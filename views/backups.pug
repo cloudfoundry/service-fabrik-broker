@@ -1,0 +1,49 @@
+extends layout
+
+block content
+  include mixins/controls.pug
+  .container-fluid
+    .row
+      .col-md-12
+        h3 Backups
+        table.table.table-bordered
+          thead
+            tr.active.top
+              th.center(colspan='3') Backup
+              th(rowspan='2') Service
+              th(rowspan='2') Plan
+              th(rowspan='2') Instance GUID
+              th(rowspan='2') Space GUID
+            tr.active
+              th Action
+              th GUID
+              th Started
+
+          tbody
+            each backup in backups
+              -
+                try {
+                  service = catalog.getService(backup.service_id)
+                  plan = catalog.getPlan(backup.plan_id)
+                } catch (err) {
+                  service = plan = null
+                }
+              tr
+                td
+                  form(role='form', method='POST', action=`/admin/backups/${backup.backup_guid}/delete?redirect_uri=${encodeURIComponent(url)}`)
+                    input(name='space_guid', type='hidden', value=backup.space_guid)
+                    input(name='service_id', type='hidden', value=backup.service_id)
+                    input(name='plan_id', type='hidden', value=backup.plan_id)
+                    input(name='instance_guid', type='hidden', value=backup.instance_guid)
+                    button.btn.btn-xs.btn-link(type='submit', aria-label='Left Align')
+                      span.glyphicon.glyphicon-trash(aria-hidden='true')
+                td= backup.backup_guid
+                td= backup.started_at
+                td= _.get(service, 'name', backup.service_id)
+                td= _.get(plan, 'name', backup.plan_id)
+                td= backup.instance_guid
+                td= backup.space_guid
+            else
+              tr
+                td.center(colspan='7')
+                  small none

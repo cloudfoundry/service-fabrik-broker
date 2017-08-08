@@ -1,0 +1,2 @@
+#!/bin/bash -eu
+watch eval 'cf services 2>/dev/null | tail -n +4 | sed -r "s/name               /CF service instance/1"'

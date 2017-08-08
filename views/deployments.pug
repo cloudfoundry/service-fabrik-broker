@@ -1,0 +1,57 @@
+extends layout
+
+block content
+  include mixins/controls.pug
+  .container
+    .row
+      .col-lg-12
+        h2 Outdated deployments
+        table.table.table-bordered
+          thead
+            tr.active.top
+              th.center(colspan='2') Deployment
+              th(rowspan='2') Service
+              th(rowspan='2') Plan
+              th(rowspan='2') Space
+              th.center(colspan='2') Instance
+            tr.active
+              th Name
+              th Difference
+              th Name
+              th State
+          tbody
+            each deployment in deployments
+              -
+                instance = deployment.instance || {};
+                plan = catalog.getPlan(instance.service_plan_id)
+                service = plan.service
+                last_operation = instance.last_operation
+                state = `${last_operation.type} ${last_operation.state }`
+                switch (last_operation.state) {
+                  case 'succeeded':
+                    contextualClass = 'success'
+                    break
+                  case 'in progress':
+                    contextualClass = 'warning'
+                    break
+                  default:
+                    contextualClass = 'danger'
+                    break
+                }
+              tr
+                td
+                  a(href=`/admin/deployments/${deployment.name}?plan_id=${plan.id}`)= deployment.name
+                td.diff
+                  pre
+                    code.language-diff #{deployment.diff.join('\n')}
+                td= service.name
+                td= plan.name
+                td= instance.space_guid
+                td: a(href=instance.dashboard_url)= instance.name
+                td(class=[`text-${contextualClass}`])= state
+            else
+              tr
+                td.center(colspan='7')
+                  small none
+block scripts
+  script(src='/js/prism.js')

@@ -1,0 +1,39 @@
+extends layout
+
+block append vars
+  -
+    head.title = title = title || 'Service Fabrik Dashboard'
+    body.attributes = {
+      'id': 'page-top',
+      'data-spy': 'scroll',
+      'data-target': '.navbar-fixed-top'
+    }
+
+block nav
+  nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
+    .container
+      .navbar-header.page-scroll
+        button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-ex1-collapse')
+          span.sr-only Toggle navigation
+          span.icon-bar
+          span.icon-bar
+          span.icon-bar
+        a.navbar-brand.page-scroll(href='#page-top') #{head.title}
+      .collapse.navbar-collapse.navbar-right.navbar-ex1-collapse
+        ul.nav.navbar-nav
+          li.hidden
+            a.page-scroll(href='#page-top')
+          block navbar
+
+block footer
+  footer.footer
+    .container
+      p
+        small Copyright © SAP SE 2017
+
+block scripts
+  script(src='/js/jquery.js')
+  script(src='/js/bootstrap.js')
+  script(src='/js/jquery.easing.js')
+  script(src='/js/prism.js')
+  script(src='/js/scrolling-nav.js')

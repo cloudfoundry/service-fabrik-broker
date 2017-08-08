@@ -1,0 +1,17 @@
+extends layout
+
+block append meta
+  if _.includes(['queued', 'processing'], task.state)
+    meta(http-equiv='refresh', content='3')
+
+block content
+  include mixins/controls.pug
+  .container
+    .row
+      .col-lg-12
+        h1 Deployment
+        h4: strong #{task.deployment}
+        p &nbsp;
+        +renderPropertyListPanel('Task', _.omit(task, 'deployment'))
+        .btn-toolbar(role='toolbar')
+          a.btn.btn-default(href='/v1/deployments/outdated') Outdated Deployments

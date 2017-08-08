@@ -1,0 +1,26 @@
+doctype html
+html(lang="en")
+  block vars
+    -
+      const head = {
+        title: 'Service Fabrik'
+      }
+      const body = {
+        attributes: {}
+      }
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    block meta
+      meta(name='description', content=head.title)
+    block title
+      title #{head.title}
+    block links
+      link(rel='icon', href='/favicon.ico')
+      link(rel='stylesheet', href='/css/style.css', type='text/css', media='all')
+  body&attributes(body.attributes)
+    block nav
+    block content
+    block footer
+    block scripts

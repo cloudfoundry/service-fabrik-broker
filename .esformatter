@@ -1,0 +1,18 @@
+{
+  "preset": "default",
+  "plugins": [
+    "esformatter-quotes",
+    "esformatter-braces",
+    "esformatter-semicolons",
+    "esformatter-dot-notation",
+    "esformatter-var-each",
+    "esformatter-use-strict",
+    "esformatter-quote-props"
+  ],
+  "quotes": {
+    "type": "single"
+  },
+  "indent": {
+    "SwitchStatement": 0
+  }
+}

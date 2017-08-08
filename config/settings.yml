@@ -1,0 +1,618 @@
+# This file should not be used in deployed environments. Instead, set
+# the SETTINGS_PATH environment variable to point to a configuration
+# file that contains these settings.
+<%
+const path = require('path');
+const os = require('os');
+
+const log_path = path.join(__dirname, '..', 'logs', `${process.env.NODE_ENV}.log`)
+
+const broker_name = 'service-fabrik-broker';
+const ip = '10.0.2.2';
+const internal = {
+  protocol: 'https',
+  ip: ip,
+  port: 9293
+};
+const external = {
+  protocol: 'https',
+  host: `${broker_name}.bosh-lite.com`,
+  port: 9292
+};
+const redirect_uri = `${external.protocol}://${external.host}/manage/auth/cf/callback`;
+
+const cloudProviders = {
+  openstack: {
+    authUrl: 'https://myopenstackcloud.com:5000',
+    keystoneAuthVersion: 'v3',
+    domainName: 'MYDOMAIN',
+    tenantName: 'service-fabrik',
+    tenantId: 'tenant_id',
+    region: 'eu-de-1',
+    username: 'service-fabrik-broker-backup-service-fabrik',
+    password: 'rabbitmq_password',
+    containerPrefix: 'cf.service-fabrik.myopenstack.com-service-fabrik'
+  },
+  amazon: {
+    region: 'eu-central-1',
+    keyId: 'aws_key_id',
+    key: 'aws_key',
+    containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
+  }
+};
+const cloudProvider = cloudProviders.openstack;
+%>---
+defaults: &defaults
+  ####################
+  # GENERAL SETTINGS #
+  ####################
+  broker_name: <%= broker_name %>
+  deployment_name: service-fabrik
+  username: broker
+  password: ~
+  skip_ssl_validation: true
+  log_path: <%= log_path %>
+  log_level: info
+  sys_log_level: info
+  enable_circuit_breaker: false
+
+  ##############################
+  # EXTERNAL ENDPOINT SETTINGS #
+  ##############################
+  external: &external
+    log_event: true
+    event_type: SF.API_EVENT
+    trust_proxy: 2
+    port: <%= external.port %>
+    protocol: <%= external.protocol %>
+    host: <%= external.host %>
+    cookie_secret: 'cookie_secret'
+    cookie_secure: <%= external.protocol === 'https' %>
+    session_expiry: 86400
+    api_requires_admin_scope: false
+
+  ##############################
+  # INTERNAL ENDPOINT SETTINGS #
+  ##############################
+  internal: &internal
+    log_event: true
+    event_type: SF.BROKER_EVENT
+    domain_socket:
+      path: /tmp/var
+      fwd_events: true
+    port: <%= internal.port %>
+    ip: <%= internal.ip %>
+    protocol: <%= internal.protocol%>
+    host: <%= `${internal.ip}:${internal.port}` %>
+    ssl:
+      key: <%= certificate('broker.key') %>
+      cert: <%= certificate('broker.crt') %>
+
+  ####################
+  # MONGODB SETTINGS #
+  ####################
+  mongodb:
+    provision:
+      network_index: 1
+    deployment_name: service-fabrik-mongodb
+    retry_connect:
+      max_attempt: 5 # MaxAttempts of 8 with a backoff factor of 2 leads to last attempt ~ at 4.3 hr from first error occurence time
+      min_delay: 120000 # min 2 mins
+    #url: mongodb://localhost:27017/service-fabrik #'mongodb://user:pass@localhost:port/database'
+    record_max_fetch_count: 100  # Max number of records that can be fetched at a time
+    backup:
+      schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
+      status_check_every: 120000 # (ms) Check the status of service fabrik backup once every 2 mins
+      backup_timeout_time: 7200000 # (ms) Service Fabrik backup must finish within this timeout time (2 hrs)
+    agent:
+      version: '1'
+      provider:
+        container: <%= cloudProvider.containerPrefix %>-broker-db
+      auth:
+        username: agent
+        password: secret
+
+  ######################
+  # SCHEDULER SETTINGS #
+  ######################
+  scheduler:
+    job_types: ScheduledBackup, ServiceFabrikBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper
+    process_every: '3 minutes' # Process every 3 min by default
+    run_with_web_process: true #if this flag is either undefined or set to true, then agenda scheduler can run along within web process
+    max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
+    max_concurrency: 30
+    default_concurrency: 20
+    default_lock_lifetime: 180000
+    agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
+    job_history_retention_in_days: 30
+    system_jobs:
+      - name: 'service-fabrik-mongodb'
+        type: ScheduledOobDeploymentBackup
+        interval: '0 12 * * *' #Backup schedule interval for service fabrik DB
+        job_data:
+          type: online
+          deployment_name: service-fabrik-mongodb
+          trigger: scheduled
+          container: service-fabrik-mongodb
+      - name: 'Backup_Reaper'
+        type: BackupReaper
+        interval: '0 1 * * *' #Backup schedule interval for service fabrik DB
+        job_data:
+          delete_delay: 1000 #delay in processing between two tasks (in millisecond)
+      - name: 'MongoDB'
+        type: ServiceFabrikBackup
+        interval: '0 1 * * *'
+        enabled: false
+
+  #######################
+  # MONITORING SETTINGS #
+  #######################
+  monitoring:
+    success_state: 'ok'
+    success_metric: 0
+    failure_state: 'critical'
+    failure_metric: 1
+    warning_state: 'warning'
+    inprogress_state: 'in progress'
+    inprogress_metric: 2
+    event_name_prefix: broker.0.service-fabrik
+    include_response_body: false
+    unauthorized:
+      http_status:
+      - 401
+      - 403
+      event_name: 'unauthorized_access'
+      description: 'Unauthorized access to service attempted'
+      tags:
+      - security
+      - unauthorized
+      include_response_body: true
+  riemann:
+    host: 127.0.0.1
+    port: 1234
+    protocol : tcp
+    show_errors: false
+    prefix: CF
+  ###################
+  # QUOTA MANAGEMENT SETTINGS #
+  ###################
+  quota:
+    enabled: false
+    whitelist:
+      - 'CF_UAA'
+      - 'CF_provisioning'
+    oauthDomain: https://myauth-domain.com
+    serviceDomain: https://my-tenant-onboarding.com
+    username: sb-service-client!t1
+    password: quota_password
+  ###################
+  # BACKUP SETTINGS #
+  ###################
+  backup:
+    retention_period_in_days: 14
+    max_num_on_demand_backup: 2
+    status_check_every: 120000 # (ms) Check the status of backup once every 2 mins
+    backup_restore_status_poller_timeout: 86400000 # (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
+    backup_restore_status_check_every: 120000 # (ms) Check the status of deployment backup/restore once every 2 mins
+    abort_time_out: 300000 #(ms) Timeout time for abort of backup to complete
+    provider:
+      name: openstack
+      authUrl: <%= cloudProvider.authUrl %>
+      keystoneAuthVersion: <%= cloudProvider.keystoneAuthVersion %>
+      domainName: <%= cloudProvider.domainName %>
+      projectDomainName: <%= cloudProvider.domainName %>
+      tenantId: <%= cloudProvider.tenantId %>
+      region: <%= cloudProvider.region %>
+      username: <%= cloudProvider.username %>
+      password: <%= cloudProvider.password %>
+      strictSSL: false
+      container: <%= cloudProvider.containerPrefix %>-broker
+  #############################
+  # CLOUD-CONTROLLER SETTINGS #
+  #############################
+  cf: &cf
+    url: https://api.bosh-lite.com
+    username: admin
+    password: admin
+
+  ###################
+  # DOCKER SETTINGS #
+  ###################
+  docker: &docker
+    url: unix:///var/run/docker.sock # how to connect the broker to docker
+    allocate_docker_host_ports: true # if true the broker will allocate fixed port mappings for the containers
+    volume_driver: local
+
+  #####################
+  # DIRECTOR SETTINGS #
+  #####################
+  #bootstrap_bosh_director settings
+  bootstrap_bosh_director:
+    url: https://192.168.50.3:25555
+    username: admin
+    password: admin
+    skip_ssl_validation: true
+    cpi: warden_cpi
+  director: &director
+    cpi: warden_cpi
+    url: https://192.168.50.4:25555
+    username: admin
+    password: admin
+    skip_ssl_validation: true
+    default_task_poll_interval: 10000
+    lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
+    infrastructure: &director_infrastructure
+      stemcell:
+        name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+        version: latest
+      segmentation:
+        network_name: default
+        # calculate capacity based on the network range
+        capacity: -1
+        offset: 1
+        size: 8
+      azs:
+      - { name: z1, cloud_properties: { name: random } }
+      - { name: z2, cloud_properties: { name: random } }
+      - { name: z3, cloud_properties: { name: random } }
+      vm_types:
+      - { name: micro,    cloud_properties: { name: random } }
+      - { name: small,    cloud_properties: { name: random } }
+      - { name: medium,   cloud_properties: { name: random } }
+      - { name: large,    cloud_properties: { name: random } }
+      - { name: xlarge,   cloud_properties: { name: random } }
+      - { name: 2xlarge,  cloud_properties: { name: random } }
+      - { name: 4xlarge,  cloud_properties: { name: random } }
+      - { name: 10xlarge, cloud_properties: { name: random } }
+      disk_types:
+      - { name: hdd_1gb,   disk_size:     1_024 } # minimum size 1GiB (2^30), everything else is similar to hard disk vendors (10^x)
+      - { name: hdd_2gb,   disk_size:     2_000 }
+      - { name: hdd_4gb,   disk_size:     4_000 }
+      - { name: hdd_6gb,   disk_size:     6_000 }
+      - { name: hdd_8gb,   disk_size:     8_000 }
+      - { name: hdd_10gb,  disk_size:    10_000 }
+      - { name: hdd_20gb,  disk_size:    20_000 }
+      - { name: hdd_40gb,  disk_size:    40_000 }
+      - { name: hdd_60gb,  disk_size:    60_000 }
+      - { name: hdd_80gb,  disk_size:    80_000 }
+      - { name: hdd_100gb, disk_size:   100_000 }
+      - { name: hdd_200gb, disk_size:   200_000 }
+      - { name: hdd_400gb, disk_size:   400_000 }
+      - { name: hdd_600gb, disk_size:   600_000 }
+      - { name: hdd_800gb, disk_size:   800_000 }
+      - { name: hdd_1tb,   disk_size: 1_000_000 }
+      - { name: hdd_2tb,   disk_size: 2_000_000 }
+      - { name: hdd_4tb,   disk_size: 4_000_000 }
+      - { name: hdd_6tb,   disk_size: 6_000_000 }
+      - { name: hdd_8tb,   disk_size: 8_000_000 }
+      networks:
+      - &default_network
+        name: default
+        type: manual
+        subnets:
+        - { range: 10.244.10.0/24, az: z1, cloud_properties: { name: random } }
+        - { range: 10.244.11.0/24, az: z2, cloud_properties: { name: random } }
+        - { range: 10.244.12.0/24, az: z3, cloud_properties: { name: random } }
+      - &compilation_network
+        name: compilation
+        type: dynamic
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+  ########################################
+  # AGENTS DEFINITIONS                   #
+  ########################################
+  agents: &agents
+    blueprint: &agent_blueprint
+      version: '1'
+      hostname: <%= process.env.BLUEPRINT_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - backup
+      - restore
+      provider: &provider_blueprint
+        name: boshlite
+        container: blueprint_backup
+  ########################################
+  # SERVICES CATALOG - BLUEPRINT SERVICE #
+  ########################################
+  services:
+  - id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+    name: 'blueprint'
+    description: &description 'Blueprint service for internal development, testing, and documentation purposes of the Service Fabrik'
+    bindable: true
+    tags:
+    - 'blueprint'
+    - 'no-not-use'
+    metadata:
+      displayName: 'Blueprint'
+      longDescription: *description
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://sap.com/'
+      supportUrl: 'https://sap.com/'
+    dashboard_client:
+      id: 'service-fabrik-blueprint-client'
+      secret: 'service-fabrik-blueprint-secret'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # CONTAINER SERVICE PLANS #
+    ###########################
+    - id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
+      name: 'v1.0-container'
+      free: true
+      manager:
+        name: 'docker'
+        settings:
+          image: 'servicefabrikjenkins/blueprint'
+          tag: 'latest'
+          memory: '128m'
+          persistent_volumes:
+          - name: 'data'
+            path: '/data'
+            size: '100m'
+      credentials:
+        username:
+          key: 'BLUEPRINT_USER_NAME'
+        password:
+          key: 'BLUEPRINT_USER_PASS'
+        uri:
+          prefix: 'http'
+          port: 8080/tcp
+      description: 'Blueprint 1.0 service running inside a Docker container (for non-productive usage)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Container Deployment'
+        - '128 MB Memory'
+        - '100 MB Disk'
+    - id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
+      name: 'v1.0-container-large'
+      free: true
+      manager:
+        name: 'docker'
+        settings:
+          image: 'servicefabrikjenkins/blueprint'
+          tag: 'latest'
+          memory: '256m'
+          persistent_volumes:
+          - name: 'data'
+            path: '/data'
+            size: '200m'
+      credentials:
+        username:
+          key: 'BLUEPRINT_USER_NAME'
+        password:
+          key: 'BLUEPRINT_USER_PASS'
+        uri:
+          prefix: 'http'
+          port: 8080/tcp
+      description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Container Deployment'
+        - '256 MB Memory'
+        - '200 MB Disk'
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - id: 'bc158c9a-7934-401e-94ab-057082a5073f'
+      name: 'v1.0-dedicated-xsmall'
+      free: false
+      manager:
+        name: 'director'
+        settings:
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          template: <%= base64_template('blueprint') %>
+          releases: &dedicated_releases
+          - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          context:
+            agent: *agent_blueprint
+            resource_pool: micro
+            disk_pool: hdd_1gb
+      description: 'Blueprint 1.0 service x-small (managed service in beta)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '1 GB Memory'
+        - '1 GB Disk'
+    - id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
+      name: 'v1.0-dedicated-large'
+      free: false
+      manager:
+        name: 'director'
+        settings:
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          update_predecessors:
+          - 'bc158c9a-7934-401e-94ab-057082a5073f'
+          template: <%= base64_template('blueprint') %>
+          releases: *dedicated_releases
+          context:
+            agent: *agent_blueprint
+            resource_pool: micro
+            disk_pool: hdd_2gb
+      description: 'Blueprint 1.0 service large (managed service in beta)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '1 GB Memory'
+        - '2 GB Disk'
+
+development:
+  <<: *defaults
+  log_level: debug
+  password: 'secret'
+
+development_sc6: &sc6
+  <<: *defaults
+  log_level: debug
+  password: 'secret'
+  director:
+    <<: *director
+    prefix: service-fabrik-backup
+    url: https://127.0.0.1:25555
+    infrastructure:
+      <<: *director_infrastructure
+      stemcell:
+        name: bosh-openstack-kvm-ubuntu-trusty-go_agent
+        version: latest
+      vm_types:
+      - { name: micro, cloud_properties: {availability_zone: rot_1, instance_type: small_1_1 } }
+      - { name: medium, cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 } }
+      networks:
+      - name: default
+        type: manual
+        subnets:
+        - range: 10.11.0.0/18
+          az: z1
+          cloud_properties:
+            net_id: b7089c41-e529-4044-943b-174b92ad6074
+            security_groups:
+            - service-fabrik-bosh-services
+            subnet: b7089c41-e529-4044-943b-174b92ad6074
+      - &fabrik_network
+        name: service_fabrik
+        type: manual
+        segmentation:
+          # calculate capacity based on the network range
+          capacity: -1
+          offset: 1
+          size: 10
+        subnets:
+        - { range: 10.11.252.0/24, az: z1, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.253.0/24, az: z2, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.254.0/24, az: z3, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+      - name: compilation
+        type: dynamic
+        cloud_properties:
+          net_id: b7089c41-e529-4044-943b-174b92ad6074
+          security_groups:
+          - service-fabrik-compilation
+          subnet: b7089c41-e529-4044-943b-174b92ad6074
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 20
+        cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 }
+
+development_aws:
+  env: &resource_pool_env
+    bosh:
+      password: bosh_password
+  <<: *defaults
+  log_level: debug
+  password: 'secret'
+  director:
+    <<: *director
+    url: https://127.0.0.1:25557
+    infrastructure:
+      <<: *director_infrastructure
+      stemcell:
+        name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+        version: latest
+      azs:
+        - name: z1
+          cloud_properties:
+            availability_zone: eu-central-1a
+        - name: z2
+          cloud_properties:
+            availability_zone: eu-central-1b
+      vm_types:
+      - { name: micro,    env: *resource_pool_env, cloud_properties: { instance_type: t2.micro } }
+      - { name: small,    env: *resource_pool_env, cloud_properties: { instance_type: t2.small } }
+      - { name: medium,   env: *resource_pool_env, cloud_properties: { instance_type: t2.medium } }
+      - { name: large,    env: *resource_pool_env, cloud_properties: { instance_type: t2.large } }
+      - { name: xlarge,   env: *resource_pool_env, cloud_properties: { instance_type: m4.xlarge } }
+      - { name: 2xlarge,  env: *resource_pool_env, cloud_properties: { instance_type: m4.2xlarge } }
+      - { name: 4xlarge,  env: *resource_pool_env, cloud_properties: { instance_type: m4.4xlarge } }
+      - { name: 10xlarge, env: *resource_pool_env, cloud_properties: { instance_type: m4.10xlarge } }
+      networks:
+      - name: default
+        type: manual
+        subnets:
+        - az: z1
+          range: 10.11.0.0/18
+          cloud_properties:
+            subnet: subnet-92c928fa
+            security_groups:
+            - sg-14644d7c
+        - az: z2
+          range: 10.11.64.0/18
+          cloud_properties:
+            subnet: subnet-4faa9634
+            security_groups:
+            - sg-14644d7c
+      - name: compilation
+        type: dynamic
+        cloud_properties:
+          subnet: subnet-88b251e0
+          security_groups:
+          - sg-5e51fd36
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties:
+          availability_zone: eu-central-1a
+          instance_type: t2.medium
+
+production:
+  <<: *defaults
+  password: 'secret'
+
+test:
+  <<: *defaults
+  log_level: debug
+  enable_circuit_breaker: false
+  external:
+    <<: *external
+    protocol: 'http'
+    cookie_secure: false
+  docker:
+    <<: *docker
+    url: 'https://192.168.99.100:2376'
+  director:
+    <<: *director
+    cpi: aws_cpi
+    uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
+    infrastructure:
+      <<: *director_infrastructure
+      networks:
+      - *default_network
+      - *compilation_network
+      - *fabrik_network
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+  password: 'secret'

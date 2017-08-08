@@ -1,0 +1,12 @@
+extends dashboard
+
+block navbar
+  li: a.page-scroll(href='#service') Service
+  li: a.page-scroll(href='#container') Container
+  li: a.page-scroll(href='#files') Log Files
+
+block content
+  include mixins/sections.pug
+  +showSectionService(service, plan, instance)
+  +showSectionContainer(details, processes)
+  +showSectionFiles('Log Files', files)

@@ -1,0 +1,129 @@
+---
+defaults:
+  http_success_codes:
+  - 200
+  - 201
+  http_inprogress_codes:
+  - 202
+  log_inprogress_state: true # flag that is used to determine if async operations in-progress state is to be logged
+  cf_last_operation: false # flag to indicate if a particular HTTP operation is to be treated as cf-lastoperation semantics additionally
+  ignore_service_fabrik_operation: false # flag to indicate if service-fabrik operations are to be excluded. for ex. broker update (HTTP Patch)
+                                         #  gets invoked via backup/restore etc, which are to be ignored when coming via HTTP Patch.
+  include_response_body: false # wheter HTTP response body is to be logged or not
+"/api/v1/info":
+  GET:
+    enabled: false
+    event_name: info_api
+    description: Returns broker name, the version of the implemented API and an indicator
+      which shows whether the broker is ready to perform all its implemented operations
+    tags:
+    - info
+"/api/v1/service_instances/:instance_id/backup":
+  GET:
+    enabled: true
+    event_name: instance_backup_info
+    description: Retrieving the metadata of the last backup operation on the service instance
+    tags:
+    - backup
+  POST:
+    enabled: true
+    event_name: create_backup
+    description: Backup service instance
+    tags:
+    - backup
+  DELETE:
+    enabled: true
+    event_name: abort_backup
+    description: Triggering the abortion of a running backup
+    tags:
+    - backup
+"/api/v1/service_instances/:instance_id/restore":
+  GET:
+    enabled: true
+    event_name: instance_restore_info
+    description: Retrieving the metadata of the last restore operation
+    tags:
+    - restore
+  POST:
+    enabled: true
+    event_name: restore_instance
+    description: 'Restore of a Service Instance '
+    tags:
+    - restore
+  DELETE:
+    enabled: true
+    event_name: abort_restore
+    description: Triggering the abortion of a running restore
+    tags:
+    - restore
+"/api/v1/service_instances/:instance_id":
+  GET:
+    enabled: true
+    event_name: service_instance_info
+    description: The state of a service instance is described by an indicator showing
+      whether it is operational
+    tags:
+    - service instance
+    - info
+"/api/v1/service_instances/:operation(backup|restore)":
+  GET:
+    enabled: true
+    op_name_in_request:
+      path: params.operation
+      decode: false
+    # 'TODO: The below currently config has bug in case of error.https://github.com/expressjs/express/issues/2088.'
+    # 'Fix is to carry req.params into req.params in basecontroller. '
+    backup:
+      event_name: list_last_backups
+      description: Retrieve metadata of the last backup operation for all service
+        instances within the given space
+      tags:
+      - backup
+    restore:
+      event_name: list_last_restore
+      description: Retrieve metadata of the last restore operation for all service
+        instances within the given space
+      tags:
+      - restore
+"/api/v1/backups":
+  GET:
+    enabled: true
+    event_name: list_all_backups
+    description: Retrieve metadata of all backups within the given space
+    tags:
+    - backup
+"/api/v1/backups/:backup_guid":
+  GET:
+    enabled: true
+    event_name: get_backup_by_guid
+    description: Retrieve metadata of a specific backup within the given space
+    tags:
+    - backup
+  DELETE:
+    enabled: true
+    event_name: delete_backup_by_guid
+    description: Delete a specific backup
+    tags:
+    - backup
+    http_success_codes:
+    - 200
+    - 410
+"/api/v1/service_instances/:instance_id/schedule_backup":
+  GET:
+    enabled: true
+    event_name: get_backup_schedule
+    description: Retrieving the backup schedule for a service instance
+    tags:
+    - schedule_backup
+  PUT:
+    enabled: true
+    event_name: schedule_backup
+    description: Schedule backup for a service instance
+    tags:
+    - schedule_backup
+  DELETE:
+    enabled: true
+    event_name: cancel_automated_backup
+    description: Cancel automated scheduled backup for a service instance
+    tags:
+    - schedule_backup

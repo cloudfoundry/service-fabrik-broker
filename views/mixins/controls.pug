@@ -1,0 +1,60 @@
+mixin renderTabs(tabs)
+  ul.nav.nav-tabs(role='tablist')
+    for tab, index in tabs
+      li(class=!index ? 'active' : '', role='presentation')
+        a(href='#'+tab.id, aria-controls=tab.id , role='tab', data-toggle='tab')= tab.title
+  .tab-content
+    for tab, index in tabs
+      .tab-pane(id=tab.id, class=!index ? 'active' : '', role='tabpanel')
+        pre
+          code(class=['language', tab.language || 'xxxx'].join('-'))= tab.content
+
+mixin renderUnstyledList(values)
+  ul.list-unstyled
+    each value in values
+      li= value
+
+
+mixin renderTable(columns, rows)
+  table.table
+    thead
+      tr
+        for column in columns
+          th= column
+    tbody
+      each row in rows
+        tr
+          each value in row
+            td= value
+
+mixin renderTablePanel(title, columns, rows)
+  .panel.panel-default
+    .panel-heading= title
+    +renderTable(columns, rows)
+
+mixin renderPropertyListValue(value)
+  if _.isArray(value)
+    if _.size(value) > 1
+      td: +renderUnstyledList(value)
+    else
+      td= _.first(value)
+  else if /^https?:\/\//.test(value)
+    td: a(href=value)= value
+  else
+    td= value
+
+mixin renderPropertyList(properties)
+  table.table.fixed-table
+    each key in _.keys(properties)
+      - value = properties[key]
+      tr
+        th= key
+        +renderPropertyListValue(properties[key])
+
+mixin renderPropertyListPanel(title, properties)
+  .panel.panel-default
+    .panel-heading= title
+    if _.isEmpty(properties)
+      .panel-body: small none
+    else
+      +renderPropertyList(properties)
