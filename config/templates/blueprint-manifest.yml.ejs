@@ -1,0 +1,54 @@
+<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [p('resource_pool')]}) %>
+
+update:
+  canaries: 0
+  max_in_flight: 50
+  canary_watch_time: 1000-100000
+  update_watch_time: 1000-100000
+  serial: false
+
+jobs: &jobs
+<%
+const net = spec.networks[0];
+const members = net.static.slice(0,1);
+%>
+- name: blueprint_<%= net.az %>
+  instances: <%= members.length %>
+  networks:
+  - name: <%= net.name %>
+    static_ips: <%= JSON.stringify(members) %>
+  resource_pool: <%= `${p('resource_pool')}_${net.az}` %>
+  persistent_disk_pool: <%= p('disk_pool') %>
+  templates:
+  - { name: blueprint, release: blueprint }
+  - { name: blueprint-agent, release: blueprint }
+
+<%
+const properties = {};
+if (!spec.previous_manifest) {
+  /* create scenario: pick random service instance properties */
+  properties.blueprint = {
+    admin: {
+      username: SecureRandom.hex(16),
+      password: SecureRandom.hex(16)
+    }
+  };
+} else {
+  /* update scenario: preserve previous service instance properties */
+  properties.blueprint = spec.previous_manifest.properties.blueprint;
+}
+%>
+properties:
+  blueprint: &blueprint
+    port: 8080
+    admin:
+      username: <%= properties.blueprint.admin.username %>
+      password: <%= properties.blueprint.admin.password %>
+  agent:
+    username: <%= p('agent.auth.username') %>
+    password: <%= p('agent.auth.password') %>
+    provider: <%= JSON.stringify(p('agent.provider')) %>
+    manifest:
+      jobs: *jobs
+      properties:
+        blueprint: *blueprint

@@ -1,0 +1,62 @@
+extends layout
+
+block content
+  include mixins/controls.pug
+  .container-fluid
+    .row
+      .col-lg-12
+        h2 Deployments
+        table.table.table-bordered
+          thead
+            tr.active.top
+              th.center(colspan='2') Deployment
+              th(rowspan='2') Service
+              th(rowspan='2') Plan
+              th(rowspan='2') Organization
+              th(rowspan='2') Space
+              th.center(colspan='2') Instance
+            tr.active
+              th Name
+              th VMs
+              th Name
+              th State
+
+          tbody
+            each deployment in deployments
+              -
+                plan_id = _.get(deployment, 'plan.id')
+                url = plan_id ?
+                  `/admin/deployments/${deployment.name}?plan_id=${plan_id}` :
+                  undefined
+                dashboard_url = _.get(deployment, 'entity.dashboard_url')
+                last_operation = _.get(deployment, 'entity.last_operation', {})
+                state = last_operation.type ?
+                  `${last_operation.type} ${last_operation.state }` :
+                  undefined
+                switch (last_operation.state) {
+                  case 'succeeded':
+                    contextualClass = 'success'
+                    break
+                  case 'in progress':
+                    contextualClass = 'warning'
+                    break
+                  default:
+                    contextualClass = 'danger'
+                    break
+                }
+              tr
+                if url
+                 td: a(href=url)= deployment.name
+                else
+                 td= deployment.name
+                td= _.get(deployment, 'vms.length')
+                td= _.get(deployment, 'service.name')
+                td= _.get(deployment, 'plan.name')
+                td= _.get(deployment, 'organization.name')
+                td= _.get(deployment, 'space.name')
+                if dashboard_url
+                  td: a(href=dashboard_url)=  _.get(deployment, 'entity.name')
+                else
+                  td= _.get(deployment, 'entity.name')
+                td(class=[`text-${contextualClass}`])= state
+

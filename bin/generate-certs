@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e -x
+
+# Install certstrap
+go get -v github.com/square/certstrap
+
+# Place keys and certificates here
+root="$(dirname "$(dirname "$(test -L "$0" && readlink "$0" || echo "$0")")")"
+depot_path="${root}/config/certs"
+mkdir -p ${depot_path}
+
+# CA to distribute to broker and agents
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name 'service fabrik ca'
+mv -f ${depot_path}/service_fabrik_ca.crt ${depot_path}/ca.crt
+mv -f ${depot_path}/service_fabrik_ca.key ${depot_path}/ca.key
+
+# Server certificate
+broker_cn=${1:-10.0.2.2}
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name $broker_cn
+certstrap --depot-path ${depot_path} sign $broker_cn --CA ca
+mv -f ${depot_path}/$broker_cn.key ${depot_path}/broker.key
+mv -f ${depot_path}/$broker_cn.csr ${depot_path}/broker.csr
+mv -f ${depot_path}/$broker_cn.crt ${depot_path}/broker.crt
+
+# Agent certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name 'service fabrik agent'
+certstrap --depot-path ${depot_path} sign service_fabrik_agent --CA ca
+mv -f ${depot_path}/service_fabrik_agent.key ${depot_path}/agent.key
+mv -f ${depot_path}/service_fabrik_agent.csr ${depot_path}/agent.csr
+mv -f ${depot_path}/service_fabrik_agent.crt ${depot_path}/agent.crt

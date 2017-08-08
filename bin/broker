@@ -1,0 +1,208 @@
+#!/bin/bash -eu
+
+broker_host="10.0.2.2:9292"
+instance_guid=""
+plan_id=""
+service_id=""
+auth_header=""
+
+########## INITIALIZATION
+
+function init() {
+  # service instance name
+  local name="${1}"
+  # instance
+  local instance=$(cf curl "/v2/service_instances?q=name:${name}" | jq -r .resources[0])
+  instance_guid=$(echo ${instance} | jq -r .metadata.guid)
+  # plan
+  local plan_guid=$(echo ${instance} | jq -r .entity.service_plan_guid)
+  local plan=$(cf curl "/v2/service_plans/${plan_guid}")
+  plan_id=$(echo ${plan} | jq -r .entity.unique_id)
+  # space
+  space_guid=$(echo ${instance} | jq -r .entity.space_guid)
+  # access token
+  auth_header=$(cat ~/.cf/config.json | jq -r .AccessToken)
+}
+
+function init_without_instance() {
+  # space
+  space_guid=$(cat ~/.cf/config.json | jq -r .SpaceFields.GUID)
+  # refresh access token
+  cf curl "/v2/spaces/$space_guid" &>/dev/null
+  # access token
+  auth_header=$(cat ~/.cf/config.json | jq -r .AccessToken)
+}
+
+########## GENERAL
+
+function service_instance_state() {
+  # init
+  init "${1}"
+  # get state
+  local result=$(curl -sk -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}?plan_id=${plan_id}")
+  # return
+  echo ${result}
+}
+
+########## BACKUP
+
+function backup_start() {
+  # init
+  init "${1}"
+  # backup type
+  local backup_type="${2:-online}"
+  # start backup
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/backup" -X POST -d "type=${backup_type}&space_guid=${space_guid}&plan_id=${plan_id}")
+  # return
+  echo ${result}
+}
+
+function backup_state() {
+  # init
+  init "${1}"
+  # get backup state
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/backup?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function backup_abort() {
+  # init
+  init "${1}"
+  # abort backup
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/backup?space_guid=${space_guid}" -X DELETE)
+  # return
+  echo ${result}
+}
+
+########## RESTORE
+
+function restore_start() {
+  # init
+  init "${1}"
+  # backup guid
+  local backup_guid="${2:-null}"
+  # start restore
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/restore" -X POST -d "backup_guid=${backup_guid}&space_guid=${space_guid}&plan_id=${plan_id}")
+  # return
+  echo ${result}
+}
+
+function restore_state() {
+  # init
+  init "${1}"
+  # get restore state
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/restore?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function restore_abort() {
+  # init
+  init "${1}"
+  # abort restore
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/${instance_guid}/restore?space_guid=${space_guid}" -X DELETE)
+  # return
+  echo ${result}
+}
+
+########## MANAGING BACKUPS
+
+function backup_state_all() {
+  # init
+  init_without_instance
+  # get states
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/backup?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function restore_state_all() {
+  # init
+  init_without_instance
+  # get states
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/service_instances/restore?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function show_backups() {
+  # init
+  init_without_instance
+  # show backup metadatas
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/backups?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function show_backup() {
+  # init
+  init_without_instance
+  # backup guid
+  local backup_guid="${1:-null}"
+  # show backup metadata
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/backups/${backup_guid}?space_guid=${space_guid}")
+  # return
+  echo ${result}
+}
+
+function delete_backup() {
+  # init
+  init_without_instance
+  # backup guid
+  local backup_guid="${1:-null}"
+  # show backup metadata
+  local result=$(curl -s -H "Authorization: ${auth_header}" -H "Accept: application/json" "http://${broker_host}/api/v1/backups/${backup_guid}?space_guid=${space_guid}" -X DELETE)
+  # return
+  echo ${result}
+}
+
+########## HELP
+
+function help() {
+  echo -e "USAGE:"
+  echo -e "       $(basename $0) [global options] command [arguments...]"
+  echo -e "GENERAL:"
+  echo -e "       state        <name>                     Get state of service instance with given name"
+  echo -e "BACKUP:"
+  echo -e "       backup-start <name> [<type>]            Start new backup operation for service instance with given name"
+  echo -e "       backup-state <name>                     Get state of last backup operation for service instance with given name"
+  echo -e "       backup-abort <name>                     Abort ongoing backup operation for service instance with given name"
+  echo -e "RESTORE:"
+  echo -e "       restore-start <name> <backup_guid>      Start new restore operation for service instance with given name"
+  echo -e "       restore-state <name>                    Get state of last restore operation for service instance with given name"
+  echo -e "       restore-abort <name>                    Abort ongoing restore operation for service instance with given name"
+  echo -e "MANAGING BACKUPS:"
+  echo -e "       backup-state-all                        Get state of last backup operation for all service instances in your current space"
+  echo -e "       restore-state-all                       Get state of last restore operation for all service instances in your current space"
+  echo -e "       show-backups                            Get metadata of all backups in your current space"
+  echo -e "       show-backup <backup_guid>               Get metadata of a specific backup"
+  echo -e "       delete-backup <backup_guid>             Delete a specific backup"
+  echo -e "GLOBAL OPTIONS:"
+  echo -e "       [-h]                              Show this help"
+  echo -e "       [--host <hostname>:<port>]        The host of the Service Fabrik Broker"
+}
+
+# Dispatch
+function dispatch() {
+  case $1 in
+    "-h") help; exit 0;;
+    "--host") broker_host="${2}"; dispatch ${@:3};;
+    "state")        service_instance_state ${@:2};;
+    "backup-start") backup_start ${@:2};;
+    "backup-state") backup_state ${@:2};;
+    "backup-abort") backup_abort ${@:2};;
+    "restore-start") restore_start ${@:2};;
+    "restore-state") restore_state ${@:2};;
+    "restore-abort") restore_abort ${@:2};;
+    "backup-state-all") backup_state_all ${@:2};;
+    "restore-state-all") restore_state_all ${@:2};;
+    "show-backups") show_backups ${@:2};;
+    "show-backup") show_backup ${@:2};;
+    "delete-backup") delete_backup ${@:2};;
+  esac
+}
+
+# Entry point
+dispatch ${@}
+

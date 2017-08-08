@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const util = require('util');
+const config = require('../lib/config');
+
+console.log(util.inspect(config, {
+  colors: true,
+  depth: 100
+}));

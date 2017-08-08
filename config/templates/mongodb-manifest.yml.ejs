@@ -1,0 +1,95 @@
+<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [p('resource_pool')]}) %>
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 30000-100000
+  update_watch_time: 5000-100000
+
+jobs: &jobs
+<%
+const net = spec.networks[0];
+const members = net.static.slice(0,3);
+%>
+- name: mongodb_<%= net.az %>
+  instances: <%= members.length %>
+  networks:
+  - name: <%= net.name %>
+    static_ips: <%= JSON.stringify(members) %>
+  resource_pool: <%= `${p('resource_pool')}_${net.az}` %>
+  persistent_disk_pool: <%= p('disk_pool') %>
+  templates:
+  - { name: mongodb, release: mongodb }
+  - { name: broker-agent, release: broker-agent-mongodb }
+
+<%
+const properties = {};
+if (!spec.previous_manifest) {
+  /* create scenario: pick random service instance properties */
+  properties.mongodb = {
+    keyfile: SecureRandom.hex(512),
+    repl_set_id: SecureRandom.hex(16),
+    userAdminPassword: SecureRandom.hex(16),
+    serviceUserName: SecureRandom.hex(4),
+    serviceUserPassword: SecureRandom.hex(16),
+    defaultDatabase: SecureRandom.hex(8),
+    service_agent: {
+      username: SecureRandom.hex(8),
+      password: SecureRandom.hex(16)
+    }
+  };
+} else {
+  /* update scenario: preserve previous service instance properties */
+  properties.mongodb = spec.previous_manifest.properties.mongodb;
+
+  if (!spec.previous_manifest.properties.mongodb.service_agent) {
+    properties.mongodb.service_agent = {
+      username: SecureRandom.hex(8),
+      password: SecureRandom.hex(16)
+    }
+  }
+}
+properties.mongodb.members = members;
+
+%>
+properties:
+  mongodb: &mongodb
+    members: <%= JSON.stringify(properties.mongodb.members) %>
+    keyfile: <%= properties.mongodb.keyfile %>
+    repl_set_id: <%= properties.mongodb.repl_set_id %>
+    userAdminPassword: <%= properties.mongodb.userAdminPassword %>
+    serviceUserName: <%= properties.mongodb.serviceUserName %>
+    serviceUserPassword: <%= properties.mongodb.serviceUserPassword %>
+    defaultDatabase:  <%= properties.mongodb.defaultDatabase %>
+    service_agent:
+      port: 2722
+      username: <%= properties.mongodb.service_agent.username %>
+      password: <%= properties.mongodb.service_agent.password %>
+  metrics_collector: &metrics_collector
+    host: <%= p('metrics_collector.host') %>
+    port: <%= p('metrics_collector.port') %>
+    interval: <%= p('metrics_collector.interval') %>
+    prefix: <%= p('metrics_collector.prefix') %>
+  metrics_dashboard: &metrics_dashboard
+    active: <%= p('metrics_dashboard.active') %>
+    host: <%= p('metrics_dashboard.host') %>
+    port: <%= p('metrics_dashboard.port') %>
+    username: <%= p('metrics_dashboard.username') %>
+    password: <%= p('metrics_dashboard.password') %>
+  syslog:
+    active: <%= p('syslog.active') %>
+    syslog_ingestor:
+      host: <%= p('syslog.syslog_ingestor.host') %>
+  agent:
+    username: <%= JSON.stringify(p('agent.auth.username')) %>
+    password: <%= JSON.stringify(p('agent.auth.password')) %>
+    provider: <%= JSON.stringify(p('agent.provider')) %>
+    backup_restore:
+      poll_delay_time: <%= p('backup_restore.poll_delay_time') %>
+      poll_maximum_time: <%= p('backup_restore.poll_maximum_time') %>
+    manifest:
+      jobs: *jobs
+      properties:
+        mongodb: *mongodb
+        metrics_dashboard: *metrics_dashboard
+        metrics_collector: *metrics_collector

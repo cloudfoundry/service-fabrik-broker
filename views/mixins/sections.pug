@@ -1,0 +1,57 @@
+include controls.pug
+
+mixin showSectionService(service, plan, instance)
+  section#service.section
+    .container
+      .row
+        .col-lg-12
+          h4 Service Information
+      .row
+        .col-lg-6
+           +renderPropertyListPanel('Service', {
+              ID: service.id,
+              Name: service.name,
+              Description: service.metadata.longDescription || service.description,
+              Tags: service.tags.join(', '),
+              Documentation: service.metadata.documentationUrl,
+              Support: service.metadata.supportUrl
+           })
+        .col-lg-6
+          +renderPropertyListPanel('Plan', {
+            ID: plan.id,
+            Name: plan.name,
+            Description: plan.description,
+            Bullets: plan.metadata.bullets.join(', ')
+          })
+        .col-lg-6
+          +renderPropertyListPanel('Service Instance', {
+            GUID: instance.metadata.guid,
+            Name: instance.entity.name,
+            Manager: plan.manager.name
+          })
+
+mixin showSectionContainer(details, processes)
+  section#container.section
+    .container
+      .row
+        .col-lg-12
+          h4 Container Information
+      if !_.isEmpty(details)
+        .row
+          each title in _.keys(details)
+            .col-lg-6
+              +renderPropertyListPanel(title, details[title])
+      if !_.isEmpty(processes)
+        .row
+          .col-lg-12
+            +renderTablePanel('Processes', _.first(processes), processes.slice(1))
+
+mixin showSectionFiles(title, logs)
+  section#files.section
+    .container
+      .row
+        .col-lg-12
+          h4= title
+      .row
+        .col-lg-12
+          +renderTabs(logs)

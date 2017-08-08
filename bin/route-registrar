@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e -x
+
+# Install route registrar
+go get -v code.cloudfoundry.org/route-registrar
+
+# Root directroy
+root="$(dirname "$(dirname "$(test -L "$0" && readlink "$0" || echo "$0")")")"
+
+# start the route registrar
+route-registrar \
+  -configPath="${root}/config/route-registrar.yml" \
+  -pidfile="${root}/tmp/route-registrar.pid"

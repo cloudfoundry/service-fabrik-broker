@@ -1,0 +1,116 @@
+extends layout
+
+block content
+  include mixins/controls.pug
+  .container-fluid
+    .row
+      .col-md-12
+        h2 Deployment #[small #{name}]
+    .row
+      .col-md-12
+        h3 Virtual Machines
+        table.table.table-bordered
+          thead
+            tr.active.top
+              th(rowspan='2') Instance
+              th(rowspan='2') State
+              th(rowspan='2') VM&nbsp;Type
+              th(rowspan='2') IPs
+              th(rowspan='2') Uptime
+              th.center(colspan='3') Load
+              th.center(colspan='3') CPU
+              th(rowspan='2') Memory#[br]Usage
+              th(rowspan='2') Swap#[br]Usage
+              th.center(colspan='3') Disk Usage
+            tr.active
+              th Ø&nbsp;1
+              th Ø&nbsp;5
+              th Ø&nbsp;15
+              th User
+              th Sys
+              th Wait
+              th System
+              th Ephemeral
+              th Persistent
+          tbody
+            each vm in vms
+              -
+                disk = vm.vitals.disk
+                contextualClass = vm.job_state === 'running' ? 'success' : 'danger'
+              tr(class=[contextualClass])
+                td #{vm.job_name}/#{vm.index}
+                td= vm.job_state
+                td= vm.vm_type
+                td= _.join(vm.ips, ', ')
+                td &nbsp;
+                td= _.nth(vm.vitals.load, 0)
+                td= _.nth(vm.vitals.load, 1)
+                td= _.nth(vm.vitals.load, 2)
+                td #{_.get(vm, 'vitals.cpu.sys')}%
+                td #{_.get(vm, 'vitals.cpu.user')}%
+                td #{_.get(vm, 'vitals.cpu.wait')}%
+                td #{_.get(vm, 'vitals.mem.percent')}%
+                td #{_.get(vm, 'vitals.swap.percent')}%
+                td #{_.get(vm, 'vitals.disk.system.percent')}%
+                td #{_.get(vm, 'vitals.disk.ephemeral.percent')}%
+                td #{_.get(vm, 'vitals.disk.persistent.percent')}%
+              each process in vm.processes
+                -
+                  contextualClass = process.state === 'running' ? 'success' : 'danger'
+                tr
+                  td &nbsp;&nbsp;&nbsp;#{process.name}
+                  td(class=[`text-${contextualClass}`])= process.state
+                  td(colspan='2') &nbsp;
+                  td= moment.duration(process.uptime.secs, 'seconds').humanize()
+                  td(colspan='3') &nbsp;
+                  td.center(colspan='3') #{process.cpu.total}%
+                  td #{process.mem.percent}%
+                  td(colspan='4') &nbsp;
+    .row
+      .col-md-12
+        h3 Tasks
+        table.table.table-bordered
+          thead
+            tr.active.top
+              th Id
+              th State
+              th Started
+              th Last&nbsp;Activity
+              th User
+              th Description
+              th Result
+          tbody
+            each task in tasks
+              tr
+                td= task.id
+                td= task.state
+                td= moment(task.started_at*1000).format('YYYY-MM-DD HH:mm:ss Z')
+                td= moment(task.timestamp*1000).format('YYYY-MM-DD HH:mm:ss Z')
+                td= task.user
+                td= task.description
+                td= task.result
+    .row
+      .col-md-12
+        button.btn.btn-primary.btn-large(type='button', data-toggle='modal', data-target='#deployModal')  Deploy
+
+  #deployModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='deployModalLabel')
+    .modal-dialog(role='document')
+      .modal-content
+        form(role='form', method='POST', action=`./${name}/update?redirect_uri=/admin/deployments`)
+          .modal-header.bg-primary
+            h4#deployModalLabel.modal-title Manifest changes
+          .modal-body
+            pre: code.language-diff #{_.isEmpty(diff) ? 'none' : _.join(diff, '\n')}
+            .checkbox
+              label
+                input(name='recreate', type='checkbox')
+                | Recreate all VMs in deployment
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') Cancel
+            | &nbsp;
+            button.btn.btn-primary(type='submit') Ok
+
+block scripts
+  script(src='/js/jquery.js')
+  script(src='/js/bootstrap.js')
+  script(src='/js/prism.js')

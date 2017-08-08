@@ -1,0 +1,2 @@
+#!/bin/bash -eu
+watch eval 'echo "Bosh Director Deployments"; bosh deployments 2>/dev/null | grep -E "\| [a-z0-9._-]+-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}" | awk -F "|" "{print \$2 \$3 \$5}" | sed -r "s/^ //g"'
