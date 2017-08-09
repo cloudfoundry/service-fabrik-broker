@@ -2,10 +2,6 @@
 
 This broker was inspired  by the [cf-containers-broker](https://github.com/cloudfoundry-community/cf-containers-broker). It is supporting Docker- and Bosh-based service deployments. More details on the implemented Cloud Foundry contract can be found [here](http://docs.cloudfoundry.org/services/api.html).
 
-## License
-
-This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file.
-
 ## Local Development Setup (Ubuntu)
 
 Certainly when you are a broker developer, but also if you are a service developer, you may want to work locally with the broker without packaging it into a Bosh release and deploying it. You can do so using [Bosh Lite](http://docs.cloudfoundry.org/deploying/boshlite) and starting and registering the broker locally:
@@ -139,6 +135,9 @@ cf restart my-app # do this a.) to make binding information available in environ
 cf unbind-service my-app my-service
 cf delete-service -f my-service
 ```
+## How to obtain support
+
+If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](https://github.com/sap/service-fabrik-broker/issues). We shall get back to you.
 
 ## LICENSE
 
