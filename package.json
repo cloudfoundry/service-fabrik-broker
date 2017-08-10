@@ -1,12 +1,21 @@
 {
   "name": "service-fabrik-broker",
   "description": "Service Fabrik Broker",
-  "version": "1.14.0",
+  "version": "3.0.1",
   "license": "Apache-2.0",
   "contributors": [
     "Franzke, Rafael",
     "Koser, Holger",
-    "Lerenc, Vedran"
+    "Lerenc, Vedran",
+    "Basavaraju, Jagadish",
+    "Brahmandabheri, Vinayendraswamy",
+    "Chattopadhyay, Subhankar",
+    "Gadre, Ketaki",
+    "Kapoor, Akshay",
+    "Kamath, Prasad",
+    "Mondal, Saurav",
+    "Mishra, Pritish",
+    "Suresh, Murali"
   ],
   "repository": {
     "type": "git",
