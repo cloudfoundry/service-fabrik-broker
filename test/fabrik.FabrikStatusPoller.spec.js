@@ -83,7 +83,10 @@ describe('fabrik', function () {
 
       it('Abort backup if operation is not complete & wait for abort to complete', function (done) {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP).then(() => {
+        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
+          name: 'hugo',
+          email: 'hugo@sap.com'
+        }).then(() => {
           setTimeout(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
@@ -96,7 +99,10 @@ describe('fabrik', function () {
       it('Abort backup if operation is not complete & post abort time out, unlock deployment', function (done) {
         config.director.lock_deployment_max_duration = 0;
         config.backup.abort_time_out = 0;
-        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP).then(() => {
+        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
+          name: 'hugo',
+          email: 'hugo@sap.com'
+        }).then(() => {
           setTimeout(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
@@ -109,7 +115,10 @@ describe('fabrik', function () {
       });
       it('Abort backup if operation is not complete & post successful abort, unlock deployment', function (done) {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP).then(() => {
+        FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP, {
+          name: 'hugo',
+          email: 'hugo@sap.com'
+        }).then(() => {
           setTimeout(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
@@ -120,7 +129,10 @@ describe('fabrik', function () {
       });
       it('Stop polling operation on backup completion &  unlock deployment', function (done) {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP).then(() => {
+        FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
+          name: 'hugo',
+          email: 'hugo@sap.com'
+        }).then(() => {
           setTimeout(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;

@@ -32,13 +32,10 @@ const EventLogInterceptor = proxyquire('../lib/EventLogInterceptor', {
 
 describe('EventLogInterceptor', function () {
   /* jshint expr:true */
-
-  const internalAPIsConfigFileName = path.join(__dirname, '..', 'config', 'eventlog-config-internal.yml');
-  const externalAPIsConfigFileName = path.join(__dirname, '..', 'config', 'eventlog-config-external.yml');
   const directorManager = new DirectorManager(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
   const dockerManager = new DockerManager(catalog.getPlan('466c5078-df6e-427d-8fb2-c76af50c0f56'));
-  const internalAppEventLogInterceptor = new EventLogInterceptor(config.internal.event_type, internalAPIsConfigFileName);
-  const externalAppEventLogInterceptor = new EventLogInterceptor(config.external.event_type, externalAPIsConfigFileName);
+  const internalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+  const externalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.external.event_type, 'external');
   let pubSubSpy;
 
   beforeEach(function () {
