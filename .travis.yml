@@ -8,8 +8,8 @@ script:
      [[ -z $CHANGED_FILES ]] && NUM_CHANGED_FILES=0 || NUM_CHANGED_FILES=$(echo $CHANGED_FILES | wc -l)
      echo "Code formatting to be fixed in $NUM_CHANGED_FILES file(s)..."
      if [[ $NUM_CHANGED_FILES -gt 0 ]]; then
-       git diff
        echo "Listing modifications required.."
+       git diff
        echo "FAILED: Run js-beautify(npm run jsformat)" && exit 1;
      else
        echo "No changes to the code formatting required.. "
