@@ -72,6 +72,7 @@ describe('fabrik', function () {
       });
 
       afterEach(function () {
+        FabrikStatusPoller.clearAllPollers();
         directorOperationStub.reset();
         serviceFabrikClientStub.reset();
         serviceFabrikOperationStub.reset();
@@ -81,75 +82,70 @@ describe('fabrik', function () {
         sandbox.restore();
       });
 
-      it('Abort backup if operation is not complete & wait for abort to complete', function (done) {
+      it('Abort backup if operation is not complete & wait for abort to complete', function () {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
+        return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
-        }).then(() => {
-          setTimeout(() => {
+        }).then(() =>
+          Promise.delay(200).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).not.to.be.called;
             config.director.lock_deployment_max_duration = 10000;
-            done();
-          }, 200);
-        });
+          }));
       });
-      it('Abort backup if operation is not complete & post abort time out, unlock deployment', function (done) {
+      it('Abort backup if operation is not complete & post abort time out, unlock deployment', function () {
         config.director.lock_deployment_max_duration = 0;
         config.backup.abort_time_out = 0;
-        FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
+        return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
-        }).then(() => {
-          setTimeout(() => {
+        }).then(() =>
+          Promise.delay(300).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.calledOnce;
             config.backup.abort_time_out = 180000;
             config.director.lock_deployment_max_duration = 10000;
-            done();
-          }, 200);
-        });
+          }));
       });
       it('Abort backup if operation is not complete & post successful abort, unlock deployment', function (done) {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP, {
+        return FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
-        }).then(() => {
-          setTimeout(() => {
+        }).then(() =>
+          Promise.delay(300).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;
             done();
-          }, 300);
-        });
+          }));
       });
       it('Stop polling operation on backup completion &  unlock deployment', function (done) {
         config.director.lock_deployment_max_duration = 0;
-        FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
+        return FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
-        }).then(() => {
-          setTimeout(() => {
+        }).then(() =>
+          Promise.delay(300).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;
             done();
-          }, 300);
-        });
+          }));
       });
     });
 
     describe('#PollerRestartOnBrokerRestart', function () {
 
       before(function () {
-        startStub = sandbox.stub(FabrikStatusPoller, 'start');
+        startStub = sinon.stub(FabrikStatusPoller, 'start');
       });
 
       afterEach(function () {
+        FabrikStatusPoller.clearAllPollers();
         startStub.reset();
         mocks.reset();
       });
@@ -182,12 +178,11 @@ describe('fabrik', function () {
             mocks.director.getDeploymentNames(capacity, queued), deploymentObj =>
             mocks.director.getLockProperty(deploymentObj.name, true));
           mocks.director.getDeployments(opts);
-          FabrikStatusPoller
+          return FabrikStatusPoller
             .restart('backup')
             .then(promises => Promise.all(promises)
               .then(() => expect(startStub).to.be.calledTwice));
         });
-
 
         it('should not restart polling for deployments without a lock', function () {
           const queued = false;
@@ -200,7 +195,7 @@ describe('fabrik', function () {
             mocks.director.getDeploymentNames(capacity, queued), deploymentObj =>
             mocks.director.getLockProperty(deploymentObj.name, false));
           mocks.director.getDeployments(opts);
-          FabrikStatusPoller
+          return FabrikStatusPoller
             .restart('backup')
             .then(promises => Promise.all(promises)
               .then(() => expect(startStub).not.to.be.called));

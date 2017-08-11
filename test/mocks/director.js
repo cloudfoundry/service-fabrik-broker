@@ -155,7 +155,7 @@ function getDeploymentTask(taskId, state) {
     });
 }
 
-function getLockProperty(deploymentName, found) {
+function getLockProperty(deploymentName, found, lockInfo) {
   if (!found) {
     return nock(directorUrl)
       .replyContentLength()
@@ -166,7 +166,7 @@ function getLockProperty(deploymentName, found) {
     .replyContentLength()
     .get(`/deployments/${deploymentName}/properties/${CONST.DEPLOYMENT_LOCK_NAME}`)
     .reply(200, {
-      value: JSON.stringify({
+      value: JSON.stringify(lockInfo || {
         username: 'admin',
         lockedForOperation: 'backup',
         createdAt: new Date()
