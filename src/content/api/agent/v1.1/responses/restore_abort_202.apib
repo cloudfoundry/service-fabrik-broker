@@ -1,0 +1,9 @@
+In case of success, the abortion request was accepted. The agent must abort the currently running restore and clean up
+all created resources. The service instance may be in an error state if the abortion request arrives after the agent has
+already deleted any service-specific relevant data.
+The response body must always be an empty JSON object.
+
+    + Body
+
+            {
+            }

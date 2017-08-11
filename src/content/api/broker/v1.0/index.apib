@@ -1,0 +1,356 @@
+FORMAT: 1A
+HOST: http://<broker-host>:9292/api/v1
+
+# Service Fabrik Broker API - v1.0
+
+Welcome to the [Service Fabrik Broker](https://github.com/sap/service-fabrik-broker)
+API documentation.
+
+Most of the below listed operations are service-specific and thus the Service Fabrik Broker will interact with the corresponding agents of the service instance
+in order to delegate the request.
+
+::: note
+## HTTP Headers
+**If not stated otherwise**, the HTTP *header* must set
+```http
+Content-Type: application/json
+```
+for all requests and responses.
+
+## Errors
+The API uses standard HTTP codes to indicate that errors occurred during the request. Each related response body contains
+a description of the error within JSON format:
+```
+{
+  "code": 400,
+  "message": "An error occurred because of bad parameters."
+}  
+```
+Special errors are:
+* `501`: indicating that the agents configured for the service instance's service plan have not implemented the requested operation at all
+* `502`: indicating that the agents configured for the service instance's service plan have implemented the requested operation, but currently no agent is eligible to accept it  
+
+## Security
+
+All endpoints except `/info` are secured via OAuth2 access tokens (provided by the Cloud Foundry UAA Server of the CF system the Service Fabrik is registered to).
+You need appropriate privileges for the Cloud Foundry service instance you want to perform an operation on (i.e., having the `SpaceDeveloper` in the service instance's space).
+In order to authenticate yourself, you need to obtain a token from the UAA and send it in the HTTP header of the call to the broker:
+```bash
+$ ACCESS_TOKEN=$(curl -s -X POST -d "grant_type=password&client_id=cf&client_secret=&response_type=token&username=YOUR-USERNAME&password=YOUR-PASSWORD" "http://uaa.bosh-lite.com/oauth/token" | jq -r .access_token)
+$ curl -H "Authorization: Bearer $ACCESS_TOKEN" "https://service-fabrik-broker/v1/api/service_instances/SERVICE-INSTANCE-GUID?plan_id=SERVICE-PLAN-ID" | jq .
+{
+  "operational": true
+}
+```
+
+## URI Templates
+
+In this documentation, we express our URIs according to https://tools.ietf.org/html/rfc6570.
+
+:::
+
+
+# Group General
+Retrieve information about the broker.
+
+## Show Broker Information [GET /info]
+
++ Response 200
+<!-- include(responses/GET_info_200.apib) -->
+
+
+
+
+# Group State
+Retrieve the current state of a service instance.
+
+## Show State [GET /service_instances/{instance_guid}{?plan_id}]
+The state of a service instance is described by an indicator showing whether it is operational.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + plan_id (optional) - the unique service plan id
+
++ Response 200
+<!-- include(responses/GET_service_instances_instanceGuid_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
+
+
+# Group Backup
+Backup service instance data safely.
+
+## Start Backup [POST /service_instances/{instance_guid}/backup]
+Endpoint for triggering a manual backup on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + BODY.type - the backup type (either `online` or `offline`)
+    + BODY.space_guid (optional) - the space guid of the service instance
+    + BODY.plan_id (optional) - the unique service plan id
+
++ Request
+<!-- include(requests/POST_service_instances_instanceGuid_backup.apib) -->
+
++ Response 202
+<!-- include(responses/POST_service_instances_instanceGuid_backup_202.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 409
+<!-- include(responses/409.apib) -->
+
+
+## Show Last Backup Operation [GET /service_instances/{instance_guid}/backup{?space_guid}]
+Endpoint for retrieving the metadata of the last backup operation on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + space_guid (optional) - the space guid of the service instance
+
++ Response 200
+<!-- include(responses/GET_service_instances_instanceGuid_backup_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 404
+no backup performed for this instance until now
+
+    + Body
+
+
+## Abort Backup [DELETE /service_instances/{instance_guid}/backup{?space_guid}]
+Endpoint for triggering the abortion of a running backup on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + space_guid (optional) - the space guid of the service instance
+
++ Response 200
+<!-- include(responses/DEL_service_instances_instanceGuid_backup_200.apib) -->
+
++ Response 202
+<!-- include(responses/DEL_service_instances_instanceGuid_backup_202.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
+
+
+# Group Restore
+Restore backup data identified by a GUID to a BOSH service instance.
+
+## Start Restore [POST /service_instances/{instance_guid}/restore]
+Endpoint for triggering a restore (manually only) on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + BODY.backup_guid - the guid of the backup to be restored
+    + BODY.space_guid (optional) - the space guid of the service instance
+    + BODY.plan_id (optional) - the unique service plan id
+
++ Request
+<!-- include(requests/POST_service_instances_instanceGuid_restore.apib) -->
+
++ Response 202
+<!-- include(responses/POST_service_instances_instanceGuid_restore_202.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 409
+<!-- include(responses/409.apib) -->
+
++ Response 422
+<!-- include(responses/422.apib) -->
+
+
+## Show Last Restore Operation [GET /service_instances/{instance_guid}/restore{?space_guid}]
+Endpoint for retrieving the metadata of the last restore operation on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + space_guid (optional) - the space guid of the service instance
+
++ Response 200
+<!-- include(responses/GET_service_instances_instanceGuid_restore_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 404
+no restore performed for this instance until now
+
+    + Body
+
+
+## Abort Restore [DELETE /service_instances/{instance_guid}/restore{?space_guid}]
+Endpoint for triggering the abortion of a running restore on a BOSH service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + space_guid (optional) - the space guid of the service instance
+
++ Response 200
+<!-- include(responses/DEL_service_instances_instanceGuid_restore_200.apib) -->
+
++ Response 202
+<!-- include(responses/DEL_service_instances_instanceGuid_restore_202.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
+
+
+
+# Group Managing Backups
+## Show Last Backup Operation for all Instances [GET /service_instances/backup{?space_guid}]
+Retrieve metadata of the last backup operation for all service instances within the given space.
+
++ Parameters
+    + space_guid - the guid of the space
+
++ Response 200
+<!-- include(responses/GET_service_instances_backup_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
+
+## Show Last Restore Operation for all Instances [GET /service_instances/restore{?space_guid}]
+Retrieve metadata of the last restore operation for all service instances within the given space.
+
++ Parameters
+    + space_guid - the guid of the space
+
++ Response 200
+<!-- include(responses/GET_service_instances_restore_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
+
+## Show all Backups in Space [GET /backups{?space_guid}]
+Retrieve metadata of all backups within the given space.
+
++ Parameters
+    + space_guid - the guid of the space
+
++ Response 200
+<!-- include(responses/GET_backups_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
+
+## Show specific Backup [GET /backups/{backup_guid}{?space_guid}]
+Retrieve metadata of a specific backup within the given space.
+
++ Parameters
+    + backup_guid - the guid of the backup
+    + space_guid - the guid of the space
+
++ Response 200
+<!-- include(responses/GET_backups_backupGuid_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
++ Response 404
+<!-- include(responses/404.apib) -->
+
+
+## Delete Backup [DELETE /backups/{backup_guid}{?space_guid}]
+Delete a specific backup.
+
++ Parameters
+    + backup_guid - the guid of the backup
+    + space_guid - the guid of the space
+
++ Response 200
+<!-- include(responses/DEL_backups_backupGuid_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
++ Response 410
+backup does not exist or has already been deleted
+
+    + Body
+
+
+
+
+# Group Scheduling Backups
+## Schedule Backup [PUT /service_instances/{instance_guid}/schedule_backup]
+By default when a service key is generated for a service instance (either via bind service or create service key methods by CF),
+if the instance is not already setup for automated backups then service fabrik broker automatically schedules backup
+with a default schedule interval of 'daily'. The schedule times are randomized in the next 24 hours to achieve some randomization
+in backup. This default schedule interval of 'daily', can be overridden by definining 'backup_interval' at service level in the services manifest. [Refer PostgreSQL manifest for example]
+
+The below API can be used to Update the automated backup schedule interval as defined by service fabrik broker at the service instance key generation time
+or Create the backup schedule even before service fabrik broker creates backup schedule.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + BODY.type - the backup type (either `online` or `offline`)
+    + BODY.repeatInterval  - repeat interval of the backup. Supported formats: valid cron expression or <a href='https://github.com/rschmukler/human-interval' target='_blank'>human-readable</a> intervals (ex. 4 hours, 6 hours 30 minutes,etc.)
+    + BODY.timeZone (optional) - timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered
+
++ Request
+<!-- include(requests/PUT_service_instances_instanceGuid_schedule_backup.apib) -->
+
++ Response 200
+<!-- include(responses/PUT_schedu_backup_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
++ Response 501
+<!-- include(responses/501-schedule_backup.apib) -->
+
+
+## Get Backup Schedule [GET /service_instances/{instance_guid}/schedule_backup]
+
++ Parameters
+    + instance_guid - the guid of the service instance
+
++ Response 200
+<!-- include(responses/PUT_schedu_backup_200.apib) -->
+
++ Response 404
+<!-- include(responses/404-schedule_backup.apib) -->
+
+
+## Cancel Automated Backups [DELETE /service_instances/{instance_guid}/schedule_backup]
+[Note : This api can only be executed by users with 'cloud_controller.admin' scope.
+API mainly provided for clean up hooks in automated test scripts]
++ Parameters
+    + instance_guid - the guid of the service instance
+
++ Response 200

@@ -1,0 +1,352 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Configuration Parameters &#8212; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="IaaS Client API Reference" href="iaas_client.html" />
+    <link rel="prev" title="Versions" href="versions.html" />
+<link rel="stylesheet" href="../css/font-awesome.min.css">
+
+  </head>
+  <body>
+
+
+
+
+
+    <div class="document">
+<div class="container-fluid">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center><img src="_static/service-fabrik.svg" width="235" height="320"></center>
+</a>
+<div style="height: 6px"></div>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#how-to-use-this-project">How to use this project</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="versions.html">Versions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="versions.html#change-log">Change Log</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-parameters">General parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#iaas-specific-credentials-parameters">IaaS-specific credentials parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-provide-configuration-from-command-line">Example: Provide configuration from command line</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-provide-configuration-manually">Example: Provide configuration manually</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iaas_client.html">IaaS Client API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#volumes">Volumes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#snapshots">Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#mounting-and-formatting">Mounting and Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#encrypt-directories-and-files">Encrypt Directories and Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#blob-storage-interaction">BLOB Storage Interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#miscellaneous-functions">Miscellaneous Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging.html">Logging and Last Operation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-levels">Log levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-file">Log file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#last-operation-file">Last Operation file</a></li>
+</ul>
+</li>
+</ul>
+
+</nav>
+<div class="content">
+<header>
+<span class="headline">Service Fabrik Backup & Restore Python Library Documentation</span>
+</header>
+
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="configuration-parameters">
+<h1>Configuration Parameters<a class="headerlink" href="#configuration-parameters" title="Permalink to this headline">¶</a></h1>
+<p>In order to properly instantiate an IaaS client via the <code class="docutils literal"><span class="pre">create_iaas_client()</span></code> function (which is documented <a class="reference external" href="iaas_client.html">here</a>),
+you <strong>must</strong> provide some parameters (like IaaS credentials or other configuration settings).
+These parameters must be transfered in a dictionary to the function.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently, the parameters for both backup and restore are the same. However, the <code class="docutils literal"><span class="pre">type</span></code> parameter in the <code class="docutils literal"><span class="pre">parse_options</span></code> function
+exists for future compatibility.</p>
+</div>
+<div class="section" id="general-parameters">
+<h2>General parameters<a class="headerlink" href="#general-parameters" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="89%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">iaas</span></code></td>
+<td>The underlying IaaS provider. Possible values: <code class="docutils literal"><span class="pre">aws</span></code>, <code class="docutils literal"><span class="pre">openstack</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">type</span></code></td>
+<td>Type of the backup (for restore operations it might be helpful to know how the backup was done): Possible values: <code class="docutils literal"><span class="pre">online</span></code>, <code class="docutils literal"><span class="pre">offline</span></code></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">instance_id</span></code></td>
+<td>The Content-ID (IaaS-specific VM ID) of the machine on which the backup/restore operation should be performed.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">secret</span></code></td>
+<td>The password which is used for encryption/decryption of the files which are to be backed up/restored.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">location</span></code></td>
+<td>An IaaS-specific BLOB storage container name (S3/Swift) to upload/download files to/from.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">job_name</span></code></td>
+<td>The name of the service job under which it is registered to <code class="docutils literal"><span class="pre">monit</span></code> (required for stop/start operations).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="iaas-specific-credentials-parameters">
+<h2>IaaS-specific credentials parameters<a class="headerlink" href="#iaas-specific-credentials-parameters" title="Permalink to this headline">¶</a></h2>
+<p>Depending on the IaaS provider, you need to state some credentials to enable the connection.</p>
+<div class="section" id="aws">
+<h3>AWS<a class="headerlink" href="#aws" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">access_key_id</span></code></td>
+<td>AWS Access Key ID</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">secret_access_key</span></code></td>
+<td>AWS Secret Access Key</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">region_name</span></code></td>
+<td>AWS Region Name</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="openstack">
+<h3>OpenStack<a class="headerlink" href="#openstack" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="27%" />
+<col width="73%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">username</span></code></td>
+<td>OpenStack user name with Swift privileges</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">password</span></code></td>
+<td>OpenStack user password</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">auth_url</span></code></td>
+<td>OpenStack Keystone Authentication URL</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">user_domain_name</span></code></td>
+<td>OpenStack Domain Name</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">tenant_id</span></code></td>
+<td>OpenStack ID of the tenant/project the VM is deployed in</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">tenant_name</span></code></td>
+<td>OpenStack Name of the tenant/project the VM is deployed in</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="bosh-lite">
+<h3>BOSH-Lite<a class="headerlink" href="#bosh-lite" title="Permalink to this headline">¶</a></h3>
+<p>none</p>
+</div>
+</div>
+<div class="section" id="example-provide-configuration-from-command-line">
+<h2>Example: Provide configuration from command line<a class="headerlink" href="#example-provide-configuration-from-command-line" title="Permalink to this headline">¶</a></h2>
+<p>If you want to provide the configuration from the command line, one of the first things in your <code class="docutils literal"><span class="pre">backup.py</span></code> / <code class="docutils literal"><span class="pre">restore.py</span></code> script should be the parsing
+of the the appropriate parameters. This can be done with the library function <code class="docutils literal"><span class="pre">parse_options()</span></code> you may import:</p>
+<dl class="function">
+<dt id="lib.config.parse_options">
+<code class="descclassname">lib.config.</code><code class="descname">parse_options</code><span class="sig-paren">(</span><em>type</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.config.parse_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the required command line options for the given operation type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>type</strong> – a string containing either <cite>backup</cite> or <cite>restore</cite></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a dictionary containing the key-value pairs of the provided parameters</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">configuration</span> <span class="o">=</span> <span class="n">parse_options</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p>Having implemented your <code class="docutils literal"><span class="pre">backup.py</span></code> / <code class="docutils literal"><span class="pre">restore.py</span></code> script this way, the following calls are examples to start it:</p>
+<div class="section" id="id1">
+<h3>AWS<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ python3 backup.py \
+    --iaas=aws \
+    --type=offline \
+    --instance_id=i-1a2b3c4d \
+    --secret=foo \
+    --location=bucket_in_s3 \
+    --job_name=my_service \
+    --access_key_id=abc \
+    --secret_access_key=def \
+    --region_name=eu-central-1
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>OpenStack<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ python3 backup.py \
+    --iaas=openstack \
+    --type=offline \
+    --instance_id=4ef66e6d-1b0e-4eb2-b18b-9598057f8e39 \
+    --secret=foo \
+    --location=container_in_swift \
+    --job_name=my_service \
+    --username=swift-my-service \
+    --password=secret \
+    --auth_url=https://auth.url.openstack:5000/v3/ \
+    --user_domain_name=HCP_CF_01 \
+    --tenant_id=1a2b3c4d5e6f7g8h9i0j1a2b3c4d5e6f7g8h \
+    --tenant_name=my-service
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>BOSH-Lite<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ python3 backup.py \
+    --iaas=boshlite \
+    --type=offline \
+    --instance_id=4ef66e6d-1b0e-4eb2-b18b-9598057f8e39 \
+    --secret=foo \
+    --location=container_in_swift \
+    --job_name=my_service
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="example-provide-configuration-manually">
+<h2>Example: Provide configuration manually<a class="headerlink" href="#example-provide-configuration-manually" title="Permalink to this headline">¶</a></h2>
+<p>If you want to provide the configuration manually, you do not need to use the <code class="docutils literal"><span class="pre">parse_options()</span></code> function from the library. Instead, you transfer the configuration
+directory to the <code class="docutils literal"><span class="pre">create_iaas_client()</span></code> function after defining the appropriate dictionary:</p>
+<div class="section" id="id4">
+<h3>AWS<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">service_fabrik_backup_restore</span> <span class="kn">import</span> <span class="n">create_iaas_client</span>
+<span class="o">...</span>
+<span class="n">configuration</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s1">&#39;iaas&#39;</span><span class="p">:</span> <span class="s1">&#39;aws&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;instance_id&#39;</span><span class="p">:</span> <span class="s1">&#39;i-1a2b3c4d&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;secret&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="s1">&#39;bucket_in_s3&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;job_name&#39;</span><span class="p">:</span> <span class="s1">&#39;my_service&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;access_key_id&#39;</span><span class="p">:</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;secret_access_key&#39;</span><span class="p">:</span> <span class="s1">&#39;def&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;region_name&#39;</span><span class="p">:</span> <span class="s1">&#39;eu-central-1&#39;</span>
+<span class="p">}</span>
+<span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>OpenStack<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">service_fabrik_backup_restore</span> <span class="kn">import</span> <span class="n">create_iaas_client</span>
+<span class="o">...</span>
+<span class="n">configuration</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s1">&#39;iaas&#39;</span><span class="p">:</span> <span class="s1">&#39;openstack&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;instance_id&#39;</span><span class="p">:</span> <span class="s1">&#39;4ef66e6d-1b0e-4eb2-b18b-9598057f8e39&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;secret&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="s1">&#39;container_in_swift&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;job_name&#39;</span><span class="p">:</span> <span class="s1">&#39;my_service&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;swift-my-service&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;secret&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;auth_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://auth.url.openstack:5000/v3/&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;user_domain_name&#39;</span><span class="p">:</span> <span class="s1">&#39;HCP_CF_01&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;tenant_id&#39;</span><span class="p">:</span> <span class="s1">&#39;1a2b3c4d5e6f7g8h9i0j1a2b3c4d5e6f7g8h&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;tenant_name&#39;</span><span class="p">:</span> <span class="s1">&#39;my-service&#39;</span>
+<span class="p">}</span>
+<span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h3>BOSH-Lite<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">service_fabrik_backup_restore</span> <span class="kn">import</span> <span class="n">create_iaas_client</span>
+<span class="o">...</span>
+<span class="n">configuration</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s1">&#39;iaas&#39;</span><span class="p">:</span> <span class="s1">&#39;boshlite&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;instance_id&#39;</span><span class="p">:</span> <span class="s1">&#39;4ef66e6d-1b0e-4eb2-b18b-9598057f8e39&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;secret&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="s1">&#39;container_in_swift&#39;</span><span class="p">,</span>
+  <span class="s1">&#39;job_name&#39;</span><span class="p">:</span> <span class="s1">&#39;my_service&#39;</span>
+<span class="p">}</span>
+<span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+</div>
+
+
+      <div class="clearer"></div>
+    </div>
+
+<p style="text-align: center;" class="text-muted">
+Copyright &copy; SAP SE 2016. Generated using <a href="http://sphinx-doc.org/">Sphinx</a>.
+</p>
+<script type="text/javascript" src="_static/script.js"></script>
+
+  </body>
+</html>

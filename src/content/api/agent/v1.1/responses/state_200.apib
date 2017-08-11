@@ -1,0 +1,27 @@
+In case of success, a JSON object is returned which contains an indicator whether the service is currently operational and optionally additional information.
+
+    + Body
+
+            {
+                "operational": true,
+                "details": {
+                    "number_of_files": 0
+                }
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "required": ["operational"],
+                "properties": {
+                    "operational": {
+                        "type": "boolean",
+                        "description": "True if the service is available and False otherwise."
+                    },
+                    "details": {
+                        "description": "Any additional information returned from the service agent."
+                    }
+                }
+            }

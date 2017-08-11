@@ -1,0 +1,15 @@
+{
+  "name": "service-fabrik-docs",
+  "version": "1.0.0",
+  "description": "Source files for all Service Fabrik relevant documentation.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sap/service-fabrik-broker.git"
+  },
+  "dependencies": {
+    "aglio": "^2.2.1",
+    "highlight.js": "^9.7.0",
+    "marked": "^0.3.6"
+  }
+}

@@ -1,0 +1,36 @@
+The request body must be a JSON object containing the type of the backup (online/offline), repeat interval and may optionally contain the timezone to be taken into consideration for job runs.
+A backup of type `offline` may involve downtimes of the service instance itself, whereby an `online` backup does not cause any downtime.
+
+    + Body
+
+            {
+              "type": "online",
+              "repeatInterval": "*/30 */6 * * *",
+              "timeZone": "America/New_York"
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["type", "repeatInterval"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "online",
+                    "offline"
+                  ],
+                  "description": "Type of the backup"
+                },
+                "repeatInterval": {
+                  "type": "string",
+                  "description": "Cron expression specifying the schedule interval. It also supports readable human-intervals"
+                },
+                "timeZone": {
+                  "type": "string",
+                  "description": "Timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered"
+                }
+              }
+            }

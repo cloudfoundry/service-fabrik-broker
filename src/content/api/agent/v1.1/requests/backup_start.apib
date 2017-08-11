@@ -1,0 +1,81 @@
+The request body must be a JSON object with exactly two objects containing backup-specific configuration parameters
+and a list of all virtual machines belonging to the service instance.
+
+    + Body
+
+            {
+              "backup": {
+                "guid": "72a330a5-e15f-4cb2-829f-cf7047848b80",
+                "type": "online",
+                "secret": "********"
+              },
+              "vms": [
+                {
+                    "cid": "9efd029c-8c30-4be6-9be4-b6f3fecbd318",
+                    "job": "mongodb_z1",
+                    "index": 0
+                },
+                {
+                    "cid": "42efdcda-a60f-4d47-9f40-2a3c1a105302",
+                    "job": "mongodb_z1",
+                    "index": 1
+                },
+                {
+                    "cid": "cb81950a-de56-4b11-bb37-90994d94c19c",
+                    "job": "mongodb_z1",
+                    "index": 2
+                }
+              ]
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["backup", "vms"],
+              "properties": {
+                "backup": {
+                  "type": "object",
+                  "description": "An object containing backup-specific configuration parameters",
+                  "properties": {
+                    "guid": {
+                      "type": "string",
+                      "description": "A guid identifying this specific backup"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["online", "offline"],
+                      "description": "The way how this backup should be executed"
+                    },
+                    "secret": {
+                      "type": "string",
+                      "description": "A secret to be used for encryption"
+                    }
+                  }
+                },
+                "vms": {
+                  "type": "array",
+                  "description": "A list of virtual machines belonging to the service instance",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": ["cid", "job", "index"],
+                    "properties": {
+                      "cid": {
+                        "type": "string",
+                        "description": "The guid of the VM used by the IaaS provider to identify it"
+                      },
+                      "job": {
+                        "type": "string",
+                        "description": "The (BOSH) name of the job running on this VM"
+                      },
+                      "index": {
+                        "type": "integer",
+                        "description": "The (BOSH) index of the job running on this VM"
+                      }
+                    }
+                  }
+                }
+              }
+            }

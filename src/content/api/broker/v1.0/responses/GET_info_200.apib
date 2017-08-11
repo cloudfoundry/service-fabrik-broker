@@ -1,0 +1,32 @@
+In case of success, a JSON object is returned which contains the broker name, the version of the implemented API and an indicator which
+shows whether the broker is ready to perform all its implemented operations (i.e., if all bootstrapping operations have been completed).
+
+    + Body
+
+            {
+              "name": "service-fabrik-broker",
+              "api_version": "1.0",
+              "ready": true
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["name", "api_version", "ready"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Service Broker Name"
+                },
+                "api_version": {
+                  "type": "string",
+                  "description": "Version of the implemented API: <major>.<minor>"
+                },
+                "ready": {
+                  "type": "boolean",
+                  "description": "Indicator whether the broker is ready to perform all implemented operations"
+                }
+              }
+            }

@@ -1,0 +1,130 @@
+In case of success, a JSON object is returned which contains information about the last operation during a backup and some metadata.
+
+    + Body
+
+            {
+              "operation": "backup",
+              "state": "processing",
+              "username": "max.mustermann@gmail.com",
+              "trigger": "manual",
+              "type": "online",
+              "backup_guid": "44444444-4444-4444-4444-444444444444",
+              "instance_guid": "33333333-3333-3333-3333-333333333333",
+              "plan_id": "22222222-2222-2222-2222-222222222222",
+              "service_id": "11111111-1111-1111-1111-111111111111",
+              "space_guid": "00000000-0000-0000-0000-111111111111",
+              "organization_guid": "00000000-0000-0000-0000-000000000000",
+              "started_at": "2016-08-31T10:37:52+00:00",
+              "finished_at": "2016-08-31T10:39:33+00:00",
+              "logs": [
+                {
+                  "time": "2016-08-31T10:37:52+00:00",
+                  "level": "info",
+                  "msg": "Create snapshot"
+                },
+                {
+                  "time": "2016-08-31T10:38:08+00:00",
+                  "level": "info",
+                  "msg": "Create volume from snapshot"
+                }
+              ]
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "description": "Name of the operation"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "online",
+                    "offline"
+                  ],
+                  "description": "Type of the backup"
+                },
+                "username": {
+                  "type": "string",
+                  "description": "Name of the triggering user"
+                },
+                "instance_guid": {
+                  "type": "string",
+                  "description": "GUID of the service instance"
+                },
+                "service_id": {
+                  "type": "string",
+                  "description": "Service ID of the service instance"
+                },
+                "plan_id": {
+                  "type": "string",
+                  "description": "Plan ID of the service instance"
+                },
+                "organization_guid": {
+                  "type": "string",
+                  "description": "Organization GUID of the service instance"
+                },
+                "space_guid": {
+                  "type": "string",
+                  "description": "Space GUID of the service instance"
+                },
+                "backup_guid": {
+                  "type": "string",
+                  "description": "GUID of the backup"
+                },
+                "trigger": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "automatic"
+                  ],
+                  "description": "The way how the backup has been triggered."
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "new",
+                    "processing",
+                    "aborting",
+                    "succeeded",
+                    "failed",
+                    "aborted"
+                  ],
+                  "description": "The state of the last operation."
+                },
+                "started_at": {
+                  "type": "string",
+                  "description": "The timestamp of the last operation (UTC format)."
+                },
+                "finished_at": {
+                  "type": "string",
+                  "description": "The timestamp of the last operation (UTC format)."
+                },
+                "logs": {
+                  "type": "array",
+                  "description": "List of log statements",
+                  "items": {
+                    "type": "object",
+                    "required": ["time", "level", "msg"],
+                    "properties": {
+                      "time": {
+                        "type": "string",
+                        "description": "The timestamp of the log entry (UTC format)"
+                      },
+                      "level": {
+                        "type": "string",
+                        "description": "The severity of the log entry"
+                      },
+                      "msg": {
+                        "type": "string",
+                        "description": "The message of the log entry"
+                      }
+                    }
+                  }
+                }
+              }
+            }

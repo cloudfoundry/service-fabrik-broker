@@ -1,0 +1,1146 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Service Fabrik Broker API - v1.0</title><link rel="stylesheet" href="../css/service-fabrik.css"><link rel="stylesheet" href="../css/font-awesome.min.css"><link rel="SHORTCUT ICON" href="../img/favicon.ico"></head><body class="preload"><div class="container-fluid-custom"><div class="row"><nav><a href="https://github.com/sap/service-fabrik-broker/"><center><img src="../img/service-fabrik.svg" width="235" height="320"></center></a><ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<hr><div>API Versions:&nbsp;<a href="broker_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-show-broker-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Broker Information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#state">State</a></div><div class="collapse-content"><ul><li><a href="#state-show-state-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show State</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#backup">Backup</a></div><div class="collapse-content"><ul><li><a href="#backup-start-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Backup</a></li><li><a href="#backup-show-last-backup-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation</a></li><li><a href="#backup-abort-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#restore">Restore</a></div><div class="collapse-content"><ul><li><a href="#restore-start-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Restore</a></li><li><a href="#restore-show-last-restore-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation</a></li><li><a href="#restore-abort-restore-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Restore</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#managing-backups">Managing Backups</a></div><div class="collapse-content"><ul><li><a href="#managing-backups-show-last-backup-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation for all Instances</a></li><li><a href="#managing-backups-show-last-restore-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation for all Instances</a></li><li><a href="#managing-backups-show-all-backups-in-space-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show all Backups in Space</a></li><li><a href="#managing-backups-show-specific-backup-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show specific Backup</a></li><li><a href="#managing-backups-delete-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Delete Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#scheduling-backups">Scheduling Backups</a></div><div class="collapse-content"><ul><li><a href="#scheduling-backups-schedule-backup-put"><span class="badge put"><i class="fa fa-pencil"></i></span>Schedule Backup</a></li><li><a href="#scheduling-backups-get-backup-schedule-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Get Backup Schedule</a></li><li><a href="#scheduling-backups-cancel-automated-backups-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Cancel Automated Backups</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;broker-host&gt;:9292/api/v1">http://&lt;broker-host&gt;:9292/api/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Broker API - v1.0</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik Broker</a>
+API documentation.</p>
+<p>Most of the below listed operations are service-specific and thus the Service Fabrik Broker will interact with the corresponding agents of the service instance
+in order to delegate the request.</p>
+<div class="note">
+<h2 id="header-http-headers">HTTP Headers <a class="permalink" href="#header-http-headers" aria-hidden="true">¶</a></h2>
+<p><strong>If not stated otherwise</strong>, the HTTP <em>header</em> must set</p>
+<pre><code class="language-http"><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre>
+<p>for all requests and responses.</p>
+<h2 id="header-errors">Errors <a class="permalink" href="#header-errors" aria-hidden="true">¶</a></h2>
+<p>The API uses standard HTTP codes to indicate that errors occurred during the request. Each related response body contains
+a description of the error within JSON format:</p>
+<pre><code>{
+  "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-number">400</span></span>,
+  "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"An error occurred because of bad parameters."</span>
+</span>}</code></pre>
+<p>Special errors are:</p>
+<ul>
+<li>
+<p><code>501</code>: indicating that the agents configured for the service instance’s service plan have not implemented the requested operation at all</p>
+</li>
+<li>
+<p><code>502</code>: indicating that the agents configured for the service instance’s service plan have implemented the requested operation, but currently no agent is eligible to accept it</p>
+</li>
+</ul>
+<h2 id="header-security">Security <a class="permalink" href="#header-security" aria-hidden="true">¶</a></h2>
+<p>All endpoints except <code>/info</code> are secured via OAuth2 access tokens (provided by the Cloud Foundry UAA Server of the CF system the Service Fabrik is registered to).
+You need appropriate privileges for the Cloud Foundry service instance you want to perform an operation on (i.e., having the <code>SpaceDeveloper</code> in the service instance’s space).
+In order to authenticate yourself, you need to obtain a token from the UAA and send it in the HTTP header of the call to the broker:</p>
+<pre><code class="language-bash">$ ACCESS_TOKEN=$(curl <span class="hljs-operator">-s</span> -X POST <span class="hljs-operator">-d</span> <span class="hljs-string">"grant_type=password&amp;client_id=cf&amp;client_secret=&amp;response_type=token&amp;username=YOUR-USERNAME&amp;password=YOUR-PASSWORD"</span> <span class="hljs-string">"http://uaa.bosh-lite.com/oauth/token"</span> | jq -r .access_token)
+$ curl -H <span class="hljs-string">"Authorization: Bearer <span class="hljs-variable">$ACCESS_TOKEN</span>"</span> <span class="hljs-string">"https://service-fabrik-broker/v1/api/service_instances/SERVICE-INSTANCE-GUID?plan_id=SERVICE-PLAN-ID"</span> | jq .
+{
+  <span class="hljs-string">"operational"</span>: <span class="hljs-literal">true</span>
+}</code></pre>
+<h2 id="header-uri-templates">URI Templates <a class="permalink" href="#header-uri-templates" aria-hidden="true">¶</a></h2>
+<p>In this documentation, we express our URIs according to <a href="https://tools.ietf.org/html/rfc6570">https://tools.ietf.org/html/rfc6570</a>.</p>
+</div>
+<section id="general" class="resource-group"><h2 class="group-heading">General <a href="#general" class="permalink">&para;</a></h2><p>Retrieve information about the broker.</p>
+<div id="general-show-broker-information" class="resource"><div id="general-show-broker-information-get" class="action get"><h4 class="action-heading"><div class="name">Show Broker Information</div><a href="#general-show-broker-information-get" class="method get">GET</a><code class="uri">/info</code></h4><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, a JSON object is returned which contains the broker name, the version of the implemented API and an indicator which
+shows whether the broker is ready to perform all its implemented operations (i.e., if all bootstrapping operations have been completed).</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"service-fabrik-broker"</span></span>,
+  "<span class="hljs-attribute">api_version</span>": <span class="hljs-value"><span class="hljs-string">"1.0"</span></span>,
+  "<span class="hljs-attribute">ready</span>": <span class="hljs-value"><span class="hljs-literal">true</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+    <span class="hljs-string">"name"</span>,
+    <span class="hljs-string">"api_version"</span>,
+    <span class="hljs-string">"ready"</span>
+  ]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service Broker Name"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">api_version</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Version of the implemented API: &lt;major&gt;.&lt;minor&gt;"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">ready</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"boolean"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Indicator whether the broker is ready to perform all implemented operations"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="state" class="resource-group"><h2 class="group-heading">State <a href="#state" class="permalink">&para;</a></h2><p>Retrieve the current state of a service instance.</p>
+<div id="state-show-state" class="resource"><div id="state-show-state-get" class="action get"><h4 class="action-heading"><div class="name">Show State</div><a href="#state-show-state-get" class="method get">GET</a><code class="uri">/service_instances/{instance_guid}{?plan_id}</code></h4><p>The state of a service instance is described by an indicator showing whether it is operational.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>plan_id</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the unique service plan id</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, a JSON object is returned which contains information about the <em>operational</em> status, and optionally additional information.
+The Service Fabrik obtains these data from the corresponding agent(s) running on the service instance.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">operational</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">details</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">number_of_files</span>": <span class="hljs-value"><span class="hljs-number">0</span>
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+    <span class="hljs-string">"operational"</span>
+  ]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">operational</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"boolean"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"True if the service instance is available and False otherwise."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">details</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Any additional information returned from the service agent."</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="backup" class="resource-group"><h2 class="group-heading">Backup <a href="#backup" class="permalink">&para;</a></h2><p>Backup service instance data safely.</p>
+<div id="backup-start-backup" class="resource"><div id="backup-start-backup-post" class="action post"><h4 class="action-heading"><div class="name">Start Backup</div><a href="#backup-start-backup-post" class="method post">POST</a><code class="uri">/service_instances/{instance_guid}/backup</code></h4><p>Endpoint for triggering a manual backup on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object containing the type of the backup (online/offline), and may optionally contain the space_guid and the unique service plan id.
+A backup of type <code>offline</code> may involve downtimes of the service instance itself, whereby an <code>online</code> backup does not cause any downtime.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>type</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the backup type (either <code>online</code> or <code>offline</code>)</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>plan_id</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the unique service plan id</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"online"</span>,
+        <span class="hljs-string">"offline"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space guid of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Unique service plan id of the service instance"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>202</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>409</code>&nbsp;<span style="font-weight: normal;">-&nbsp;another operation is already in progress for the service instance</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the backup request was accepted and started.
+The response body will be a JSON object which contains the name of the operation and
+the computed backup guid.
+As the backup operation is asynchronous, its state can be checked by polling the
+<code>GET /service_instances/{instance_guid}/backup</code> endpoint.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"backup"</span></span>,
+  "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-string">"a6b39499-8b8b-4e1b-aaec-b2bc11d396e4"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="backup-show-last-backup-operation" class="resource"><div id="backup-show-last-backup-operation-get" class="action get"><h4 class="action-heading"><div class="name">Show Last Backup Operation</div><a href="#backup-show-last-backup-operation-get" class="method get">GET</a><code class="uri">/service_instances/{instance_guid}/backup{?space_guid}</code></h4><p>Endpoint for retrieving the metadata of the last backup operation on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>404</code>&nbsp;<span style="font-weight: normal;">-&nbsp;no backup performed for this instance until now</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, a JSON object is returned which contains information about the last operation during a backup and some metadata.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"backup"</span></span>,
+  "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"processing"</span></span>,
+  "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+  "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"manual"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+  "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+  "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+  "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+  "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+  "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+  "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span></span>,
+  "<span class="hljs-attribute">logs</span>": <span class="hljs-value">[
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Create snapshot"</span>
+    </span>},
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:38:08+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Create volume from snapshot"</span>
+    </span>}
+  ]
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"online"</span>,
+        <span class="hljs-string">"offline"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"manual"</span>,
+        <span class="hljs-string">"automatic"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"new"</span>,
+        <span class="hljs-string">"processing"</span>,
+        <span class="hljs-string">"aborting"</span>,
+        <span class="hljs-string">"succeeded"</span>,
+        <span class="hljs-string">"failed"</span>,
+        <span class="hljs-string">"aborted"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">logs</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of log statements"</span></span>,
+      "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+        "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+          <span class="hljs-string">"time"</span>,
+          <span class="hljs-string">"level"</span>,
+          <span class="hljs-string">"msg"</span>
+        ]</span>,
+        "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">time</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the log entry (UTC format)"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">level</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The severity of the log entry"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">msg</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The message of the log entry"</span>
+          </span>}
+        </span>}
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="backup-abort-backup" class="resource"><div id="backup-abort-backup-delete" class="action delete"><h4 class="action-heading"><div class="name">Abort Backup</div><a href="#backup-abort-backup-delete" class="method delete">DELETE</a><code class="uri">/service_instances/{instance_guid}/backup{?space_guid}</code></h4><p>Endpoint for triggering the abortion of a running backup on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success (currently no backup in progress for this service instance)</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>202</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the abortion request was accepted. The cleanup of resources may
+require some time and usually won’t complete immediately. The current state can be
+checked by polling the <code>GET /service_instances/{instance_guid}/backup</code> endpoint.
+The response body will always be an empty JSON object.</p>
+</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section><section id="restore" class="resource-group"><h2 class="group-heading">Restore <a href="#restore" class="permalink">&para;</a></h2><p>Restore backup data identified by a GUID to a BOSH service instance.</p>
+<div id="restore-start-restore" class="resource"><div id="restore-start-restore-post" class="action post"><h4 class="action-heading"><div class="name">Start Restore</div><a href="#restore-start-restore-post" class="method post">POST</a><code class="uri">/service_instances/{instance_guid}/restore</code></h4><p>Endpoint for triggering a restore (manually only) on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object containing the guid of the backup data set to be restored, and may optionally contain the space_guid and the unique service plan id.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>backup_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the backup to be restored</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>plan_id</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the unique service plan id</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup data set to be restored"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space guid of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Unique service plan id of the service instance"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>202</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>409</code>&nbsp;<span style="font-weight: normal;">-&nbsp;another operation is already in progress for the service instance</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>422</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unable to process the request due to unmet preconditions</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the restore request was accepted and started.
+The response body will be a JSON object which contains the name of the operation and the guid of this operation.
+As the restore operation is asynchronous, its state can be checked by polling the
+<code>GET /service_instances/{instance_guid}/restore</code> endpoint.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"restore"</span></span>,
+  "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-string">"a6b39499-8b8b-4e1b-aaec-b2bc11d396e4"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="restore-show-last-restore-operation" class="resource"><div id="restore-show-last-restore-operation-get" class="action get"><h4 class="action-heading"><div class="name">Show Last Restore Operation</div><a href="#restore-show-last-restore-operation-get" class="method get">GET</a><code class="uri">/service_instances/{instance_guid}/restore{?space_guid}</code></h4><p>Endpoint for retrieving the metadata of the last restore operation on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>404</code>&nbsp;<span style="font-weight: normal;">-&nbsp;no restore performed for this instance until now</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, a JSON object is returned which contains information about the last operation during a restore and some metadata.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"restore"</span></span>,
+  "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"processing"</span></span>,
+  "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+  "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+  "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+  "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+  "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+  "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+  "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span></span>,
+  "<span class="hljs-attribute">logs</span>": <span class="hljs-value">[
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Downloading tarball"</span>
+    </span>},
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:38:08+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Extracting tarball"</span>
+    </span>}
+  ]
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"new"</span>,
+        <span class="hljs-string">"processing"</span>,
+        <span class="hljs-string">"aborting"</span>,
+        <span class="hljs-string">"succeeded"</span>,
+        <span class="hljs-string">"failed"</span>,
+        <span class="hljs-string">"aborted"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">logs</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of log statements"</span></span>,
+      "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+        "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+          <span class="hljs-string">"time"</span>,
+          <span class="hljs-string">"level"</span>,
+          <span class="hljs-string">"msg"</span>
+        ]</span>,
+        "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">time</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the log entry (UTC format)"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">level</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The severity of the log entry"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">msg</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The message of the log entry"</span>
+          </span>}
+        </span>}
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="restore-abort-restore" class="resource"><div id="restore-abort-restore-delete" class="action delete"><h4 class="action-heading"><div class="name">Abort Restore</div><a href="#restore-abort-restore-delete" class="method delete">DELETE</a><code class="uri">/service_instances/{instance_guid}/restore{?space_guid}</code></h4><p>Endpoint for triggering the abortion of a running restore on a BOSH service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success (currently no restore in progress for this service instance)</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>202</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the abortion request was accepted. The cleanup of resources may
+require some time and usually won’t complete immediately. The current state can be
+checked by polling the <code>GET /service_instances/{instance_guid}/restore</code> endpoint.
+The response body will always be an empty JSON object.</p>
+</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section><section id="managing-backups" class="resource-group"><h2 class="group-heading">Managing Backups <a href="#managing-backups" class="permalink">&para;</a></h2><div id="managing-backups-show-last-backup-operation-for-all-instances" class="resource"><div id="managing-backups-show-last-backup-operation-for-all-instances-get" class="action get"><h4 class="action-heading"><div class="name">Show Last Backup Operation for all Instances</div><a href="#managing-backups-show-last-backup-operation-for-all-instances-get" class="method get">GET</a><code class="uri">/service_instances/backup{?space_guid}</code></h4><p>Retrieve metadata of the last backup operation for all service instances within the given space.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>space_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the space</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, an array is returned which contains JSON objects. Those store
+the metadata of the last backup operation of all service instances within the given space.</p>
+</div><h4>Example</h4><pre><code>[
+  {
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"backup"</span></span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"processing"</span></span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"manual"</span></span>,
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span>
+  </span>}
+]</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+  "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of metadata about the last operation"</span></span>,
+  "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+    "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"online"</span>,
+          <span class="hljs-string">"offline"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"manual"</span>,
+          <span class="hljs-string">"automatic"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"new"</span>,
+          <span class="hljs-string">"processing"</span>,
+          <span class="hljs-string">"aborting"</span>,
+          <span class="hljs-string">"succeeded"</span>,
+          <span class="hljs-string">"failed"</span>,
+          <span class="hljs-string">"aborted"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="managing-backups-show-last-restore-operation-for-all-instances" class="resource"><div id="managing-backups-show-last-restore-operation-for-all-instances-get" class="action get"><h4 class="action-heading"><div class="name">Show Last Restore Operation for all Instances</div><a href="#managing-backups-show-last-restore-operation-for-all-instances-get" class="method get">GET</a><code class="uri">/service_instances/restore{?space_guid}</code></h4><p>Retrieve metadata of the last restore operation for all service instances within the given space.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>space_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the space</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, an array is returned which contains JSON objects. Those store
+the metadata of the last restore operation of all service instances within the given space.</p>
+</div><h4>Example</h4><pre><code>[
+  {
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"restore"</span></span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"succeeded"</span></span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span>
+  </span>}
+]</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+  "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of metadata about the last operation"</span></span>,
+  "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+    "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"new"</span>,
+          <span class="hljs-string">"processing"</span>,
+          <span class="hljs-string">"aborting"</span>,
+          <span class="hljs-string">"succeeded"</span>,
+          <span class="hljs-string">"failed"</span>,
+          <span class="hljs-string">"aborted"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="managing-backups-show-all-backups-in-space" class="resource"><div id="managing-backups-show-all-backups-in-space-get" class="action get"><h4 class="action-heading"><div class="name">Show all Backups in Space</div><a href="#managing-backups-show-all-backups-in-space-get" class="method get">GET</a><code class="uri">/backups{?space_guid}</code></h4><p>Retrieve metadata of all backups within the given space.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>space_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the space</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, an array is returned which contains JSON objects. Those store
+the metadata of the backups.</p>
+</div><h4>Example</h4><pre><code>[
+  {
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"backup"</span></span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"processing"</span></span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"manual"</span></span>,
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span>
+  </span>}
+]</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+  "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of metadata properties"</span></span>,
+  "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+    "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"online"</span>,
+          <span class="hljs-string">"offline"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"manual"</span>,
+          <span class="hljs-string">"automatic"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+          <span class="hljs-string">"new"</span>,
+          <span class="hljs-string">"processing"</span>,
+          <span class="hljs-string">"aborting"</span>,
+          <span class="hljs-string">"succeeded"</span>,
+          <span class="hljs-string">"failed"</span>,
+          <span class="hljs-string">"aborted"</span>
+        ]</span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="managing-backups-show-specific-backup" class="resource"><div id="managing-backups-show-specific-backup-get" class="action get"><h4 class="action-heading"><div class="name">Show specific Backup</div><a href="#managing-backups-show-specific-backup-get" class="method get">GET</a><code class="uri">/backups/{backup_guid}{?space_guid}</code></h4><p>Retrieve metadata of a specific backup within the given space.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>backup_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the backup</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the space</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>404</code>&nbsp;<span style="font-weight: normal;">-&nbsp;resource not found</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, a JSON object is returned which contains information about the stated backup and its metadata.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">operation</span>": <span class="hljs-value"><span class="hljs-string">"backup"</span></span>,
+  "<span class="hljs-attribute">state</span>": <span class="hljs-value"><span class="hljs-string">"processing"</span></span>,
+  "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"max.mustermann@gmail.com"</span></span>,
+  "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"manual"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+  "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
+  "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value"><span class="hljs-string">"33333333-3333-3333-3333-333333333333"</span></span>,
+  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span></span>,
+  "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
+  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-111111111111"</span></span>,
+  "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value"><span class="hljs-string">"00000000-0000-0000-0000-000000000000"</span></span>,
+  "<span class="hljs-attribute">started_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+  "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:39:33+00:00"</span></span>,
+  "<span class="hljs-attribute">logs</span>": <span class="hljs-value">[
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:37:52+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Create snapshot"</span>
+    </span>},
+    {
+      "<span class="hljs-attribute">time</span>": <span class="hljs-value"><span class="hljs-string">"2016-08-31T10:38:08+00:00"</span></span>,
+      "<span class="hljs-attribute">level</span>": <span class="hljs-value"><span class="hljs-string">"info"</span></span>,
+      "<span class="hljs-attribute">msg</span>": <span class="hljs-value"><span class="hljs-string">"Create volume from snapshot"</span>
+    </span>}
+  ]
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">operation</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the operation"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"online"</span>,
+        <span class="hljs-string">"offline"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the triggering user"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"manual"</span>,
+        <span class="hljs-string">"automatic"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">state</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"new"</span>,
+        <span class="hljs-string">"processing"</span>,
+        <span class="hljs-string">"aborting"</span>,
+        <span class="hljs-string">"succeeded"</span>,
+        <span class="hljs-string">"failed"</span>,
+        <span class="hljs-string">"aborted"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The state of the last operation."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">started_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">finished_at</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the last operation (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">logs</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of log statements"</span></span>,
+      "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+        "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+          <span class="hljs-string">"time"</span>,
+          <span class="hljs-string">"level"</span>,
+          <span class="hljs-string">"msg"</span>
+        ]</span>,
+        "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">time</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The timestamp of the log entry (UTC format)"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">level</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The severity of the log entry"</span>
+          </span>}</span>,
+          "<span class="hljs-attribute">msg</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The message of the log entry"</span>
+          </span>}
+        </span>}
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="managing-backups-delete-backup" class="resource"><div id="managing-backups-delete-backup-delete" class="action delete"><h4 class="action-heading"><div class="name">Delete Backup</div><a href="#managing-backups-delete-backup-delete" class="method delete">DELETE</a><code class="uri">/backups/{backup_guid}{?space_guid}</code></h4><p>Delete a specific backup.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>backup_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the backup</p>
+</dd><dt>space_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the space</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>410</code>&nbsp;<span style="font-weight: normal;">-&nbsp;backup does not exist or has already been deleted</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the corresponding backup data set has been deleted.
+The response body must always be an empty JSON object.</p>
+</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section><section id="scheduling-backups" class="resource-group"><h2 class="group-heading">Scheduling Backups <a href="#scheduling-backups" class="permalink">&para;</a></h2><div id="scheduling-backups-schedule-backup" class="resource"><div id="scheduling-backups-schedule-backup-put" class="action put"><h4 class="action-heading"><div class="name">Schedule Backup</div><a href="#scheduling-backups-schedule-backup-put" class="method put">PUT</a><code class="uri">/service_instances/{instance_guid}/schedule_backup</code></h4><p>By default when a service key is generated for a service instance (either via bind service or create service key methods by CF),
+if the instance is not already setup for automated backups then service fabrik broker automatically schedules backup
+with a default schedule interval of ‘daily’. The schedule times are randomized in the next 24 hours to achieve some randomization
+in backup. This default schedule interval of ‘daily’, can be overridden by definining ‘backup_interval’ at service level in the services manifest. [Refer PostgreSQL manifest for example]</p>
+<p>The below API can be used to Update the automated backup schedule interval as defined by service fabrik broker at the service instance key generation time
+or Create the backup schedule even before service fabrik broker creates backup schedule.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object containing the type of the backup (online/offline), repeat interval and may optionally contain the timezone to be taken into consideration for job runs.
+A backup of type <code>offline</code> may involve downtimes of the service instance itself, whereby an <code>online</code> backup does not cause any downtime.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>type</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the backup type (either <code>online</code> or <code>offline</code>)</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>repeatInterval</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>repeat interval of the backup. Supported formats: valid cron expression or <a href='https://github.com/rschmukler/human-interval' target='_blank'>human-readable</a> intervals (ex. 4 hours, 6 hours 30 minutes,etc.)</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>timeZone</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"*/30 */6 * * *"</span></span>,
+  "<span class="hljs-attribute">timeZone</span>": <span class="hljs-value"><span class="hljs-string">"America/New_York"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+    <span class="hljs-string">"type"</span>,
+    <span class="hljs-string">"repeatInterval"</span>
+  ]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+        <span class="hljs-string">"online"</span>,
+        <span class="hljs-string">"offline"</span>
+      ]</span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Cron expression specifying the schedule interval. It also supports readable human-intervals"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">timeZone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>501</code>&nbsp;<span style="font-weight: normal;">-&nbsp;Feature 'backup' not supported</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the details of the scheduled backup job is returned back.
+The returned info will contain job details like when the job will run next time, when it was run last time
+(in case of schedule update operation), the information that will be used by the backup job and audit info.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b_ScheduledBackup"</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+    "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b"</span></span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"scheduled"</span></span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"552b91fa-0c05-44e9-ba1b-e7bef20a6d63"</span></span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"201c90de-f90d-44b1-9903-cea383085675"</span></span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"6db542eb-8187-4afc-8a85-e08b4a3cc24e"</span>
+  </span>}</span>,
+  "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-17T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-14T06:31:00.607Z"</span></span>,
+  "<span class="hljs-attribute">failCount</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+  "<span class="hljs-attribute">failReason</span>": <span class="hljs-value"><span class="hljs-string">"Got HTTP Status Code 500 expected 202"</span></span>,
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"*/30 */6 * * *"</span></span>,
+  "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-11T06:08:11.864Z"</span></span>,
+  "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:31:11.864Z"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the scheduled backup job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"online"</span>,
+            <span class="hljs-string">"offline"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"on-demand"</span>,
+            <span class="hljs-string">"scheduled"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+        </span>}
+      </span>}
+    </span>}</span>,
+    "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job will run next time (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job was last run (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job was locked (UTC format). This field if null, then it indicates that job is not running at present. If non-null, then it would mean that either the job is running or job has ended abruptly"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Repeat interval of the backup. Supported formats: valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The last time the job failed (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failCount</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"number"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Number of times the jobs has failed till date"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failReason</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Reason for its last failure"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who created the backup schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who updated the backup schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time when the schedule was created for the first time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the schedule was updated the last time (UTC format)."</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="scheduling-backups-get-backup-schedule" class="resource"><div id="scheduling-backups-get-backup-schedule-get" class="action get"><h4 class="action-heading"><div class="name">Get Backup Schedule</div><a href="#scheduling-backups-get-backup-schedule-get" class="method get">GET</a><code class="uri">/service_instances/{instance_guid}/schedule_backup</code></h4><div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>404</code>&nbsp;<span style="font-weight: normal;">-&nbsp;Schedule not found for instance ${instance_id}</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the details of the scheduled backup job is returned back.
+The returned info will contain job details like when the job will run next time, when it was run last time
+(in case of schedule update operation), the information that will be used by the backup job and audit info.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b_ScheduledBackup"</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"online"</span></span>,
+    "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b"</span></span>,
+    "<span class="hljs-attribute">trigger</span>": <span class="hljs-value"><span class="hljs-string">"scheduled"</span></span>,
+    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"552b91fa-0c05-44e9-ba1b-e7bef20a6d63"</span></span>,
+    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"201c90de-f90d-44b1-9903-cea383085675"</span></span>,
+    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value"><span class="hljs-string">"6db542eb-8187-4afc-8a85-e08b4a3cc24e"</span>
+  </span>}</span>,
+  "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-17T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-14T06:31:00.607Z"</span></span>,
+  "<span class="hljs-attribute">failCount</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+  "<span class="hljs-attribute">failReason</span>": <span class="hljs-value"><span class="hljs-string">"Got HTTP Status Code 500 expected 202"</span></span>,
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"*/30 */6 * * *"</span></span>,
+  "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-11T06:08:11.864Z"</span></span>,
+  "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:31:11.864Z"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the scheduled backup job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"online"</span>,
+            <span class="hljs-string">"offline"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Type of the backup"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">trigger</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"on-demand"</span>,
+            <span class="hljs-string">"scheduled"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The way how the backup has been triggered."</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Plan ID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service ID of the service instance"</span>
+        </span>}
+      </span>}
+    </span>}</span>,
+    "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job will run next time (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job was last run (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the backup job was locked (UTC format). This field if null, then it indicates that job is not running at present. If non-null, then it would mean that either the job is running or job has ended abruptly"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Repeat interval of the backup. Supported formats: valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The last time the job failed (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failCount</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"number"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Number of times the jobs has failed till date"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failReason</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Reason for its last failure"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who created the backup schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who updated the backup schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time when the schedule was created for the first time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the schedule was updated the last time (UTC format)."</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="scheduling-backups-cancel-automated-backups" class="resource"><div id="scheduling-backups-cancel-automated-backups-delete" class="action delete"><h4 class="action-heading"><div class="name">Cancel Automated Backups</div><a href="#scheduling-backups-cancel-automated-backups-delete" class="method delete">DELETE</a><code class="uri">/service_instances/{instance_guid}/schedule_backup</code></h4><p>[Note : This api can only be executed by users with ‘cloud_controller.admin’ scope.
+API mainly provided for clean up hooks in automated test scripts]</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div style="height: 10px"></div></div></div></section></div></div></div><p style="text-align: center;" class="text-muted">Copyright &copy; SAP SE 2016. Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio.</a></p><script src="../js/jquery.min.js"></script><script src="../js/bootstrap.min.js"></script><script src="../js/service-fabrik.js"></script></body></html>

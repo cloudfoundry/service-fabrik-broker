@@ -1,0 +1,15 @@
+*~
+.DS_Store
+.idea
+
+node_modules/
+
+architecture/example.png
+
+src/architecture/*.png
+
+src/api/broker/**/*.html
+src/api/agent/**/*.html
+
+src/backup-restore-library/build
+src/backup-restore-library/service-fabrik-backup-restore

@@ -1,0 +1,44 @@
+In case of success, a JSON object is returned which contains the agent name, its version, the version of the
+implemented API and a list of features which the agent is supporting *at this moment*. I.e. while e.g. an
+agent on a primary/master node may be capable of running a backup and reports this as a supported feature,
+a secondary/slave node agent may not be capable and will omit that feature when queried. The broker will
+dispatch an operation to the first agent that responds successfully and offeres a desired feature.
+
+    + Body
+
+            {
+                "name": "blueprint-agent",
+                "version": "1.0.0",
+                "api_version": "1.1",
+                "supported_features": ["state", "lifecycle", "credentials", "backup", "restore"]
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "required": ["name", "version", "api_version", "supported_features"],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Agent name: <serviceName>-agent"
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "Version of the agent implementation."
+                    },
+                    "api_version": {
+                        "type": "string",
+                        "description": "Version of the implemented API: <major>.<minor>"
+                    },
+                    "supported_features": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["state", "lifecycle", "credentials", "backup", "restore"]
+                        },
+                        "description": "A list of features the agent is supporting at this moment."
+                    }
+                }
+            }

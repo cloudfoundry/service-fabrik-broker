@@ -1,0 +1,37 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  User; Controller; Broker; Bosh; Service; IaaS;
+
+  # trigger deprovisioning of service instance
+  User ->> Controller [label = "cf delete-service"] {
+    Controller => Broker [label = "run deprovisioning", return = "ok"] {
+      Broker => Controller [label = "delete security-group", return = "ok"]
+      Broker ->> Bosh [label = "bosh delete"]
+    }
+  }
+
+  # bosh starts undeployment
+  Bosh => Service [label = "monit stop all"]
+
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "in progress"] {
+    Broker => Bosh [label = "task state?", return = "processing"]
+  }
+
+  # bosh continues undeployment
+  Bosh => IaaS [label = "release resources"]
+  Broker <<-- Bosh [label = "deletion completed\nno actual callback"]
+
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "succeeded"] {
+    Broker => Bosh [label = "task state?", return = "done"]
+  }
+  User <<-- Controller [label = "deletion completed\nno actual callback"]
+}

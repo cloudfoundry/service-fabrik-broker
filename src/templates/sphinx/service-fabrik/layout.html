@@ -1,0 +1,50 @@
+{% extends "basic/layout.html" %}
+
+{# add image for OpenGraph #}
+{% block extrahead %}
+  <link rel="stylesheet" href="../css/font-awesome.min.css">
+{% endblock %}
+
+{# wrap contents #}
+{% block header %}
+    {{ super() }}
+{% endblock %}
+
+{% block document %}
+  <div class="container-fluid">
+    <div class="row">
+      <nav>
+        <a href="https://github.com/sap/service-fabrik-broker/">
+          <center><img src="_static/{{ logo }}" width="235" height="320"></center>
+        </a>
+        <div style="height: 6px"></div>
+        NAV
+        {{ toctree(collapse=(docstitle == 'Service Fabrik Wiki'), maxdepth=2, titles_only=False, includehidden=True) }}
+      </nav>
+      <div class="content">
+        <header>
+          <span class="headline">{{ project }}</span>
+        </header>
+        {{ super() }}
+      </div>
+{% endblock %}
+
+{% block footer %}
+  <p style="text-align: center;" class="text-muted">
+    Copyright &copy; SAP SE 2016. Generated using <a href="http://sphinx-doc.org/">Sphinx</a>.
+  </p>
+  <script type="text/javascript" src="_static/script.js"></script>
+{% endblock %}
+
+{% block relbar1 %}
+{% endblock %}
+{% block relbar2 %}
+{% endblock %}
+{% block sidebar1 %}
+{% endblock %}
+{% block sidebar2 %}
+{% endblock %}
+{% block sidebarsourcelink %}
+{% endblock %}
+{% block sidebarsearch %}
+{% endblock %}

@@ -1,0 +1,31 @@
+The request body must be a JSON object containing the guid of the backup data set to be restored, and may optionally contain the space_guid and the unique service plan id.
+
+    + Body
+
+            {
+              "backup_guid": "44444444-4444-4444-4444-444444444444",
+              "space_guid": "11111111-1111-1111-1111-111111111111",
+              "plan_id": "22222222-2222-2222-2222-222222222222"
+              
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "properties": {
+                "backup_guid": {
+                  "type": "string",
+                  "description": "GUID of the backup data set to be restored"
+                },
+                "space_guid": {
+                  "type": "string",
+                  "description": "Space guid of the service instance"
+                },
+                "plan_id": {
+                  "type": "string",
+                  "description": "Unique service plan id of the service instance"
+                }
+              }
+            }

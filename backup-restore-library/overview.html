@@ -1,0 +1,188 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Overview &#8212; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Versions" href="versions.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="index.html" />
+<link rel="stylesheet" href="../css/font-awesome.min.css">
+
+  </head>
+  <body>
+
+
+
+
+
+    <div class="document">
+<div class="container-fluid">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center><img src="_static/service-fabrik.svg" width="235" height="320"></center>
+</a>
+<div style="height: 6px"></div>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use-this-project">How to use this project</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="versions.html">Versions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="versions.html#change-log">Change Log</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config_params.html">Configuration Parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#general-parameters">General parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#iaas-specific-credentials-parameters">IaaS-specific credentials parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-from-command-line">Example: Provide configuration from command line</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-manually">Example: Provide configuration manually</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iaas_client.html">IaaS Client API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#volumes">Volumes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#snapshots">Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#mounting-and-formatting">Mounting and Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#encrypt-directories-and-files">Encrypt Directories and Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#blob-storage-interaction">BLOB Storage Interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#miscellaneous-functions">Miscellaneous Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging.html">Logging and Last Operation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-levels">Log levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-file">Log file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#last-operation-file">Last Operation file</a></li>
+</ul>
+</li>
+</ul>
+
+</nav>
+<div class="content">
+<header>
+<span class="headline">Service Fabrik Backup & Restore Python Library Documentation</span>
+</header>
+
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p>This library arose during the development of Backup &amp; Restore for the <a class="reference external" href="https://github.com/sap/service-fabrik-blueprint-service">Blueprint-Service</a>
+as part of the <a class="reference external" href="https://github.com/sap/service-fabrik-broker">Service Fabrik</a>’s Backup &amp; Restore offering.
+It can be used for two IaaS providers, Amazon Web Services and OpenStack, as it abstracts some basic functionalities, like volume creation/deletion/attaching/detaching,
+by implementing provider-specific clients. However, for local development also a BOSH-Lite Client is provided which allows speeding up the development process before
+actually testing the scripts on real infrastructure providers.
+Service teams may like to use the library to avoid implementing the same features from scratch during their service-specific Backup &amp; Restore development.</p>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<p>The following features are exposed:</p>
+<ul class="simple">
+<li>Abstraction of the underlying IaaS provider</li>
+<li>Implicit waiting for operations to be finished before further processing</li>
+<li>Implicit retry logic to catch briefly occurring infrastructure problems</li>
+<li>Reliable clean-up of created resources to avoid orphans (in case of errors)</li>
+<li>Proper exception handling in case of errors</li>
+<li>Enabling easy and transparent backup &amp; restore implementations</li>
+</ul>
+</div>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>You need to have <strong>Python3</strong> as well as <strong>pip3</strong> installed. pip3 is used for the installation of the library’s dependencies.
+Please find further details on download and installation here:</p>
+<ul class="simple">
+<li>Python3: <a class="reference external" href="https://www.python.org/downloads/">https://www.python.org/downloads/</a></li>
+<li>pip3: <a class="reference external" href="https://pip.pypa.io/en/stable/installing/">https://pip.pypa.io/en/stable/installing/</a></li>
+</ul>
+</div>
+<div class="section" id="how-to-use-this-project">
+<h2>How to use this project<a class="headerlink" href="#how-to-use-this-project" title="Permalink to this headline">¶</a></h2>
+<p>Assuming, your working directory is <code class="docutils literal"><span class="pre">~/workspace/my_service</span></code>:</p>
+<div class="section" id="clone-this-repository">
+<h3>Clone this repository<a class="headerlink" href="#clone-this-repository" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">Most likely your working directory is already a git repository so that you may want to add this repository as submodule:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd ~/workspace/my_service
+$ git submodule add https://github.com/sap/service-fabrik-backup-restore.git service_fabrik_backup_restore
+</pre></div>
+</div>
+</li>
+<li><p class="first">Otherwise, just clone this repository (assuming your working directory is <code class="docutils literal"><span class="pre">~/workspace/my_service</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd ~/workspace/my_service
+$ git clone https://github.com/sap/service-fabrik-backup-restore.git service_fabrik_backup_restore
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="install-the-dependencies">
+<h3>Install the dependencies<a class="headerlink" href="#install-the-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>pip3 is the PyPa recommended tool for installing Python packages:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd ~/workspace/my_service/service_fabrik_backup_restore
+$ pip3 install -r requirements.txt
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-the-library">
+<h3>Using the library<a class="headerlink" href="#using-the-library" title="Permalink to this headline">¶</a></h3>
+<p>Basically, you have to create a new file, e.g. <code class="docutils literal"><span class="pre">backup.py</span></code>, and import the Backup &amp; Restore library:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd ~/workspace/my_service
+$ touch backup.py
+</pre></div>
+</div>
+<p>Within the <code class="docutils literal"><span class="pre">backup.py</span></code>, put this line at the top of the file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">service_fabrik_backup_restore</span> <span class="kn">import</span> <span class="n">create_iaas_client</span><span class="p">,</span> <span class="n">parse_options</span>
+</pre></div>
+</div>
+<p>Now you can start implementing the backup / restore for your service and take advantage of this library’s functionalities.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+</div>
+
+
+      <div class="clearer"></div>
+    </div>
+
+<p style="text-align: center;" class="text-muted">
+Copyright &copy; SAP SE 2016. Generated using <a href="http://sphinx-doc.org/">Sphinx</a>.
+</p>
+<script type="text/javascript" src="_static/script.js"></script>
+
+  </body>
+</html>

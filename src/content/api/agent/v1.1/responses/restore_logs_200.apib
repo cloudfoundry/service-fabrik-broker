@@ -1,0 +1,29 @@
+In case of success, newline-separated JSON objects are returned which contain single log messages of the last
+restore operation (see https://tools.ietf.org/id/draft-snell-activity-streams-type-01.html).
+
+    + Body
+
+            {"time": "2015-11-18T11:28:40+00:00", "level": "info", "msg": "Creating snapshot ..."}
+            {"time": "2015-11-18T11:28:42+00:00", "level": "info", "msg": "Creating volume ..."}
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["time", "level", "msg"],
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "description": "The timestamp of the log entry (UTC format)"
+                },
+                "level": {
+                  "type": "string",
+                  "description": "The severity of the log entry"
+                },
+                "msg": {
+                  "type": "string",
+                  "description": "The message of the log entry"
+                }
+              }
+            }

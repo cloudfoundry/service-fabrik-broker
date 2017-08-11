@@ -1,0 +1,337 @@
+FORMAT: 1A
+HOST: http://<agent-ip-address>:2718/v1
+
+# Service Fabrik Agent API - v1.1
+
+Welcome to the [Service Fabrik](https://github.com/sap/service-fabrik-broker)
+Agent API documentation. Agents are supposed to perform service-specific operations. Due to that, an agent **must** be
+part of a BOSH service instance and will be contacted by the broker to delegate operations the broker can not handle by
+itself (e.g. creating/deleting credentials while binding/unbinding, running a backup or restore operation, etc.).
+Consequently, the agent acts as an intermediate between the broker and the service. This is to decouple the two components,
+to enable autonomous releases, and to avoid dependencies between the Service Fabrik and individual services.
+
+## API changes
+* `GET /info` now returns `supported_features` field, showing a list of features the agent supports at the moment he receives the request.
+* `GET /state` get an indicator whether the service instance is currently operational.
+* `POST /lifecycle/deprovision` perform any operations before the deprovision of the service instance.
+* `POST /backup/start` start a backup of service-specific data.
+* `POST /backup/abort` abort a running backup.
+* `GET /backup` retrieve the last operation during a backup
+* `GET /backup/logs` retrieve the logs of the last backup operation
+* `POST /restore/start` start a restore of service-specific data.
+* `POST /restore/abort` abort a running restore.
+* `GET /restore` retrieve the last operation during a restore
+* `GET /restore/logs` retrieve the logs of the last restore operation
+
+**Important**: Due to the modifications of the `GET /info` response, the broker implements the following behaviour when it is asked to execute a service-specific operation and
+tries to commission an adequate agent for it:
+* For agents implementing API v1.0, the broker chooses the first one answering to its outgoing `GET /info` request.
+* For agents implementing API v1.1, the broker chooses the first one answering to its outgoing `GET /info` request, *and* having the requested feature in the `supported_features` response.
+
+In a clustered service with multiple agents, not every agent has to support every feature. The only thing which must be ensured is: If the service supports a feature in principle, at least
+one agent should have it in its `supported_features` list. However, not every service must support every feature of this API (except `info`). For example, if a service
+has no needs to perform special operations before it is deprovisioned, it must not implement the `/lifecycle` endpoint. The same applies to the remaining endpoints.
+
+***
+
+::: note
+## HTTP Headers
+**If not stated otherwise**, the HTTP *header* must set
+```http
+Content-Type: application/json
+```
+for all requests and responses.
+
+## Errors
+The API uses standard HTTP codes to indicate that errors occurred during the request. Each related response body contains
+a description of the error within JSON format:
+```
+{
+  "description": "An error occurred because of bad parameters."
+}
+```
+
+## Security
+All endpoints except for `/info` must be secured via
+[basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+:::
+
+
+
+# Group General
+Retrieve information about the agent.
+
+## Retrieve Agent Information [GET /info]
+
++ Response 200
+<!-- include(responses/info_200.apib) -->
+
+
+# Group State
+## Retrieve Service Instance State [GET /state]
+
++ Response 200
+<!-- include(responses/state_200.apib) -->
+
+
+# Group Lifecycle
+Whenever someone asks the broker to delete a service instance, it commissions an agent to perform 
+any operations required to be executed before the actual deprovisioning of the instance gets triggered.
+
+## Deprovision [POST /lifecycle/deprovision]
+Called when ```cf delete-service``` is invoked on a BOSH service instance.
+The agent is asked to perform any necessary operations before the broker executes the deprovisioning of the service instance.
+
++ Request
+<!-- include(requests/lifecycle_deprovision.apib) -->
+
++ Response 200
+<!-- include(responses/lifecycle_deprovision_200.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+
+
+# Group Credentials
+Whenever someone asks to grant/refuse access to a service instance (either by binding/unbinding an application or by
+manually creating/deleting service keys), the broker commissions an agent to perform the requested *service-specific*
+operation.
+
+## Create Credentials [POST /credentials/create]
+Called when ```cf bind-service``` or ```cf create-service-key``` is invoked on a BOSH service instance.
+The agent is asked to create and return service-specific credentials.
+
++ Parameters
+    + BODY.parameters: `` (object) - Service-specific configuration parameters used for creating of credentials
+
++ Request
+<!-- include(requests/credentials_create.apib) -->
+
++ Response 200
+<!-- include(responses/credentials_create_200.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+## Delete Credentials [POST /credentials/delete]
+Called when ```cf unbind-service``` or ```cf delete-service-key``` is invoked on a BOSH service instance.
+The agent is asked to delete service-specific credentials.
+
++ Parameters
+    + BODY.credentials: `` (object) - Service-specific credentials to delete
+
++ Request
+<!-- include(requests/credentials_delete.apib) -->
+
++ Response 200
+<!-- include(responses/credentials_delete_200.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+
+
+# Group Backup
+Whenever someone asks the broker to backup data of a service instance, it commissions an
+agent to perform the requested *service-specific* operation. A backup may be offered in an
+*online* and/or *offline* way be the agent. As soon as the broker chooses an operating
+agent, it will contact the agent as long as the operation is in progress. If the service is
+clustered and agents are present on multiple nodes which must be stopped independently, the
+agents need to communicate among themselves and may freely choose any suitable protocol
+(the Service Fabrik does not prescribe any agent communication protocol).
+
+The agent is free in how it implements the backup functionality. However, to help abstract
+from the concrete infrastructures, we provide a [Python-based library](https://github.com/sap/service-fabrik-backup-restore) for this purpose.
+It offers primitives to interact with the VMs, volumes, snapshots and the BLOB store.
+Services don't have to use it, but they have to store their backups in the BLOB store under
+a folder named by the backup GUID so that service/agent-independent backup management can be
+implemented by the broker (which basically means the broker can delete backups even if the
+service/agent is gone). The credentials an agent uses should be specific to that service and
+not include more rights than necessary (e.g. access to the container/bucket shall be possible
+only for that particular service). Again, it is mandatory to use the backup guid as folder
+name (as a backup discriminator), so that multiple backups can be stored (and found for the
+restore operation) and the broker can handle the management (i.e. deletion) independently.
+Any data that is stored must be encrypted with the given (broker-provided) secret. How the
+data is stored (one or multiple files, sub folders or not, how they are named), is up to the
+agent as only the agent will read them again (during a restore operation).
+
+Operations are managed by the broker with specific allowed states for the agent to set:
+
+`new` (initial) -> `processing` -> `succeeded` (final) or `failed` (final) or `aborting` -> `aborted` (final)
+
+Besides the state, the agent is free to return also stage information (within this state)
+that will be returned to the cloud controller and is/will be used to implement some form of
+progress information (e.g. a stage while in state `processing` could be "taking snapshot" or
+"encrypting data"). The agent can and should also return logs that should help operations
+folks to resolve issues when the operations fail (without having to access a concrete agent
+VM, which may be hard if the service instance is clustered or not possible if already gone).
+Both the last operation information and the logs are auto-generated by the mentioned Python-based library.
+
+## Start Backup [POST /backup/start]
+Called by the broker when a backup is triggered (manually or automatically) on a BOSH service instance.
+The agent is asked to perform a backup of all service-specific relevant data a user might want to save.
+
++ Parameters
+    + BODY.backup: `` (object) - Backup-specific configuration parameters
+    + BODY.backup.guid: `` (string) - A guid identifying this specific backup
+    + BODY.backup.type: `` (string) - The way how this backup should be executed
+    + BODY.backup.secret: `` (string) - A secret to be used for encryption
+    + BODY.vms: `` (array) - List of virtual machines belonging to the service instance
+    + BODY.vms.cid: `` (string) - GUID of the VM used by the IaaS provider to identify it
+    + BODY.vms.job: `` (string) - The (BOSH) name of the job running on this VM
+    + BODY.vms.index: `` (number) - The (BOSH) index of the job running on this VM
+
++ Request
+<!-- include(requests/backup_start.apib) -->
+
++ Response 202
+<!-- include(responses/backup_start_202.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 409
+another backup/restore operation is already in progress
+
+    + Body
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+
+## Abort Backup [POST /backup/abort]
+Called by the broker when a user asks to abort a running backup on a BOSH service instance.
+The agent is asked to abort the backup savely (i.e., remove orphaned volumes/snapshots/other resources).
+
++ Request
+<!-- include(requests/backup_abort.apib) -->
+
++ Response 202
+<!-- include(responses/backup_abort_202.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 410
+currently no backup in progress
+
+    + Body
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+
+## Retrieve Last Backup Operation [GET /backup]
+
++ Response 200
+<!-- include(responses/backup_200.apib) -->
+
+## Retrieve Latest Backup Logs [GET /backup/logs]
+
++ Response 200 (application/stream+json)
+<!-- include(responses/backup_logs_200.apib) -->
+
+
+
+# Group Restore
+Restore is the twin of the backup operation and is handled in a similar way. Please see the backup section for more information.
+
+There is one very important note to make here though: The restore operation must restore the actual
+data from the backup, but the configuration of the service instance as it exists right now must be
+preserved! This means especially, that any user-provided service instance parameters remain in place
+and that especially the now active user credentials are preserved and whatever other user credentials
+existed at the time of the backup are deleted (security risk!).
+
+## Start Restore [POST /restore/start]
+Called by the broker when a restore is triggered on a BOSH service instance.
+The agent is asked to perform a restore of all service-specific relevant data of a previously created backup set.
+
++ Parameters
+    + BODY.backup: `` (object) - Information about the backup  which should be restored
+    + BODY.backup.guid: `` (string) - The guid of the backup to be restored
+    + BODY.backup.type: `` (string) - The way how the backup (which is asked to be restored) has been created
+    + BODY.backup.secret: `` (string) - A secret to be used for decryption
+    + BODY.vms: `` (array) - List of virtual machines belonging to the service instance
+    + BODY.vms.cid: `` (string) - GUID of the VM used by the IaaS provider to identify it
+    + BODY.vms.job: `` (string) - The (BOSH) name of the job running on this VM
+    + BODY.vms.index: `` (number) - The (BOSH) index of the job running on this VM
+
++ Request
+<!-- include(requests/restore_start.apib) -->
+
++ Response 202
+<!-- include(responses/restore_start_202.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 409
+another backup/restore operation is already in progress
+
+    + Body
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+## Abort Restore [POST /restore/abort]
+Called by the broker when a user asks to abort a running restore on a BOSH service instance.
+The agent is asked to abort the restore savely (i.e., remove orphaned volumes/snapshots/other resources). However, the
+service instance could end up in an error state.
+
++ Request
+<!-- include(requests/restore_abort.apib) -->
+
++ Response 202
+<!-- include(responses/restore_abort_202.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 410
+currently no restoration in progress
+
+    + Body
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+## Retrieve Last Restore Operation [GET /restore]
+
++ Response 200
+<!-- include(responses/restore_200.apib) -->
+
+## Retrieve Latest Restore Logs [GET /restore/logs]
+
++ Response 200 (application/stream+json)
+<!-- include(responses/restore_logs_200.apib) -->

@@ -1,0 +1,32 @@
+In case of success, a JSON object is returned which contains information about the last operation during a restore.
+
+    + Body
+
+            {
+                "state": "processing",
+                "stage": "Creating volume ...",
+                "updated_at": "2015-11-18T11:28:42+00:00"
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "required": ["state", "stage", "updated_at"],
+                "properties": {
+                    "state": {
+                        "type": "string",
+                        "enum": ["new", "processing", "aborting", "succeeded", "failed", "aborted"],
+                        "description": "The state of the last restore operation"
+                    },
+                    "stage": {
+                        "type": "string",
+                        "description": "A description which explains the last operation"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "description": "The timestamp of the last operation (UTC format)"
+                    }
+                }
+            }

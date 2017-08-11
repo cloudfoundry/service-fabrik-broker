@@ -1,0 +1,175 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Versions &#8212; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration Parameters" href="config_params.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
+<link rel="stylesheet" href="../css/font-awesome.min.css">
+
+  </head>
+  <body>
+
+
+
+
+
+    <div class="document">
+<div class="container-fluid">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center><img src="_static/service-fabrik.svg" width="235" height="320"></center>
+</a>
+<div style="height: 6px"></div>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#how-to-use-this-project">How to use this project</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Versions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#change-log">Change Log</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config_params.html">Configuration Parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#general-parameters">General parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#iaas-specific-credentials-parameters">IaaS-specific credentials parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-from-command-line">Example: Provide configuration from command line</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-manually">Example: Provide configuration manually</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iaas_client.html">IaaS Client API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#volumes">Volumes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#snapshots">Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#mounting-and-formatting">Mounting and Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#encrypt-directories-and-files">Encrypt Directories and Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#blob-storage-interaction">BLOB Storage Interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#miscellaneous-functions">Miscellaneous Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging.html">Logging and Last Operation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-levels">Log levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#log-file">Log file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html#last-operation-file">Last Operation file</a></li>
+</ul>
+</li>
+</ul>
+
+</nav>
+<div class="content">
+<header>
+<span class="headline">Service Fabrik Backup & Restore Python Library Documentation</span>
+</header>
+
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="versions">
+<h1>Versions<a class="headerlink" href="#versions" title="Permalink to this headline">¶</a></h1>
+<p>The library is maintained by the Service Fabrik Team and improved continuously. We use semantic versioning (MAJOR.MINOR.PATCH).</p>
+<div class="section" id="change-log">
+<h2>Change Log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h2>
+<p><strong>v1.2.2 (2016-12-07)</strong></p>
+<ul class="simple">
+<li>Introduced copy_snapshot function, currently defined only for AWS to create encrypted copy of snapshot.</li>
+<li>Introduced copy_directory function to recursively copy directories.</li>
+<li>Introduced download_from_blobstore_decrypt_extract function to download a file from BLOB storage and pipe it to a subprocess for decryption and decompression.</li>
+</ul>
+<p><strong>v1.2.1 (2016-12-07)</strong></p>
+<ul class="simple">
+<li>Improved Python docstrings to clarify the purpose of <code class="docutils literal"><span class="pre">initialize()</span></code> and <code class="docutils literal"><span class="pre">finalize()</span></code> methods</li>
+</ul>
+<p><strong>v1.2.0 (2016-12-07)</strong></p>
+<ul class="simple">
+<li>Implemented a BOSH-Lite client which can be used for local development before actually testing the scripts on a real infrastructure provider. This allows speeding up the development
+and the bug-fix process.</li>
+<li>Introduced a workaround for a <code class="docutils literal"><span class="pre">boto3</span></code> bug in its attach-volume method. Resolves <a class="reference external" href="https://jtrack.wdf.sap.corp/browse/NGPBUG-31145">https://jtrack.wdf.sap.corp/browse/NGPBUG-31145</a>.</li>
+<li>Enabled the retrying logic for important methods. If an error occurs, it will retry at most 5 times with a waiting time of 10 seconds between each try and an overall waiting time of 10 minutes.</li>
+<li>Introduced <code class="docutils literal"><span class="pre">initialize()</span></code> and <code class="docutils literal"><span class="pre">finalize()</span></code> methods at the IaaS Client for convenience reasons. The <code class="docutils literal"><span class="pre">initialize()</span></code> method will set the last operation state to <code class="docutils literal"><span class="pre">processing</span></code> and
+log some initial statements. The <code class="docutils literal"><span class="pre">finalize()</span></code> method will set the last operation state to <code class="docutils literal"><span class="pre">succeeded</span></code> and log some final statements.</li>
+<li>The symbolic link logic for the last operation files introduced with <code class="docutils literal"><span class="pre">v1.0.3</span></code> has updated the link to the <code class="docutils literal"><span class="pre">blue</span></code> file for both backup and restore in the initialization phase. Now only
+the link of the current operation gets updated to the <code class="docutils literal"><span class="pre">blue</span></code> file.</li>
+<li>General improvements of log statements</li>
+</ul>
+<p><strong>v1.1.0 (2016-11-30)</strong></p>
+<ul class="simple">
+<li>Enable uploads of files larger than 5 GB to Swift (<a class="reference external" href="http://docs.openstack.org/developer/swift/overview_large_objects.html">http://docs.openstack.org/developer/swift/overview_large_objects.html</a>)</li>
+<li>Use <code class="docutils literal"><span class="pre">keystoneauth1</span></code> module instead of the deprecated <code class="docutils literal"><span class="pre">keystoneclient</span></code></li>
+<li>Log statements are now also provided for the creation/extraction and encryption/decryption of tarballs/files</li>
+</ul>
+<p><strong>v1.0.3 (2016-11-09)</strong></p>
+<ul class="simple">
+<li>Important security fix: the GPG secret used for encryption/decryption is now hidden in the logs</li>
+<li>Last operation file is now written according to the <em>blue/green principle</em> to avoid issues of simultaneous reading/writing of the same file by two processes.
+E.g., for a <code class="docutils literal"><span class="pre">backup</span></code>, the library creates two files <code class="docutils literal"><span class="pre">backup.lastoperation.blue.json</span></code> and <code class="docutils literal"><span class="pre">backup.lastoperation.green.json</span></code>, and a symbolic link <code class="docutils literal"><span class="pre">backup.lastoperation.json</span></code>
+which is always pointing to the file which is not currently updated/written by the library. This is to avoid conflicts occurring if two processes try to simultaneously read the same file.</li>
+</ul>
+<p><strong>v1.0.2 (2016-10-28)</strong></p>
+<ul class="simple">
+<li>Unmount volumes lazy to avoid errors during clean-ups because a device may be busy (improves reliability of clean-ups)</li>
+</ul>
+<p><strong>v1.0.1 (2016-10-12)</strong></p>
+<ul class="simple">
+<li>Improve python doc-strings for better documentation</li>
+</ul>
+<p><strong>v1.0.0 (2016-10-11)</strong></p>
+<ul class="simple">
+<li>Rename ‘amazon’ to ‘aws’</li>
+<li>Remove <code class="docutils literal"><span class="pre">get_logger</span></code> function and add the logger to the IaaSClient class</li>
+<li>Change AWS S3 Access check due to changed policies</li>
+<li>Update list of methods which allow a safe abortion</li>
+<li>Improve log statements</li>
+<li>Remove certificates configurable via environment variable <code class="docutils literal"><span class="pre">SF_BACKUP_RESTORE_CERTS</span></code> and use default</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+</div>
+
+
+      <div class="clearer"></div>
+    </div>
+
+<p style="text-align: center;" class="text-muted">
+Copyright &copy; SAP SE 2016. Generated using <a href="http://sphinx-doc.org/">Sphinx</a>.
+</p>
+<script type="text/javascript" src="_static/script.js"></script>
+
+  </body>
+</html>

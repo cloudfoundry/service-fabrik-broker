@@ -1,0 +1,68 @@
+# See http://www.uml-diagrams.org/sequence-diagrams.html ...for sequence diagrams
+# and http://blockdiag.com/en/seqdiag/examples.html      ...for seqdiag examples
+
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change font size
+  # default_fontsize = 11; // default value is 11
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # Do not show activity line
+  # activation = none;
+
+  # Number edges automaticaly
+  # autonumber = True;
+
+  # actors (in order left to right)
+  A; B; C;
+
+  # activities (in chronological order)
+  # normal edge and doted edge
+  A -> B [label = "normal edge", leftnote = "send request"];
+  B --> C [label = "dotted edge", rightnote = "send response"];
+
+  B <-- C [label = "return dotted edge"];
+  A <- B [label = "return edge"];
+
+  # asynchronus edge
+  A ->> B [label = "asynchronus edge"];
+  B -->> C [label = "asynchronus dotted edge"];
+
+  B <<-- C [label = "return asynchronus doted edge"];
+  A <<- B [label = "return asynchronus edge"];
+
+  # self referenced edge
+  A -> A [label = "self reference edge"];
+
+  === Separator line ===
+
+  # diagonal edge
+  A -> B [diagonal, label = "diagonal edge"];
+  A <- B [diagonal, label = "return diagonal edge"];
+
+  # color of edge
+  A -> B [label = "colored label", color = red];
+
+  # failed edge
+  A -> B [label = "failed edge", failed];
+
+  ... Separator line ...
+
+  # auto return edge
+  A => B [label = "call", return = "return"];
+
+  # nested auto return edge
+  A => B => C [label = "call", return = "return"];
+
+  # nested sequence
+  A => B [label = "nested call"]{
+     B => C [label = "call 1"];
+     B => D [label = "call 2"];
+     B => E [label = "call 3"];
+  }
+}

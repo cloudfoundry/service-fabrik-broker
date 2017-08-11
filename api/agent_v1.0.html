@@ -1,0 +1,117 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Service Fabrik Agent API - v1.0</title><link rel="stylesheet" href="../css/service-fabrik.css"><link rel="stylesheet" href="../css/font-awesome.min.css"><link rel="SHORTCUT ICON" href="../img/favicon.ico"></head><body class="preload"><div class="container-fluid-custom"><div class="row"><nav><a href="https://github.com/sap/service-fabrik-broker/"><center><img src="../img/service-fabrik.svg" width="235" height="320"></center></a><ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<hr><div>API Versions:&nbsp;<a href="agent_v1.1.html">v1.1</a>,&nbsp;<a href="agent_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-retrieve-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#credentials">Credentials</a></div><div class="collapse-content"><ul><li><a href="#credentials-create-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Create Credentials</a></li><li><a href="#credentials-delete-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Delete Credentials</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;agent-ip-address&gt;:2718/v1">http://&lt;agent-ip-address&gt;:2718/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Agent API - v1.0</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik</a>
+Agent API documentation. Agents are supposed to perform service-specific operations. Due to that, an agent <strong>must</strong> be
+part of a BOSH service instance and will be contacted by the broker to delegate operations the broker can not handle by
+itself (e.g., creating/deleting credentials while binding/unbinding, or backing-up/restoring, etc.). Consequently,
+the agent acts as an intermediate between the broker and the service. This is to decouple the two components,
+to enable autonomous releases, and to avoid dependencies between the Service Fabrik and individual services.</p>
+<p>Please find an Agent Integration Guide <a href="https://github..com/sap/service-fabrik-broker/wiki/Agent-Integration">here</a>.</p>
+<div class="note">
+<h2 id="header-http-headers">HTTP Headers <a class="permalink" href="#header-http-headers" aria-hidden="true">¶</a></h2>
+<p>For all HTTP requests and responses, the <em>header</em> must set</p>
+<pre><code class="language-http"><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre>
+<h2 id="header-errors">Errors <a class="permalink" href="#header-errors" aria-hidden="true">¶</a></h2>
+<p>The Agent API uses standard HTTP codes to indicate that errors occurred during the request. Each response body must contain
+a description within a JSON format:</p>
+<pre><code>{
+  "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"An error occurred because of bad parameters."</span>
+</span>}</code></pre>
+<h2 id="header-security">Security <a class="permalink" href="#header-security" aria-hidden="true">¶</a></h2>
+<p>All endpoints except for <code>/info</code> must be secured via
+<a href="https://en.wikipedia.org/wiki/Basic_access_authentication">Basic access authentication</a>.</p>
+</div>
+<section id="general" class="resource-group"><h2 class="group-heading">General <a href="#general" class="permalink">&para;</a></h2><p>Retrieve information about the agent.</p>
+<div id="general-retrieve-information" class="resource"><div id="general-retrieve-information-get" class="action get"><h4 class="action-heading"><div class="name">Retrieve information</div><a href="#general-retrieve-information-get" class="method get">GET</a><code class="uri">/info</code></h4><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of a success response, a JSON object containing the agent name, its version and the version of the implemented
+API is sent via the response body.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"blueprint-agent"</span></span>,
+  "<span class="hljs-attribute">version</span>": <span class="hljs-value"><span class="hljs-string">"1.0.0"</span></span>,
+  "<span class="hljs-attribute">api_version</span>": <span class="hljs-value"><span class="hljs-string">"1.0"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+    <span class="hljs-string">"name"</span>,
+    <span class="hljs-string">"version"</span>,
+    <span class="hljs-string">"api_version"</span>
+  ]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Agent name: &lt;serviceName&gt;-agent"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">version</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Version of the agent implementation."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">api_version</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Version of the implemented API: &lt;major&gt;.&lt;minor&gt;"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="credentials" class="resource-group"><h2 class="group-heading">Credentials <a href="#credentials" class="permalink">&para;</a></h2><p>Whenever someone asks to grant/refuse access to a service instance (either by binding/unbinding an application or by
+manually creating/deleting service keys), the broker commissions an agent to perform the requested <em>service-specific</em>
+operation.</p>
+<div id="credentials-create-credentials" class="resource"><div id="credentials-create-credentials-post" class="action post"><h4 class="action-heading"><div class="name">Create Credentials</div><a href="#credentials-create-credentials-post" class="method post">POST</a><code class="uri">/credentials/create</code></h4><p>Called when <code>cf bind-service</code> or <code>cf create-service-key</code> is invoked on a BOSH service instance.
+The agent is asked to create and return service-specific credentials.</p>
+<div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object with exactly one property containing user-provided parameters the agent may want
+to process/use for its computations. These parameters can be set by the executor of the <code>cf bind-service</code> or
+<code>cf create-service-key</code> command.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>parameters</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Service-specific configuration parameters used for creating of credentials</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">parameters</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">max_connections</span>": <span class="hljs-value"><span class="hljs-number">500</span></span>,
+    "<span class="hljs-attribute">autovacuum</span>": <span class="hljs-value"><span class="hljs-literal">true</span>
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">parameters</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service-specific configuration parameters"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid response body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of a success response, the request was processed correctly and the required credentials were created.
+The response body contains a JSON object with the generated credentials (respecting the
+<a href="http://docs.cloudfoundry.org/services/binding-credentials.html">Specification of Cloud Foundry</a>).
+The example below lists some possible credential fields, though you can provide additional fields as needed.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">hosts</span>": <span class="hljs-value">[
+    <span class="hljs-string">"127.0.0.1"</span>,
+    <span class="hljs-string">"127.0.0.2"</span>
+  ]</span>,
+  "<span class="hljs-attribute">hostname</span>": <span class="hljs-value"><span class="hljs-string">"127.0.0.1"</span></span>,
+  "<span class="hljs-attribute">port</span>": <span class="hljs-value"><span class="hljs-string">"8080"</span></span>,
+  "<span class="hljs-attribute">uri</span>": <span class="hljs-value"><span class="hljs-string">"http://admin:admin@127.0.0.1:1234"</span></span>,
+  "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">password</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div><div id="credentials-delete-credentials" class="resource"><div id="credentials-delete-credentials-post" class="action post"><h4 class="action-heading"><div class="name">Delete Credentials</div><a href="#credentials-delete-credentials-post" class="method post">POST</a><code class="uri">/credentials/delete</code></h4><p>Called when <code>cf unbind-service</code> or <code>cf delete-service-key</code> is invoked on a BOSH service instance.
+The agent is asked to remove service-specific credentials.</p>
+<div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object with exactly one property containing service-specific credentials the agent is
+asked to delete. The individual properties within the <code>credentials</code> object depend on the service.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>credentials</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Service-specific credentials to delete</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">credentials</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">username</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+    "<span class="hljs-attribute">dbname</span>": <span class="hljs-value"><span class="hljs-string">"default"</span>
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">credentials</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service-specific credentials to delete"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid response body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of a success response, the request was processed successfully and the sent credentials were deleted. In case
+the sent credentials do not exist, even <code>200 OK</code> must be responded. The response body must always be an empty
+JSON object.</p>
+</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section></div></div></div><p style="text-align: center;" class="text-muted">Copyright &copy; SAP SE 2016. Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio.</a></p><script src="../js/jquery.min.js"></script><script src="../js/bootstrap.min.js"></script><script src="../js/service-fabrik.js"></script></body></html>

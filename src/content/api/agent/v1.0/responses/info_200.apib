@@ -1,0 +1,32 @@
+In case of a success response, a JSON object containing the agent name, its version and the version of the implemented
+API is sent via the response body.
+
+    + Body
+
+            {
+                "name": "blueprint-agent",
+                "version": "1.0.0",
+                "api_version": "1.0"
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "required": ["name", "version", "api_version"],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Agent name: <serviceName>-agent"
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "Version of the agent implementation."
+                    },
+                    "api_version": {
+                        "type": "string",
+                        "description": "Version of the implemented API: <major>.<minor>"
+                    }
+                }
+            }

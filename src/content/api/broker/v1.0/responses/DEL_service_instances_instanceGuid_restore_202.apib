@@ -1,0 +1,9 @@
+In case of success, the abortion request was accepted. The cleanup of resources may
+require some time and usually won't complete immediately. The current state can be
+checked by polling the `GET /service_instances/{instance_guid}/restore` endpoint.
+The response body will always be an empty JSON object.
+
+    + Body
+
+            {
+            }

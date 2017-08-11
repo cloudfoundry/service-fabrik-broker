@@ -1,0 +1,91 @@
+FORMAT: 1A
+HOST: http://<agent-ip-address>:2718/v1
+
+# Service Fabrik Agent API - v1.0
+Welcome to the [Service Fabrik](https://github.com/sap/service-fabrik-broker)
+Agent API documentation. Agents are supposed to perform service-specific operations. Due to that, an agent **must** be
+part of a BOSH service instance and will be contacted by the broker to delegate operations the broker can not handle by
+itself (e.g., creating/deleting credentials while binding/unbinding, or backing-up/restoring, etc.). Consequently,
+the agent acts as an intermediate between the broker and the service. This is to decouple the two components,
+to enable autonomous releases, and to avoid dependencies between the Service Fabrik and individual services.
+
+
+::: note
+## HTTP Headers
+For all HTTP requests and responses, the *header* must set
+```http
+Content-Type: application/json
+```
+
+## Errors
+The Agent API uses standard HTTP codes to indicate that errors occurred during the request. Each response body must contain
+a description within a JSON format:
+```
+{
+  "description": "An error occurred because of bad parameters."
+}
+```
+
+## Security
+All endpoints except for `/info` must be secured via
+[Basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+:::
+
+
+# Group General
+Retrieve information about the agent.
+
+## Retrieve information [GET /info]
+
++ Response 200
+<!-- include(responses/info_200.apib) -->
+
+
+# Group Credentials
+Whenever someone asks to grant/refuse access to a service instance (either by binding/unbinding an application or by
+manually creating/deleting service keys), the broker commissions an agent to perform the requested *service-specific*
+operation.
+
+## Create Credentials [POST /credentials/create]
+Called when ```cf bind-service``` or ```cf create-service-key``` is invoked on a BOSH service instance.
+The agent is asked to create and return service-specific credentials.
+
++ Parameters
+    + BODY.parameters: `` (object) - Service-specific configuration parameters used for creating of credentials
+
++ Request
+<!-- include(requests/credentials_create.apib) -->
+
++ Response 200
+<!-- include(responses/credentials_create_200.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 500
+<!-- include(responses/500.apib) -->
+
+## Delete Credentials [POST /credentials/delete]
+Called when ```cf unbind-service``` or ```cf delete-service-key``` is invoked on a BOSH service instance.
+The agent is asked to remove service-specific credentials.
+
++ Parameters
+    + BODY.credentials: `` (object) - Service-specific credentials to delete
+
++ Request
+<!-- include(requests/credentials_delete.apib) -->
+
++ Response 200
+<!-- include(responses/credentials_delete_200.apib) -->
+
++ Response 400
+<!-- include(responses/400.apib) -->
+
++ Response 405
+<!-- include(responses/405.apib) -->
+
++ Response 500
+<!-- include(responses/500.apib) -->

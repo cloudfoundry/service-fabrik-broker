@@ -1,0 +1,256 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Logging and Last Operation &#8212; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="IaaS Client API Reference" href="iaas_client.html" />
+<link rel="stylesheet" href="../css/font-awesome.min.css">
+
+  </head>
+  <body>
+
+
+
+
+
+    <div class="document">
+<div class="container-fluid">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center><img src="_static/service-fabrik.svg" width="235" height="320"></center>
+</a>
+<div style="height: 6px"></div>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#how-to-use-this-project">How to use this project</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="versions.html">Versions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="versions.html#change-log">Change Log</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config_params.html">Configuration Parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#general-parameters">General parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#iaas-specific-credentials-parameters">IaaS-specific credentials parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-from-command-line">Example: Provide configuration from command line</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-manually">Example: Provide configuration manually</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iaas_client.html">IaaS Client API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#volumes">Volumes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#snapshots">Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#mounting-and-formatting">Mounting and Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#encrypt-directories-and-files">Encrypt Directories and Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#blob-storage-interaction">BLOB Storage Interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iaas_client.html#miscellaneous-functions">Miscellaneous Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Logging and Last Operation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#log-levels">Log levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#log-file">Log file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#last-operation-file">Last Operation file</a></li>
+</ul>
+</li>
+</ul>
+
+</nav>
+<div class="content">
+<header>
+<span class="headline">Service Fabrik Backup & Restore Python Library Documentation</span>
+</header>
+
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="logging-and-last-operation">
+<h1>Logging and Last Operation<a class="headerlink" href="#logging-and-last-operation" title="Permalink to this headline">¶</a></h1>
+<p>The library has already included a logging mechanism. A logger is initialized while creating an IaaS client and bound to the instance.
+However, the implemented methods of the IaaS client already log their current operations, so that you basically do not the logger.
+Anyway, if you want to log specific messages, you can use the following functions on your IaaS client instance:</p>
+<div class="section" id="log-levels">
+<h2>Log levels<a class="headerlink" href="#log-levels" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="lib.logger.Logger.debug">
+<code class="descclassname">Logger.</code><code class="descname">debug</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.logger.Logger.debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs a message with level ‘debug’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – the message to be logged</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A log message.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lib.logger.Logger.info">
+<code class="descclassname">Logger.</code><code class="descname">info</code><span class="sig-paren">(</span><em>message</em>, <em>last_operation_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.logger.Logger.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs a message with level ‘info’ and updates the last_operation file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – the message to be logged</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;A log message.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lib.logger.Logger.warning">
+<code class="descclassname">Logger.</code><code class="descname">warning</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.logger.Logger.warning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs a message with level ‘warning’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – the message to be logged</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;A log message.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lib.logger.Logger.error">
+<code class="descclassname">Logger.</code><code class="descname">error</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.logger.Logger.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs a message with level ‘error’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – the message to be logged</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;A log message.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lib.logger.Logger.critical">
+<code class="descclassname">Logger.</code><code class="descname">critical</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.logger.Logger.critical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs a message with level ‘critical’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – the message to be logged</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s1">&#39;A log message.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="log-file">
+<h2>Log file<a class="headerlink" href="#log-file" title="Permalink to this headline">¶</a></h2>
+<p>The path of the log file can be set via the environment variable <code class="docutils literal"><span class="pre">SF_BACKUP_RESTORE_LOG_DIRECTORY</span></code>. The library will create a file based on the
+<code class="docutils literal"><span class="pre">operation_name</span></code> you provided while instantiating an IaaS client (see the reference of the creator function <a class="reference external" href="iaas_client.html">here</a>).
+For example, if the <code class="docutils literal"><span class="pre">operation_name</span></code> is <cite>backup</cite>, the log file will have the name <code class="docutils literal"><span class="pre">backup.log</span></code> in the <code class="docutils literal"><span class="pre">SF_BACKUP_RESTORE_LOG_DIRECTORY</span></code>.</p>
+<p>The log file contains log messages in the following format, separated by newlines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;2016-08-31T11:16:50+00:00&quot;</span><span class="p">,</span> <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="s2">&quot;Create volume&quot;</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="last-operation-file">
+<h2>Last Operation file<a class="headerlink" href="#last-operation-file" title="Permalink to this headline">¶</a></h2>
+<p>Furthermore, you should set the path of the directory of the <em>last operation files</em> which are updated by library for each state or stage it reaches. This can
+be done via the environment variable <code class="docutils literal"><span class="pre">SF_BACKUP_RESTORE_LAST_OPERATION_DIRECTORY</span></code>. The library will create two files based on the <code class="docutils literal"><span class="pre">operation_name</span></code> you provided while
+instantiating an IaaS client (see the reference of the creator function <a class="reference external" href="iaas_client.html">here</a>). For example, with <code class="docutils literal"><span class="pre">operation_name='backup'</span></code> there will be
+<code class="docutils literal"><span class="pre">backup.lastoperation.blue.json</span></code>, <code class="docutils literal"><span class="pre">backup.lastoperation.green.json</span></code>, and a symbolic link <code class="docutils literal"><span class="pre">backup.lastoperation.json</span></code> created  in the <code class="docutils literal"><span class="pre">SF_BACKUP_RESTORE_LAST_OPERATION_DIRECTORY</span></code>.
+The symbolic link is always pointing to the file which is <em>not</em> currently updated/written by the library. This prevents issues of simultaneous reading/writing of the same
+file by two processes. Thus, to find out the last operation state, it is recommend to only read <code class="docutils literal"><span class="pre">backup.lastoperation.json</span></code> or <code class="docutils literal"><span class="pre">restore.lastoperation.json</span></code>, respectively.</p>
+<p>The files contain the state and stage of the last operation in the following format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="s2">&quot;processing&quot;</span><span class="p">,</span> <span class="s2">&quot;stage&quot;</span><span class="p">:</span> <span class="s2">&quot;Create volume&quot;</span><span class="p">,</span> <span class="s2">&quot;updated_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-11-18T11:28:42+00:00&quot;</span> <span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Please note that the files are re-used and will be overwritten for each usage of the library.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+</div>
+
+
+      <div class="clearer"></div>
+    </div>
+
+<p style="text-align: center;" class="text-muted">
+Copyright &copy; SAP SE 2016. Generated using <a href="http://sphinx-doc.org/">Sphinx</a>.
+</p>
+<script type="text/javascript" src="_static/script.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,28 @@
+In case of success, the restore request was accepted and started.
+The response body will be a JSON object which contains the name of the operation and the guid of this operation.
+As the restore operation is asynchronous, its state can be checked by polling the
+`GET /service_instances/{instance_guid}/restore` endpoint.
+
+    + Body
+
+            {
+              "name": "restore",
+              "guid": "a6b39499-8b8b-4e1b-aaec-b2bc11d396e4"
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of the operation"
+                },
+                "guid": {
+                  "type": "string",
+                  "description": "GUID of the backup"
+                }
+              }
+            }
