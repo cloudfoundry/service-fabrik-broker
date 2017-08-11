@@ -115,7 +115,7 @@
 <ul class="simple">
 <li>Implemented a BOSH-Lite client which can be used for local development before actually testing the scripts on a real infrastructure provider. This allows speeding up the development
 and the bug-fix process.</li>
-<li>Introduced a workaround for a <code class="docutils literal"><span class="pre">boto3</span></code> bug in its attach-volume method. Resolves <a class="reference external" href="https://jtrack.wdf.sap.corp/browse/NGPBUG-31145">https://jtrack.wdf.sap.corp/browse/NGPBUG-31145</a>.</li>
+<li>Introduced a workaround for a <code class="docutils literal"><span class="pre">boto3</span></code> bug in its attach-volume method.</li>
 <li>Enabled the retrying logic for important methods. If an error occurs, it will retry at most 5 times with a waiting time of 10 seconds between each try and an overall waiting time of 10 minutes.</li>
 <li>Introduced <code class="docutils literal"><span class="pre">initialize()</span></code> and <code class="docutils literal"><span class="pre">finalize()</span></code> methods at the IaaS Client for convenience reasons. The <code class="docutils literal"><span class="pre">initialize()</span></code> method will set the last operation state to <code class="docutils literal"><span class="pre">processing</span></code> and
 log some initial statements. The <code class="docutils literal"><span class="pre">finalize()</span></code> method will set the last operation state to <code class="docutils literal"><span class="pre">succeeded</span></code> and log some final statements.</li>

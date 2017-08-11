@@ -20,7 +20,7 @@ Change Log
 
 - Implemented a BOSH-Lite client which can be used for local development before actually testing the scripts on a real infrastructure provider. This allows speeding up the development
   and the bug-fix process.
-- Introduced a workaround for a ``boto3`` bug in its attach-volume method. Resolves https://jtrack.wdf.sap.corp/browse/NGPBUG-31145.
+- Introduced a workaround for a ``boto3`` bug in its attach-volume method.
 - Enabled the retrying logic for important methods. If an error occurs, it will retry at most 5 times with a waiting time of 10 seconds between each try and an overall waiting time of 10 minutes.
 - Introduced ``initialize()`` and ``finalize()`` methods at the IaaS Client for convenience reasons. The ``initialize()`` method will set the last operation state to ``processing`` and
   log some initial statements. The ``finalize()`` method will set the last operation state to ``succeeded`` and log some final statements.
