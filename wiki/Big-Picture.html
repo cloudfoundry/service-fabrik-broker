@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Big-Picture</h1>
+</header>
+<h4 id="motivation">Motivation</h4>
+<p>The <a href="http://docs.cloudfoundry.org/services/api.html">Cloud Foundry service broker API</a> is a very easy to implement API that allows to integrate services of almost all kinds into the platform. It does so by focusing on the essential primitives such as offering a catalog and triggering the provisioning of service instances/credentials.
+The hard part is to actually create the service instances and the even harder part is to keep them operational, i.e. to run the day 2 operations such as backup &amp; restore or updates in an unattended, automated way.</p>
+<p>If you have very distinct services, the service broker API will help you tremendously, because it provides you with the necessary “hooks” and goes out of your way for the concrete implementation. On the other hand, if you have services that could be handled similarly, writing a service broker for each of them seems like quite some effort, especially if you start to add the above mentioned day 2 operations.</p>
+<p>Services usually aren’t that different and most of them will require some form of backup &amp; restore. Almost all of them will require means to update them. And so it goes on. What you like to have is actually one service broker with harmonized provisioning functionality and day 2 operations for your fleet of services/service instances. That would make it easier for you to offer a compelling service catalog which basically defines the value of your platform.</p>
+<p>One could argue that the service broker API could or should be extended, at least by optional operations. However, finding the right abstractions is hard and if the API grows too much, it may no longer fit all services and lead to poor adoption. Plus, you need to understand the domain very well before you can propose such extensions.</p>
+<p>So, we started to identify the services that could be handled similarly and what would be needed to do so. We found the <a href="https://github.com/cloudfoundry-community/cf-containers-broker">cf-containers-broker</a> written by <a href="https://github.com/frodenas">Ferran Rodenas</a> and its <a href="https://github.com/cloudfoundry-community/docker-boshrelease">BOSH release</a> and started to use and contributed to it (e.g. the Docker/Swarm cluster support, additional service Docker images). We became committers, but eventually departed from that project (mainly because of the limitations we saw in Ruby, parallelism and dealing with multiple streaming connections which is what service brokers usually do) and initiated a separate project which we called the Service Fabrik (German loanword for Factory). The Service Fabrik provisions service instances as Docker and BOSH deployments.</p>
+<h4 id="high-level-goal">High Level Goal</h4>
+<p>Provide a service provisioning and operations solution:</p>
+<ol>
+<li>Support container- and BOSH-based provisioning (at first)</li>
+<li>Add additional capabilities such as backup &amp; restore and updates (at first)</li>
+<li>Offer a CF command line interface (CLI) plugin for all additional capabilities not natively supported by Cloud Foundry Cloud Controller</li>
+<li>Implement an ops/management UI for the fleet of services/service instances</li>
+</ol>
+<h4 id="features-deliverables">Features/Deliverables</h4>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/component-quick-reference.png?raw=true" alt="Missing"></p>
+<p>The features/deliverables of the Service Fabrik are:</p>
+<ol>
+<li>Service broker implementing the <a href="http://docs.cloudfoundry.org/services/api.html">Cloud Foundry service broker API</a> and extending it by a remote API offering additional capabilities like user-initiated backup &amp; restore</li>
+<li>Provisioning of service instances to Docker/Swarm utilizing the already existing (16 officially at present) Docker images for the <a href="https://github.com/cloudfoundry-community/cf-containers-broker">cf-containers-broker</a>/<a href="https://github.com/cloudfoundry-community/docker-boshrelease">docker-boshrelease</a></li>
+<li>Provisioning of services to BOSH (“1.0”, planned to switch to BOSH “2.0” feature set, which should be fairly straight-forward as we have something similar to the cloud config)</li>
+<li>Backup &amp; restore supporting OpenStack and AWS (in development; the amount of data is significant, so we need to store the backups in Swift or S3 respectively)</li>
+<li>CF CLI plugin to let the user run backups, list backup sets, or restore them (planned)</li>
+<li>Automated stemcell and release updates (utilizing plainly BOSH)</li>
+<li>Generic service instance dashboards for all services</li>
+<li>Ops/management UI (planned; required for a large fleet of services/service instances; at present, Docker and BOSH help us tremendously to keep everything running, but we see the need for a UI to get a better understanding of the deployment, deal with support requests, extract usage reports and more)</li>
+<li>Automated unit tests</li>
+<li>Developer documentation</li>
+</ol>
+<h4 id="implementation-details">Implementation Details</h4>
+<p>Our implementation is currently deployed via BOSH. The catalog is described in the deployment manifest and is generated primarily using <a href="https://github.com/cloudfoundry-incubator/spiff">spiff</a>, but also <a href="http://ruby-doc.org/stdlib-2.3.1/libdoc/erb/rdoc/ERB.html">ERB</a>. Besides the main catalog data, listing services, their service plans, unique IDs, labels, descriptions, and more, it also contains a section per service plan that describes how to provision a particular service instance. In the case of Docker, a Docker image must be provided and in the case of BOSH, a stemcell and a release must be provided. Whereas the image is basically self-sufficient for Docker, a manifest must be generated for BOSH. That is done by the broker utilizing specially developed manifest templates written in <a href="http://www.embeddedjs.com/">EJS</a> included and encoded on-the-fly into the deployment manifest. This allows to “implement” behavior like generating secure passwords on service creation, but reusing them on updates. The provisioning happens synchronously for Docker and asynchronously for BOSH service instances (in the sense of the service broker API) due to the different nature of the provisioning technologies.</p>
+<p>After provisioning, the service instances are ready for consumption/binding and have generic dashboards associated. To utilize the already existing Docker images for the <a href="https://github.com/cloudfoundry-community/cf-containers-broker">cf-containers-broker</a>/<a href="https://github.com/cloudfoundry-community/docker-boshrelease">docker-boshrelease</a> without modifications we kept the credential generation logic, but this means there is only one credentials set for a service instance, not per binding. For BOSH service instances we generated binding-unique credential sets through the help of an agent that must be co-deployed with the service instance. The agent must implement the Service Fabrik contract to allow for credential generation/deletion or service-individual backup &amp; restore. Services show different behavior and use different tools, so we didn’t generalize those operations, but basically followed the core principle of the service broker API and provide the service instances merely with hooks to achieve the task.</p>
+<p>By updating the Service Fabrik deployment manifest, services/service plans can be added, old ones be deprecated or even deleted (shouldn’t be done if service instances still exist), existing service plans updated, e.g. in the case of BOSH services with new stemcell or release versions. In this case the Service Fabrik will automatically identify service instances of that service plan with an old stemcell or release and trigger a BOSH (re-)deployment, i.e. update. At present this happens when the Service Fabrik is triggered through its remote API, but we plan to allow users to define their own maintenance windows so that they can influence this behavior. Right now, Docker services cannot be updated as we primarily focus on managed BOSH services.</p>
+<p>BOSH services can be also updated by the end-user, i.e. the end-user can change the service plan, e.g. to upgrade/downgrade it, be it in terms of functionality, scale or size (should the service only implement certain “t-shirt” sizes which oftentimes is useful for a simplistic billing). The end-user can also keep the service plan and only provide new/different custom parameters that tweak the service behavior, e.g. service specific parameters or even scale it. In the future we plan to improve this with the aforementioned CF CLI plugin.</p>
+<p>End-users will be enabled to upgrade service instances through the same means. Compared to an update, upgrade means to actively change the version, e.g. upgrade from PostgreSQL 9.4 to 9.5. Since the Cloud Foundry Cloud Controller meta model has no notion of version, we expose the version in the service plan name, which allows the user to upgrade individually using cf update-service. Part of the catalog data are valid migrations paths between service plans and only those are permitted by the broker. The BOSH release must then be smart enough to support those.</p>
+<p>Once we have completed our work on backup &amp; restore, automated updates, and upgrades, we plan to focus our work on an ops/management web UI next.</p>
+<p>You will have noticed that adding additional capabilities currently focuses on BOSH services, but we plan to continue our efforts on the container services as well. However, since Docker/Swarm has certain limitations we may need to change the container scheduler first and improve the volume management before we can add more capabilities. This is work that was taken care of by BOSH already as BOSH already has first-class support for many missed features in Docker/Swarm like the volume management. That’s why we are currently focusing on BOSH services, but containers are interesting for managed services as well.</p>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>
