@@ -226,14 +226,19 @@ defaults: &defaults
   #####################
   # DIRECTOR SETTINGS #
   #####################
-  #bootstrap_bosh_director settings
-  bootstrap_bosh_director:
-    url: https://192.168.50.3:25555
+  directors:
+  - url: https://192.168.50.3:25555
+    primary: false        # is true if the director takes part in lifecycle operations except create
+    support_create: false  # is true if director is expected to 'create deployments'
+    name: bootstrap-bosh
     username: admin
     password: admin
     skip_ssl_validation: true
     cpi: warden_cpi
-  director: &director
+  - &director
+    primary: true
+    support_create: false
+    name: bosh
     cpi: warden_cpi
     url: https://192.168.50.4:25555
     username: admin
@@ -245,6 +250,76 @@ defaults: &defaults
       stemcell:
         name: bosh-warden-boshlite-ubuntu-trusty-go_agent
         version: latest
+      segmentation:
+        network_name: default
+        # calculate capacity based on the network range
+        capacity: -1
+        offset: 1
+        size: 8
+      azs:
+      - { name: z1, cloud_properties: { name: random } }
+      - { name: z2, cloud_properties: { name: random } }
+      - { name: z3, cloud_properties: { name: random } }
+      vm_types:
+      - { name: micro,    cloud_properties: { name: random } }
+      - { name: small,    cloud_properties: { name: random } }
+      - { name: medium,   cloud_properties: { name: random } }
+      - { name: large,    cloud_properties: { name: random } }
+      - { name: xlarge,   cloud_properties: { name: random } }
+      - { name: 2xlarge,  cloud_properties: { name: random } }
+      - { name: 4xlarge,  cloud_properties: { name: random } }
+      - { name: 10xlarge, cloud_properties: { name: random } }
+      disk_types:
+      - { name: hdd_1gb,   disk_size:     1_024 } # minimum size 1GiB (2^30), everything else is similar to hard disk vendors (10^x)
+      - { name: hdd_2gb,   disk_size:     2_000 }
+      - { name: hdd_4gb,   disk_size:     4_000 }
+      - { name: hdd_6gb,   disk_size:     6_000 }
+      - { name: hdd_8gb,   disk_size:     8_000 }
+      - { name: hdd_10gb,  disk_size:    10_000 }
+      - { name: hdd_20gb,  disk_size:    20_000 }
+      - { name: hdd_40gb,  disk_size:    40_000 }
+      - { name: hdd_60gb,  disk_size:    60_000 }
+      - { name: hdd_80gb,  disk_size:    80_000 }
+      - { name: hdd_100gb, disk_size:   100_000 }
+      - { name: hdd_200gb, disk_size:   200_000 }
+      - { name: hdd_400gb, disk_size:   400_000 }
+      - { name: hdd_600gb, disk_size:   600_000 }
+      - { name: hdd_800gb, disk_size:   800_000 }
+      - { name: hdd_1tb,   disk_size: 1_000_000 }
+      - { name: hdd_2tb,   disk_size: 2_000_000 }
+      - { name: hdd_4tb,   disk_size: 4_000_000 }
+      - { name: hdd_6tb,   disk_size: 6_000_000 }
+      - { name: hdd_8tb,   disk_size: 8_000_000 }
+      networks:
+      - &default_network
+        name: default
+        type: manual
+        subnets:
+        - { range: 10.244.10.0/24, az: z1, cloud_properties: { name: random } }
+        - { range: 10.244.11.0/24, az: z2, cloud_properties: { name: random } }
+        - { range: 10.244.12.0/24, az: z3, cloud_properties: { name: random } }
+      - &compilation_network
+        name: compilation
+        type: dynamic
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+  - cpi: warden_cpi
+    url: https://192.168.50.4:25555
+    username: admin
+    password: admin
+    primary: true
+    support_create: true
+    name: bosh-sf
+    skip_ssl_validation: true
+    default_task_poll_interval: 10000
+    lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
+    infrastructure: &director_infrastructure
+      stemcell:
+        name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+        version: 3421.6
       segmentation:
         network_name: default
         # calculate capacity based on the network range
@@ -600,9 +675,46 @@ test:
   docker:
     <<: *docker
     url: 'https://192.168.99.100:2376'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     cpi: aws_cpi
+    primary: true
+    support_create: false
+    name: bosh
+    uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
+    infrastructure:
+      <<: *director_infrastructure
+      networks:
+      - *default_network
+      - *compilation_network
+      - *fabrik_network
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+  - <<: *director
+    cpi: aws_cpi
+    primary: true
+    support_create: true
+    name: bosh-sf
+    uuid: 3afe51e2-b7e6-471f-9bca-93048fa591f4
+    infrastructure:
+      <<: *director_infrastructure
+      networks:
+      - *default_network
+      - *compilation_network
+      - *fabrik_network
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+  - <<: *director
+    cpi: aws_cpi
+    primary: false
+    support_create: false
+    name: bootstrap-bosh
     uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
     infrastructure:
       <<: *director_infrastructure

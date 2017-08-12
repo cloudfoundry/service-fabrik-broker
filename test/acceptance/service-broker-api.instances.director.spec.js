@@ -6,6 +6,7 @@ const errors = require('../../lib/errors');
 const Promise = require('bluebird');
 const app = require('../../apps').internal;
 const utils = lib.utils;
+const bosh = require('../../lib/bosh');
 const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
@@ -19,7 +20,9 @@ describe('service-broker-api', function () {
     describe('director', function () {
       const base_url = '/cf/v2';
       const index = mocks.director.networkSegmentIndex;
+      const director = bosh.director;
       const api_version = '2.9';
+      const no_of_directors = 3;
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
@@ -58,6 +61,10 @@ describe('service-broker-api', function () {
         ]);
       });
 
+      beforeEach(function () {
+        director.clearCache();
+      });
+
       afterEach(function () {
         mocks.reset();
         cancelScheduleStub.reset();
@@ -72,6 +79,7 @@ describe('service-broker-api', function () {
       describe('#provision', function () {
         it('returns 202 Accepted', function () {
           mocks.director.getDeployments({
+            'noOfTimes': no_of_directors - 1,
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
@@ -91,12 +99,13 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body.dashboard_url).to.equal(dashboard_url);
               expect(res.body).to.have.property('operation');
-              expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: task_id,
+              const decoded = utils.decodeBase64(res.body.operation);
+              expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
                 type: 'create',
                 parameters: parameters,
                 space_guid: space_guid
               });
+              expect(decoded.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
             });
         });
@@ -104,7 +113,9 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors - 1
+          });
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -129,7 +140,7 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: task_id,
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters
               });
@@ -142,7 +153,9 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors - 1
+          });
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.deprovision();
@@ -168,7 +181,7 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: task_id,
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
               });
               //expect(cancelScheduleStub).to.be.calledOnce;
@@ -181,6 +194,9 @@ describe('service-broker-api', function () {
 
       describe('#lastOperation', function () {
         it('returns 200 OK (state = in progress)', function () {
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -190,7 +206,7 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id,
               operation: utils.encodeBase64({
-                task_id: task_id,
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 space_guid: space_guid
               })
@@ -208,6 +224,9 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK (state = succeeded)', function () {
           mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.cloudController.createSecurityGroup(instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -217,7 +236,7 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id,
               operation: utils.encodeBase64({
-                task_id: task_id,
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 space_guid: space_guid
               })
@@ -239,7 +258,9 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 500;
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors - 1
+          });
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -283,7 +304,9 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors - 1
+          });
           mocks.director.getDeploymentManifest();
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();

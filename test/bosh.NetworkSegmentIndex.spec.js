@@ -3,6 +3,7 @@
 const lib = require('../lib');
 const catalog = lib.models.catalog;
 const DirectorManager = lib.fabrik.DirectorManager;
+const BoshDirectorClient = lib.bosh.BoshDirectorClient;
 
 const proxyquire = require('proxyquire');
 let networks = [{
@@ -27,19 +28,9 @@ let networks = [{
   }]
 }];
 
+let mock_config;
+
 const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-  '../config': {
-    director: {
-      infrastructure: {
-        segmentation: {
-          capacity: 1235,
-          offset: 1,
-          size: 8
-        },
-        networks: networks
-      }
-    }
-  },
   lodash: {
     sample: function (collection) {
       return collection[2];
@@ -47,66 +38,65 @@ const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
   }
 });
 
+
+let getInfrastructureStub, setDefaultConfig, updateStub;
 describe('bosh', () => {
+  before(function () {
+    getInfrastructureStub = sinon.stub(BoshDirectorClient, 'getInfrastructure');
+    setDefaultConfig = function () {
+      getInfrastructureStub.withArgs().returns({
+        segmentation: {
+          capacity: 1235,
+          offset: 1,
+          size: 8
+        },
+        networks: networks
+      });
+    };
+    updateStub = function (capacity) {
+      mock_config = {
+        infrastructure: {
+          segmentation: {
+            capacity: capacity
+          },
+          networks: networks
+        }
+      };
+      getInfrastructureStub.withArgs().returns(mock_config.infrastructure);
+    };
+  });
+  after(function () {
+    getInfrastructureStub.restore();
+  });
+
   describe('NetworkSegmentIndex', () => {
     describe('#adjust', () => {
       it('returns a left-padded string', () => {
+        setDefaultConfig();
         expect(NetworkSegmentIndex.adjust('123')).to.eql('0123');
         expect(NetworkSegmentIndex.adjust('123', 6)).to.eql('000123');
       });
     });
 
     describe('#calculateCapacity', () => {
-      it('returns 30', () => {
+      it('returns 1235', () => {
+        setDefaultConfig();
         expect(NetworkSegmentIndex.capacity('default')).to.eql(1235);
       });
 
       it('returns 126', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        expect(NetworkSegmentIndex.capacity()).to.eql(126);
+        updateStub(-1);
+        expect(NetworkSegmentIndex.capacity(undefined)).to.eql(126);
       });
 
       it('returns 2046', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
+        updateStub(-1);
         expect(NetworkSegmentIndex.capacity('public')).to.eql(2046);
       });
 
       it('returns 1', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: 1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        expect(NetworkSegmentIndex.capacity()).to.eql(1);
+        updateStub(1);
+        expect(NetworkSegmentIndex.capacity(undefined)).to.eql(1);
       });
     });
 
@@ -144,32 +134,24 @@ describe('bosh', () => {
     });
 
     describe('#getFreeIndices', () => {
-      it('returns an array that contains 30 indices', () => {
+      it('returns an array that contains 1234 indices', () => {
         manager.service.subnet = null;
-        let freeIndices = NetworkSegmentIndex.getFreeIndices([`${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager.service.subnet);
-
+        setDefaultConfig();
+        let freeIndices = NetworkSegmentIndex
+          .getFreeIndices([`${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager.service.subnet);
         expect(freeIndices).to.have.length(1234);
       });
       it('returns an array that contains 2045 indices', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        let freeIndices = NetworkSegmentIndex.getFreeIndices([`${DirectorManager.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public');
+        updateStub(-1);
+        let freeIndices = NetworkSegmentIndex
+          .getFreeIndices([`${DirectorManager.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public');
         expect(freeIndices).to.have.length(2045);
       });
     });
 
     describe('#findFreeIndex', () => {
       it('returns 2', () => {
+        setDefaultConfig();
         expect(NetworkSegmentIndex.findFreeIndex([{
           name: `${DirectorManager.prefix}-9876-5432abcd-1098-abcd-7654-3210abcd9876`
         }, `${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager)).to.eql(2);
