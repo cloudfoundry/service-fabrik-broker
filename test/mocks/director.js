@@ -9,13 +9,19 @@ const CONST = require('../../lib/constants');
 const agent = require('./agent');
 const config = lib.config;
 const bosh = lib.bosh;
+const BoshDirectorClient = require('../../lib/bosh/BoshDirectorClient');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
-const directorUrl = config.director.url;
 const prefix = 'service-fabrik';
 const networkSegmentIndex = 21;
 const credentials = agent.credentials;
-
+const primary_config = BoshDirectorClient
+  .getPrimaryConfig(_
+    .filter(config.directors, function (director) {
+      return director.supportCreate && director.primary;
+    }));
+const directorUrl = primary_config.url;
 const manifest = {
+  name: 'test-deployment-name',
   jobs: [{
     name: 'blueprint_z1',
     networks: [{
@@ -70,6 +76,7 @@ exports.getDeploymentVms = getDeploymentVms;
 exports.verifyDeploymentLockStatus = verifyDeploymentLockStatus;
 exports.acquireLock = acquireLock;
 exports.releaseLock = releaseLock;
+exports.manifest = manifest;
 //At app start DB Manager automatically fires this request before anything has started. So setting this mock to start with.
 //getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
 
@@ -83,8 +90,8 @@ function deploymentNameByIndex(index) {
   return `${prefix}-${_.padStart(index, 4, '0')}-${uuidByIndex(index)}`;
 }
 
-function getDeploymentNames(capacity, queued) {
-  return _
+function getDeploymentNames(capacity, queued, oob) {
+  let names = _
     .chain(queued ? 3 : 0)
     .range(capacity)
     .pull(queued ? networkSegmentIndex : -1)
@@ -92,31 +99,52 @@ function getDeploymentNames(capacity, queued) {
       name: deploymentNameByIndex(index)
     }))
     .value();
+
+  if (oob) {
+    names = _.concat(names, [{
+        name: 'ccdb'
+      },
+      {
+        name: CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID
+      },
+      {
+        name: 'service-fabrik-mongodb'
+      }
+    ]);
+  }
+  return names;
 }
 
 function getDeployments(opts) {
   const queued = _.get(opts, 'queued', false);
-  const capacity = _.get(opts, 'capacity', NetworkSegmentIndex.capacity());
-  const deployments = getDeploymentNames(capacity, queued);
-  const scope = nock(directorUrl)
-    .replyContentLength()
-    .get('/deployments')
-    .reply(200, deployments);
+  const capacity = _.get(opts, 'capacity', NetworkSegmentIndex.capacity('default', primary_config));
+  const noOfTimes = _.get(opts, 'noOfTimes', 1);
+  const oob = _.get(opts, 'oob', false);
+  const deployments = getDeploymentNames(capacity, queued, oob);
+  const scope = _
+    .range(noOfTimes)
+    .map(() => nock(directorUrl)
+      .replyContentLength()
+      .get('/deployments')
+      .reply(200, deployments));
   if (queued) {
     const tasks = _
-      .chain(0)
+      .chain()
       .range(3)
       .map(index => ({
         deployment: deploymentNameByIndex(index)
       }))
       .value();
-    scope
-      .get('/tasks')
-      .query({
-        limit: 1000,
-        state: 'queued'
-      })
-      .reply(200, tasks);
+    _
+      .range(noOfTimes)
+      .map(index => scope[index]
+        .get('/tasks')
+        .query({
+          limit: 1000,
+          state: 'queued'
+        })
+        .reply(200, tasks)
+      );
   }
   return scope;
 }
@@ -141,7 +169,13 @@ function deleteDeployment(taskId) {
     });
 }
 
-function getDeploymentTask(taskId, state) {
+function getDeploymentTask(taskId, state, notFound) {
+  if (notFound) {
+    return nock(directorUrl)
+      .replyContentLength()
+      .get(`/tasks/${taskId}`)
+      .reply(404, {});
+  }
   return nock(directorUrl)
     .replyContentLength()
     .get(`/tasks/${taskId}`)
@@ -182,7 +216,7 @@ function getDeployment(deploymentName, found, boshDirectorUrlInput) {
       .get(`/deployments/${deploymentName}`)
       .reply(404, {
         'code': 70000,
-        'description': 'Deployment ${deployment_name} doesn\'t exist'
+        'description': `'Deployment ${deploymentName} doesn\'t exist'`
       });
   }
   return nock(boshDirectorUrl)

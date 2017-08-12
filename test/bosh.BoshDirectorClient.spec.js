@@ -4,11 +4,24 @@ const Promise = require('bluebird');
 const uuid = require('uuid');
 const _ = require('lodash');
 const errors = require('../lib/errors');
+const config = require('../lib/config');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const BoshDirectorClient = require('../lib/bosh/BoshDirectorClient');
-
+const yaml = require('js-yaml');
 const id = uuid.v4();
+const deployment_name = id;
+const taskId = Math.floor(Math.random() * 123456789);
+const bosh_taskId = `bosh_${taskId}`;
+const manifest = yaml.safeDump({
+  name: id
+});
+const no_of_directors = 2;
+let primary_config = BoshDirectorClient
+  .getPrimaryConfig(_
+    .filter(config.directors, function (director) {
+      return director.supportCreate && director.primary;
+    }));
 
 class MockBoshDirectorClient extends BoshDirectorClient {
   constructor(request, response) {
@@ -21,7 +34,7 @@ class MockBoshDirectorClient extends BoshDirectorClient {
     });
   }
 
-  request(options, expectedStatusCode) {
+  makeRequest(options, expectedStatusCode) {
     switch (this.res.statusCode) {
     case 400:
       this.res.statusCode = 204;
@@ -40,10 +53,72 @@ class MockBoshDirectorClient extends BoshDirectorClient {
       });
     }
   }
+
+  makeRequestWithConfig(options, expectedStatusCode) {
+    switch (this.res.statusCode) {
+    case 400:
+      this.res.statusCode = 204;
+      return Promise.reject(new BadRequest(''));
+    case 404:
+      this.res.statusCode = 204;
+      return Promise.reject(new NotFound(''));
+    default:
+      expect(expectedStatusCode).to.equal(this.res.statusCode);
+      expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
+
+      return Promise.resolve({
+        body: this.res.body,
+        statusCode: this.res.statusCode,
+        headers: this.res.headers
+      });
+    }
+  }
+
+  populateCache() {
+    this.cache = {};
+    this.cache[deployment_name] = primary_config;
+  }
+
 }
 
 describe('bosh', () => {
   describe('BoshDirectorClient', () => {
+
+    describe('#constructor', () => {
+      it('initializes variables', () => {
+        let dc = new MockBoshDirectorClient();
+        expect(dc.cache).to.be.an('object');
+        expect(dc.uuid).to.be.a('string');
+        expect(dc.cpi).to.be.a('string');
+        expect(dc.primary).to.be.a('boolean');
+      });
+
+      it('sets primary as false if not defined', () => {
+        let getPrimaryConfigStub = sinon.stub(BoshDirectorClient, 'getPrimaryConfig');
+        getPrimaryConfigStub.withArgs().returns({
+          primary: undefined
+        });
+        let dc = new MockBoshDirectorClient();
+        expect(dc.primary).to.eql(false);
+        getPrimaryConfigStub.restore();
+      });
+
+    });
+
+    describe('#getPrimaryConfig', () => {
+      it('get the director defined as primary', () => {
+        expect(primary_config.primary).to.eql(true);
+      });
+    });
+
+    describe('#clearCache', () => {
+      it('empties the cache', () => {
+        let dc = new MockBoshDirectorClient();
+        dc.clearCache();
+        expect(dc.cache).to.eql({});
+      });
+    });
+
     describe('#getInfo', () => {
       it('returns a JSON object', (done) => {
         let request = {
@@ -78,7 +153,7 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response).getDeployments().then((content) => {
-          expect(content).to.eql(JSON.parse(response.body));
+          expect(content).to.eql(_.range(no_of_directors).map(() => JSON.parse(response.body)));
           done();
         }).catch(done);
       });
@@ -134,7 +209,7 @@ describe('bosh', () => {
             'Content-Type': 'text/yaml'
           },
           qs: undefined,
-          body: id
+          body: manifest
         };
         let response = {
           body: JSON.stringify({
@@ -147,9 +222,9 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response)
-          .createOrUpdateDeployment(id)
+          .createOrUpdateDeployment(manifest)
           .then((content) => {
-            expect(content).to.eql(taskId);
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();
           })
           .catch(done);
@@ -161,7 +236,7 @@ describe('bosh', () => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'DELETE',
-          url: `/deployments/${id}`
+          url: `/deployments/${deployment_name}`
         };
         let response = {
           body: JSON.stringify({
@@ -174,7 +249,7 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response).deleteDeployment(id).then((content) => {
-          expect(content).to.eql(taskId);
+          expect(content).to.eql(`${deployment_name}_${taskId}`);
           done();
         }).catch(done);
       });
@@ -376,7 +451,7 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response).getTasks().then((content) => {
-          expect(content).to.eql(JSON.parse(response.body));
+          expect(content).to.eql(_.range(no_of_directors).map(() => JSON.parse(response.body)));
           done();
         }).catch(done);
       });
@@ -386,7 +461,7 @@ describe('bosh', () => {
       it('returns a JSON object', (done) => {
         let request = {
           method: 'GET',
-          url: `/tasks/${id}`
+          url: `/tasks/${taskId}`
         };
         let response = {
           body: JSON.stringify({
@@ -395,7 +470,7 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getTask(id).then((content) => {
+        new MockBoshDirectorClient(request, response).getTask(bosh_taskId).then((content) => {
           expect(content).to.eql(JSON.parse(response.body));
           done();
         }).catch(done);
@@ -406,7 +481,7 @@ describe('bosh', () => {
       it('returns a JSON object', (done) => {
         let request = {
           method: 'GET',
-          url: `/tasks/${id}/output`,
+          url: `/tasks/${taskId}/output`,
           qs: {
             type: 'result'
           }
@@ -419,7 +494,7 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getTaskResult(id).then((content) => {
+        new MockBoshDirectorClient(request, response).getTaskResult(bosh_taskId).then((content) => {
           expect(content).to.eql(body);
           done();
         }).catch(done);
@@ -432,7 +507,7 @@ describe('bosh', () => {
         let id2 = uuid.v4();
         let request = {
           method: 'GET',
-          url: `/tasks/${id}/output`,
+          url: `/tasks/${taskId}/output`,
           qs: {
             type: 'event'
           }
@@ -442,13 +517,21 @@ describe('bosh', () => {
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getTaskEvents(id).then((content) => {
+        new MockBoshDirectorClient(request, response).getTaskEvents(bosh_taskId).then((content) => {
           expect(content).to.be.a('Array');
           expect(content).to.have.length(2);
           expect(content[0].uuid).to.eql(id1);
           expect(content[1].uuid).to.eql(id2);
           done();
         }).catch(done);
+      });
+    });
+
+    describe('#parseTaskid', () => {
+      it('gets the taskid from a prefixed taskid', () => {
+        let dc = new MockBoshDirectorClient();
+        expect(dc.parseTaskid('123-asd-123-1_123', 1)).to.be.eql('123-asd-123-1');
+        expect(dc.parseTaskid('123-asd-123-1_456', 2)).to.be.eql('456');
       });
     });
 
