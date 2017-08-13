@@ -242,7 +242,7 @@ describe('service-fabrik-api', function () {
           agent_ip: mocks.agent.ip
         };
 
-        it('should initiate a start-backup operation at cloud controller via a service instance update', function () {
+        it('should initiate a start-backup operation at cloud controller via a service instance update', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
@@ -259,6 +259,24 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
+          mocks.director.getDeployments();
+          const instanceInfo = {
+            space_guid: space_guid,
+            backup_guid: backup_guid,
+            instance_guid: instance_id,
+            agent_ip: '10.0.1.10',
+            service_id: service_id,
+            plan_id: plan_id,
+            deployment: mocks.director.deploymentNameByIndex(index),
+            started_at: new Date()
+          };
+          const lockInfo = {
+            username: 'admin',
+            lockedForOperation: 'backup',
+            createdAt: new Date(),
+            instanceInfo: instanceInfo
+          };
+          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -268,9 +286,12 @@ describe('service-fabrik-api', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
+              setTimeout(() => {
+                expect(res).to.have.status(202);
+                expect(res.body).to.have.property('guid');
+                mocks.verify();
+                done();
+              }, 200);
             });
         });
 

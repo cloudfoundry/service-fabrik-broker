@@ -35,7 +35,7 @@ describe('Jobs', function () {
     //const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
     const fileName16Daysprior = `${prefix}.${backup_guid}.${started16DaysPrior}.json`;
     const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
-    const pathname14 = `/${container}/${fileName16Daysprior}`;
+    const pathname16 = `/${container}/${fileName16Daysprior}`;
     const pathname18 = `/${container}/${fileName18DaysPrior}`;
     const archiveFilename1 = `${backup_guid}/volume.tgz.enc`;
     const archivePathname1 = `/${blueprintContainer}/${archiveFilename1}`;
@@ -137,11 +137,11 @@ describe('Jobs', function () {
       mocks.cloudProvider.list(container, `${space_guid}/backup`, [
         fileName16Daysprior
       ]);
-      mocks.cloudProvider.remove(pathname14);
+      mocks.cloudProvider.remove(pathname16);
       mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename1]);
       mocks.cloudProvider.remove(archivePathname1);
       //Out of 3 files 1 day prior is filtered out will not be deleted
-      mocks.cloudProvider.download(pathname14, scheduled_data);
+      mocks.cloudProvider.download(pathname16, scheduled_data);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {
