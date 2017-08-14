@@ -1,6 +1,19 @@
 # Service Fabrik Broker for Cloud Foundry
 
-This broker was inspired  by the [cf-containers-broker](https://github.com/cloudfoundry-community/cf-containers-broker). It is supporting Docker- and Bosh-based service deployments. More details on the implemented Cloud Foundry contract can be found [here](http://docs.cloudfoundry.org/services/api.html).
+This broker was inspired  by the [cf-containers-broker](https://github.com/cloudfoundry-community/cf-containers-broker). It supports Docker and Bosh-based service deployments. More details on the implemented Cloud Foundry contract can be found [here](http://docs.cloudfoundry.org/services/api.html). Read the [Big Picture](https://github.com/SAP/service-fabrik-broker/wiki/Big-Picture) behind Service Fabrik Broker.
+
+# Table of Contents
+1. [Local Development Setup](https://github.com/SAP/service-fabrik-broker#local-development-setup-ubuntu)
+2. [Installing Docker](https://github.com/SAP/service-fabrik-broker#installing-docker)
+3. [Installing NVM](https://github.com/SAP/service-fabrik-broker#installing-nvm)
+4. [Installing Bosh Lite](https://github.com/SAP/service-fabrik-broker#installing-bosh-lite)
+5. [Installing Cloud Foundry](https://github.com/SAP/service-fabrik-broker#installing-cloud-foundry)
+6. [Installing the Broker](https://github.com/SAP/service-fabrik-broker#installing-the-broker)
+7. [Launch the Broker](https://github.com/SAP/service-fabrik-broker#launch-the-broker)
+8. [Register the Broker](https://github.com/SAP/service-fabrik-broker#register-the-broker)
+9. [Upload Bosh Director Based Service Releases](https://github.com/SAP/service-fabrik-broker#upload-bosh-director-based-service-releases)
+10. [Run a Service Lifecycle](https://github.com/SAP/service-fabrik-broker#run-a-service-lifecycle)
+11. [How to obtain Support](https://github.com/SAP/service-fabrik-broker#how-to-obtain-support)
 
 ## Local Development Setup (Ubuntu)
 
@@ -10,11 +23,14 @@ Certainly when you are a broker developer, but also if you are a service develop
 
 The famous Docker will be required for a local start of the broker. You can avoid this by removing any Docker service defintion from the broker settings/configuration/catalog.
 
-* Follow instructions at https://docs.docker.com/engine/installation/linux/ubuntulinux
+* Follow instructions at https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/
  
 If you're using a Mac, we recommend to use [Docker for MAC](https://docs.docker.com/docker-for-mac/).
 
 * https://download.docker.com/mac/beta/Docker.dmg
+
+Post installation of docker make modifications to [manage docker as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user)
+
 
 ### Installing NVM
 
@@ -46,6 +62,7 @@ properties:
   cc:
     broker_client_default_async_poll_interval_seconds: 1
 ```
+* Next follow instructions at http://docs.cloudfoundry.org/deploying/common/deploy.html to deploy Cloud Foundry
 * If you run into strange errors using bosh <command> and OpenSSL (when generating the manifest), update OpenSSL and patch the scripts:
 ```shell
 wget http://www.openssl.org/source/openssl-1.0.1p.tar.gz
@@ -55,6 +72,16 @@ cd openssl-1.0.1p
 make
 sudo make install
 # add 2>/dev/null to the bosh <command> calls in ./scripts/generate-bosh-lite-dev-manifest
+
+* If you run into certificate errors from consul like "Unexpected response code: 500 (rpc error: failed to get conn: x509: certificate has expired or is not yet valid)". This means the certificates has expired and it is required to recreate the certificates. Follow the steps below:
+  * Generate new certificates using the script cf-release/scripts/generate-consul-certs.
+  * Copy the certificates in the relevant section of cf-release/templates/cf-infrastructure-bosh-lite.yml
+  * Regenerate the cf-release deployment manifest
+  * Now recreate the release, upload and deploy it as follows:
+    ```
+    bosh create release && bosh upload release && bosh deploy
+    ```
+* Follow instructions at https://docs.cloudfoundry.org/cf-cli/install-go-cli.html to install cf cli
 ```
 * Target, Login, Prepare Cloud Foundry Usage
 ```shell
@@ -114,13 +141,7 @@ cf service-access # should show all services as enabled, cf marketplace should s
 
 In order for the broker to provision bosh director based services, the releases used in the service manifest templates must be manually uploaded to the targetted bosh director.
 The catalog (`config/settings.yml`) only contains our own [blueprint-service](https://github.com/sap/service-fabrik-blueprint-service) which we are using for internal development, testing and documentation purposes of the Service Fabrik.
-If you want to provision our `blueprint-service` as bosh director based service, you first have to checkout the [blueprint-boshrelease](https://github.com/sap/service-fabrik-blueprint-boshrelease) repository and upload the release version **defined in the catalog** (e.g., `0.0.11`) yourself:
-```shell
-cd ~/workspace
-git clone https://github.com/sap/service-fabrik-blueprint-boshrelease
-cd blueprint-boshrelease
-bosh upload release releases/blueprint/blueprint-0.0.11.yml
-```
+If you want to provision our `blueprint-service` as bosh director based service, follow the steps mentioned in [blueprint-boshrelease](https://github.com/sap/service-fabrik-blueprint-boshrelease) repository
 
 ### Run a Service Lifecycle
 
