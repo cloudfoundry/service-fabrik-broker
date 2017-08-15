@@ -6,6 +6,7 @@ const lib = require('../../lib');
 const ScheduleManager = require('../../lib/jobs');
 const CONST = require('../../lib/constants');
 const apps = require('../../apps');
+const bosh = require('../../lib/bosh');
 const catalog = lib.models.catalog;
 const config = lib.config;
 const errors = lib.errors;
@@ -23,7 +24,9 @@ describe('service-fabrik-api', function () {
     describe('director', function () {
       const base_url = '/api/v1';
       const broker_api_base_url = '/cf/v2';
+      const no_of_directors = 2;
       const broker_api_version = '2.9';
+      const director = bosh.director;
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;
       const adminAuthHeader = `bearer ${mocks.uaa.adminJwtToken}`;
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
@@ -101,6 +104,10 @@ describe('service-fabrik-api', function () {
         ]);
       });
 
+      beforeEach(function () {
+        director.clearCache();
+      });
+
       afterEach(function () {
         timestampStub.reset();
         cancelScheduleStub.reset();
@@ -131,7 +138,9 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
@@ -178,7 +187,9 @@ describe('service-fabrik-api', function () {
         };
 
         it('should receive the update request from cloud controller and end backup', function () {
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.director.releaseLock();
           mocks.cloudProvider.list(container, list_prefix, [
             list_filename
@@ -259,7 +270,9 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           const instanceInfo = {
             space_guid: space_guid,
             backup_guid: backup_guid,
@@ -381,7 +394,9 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.director.getDeploymentManifest();
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
@@ -812,7 +827,9 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeployments();
+          mocks.director.getDeployments({
+            'noOfTimes': no_of_directors
+          });
           mocks.director.getDeploymentManifest();
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.verifyDeploymentLockStatus();

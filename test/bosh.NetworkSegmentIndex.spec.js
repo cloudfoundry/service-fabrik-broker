@@ -27,24 +27,38 @@ let networks = [{
   }]
 }];
 
+let mock_config;
+
 const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-  '../config': {
-    director: {
-      infrastructure: {
-        segmentation: {
-          capacity: 1235,
-          offset: 1,
-          size: 8
-        },
-        networks: networks
-      }
-    }
-  },
   lodash: {
     sample: function (collection) {
       return collection[2];
     }
   }
+});
+
+function updateStub(capacity) {
+  mock_config = {
+    infrastructure: {
+      segmentation: {
+        capacity: capacity
+      },
+      networks: networks
+    }
+  };
+}
+
+afterEach(function () {
+  mock_config = {
+    infrastructure: {
+      segmentation: {
+        capacity: 1235,
+        offset: 1,
+        size: 8
+      },
+      networks: networks
+    }
+  };
 });
 
 describe('bosh', () => {
@@ -58,55 +72,22 @@ describe('bosh', () => {
 
     describe('#calculateCapacity', () => {
       it('returns 30', () => {
-        expect(NetworkSegmentIndex.capacity('default')).to.eql(1235);
+        expect(NetworkSegmentIndex.capacity('default', mock_config)).to.eql(1235);
       });
 
       it('returns 126', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        expect(NetworkSegmentIndex.capacity()).to.eql(126);
+        updateStub(-1);
+        expect(NetworkSegmentIndex.capacity(undefined, mock_config)).to.eql(126);
       });
 
       it('returns 2046', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        expect(NetworkSegmentIndex.capacity('public')).to.eql(2046);
+        updateStub(-1);
+        expect(NetworkSegmentIndex.capacity('public', mock_config)).to.eql(2046);
       });
 
       it('returns 1', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: 1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        expect(NetworkSegmentIndex.capacity()).to.eql(1);
+        updateStub(1);
+        expect(NetworkSegmentIndex.capacity(undefined, mock_config)).to.eql(1);
       });
     });
 
@@ -146,24 +127,18 @@ describe('bosh', () => {
     describe('#getFreeIndices', () => {
       it('returns an array that contains 30 indices', () => {
         manager.service.subnet = null;
-        let freeIndices = NetworkSegmentIndex.getFreeIndices([`${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager.service.subnet);
-
+        let freeIndices = NetworkSegmentIndex
+          .getFreeIndices([`${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager.service.subnet, {
+            config: mock_config
+          });
         expect(freeIndices).to.have.length(1234);
       });
       it('returns an array that contains 2045 indices', () => {
-        const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
-          '../config': {
-            director: {
-              infrastructure: {
-                segmentation: {
-                  capacity: -1
-                },
-                networks: networks
-              }
-            }
-          }
-        });
-        let freeIndices = NetworkSegmentIndex.getFreeIndices([`${DirectorManager.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public');
+        updateStub(-1);
+        let freeIndices = NetworkSegmentIndex
+          .getFreeIndices([`${DirectorManager.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public', {
+            config: mock_config
+          });
         expect(freeIndices).to.have.length(2045);
       });
     });
@@ -172,7 +147,9 @@ describe('bosh', () => {
       it('returns 2', () => {
         expect(NetworkSegmentIndex.findFreeIndex([{
           name: `${DirectorManager.prefix}-9876-5432abcd-1098-abcd-7654-3210abcd9876`
-        }, `${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager)).to.eql(2);
+        }, `${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager, {
+          config: mock_config
+        })).to.eql(2);
       });
     });
   });
