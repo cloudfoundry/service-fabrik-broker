@@ -41,4 +41,4 @@ http:
     "https://sap-provisioning.sb-iot-sap.cfapps.stagingaws.hanavlab.ondemand.com":
       name: "Quota Management Oauth"
     "https://tenant-onboarding-develop.cfapps.stagingaws.hanavlab.ondemand.com":
-      name: "Qutoa Management APIs"
+      name: "Quota Management APIs"
