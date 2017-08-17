@@ -53,8 +53,9 @@ defaults: &defaults
   skip_ssl_validation: true
   log_path: <%= log_path %>
   log_level: info
+  colorize_log: false
   sys_log_level: info
-  enable_circuit_breaker: false
+  enable_circuit_breaker: true
 
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
