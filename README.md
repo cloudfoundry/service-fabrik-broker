@@ -50,6 +50,7 @@ Bosh Lite is a lightweight local development environment for BOSH using Warden/G
 
 * Follow instructions at https://github.com/cloudfoundry/bosh-lite/blob/master/README.md#install-bosh-lite
 * Run `vagrant ssh` and then remove `8.8.8.8` from `/etc/resolv.conf` to avoid 5s timeouts
+* If you want to work with BOSH2.0 and want to deploy [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment), then please follow the bosh-lite installation guide as described in https://bosh.io/docs/bosh-lite.
 
 ### Installing Cloud Foundry
 
@@ -72,7 +73,7 @@ cd openssl-1.0.1p
 make
 sudo make install
 # add 2>/dev/null to the bosh <command> calls in ./scripts/generate-bosh-lite-dev-manifest
-
+```
 * If you run into certificate errors from consul like "Unexpected response code: 500 (rpc error: failed to get conn: x509: certificate has expired or is not yet valid)". This means the certificates has expired and it is required to recreate the certificates. Follow the steps below:
   * Generate new certificates using the script cf-release/scripts/generate-consul-certs.
   * Copy the certificates in the relevant section of cf-release/templates/cf-infrastructure-bosh-lite.yml
@@ -82,11 +83,29 @@ sudo make install
     bosh create release && bosh upload release && bosh deploy
     ```
 * Follow instructions at https://docs.cloudfoundry.org/cf-cli/install-go-cli.html to install cf cli
+
+* If you have installed bosh-lite using [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment), then you can deploy cf using the following commands, using [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
+
+```shell
+git clone https://github.com/cloudfoundry/cf-deployment  
+cd cf-deployment  
+bosh2 -e vbox upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent  
+bosh2 -e vbox update-cloud-config bosh-lite/cloud-config.yml  
+bosh2 -e vbox -d cf deploy cf-deployment.yml -o operations/bosh-lite.yml --vars-store deployment-vars.yml -v system_domain=bosh-lite.com
 ```
+
 * Target, Login, Prepare Cloud Foundry Usage
 ```shell
 cf api --skip-ssl-validation api.bosh-lite.com
-cf login -u admin -p admin
+cf login -u admin -p admin 
+```
+Password will be different in case if you are using using [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
+```shell
+export CF_ADMIN_PASSWORD=$(bosh2 int ./deployment-vars.yml --path /cf_admin_password)  
+cf auth admin $CF_ADMIN_PASSWORD
+```
+Now, sample orgs and spaces can be created to start using it.
+```shell
 cf create-org dev
 cf create-space -o dev broker
 cf target -o dev -s broker
@@ -116,7 +135,7 @@ Useful prerequisites: When working with the broker, install `curl` (`sudo apt-ge
 If you need to change the `settings.yml` configuration you should copy the file and point the broker to your settings file via the environment variable `SETTINGS_PATH`.
 ```shell
 # env vars you may like to set to different than these default values
-# export NODE_ENV=development
+# export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
 # export SETTINGS_PATH=$(pwd)/config/settings.yml 
 npm run -s start
 ```
@@ -141,7 +160,7 @@ cf service-access # should show all services as enabled, cf marketplace should s
 
 In order for the broker to provision bosh director based services, the releases used in the service manifest templates must be manually uploaded to the targetted bosh director.
 The catalog (`config/settings.yml`) only contains our own [blueprint-service](https://github.com/sap/service-fabrik-blueprint-service) which we are using for internal development, testing and documentation purposes of the Service Fabrik.
-If you want to provision our `blueprint-service` as bosh director based service, follow the steps mentioned in [blueprint-boshrelease](https://github.com/sap/service-fabrik-blueprint-boshrelease) repository
+If you want to provision our `blueprint-service` as bosh director based service, follow the steps mentioned in [blueprint-boshrelease](https://github.com/sap/service-fabrik-blueprint-boshrelease) repository.
 
 ### Run a Service Lifecycle
 
@@ -162,4 +181,4 @@ If you need any support, have any question or have found a bug, please report it
 
 ## LICENSE
 
-This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSE) file
+This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSE) file.

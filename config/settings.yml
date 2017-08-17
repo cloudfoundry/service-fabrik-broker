@@ -324,7 +324,8 @@ defaults: &defaults
   # SERVICES CATALOG - BLUEPRINT SERVICE #
   ########################################
   services:
-  - id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+  - &blueprint_service
+    id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
     name: 'blueprint'
     description: &description 'Blueprint service for internal development, testing, and documentation purposes of the Service Fabrik'
     bindable: true
@@ -346,7 +347,8 @@ defaults: &defaults
     ###########################
     # CONTAINER SERVICE PLANS #
     ###########################
-    - id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
+    - &blueprint_plan1
+      id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
       name: 'v1.0-container'
       free: true
       manager:
@@ -377,7 +379,8 @@ defaults: &defaults
         - 'Container Deployment'
         - '128 MB Memory'
         - '100 MB Disk'
-    - id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
+    - &blueprint_plan2
+      id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
       name: 'v1.0-container-large'
       free: true
       manager:
@@ -411,18 +414,19 @@ defaults: &defaults
     ###########################
     # DEDICATED SERVICE PLANS #
     ###########################
-    - id: 'bc158c9a-7934-401e-94ab-057082a5073f'
+    - &blueprint_plan3
+      id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-dedicated-xsmall'
       free: false
-      manager:
+      manager: &manager_plan3
         name: 'director'
-        settings:
+        settings: &settings_plan3
           prefix: 'blueprint'
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
           - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
-          context:
+          context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
             disk_pool: hdd_1gb
@@ -438,19 +442,20 @@ defaults: &defaults
         - '1 vCPUs'
         - '1 GB Memory'
         - '1 GB Disk'
-    - id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
+    - &blueprint_plan4
+      id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
       name: 'v1.0-dedicated-large'
       free: false
-      manager:
+      manager: &manager_plan4
         name: 'director'
-        settings:
+        settings: &settings_plan4
           prefix: 'blueprint'
           agent: *agent_blueprint
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
           template: <%= base64_template('blueprint') %>
           releases: *dedicated_releases
-          context:
+          context: &context_plan4
             agent: *agent_blueprint
             resource_pool: micro
             disk_pool: hdd_2gb
@@ -467,10 +472,75 @@ defaults: &defaults
         - '1 GB Memory'
         - '2 GB Disk'
 
-development:
+development: &development
   <<: *defaults
   log_level: debug
   password: 'secret'
+  agents:
+    <<: *agents
+    blueprint: &agent_blueprint1
+      version: '1'
+      hostname: <%= process.env.BLUEPRINT_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+  services:
+  - <<: *blueprint_service
+    plans:
+    - *blueprint_plan1
+    - *blueprint_plan2
+    - <<: *blueprint_plan3
+      manager:
+        <<: *manager_plan3
+        settings:
+          <<: *settings_plan3
+          agent: *agent_blueprint1
+          context:
+            <<: *context_plan3
+            agent: *agent_blueprint1
+    - <<: *blueprint_plan4
+      manager:
+        <<: *manager_plan4
+        settings:
+          <<: *settings_plan4
+          agent: *agent_blueprint1
+          context:
+            <<: *context_plan4
+            agent: *agent_blueprint1
+
+
+boshlite2:
+  <<: *development
+  log_level: debug
+  password: 'secret'
+  cf:
+    <<: *cf
+    password: cf_password
+  director:
+    <<: *director
+    url: https://192.168.50.6:25555
+    password: director_password
+    infrastructure:
+      <<: *director_infrastructure
+      networks:
+      - name: default
+        type: manual
+        subnets:
+        - { range: 10.244.11.0/20, az: z1, cloud_properties: { name: random } }
+        - { range: 10.244.12.0/20, az: z2, cloud_properties: { name: random } }
+        - { range: 10.244.13.0/20, az: z3, cloud_properties: { name: random } }
+      - name: compilation
+        type: dynamic
+      compilation:
+        network: compilation
+        reuse_compilation_vms: true
+        workers: 4
+        cloud_properties: { name: random }
+
 
 development_sc6: &sc6
   <<: *defaults
