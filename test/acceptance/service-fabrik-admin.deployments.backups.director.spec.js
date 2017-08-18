@@ -5,6 +5,7 @@ const lib = require('../../lib');
 const logger = lib.logger;
 const app = require('../../apps').internal;
 const config = lib.config;
+const bosh = require('../../lib/bosh');
 const backupStore = lib.iaas.backupStoreForOob;
 const filename = backupStore.filename;
 const CONST = require('../../lib/constants');
@@ -17,6 +18,7 @@ describe('service-fabrik-admin', function () {
     const base_url = '/admin';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const deployment_name = 'ccdb';
+    const director = bosh.director;
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
@@ -87,6 +89,11 @@ describe('service-fabrik-admin', function () {
       ]);
     });
 
+    beforeEach(function () {
+      director.clearCache();
+    });
+
+
     afterEach(function () {
       mocks.reset();
       scheduleStub.reset();
@@ -100,6 +107,9 @@ describe('service-fabrik-admin', function () {
     });
 
     describe('backup', function () {
+      beforeEach(function () {
+        director.clearCache();
+      });
       it('should list all backups for ccdb deployment', function () {
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
@@ -121,13 +131,16 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(2);
+        mocks.director.getDeploymentManifest(1);
+        mocks.director.getDeployments({
+          'noOfTimes': 1,
+          'oob': true
+        });
+        mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name, deploymentVms);
-
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
-        logger.debug(`uploading json here:--> ${pathname}`);
         mocks.cloudProvider.upload(pathname, body => {
           expect(body.type).to.equal(type);
           expect(body.username).to.equal(config.username);
@@ -144,12 +157,12 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
-            mocks.verify();
             expect(scheduleStub).to.be.calledOnce;
             expect(res).to.have.status(202);
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_backup);
             expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
           });
       });
 
@@ -164,7 +177,10 @@ describe('service-fabrik-admin', function () {
           stage: 'Creating volume',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true);
+        mocks.director.getDeployments({
+          'oob': true
+        });
+        mocks.director.getDeploymentManifest();
         mocks.agent.lastBackupOperation(backupState);
         return chai
           .request(app)
@@ -176,8 +192,8 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
-            mocks.verify();
             expect(res.body).to.eql(backupState);
+            mocks.verify();
           });
       });
 
@@ -204,9 +220,12 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bootstrap bosh deployment backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(2, config.bootstrap_bosh_director.url);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms, config.bootstrap_bosh_director.url);
-
+        director.clearCache();
+        mocks.director.getDeploymentManifest(2);
+        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeployments({
+          'oob': true
+        });
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -250,7 +269,10 @@ describe('service-fabrik-admin', function () {
           stage: 'Creating volume',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true, config.bootstrap_bosh_director.url);
+        mocks.director.getDeployments({
+          'oob': true
+        });
+        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastBackupOperation(backupState);
         return chai
           .request(app)
@@ -270,6 +292,9 @@ describe('service-fabrik-admin', function () {
     });
 
     describe('restore', function () {
+      beforeEach(function () {
+        director.clearCache();
+      });
       it('should list restore info for ccdb', function () {
         mocks.cloudProvider.download(restorePathname, restore_data);
         return chai
@@ -293,13 +318,15 @@ describe('service-fabrik-admin', function () {
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
         mocks.agent.startRestore();
-
         logger.debug(`uploading json here: ${pathname}`);
         mocks.cloudProvider.upload(restorePathname, body => {
           expect(body.username).to.equal(config.username);
           expect(body.backup_guid).to.equal(backup_guid);
           expect(body.state).to.equal('processing');
           return true;
+        });
+        mocks.director.getDeployments({
+          'oob': true
         });
         mocks.cloudProvider.headObject(restorePathname);
         return chai
@@ -312,12 +339,12 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
-            mocks.verify();
             expect(scheduleStub).to.be.calledOnce;
             expect(res).to.have.status(202);
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_restore);
             expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
           });
       });
 
@@ -332,6 +359,9 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
+        mocks.director.getDeployments({
+          'oob': true
+        });
         mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
@@ -344,8 +374,8 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
-            mocks.verify();
             expect(res.body).to.eql(restoreState);
+            mocks.verify();
           });
       });
 
@@ -360,6 +390,9 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
+        mocks.director.getDeployments({
+          'oob': true
+        });
         mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
@@ -372,8 +405,8 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
-            mocks.verify();
             expect(res.body).to.eql(restoreState);
+            mocks.verify();
           });
       });
 
@@ -395,20 +428,22 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bootstrap bosh deployment restore operation successfully', function () {
-        mocks.director.getDeployment(deployment_name, true, config.bootstrap_bosh_director.url);
-        mocks.director.getDeploymentManifest(1, config.bootstrap_bosh_director.url);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms, config.bootstrap_bosh_director.url);
+        mocks.director.getDeployment(deployment_name, true);
+        mocks.director.getDeploymentManifest(1);
+        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
         mocks.agent.startRestore();
-
         logger.debug(`uploading json here: ${pathname}`);
         mocks.cloudProvider.upload(restorePathname, body => {
           expect(body.username).to.equal(config.username);
           expect(body.backup_guid).to.equal(backup_guid);
           expect(body.state).to.equal('processing');
           return true;
+        });
+        mocks.director.getDeployments({
+          'oob': true
         });
         mocks.cloudProvider.headObject(restorePathname);
         return chai
@@ -442,7 +477,10 @@ describe('service-fabrik-admin', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
-        mocks.director.getDeployment(deployment_name, true, config.bootstrap_bosh_director.url);
+        mocks.director.getDeployments({
+          'oob': true
+        });
+        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
           .request(app)
