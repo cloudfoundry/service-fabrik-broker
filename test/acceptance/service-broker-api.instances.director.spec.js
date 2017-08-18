@@ -22,7 +22,6 @@ describe('service-broker-api', function () {
       const index = mocks.director.networkSegmentIndex;
       const director = bosh.director;
       const api_version = '2.9';
-      const no_of_directors = 1;
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
@@ -79,7 +78,6 @@ describe('service-broker-api', function () {
       describe('#provision', function () {
         it('returns 202 Accepted', function () {
           mocks.director.getDeployments({
-            'noOfTimes': 1,
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
@@ -113,9 +111,7 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeployments({
-            'noOfTimes': 1
-          });
+          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -153,9 +149,7 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-          mocks.director.getDeployments({
-            'noOfTimes': 1
-          });
+          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.deprovision();
@@ -194,9 +188,7 @@ describe('service-broker-api', function () {
 
       describe('#lastOperation', function () {
         it('returns 200 OK (state = in progress)', function () {
-          mocks.director.getDeployments({
-            'noOfTimes': no_of_directors
-          });
+          mocks.director.getDeployments();
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -224,9 +216,7 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK (state = succeeded)', function () {
           mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.director.getDeployments({
-            'noOfTimes': no_of_directors
-          });
+          mocks.director.getDeployments();
           mocks.cloudController.createSecurityGroup(instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -258,9 +248,7 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 500;
-          mocks.director.getDeployments({
-            'noOfTimes': 1
-          });
+          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -304,9 +292,7 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeployments({
-            'noOfTimes': 1
-          });
+          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();

@@ -12,7 +12,6 @@ describe('service-fabrik-admin', function () {
       let numberOfDeployments = 8;
       const base_url = '/admin';
       const name = 'update';
-      const no_of_directors = 1;
       const args = {};
       const broker_guid = 'eb3303c3-f373-4339-8562-113d1451a6ef';
       const broker_name = config.broker_name;
@@ -35,7 +34,6 @@ describe('service-fabrik-admin', function () {
       describe('#getOutdatedDeployments', function () {
         it('should return 200 Ok', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors,
             capacity: numberOfDeployments
           });
           mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
@@ -60,7 +58,6 @@ describe('service-fabrik-admin', function () {
       describe('#getDeploymentsSummary', function () {
         it('should return 200 Ok', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors,
             capacity: numberOfDeployments,
             customParam: 'customValue'
           });
@@ -117,7 +114,6 @@ describe('service-fabrik-admin', function () {
 
         it('should not contain deployments with changes in forbidden sections (and call cloud controller)', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors,
             capacity: numberOfDeployments
           });
           mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
@@ -151,7 +147,6 @@ describe('service-fabrik-admin', function () {
             ['  instances: 1', 'added']
           ];
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors,
             capacity: numberOfDeployments
           });
           mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);

@@ -13,7 +13,6 @@ describe('fabrik', function () {
     /* jshint expr:true */
 
     let sandbox, startStub, directorOperationStub, serviceFabrikClientStub, serviceFabrikOperationStub;
-    const no_of_directors = 1;
     const index = mocks.director.networkSegmentIndex;
     const time = Date.now();
     const IN_PROGRESS_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180be';
@@ -172,7 +171,6 @@ describe('fabrik', function () {
           const queued = false;
           const capacity = 2;
           const opts = {
-            'noOfTimes': no_of_directors,
             queued: queued,
             capacity: capacity
           };
@@ -190,7 +188,6 @@ describe('fabrik', function () {
           const queued = false;
           const capacity = 2;
           const opts = {
-            'noOfTimes': no_of_directors,
             queued: queued,
             capacity: capacity
           };

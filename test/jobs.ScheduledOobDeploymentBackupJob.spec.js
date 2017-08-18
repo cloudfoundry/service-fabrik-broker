@@ -22,7 +22,6 @@ describe('Jobs', function () {
     const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
     const director = bosh.director;
-    const no_of_directors = 1;
     const started14DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
     const prefix = `${root_folder}/backup/${deploymentName}`;
@@ -148,7 +147,6 @@ describe('Jobs', function () {
         });
         mocks.director.getDeployment(deploymentName, true);
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
 
         });
@@ -178,7 +176,6 @@ describe('Jobs', function () {
         });
         mocks.cloudProvider.list(container, prefix, [], 404);
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
 
         });
@@ -217,7 +214,6 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.download(pathname14, scheduled_data);
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
 
         });
@@ -250,7 +246,6 @@ describe('Jobs', function () {
         mocks.director.getDeployment(deploymentName, false);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
 
         });
@@ -289,7 +284,6 @@ describe('Jobs', function () {
         };
 
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
         });
         mocks.cloudProvider.list(container, prefix, [
@@ -342,7 +336,6 @@ describe('Jobs', function () {
       it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
         mocks.director.getDeployment(deploymentName, false);
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
         });
         mocks.cloudProvider.list(container, prefix, [
