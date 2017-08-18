@@ -9,7 +9,7 @@ describe('service-fabrik-admin', function () {
   describe('instances', function () {
     /* jshint expr:true */
     describe('director', function () {
-      let numberOfDeployments = 3;
+      let numberOfDeployments = 8;
       const base_url = '/admin';
       const name = 'update';
       const args = {};

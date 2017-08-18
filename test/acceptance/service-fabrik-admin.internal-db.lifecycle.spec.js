@@ -3,6 +3,7 @@
 const lib = require('../../lib');
 const app = require('../../apps').internal;
 const DBManager = require('../../lib/fabrik/DBManager');
+const bosh = require('../../lib/bosh');
 const fabrik = lib.fabrik;
 const config = lib.config;
 const backupStore = lib.iaas.backupStore;
@@ -17,6 +18,7 @@ describe('service-fabrik-admin', function () {
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const time = Date.now();
     const started_at = isoDate(time);
+    const director = bosh.director;
     const container = backupStore.containerName;
     let timestampStub, uuidv4Stub;
 
@@ -26,7 +28,6 @@ describe('service-fabrik-admin', function () {
 
     before(function () {
       config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-      mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
       fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
@@ -42,6 +43,10 @@ describe('service-fabrik-admin', function () {
       ]);
     });
 
+    beforeEach(function () {
+      director.clearCache();
+    });
+
     afterEach(function () {
       mocks.reset();
       timestampStub.reset();
@@ -54,16 +59,20 @@ describe('service-fabrik-admin', function () {
     });
 
     describe('create', function () {
+
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
-        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 500;
+        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 200;
+        this.timeout(2000 + WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
         mocks.director.getDeployment(config.mongodb.deployment_name, false);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
-        mocks.director.getDeploymentManifest();
+        mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.agent.getInfo();
         mocks.agent.createCredentials();
-        const default_poll_interval = config.director.default_task_poll_interval;
-        config.director.default_task_poll_interval = 10;
+        mocks.director.getDeployments({
+          'oob': true
+        });
+        config.directors[0].default_task_poll_interval = 10;
         mocks.director.createBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
         return chai
           .request(app)
@@ -77,7 +86,6 @@ describe('service-fabrik-admin', function () {
             expect(res).to.have.status(202);
             setTimeout(() => {
               mocks.verify();
-              config.director.default_task_poll_interval = default_poll_interval;
               done();
             }, WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
           });
@@ -88,11 +96,13 @@ describe('service-fabrik-admin', function () {
       it('should update service fabrik internal mongodb deployment ', function (done) {
         const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 500;
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
-        mocks.director.getDeploymentManifest();
+        mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
-        const default_poll_interval = config.director.default_task_poll_interval;
-        config.director.default_task_poll_interval = 10;
+        mocks.director.getDeployments({
+          'oob': true
+        });
+        config.directors[0].default_task_poll_interval = 10;
         return chai
           .request(app)
           .put(`${base_url}/service-fabrik/db`)
@@ -107,7 +117,6 @@ describe('service-fabrik-admin', function () {
             expect(res).to.have.status(202);
             setTimeout(() => {
               mocks.verify();
-              config.director.default_task_poll_interval = default_poll_interval;
               done();
             }, WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
           });

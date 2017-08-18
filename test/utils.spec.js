@@ -24,4 +24,12 @@ describe('utils', function () {
       expect(utils.deploymentNameRegExp('').exec(deployment_name)[1]).to.eql('service-fabrik');
     });
   });
+
+  describe('#taskIdRegExp', function () {
+    it('should match name and taskId', function () {
+      let prefixedTaskId = `${DirectorManager.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876_12345`;
+      expect(utils.taskIdRegExp().exec(prefixedTaskId)[1]).to.eql(`${DirectorManager.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876`);
+      expect(utils.taskIdRegExp().exec(prefixedTaskId)[2]).to.eql('12345');
+    });
+  });
 });

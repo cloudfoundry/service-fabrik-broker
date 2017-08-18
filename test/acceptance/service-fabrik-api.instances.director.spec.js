@@ -6,6 +6,7 @@ const lib = require('../../lib');
 const ScheduleManager = require('../../lib/jobs');
 const CONST = require('../../lib/constants');
 const apps = require('../../apps');
+const bosh = require('../../lib/bosh');
 const catalog = lib.models.catalog;
 const config = lib.config;
 const errors = lib.errors;
@@ -24,6 +25,7 @@ describe('service-fabrik-api', function () {
       const base_url = '/api/v1';
       const broker_api_base_url = '/cf/v2';
       const broker_api_version = '2.9';
+      const director = bosh.director;
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;
       const adminAuthHeader = `bearer ${mocks.uaa.adminJwtToken}`;
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
@@ -99,6 +101,10 @@ describe('service-fabrik-api', function () {
           fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
+      });
+
+      beforeEach(function () {
+        director.clearCache();
       });
 
       afterEach(function () {

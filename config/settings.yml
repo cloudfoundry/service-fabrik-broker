@@ -227,14 +227,19 @@ defaults: &defaults
   #####################
   # DIRECTOR SETTINGS #
   #####################
-  #bootstrap_bosh_director settings
-  bootstrap_bosh_director:
-    url: https://192.168.50.3:25555
+  directors:
+  - url: https://192.168.50.3:25555
+    primary: false        # is true if the director takes part in lifecycle operations except create
+    support_create: false  # is true if director is expected to 'create deployments'
+    name: bootstrap-bosh
     username: admin
     password: admin
     skip_ssl_validation: true
     cpi: warden_cpi
-  director: &director
+  - &director
+    primary: true
+    support_create: false
+    name: bosh
     cpi: warden_cpi
     url: https://192.168.50.4:25555
     username: admin
@@ -302,6 +307,17 @@ defaults: &defaults
         reuse_compilation_vms: true
         workers: 4
         cloud_properties: { name: random }
+  - cpi: warden_cpi
+    url: https://192.168.50.4:25555
+    username: admin
+    password: admin
+    primary: true
+    support_create: true
+    name: bosh-sf
+    skip_ssl_validation: true
+    default_task_poll_interval: 10000
+    lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
+    infrastructure: *director_infrastructure
   ########################################
   # AGENTS DEFINITIONS                   #
   ########################################
@@ -671,11 +687,14 @@ test:
   docker:
     <<: *docker
     url: 'https://192.168.99.100:2376'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     cpi: aws_cpi
+    primary: true
+    support_create: true
+    name: bosh
     uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
-    infrastructure:
+    infrastructure: &test_infrastructure
       <<: *director_infrastructure
       networks:
       - *default_network
