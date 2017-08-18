@@ -119,7 +119,7 @@ function getDeploymentNames(capacity, queued, oob) {
 function getDeployments(opts) {
   const queued = _.get(opts, 'queued', false);
   const capacity = _.get(opts, 'capacity', NetworkSegmentIndex.capacity());
-  const noOfTimes = _.get(opts, 'noOfTimes', 1);
+  const noOfTimes = 1;
   const oob = _.get(opts, 'oob', false);
   const deployments = getDeploymentNames(capacity, queued, oob);
   const scope = _

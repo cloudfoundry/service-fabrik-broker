@@ -18,9 +18,6 @@ describe('service-fabrik-admin', function () {
     const base_url = '/admin';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const deployment_name = 'ccdb';
-    const no_of_directors = 1;
-    const callsForStatus = no_of_directors;
-    const callsForInitiate = no_of_directors;
     const director = bosh.director;
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
@@ -181,7 +178,6 @@ describe('service-fabrik-admin', function () {
           updated_at: started_at
         };
         mocks.director.getDeployments({
-          'noOfTimes': callsForStatus,
           'oob': true
         });
         mocks.director.getDeploymentManifest();
@@ -228,7 +224,6 @@ describe('service-fabrik-admin', function () {
         mocks.director.getDeploymentManifest(2);
         mocks.director.getDeploymentVms(deployment_name, deploymentVms);
         mocks.director.getDeployments({
-          'noOfTimes': callsForInitiate,
           'oob': true
         });
         mocks.agent.getInfo();
@@ -275,7 +270,6 @@ describe('service-fabrik-admin', function () {
           updated_at: started_at
         };
         mocks.director.getDeployments({
-          'noOfTimes': callsForStatus,
           'oob': true
         });
         mocks.director.getDeployment(deployment_name, true);
@@ -332,7 +326,6 @@ describe('service-fabrik-admin', function () {
           return true;
         });
         mocks.director.getDeployments({
-          'noOfTimes': callsForInitiate,
           'oob': true
         });
         mocks.cloudProvider.headObject(restorePathname);
@@ -367,7 +360,6 @@ describe('service-fabrik-admin', function () {
           updated_at: started_at
         };
         mocks.director.getDeployments({
-          'noOfTimes': callsForStatus,
           'oob': true
         });
         mocks.director.getDeployment(deployment_name, true);
@@ -399,7 +391,6 @@ describe('service-fabrik-admin', function () {
           updated_at: started_at
         };
         mocks.director.getDeployments({
-          'noOfTimes': callsForStatus,
           'oob': true
         });
         mocks.director.getDeployment(deployment_name, true);
@@ -452,7 +443,6 @@ describe('service-fabrik-admin', function () {
           return true;
         });
         mocks.director.getDeployments({
-          'noOfTimes': callsForInitiate,
           'oob': true
         });
         mocks.cloudProvider.headObject(restorePathname);
@@ -488,7 +478,6 @@ describe('service-fabrik-admin', function () {
           updated_at: started_at
         };
         mocks.director.getDeployments({
-          'noOfTimes': callsForStatus,
           'oob': true
         });
         mocks.director.getDeployment(deployment_name, true);

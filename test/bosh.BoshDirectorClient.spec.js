@@ -16,7 +16,6 @@ const bosh_taskId = `bosh_${taskId}`;
 const manifest = yaml.safeDump({
   name: id
 });
-const no_of_directors = 1;
 let primary_config = _.sample(_
   .filter(config.directors, function (director) {
     return director.support_create && director.primary;
@@ -132,7 +131,7 @@ describe('bosh', () => {
         };
 
         new MockBoshDirectorClient(request, response).getDeployments().then((content) => {
-          expect(content).to.eql(_.range(no_of_directors).map(() => JSON.parse(response.body)));
+          expect(content).to.eql([JSON.parse(response.body)]);
           done();
         }).catch(done);
       });
@@ -436,7 +435,7 @@ describe('bosh', () => {
         }).then((content) => {
           let body = JSON.parse(response.body)[0];
           body.id = `${deployment_name}_${body.id}`;
-          expect(content).to.eql(_.range(no_of_directors).map(() => body));
+          expect(content).to.eql([body]);
           done();
         }).catch(done);
       });

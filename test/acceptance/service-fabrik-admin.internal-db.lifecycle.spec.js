@@ -17,7 +17,6 @@ describe('service-fabrik-admin', function () {
     const base_url = '/admin';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const time = Date.now();
-    const no_of_directors = 1;
     const started_at = isoDate(time);
     const director = bosh.director;
     const container = backupStore.containerName;
@@ -71,7 +70,6 @@ describe('service-fabrik-admin', function () {
         mocks.agent.getInfo();
         mocks.agent.createCredentials();
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
         });
         config.directors[0].default_task_poll_interval = 10;
@@ -102,7 +100,6 @@ describe('service-fabrik-admin', function () {
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
           'oob': true
         });
         config.directors[0].default_task_poll_interval = 10;
