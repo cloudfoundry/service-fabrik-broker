@@ -22,16 +22,7 @@ describe('Jobs', function () {
     const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
     const director = bosh.director;
-    const no_of_directors = 3;
-    const director_url = _
-      .reduce(config.directors,
-        (bootstrap, director) => {
-          if (director.name === CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH) {
-            return director;
-          } else {
-            return bootstrap;
-          }
-        }, null).url;
+    const no_of_directors = 1;
     const started14DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
     const prefix = `${root_folder}/backup/${deploymentName}`;
@@ -116,10 +107,6 @@ describe('Jobs', function () {
         mocks.cloudProvider.remove(`/${mongoDBContainer}${backupFileName14DayspriorToDelete}`);
         mocks.cloudProvider.remove(pathname14);
         mocks.director.getDeployment(deploymentName, true);
-        mocks.director.getDeployments({
-          'noOfTimes': no_of_directors,
-          'oob': true
-        });
         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
@@ -318,7 +305,7 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.remove(`/${mongoDBContainer}${backupFileName14DayspriorToDelete}`);
         mocks.cloudProvider.remove(pathname14);
-        mocks.director.getDeployment(deploymentName, true, director_url);
+        mocks.director.getDeployment(deploymentName, true);
         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
@@ -353,7 +340,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
-        mocks.director.getDeployment(deploymentName, false, director_url);
+        mocks.director.getDeployment(deploymentName, false);
         mocks.director.getDeployments({
           'noOfTimes': no_of_directors,
           'oob': true
