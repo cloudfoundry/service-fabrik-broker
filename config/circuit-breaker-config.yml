@@ -1,0 +1,44 @@
+# Circuit breaker configurations are done at Protocol level (only http for now)
+# If an API URL is not configured in the below, then all calls to that subsystem bypass the circuit breaker.
+# One circuit is created for each of the configured API URL (Base Circuit) & additional circuits are created if configuration are overridden.
+# Appropriate circuit is chosen from bottom-up i.e. if for a particular path in API if configuration is overridden, then corresponding circuit with overriden config is applied, else Base circuit is applied)
+http:
+  error_threshold_percentage: 49 #error percentange at which the circuit trips
+  service_timeout: 180000 #timeout time by which the request must be served
+  request_volume_threshold: 10 #Number of requests post which metrics checks are applied by circuit breaker
+  sleep_window_in_ms : 120000 #ms the circuit trips before it allows for a single request to go through in half-open circuit state
+  statistical_window_length: 120000 #ms the metrics are caclucated for, after this the metrics are reset.
+  statistical_window_number_of_buckets: 10 #statistical window length is sliced into this configured number of buckets
+  apis:
+    "https://192.168.50.3:25555":
+      name: "Boot Strap Bosh Director"
+      # sleep_window_in_ms : 30000
+      # statistical_window_length: 5000
+      # api_overrides:
+      #   GET:
+      #     error_threshold_percentage: 39
+      #     service_timeout: 1000
+      #     request_volume_threshold: 5
+      #     method_overrides:
+      #       "/info":
+      #         request_volume_threshold: 2
+      #       "/deployments":
+      #         error_threshold_percentage: 29
+      #         request_volume_threshold: 3  
+      #   POST:
+      #   PUT:
+      #   DELETE:
+    "https://192.168.50.4:25555":
+      name: "Bosh Director"
+    "https://api.bosh-lite.com":
+      name: "Cloud Controller"
+    "https://uaa.bosh-lite.com":
+      name: "CF UAA"
+    "https://service-fabrik-broker.bosh-lite.com":
+      name: "Service Fabrik APIs"
+    "https://10.0.2.2:9293":
+      name: "Service Broker APIs"
+    "https://sap-provisioning.sb-iot-sap.cfapps.stagingaws.hanavlab.ondemand.com":
+      name: "Quota Management Oauth"
+    "https://tenant-onboarding-develop.cfapps.stagingaws.hanavlab.ondemand.com":
+      name: "Quota Management APIs"
