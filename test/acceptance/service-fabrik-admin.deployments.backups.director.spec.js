@@ -18,20 +18,11 @@ describe('service-fabrik-admin', function () {
     const base_url = '/admin';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const deployment_name = 'ccdb';
-    const no_of_directors = 3;
+    const no_of_directors = 1;
     const callsForStatus = no_of_directors;
-    const callsForInitiate = no_of_directors * 3;
+    const callsForInitiate = no_of_directors;
     const director = bosh.director;
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
-    const director_url = _
-      .reduce(config.directors,
-        (bootstrap, director) => {
-          if (director.name === CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH) {
-            return director;
-          } else {
-            return bootstrap;
-          }
-        }, null).url;
     const time = Date.now();
     const started_at = isoDate(time);
     const container = backupStore.containerName;
@@ -143,16 +134,16 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(2);
+        mocks.director.getDeploymentManifest(1);
         mocks.director.getDeployments({
-          'noOfTimes': callsForInitiate,
+          'noOfTimes': 1,
           'oob': true
         });
+        mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name, deploymentVms);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
-        logger.debug(`uploading json here:--> ${pathname}`);
         mocks.cloudProvider.upload(pathname, body => {
           expect(body.type).to.equal(type);
           expect(body.username).to.equal(config.username);
@@ -234,8 +225,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate bootstrap bosh deployment backup operation successfully', function () {
         director.clearCache();
-        mocks.director.getDeploymentManifest(2, director_url);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms, director_url);
+        mocks.director.getDeploymentManifest(2);
+        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
         mocks.director.getDeployments({
           'noOfTimes': callsForInitiate,
           'oob': true
@@ -287,7 +278,7 @@ describe('service-fabrik-admin', function () {
           'noOfTimes': callsForStatus,
           'oob': true
         });
-        mocks.director.getDeployment(deployment_name, true, director_url);
+        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastBackupOperation(backupState);
         return chai
           .request(app)
@@ -446,9 +437,9 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bootstrap bosh deployment restore operation successfully', function () {
-        mocks.director.getDeployment(deployment_name, true, director_url);
-        mocks.director.getDeploymentManifest(1, director_url);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms, director_url);
+        mocks.director.getDeployment(deployment_name, true);
+        mocks.director.getDeploymentManifest(1);
+        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -500,7 +491,7 @@ describe('service-fabrik-admin', function () {
           'noOfTimes': callsForStatus,
           'oob': true
         });
-        mocks.director.getDeployment(deployment_name, true, director_url);
+        mocks.director.getDeployment(deployment_name, true);
         mocks.agent.lastRestoreOperation(restoreState);
         return chai
           .request(app)

@@ -16,7 +16,7 @@ const bosh_taskId = `bosh_${taskId}`;
 const manifest = yaml.safeDump({
   name: id
 });
-const no_of_directors = 2;
+const no_of_directors = 1;
 let primary_config = _.sample(_
   .filter(config.directors, function (director) {
     return director.support_create && director.primary;

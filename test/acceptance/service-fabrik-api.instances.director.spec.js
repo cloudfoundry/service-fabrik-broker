@@ -24,7 +24,7 @@ describe('service-fabrik-api', function () {
     describe('director', function () {
       const base_url = '/api/v1';
       const broker_api_base_url = '/cf/v2';
-      const no_of_directors = 2;
+      const no_of_directors = 1;
       const broker_api_version = '2.9';
       const director = bosh.director;
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;

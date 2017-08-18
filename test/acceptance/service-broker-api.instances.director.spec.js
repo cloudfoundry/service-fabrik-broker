@@ -22,7 +22,7 @@ describe('service-broker-api', function () {
       const index = mocks.director.networkSegmentIndex;
       const director = bosh.director;
       const api_version = '2.9';
-      const no_of_directors = 3;
+      const no_of_directors = 1;
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
@@ -79,7 +79,7 @@ describe('service-broker-api', function () {
       describe('#provision', function () {
         it('returns 202 Accepted', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors - 1,
+            'noOfTimes': 1,
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
@@ -114,7 +114,7 @@ describe('service-broker-api', function () {
       describe('#update', function () {
         it('returns 202 Accepted', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors - 1
+            'noOfTimes': 1
           });
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
@@ -154,7 +154,7 @@ describe('service-broker-api', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors - 1
+            'noOfTimes': 1
           });
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
@@ -259,7 +259,7 @@ describe('service-broker-api', function () {
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 500;
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors - 1
+            'noOfTimes': 1
           });
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
@@ -305,7 +305,7 @@ describe('service-broker-api', function () {
       describe('#unbind', function () {
         it('returns 200 OK', function () {
           mocks.director.getDeployments({
-            'noOfTimes': no_of_directors - 1
+            'noOfTimes': 1
           });
           mocks.director.getDeploymentManifest();
           mocks.director.getBindingProperty(binding_id);

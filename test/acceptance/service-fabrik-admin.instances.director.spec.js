@@ -12,7 +12,7 @@ describe('service-fabrik-admin', function () {
       let numberOfDeployments = 8;
       const base_url = '/admin';
       const name = 'update';
-      const no_of_directors = 2;
+      const no_of_directors = 1;
       const args = {};
       const broker_guid = 'eb3303c3-f373-4339-8562-113d1451a6ef';
       const broker_name = config.broker_name;

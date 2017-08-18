@@ -620,7 +620,7 @@ test:
   - <<: *director
     cpi: aws_cpi
     primary: true
-    support_create: false
+    support_create: true
     name: bosh
     uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
     infrastructure: &test_infrastructure
@@ -634,18 +634,4 @@ test:
         reuse_compilation_vms: true
         workers: 4
         cloud_properties: { name: random }
-  - <<: *director
-    cpi: aws_cpi
-    primary: true
-    support_create: true
-    name: bosh-sf
-    uuid: 3afe51e2-b7e6-471f-9bca-93048fa591f4
-    infrastructure: *test_infrastructure
-  - <<: *director
-    cpi: aws_cpi
-    primary: false
-    support_create: false
-    name: bootstrap-bosh
-    uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
-    infrastructure: *test_infrastructure
   password: 'secret'

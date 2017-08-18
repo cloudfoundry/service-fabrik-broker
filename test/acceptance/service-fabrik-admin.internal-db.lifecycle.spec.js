@@ -4,7 +4,6 @@ const lib = require('../../lib');
 const app = require('../../apps').internal;
 const DBManager = require('../../lib/fabrik/DBManager');
 const bosh = require('../../lib/bosh');
-const _ = require('lodash');
 const fabrik = lib.fabrik;
 const config = lib.config;
 const backupStore = lib.iaas.backupStore;
@@ -18,7 +17,7 @@ describe('service-fabrik-admin', function () {
     const base_url = '/admin';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const time = Date.now();
-    const no_of_directors = 3;
+    const no_of_directors = 1;
     const started_at = isoDate(time);
     const director = bosh.director;
     const container = backupStore.containerName;
@@ -75,7 +74,7 @@ describe('service-fabrik-admin', function () {
           'noOfTimes': no_of_directors,
           'oob': true
         });
-        _.range(3).map((index) => config.directors[index].default_task_poll_interval = 10);
+        config.directors[0].default_task_poll_interval = 10;
         mocks.director.createBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
         return chai
           .request(app)
@@ -106,7 +105,7 @@ describe('service-fabrik-admin', function () {
           'noOfTimes': no_of_directors,
           'oob': true
         });
-        _.range(3).map((index) => config.directors[index].default_task_poll_interval = 10);
+        config.directors[0].default_task_poll_interval = 10;
         return chai
           .request(app)
           .put(`${base_url}/service-fabrik/db`)
