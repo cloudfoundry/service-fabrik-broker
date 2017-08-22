@@ -8,7 +8,7 @@ const CONST = require('../lib/constants');
 const dbManager = require('../lib/fabrik').dbManager;
 
 const handlers = {};
-const CONNECTION_WAIT_SIMULATED_DELAY = 50;
+const CONNECTION_WAIT_SIMULATED_DELAY = 0;
 let mongoReachable = true;
 const mongoStub = {
   connect: () => {},
@@ -88,7 +88,7 @@ describe('db', function () {
       expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
       expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
       expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
-      dbInit.then(() => {
+      return dbInit.then(() => {
         expect(publishStub).to.be.calledOnce;
         expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_OPERATIONAL);
         expect(subscribeStub).to.be.calledOnce;
@@ -107,16 +107,17 @@ describe('db', function () {
       };
       mongoReachable = false;
       const dbInit = dbInitializer.startUp(config);
-      setTimeout(() => {
-        expect(mongooseConnectionStub.connect).to.be.calledTwice; //Once for initial connect and second during retry
-        expect(mongooseConnectionStub.on.callCount).to.equal(6); //3*2 - 3 more times during retry.
-        expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
-        expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
-        expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
-        expect(publishStub).to.be.calledAtleastOnce;
-        expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_INIT_FAILED);
-        done();
-      }, 200);
+      return Promise.delay(10)
+        .then(() => {
+          expect(mongooseConnectionStub.connect).to.be.calledTwice; //Once for initial connect and second during retry
+          expect(mongooseConnectionStub.on.callCount).to.equal(6); //3*2 - 3 more times during retry.
+          expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
+          expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
+          expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
+          expect(publishStub).to.be.calledAtleastOnce;
+          expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_INIT_FAILED);
+          done();
+        });
     });
 
     it('Should close mongo connections on recieving App shutdown event', function (done) {
@@ -130,7 +131,7 @@ describe('db', function () {
       expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
       expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
       expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
-      dbInit.then(() => {
+      return dbInit.then(() => {
         expect(publishStub).to.be.calledOnce;
         expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_OPERATIONAL);
         expect(subscribeStub).to.be.calledOnce;

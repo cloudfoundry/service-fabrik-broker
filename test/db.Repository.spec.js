@@ -42,6 +42,18 @@ for (let i = 1; i <= 10; i++) {
   listOfJobs.push(job);
 }
 
+class Query {
+  constructor(data) {
+    this.state = data;
+  }
+  lean() {
+    return this;
+  }
+  execAsync() {
+    return this.state;
+  }
+}
+
 describe('db', function () {
   describe('Repository', function () {
     /* jshint unused:false */
@@ -55,7 +67,7 @@ describe('db', function () {
         //All the below extension methods will not be inherited as they are not assigned against prototype.
         //Hence this special one method being added.
       };
-      modelStub.findOneAsync = sandbox.stub(mongoModel, 'findOneAsync');
+      modelStub.findOne = sandbox.stub(mongoModel, 'findOne');
       modelStub.schema = {
         obj: {
           updatedAt: 'defined'
@@ -81,8 +93,8 @@ describe('db', function () {
     });
 
     beforeEach(function () {
-      modelStub.findOneAsync.withArgs(criteria).returns(getJob(instance_id, time).then());
-      modelStub.findOneAsync.withArgs().returns(Promise.resolve(null));
+      modelStub.findOne.withArgs(criteria).returns(new Query(getJob(instance_id, time)));
+      modelStub.findOne.withArgs().returns(new Query(Promise.resolve(null)));
       modelStub.findByIdAsync.withArgs().returns(Promise.resolve(getJob(instance_id, time)));
       modelStub.populateAsync.withArgs().returns(getJob(instance_id, time));
       modelStub.removeAsync.withArgs(criteria).returns(Promise.resolve({}));
@@ -93,7 +105,7 @@ describe('db', function () {
     });
 
     afterEach(function () {
-      modelStub.findOneAsync.reset();
+      modelStub.findOne.reset();
       modelStub.findByIdAsync.reset();
       modelStub.populateAsync.reset();
       modelStub.removeAsync.reset();
@@ -114,16 +126,16 @@ describe('db', function () {
       return Repository.findOne(CONST.DB_MODEL.JOB, {
         name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
       }).then(response => {
-        expect(modelStub.findOneAsync).to.be.calledOnce;
+        expect(modelStub.findOne).to.be.calledOnce;
         expect(response).to.eql(getJob(instance_id, time).value());
       });
     });
 
-    it('Should return the null when requested for non-existing object', function () {
+    it('Should return null when requested for non-existing object', function () {
       return Repository.findOne(CONST.DB_MODEL.JOB, {
         name: `${instance_id}_NONAME`
       }).then(response => {
-        expect(modelStub.findOneAsync).to.be.calledOnce;
+        expect(modelStub.findOne).to.be.calledOnce;
         expect(response).to.eql(null);
       });
     });
@@ -152,7 +164,7 @@ describe('db', function () {
       return Repository.saveOrUpdate(CONST.DB_MODEL.JOB, getJob(instance_id, time).value(), criteria, {
         'name': 'hugo'
       }).then(response => {
-        expect(modelStub.findOneAsync).to.be.calledOnce;
+        expect(modelStub.findOne).to.be.calledOnce;
         expect(modelStub.findOneAndUpdateAsync).to.be.calledOnce;
         expect(response).to.eql(getJob(instance_id, time).value());
       });

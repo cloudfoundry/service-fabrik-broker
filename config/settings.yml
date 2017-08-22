@@ -117,15 +117,24 @@ defaults: &defaults
   # SCHEDULER SETTINGS #
   ######################
   scheduler:
-    job_types: ScheduledBackup, ServiceFabrikBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper
+    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper, ServiceInstanceAutoUpdate
     process_every: '3 minutes' # Process every 3 min by default
     run_with_web_process: true #if this flag is either undefined or set to true, then agenda scheduler can run along within web process
     max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
     max_concurrency: 30
     default_concurrency: 20
     default_lock_lifetime: 180000
+    maintenance_check_interval: 90000 #every (ms) scheduler checks for maitenance mode
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
     job_history_retention_in_days: 30
+    maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
+    jobs:
+      reschedule_delay: '20 mins from now'
+      scheduled_backup:
+        max_attempts: 3 # Incase of a conflicting operation (ex. update) in progress, the backup is rescheduled. This count defines upper limit on the number of attempts the job is rescheduled in case of conflict.
+      service_instance_update: 
+        max_attempts: 3
+        run_every_xdays: 15 #every 7 days update is checked
     system_jobs:
       - name: 'service-fabrik-mongodb'
         type: ScheduledOobDeploymentBackup
@@ -135,15 +144,13 @@ defaults: &defaults
           deployment_name: service-fabrik-mongodb
           trigger: scheduled
           container: service-fabrik-mongodb
+        enabled: true
       - name: 'Backup_Reaper'
         type: BackupReaper
         interval: '0 1 * * *' #Backup schedule interval for service fabrik DB
         job_data:
           delete_delay: 1000 #delay in processing between two tasks (in millisecond)
-      - name: 'MongoDB'
-        type: ServiceFabrikBackup
-        interval: '0 1 * * *'
-        enabled: false
+        enabled: true
 
   #######################
   # MONITORING SETTINGS #

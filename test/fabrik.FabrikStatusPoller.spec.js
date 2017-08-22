@@ -39,7 +39,7 @@ describe('fabrik', function () {
         lock_deployment_max_duration: 10000
       },
       backup: {
-        status_check_every: 100,
+        status_check_every: 10,
         abort_time_out: 180000
       }
     };
@@ -88,7 +88,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(200).then(() => {
+          Promise.delay(20).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).not.to.be.called;
@@ -102,7 +102,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(300).then(() => {
+          Promise.delay(30).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.calledOnce;
@@ -116,7 +116,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(300).then(() => {
+          Promise.delay(30).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;
@@ -129,7 +129,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(300).then(() => {
+          Promise.delay(30).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;

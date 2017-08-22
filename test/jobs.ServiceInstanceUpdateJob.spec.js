@@ -1,0 +1,390 @@
+'use strict';
+const _ = require('lodash');
+const CONST = require('../lib/constants');
+const catalog = require('../lib/models/catalog');
+const utils = require('../lib/utils');
+const config = require('../lib/config');
+const errors = require('../lib/errors');
+const BaseJob = require('../lib/jobs/BaseJob');
+const JobFabrik = require('../lib/jobs/JobFabrik');
+const ScheduleManager = require('../lib/jobs/ScheduleManager');
+const NetworkSegmentIndex = require('../lib/bosh/NetworkSegmentIndex');
+
+describe('Jobs', function () {
+  /* jshint expr:true */
+  describe('ServiceInstanceUpdateJob', function () {
+    const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+    const sf_operation_name = 'update';
+    const sf_operation_args = {};
+    const index = NetworkSegmentIndex.adjust(mocks.director.networkSegmentIndex);
+    const instance_id = mocks.director.uuidByIndex(index);
+    const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+    const plan_id_forced_update = 'fc158c9a-7934-401e-94ab-057082a5073f';
+    const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+    let job;
+    const job_sample = {
+      attrs: {
+        name: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+        data: {
+          _n_a_m_e_: `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`,
+          instance_name: 'bp01',
+          instance_id: instance_id,
+          deployment_name: `${CONST.SERVICE_FABRIK_PREFIX}-${index}-${instance_id}`
+        },
+        lastRunAt: new Date(),
+        nextRunAt: new Date(),
+        repeatInterval: '*/1 * * * *',
+        lockedAt: null,
+        repeatTimezone: 'America/New_York'
+      },
+      fail: () => undefined,
+      save: () => undefined,
+      touch: () => undefined
+    };
+    let sandbox, baseJobLogRunHistoryStub, cancelScheduleStub, scheduleRunAtStub, uuidv4Stub, catalogStub;
+
+    before(function () {
+      sandbox = sinon.sandbox.create();
+      baseJobLogRunHistoryStub = sandbox.stub(BaseJob, 'logRunHistory');
+      baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
+      cancelScheduleStub = sandbox.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+      scheduleRunAtStub = sandbox.stub(ScheduleManager, 'runAt', () => Promise.resolve({}));
+      const plan = catalog.getPlan(plan_id);
+      const forcedUpdatePlan = _.cloneDeep(plan);
+      forcedUpdatePlan.service.force_update = true;
+      uuidv4Stub = sandbox.stub(utils, 'uuidV4');
+      catalogStub = sandbox.stub(catalog, 'getPlan');
+      uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
+      catalogStub.withArgs(plan_id_forced_update).returns(forcedUpdatePlan);
+      catalogStub.withArgs(plan_id).returns(plan);
+      return mocks.setup();
+    });
+
+    beforeEach(function () {
+      job = _.cloneDeep(job_sample);
+    });
+
+    afterEach(function () {
+      mocks.reset();
+      baseJobLogRunHistoryStub.reset();
+      cancelScheduleStub.reset();
+      scheduleRunAtStub.reset();
+      catalogStub.reset();
+      uuidv4Stub.reset();
+    });
+
+    after(function () {
+      sandbox.restore();
+    });
+
+    it('job must not start and error if mandatory params (instance_id | deployment_name) is missing', function (done) {
+      const sfClientStub = sinon.stub(ServiceInstanceUpdateJob, 'getFabrikClient');
+      const badJob = {
+        attrs: {
+          data: {}
+        },
+        fail: () => {},
+        save: () => {}
+      };
+      return ServiceInstanceUpdateJob
+        .run(badJob, () => {})
+        .then(() => {
+          const invalidInputMsg = `ServiceInstance Update cannot be initiated as the required mandatory params (instance_id | deployment_name) is empty : ${JSON.stringify(badJob.attrs.data)}`;
+          expect(sfClientStub).not.to.be.called;
+          sfClientStub.restore();
+          const expectedResponse = {
+            instance_deleted: false,
+            job_cancelled: false,
+            deployment_outdated: 'TBD',
+            update_init: 'TBD',
+            diff: 'TBD'
+          };
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('BadRequest');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Bad Request');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(400);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(badJob.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        }).catch(done);
+    });
+
+    it('if service instance is not found, should cancel itself', function (done) {
+      mocks.cloudController.findServicePlan(instance_id);
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).to.be.calledOnce;
+          expect(cancelScheduleStub.firstCall.args[0]).to.eql(instance_id);
+          expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          done();
+        }).catch(done);
+    });
+
+    it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, []);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: false,
+        update_init: 'NA',
+        diff: []
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      });
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.SUCCEEDED,
+        update_operation_guid: backup_guid,
+        diff: diff
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+    it('if instance is outdated, and changes are in forbidden section then update must not be initiated', function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      const diff = [
+        ['jobs:', null],
+        ['- name: blueprint_z1', null],
+        ['  instances: 2', 'removed'],
+        ['  instances: 1', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: diff
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden section(s) \'jobs\'';
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Forbidden');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(403);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id_forced_update);
+      const diff = [
+        ['jobs:', null],
+        ['- name: blueprint_z1', null],
+        ['  instances: 2', 'removed'],
+        ['  instances: 1', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      });
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.SUCCEEDED,
+        update_operation_guid: backup_guid,
+        diff: diff
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated, update initiation attempt fails and then schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      }, 500);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: diff
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      }, 500);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: diff
+      };
+      const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
+      config.scheduler.jobs.service_instance_update.max_attempts = 1;
+      job.attrs.data.attempt = 1;
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).not.to.be.called;
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      }, 500, {
+        error_code: 'CF-ServiceBrokerBadResponse',
+        status: 500,
+        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.OPERATION_TYPE.LOCK} by`,
+        http: {
+          status: 409
+        }
+      });
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: diff
+      };
+      const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
+      config.scheduler.jobs.service_instance_update.max_attempts = 0;
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.DeploymentAlreadyLocked).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+  });
+});

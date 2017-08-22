@@ -69,7 +69,7 @@ describe('Jobs', function () {
       attrs: {
         name: `${instance_id}_${CONST.JOB.BAKUP_REAPER}`,
         data: {
-          delete_delay: 1000
+          delete_delay: 0
         },
         lastRunAt: new Date(),
         nextRunAt: new Date(),

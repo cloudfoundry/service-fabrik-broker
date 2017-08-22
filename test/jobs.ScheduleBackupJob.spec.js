@@ -245,11 +245,11 @@ describe('Jobs', function () {
         });
       });
 
-      it('should log error in case instance Id and backup type is absent in Job data', function () {
+      it('should log error in case instance Id and backup type is absent in Job data', function (done) {
         let sfClientStub;
         sfClientStub = sinon.stub(ScheduleBackupJob, 'getFabrikClient');
         job.attrs.data = {};
-        ScheduleBackupJob.run(job, () => {
+        return ScheduleBackupJob.run(job, () => {
           const invalidInputMsg = `Scheduled backup cannot be initiated as the required mandatory params (intance_uid | type) is empty : ${JSON.stringify(job.attrs.data)}`;
           expect(sfClientStub).not.to.be.called;
           sfClientStub.restore();
@@ -260,7 +260,8 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
-        });
+          done();
+        }).catch(done);
       });
     });
   });

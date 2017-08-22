@@ -64,9 +64,7 @@ describe('Jobs', function () {
     const user = {
       name: 'Hugo'
     };
-    const systemUser = {
-      name: CONST.USER.SYSTEM
-    };
+    const systemUser = CONST.SYSTEM_USER;
 
     describe('#LogRunHistory', function () {
       let repositorySaveStub, repositoryDeleteStub;

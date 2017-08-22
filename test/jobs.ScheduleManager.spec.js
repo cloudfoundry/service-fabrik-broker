@@ -4,6 +4,7 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const CONST = require('../lib/constants');
 const errors = require('../lib/errors');
+const utils = require('../lib/utils');
 const instance_id = '9999-8888-7777-6666';
 const jobType = CONST.JOB.SCHEDULED_BACKUP;
 const interval = '*/1 * * * *';
@@ -42,6 +43,7 @@ const mergedJob = {
 const schedulerStub = {
   schedule: () => undefined,
   getJob: () => undefined,
+  runAt: () => undefined,
   cancelJob: () => undefined
 };
 const repositoryStub = {
@@ -60,6 +62,19 @@ class Scheduler {
       nextRunAt: nextRunAt,
       lockedAt: null,
       repeatInterval: interval,
+      repeatTimezone: data.timeZone
+    });
+  }
+
+  runAt(name, type, runAt, data) {
+    schedulerStub.runAt.call(schedulerStub, arguments);
+    return Promise.resolve({
+      name: type,
+      data: _.omit(data, 'timeZone'),
+      lastRunAt: lastRunAt,
+      nextRunAt: nextRunAt,
+      lockedAt: null,
+      repeatInterval: runAt,
       repeatTimezone: data.timeZone
     });
   }
@@ -127,26 +142,38 @@ class Repository {
   }
 }
 
-const ScheduleManager = proxyquire('../lib/jobs/ScheduleManager', {
-  './Scheduler': Scheduler,
-  '../db': {
-    Repository: Repository
-  }
-});
-
 describe('Jobs', function () {
+  const ScheduleManager = proxyquire('../lib/jobs/ScheduleManager', {
+    './Scheduler': Scheduler,
+    '../db': {
+      Repository: Repository
+    }
+  });
   /* jshint expr:true */
   describe('ScheduleManager', function () {
     let schedulerSpy = sinon.stub(schedulerStub);
     let repoSpy = sinon.stub(repositoryStub);
 
+    let clock, randomIntStub;
+    before(function () {
+      clock = sinon.useFakeTimers();
+      randomIntStub = sinon.stub(utils, 'getRandomInt', () => 0);
+    });
+
     afterEach(function () {
       schedulerSpy.schedule.reset();
+      schedulerSpy.runAt.reset();
       schedulerSpy.getJob.reset();
       schedulerSpy.cancelJob.reset();
       repoSpy.saveOrUpdate.reset();
       repoSpy.findOne.reset();
       repoSpy.delete.reset();
+      clock.reset();
+    });
+
+    after(function () {
+      clock.restore();
+      randomIntStub.restore();
     });
 
     describe('#ScheduleJobs', function () {
@@ -170,6 +197,62 @@ describe('Jobs', function () {
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(criteria);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+            done();
+          });
+      });
+      it('should schedule a job in agenda with daily random schedule and save it in mongodb successfully', function (done) {
+        ScheduleManager
+          .scheduleDaily(instance_id, CONST.JOB.SCHEDULED_BACKUP, jobData, user)
+          .done((jobResponse) => {
+            const expectedResponse = _.cloneDeep(mergedJob);
+            const randomInterval = '0 0 * * *';
+            expectedResponse.repeatInterval = randomInterval;
+            expect(jobResponse).to.eql(expectedResponse);
+            expect(schedulerSpy.schedule).to.be.calledOnce;
+            expect(schedulerSpy.schedule.firstCall.args[0][0]).to.eql(instance_id);
+            expect(schedulerSpy.schedule.firstCall.args[0][1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+            expect(schedulerSpy.schedule.firstCall.args[0][2]).to.eql(randomInterval);
+            expect(schedulerSpy.schedule.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: jobType,
+              interval: randomInterval,
+              data: jobData
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(criteria);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+            done();
+          });
+      });
+      it('should schedule a job in agenda and save it in mongodb successfully at specified time', function (done) {
+        const scheduleAt = '10 mins from now';
+        ScheduleManager
+          .runAt(instance_id, CONST.JOB.SCHEDULED_BACKUP, scheduleAt, jobData, user)
+          .done((jobResponse) => {
+            const expectedResponse = _.cloneDeep(mergedJob);
+            expectedResponse.repeatInterval = scheduleAt;
+            expect(jobResponse).to.eql(expectedResponse);
+            expect(schedulerSpy.runAt).to.be.calledOnce;
+            expect(schedulerSpy.runAt.firstCall.args[0][0]).to.eql(instance_id);
+            expect(schedulerSpy.runAt.firstCall.args[0][1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+            expect(schedulerSpy.runAt.firstCall.args[0][2]).to.eql(scheduleAt);
+            expect(schedulerSpy.runAt.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: jobType,
+              interval: scheduleAt,
+              data: jobData
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            const expectedCriteria = _.clone(criteria);
+            expectedCriteria.type = `${CONST.JOB.SCHEDULED_BACKUP}_0`;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(expectedCriteria);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
             done();
           });
@@ -261,7 +344,7 @@ describe('Jobs', function () {
             },
             {
               name: 'MongoDB',
-              type: 'ServiceFabrikBackup',
+              type: 'ScheduledOobDeploymentBackup',
               interval: '0 1 * * *',
               enabled: false
             }
@@ -271,15 +354,12 @@ describe('Jobs', function () {
       const ScheduleManager2 = proxyquire('../lib/jobs/ScheduleManager', {
         '../config': systemJobConfig
       });
-      const systemUser = {
-        name: 'SYSTEM'
-      };
+      const systemUser = CONST.SYSTEM_USER;
       let sandbox, cancelStub, scheduleStub;
       before(function () {
         sandbox = sinon.sandbox.create();
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');
-
       });
 
       afterEach(function () {

@@ -162,7 +162,7 @@ const proxyLibs = {
   'agenda': Agenda,
   '../config': {
     scheduler: {
-      job_types: 'ScheduledBackup, ServiceFabrikBackup',
+      job_types: 'ScheduledBackup, ScheduledOobDeploymentBackup',
       process_every: '1 minute',
       max_concurrency: 30,
       default_concurrency: 20,
@@ -284,7 +284,7 @@ describe('Jobs', function () {
             //jobsAsync is called twice - once during jobRegistration & second as part of internal mongodb schedule (post define, data retrieved from db)
             expect(agendaSpy.define).to.be.calledTwice;
             expect(agendaSpy.define.firstCall.args[0]).to.eql('ScheduledBackup');
-            expect(agendaSpy.define.secondCall.args[0]).to.eql('ServiceFabrikBackup');
+            expect(agendaSpy.define.secondCall.args[0]).to.eql('ScheduledOobDeploymentBackup');
             expect(agendaSpy.start).to.be.calledOnce;
             expect(publishSpy).to.be.calledTwice;
             expect(publishSpy.firstCall.args[0]).to.eql(CONST.TOPIC.SCHEDULER_STARTED);
