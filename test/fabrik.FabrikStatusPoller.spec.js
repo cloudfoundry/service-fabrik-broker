@@ -4,6 +4,7 @@ const lib = require('../lib');
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const DirectorManager = lib.fabrik.DirectorManager;
+const BoshDirectorClient = lib.bosh.BoshDirectorClient;
 const CONST = require('../lib/constants');
 const ServiceFabrikClient = require('../lib/cf/ServiceFabrikClient');
 const ServiceFabrikOperation = require('../lib/fabrik/ServiceFabrikOperation');
@@ -12,7 +13,8 @@ describe('fabrik', function () {
   describe('FabrikStatusPoller', function () {
     /* jshint expr:true */
 
-    let sandbox, startStub, directorOperationStub, serviceFabrikClientStub, serviceFabrikOperationStub;
+    let sandbox, startStub, directorOperationStub, serviceFabrikClientStub, serviceFabrikOperationStub,
+      getDirectorConfigStub;
     const index = mocks.director.networkSegmentIndex;
     const time = Date.now();
     const IN_PROGRESS_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180be';
@@ -34,10 +36,11 @@ describe('fabrik', function () {
     const instanceInfo_aborting = _.clone(instanceInfo);
     _.set(instanceInfo_aborting, 'backup_guid', ABORTING_BACKUP_GUID);
 
+    const directorConfigStub = {
+      lock_deployment_max_duration: 0
+    };
+
     const config = {
-      director: {
-        lock_deployment_max_duration: 10000
-      },
       backup: {
         status_check_every: 100,
         abort_time_out: 180000
@@ -54,6 +57,8 @@ describe('fabrik', function () {
         directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
         serviceFabrikClientStub = sandbox.stub(ServiceFabrikClient.prototype, 'abortLastBackup');
         serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke');
+        getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
+        getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
         directorOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS
         }));
@@ -76,6 +81,7 @@ describe('fabrik', function () {
         directorOperationStub.reset();
         serviceFabrikClientStub.reset();
         serviceFabrikOperationStub.reset();
+        getDirectorConfigStub.reset();
       });
 
       after(function () {
@@ -83,7 +89,6 @@ describe('fabrik', function () {
       });
 
       it('Abort backup if operation is not complete & wait for abort to complete', function () {
-        config.director.lock_deployment_max_duration = 0;
         return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
@@ -92,11 +97,9 @@ describe('fabrik', function () {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).not.to.be.called;
-            config.director.lock_deployment_max_duration = 10000;
           }));
       });
       it('Abort backup if operation is not complete & post abort time out, unlock deployment', function () {
-        config.director.lock_deployment_max_duration = 0;
         config.backup.abort_time_out = 0;
         return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
@@ -107,11 +110,9 @@ describe('fabrik', function () {
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.calledOnce;
             config.backup.abort_time_out = 180000;
-            config.director.lock_deployment_max_duration = 10000;
           }));
       });
       it('Abort backup if operation is not complete & post successful abort, unlock deployment', function (done) {
-        config.director.lock_deployment_max_duration = 0;
         return FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
@@ -124,7 +125,6 @@ describe('fabrik', function () {
           }));
       });
       it('Stop polling operation on backup completion &  unlock deployment', function (done) {
-        config.director.lock_deployment_max_duration = 0;
         return FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
