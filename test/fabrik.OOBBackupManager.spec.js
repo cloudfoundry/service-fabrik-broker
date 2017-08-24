@@ -185,7 +185,7 @@ describe('fabrik', function () {
         expect(startBackupStub).to.be.calledOnce;
         expect(putFileStub).to.be.calledOnce;
         expect(startBackupStub.firstCall.args[0]).to.eql(dbIps);
-        expect(startBackupStub.firstCall.args[1].trigger).to.eql(CONST.BACKUP.TRIGGER.SCHEDULED);
+        expect(startBackupStub.firstCall.args[1].trigger).to.eql(CONST.BACKUP.TRIGGER.ON_DEMAND);
         expect(startBackupStub.firstCall.args[1].type).to.eql('online');
         expect(startBackupStub.firstCall.args[2]).to.eql(expectedVms);
         expect(result.operation).to.eql(expectedResult.operation);
