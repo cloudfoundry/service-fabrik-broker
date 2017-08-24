@@ -145,7 +145,7 @@ describe('service-fabrik-admin', function () {
           expect(body.type).to.equal(type);
           expect(body.username).to.equal(config.username);
           expect(body.backup_guid).to.equal(backup_guid);
-          expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.SCHEDULED);
+          expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.ON_DEMAND);
           expect(body.state).to.equal('processing');
           return true;
         });
@@ -234,7 +234,7 @@ describe('service-fabrik-admin', function () {
           expect(body.type).to.equal(type);
           expect(body.username).to.equal(config.username);
           expect(body.backup_guid).to.equal(backup_guid);
-          expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.SCHEDULED);
+          expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.ON_DEMAND);
           expect(body.state).to.equal('processing');
           return true;
         });
