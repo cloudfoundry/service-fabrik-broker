@@ -89,6 +89,39 @@ describe('bosh', () => {
       });
     });
 
+    describe('#getInfrastructure', () => {
+      it('return the object with infrastructure details', () => {
+        expect(MockBoshDirectorClient.getInfrastructure()).to.be.instanceof(Object);
+        expect(MockBoshDirectorClient.getInfrastructure().stemcell).to.be.instanceof(Object);
+        expect(MockBoshDirectorClient.getInfrastructure().segmentation).to.be.instanceof(Object);
+      });
+    });
+
+    describe('#getActivePrimary', () => {
+      it('gets the configs which are primary and supports create', () => {
+        const val = MockBoshDirectorClient.getActivePrimary();
+        expect(val).to.be.instanceof(Array);
+        expect(val[0].primary).to.eql(true);
+        expect(val[0].support_create).to.eql(true);
+      });
+    });
+
+    describe('#getConfigByName', () => {
+      it('gets the config by BOSH director name', () => {
+        expect(new MockBoshDirectorClient().getConfigByName('bosh').name).to.eql('bosh');
+      });
+    });
+
+    describe('#getOobDirectorConfigs', () => {
+      it('gets the config which is only for out of band backup', () => {
+        const val = MockBoshDirectorClient.getOobDirectorConfigs();
+        // we dont include OobDirectors in test config at this point.
+        expect(val).to.eql([]);
+      });
+    });
+
+    // #getDirectorConfig is currently covered in Acceptance Test. Need to add unit test here.
+
     describe('#clearCache', () => {
       it('empties the cache', () => {
         const dc = new MockBoshDirectorClient();
