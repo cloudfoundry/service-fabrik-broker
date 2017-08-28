@@ -1,20 +1,32 @@
 'use strict';
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
+const moment = require('moment');
 const CONST = require('../lib/constants');
+const errors = require('../lib/errors');
 const maintenanceManager = require('../lib/maintenance').maintenanceManager;
 
 const logger = require('../lib/logger');
 
 describe('JobScheduler', function () {
+  /* jshint expr:true */
+  process.setMaxListeners(0);
   let JobScheduler;
   let cpus = 0,
     count = 0,
+    workerExitHandlers = [],
+    throwUnhandledError,
     workers = [];
 
   function on(event, callback) {
-    workers[0] = callback;
+    workerExitHandlers[0] = callback;
   }
+
+  const schedulerConfig = {
+    max_workers: 5,
+    maintenance_check_interval: 9000,
+    maintenance_mode_time_out: 1800000
+  };
 
   const proxyLibs = {
     'os': {
@@ -25,10 +37,11 @@ describe('JobScheduler', function () {
     'cluster': {
       isMaster: true,
       on: on,
+      workers: workers,
       fork: () => {
         count++;
         logger.info('forking child..', count);
-        proxyquire('../JobScheduler', {
+        const js = proxyquire('../JobScheduler', {
           'cluster': {
             isMaster: false,
             on: on,
@@ -42,110 +55,299 @@ describe('JobScheduler', function () {
             }
           }
         });
+        const worker = {
+          pid: count,
+          send: (msg) => js.handleMessage(msg)
+        };
+        workers.push(worker);
         return count;
       }
     },
     './lib/config': {
-      scheduler: {
-        max_workers: 5
-      }
+      scheduler: schedulerConfig
     }
   };
 
   describe('#Start', function () {
-    /* jshint expr:true */
-    let publishStub, sandbox, clock, maintenaceManagerStub;
+    let publishStub, sandbox, clock, processExitStub;
     before(function () {
       sandbox = sinon.sandbox.create();
       publishStub = sandbox.stub(pubsub, 'publish');
-      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo', () => Promise.resolve(null));
-      clock = sinon.useFakeTimers();
+      processExitStub = sandbox.stub(process, 'exit');
+      clock = sinon.useFakeTimers(new Date().getTime());
     });
-
     afterEach(function () {
       publishStub.reset();
-      maintenaceManagerStub.reset();
+      processExitStub.reset();
+      workers.splice(0, workers.length);
       clock.reset();
     });
-
     after(function () {
-      publishStub.restore();
       clock.restore();
       sandbox.restore();
     });
 
-    it('Should initialize JobScheduler based on CPU Count when max_worker config is greater than # of CPUs', function (done) {
-      count = 0;
-      logger.info('count is', count);
-      cpus = 4;
-      JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-      return JobScheduler
-        .then(() => {
-          logger.info('count is>>', count);
-          clock.tick(0);
-          const EXPECTED_NUM_OF_WORKERS = 4 - 1;
-          //Fork should be invoked 1 less than number of cpus.
-          for (let x = 0; x < EXPECTED_NUM_OF_WORKERS; x++) {
-            clock.tick(0);
-          }
-          setTimeout(() => {
-            expect(count).to.eql(4 - 1);
-            done();
-          }, 0);
-          clock.tick(0);
-        });
-    });
-
-    it('Create workers based on max_worker config & on error recreate the worker', function (done) {
-      count = 0;
-      cpus = 8;
-      JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-      return JobScheduler
-        .then(() => {
-          for (let x = 0; x < 5; x++) {
-            clock.tick(0);
-          }
-          workers[0]({
-            id: 1
-          }, 2, null);
-          clock.tick(0);
-          //Simulate kill one of the workers by invoking the exit handler callback.
-          setTimeout(() => {
-            logger.info('recreate test is complete.');
-            expect(count).to.eql(6);
-            //Fork should be invoked based on max_workers in config
-            //In the above case because callback also results in additional call
-            done();
-          }, 0);
-          clock.tick(0);
-        });
-    });
-
-    it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function (done) {
-      count = 0;
-      cpus = 1;
-      let notifyShutDown;
-      const processStub = sandbox.stub(process, 'on', (name, callback) => {
-        if (name === 'SIGTERM' || name === 'SIGINT') {
-          notifyShutDown = callback;
-        }
+    describe('#NotInMaintenance', function () {
+      let maintenaceManagerStub;
+      before(function () {
+        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo', () => Promise.resolve(null));
       });
-      JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-      return JobScheduler
-        .then(() => {
-          clock.tick(0);
-          processStub.restore();
-          notifyShutDown();
-          setTimeout(() => {
+      afterEach(function () {
+        maintenaceManagerStub.reset();
+      });
+      after(function () {
+        maintenaceManagerStub.restore();
+      });
+
+      it('Should initialize JobScheduler based on CPU Count when max_worker config is greater than # of CPUs', function () {
+        count = 0;
+        logger.info('count is', count);
+        cpus = 4;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        return JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>', count);
+            clock.tick(0);
+            const EXPECTED_NUM_OF_WORKERS = 4 - 1;
+            //Fork should be invoked 1 less than number of cpus.
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+              clock.tick(delay);
+            }
+            return Promise.try(() => {
+              expect(count).to.eql(4 - 1);
+            });
+          });
+      });
+      it('Create workers based on max_worker config & on error recreate the worker', function () {
+        count = 0;
+        cpus = 8;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
+        return JobScheduler
+          .ready
+          .then(() => {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+              clock.tick(delay);
+            }
+            workerExitHandlers[0]({
+              id: 1
+            }, 2, null);
+            clock.tick(CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
+            //Simulate kill one of the workers by invoking the exit handler callback.
+            return Promise.try(() => {
+              expect(count).to.eql(6);
+              //Fork should be invoked based on max_workers in config
+              //In the above case because callback also results in additional call
+            });
+          });
+      });
+      it('Should handled unhandled rejection and if the reason is DB unavailable, then must terminate self', function () {
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        throwUnhandledError = true;
+        const EXPECTED_NUM_OF_WORKERS = cpus;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        return JobScheduler
+          .ready
+          .then(() => {
+            clock.tick(0);
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+              clock.tick(delay);
+            }
+            logger.info('count is>>', count);
+            expect(count).to.eql(1);
+            JobScheduler.processUnhandledRejection(new errors.DBUnavailable('DB Down...'));
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(publishStub).to.be.calledOnce;
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
-            expect(count).to.eql(1);
-            //Fork should be invoked 1 less than number of cpus.
-            done();
-          }, 0);
-          clock.tick(0);
-        });
+            expect(processExitStub).to.be.calledOnce;
+            expect(processExitStub.firstCall.args[0]).to.eql(2);
+            JobScheduler.handleMessage('INVALID_MESSAGE');
+            //Nothing should be done when an invalid message is sent.
+          });
+      });
+      it('workers should exit on system being in maintenance & scheduler must poll till system in maintenance', function () {
+        count = 0;
+        cpus = 8;
+        const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        return JobScheduler
+          .ready
+          .then(() => {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+              clock.tick(delay);
+            }
+            workerExitHandlers[0]({
+              id: 1
+            }, CONST.ERR_CODES.SF_IN_MAINTENANCE, null);
+            //Simulate kill one of the workers by invoking the exit handler callback & flag that system is in maintenance.
+            Promise.try(() => {
+              expect(count).to.eql(5);
+              expect(JobScheduler.workerCount).to.eql(0);
+              logger.info('All jobs are created & are destroyed after putting system in maintenance', JobScheduler.workerCount);
+              //All workers should be stopped & system should be in maintenance
+            });
+            //After all the Jobs are killed, check for maintenance window.
+            clock.tick(schedulerConfig.maintenance_check_interval);
+            return Promise.try(() => {})
+              .then(() => Promise.try(() => {}))
+              .then((maintinfo) => {
+                //Double Promise.try in the above induces the required lag for the actual maintenace check in JobScheduler, which runs in a promise.
+                logger.info('maintenance info as seen in test', maintinfo);
+                for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+                  clock.tick(delay);
+                }
+                //count - indicates how many workers were created.
+                logger.debug('recreated all workers...');
+                expect(JobScheduler.workerCount).to.eql(5);
+              });
+          });
+      });
     });
 
+    describe('#InMaintenance', function () {
+      let getMaintenanceStub, updateMaintStub, updateStatus;
+      beforeEach(function () {
+        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo');
+        updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
+          return Promise.try(() => {
+            if (updateStatus) {
+              return {};
+            }
+            throw new Error('DB Update Failed...');
+          });
+        });
+        getMaintenanceStub.onCall(0).returns(Promise.resolve({
+          createdAt: new Date()
+        }));
+        getMaintenanceStub.onCall(1).returns(Promise.resolve({
+          createdAt: new Date()
+        }));
+        getMaintenanceStub.returns(Promise.resolve(null));
+      });
+      afterEach(function () {
+        getMaintenanceStub.restore();
+        updateMaintStub.restore();
+      });
+
+      it('JobScheduler starts, waits for system to come out of maintenance & then initializes all workers', function () {
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>', count);
+            clock.tick(0);
+            expect(count).to.eql(1);
+          });
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
+      it('If maintenance duration exceeds timeout, then terminates maintenance window & on success, initializes all workers', function () {
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        updateStatus = true;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>>>', count);
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+            expect(getMaintenanceStub.callCount).to.equal(3); // 3times from the JobScheduler
+            expect(processExitStub).not.to.be.called;
+            expect(count).to.eql(1);
+          });
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
+      it('If maintenance duration exceeds timeout & if it cannot update maintenance window, then exits the process', function () {
+        getMaintenanceStub.onCall(2).returns(Promise.resolve({
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        updateStatus = false;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>>>', count);
+            JobScheduler.addJobWorker();
+            //When in maintenance mode invoking addJobWorker will not create the worker.
+            expect(JobScheduler.workerCount).to.eql(0);
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+            expect(getMaintenanceStub.callCount).to.equal(3); // 3times from the JobScheduler & 1 from test.
+            expect(processExitStub).to.have.been.calledOnce;
+            expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.INTERNAL_ERROR);
+            expect(count).to.eql(0);
+          });
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
+    });
+  });
+
+  describe('#Shutdown', function () {
+    let processOnStub, sandbox, publishStub, maintenaceManagerStub, clock, processExitStub;
+    let eventHandlers = {};
+    let sigIntHandler;
+    let sigTermHandler;
+    before(function () {
+      sandbox = sinon.sandbox.create();
+      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo', () => Promise.resolve(null));
+      processExitStub = sandbox.stub(process, 'exit');
+      processOnStub = sandbox.stub(process, 'on', (name, callback) => {
+        eventHandlers[name] = callback;
+        if (name === 'SIGINT') {
+          sigIntHandler = callback;
+        }
+        if (name === 'SIGTERM') {
+          sigTermHandler = callback;
+        }
+      });
+      publishStub = sandbox.stub(pubsub, 'publish');
+      clock = sinon.useFakeTimers(new Date().getTime());
+    });
+    afterEach(function () {
+      eventHandlers = {};
+    });
+    after(function () {
+      sandbox.restore();
+      clock.restore();
+    });
+    it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {
+      count = 0;
+      cpus = 1;
+      JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+      return JobScheduler
+        .ready
+        .then(() => {
+          clock.tick(0);
+          sigIntHandler();
+          sigTermHandler();
+          return Promise.try(() => {
+            expect(publishStub).to.be.calledTwice;
+            expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
+            expect(publishStub.secondCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
+            expect(count).to.eql(1);
+            //Fork should be invoked 1 less than number of cpus.
+          });
+        });
+    });
   });
 });

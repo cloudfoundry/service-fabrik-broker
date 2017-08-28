@@ -51,11 +51,12 @@ const dbInitializer = proxyquire('../lib/db/DbConnectionManager', {
 
 describe('db', function () {
   describe('#DbConnectionManager', function () {
-    let mongooseConnectionStub, publishStub, subscribeStub, sandbox;
+    let mongooseConnectionStub, publishStub, subscribeStub, sandbox, processExitStub;
 
     before(function () {
       sandbox = sinon.sandbox.create();
       mongooseConnectionStub = sandbox.stub(mongoStub);
+      processExitStub = sandbox.stub(process, 'exit');
       publishStub = sandbox.stub(pubsub, 'publish', (topic, data) => {
         if (handlers[topic] && _.isFunction(handlers[topic])) {
           handlers[topic].call(handlers[topic], data);
@@ -107,7 +108,7 @@ describe('db', function () {
       };
       mongoReachable = false;
       const dbInit = dbInitializer.startUp(config);
-      return Promise.delay(10)
+      return Promise.delay(20)
         .then(() => {
           expect(mongooseConnectionStub.connect).to.be.calledTwice; //Once for initial connect and second during retry
           expect(mongooseConnectionStub.on.callCount).to.equal(6); //3*2 - 3 more times during retry.
