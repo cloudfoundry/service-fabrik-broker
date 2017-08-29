@@ -1401,7 +1401,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#schedule-update', function () {
-        it('should return 503 - schedule backup feature not enabled', function () {
+        it('should return 503 - schedule update feature not enabled', function () {
           const mongourl = config.mongodb.url;
           const mongoprovision = config.mongodb.provision;
           delete config.mongodb.url;

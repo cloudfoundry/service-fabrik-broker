@@ -238,6 +238,9 @@ describe('service-fabrik-admin', function () {
             .post(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
+            .send({
+              progress: 'SF Deployed'
+            })
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(403);
@@ -252,6 +255,9 @@ describe('service-fabrik-admin', function () {
             .put(`${base_url}/service-fabrik/maintenance`)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
+            .send({
+              progress: 'SF Deployed'
+            })
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(200);
