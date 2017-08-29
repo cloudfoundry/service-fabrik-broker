@@ -79,6 +79,27 @@ describe('service-fabrik-admin', function () {
         });
       });
 
+      describe('#getDeploymentDirectorConfig', function () {
+        it('it return the config of the director to which the deployment belongs', function () {
+          return chai
+            .request(apps.internal)
+            .get(`${base_url}/deployments/${deployment_name}/director`)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.name).to.equal('bosh');
+              expect(res.body).to.have.property('uuid');
+              expect(res.body).to.have.property('name');
+              expect(res.body).to.have.property('support_create');
+              expect(res.body).to.have.property('infrastructure');
+              expect(res.body).to.have.property('cpi');
+              mocks.verify();
+            });
+        });
+      });
+
       describe('#updateDeployment', function () {
         it('should initiate a service-fabrik-operation via an update at cloud controller', function () {
           mocks.cloudController.updateServiceInstance(instance_id, body => {
