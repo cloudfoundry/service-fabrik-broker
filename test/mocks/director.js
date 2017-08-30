@@ -116,7 +116,7 @@ function getDeploymentNames(capacity, queued, oob) {
   return names;
 }
 
-function getDeployments(opts) {
+function getDeployments(opts, expectedReturnStatusCode) {
   const queued = _.get(opts, 'queued', false);
   const capacity = _.get(opts, 'capacity', NetworkSegmentIndex.capacity());
   const noOfTimes = 1;
@@ -127,7 +127,7 @@ function getDeployments(opts) {
     .map(() => nock(directorUrl)
       .replyContentLength()
       .get('/deployments')
-      .reply(200, deployments));
+      .reply(expectedReturnStatusCode || 200, deployments));
   if (queued) {
     const tasks = _
       .chain()
