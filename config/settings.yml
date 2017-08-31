@@ -539,8 +539,8 @@ boshlite2:
   cf:
     <<: *cf
     password: 7muomwfzuaqo1r6aid1t
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     url: https://192.168.50.6:25555
     password: v5o4z3qg3og1gjct0eea
     infrastructure:
@@ -565,8 +565,8 @@ development_sc6: &sc6
   <<: *defaults
   log_level: debug
   password: 'secret'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     prefix: service-fabrik-backup
     url: https://127.0.0.1:25555
     infrastructure:
@@ -620,8 +620,8 @@ development_aws:
   <<: *defaults
   log_level: debug
   password: 'secret'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     url: https://127.0.0.1:25557
     infrastructure:
       <<: *director_infrastructure
