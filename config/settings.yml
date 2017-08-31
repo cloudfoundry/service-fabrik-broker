@@ -493,6 +493,15 @@ development: &development
   <<: *defaults
   log_level: debug
   password: 'secret'
+  directors:
+  - <<: *director
+    cpi: aws_cpi
+    primary: true
+    support_create: true
+    name: bosh
+    uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
+    infrastructure: &test_infrastructure
+      <<: *director_infrastructure
   agents:
     <<: *agents
     blueprint: &agent_blueprint1
@@ -679,7 +688,7 @@ production:
 test:
   <<: *defaults
   log_level: debug
-  enable_circuit_breaker: false
+  # enable_circuit_breaker: false
   external:
     <<: *external
     protocol: 'http'
