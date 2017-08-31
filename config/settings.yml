@@ -690,7 +690,7 @@ production:
 test:
   <<: *defaults
   log_level: debug
-  # enable_circuit_breaker: false
+  enable_circuit_breaker: false
   external:
     <<: *external
     protocol: 'http'
