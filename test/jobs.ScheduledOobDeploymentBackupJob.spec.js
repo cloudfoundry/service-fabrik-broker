@@ -28,7 +28,7 @@ describe('Jobs', function () {
     // const prefixForDelete = `${space_guid}/backup/${instance_id}.${backup_guid}`;
     const fileName14Daysprior = `${prefix}.${backup_guid}.${started14DaysPrior}.json`;
     const pathname14 = `/${container}/${fileName14Daysprior}`;
-    const mongoDBContainer = config.mongodb.agent.provider.container;
+    const mongoDBContainer = config.backup.provider.container;
     // const mongoDBContainer = _.replace(config.mongodb.agent.provider.container,'broker-db','postgresql');
     const backupFileName14DayspriorToDelete = `/${backup_guid}`;
     const scheduled_data = {

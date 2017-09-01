@@ -43,7 +43,7 @@ const manifest = {
     agent: {
       provider: {
         name: 'openstack',
-        container: config.mongodb.agent.provider.container
+        container: config.backup.provider.container
       },
       username: 'admin',
       password: 'admin'
