@@ -28,6 +28,7 @@ describe('service-fabrik-admin', function () {
 
     before(function () {
       config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+      mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
       fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
@@ -63,6 +64,7 @@ describe('service-fabrik-admin', function () {
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
         const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 200;
         this.timeout(2000 + WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
+        mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');

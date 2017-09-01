@@ -105,19 +105,12 @@ defaults: &defaults
       schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
       status_check_every: 120000 # (ms) Check the status of service fabrik backup once every 2 mins
       backup_timeout_time: 7200000 # (ms) Service Fabrik backup must finish within this timeout time (2 hrs)
-    agent:
-      version: '1'
-      provider:
-        container: <%= cloudProvider.containerPrefix %>-broker-db
-      auth:
-        username: agent
-        password: secret
 
   ######################
   # SCHEDULER SETTINGS #
   ######################
   scheduler:
-    job_types: ScheduledBackup, ServiceFabrikBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper
+    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper
     process_every: '3 minutes' # Process every 3 min by default
     run_with_web_process: true #if this flag is either undefined or set to true, then agenda scheduler can run along within web process
     max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
