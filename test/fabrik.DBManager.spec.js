@@ -420,7 +420,7 @@ describe('fabrik', function () {
               expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);
               //Can be any one of the state
             })
-            .then(() => Promise.delay(5))
+            .then(() => Promise.delay(10))
             .then(() => {
               expect(getDeploymentStub).to.be.calledOnce;
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb');
