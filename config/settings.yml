@@ -105,13 +105,6 @@ defaults: &defaults
       schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
       status_check_every: 120000 # (ms) Check the status of service fabrik backup once every 2 mins
       backup_timeout_time: 7200000 # (ms) Service Fabrik backup must finish within this timeout time (2 hrs)
-    agent:
-      version: '1'
-      provider:
-        container: <%= cloudProvider.containerPrefix %>-broker-db
-      auth:
-        username: agent
-        password: secret
 
   ######################
   # SCHEDULER SETTINGS #
@@ -200,6 +193,8 @@ defaults: &defaults
     retention_period_in_days: 14
     max_num_on_demand_backup: 2
     status_check_every: 120000 # (ms) Check the status of backup once every 2 mins
+    retry_delay_on_error: 60000 # (ms) In case of unlock failure 3 retry attempts will be done with this configured delay in exponential manner
+    lock_check_delay_on_restart: 5000 #(ms) On restart of service fabrik queries all deployments to see if there is a lock on it. This delay ensures each call is spaced with this delay.
     backup_restore_status_poller_timeout: 86400000 # (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
     backup_restore_status_check_every: 120000 # (ms) Check the status of deployment backup/restore once every 2 mins
     abort_time_out: 300000 #(ms) Timeout time for abort of backup to complete
@@ -500,6 +495,15 @@ development: &development
   <<: *defaults
   log_level: debug
   password: 'secret'
+  directors:
+  - <<: *director
+    cpi: aws_cpi
+    primary: true
+    support_create: true
+    name: bosh
+    uuid: b7e651e2-3afe-471f-9bca-93048fa591f4
+    infrastructure: &test_infrastructure
+      <<: *director_infrastructure
   agents:
     <<: *agents
     blueprint: &agent_blueprint1
@@ -544,8 +548,8 @@ boshlite2:
   cf:
     <<: *cf
     password: 7muomwfzuaqo1r6aid1t
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     url: https://192.168.50.6:25555
     password: v5o4z3qg3og1gjct0eea
     infrastructure:
@@ -570,8 +574,8 @@ development_sc6: &sc6
   <<: *defaults
   log_level: debug
   password: 'secret'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     prefix: service-fabrik-backup
     url: https://127.0.0.1:25555
     infrastructure:
@@ -625,8 +629,8 @@ development_aws:
   <<: *defaults
   log_level: debug
   password: 'secret'
-  director:
-    <<: *director
+  directors:
+  - <<: *director
     url: https://127.0.0.1:25557
     infrastructure:
       <<: *director_infrastructure

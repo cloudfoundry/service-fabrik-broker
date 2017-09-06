@@ -3,21 +3,25 @@
 const lib = require('../lib');
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
+const logger = require('../lib/logger');
 const DirectorManager = lib.fabrik.DirectorManager;
+const BoshDirectorClient = lib.bosh.BoshDirectorClient;
 const CONST = require('../lib/constants');
+const errors = require('../lib/errors');
 const ServiceFabrikClient = require('../lib/cf/ServiceFabrikClient');
 const ServiceFabrikOperation = require('../lib/fabrik/ServiceFabrikOperation');
 
 describe('fabrik', function () {
   describe('FabrikStatusPoller', function () {
     /* jshint expr:true */
-
-    let sandbox, startStub, directorOperationStub, serviceFabrikClientStub, serviceFabrikOperationStub;
+    let sandbox, startStub, directorOperationStub, serviceFabrikClientStub, serviceFabrikOperationStub,
+      getDirectorConfigStub, failUnlock, restartSpy;
     const index = mocks.director.networkSegmentIndex;
     const time = Date.now();
     const IN_PROGRESS_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const SUCCEEDED_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180bs';
     const ABORTING_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180ba';
+    const UNLOCK_FAILED_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
     const instanceInfo = {
       space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
       instance_guid: mocks.director.uuidByIndex(index),
@@ -33,17 +37,20 @@ describe('fabrik', function () {
     _.set(instanceInfo_Succeeded, 'backup_guid', SUCCEEDED_BACKUP_GUID);
     const instanceInfo_aborting = _.clone(instanceInfo);
     _.set(instanceInfo_aborting, 'backup_guid', ABORTING_BACKUP_GUID);
+    const instanceInfo_unlock_failed = _.clone(instanceInfo);
+    _.set(instanceInfo_unlock_failed, 'backup_guid', UNLOCK_FAILED_BACKUP_GUID);
 
+    const directorConfigStub = {
+      lock_deployment_max_duration: 30000
+    };
     const config = {
-      director: {
-        lock_deployment_max_duration: 10000
-      },
       backup: {
         status_check_every: 10,
-        abort_time_out: 180000
+        abort_time_out: 180000,
+        retry_delay_on_error: 10,
+        lock_check_delay_on_restart: 0
       }
     };
-
     const FabrikStatusPoller = proxyquire('../lib/fabrik/FabrikStatusPoller', {
       '../config': config
     });
@@ -53,7 +60,15 @@ describe('fabrik', function () {
         sandbox = sinon.sandbox.create();
         directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
         serviceFabrikClientStub = sandbox.stub(ServiceFabrikClient.prototype, 'abortLastBackup');
-        serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke');
+        serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke', () => Promise.try(() => {
+          logger.info('Unlock must fail:', failUnlock);
+          if (failUnlock) {
+            throw errors.InternalServerError('Error occurred..');
+          }
+          return {};
+        }));
+        getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
+        getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
         directorOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS
         }));
@@ -66,16 +81,22 @@ describe('fabrik', function () {
         directorOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS
         }));
-        directorOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(1).returns(Promise.resolve({
+        directorOperationStub.returns(Promise.resolve({
           state: CONST.OPERATION.SUCCEEDED
         }));
       });
-
+      beforeEach(function () {
+        directorConfigStub.lock_deployment_max_duration = 0;
+        failUnlock = false;
+        FabrikStatusPoller.stopPoller = false;
+      });
       afterEach(function () {
+        FabrikStatusPoller.stopPoller = true;
         FabrikStatusPoller.clearAllPollers();
         directorOperationStub.reset();
         serviceFabrikClientStub.reset();
         serviceFabrikOperationStub.reset();
+        getDirectorConfigStub.reset();
       });
 
       after(function () {
@@ -83,7 +104,6 @@ describe('fabrik', function () {
       });
 
       it('Abort backup if operation is not complete & wait for abort to complete', function () {
-        config.director.lock_deployment_max_duration = 0;
         return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
@@ -92,11 +112,9 @@ describe('fabrik', function () {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).not.to.be.called;
-            config.director.lock_deployment_max_duration = 10000;
           }));
       });
       it('Abort backup if operation is not complete & post abort time out, unlock deployment', function () {
-        config.director.lock_deployment_max_duration = 0;
         config.backup.abort_time_out = 0;
         return FabrikStatusPoller.start(instanceInfo_InProgress, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
@@ -107,54 +125,64 @@ describe('fabrik', function () {
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.calledOnce;
             config.backup.abort_time_out = 180000;
-            config.director.lock_deployment_max_duration = 10000;
           }));
       });
-      it('Abort backup if operation is not complete & post successful abort, unlock deployment', function (done) {
-        config.director.lock_deployment_max_duration = 0;
+      it('Abort backup if operation is not complete & post successful abort, unlock deployment', function () {
         return FabrikStatusPoller.start(instanceInfo_aborting, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(30).then(() => {
+          Promise.delay(50).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;
-            done();
           }));
       });
-      it('Stop polling operation on backup completion &  unlock deployment', function (done) {
-        config.director.lock_deployment_max_duration = 0;
+      it('Stop polling operation on backup completion &  unlock deployment', function () {
         return FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(30).then(() => {
+          Promise.delay(50).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
+            expect(FabrikStatusPoller.pollers.length).to.eql(0);
             expect(serviceFabrikOperationStub).to.be.called;
-            done();
+          }));
+      });
+      it('Unlock failure must continue the poller', function () {
+        failUnlock = true;
+        directorConfigStub.lock_deployment_max_duration = 3000;
+        return FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
+          name: 'hugo',
+          email: 'hugo@sap.com'
+        }).then(() =>
+          Promise.delay(100).then(() => {
+            expect(directorOperationStub).to.be.calledTwice; //On recieving success response the response is set in instanceInfo
+            expect(serviceFabrikClientStub).not.to.be.called;
+            expect(serviceFabrikOperationStub.callCount > 6).to.eql(true); //Retry for each invocation results in 3 calls. So expect atleast 6 (2 *3) calls
           }));
       });
     });
 
     describe('#PollerRestartOnBrokerRestart', function () {
-
       before(function () {
         startStub = sinon.stub(FabrikStatusPoller, 'start');
+        restartSpy = sinon.spy(FabrikStatusPoller, 'restart');
       });
-
+      beforeEach(function () {
+        FabrikStatusPoller.stopPoller = false;
+      });
       afterEach(function () {
+        FabrikStatusPoller.stopPoller = true;
         FabrikStatusPoller.clearAllPollers();
         startStub.reset();
+        restartSpy.reset();
         mocks.reset();
       });
-
       after(function () {
         startStub.restore();
       });
-
-
       describe('#startIfNotLocked', function () {
         it('It should call start() if deployment is  locked', function () {
           FabrikStatusPoller.startIfNotLocked(true, {});
@@ -165,7 +193,6 @@ describe('fabrik', function () {
           return expect(startStub).not.to.be.called;
         });
       });
-
       describe('#restart', function () {
         it('should restart polling for deployments with lock', function () {
           const queued = false;
@@ -183,7 +210,6 @@ describe('fabrik', function () {
             .then(promises => Promise.all(promises)
               .then(() => expect(startStub).to.be.calledTwice));
         });
-
         it('should not restart polling for deployments without a lock', function () {
           const queued = false;
           const capacity = 2;
@@ -199,6 +225,25 @@ describe('fabrik', function () {
             .restart('backup')
             .then(promises => Promise.all(promises)
               .then(() => expect(startStub).not.to.be.called));
+        });
+        it('If bosh is not responding at start then FabrikPoller must keep on retrying', function () {
+          const queued = false;
+          const capacity = 2;
+          const opts = {
+            queued: queued,
+            capacity: capacity
+          };
+          mocks.director.getDeployments(opts, 500);
+          mocks.director.getDeployments(opts, 500);
+          mocks.director.getDeployments(opts, 500);
+          return FabrikStatusPoller
+            .restart('backup')
+            .then(promises => {
+              mocks.verify();
+              expect(startStub).not.to.be.called;
+              expect(restartSpy).to.be.calledTwice;
+              expect(promises).to.eql(null);
+            });
         });
       });
     });
