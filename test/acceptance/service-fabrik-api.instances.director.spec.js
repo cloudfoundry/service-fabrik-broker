@@ -1476,7 +1476,7 @@ describe('service-fabrik-api', function () {
         });
       });
       describe('#GetUpdateSchedule', function () {
-        it('getUpdateSchedule should return 200 OK', function () {
+        it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1491,6 +1491,38 @@ describe('service-fabrik-api', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
+        it('should return update required status if query param check_update_required is provided', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.director.getDeployments();
+          mocks.director.getDeploymentManifest(1);
+          const diff = [
+            ['- name: blueprint', null],
+            ['  version: 0.0.10', 'removed'],
+            ['  version: 0.0.11', 'added']
+          ];
+          mocks.director.diffDeploymentManifest(1, diff);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .query({
+              check_update_required: true
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
+              _.set(expectedJobResponse, 'update_required', true);
+              _.set(expectedJobResponse, 'update_details', diff);
+              expect(res.body).to.eql(expectedJobResponse);
               mocks.verify();
             });
         });
