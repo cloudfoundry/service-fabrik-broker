@@ -43,7 +43,7 @@ const manifest = {
     agent: {
       provider: {
         name: 'openstack',
-        container: config.mongodb.agent.provider.container
+        container: config.backup.provider.container
       },
       username: 'admin',
       password: 'admin'
@@ -120,7 +120,7 @@ function getDeployments(opts, expectedReturnStatusCode) {
   const queued = _.get(opts, 'queued', false);
   const capacity = _.get(opts, 'capacity', NetworkSegmentIndex.capacity());
   const noOfTimes = 1;
-  const oob = _.get(opts, 'oob', false);
+  const oob = _.get(opts, 'oob', true);
   const deployments = getDeploymentNames(capacity, queued, oob);
   const scope = _
     .range(noOfTimes)

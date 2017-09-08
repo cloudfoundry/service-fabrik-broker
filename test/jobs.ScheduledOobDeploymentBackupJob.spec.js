@@ -28,7 +28,7 @@ describe('Jobs', function () {
     // const prefixForDelete = `${space_guid}/backup/${instance_id}.${backup_guid}`;
     const fileName14Daysprior = `${prefix}.${backup_guid}.${started14DaysPrior}.json`;
     const pathname14 = `/${container}/${fileName14Daysprior}`;
-    const mongoDBContainer = config.mongodb.agent.provider.container;
+    const mongoDBContainer = config.backup.provider.container;
     // const mongoDBContainer = _.replace(config.mongodb.agent.provider.container,'broker-db','postgresql');
     const backupFileName14DayspriorToDelete = `/${backup_guid}`;
     const scheduled_data = {
@@ -84,7 +84,7 @@ describe('Jobs', function () {
     });
 
     describe('#RunBackup', function () {
-      it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful', function (done) {
+      it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful', function () {
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -109,32 +109,31 @@ describe('Jobs', function () {
         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
-          return ScheduledOobDeploymentBackupJob.run(job, () => {
-            mocks.verify();
-            const expectedBackupResponse = {
-              start_backup_status: {
-                operation: 'backup',
-                backup_guid: backupResponse.backup_guid,
-                token: token
-              },
-              delete_backup_status: {
-                deleted_guids: ['071acb05-66a3-471b-af3c-8bbf1e4180be'],
-                job_cancelled: false,
-                deployment_deleted: false
-              }
-            };
-            config.backup.backup_restore_status_check_every = old_frequency;
-            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-            expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
-            expect(_.omit(baseJobLogRunHistoryStub.firstCall.args[1], 'status', 'deleted_guids')).to.eql(expectedBackupResponse);
-            expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
-            expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
-            done();
-          });
+          return ScheduledOobDeploymentBackupJob.run(job, () => {})
+            .then(() => {
+              mocks.verify();
+              const expectedBackupResponse = {
+                start_backup_status: {
+                  operation: 'backup',
+                  backup_guid: backupResponse.backup_guid,
+                  token: token
+                },
+                delete_backup_status: {
+                  deleted_guids: ['071acb05-66a3-471b-af3c-8bbf1e4180be'],
+                  job_cancelled: false,
+                  deployment_deleted: false
+                }
+              };
+              config.backup.backup_restore_status_check_every = old_frequency;
+              expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+              expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+              expect(_.omit(baseJobLogRunHistoryStub.firstCall.args[1], 'status', 'deleted_guids')).to.eql(expectedBackupResponse);
+              expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+              expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+            });
         } catch (ex) {
           console.log('exception occurred', ex);
           mocks.verify();
-          done();
         }
       });
 
