@@ -159,30 +159,44 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(400).then(() => {
+          Promise.delay(200).then(() => {
             expect(directorOperationStub).to.be.calledTwice; //On recieving success response the response is set in instanceInfo
             expect(serviceFabrikClientStub).not.to.be.called;
-            expect(serviceFabrikOperationStub.callCount > 6).to.eql(true); //Retry for each invocation results in 3 calls. So expect atleast 6 (2 *3) calls
+            expect(serviceFabrikOperationStub.callCount >= 2).to.eql(true); //Retry for each invocation results in 3 calls. So expect atleast 6 (2 *3) calls
           }));
       });
     });
 
     describe('#PollerRestartOnBrokerRestart', function () {
+      let getDeploymentNameFromCacheStub, deploymentFoundInCache;
+      let deployments = [];
+      deployments.push(mocks.director.deploymentNameByIndex(1));
+      deployments.push(mocks.director.deploymentNameByIndex(2));
       before(function () {
         startStub = sinon.stub(FabrikStatusPoller, 'start');
         restartSpy = sinon.spy(FabrikStatusPoller, 'restart');
+        getDeploymentNameFromCacheStub = sinon.stub(BoshDirectorClient.prototype, 'getDeploymentNamesFromCache', () => Promise.try(() => {
+          logger.info('Deployments found in cache:', deploymentFoundInCache);
+          if (deploymentFoundInCache) {
+            return deployments;
+          }
+          throw errors.Timeout.toManyAttempts(CONST.BOSH_POLL_MAX_ATTEMPTS, new Error('Fetching deployments from Cache is taking too long.'));
+        }));
       });
       beforeEach(function () {
+        deploymentFoundInCache = true;
         FabrikStatusPoller.stopPoller = false;
       });
       afterEach(function () {
         FabrikStatusPoller.stopPoller = true;
         FabrikStatusPoller.clearAllPollers();
         startStub.reset();
+        getDeploymentNameFromCacheStub.reset();
         restartSpy.reset();
         mocks.reset();
       });
       after(function () {
+        getDeploymentNameFromCacheStub.restore();
         startStub.restore();
       });
       describe('#startIfNotLocked', function () {
@@ -197,16 +211,9 @@ describe('fabrik', function () {
       });
       describe('#restart', function () {
         it('should restart polling for deployments with lock', function () {
-          const queued = false;
-          const capacity = 2;
-          const opts = {
-            queued: queued,
-            capacity: capacity
-          };
           _.each(
-            mocks.director.getDeploymentNames(capacity, queued), deploymentObj =>
-            mocks.director.getLockProperty(deploymentObj.name, true));
-          mocks.director.getDeployments(opts);
+            deployments, name =>
+            mocks.director.getLockProperty(name, true));
           return FabrikStatusPoller
             .restart('backup')
             .then(promises => Promise.all(promises)
@@ -220,8 +227,8 @@ describe('fabrik', function () {
             capacity: capacity
           };
           _.each(
-            mocks.director.getDeploymentNames(capacity, queued), deploymentObj =>
-            mocks.director.getLockProperty(deploymentObj.name, false));
+            deployments, name =>
+            mocks.director.getLockProperty(name, false));
           mocks.director.getDeployments(opts);
           return FabrikStatusPoller
             .restart('backup')
@@ -229,19 +236,10 @@ describe('fabrik', function () {
               .then(() => expect(startStub).not.to.be.called));
         });
         it('If bosh is not responding at start then FabrikPoller must keep on retrying', function () {
-          const queued = false;
-          const capacity = 2;
-          const opts = {
-            queued: queued,
-            capacity: capacity
-          };
-          mocks.director.getDeployments(opts, 500);
-          mocks.director.getDeployments(opts, 500);
-          mocks.director.getDeployments(opts, 500);
+          deploymentFoundInCache = false;
           return FabrikStatusPoller
             .restart('backup')
             .then(promises => {
-              mocks.verify();
               expect(startStub).not.to.be.called;
               expect(restartSpy).to.be.calledTwice;
               expect(promises).to.eql(null);
