@@ -236,13 +236,7 @@ describe('fabrik', function () {
               .then(() => expect(startStub).not.to.be.called));
         });
         it('If bosh is not responding at start then FabrikPoller must keep on retrying', function () {
-          const queued = false;
           deploymentFoundInCache = false;
-          const capacity = 2;
-          const opts = {
-            queued: queued,
-            capacity: capacity
-          };
           return FabrikStatusPoller
             .restart('backup')
             .then(promises => {

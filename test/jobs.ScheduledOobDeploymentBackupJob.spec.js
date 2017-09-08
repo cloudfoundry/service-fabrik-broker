@@ -134,7 +134,6 @@ describe('Jobs', function () {
         } catch (ex) {
           console.log('exception occurred', ex);
           mocks.verify();
-          done();
         }
       });
 
