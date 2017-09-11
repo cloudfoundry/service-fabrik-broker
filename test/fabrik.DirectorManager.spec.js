@@ -21,6 +21,9 @@ var boshStub = {
   director: {
     getDeploymentNames: function () {
       return Promise.resolve([`service-fabrik-0021-${used_guid}`]);
+    },
+    getDeploymentNameForInstanceId: function () {
+      return Promise.resolve([`service-fabrik-0021-${used_guid}`]);
     }
   }
 };
