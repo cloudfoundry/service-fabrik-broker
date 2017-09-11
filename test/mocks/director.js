@@ -314,7 +314,6 @@ function getBindingProperty(binding_id, parameters, deployment, notFound) {
     });
 }
 
-
 function verifyDeploymentLockStatus(deployment, locked, params) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
   if (!locked) {
@@ -336,11 +335,11 @@ function verifyDeploymentLockStatus(deployment, locked, params) {
     });
 }
 
-function releaseLock(deployment) {
+function releaseLock(deployment, expectedStatusCode) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
   return nock(directorUrl)
     .delete(`/deployments/${deploymentName}/properties/${CONST.DEPLOYMENT_LOCK_NAME}`)
-    .reply(204);
+    .reply(expectedStatusCode || 204);
 }
 
 function acquireLock(deployment) {
