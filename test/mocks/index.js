@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const nock = require('nock');
+const azureClient = require('./azureClient');
 const cloudController = require('./cloudController');
 const cloudProvider = require('./cloudProvider');
 const uaa = require('./uaa');
@@ -15,6 +16,7 @@ const lib = require('../../lib');
 const logger = lib.logger;
 
 exports = module.exports = init;
+exports.azureClient = azureClient;
 exports.cloudController = cloudController;
 exports.cloudProvider = cloudProvider;
 exports.uaa = uaa;
