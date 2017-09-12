@@ -1431,7 +1431,7 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it('should return 400 - Bad request on skipping mandatory params', function () {
+        it('should return 400 - Badrequest on skipping mandatory params', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,

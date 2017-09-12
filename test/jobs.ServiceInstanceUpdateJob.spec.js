@@ -11,9 +11,9 @@ const ScheduleManager = require('../lib/jobs/ScheduleManager');
 const NetworkSegmentIndex = require('../lib/bosh/NetworkSegmentIndex');
 
 describe('Jobs', function () {
+  const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
   /* jshint expr:true */
   describe('ServiceInstanceUpdateJob', function () {
-    const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
     const sf_operation_name = 'update';
     const sf_operation_args = {};
     const index = NetworkSegmentIndex.adjust(mocks.director.networkSegmentIndex);
@@ -385,6 +385,39 @@ describe('Jobs', function () {
           expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
           done();
         }).catch(done);
+    });
+  });
+  describe('#Random', function () {
+    let randomIntStub, randomize, randomInt;
+    before(function () {
+      randomInt = utils.getRandomInt;
+      randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
+    });
+    after(function () {
+      randomIntStub.restore();
+    });
+    it(`Returns random schedule interval for the service instance update Job`, function () {
+      const oldRun = config.scheduler.jobs.service_instance_update.run_every_xdays;
+      config.scheduler.jobs.service_instance_update.run_every_xdays = 7;
+      const repeatInterval = ServiceInstanceUpdateJob.getRandomRepeatInterval();
+      expect(repeatInterval).to.equal('1 1 1,8,15,22 * *');
+      config.scheduler.jobs.service_instance_update.run_every_xdays = oldRun;
+    });
+    it(`Returns random schedule between the defined start end times`, function () {
+      randomize = true;
+      const oldConfig = _.clone(config.scheduler.jobs.service_instance_update);
+      config.scheduler.jobs.service_instance_update.run_every_xdays = 7;
+      config.scheduler.jobs.service_instance_update.should_start_after_hr = 10;
+      config.scheduler.jobs.service_instance_update.should_start_before_hr = 12;
+      config.scheduler.jobs.service_instance_update.should_start_after_min = 35;
+      config.scheduler.jobs.service_instance_update.should_start_before_min = 40;
+      const repeatInterval = ServiceInstanceUpdateJob.getRandomRepeatInterval();
+      const repeatArr = repeatInterval.split(' ');
+      expect(repeatArr[0] >= config.scheduler.jobs.service_instance_update.should_start_after_min).to.equal(true);
+      expect(repeatArr[0] <= config.scheduler.jobs.service_instance_update.should_start_before_min).to.equal(true);
+      expect(repeatArr[1] >= config.scheduler.jobs.service_instance_update.should_start_after_hr).to.equal(true);
+      expect(repeatArr[1] <= config.scheduler.jobs.service_instance_update.should_start_before_hr).to.equal(true);
+      config.scheduler.jobs.service_instance_update = oldConfig;
     });
   });
 });

@@ -126,8 +126,14 @@ defaults: &defaults
       scheduled_backup:
         max_attempts: 3 # Incase of a conflicting operation (ex. update) in progress, the backup is rescheduled. This count defines upper limit on the number of attempts the job is rescheduled in case of conflict.
       service_instance_update: 
-        max_attempts: 3
-        run_every_xdays: 15 #every 7 days update is checked
+        max_attempts: 3  #In case of an error while initiating a backup, it is retried again after reschedule_delay. 
+                         #This defines the upper limit on # of retries. # of retries is not applicable in case a backup is in progress in which case it tries over and over.
+        run_every_xdays: 7 #every 7 days update is checked
+        should_start_after_hr: 8 #Service Instance update Job will be scheduled in a randomized hr between job_start_hr & job_end_hr
+        should_start_before_hr: 17
+        should_start_after_min: 0 #Service Instance update Job will be scheduled in a randomized hr between job_start_hr & job_end_hr
+        should_start_before_min: 59
+        time_zone: 'Asia/Kolkata' #Timezone in which the jobs will be running
     system_jobs:
       - name: 'service-fabrik-mongodb'
         type: ScheduledOobDeploymentBackup

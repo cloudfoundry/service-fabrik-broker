@@ -208,7 +208,8 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
-            repeatInterval: '1 1 1,16 * *'
+            repeatInterval: CONST.SCHEDULE.RANDOM,
+            timeZone: 'Asia/Kolkata'
           };
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
