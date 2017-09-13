@@ -43,6 +43,7 @@ class JobScheduler {
   }
 
   initMaster() {
+    require('./lib/db/DbConnectionManager');
     this.serviceFabrikInMaintenance = false;
     logger.info(`Configured number of workers ${config.scheduler.max_workers} - No. of CPUs : ${cpus.length} - job workers : ${maxWorkers}`);
     this.workerType = `MASTER - ${process.pid}`;
