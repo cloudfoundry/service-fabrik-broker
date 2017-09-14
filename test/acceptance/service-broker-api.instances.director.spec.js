@@ -112,6 +112,7 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
+          mocks.uaa.getAccessToken();
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -122,7 +123,9 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: {
-                bosh_director_name: 'bosh'
+                bosh_director_name: 'bosh',
+                username: 'admin',
+                password: 'admin'
               },
               accepts_incomplete: accepts_incomplete
             })
@@ -134,7 +137,9 @@ describe('service-broker-api', function () {
               expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
                 type: 'create',
                 parameters: {
-                  bosh_director_name: 'bosh'
+                  bosh_director_name: 'bosh',
+                  username: 'admin',
+                  password: 'admin'
                 },
                 space_guid: space_guid
               });
