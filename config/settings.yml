@@ -116,6 +116,7 @@ defaults: &defaults
     max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
     max_concurrency: 30
     default_concurrency: 20
+    start_delay: 120000 # Scheduler start must be delayed for DB connections to happen.
     default_lock_lifetime: 180000
     maintenance_check_interval: 90000 #every (ms) scheduler checks for maitenance mode
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler

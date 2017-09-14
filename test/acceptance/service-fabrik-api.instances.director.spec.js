@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const moment = require('moment');
 const lib = require('../../lib');
 const ScheduleManager = require('../../lib/jobs');
@@ -241,7 +242,27 @@ describe('service-fabrik-api', function () {
           state: 'succeeded',
           agent_ip: mocks.agent.ip
         };
-
+        const instanceInfo = {
+          space_guid: space_guid,
+          backup_guid: backup_guid,
+          instance_guid: instance_id,
+          agent_ip: '10.0.1.10',
+          service_id: service_id,
+          plan_id: plan_id,
+          deployment: mocks.director.deploymentNameByIndex(index),
+          started_at: new Date()
+        };
+        const lockInfo = {
+          username: 'admin',
+          lockedForOperation: 'backup',
+          createdAt: new Date(),
+          instanceInfo: instanceInfo
+        };
+        const FabrikStatusPoller = require('../../lib/fabrik/FabrikStatusPoller');
+        afterEach(function () {
+          FabrikStatusPoller.stopPoller = true;
+          FabrikStatusPoller.clearAllPollers();
+        });
         it('should initiate a start-backup operation at cloud controller via a service instance update', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
@@ -260,22 +281,6 @@ describe('service-fabrik-api', function () {
             return support.jwt.verify(token, name, args);
           }, 201);
           mocks.director.getDeployments();
-          const instanceInfo = {
-            space_guid: space_guid,
-            backup_guid: backup_guid,
-            instance_guid: instance_id,
-            agent_ip: '10.0.1.10',
-            service_id: service_id,
-            plan_id: plan_id,
-            deployment: mocks.director.deploymentNameByIndex(index),
-            started_at: new Date()
-          };
-          const lockInfo = {
-            username: 'admin',
-            lockedForOperation: 'backup',
-            createdAt: new Date(),
-            instanceInfo: instanceInfo
-          };
           mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
@@ -357,6 +362,8 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.director.getDeployments();
+          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.cloudController.updateServiceInstance(instance_id, body => {
@@ -373,11 +380,11 @@ describe('service-fabrik-api', function () {
               trigger: CONST.BACKUP.TRIGGER.SCHEDULED
             })
             .catch(err => err.response)
-            .then(res => {
+            .then(res => Promise.delay(20).then(() => {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('guid');
               mocks.verify();
-            });
+            }));
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {

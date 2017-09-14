@@ -5,7 +5,6 @@ const moment = require('moment');
 const CONST = require('../lib/constants');
 const errors = require('../lib/errors');
 const maintenanceManager = require('../lib/maintenance').maintenanceManager;
-
 const logger = require('../lib/logger');
 
 describe('JobScheduler', function () {
@@ -24,6 +23,7 @@ describe('JobScheduler', function () {
 
   const schedulerConfig = {
     max_workers: 5,
+    start_delay: 0,
     maintenance_check_interval: 9000,
     maintenance_mode_time_out: 1800000
   };
@@ -51,7 +51,8 @@ describe('JobScheduler', function () {
           },
           './lib/config': {
             scheduler: {
-              max_workers: 5
+              max_workers: 5,
+              start_delay: 0
             }
           }
         });
@@ -104,7 +105,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 4;
         JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-        return JobScheduler
+        const js = JobScheduler
           .ready
           .then(() => {
             logger.info('count is>>', count);
@@ -118,13 +119,15 @@ describe('JobScheduler', function () {
               expect(count).to.eql(4 - 1);
             });
           });
+        clock.tick(schedulerConfig.start_delay);
+        return js;
       });
       it('Create workers based on max_worker config & on error recreate the worker', function () {
         count = 0;
         cpus = 8;
         JobScheduler = proxyquire('../JobScheduler', proxyLibs);
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
-        return JobScheduler
+        const js = JobScheduler
           .ready
           .then(() => {
             for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
@@ -141,15 +144,16 @@ describe('JobScheduler', function () {
               //In the above case because callback also results in additional call
             });
           });
+        clock.tick(schedulerConfig.start_delay);
+        return js;
       });
       it('Should handled unhandled rejection and if the reason is DB unavailable, then must terminate self', function () {
         count = 0;
-        logger.info('count is', count);
         cpus = 1;
         throwUnhandledError = true;
         const EXPECTED_NUM_OF_WORKERS = cpus;
         JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-        return JobScheduler
+        const js = JobScheduler
           .ready
           .then(() => {
             clock.tick(0);
@@ -167,13 +171,15 @@ describe('JobScheduler', function () {
             JobScheduler.handleMessage('INVALID_MESSAGE');
             //Nothing should be done when an invalid message is sent.
           });
+        clock.tick(schedulerConfig.start_delay);
+        return js;
       });
       it('workers should exit on system being in maintenance & scheduler must poll till system in maintenance', function () {
         count = 0;
         cpus = 8;
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
         JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-        return JobScheduler
+        const js = JobScheduler
           .ready
           .then(() => {
             for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
@@ -204,6 +210,8 @@ describe('JobScheduler', function () {
                 expect(JobScheduler.workerCount).to.eql(5);
               });
           });
+        clock.tick(schedulerConfig.start_delay);
+        return js;
       });
     });
 
@@ -244,6 +252,7 @@ describe('JobScheduler', function () {
             clock.tick(0);
             expect(count).to.eql(1);
           });
+        clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -265,6 +274,7 @@ describe('JobScheduler', function () {
             expect(processExitStub).not.to.be.called;
             expect(count).to.eql(1);
           });
+        clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -293,6 +303,7 @@ describe('JobScheduler', function () {
             expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.INTERNAL_ERROR);
             expect(count).to.eql(0);
           });
+        clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -334,7 +345,7 @@ describe('JobScheduler', function () {
       count = 0;
       cpus = 1;
       JobScheduler = proxyquire('../JobScheduler', proxyLibs);
-      return JobScheduler
+      const js = JobScheduler
         .ready
         .then(() => {
           clock.tick(0);
@@ -348,6 +359,8 @@ describe('JobScheduler', function () {
             //Fork should be invoked 1 less than number of cpus.
           });
         });
+      clock.tick(schedulerConfig.start_delay);
+      return js;
     });
   });
 });

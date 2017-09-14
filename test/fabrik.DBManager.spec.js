@@ -230,7 +230,7 @@ describe('fabrik', function () {
         initSandbox.restore();
       });
       const validateConnected = (dbManager, expectedInitCount) => {
-        return Promise.delay(5).then(() => {
+        return Promise.delay(10).then(() => {
           expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
           (expectedInitCount === 1) ? expect(dbInitializeSpy).to.be.calledOnce: expect(dbInitializeSpy.callCount >= 2).to.eql(true);
           expect(loggerWarnSpy).not.to.be.called;
@@ -407,7 +407,7 @@ describe('fabrik', function () {
       });
       it('DB update should succeed when deployment is found', function () {
         const dbManagerForUpdate = new DBManagerForUpdate();
-        return Promise.delay(2).then(() => {
+        return Promise.delay(5).then(() => {
           expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManagerForUpdate.dbInitialized).to.eql(true);

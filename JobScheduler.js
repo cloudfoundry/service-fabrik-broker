@@ -11,6 +11,9 @@ const logger = require('./lib/logger');
 const config = require('./lib/config');
 const errors = require('./lib/errors');
 const maintenanceManager = require('./lib/maintenance').maintenanceManager;
+require('./lib/db/DbConnectionManager');
+require('./lib/jobs');
+require('./lib/fabrik');
 
 let cpuCount = cpus.length;
 let maxWorkers = 0;
@@ -35,7 +38,12 @@ class JobScheduler {
       process.on('SIGINT', () => this.shutDown());
       process.on('unhandledRejection', (reason, p) => this.processUnhandledRejection(reason, p));
       if (cluster.isMaster) {
-        return this.ensureSystemNotInMainenanceThenInitMaster();
+        //This delay is added to ensure that DBManager is initialized prior to scheduler 
+        //checking for maintenance status. Retry is anyways part of this check, but this 
+        //delay ensures we dont have exception always on first try. 
+        return Promise
+          .delay(config.scheduler.start_delay)
+          .then(() => this.ensureSystemNotInMainenanceThenInitMaster());
       } else {
         return this.initWorker();
       }
@@ -43,7 +51,6 @@ class JobScheduler {
   }
 
   initMaster() {
-    require('./lib/db/DbConnectionManager');
     this.serviceFabrikInMaintenance = false;
     logger.info(`Configured number of workers ${config.scheduler.max_workers} - No. of CPUs : ${cpus.length} - job workers : ${maxWorkers}`);
     this.workerType = `MASTER - ${process.pid}`;
@@ -164,7 +171,8 @@ class JobScheduler {
                 });
             }
           }
-        });
+        })
+        .catch(err => reject(err));
     };
     return new Promise((resolve, reject) => {
       checkMaintenanceStatus.call(this, resolve, reject);
