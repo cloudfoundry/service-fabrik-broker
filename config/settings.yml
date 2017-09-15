@@ -123,7 +123,7 @@ defaults: &defaults
     job_history_retention_in_days: 30
     maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
     jobs:
-      reschedule_delay: '20 mins from now'
+      reschedule_delay: '20 minutes from now'
       scheduled_backup:
         max_attempts: 3 # Incase of a conflicting operation (ex. update) in progress, the backup is rescheduled. This count defines upper limit on the number of attempts the job is rescheduled in case of conflict.
       service_instance_update: 

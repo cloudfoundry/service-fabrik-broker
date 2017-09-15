@@ -11,8 +11,6 @@ const logger = require('./lib/logger');
 const config = require('./lib/config');
 const errors = require('./lib/errors');
 const maintenanceManager = require('./lib/maintenance').maintenanceManager;
-require('./lib/db/DbConnectionManager');
-require('./lib/jobs');
 require('./lib/fabrik');
 
 let cpuCount = cpus.length;
@@ -41,6 +39,7 @@ class JobScheduler {
         //This delay is added to ensure that DBManager is initialized prior to scheduler 
         //checking for maintenance status. Retry is anyways part of this check, but this 
         //delay ensures we dont have exception always on first try. 
+        logger.info(`Scheduler will now sleep for ${config.scheduler.start_delay} (ms) before initializing...`);
         return Promise
           .delay(config.scheduler.start_delay)
           .then(() => this.ensureSystemNotInMainenanceThenInitMaster());
@@ -68,7 +67,6 @@ class JobScheduler {
     this.workerType = `Worker - ${cluster.worker.id} - ${process.pid}`;
     logger.info(`Starting Service Fabrik Batch Job worker: ${cluster.worker.id} - ${process.pid}  @${new Date()}`);
     require('./lib/jobs');
-    require('./lib/fabrik');
     process.on('message', this.handleMessage);
   }
 
