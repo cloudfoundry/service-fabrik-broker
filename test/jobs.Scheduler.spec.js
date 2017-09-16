@@ -495,7 +495,6 @@ describe('Jobs', function () {
             });
             expect(jobSpy.schedule).to.be.calledOnce;
             expect(jobSpy.schedule.firstCall.args[0]).to.eql(runAt);
-            expect(jobSpy.computeNextRunAt).to.be.calledOnce;
             expect(jobSpy.saveAsync).to.be.calledOnce;
             scheduler.shutDownHook();
           });
@@ -522,7 +521,6 @@ describe('Jobs', function () {
               });
               expect(jobSpy.schedule).to.be.calledOnce;
               expect(jobSpy.schedule.firstCall.args[0]).to.eql(runAt);
-              expect(jobSpy.computeNextRunAt).to.be.calledOnce;
               expect(jobSpy.saveAsync).to.be.calledOnce;
               scheduler.shutDownHook();
             });
@@ -916,7 +914,6 @@ describe('Jobs', function () {
             });
             expect(jobSpy.repeatEvery).to.be.calledOnce;
             expect(jobSpy.repeatEvery.firstCall.args[0]).to.eql('*/1 * * * *');
-            expect(jobSpy.computeNextRunAt).to.be.calledOnce;
             expect(jobSpy.saveAsync).to.be.calledOnce;
             resetSpies();
             return agendaJobs[0](job, jobDoneSpy);
@@ -935,7 +932,6 @@ describe('Jobs', function () {
             });
             expect(jobSpy.schedule).to.be.calledOnce;
             expect(jobSpy.schedule.firstCall.args[0]).to.eql(schedulerConfig.jobs.reschedule_delay);
-            expect(jobSpy.computeNextRunAt).to.be.calledOnce;
             expect(jobSpy.saveAsync).to.be.calledOnce;
             expect(processExitStub).to.be.calledOnce;
             expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.SF_IN_MAINTENANCE);
@@ -976,7 +972,6 @@ describe('Jobs', function () {
             });
             expect(jobSpy.schedule).to.be.calledOnce;
             expect(jobSpy.schedule.firstCall.args[0]).to.eql(schedulerConfig.jobs.reschedule_delay);
-            expect(jobSpy.computeNextRunAt).to.be.calledOnce;
             expect(jobSpy.saveAsync).to.be.calledOnce;
             expect(processExitStub).to.be.calledOnce;
             expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.SF_IN_MAINTENANCE);
