@@ -201,6 +201,13 @@ const SchedulerPubSub = proxyquire('../lib/jobs/Scheduler', cloneProxyLibs);
 const Scheduler = proxyquire('../lib/jobs/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 
 describe('Jobs', function () {
+  let clock;
+  before(function () {
+    clock = sinon.useFakeTimers();
+  });
+  after(function () {
+    clock.restore();
+  });
   /* jshint expr:true */
   describe('Scheduler', function () {
     let agendaSpy, subscribeSpy, publishSpy, agendaSpyInit, mongooseConnectionStub, sandbox, jobSpy, logSpy;
@@ -491,7 +498,7 @@ describe('Jobs', function () {
             expect(agendaSpy.create).to.be.calledOnce;
             expect(jobSpy.unique).to.be.calledOnce;
             expect(jobSpy.unique.firstCall.args[0]).to.eql({
-              'data._n_a_m_e_': `NONAME_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}`
+              'data._n_a_m_e_': `NONAME_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}_${new Date().getTime()}`
             });
             expect(jobSpy.schedule).to.be.calledOnce;
             expect(jobSpy.schedule.firstCall.args[0]).to.eql(runAt);
@@ -517,7 +524,7 @@ describe('Jobs', function () {
               expect(agendaSpy.create).to.be.calledOnce;
               expect(jobSpy.unique).to.be.calledOnce;
               expect(jobSpy.unique.firstCall.args[0]).to.eql({
-                'data._n_a_m_e_': `NONAME_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}`
+                'data._n_a_m_e_': `NONAME_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}_${new Date().getTime()}`
               });
               expect(jobSpy.schedule).to.be.calledOnce;
               expect(jobSpy.schedule.firstCall.args[0]).to.eql(runAt);
@@ -726,13 +733,13 @@ describe('Jobs', function () {
         return scheduler.startScheduler().then(() => {
           expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
           return scheduler
-            .getJob('1234-5678-8888-3333', CONST.JOB.SCHEDULED_BACKUP, runAt)
+            .getJob('1234-5678-8888-3333', CONST.JOB.SCHEDULED_BACKUP)
             .then(job => {
               expect(agendaSpy.jobsAsync).to.be.calledOnce;
               const criteria = {
                 name: CONST.JOB.SCHEDULED_BACKUP
               };
-              const jobName = `1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}`;
+              const jobName = `1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}`;
               criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = jobName;
               expect(agendaSpy.jobsAsync.firstCall.args[0]).to.be.eql(criteria);
               expect(job).to.eql({});
@@ -926,7 +933,7 @@ describe('Jobs', function () {
             expect(jobDoneSpy).to.be.calledOnce;
             expect(agendaSpy.create).to.be.calledOnce;
             expect(jobSpy.unique).to.be.calledOnce;
-            const jobName = `NONAME_${CONST.JOB.BLUEPRINT_JOB}_${schedulerConfig.jobs.reschedule_delay.replace(/\s*/g, '')}`;
+            const jobName = `NONAME_${CONST.JOB.BLUEPRINT_JOB}_${schedulerConfig.jobs.reschedule_delay.replace(/\s*/g, '')}_${new Date().getTime()}`;
             expect(jobSpy.unique.firstCall.args[0]).to.eql({
               'data._n_a_m_e_': jobName
             });
@@ -966,7 +973,7 @@ describe('Jobs', function () {
             expect(jobDoneSpy).to.be.calledOnce;
             expect(agendaSpy.create).to.be.calledOnce;
             expect(jobSpy.unique).to.be.calledOnce;
-            const jobName = `NONAME_${CONST.JOB.BLUEPRINT_JOB}_${schedulerConfig.jobs.reschedule_delay.replace(/\s*/g, '')}`;
+            const jobName = `NONAME_${CONST.JOB.BLUEPRINT_JOB}_${schedulerConfig.jobs.reschedule_delay.replace(/\s*/g, '')}_${new Date().getTime()}`;
             expect(jobSpy.unique.firstCall.args[0]).to.eql({
               'data._n_a_m_e_': jobName
             });
