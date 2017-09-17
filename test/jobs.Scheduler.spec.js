@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+var moment = require('moment-timezone');
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const mongoose = require('mongoose');
@@ -174,6 +175,7 @@ const schedulerConfig = {
   default_concurrency: 20,
   default_lock_lifetime: 180000,
   agenda_collection: 'agendaJobDetails',
+  job_history_retention_in_days: 1,
   jobs: {
     reschedule_delay: '20 mins from now'
   }
@@ -774,8 +776,25 @@ describe('Jobs', function () {
             .cancelJob('9999-8888-7777-6666', CONST.JOB.SCHEDULED_BACKUP)
             .then(job => {
               expect(job).to.eql({});
-              expect(agendaSpy.cancelAsync).to.be.calledOnce;
+              expect(agendaSpy.cancelAsync).to.be.calledTwice;
+              const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
+              const criteria = [];
+              criteria.push({
+                lastFinishedAt: {
+                  $lt: retentionDate
+                }
+              });
+              criteria.push({
+                nextRunAt: null
+              });
+              //nextRunAt null indicates that its a one time job which will not run in future.
+              criteria.push({
+                type: 'normal'
+              });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
+                $and: criteria
+              });
+              expect(agendaSpy.cancelAsync.secondCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': `9999-8888-7777-6666_${CONST.JOB.SCHEDULED_BACKUP}`
               });
@@ -795,8 +814,25 @@ describe('Jobs', function () {
             .cancelJob('1212-8888-9999-6666', CONST.JOB.SCHEDULED_BACKUP)
             .then(job => {
               expect(job).to.eql({});
-              expect(agendaSpy.cancelAsync).to.be.calledOnce;
+              expect(agendaSpy.cancelAsync).to.be.calledTwice;
+              const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
+              const criteria = [];
+              criteria.push({
+                lastFinishedAt: {
+                  $lt: retentionDate
+                }
+              });
+              criteria.push({
+                nextRunAt: null
+              });
+              //nextRunAt null indicates that its a one time job which will not run in future.
+              criteria.push({
+                type: 'normal'
+              });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
+                $and: criteria
+              });
+              expect(agendaSpy.cancelAsync.secondCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': '1212-8888-9999-6666_ScheduledBackup'
               });
