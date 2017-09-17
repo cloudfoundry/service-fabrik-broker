@@ -868,9 +868,9 @@ describe('Jobs', function () {
         baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory', () => Promise.resolve({}));
         maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo',
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
-          (maintenanceStatus === 1 ? Promise.resolve({}) : () => {
-            throw new errors.InternalServerError('Simulated error');
-          }));
+          (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
+            maintenance: true
+          })));
         jobDoneSpy = sinon.spy();
         processExitStub = runSandBox.stub(process, 'exit');
         jobTypesOld = schedulerConfig.job_types;
@@ -934,7 +934,7 @@ describe('Jobs', function () {
         scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
           mongoose: mongooseConnectionStub
         });
-        maintenanceStatus = 1;
+        maintenanceStatus = 2;
         return scheduler.startScheduler().then(() => {
             expect(agendaSpy.define).to.be.calledOnce;
             //The above count is for the two job types defined in config
@@ -964,47 +964,7 @@ describe('Jobs', function () {
           .then(() => {
             expect(baseJobLogRunHistoryStub).to.be.calledOnce;
             expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.ServiceInMaintenance).to.eql(true);
-            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql('Pre-Condition failed');
-            expect(baseJobLogRunHistoryStub.firstCall.args[2]).to.equal(job);
-            expect(jobDoneSpy).to.be.calledOnce;
-            expect(agendaSpy.create).to.be.calledOnce;
-            expect(jobSpy.unique).to.be.calledOnce;
-            const jobName = `NONAME_${CONST.JOB.BLUEPRINT_JOB}_${schedulerConfig.jobs.reschedule_delay.replace(/\s*/g, '')}_${new Date().getTime()}`;
-            expect(jobSpy.unique.firstCall.args[0]).to.eql({
-              'data._n_a_m_e_': jobName
-            });
-            expect(jobSpy.schedule).to.be.calledOnce;
-            expect(jobSpy.schedule.firstCall.args[0]).to.eql(schedulerConfig.jobs.reschedule_delay);
-            expect(jobSpy.saveAsync).to.be.calledOnce;
-            expect(processExitStub).to.be.calledOnce;
-            expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.SF_IN_MAINTENANCE);
-            return scheduler.shutDownHook();
-          });
-      });
-      it('should reschedule the scheduled job when system maintenance status cannot be determined', function () {
-        const scheduler = new Scheduler();
-        scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
-          mongoose: mongooseConnectionStub
-        });
-        maintenanceStatus = 2;
-        return scheduler.startScheduler().then(() => {
-            resetSpies();
-          })
-          .then(() => {
-            return scheduler.schedule('NONAME', CONST.JOB.BLUEPRINT_JOB, '*/1 * * * *', {
-              instance_id: '888888888',
-              type: 'Online',
-              trigger: 'scheduled'
-            });
-          })
-          .then(() => {
-            resetSpies();
-            return agendaJobs[0](job, jobDoneSpy);
-          })
-          .then(() => {
-            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-            expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.ServiceInMaintenance).to.eql(false);
-            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql('Pre-Condition failed');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql('System in maintenance');
             expect(baseJobLogRunHistoryStub.firstCall.args[2]).to.equal(job);
             expect(jobDoneSpy).to.be.calledOnce;
             expect(agendaSpy.create).to.be.calledOnce;
