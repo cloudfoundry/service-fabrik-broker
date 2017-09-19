@@ -107,6 +107,46 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+        it('returns 202 Accepted when invoked with bosh name', function () {
+          mocks.director.getDeployments({
+            queued: true
+          });
+          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.uaa.getAccessToken();
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                bosh_director_name: 'bosh',
+                username: 'admin',
+                password: 'admin'
+              },
+              accepts_incomplete: accepts_incomplete
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              expect(res.body).to.have.property('operation');
+              const decoded = utils.decodeBase64(res.body.operation);
+              expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
+                type: 'create',
+                parameters: {
+                  bosh_director_name: 'bosh',
+                  username: 'admin',
+                  password: 'admin'
+                },
+                space_guid: space_guid
+              });
+              expect(decoded.task_id).to.eql(`${deployment_name}_${task_id}`);
+              mocks.verify();
+            });
+        });
       });
 
       describe('#update', function () {

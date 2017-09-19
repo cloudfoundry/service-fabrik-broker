@@ -49,6 +49,7 @@ function getAccessToken() {
     .reply(200, {
       access_token: jwtToken,
       refresh_token: jwtToken,
+      scope: 'cloud_controller.admin',
       token_type: 'bearer'
     });
 }
