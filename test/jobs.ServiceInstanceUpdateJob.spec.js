@@ -352,12 +352,12 @@ describe('Jobs', function () {
       mocks.cloudController.updateServiceInstance(instance_id, body => {
         const token = _.get(body.parameters, 'service-fabrik-operation');
         return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 500, {
-        error_code: 'CF-ServiceBrokerBadResponse',
-        status: 500,
+      }, 502, {
+        error_code: 'CF-ServiceBrokerRequestRejected',
+        status: 502,
         description: `Deployment ${job.attrs.data.deployment_name} ${CONST.OPERATION_TYPE.LOCK} by`,
         http: {
-          status: 409
+          status: 422
         }
       });
       const expectedResponse = {
