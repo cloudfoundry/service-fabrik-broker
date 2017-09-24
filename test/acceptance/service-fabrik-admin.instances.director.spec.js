@@ -119,6 +119,30 @@ describe('service-fabrik-admin', function () {
               mocks.verify();
             });
         });
+        it('should initiate a service-fabrik-(update)operation with forbidden manifest changes disable', function () {
+          mocks.cloudController.findServicePlan(instance_id, plan_unique_id);
+          mocks.director.getDeploymentManifest();
+          mocks.director.diffDeploymentManifest();
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.internal)
+            .post(`${base_url}/deployments/${deployment_name}/update`)
+            .send({
+              forbidden_changes: 'false'
+            })
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.name).to.equal(name);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
       });
 
       describe('#updateOutdatedDeployments', function () {
