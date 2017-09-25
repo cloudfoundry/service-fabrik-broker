@@ -260,6 +260,9 @@ describe('JobScheduler', function () {
         });
       });
       it('If maintenance duration exceeds timeout, then terminates maintenance window & on success, initializes all workers', function () {
+        getMaintenanceStub.onCall(2).returns(Promise.resolve({
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
         count = 0;
         logger.info('count is', count);
         cpus = 1;
@@ -271,6 +274,9 @@ describe('JobScheduler', function () {
             logger.info('count is>>>>', count);
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(getMaintenanceStub.callCount).to.equal(3); // 3times from the JobScheduler
+            expect(updateMaintStub).to.be.calledOnce;
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins)`);
+            expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
             expect(processExitStub).not.to.be.called;
             expect(count).to.eql(1);
           });

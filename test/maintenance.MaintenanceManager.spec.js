@@ -56,7 +56,6 @@ describe('maintenance', function () {
           expect(repoSaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
           expect(repoSaveStub.firstCall.args[1]).to.eql(maintInfo);
           expect(repoSaveStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
-          return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER);
         });
     });
     it('should successfully update start of maintenance with provided progress info', function () {
@@ -73,7 +72,6 @@ describe('maintenance', function () {
           expect(repoSaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
           expect(repoSaveStub.firstCall.args[1]).to.eql(maintInfo);
           expect(repoSaveStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
-          return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER);
         });
     });
     it('should successfully update progress of maintenance with provided progress info', function () {
@@ -87,7 +85,6 @@ describe('maintenance', function () {
           expect(repoSaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
           expect(repoSaveStub.firstCall.args[1]).to.eql(maintInfo);
           expect(repoSaveStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
-          return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER);
         });
     });
     it('should successfully update progress of maintenance with provided progress info & state remains unchanged', function () {
@@ -99,7 +96,6 @@ describe('maintenance', function () {
           expect(repoSaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
           expect(repoSaveStub.firstCall.args[1]).to.eql(maintInfo);
           expect(repoSaveStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
-          return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER);
         });
     });
     it('should throw error if update sate input is invalid', function () {

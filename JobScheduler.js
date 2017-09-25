@@ -158,10 +158,8 @@ class JobScheduler {
               logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout. Flagging the current maintenance window as aborted.`);
               const success = resolve;
               return maintenanceManager
-                .updateMaintenace({
-                  progress: `System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins)`,
-                  state: CONST.OPERATION.ABORTED
-                })
+                .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins)`,
+                  CONST.OPERATION.ABORTED)
                 .then(success)
                 .catch((err) => {
                   logger.error('error occurred while updating maintenance info', err);
