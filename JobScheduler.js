@@ -146,12 +146,6 @@ class JobScheduler {
             return resolve();
           } else {
             logger.info('+-> System is in maintenance:', maintenanceInfo);
-            if (this.intervalTimer === undefined) {
-              logger.info(`Poll maintenance status once every - ${config.scheduler.maintenance_check_interval} (ms)`);
-              this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
-                config.scheduler.maintenance_check_interval);
-              return;
-            }
             const currTime = moment();
             const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
             if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
@@ -165,7 +159,18 @@ class JobScheduler {
                 .catch((err) => {
                   logger.error('error occurred while updating maintenance info', err);
                   reject(err);
+                })
+                .finally(() => {
+                  if (this.intervalTimer) {
+                    clearInterval(this.intervalTimer);
+                  }
                 });
+            }
+            if (this.intervalTimer === undefined) {
+              logger.info(`Poll maintenance status once every - ${config.scheduler.maintenance_check_interval} (ms)`);
+              this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
+                config.scheduler.maintenance_check_interval);
+              return;
             }
           }
         })
