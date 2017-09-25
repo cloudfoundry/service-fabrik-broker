@@ -277,6 +277,7 @@ describe('JobScheduler', function () {
             expect(updateMaintStub).to.be.calledOnce;
             expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins)`);
             expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
+            expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             expect(processExitStub).not.to.be.called;
             expect(count).to.eql(1);
           });

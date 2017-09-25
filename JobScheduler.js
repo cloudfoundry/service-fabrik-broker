@@ -159,7 +159,8 @@ class JobScheduler {
               const success = resolve;
               return maintenanceManager
                 .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins)`,
-                  CONST.OPERATION.ABORTED)
+                  CONST.OPERATION.ABORTED,
+                  CONST.SYSTEM_USER)
                 .then(success)
                 .catch((err) => {
                   logger.error('error occurred while updating maintenance info', err);
