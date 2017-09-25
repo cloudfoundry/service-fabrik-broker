@@ -77,6 +77,10 @@ function startBackup() {
     .post('/v1/backup/start', body => {
       expect(body.backup).to.be.an('object');
       expect(body.vms).to.be.an.instanceof(Array);
+      expect(body.vms[0]).to.have.property('cid');
+      expect(body.vms[0]).to.have.property('index');
+      expect(body.vms[0]).to.have.property('job');
+      expect(body.vms[0]).to.have.property('iaas_vm_metadata');
       return true;
     })
     .reply(202, {});
