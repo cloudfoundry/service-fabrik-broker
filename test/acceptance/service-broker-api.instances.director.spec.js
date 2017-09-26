@@ -215,6 +215,7 @@ describe('service-broker-api', function () {
           const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -230,6 +231,7 @@ describe('service-broker-api', function () {
             })
             .catch(err => err.response)
             .then(res => {
+              delete config.mongodb.provision.plan_id;
               randomIntStub.restore();
               config.scheduler.jobs.service_instance_update.run_every_xdays = old;
               expect(res).to.have.status(200);
