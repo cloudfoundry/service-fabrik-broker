@@ -67,23 +67,18 @@ describe('Jobs', function () {
     const systemUser = CONST.SYSTEM_USER;
 
     describe('#LogRunHistory', function () {
-      let repositorySaveStub, repositoryDeleteStub;
+      let repositorySaveStub;
 
       before(function () {
         repositorySaveStub = sinon.stub(Repository, 'save');
-        repositoryDeleteStub = sinon.stub(Repository, 'delete');
-        repositoryDeleteStub.withArgs().returns(Promise.resolve({}));
-
       });
 
       afterEach(function () {
         repositorySaveStub.reset();
-        repositoryDeleteStub.reset();
       });
 
       after(function () {
         repositorySaveStub.restore();
-        repositoryDeleteStub.restore();
       });
 
       it('should log the success job run in history successfully', function () {
@@ -96,7 +91,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(user);
-          expect(repositoryDeleteStub).to.be.calledOnce;
         });
       });
       it('should log the failed job run in history successfully', function () {
@@ -112,7 +106,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(systemUser);
-          expect(repositoryDeleteStub).to.be.calledOnce;
         });
       });
       it('should gracefully handle scenarios when saving to db fails', function () {
@@ -130,7 +123,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(systemUser);
-          expect(repositoryDeleteStub).not.to.be.called;
           expect(responseCode).to.eql(-1);
         });
       });

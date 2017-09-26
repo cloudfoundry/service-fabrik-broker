@@ -122,7 +122,6 @@ defaults: &defaults
     default_lock_lifetime: 180000
     maintenance_check_interval: 90000 #every (ms) scheduler checks for maitenance mode
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
-    job_history_retention_in_days: 30
     maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
     jobs:
       reschedule_delay: '20 minutes from now'
@@ -149,9 +148,19 @@ defaults: &defaults
         enabled: true
       - name: 'Backup_Reaper'
         type: BackupReaper
-        interval: '0 1 * * *' #Backup schedule interval for service fabrik DB
+        interval: '0 1 * * *' 
         job_data:
           delete_delay: 1000 #delay in processing between two tasks (in millisecond)
+        enabled: true
+      - name: 'DbCollection_Reaper'
+        type: DbCollectionReaper
+        interval: '0 2 * * *' 
+        job_data:
+          reap_collections:
+            - name : JobRunDetail
+              retention_in_days: 60
+            - name : EventDetail
+              retention_in_days: 90
         enabled: true
 
   #######################
