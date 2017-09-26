@@ -7,6 +7,7 @@ const OperationStatusPollerJob = require('../lib/jobs/OperationStatusPollerJob')
 const BluePrintJob = require('../lib/jobs/BluePrintJob');
 const BackupReaperJob = require('../lib/jobs/BackupReaperJob');
 const ServiceInstanceUpdateJob = require('../lib/jobs/ServiceInstanceUpdateJob');
+const DbCollectionReaperJob = require('../lib/jobs/DbCollectionReaperJob');
 
 const CONST = require('../lib/constants');
 const AssertionError = require('assert').AssertionError;
@@ -25,6 +26,8 @@ describe('Jobs', function () {
         expect(oobJob).to.eql(ScheduledOobDeploymentBackupJob);
         const serviceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
         expect(serviceInstanceUpdateJob).to.eql(ServiceInstanceUpdateJob);
+        const dbCollectionReaperJob = JobFabrik.getJob(CONST.JOB.DB_COLLECTION_REAPER);
+        expect(dbCollectionReaperJob).to.eql(DbCollectionReaperJob);
         const blueprintJob = JobFabrik.getJob(CONST.JOB.BLUEPRINT_JOB);
         expect(blueprintJob).to.eql(BluePrintJob);
         blueprintJob.run({

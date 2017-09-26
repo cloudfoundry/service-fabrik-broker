@@ -112,7 +112,7 @@ defaults: &defaults
   # SCHEDULER SETTINGS #
   ######################
   scheduler:
-    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper, ServiceInstanceAutoUpdate
+    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper, ServiceInstanceAutoUpdate, DbCollectionReaper
     process_every: '3 minutes' # Process every 3 min by default
     run_with_web_process: true #if this flag is either undefined or set to true, then agenda scheduler can run along within web process
     max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
