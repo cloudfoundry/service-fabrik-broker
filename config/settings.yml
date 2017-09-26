@@ -56,7 +56,9 @@ defaults: &defaults
   colorize_log: false
   sys_log_level: info
   enable_circuit_breaker: true
-
+  feature:
+    schedule_update: on #Switch to turn on / turn off schedule_update feature
+    
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################
@@ -165,6 +167,7 @@ defaults: &defaults
     inprogress_metric: 2
     event_name_prefix: broker.0.service-fabrik
     include_response_body: false
+    events_logged_in_db: create_backup, update_instance
     unauthorized:
       http_status:
       - 401
