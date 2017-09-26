@@ -110,6 +110,34 @@ describe('Jobs', function () {
         }).catch(done);
     });
 
+    it('job must not start and error if update feature is turned off in config', function (done) {
+      const sfClientStub = sinon.stub(ServiceInstanceUpdateJob, 'getFabrikClient');
+      config.feature.schedule_update = CONST.OFF;
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          config.feature.schedule_update = CONST.ON;
+          const invalidInputMsg = `Schedule update feature is turned off. Cannot run update for ${job_sample.attrs.data.instance_name} - Deployment: ${job_sample.attrs.data.deployment_name}`;
+          expect(sfClientStub).not.to.be.called;
+          sfClientStub.restore();
+          const expectedResponse = {
+            instance_deleted: false,
+            job_cancelled: false,
+            deployment_outdated: 'TBD',
+            update_init: 'TBD',
+            diff: 'TBD'
+          };
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('ServiceUnavailable');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Service Unavailable');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(503);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        }).catch(done);
+    });
+
     it('if service instance is not found, should cancel itself', function (done) {
       mocks.cloudController.findServicePlan(instance_id);
       return ServiceInstanceUpdateJob
