@@ -60,7 +60,7 @@ describe('Jobs', function () {
         .then(() => {
           const expectedJobStatus = [{
             collection: 'JobRunDetail',
-            delete_status: deletResponse
+            delete_count: 10
           }, {
             collection: 'EventDetail',
             error: `Invalid rention period configured for collection ${job.attrs.data.reap_collections[1].name} : ${job.attrs.data.reap_collections[1].retention_in_days}`

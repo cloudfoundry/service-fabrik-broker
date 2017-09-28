@@ -2,11 +2,14 @@
 
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
+const pubsub = require('pubsub-js');
 const CONST = require('../lib/constants');
 const errors = require('../lib/errors');
 const utils = require('../lib/utils');
+const Repo = require('../lib/db').Repository;
+
 const instance_id = '9999-8888-7777-6666';
-const jobType = CONST.JOB.SCHEDULED_BACKUP;
+let jobType = CONST.JOB.SCHEDULED_BACKUP;
 const interval = '*/1 * * * *';
 const createdAt = new Date();
 const updatedAt = new Date();
@@ -82,7 +85,7 @@ class Scheduler {
   getJob(name, type) {
     schedulerStub.getJob(arguments);
     if (name !== instance_id) {
-      return Promise.resolve({});
+      return Promise.resolve(null);
     }
     return Promise.resolve({
       name: type,
@@ -158,6 +161,7 @@ describe('Jobs', function () {
     before(function () {
       clock = sinon.useFakeTimers();
       randomIntStub = sinon.stub(utils, 'getRandomInt', () => 0);
+      //randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
     });
 
     afterEach(function () {
@@ -197,6 +201,37 @@ describe('Jobs', function () {
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(criteria);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+            done();
+          });
+      });
+      it('should schedule a job with random schedule and save it in mongodb successfully', function (done) {
+        ScheduleManager
+          .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, CONST.SCHEDULE.RANDOM, jobData, user)
+          .done((jobResponse) => {
+            const expectedRandomInterval = '0 0 0,7,14,21,28 * *';
+            const mergedJobServInsUpd = _.clone(mergedJob);
+            mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.repeatInterval = expectedRandomInterval;
+            expect(jobResponse).to.eql(mergedJobServInsUpd);
+            expect(schedulerSpy.schedule).to.be.calledOnce;
+            expect(schedulerSpy.schedule.firstCall.args[0][0]).to.be.equal(instance_id);
+            expect(schedulerSpy.schedule.firstCall.args[0][1]).to.be.equal(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+            expect(schedulerSpy.schedule.firstCall.args[0][2]).to.be.equal(expectedRandomInterval);
+            expect(schedulerSpy.schedule.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+              interval: expectedRandomInterval,
+              data: jobData
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql({
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+            });
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
             done();
           });
@@ -260,6 +295,41 @@ describe('Jobs', function () {
     });
 
     describe('#getJobSchedule', function () {
+      let repositoryStub;
+      const lastRunStatus = {
+        name: instance_id,
+        type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+        interval: '12 12 * * *',
+        data: {
+          instance_id: instance_id,
+          attempt: 1,
+          _n_a_m_e_: `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`
+        },
+        response: {
+          diff: [{
+            releases: {}
+          }]
+        },
+        statusCode: CONST.JOB_RUN_STATUS_CODE.SUCCEEDED,
+        statusMessage: 'run successful',
+        startedAt: new Date(),
+        createdAt: new Date(),
+        createdBy: 'SYSTEM',
+        processedBy: 'MAC1'
+      };
+      before(function () {
+        repositoryStub = sinon.stub(Repo, 'search', () => {
+          return Promise.try(() => {
+            const runStatus = _.cloneDeep(lastRunStatus);
+            runStatus.response.diff = [];
+            runStatus.data.attempt = 2;
+            return [lastRunStatus, runStatus];
+          });
+        });
+      });
+      after(function () {
+        repositoryStub.restore();
+      });
       it('should return the job schedule for scheduled job by merging job details from agenda & mongodb successfully', function (done) {
         ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
@@ -274,7 +344,6 @@ describe('Jobs', function () {
             done();
           });
       });
-
       it('should error when queried for schedule for a job which is not yet scheduled', function (done) {
         return ScheduleManager
           .getSchedule('0625-6252-7654-9999', CONST.JOB.SCHEDULED_BACKUP)
@@ -283,6 +352,32 @@ describe('Jobs', function () {
             expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
             expect(schedulerSpy.getJob.firstCall.args[0][1]).to.eql(jobType);
             expect(repoSpy.findOne).not.to.be.called;
+            done();
+          });
+      });
+      it('should return even the last run status for job types which can return the same', function (done) {
+        return ScheduleManager
+          .getSchedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE)
+          .done((jobResponse) => {
+            const mergedJobServInsUpd = _.clone(mergedJob);
+            mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.lastRunDetails = {
+              status: CONST.OPERATION.SUCCEEDED,
+              diff: {
+                before: lastRunStatus.response.diff,
+                after: []
+              }
+            };
+            expect(jobResponse).to.eql(mergedJobServInsUpd);
+            expect(schedulerSpy.getJob).to.be.calledOnce;
+            expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql(instance_id);
+            expect(schedulerSpy.getJob.firstCall.args[0][1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+            expect(repoSpy.findOne).to.be.calledOnce;
+            expect(repoSpy.findOne.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.findOne.firstCall.args[0][1]).to.eql({
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+            });
             done();
           });
       });
@@ -351,28 +446,29 @@ describe('Jobs', function () {
           ]
         }
       };
-      const ScheduleManager2 = proxyquire('../lib/jobs/ScheduleManager', {
-        '../config': systemJobConfig
-      });
+      let ScheduleManager2;
       const systemUser = CONST.SYSTEM_USER;
-      let sandbox, cancelStub, scheduleStub;
+      let sandbox, cancelStub, scheduleStub, subStub, startSchedulerHandler;
       before(function () {
         sandbox = sinon.sandbox.create();
+        subStub = sandbox.stub(pubsub, 'subscribe', (topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
+          startSchedulerHandler = handler : {});
+        ScheduleManager2 = proxyquire('../lib/jobs/ScheduleManager', {
+          '../config': systemJobConfig
+        });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');
       });
-
       afterEach(function () {
         cancelStub.reset();
         scheduleStub.reset();
       });
-
       after(function () {
         sandbox.restore();
       });
 
       it('should schedule system jobs in agenda and save it in mongodb successfully', function () {
-        ScheduleManager2.setupSystemJobs();
+        startSchedulerHandler();
         expect(cancelStub).to.be.calledOnce;
         expect(cancelStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[2].name);
         expect(cancelStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[2].type);

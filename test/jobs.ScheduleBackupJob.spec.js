@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const CONST = require('../lib/constants');
 const config = require('../lib/config');
 const moment = require('moment');
@@ -181,7 +182,6 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
-
       it(`If an update is in progress while backup is initiated, then the backup Job must be rescheduled to run again after delay of : ${config.scheduler.jobs.reschedule_delay}`, function () {
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
@@ -202,7 +202,9 @@ describe('Jobs', function () {
           expect(runAtStub.firstCall.args[0]).to.eql(instance_id);
           expect(runAtStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
           expect(runAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
-          expect(runAtStub.firstCall.args[3]).to.eql(job.attrs.data);
+          const expectedJobData = _.clone(job.attrs.data);
+          expectedJobData.attempt = 2;
+          expect(runAtStub.firstCall.args[3]).to.eql(expectedJobData);
           expect(runAtStub.firstCall.args[4]).to.eql(CONST.SYSTEM_USER);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
           expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(errStatusCode);
@@ -214,7 +216,6 @@ describe('Jobs', function () {
       it('If error occurs while rescheduling job due to a backup run, same must be retried and then gracefully exit', function () {
         job.attrs.data.instance_id = failed_instance_id;
         const max_attmpts = config.scheduler.jobs.scheduled_backup.max_attempts;
-        config.scheduler.jobs.scheduled_backup.max_attempts = 2;
         mocks.serviceFabrikClient.startBackup(failed_instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -229,7 +230,7 @@ describe('Jobs', function () {
             delete_backup_status: 'failed'
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(runAtStub.callCount).to.be.eql(config.scheduler.jobs.scheduled_backup.max_attempts);
+          expect(runAtStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);

@@ -1,5 +1,6 @@
 'use strict';
 const _ = require('lodash');
+const Promise = require('bluebird');
 const CONST = require('../lib/constants');
 const catalog = require('../lib/models/catalog');
 const utils = require('../lib/utils');
@@ -8,16 +9,17 @@ const errors = require('../lib/errors');
 const BaseJob = require('../lib/jobs/BaseJob');
 const JobFabrik = require('../lib/jobs/JobFabrik');
 const ScheduleManager = require('../lib/jobs/ScheduleManager');
+const Repository = require('../lib/db').Repository;
 const NetworkSegmentIndex = require('../lib/bosh/NetworkSegmentIndex');
 
 describe('Jobs', function () {
   const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+  const index = NetworkSegmentIndex.adjust(mocks.director.networkSegmentIndex);
+  const instance_id = mocks.director.uuidByIndex(index);
   /* jshint expr:true */
   describe('ServiceInstanceUpdateJob', function () {
     const sf_operation_name = 'update';
     const sf_operation_args = {};
-    const index = NetworkSegmentIndex.adjust(mocks.director.networkSegmentIndex);
-    const instance_id = mocks.director.uuidByIndex(index);
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const plan_id_forced_update = 'fc158c9a-7934-401e-94ab-057082a5073f';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
@@ -109,7 +111,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it('job must not start and error if update feature is turned off in config', function (done) {
       const sfClientStub = sinon.stub(ServiceInstanceUpdateJob, 'getFabrikClient');
       config.feature.schedule_update = CONST.OFF;
@@ -137,7 +138,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it('if service instance is not found, should cancel itself', function (done) {
       mocks.cloudController.findServicePlan(instance_id);
       return ServiceInstanceUpdateJob
@@ -150,7 +150,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       mocks.director.getDeploymentManifest(1);
@@ -174,7 +173,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it(`if instance is outdated, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       const diff = [
@@ -250,7 +248,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id_forced_update);
       const diff = [
@@ -289,7 +286,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it(`if instance is outdated, update initiation attempt fails and then schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       const diff = [
@@ -327,7 +323,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it(`if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       const diff = [
@@ -366,7 +361,6 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-
     it(`if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       const diff = [
@@ -415,6 +409,112 @@ describe('Jobs', function () {
         }).catch(done);
     });
   });
+
+  describe('#LastRunStatus', function () {
+    let repositoryStub, returnResponse, failedBecauseOfBackupInProgress;
+    const lastRunStatus = {
+      name: instance_id,
+      type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+      interval: '12 12 * * *',
+      data: {
+        instance_id: instance_id,
+        attempt: 1,
+        _n_a_m_e_: `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`
+      },
+      response: {
+        diff: [{
+          releases: {}
+        }]
+      },
+      statusCode: CONST.JOB_RUN_STATUS_CODE.SUCCEEDED,
+      statusMessage: 'run successful',
+      startedAt: new Date(),
+      createdAt: new Date(),
+      createdBy: 'SYSTEM',
+      processedBy: 'MAC1'
+    };
+    before(function () {
+      repositoryStub = sinon.stub(Repository, 'search', () => {
+        return Promise.try(() => {
+          if (returnResponse === CONST.OPERATION.FAILED) {
+            let resp = [];
+            for (let x = 0; x < 3; x++) {
+              const runStatus = _.cloneDeep(lastRunStatus);
+              runStatus.statusCode = failedBecauseOfBackupInProgress ? CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY :
+                CONST.HTTP_STATUS_CODE.CONFLICT;
+              runStatus.statusMessage = 'run failed';
+              runStatus.data.attempt = x + 1;
+              resp.push(runStatus);
+            }
+            return resp;
+          } else if (returnResponse === CONST.OPERATION.IN_PROGRESS) {
+            const runStatus = _.cloneDeep(lastRunStatus);
+            runStatus.statusCode = CONST.HTTP_STATUS_CODE.CONFLICT;
+            runStatus.data.attempt = 2;
+            return [lastRunStatus, runStatus];
+          } else if (returnResponse === CONST.OPERATION.SUCCEEDED) {
+            const runStatus = _.cloneDeep(lastRunStatus);
+            runStatus.response.diff = [];
+            runStatus.data.attempt = 2;
+            return [lastRunStatus, runStatus];
+          } else {
+            return null;
+          }
+        });
+      });
+    });
+    after(function () {
+      repositoryStub.restore();
+    });
+    it(`Returns successful last run status`, function () {
+      returnResponse = CONST.OPERATION.SUCCEEDED;
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          expect(runstatus.status).to.be.equal(CONST.OPERATION.SUCCEEDED);
+          expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql([]);
+        });
+    });
+    it(`Returns null last run status when job run details are not found`, function () {
+      returnResponse = undefined;
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          expect(runstatus).to.be.equal(null);
+        });
+    });
+    it(`Returns failed last run status with user initiate updae in-progress scenario`, function () {
+      returnResponse = CONST.OPERATION.FAILED;
+      failedBecauseOfBackupInProgress = false;
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          expect(runstatus.status).to.be.equal(CONST.OPERATION.FAILED);
+          expect(runstatus.message).to.be.equal(`${CONST.HTTP_STATUS_CODE.CONFLICT} - run failed`);
+          expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
+        });
+    });
+    it(`Returns failed last run status with backup in-progress scenario`, function () {
+      returnResponse = CONST.OPERATION.FAILED;
+      failedBecauseOfBackupInProgress = true;
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          expect(runstatus.status).to.be.equal(CONST.OPERATION.FAILED);
+          expect(runstatus.message).to.be.equal('Could not initiate update as Backup process was in-progress');
+          expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
+        });
+    });
+    it(`Returns in-progress last run status`, function () {
+      returnResponse = CONST.OPERATION.IN_PROGRESS;
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          expect(runstatus.status).to.be.equal(CONST.OPERATION.IN_PROGRESS);
+          expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
+        });
+    });
+  });
+
   describe('#Random', function () {
     let randomIntStub, randomize, randomInt;
     before(function () {

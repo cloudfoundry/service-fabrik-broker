@@ -15,14 +15,15 @@ describe('Jobs', function () {
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     const job = {
       attrs: {
-        name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
+        name: CONST.JOB.SCHEDULED_BACKUP,
         data: {
           instance_id: instance_id,
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
           space_guid: space_guid,
           service_id: service_id,
-          plan_id: plan_id
+          plan_id: plan_id,
+          _n_a_m_e_: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
         },
         lastRunAt: new Date(),
         nextRunAt: new Date(),

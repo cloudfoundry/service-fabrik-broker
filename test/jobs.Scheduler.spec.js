@@ -97,24 +97,34 @@ class Agenda extends EventEmitter {
       }
     }];
     agendaStub.jobsAsync(options);
+    const jobResponse = {
+      attrs: {
+        name: options.name,
+        data: {
+          _n_a_m_e_: '9999-8888-7777-6666_ScheduledBackup',
+          instance_id: '9999-8888-7777-6666'
+        },
+        lastRunAt: new Date(),
+        nextRunAt: new Date(),
+        repeatInterval: '*/1 * * * *',
+        lockedAt: null,
+        repeatTimezone: 'America/New_York'
+      }
+    };
     if (_.keys(options).length === 0) {
       return Promise.resolve(jobs);
     } else {
-      if (options['data._n_a_m_e_'] === '9999-8888-7777-6666_ScheduledBackup') {
-        return Promise.resolve([{
-          attrs: {
-            name: options.name,
-            data: {
-              _n_a_m_e_: '9999-8888-7777-6666_ScheduledBackup',
-              instance_id: '9999-8888-7777-6666'
-            },
-            lastRunAt: new Date(),
-            nextRunAt: new Date(),
-            repeatInterval: '*/1 * * * *',
-            lockedAt: null,
-            repeatTimezone: 'America/New_York'
-          }
-        }]);
+      if (options['data._n_a_m_e_'] === '/^9999-8888-7777-6666_ScheduledBackup/') {
+        return Promise.resolve([jobResponse]);
+      } else if (options['data._n_a_m_e_'] === '/^9999-8888-7777-7777_ScheduledBackup/') {
+        const jobResp1 = _.cloneDeep(jobResponse);
+        jobResp1.attrs.data._n_a_m_e_ = '9999-8888-7777-7777_ScheduledBackup';
+        jobResp1.attrs.data.instance_id = '9999-8888-7777-7777';
+        jobResp1.attrs.nextRunAt = new Date('01/01/2016');
+        const jobResp2 = _.cloneDeep(jobResponse);
+        jobResp2.attrs.nextRunAt = new Date(0);
+        jobResp2.attrs.data._n_a_m_e_ = `9999-8888-7777-7777_ScheduledBackup_5minsfromnow_${new Date().getTime()}`;
+        return Promise.resolve([jobResp1, jobResp2]);
       } else {
         return Promise.resolve({});
       }
@@ -205,7 +215,7 @@ const Scheduler = proxyquire('../lib/jobs/Scheduler', _.set(proxyLibs, 'pubsub-j
 describe('Jobs', function () {
   let clock;
   before(function () {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(new Date().getTime());
   });
   after(function () {
     clock.restore();
@@ -724,7 +734,31 @@ describe('Jobs', function () {
             });
         });
       });
-
+      it('should return the job schedule for scheduled job successfully & overridden lastRunAt timestamp', function () {
+        const scheduler = new Scheduler();
+        expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
+        scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
+          mongoose: mongooseConnectionStub
+        });
+        return scheduler.startScheduler().then(() => {
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          return scheduler
+            .getJob('9999-8888-7777-7777', CONST.JOB.SCHEDULED_BACKUP)
+            .then(job => {
+              expect(job.name).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+              expect(job.repeatInterval).to.eql('*/1 * * * *');
+              expect(job.repeatTimezone).to.eql('America/New_York');
+              expect(job.data).to.eql({
+                instance_id: '9999-8888-7777-7777'
+              });
+              expect(job.lastRunAt).to.be.instanceof(Date);
+              expect(job.nextRunAt).to.be.instanceof(Date);
+              expect(job.nextRunAt).to.eql(new Date(0));
+              expect(job.lockedAt).to.eql(null);
+              scheduler.shutDownHook();
+            });
+        });
+      });
       it('should not error when queried for schedule of a job which is not yet scheduled', function () {
         const scheduler = new Scheduler();
         expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
@@ -739,12 +773,15 @@ describe('Jobs', function () {
             .then(job => {
               expect(agendaSpy.jobsAsync).to.be.calledOnce;
               const criteria = {
-                name: CONST.JOB.SCHEDULED_BACKUP
+                name: CONST.JOB.SCHEDULED_BACKUP,
+                nextRunAt: {
+                  $ne: null
+                }
               };
-              const jobName = `1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}`;
+              const jobName = `/^1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}/`;
               criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = jobName;
               expect(agendaSpy.jobsAsync.firstCall.args[0]).to.be.eql(criteria);
-              expect(job).to.eql({});
+              expect(job).to.eql(null);
             });
         });
       });
