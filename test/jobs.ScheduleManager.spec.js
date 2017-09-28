@@ -47,7 +47,8 @@ const schedulerStub = {
   schedule: () => undefined,
   getJob: () => undefined,
   runAt: () => undefined,
-  cancelJob: () => undefined
+  cancelJob: () => undefined,
+  purgeOldFinishedJobs: () => undefined
 };
 const repositoryStub = {
   saveOrUpdate: () => undefined,
@@ -102,8 +103,20 @@ class Scheduler {
     schedulerStub.cancelJob.call(schedulerStub, arguments);
     return Promise.resolve({});
   }
+
+  purgeOldFinishedJobs() {
+    schedulerStub.purgeOldFinishedJobs.call(schedulerStub, arguments);
+    return Promise.resolve({});
+  }
 }
 
+let DbDown = false;
+const DbUnavailable = new errors.DBUnavailable('DB Down..');
+const DELETE_RESPONSE = {
+  result: {
+    n: 10
+  }
+};
 class Repository {
   static saveOrUpdate(model, jobDetail, criteria, user) {
     repositoryStub.saveOrUpdate(arguments);
@@ -120,8 +133,13 @@ class Repository {
   }
 
   static delete() {
-    repositoryStub.delete.call(repositoryStub, arguments);
-    return Promise.resolve({});
+    return Promise.try(() => {
+      repositoryStub.delete.call(repositoryStub, arguments);
+      if (DbDown) {
+        throw DbUnavailable;
+      }
+      return DELETE_RESPONSE;
+    });
   }
 
   static findOne(model, criteria) {
@@ -169,6 +187,7 @@ describe('Jobs', function () {
       schedulerSpy.runAt.reset();
       schedulerSpy.getJob.reset();
       schedulerSpy.cancelJob.reset();
+      schedulerSpy.purgeOldFinishedJobs.reset();
       repoSpy.saveOrUpdate.reset();
       repoSpy.findOne.reset();
       repoSpy.delete.reset();
@@ -181,10 +200,10 @@ describe('Jobs', function () {
     });
 
     describe('#ScheduleJobs', function () {
-      it('should schedule a job in agenda and save it in mongodb successfully', function (done) {
-        ScheduleManager
+      it('should schedule a job in agenda and save it in mongodb successfully', function () {
+        return ScheduleManager
           .schedule(instance_id, CONST.JOB.SCHEDULED_BACKUP, interval, jobData, user)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             expect(jobResponse).to.eql(mergedJob);
             expect(schedulerSpy.schedule).to.be.calledOnce;
             expect(schedulerSpy.schedule.firstCall.args[0][0]).to.eql(instance_id);
@@ -195,20 +214,20 @@ describe('Jobs', function () {
               name: instance_id,
               type: jobType,
               interval: interval,
-              data: jobData
+              data: jobData,
+              runOnlyOnce: false
             };
             expect(repoSpy.saveOrUpdate).to.be.calledOnce;
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(criteria);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
-            done();
           });
       });
-      it('should schedule a job with random schedule and save it in mongodb successfully', function (done) {
-        ScheduleManager
+      it('should schedule a job with random schedule and save it in mongodb successfully', function () {
+        return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, CONST.SCHEDULE.RANDOM, jobData, user)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             const expectedRandomInterval = '0 0 0,7,14,21,28 * *';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
@@ -223,7 +242,8 @@ describe('Jobs', function () {
               name: instance_id,
               type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
               interval: expectedRandomInterval,
-              data: jobData
+              data: jobData,
+              runOnlyOnce: false
             };
             expect(repoSpy.saveOrUpdate).to.be.calledOnce;
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
@@ -233,13 +253,12 @@ describe('Jobs', function () {
               type: CONST.JOB.SERVICE_INSTANCE_UPDATE
             });
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
-            done();
           });
       });
-      it('should schedule a job in agenda with daily random schedule and save it in mongodb successfully', function (done) {
-        ScheduleManager
+      it('should schedule a job in agenda with daily random schedule and save it in mongodb successfully', function () {
+        return ScheduleManager
           .scheduleDaily(instance_id, CONST.JOB.SCHEDULED_BACKUP, jobData, user)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             const expectedResponse = _.cloneDeep(mergedJob);
             const randomInterval = '0 0 * * *';
             expectedResponse.repeatInterval = randomInterval;
@@ -253,21 +272,21 @@ describe('Jobs', function () {
               name: instance_id,
               type: jobType,
               interval: randomInterval,
-              data: jobData
+              data: jobData,
+              runOnlyOnce: false
             };
             expect(repoSpy.saveOrUpdate).to.be.calledOnce;
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(criteria);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
-            done();
           });
       });
-      it('should schedule a job in agenda and save it in mongodb successfully at specified time', function (done) {
+      it('should schedule a job in agenda and save it in mongodb successfully at specified time', function () {
         const scheduleAt = '10 mins from now';
-        ScheduleManager
+        return ScheduleManager
           .runAt(instance_id, CONST.JOB.SCHEDULED_BACKUP, scheduleAt, jobData, user)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             const expectedResponse = _.cloneDeep(mergedJob);
             expectedResponse.repeatInterval = scheduleAt;
             expect(jobResponse).to.eql(expectedResponse);
@@ -278,9 +297,10 @@ describe('Jobs', function () {
             expect(schedulerSpy.runAt.firstCall.args[0][3]).to.eql(jobData);
             const jobToBeSavedInDB = {
               name: instance_id,
-              type: jobType,
+              type: `${jobType}_0`,
               interval: scheduleAt,
-              data: jobData
+              data: jobData,
+              runOnlyOnce: true
             };
             expect(repoSpy.saveOrUpdate).to.be.calledOnce;
             expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
@@ -289,7 +309,6 @@ describe('Jobs', function () {
             expectedCriteria.type = `${CONST.JOB.SCHEDULED_BACKUP}_0`;
             expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(expectedCriteria);
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
-            done();
           });
       });
     });
@@ -330,10 +349,10 @@ describe('Jobs', function () {
       after(function () {
         repositoryStub.restore();
       });
-      it('should return the job schedule for scheduled job by merging job details from agenda & mongodb successfully', function (done) {
-        ScheduleManager
+      it('should return the job schedule for scheduled job by merging job details from agenda & mongodb successfully', function () {
+        return ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             expect(jobResponse).to.eql(mergedJob);
             expect(schedulerSpy.getJob).to.be.calledOnce;
             expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql(instance_id);
@@ -341,10 +360,9 @@ describe('Jobs', function () {
             expect(repoSpy.findOne).to.be.calledOnce;
             expect(repoSpy.findOne.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.findOne.firstCall.args[0][1]).to.eql(criteria);
-            done();
           });
       });
-      it('should error when queried for schedule for a job which is not yet scheduled', function (done) {
+      it('should error when queried for schedule for a job which is not yet scheduled', function () {
         return ScheduleManager
           .getSchedule('0625-6252-7654-9999', CONST.JOB.SCHEDULED_BACKUP)
           .catch(errors.NotFound, () => {
@@ -352,13 +370,12 @@ describe('Jobs', function () {
             expect(schedulerSpy.getJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
             expect(schedulerSpy.getJob.firstCall.args[0][1]).to.eql(jobType);
             expect(repoSpy.findOne).not.to.be.called;
-            done();
           });
       });
-      it('should return even the last run status for job types which can return the same', function (done) {
+      it('should return even the last run status for job types which can return the same', function () {
         return ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE)
-          .done((jobResponse) => {
+          .then((jobResponse) => {
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
             mergedJobServInsUpd.lastRunDetails = {
@@ -378,39 +395,63 @@ describe('Jobs', function () {
               name: instance_id,
               type: CONST.JOB.SERVICE_INSTANCE_UPDATE
             });
-            done();
           });
       });
     });
 
     describe('#cancelJobSchedule', function () {
-      it('should cancel the schedule for input job in agenda and delete the job from mongodb successfully', function (done) {
-        ScheduleManager
+      it('should cancel the schedule for input job in agenda and delete the job from mongodb successfully', function () {
+        return ScheduleManager
           .cancelSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
-          .done((jobResponse) => {
-            expect(jobResponse).to.eql({});
+          .then((jobResponse) => {
+            expect(jobResponse).to.eql(DELETE_RESPONSE);
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql(instance_id);
             expect(schedulerSpy.cancelJob.firstCall.args[0][1]).to.eql(jobType);
             expect(repoSpy.delete).to.be.calledOnce;
             expect(repoSpy.delete.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.delete.firstCall.args[0][1]).to.eql(criteria);
-            done();
           });
       });
 
-      it('should not error if cancel job is requested for an non-existent job', function (done) {
-        ScheduleManager
+      it('should not error if cancel job is requested for an non-existent job', function () {
+        return ScheduleManager
           .cancelSchedule('0625-6252-7654-9999', CONST.JOB.SCHEDULED_BACKUP)
-          .done((jobResponse) => {
-            expect(jobResponse).to.eql({});
+          .then((jobResponse) => {
+            expect(jobResponse).to.eql(DELETE_RESPONSE);
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
             expect(schedulerSpy.cancelJob.firstCall.args[0][1]).to.eql(jobType);
             expect(repoSpy.delete).to.be.calledOnce;
             expect(repoSpy.delete.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.delete.firstCall.args[0][1]).to.eql(_.set(criteria, 'name', '0625-6252-7654-9999'));
-            done();
+          });
+      });
+    });
+
+    describe('#PurgeOldJobs', function () {
+      it('should purge old finished jobs successfully', function () {
+        return ScheduleManager
+          .purgeOldFinishedJobs()
+          .then((response) => {
+            const expectedResponse = {
+              collection: CONST.DB_MODEL.JOB,
+              delete_count: DELETE_RESPONSE.result.n
+            };
+            expect(response).to.eql(expectedResponse);
+          });
+      });
+      it('should gracefully return even in case of errors while purging', function () {
+        DbDown = true;
+        return ScheduleManager
+          .purgeOldFinishedJobs()
+          .then((response) => {
+            DbDown = false;
+            const expectedResponse = {
+              collection: CONST.DB_MODEL.JOB,
+              error: DbUnavailable.reason || DbUnavailable.message
+            };
+            expect(response).to.eql(expectedResponse);
           });
       });
     });
@@ -485,6 +526,5 @@ describe('Jobs', function () {
         expect(scheduleStub.secondCall.args[4]).to.eql(systemUser);
       });
     });
-
   });
 });

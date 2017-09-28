@@ -813,7 +813,7 @@ describe('Jobs', function () {
             .cancelJob('9999-8888-7777-6666', CONST.JOB.SCHEDULED_BACKUP)
             .then(job => {
               expect(job).to.eql({});
-              expect(agendaSpy.cancelAsync).to.be.calledTwice;
+              expect(agendaSpy.cancelAsync).to.be.calledOnce;
               const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
               const criteria = [];
               criteria.push({
@@ -829,9 +829,6 @@ describe('Jobs', function () {
                 type: 'normal'
               });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
-                $and: criteria
-              });
-              expect(agendaSpy.cancelAsync.secondCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': `9999-8888-7777-6666_${CONST.JOB.SCHEDULED_BACKUP}`
               });
@@ -851,7 +848,7 @@ describe('Jobs', function () {
             .cancelJob('1212-8888-9999-6666', CONST.JOB.SCHEDULED_BACKUP)
             .then(job => {
               expect(job).to.eql({});
-              expect(agendaSpy.cancelAsync).to.be.calledTwice;
+              expect(agendaSpy.cancelAsync).to.be.calledOnce;
               const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
               const criteria = [];
               criteria.push({
@@ -867,9 +864,6 @@ describe('Jobs', function () {
                 type: 'normal'
               });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
-                $and: criteria
-              });
-              expect(agendaSpy.cancelAsync.secondCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': '1212-8888-9999-6666_ScheduledBackup'
               });
@@ -1019,7 +1013,42 @@ describe('Jobs', function () {
           });
       });
     });
+    describe('#PurgeOldJobs', function () {
+      it('should stop agenda on recieving app shutdown event -', function () {
+        const scheduler = new Scheduler();
+        expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
+        scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
+          mongoose: mongooseConnectionStub
+        });
 
+        return scheduler.startScheduler().then(() => {
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          return scheduler
+            .purgeOldFinishedJobs()
+            .then(resp => {
+              const retentionDate = new Date(moment().subtract(CONST.FINISHED_JOBS_RETENTION_DURATION_DAYS, 'days').toISOString());
+              const criteria = [];
+              criteria.push({
+                lastFinishedAt: {
+                  $lt: retentionDate
+                }
+              });
+              criteria.push({
+                nextRunAt: null
+              });
+              //nextRunAt null indicates that its a one time job which will not run in future.
+              criteria.push({
+                type: 'normal'
+              });
+              expect(agendaSpy.cancelAsync).to.be.calledOnce;
+              expect(agendaSpy.cancelAsync.firstCall.args[0]).to.eql({
+                $and: criteria
+              });
+
+            });
+        });
+      });
+    });
     describe('#Shutdown', function () {
       it('should stop agenda on recieving app shutdown event -', function () {
         const scheduler = new SchedulerPubSub();
