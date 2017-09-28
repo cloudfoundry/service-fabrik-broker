@@ -5,6 +5,7 @@ const uuid = require('uuid');
 const _ = require('lodash');
 const errors = require('../lib/errors');
 const config = require('../lib/config');
+const logger = require('../lib/logger');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const BoshDirectorClient = require('../lib/bosh/BoshDirectorClient');
@@ -13,6 +14,7 @@ const id = uuid.v4();
 const deployment_name = id;
 const taskId = Math.floor(Math.random() * 123456789);
 const bosh_taskId = `bosh_${taskId}`;
+let populateCacheInProgress = false;
 const manifest = yaml.safeDump({
   name: id
 });
@@ -74,9 +76,10 @@ class MockBoshDirectorClient extends BoshDirectorClient {
 
   populateCache() {
     this.cache = {};
+    this.cacheLoadInProgress = populateCacheInProgress;
+    logger.info(`Stubbed populate cache - cache load in-progress : ${populateCacheInProgress}`);
     this.cache[deployment_name] = primary_config;
   }
-
 }
 
 describe('bosh', () => {
@@ -151,6 +154,13 @@ describe('bosh', () => {
     });
 
     describe('#getDeployments', () => {
+      let clock;
+      before(function () {
+        clock = sinon.useFakeTimers();
+      });
+      after(function () {
+        clock.restore();
+      });
       it('returns a JSON object', (done) => {
         let request = {
           method: 'GET',
@@ -162,11 +172,66 @@ describe('bosh', () => {
           }),
           statusCode: 200
         };
-
         new MockBoshDirectorClient(request, response).getDeployments().then((content) => {
           expect(content).to.eql([JSON.parse(response.body)]);
           done();
         }).catch(done);
+      });
+
+      it('returns deployment names from cache', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/deployments'
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 200
+        };
+        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache().then((content) => {
+          expect(content).to.eql([deployment_name]);
+          done();
+        }).catch(done);
+      });
+      it('returns deployment names from cache for input bosh', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/deployments'
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 200
+        };
+        new MockBoshDirectorClient(request, response).getDeploymentNamesFromCache('bosh').then((content) => {
+          expect(content).to.eql([deployment_name]);
+          done();
+        }).catch(done);
+      });
+      it('waits in case of cache load if cache details are to be returned back', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/deployments'
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 200
+        };
+        populateCacheInProgress = true;
+        const director = new MockBoshDirectorClient(request, response);
+        const deployments = director
+          .getDeploymentNamesFromCache('bosh').then((content) => {
+            expect(content).to.eql([deployment_name]);
+            done();
+          }).catch(done);
+        populateCacheInProgress = false;
+        director.populateCache();
+        clock.tick(500);
+        return deployments;
       });
     });
 

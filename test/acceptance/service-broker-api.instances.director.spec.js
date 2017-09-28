@@ -27,6 +27,7 @@ describe('service-broker-api', function () {
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const instance_id = mocks.director.uuidByIndex(index);
+      const instance_id_new = mocks.director.uuidByIndex(30);
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
       const app_guid = 'app-guid';
@@ -38,6 +39,7 @@ describe('service-broker-api', function () {
       const protocol = config.external.protocol;
       const host = config.external.host;
       const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
+      const dashboard_url_new = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id_new}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
@@ -98,11 +100,50 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+        it('returns 202 Accepted when invoked with bosh name', function () {
+          mocks.director.getDeployments({
+            queued: true
+          });
+          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeployments();
+          mocks.uaa.getAccessToken();
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id_new}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                bosh_director_name: 'bosh',
+                username: 'admin',
+                password: 'admin'
+              },
+              accepts_incomplete: accepts_incomplete
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url_new);
+              expect(res.body).to.have.property('operation');
+              const decoded = utils.decodeBase64(res.body.operation);
+              expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
+                type: 'create',
+                parameters: {
+                  bosh_director_name: 'bosh',
+                  username: 'admin',
+                  password: 'admin'
+                },
+                space_guid: space_guid
+              });
+              mocks.verify();
+            });
+        });
       });
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -140,7 +181,7 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-          mocks.director.getDeployments();
+          //mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.deprovision();
@@ -249,7 +290,6 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -293,7 +333,6 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();

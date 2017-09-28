@@ -163,28 +163,49 @@ describe('service-fabrik-api', function () {
         });
       });
       describe('#unlock-start', function () {
-        const type = 'online';
         const name = 'unlock';
+        const deploymentName = mocks.director.deploymentNameByIndex(mocks.director.networkSegmentIndex);
         const args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND
-        };
-        const list_prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
-        const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
-        const list_pathname = `/${container}/${list_filename}`;
-        const data = {
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
-          state: 'succeeded',
-          agent_ip: mocks.agent.ip
+          description: `Backup operation for ${deploymentName} finished with status ${CONST.OPERATION.SUCCEEDED}`
         };
 
-        it('should receive the update request from cloud controller and end backup', function () {
-          mocks.director.getDeployments();
+        it('should receive the update request from cloud controller and unlock deployment', function () {
           mocks.director.releaseLock();
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
+          return support.jwt
+            .sign({
+              guid: backup_guid,
+              username: username
+            }, name)
+            .then(token => chai
+              .request(apps.internal)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}`)
+              .send({
+                plan_id: plan_id,
+                service_id: service_id,
+                previous_values: {
+                  plan_id: plan_id,
+                  service_id: service_id,
+                  organization_id: organization_guid,
+                  space_id: space_guid
+                },
+                parameters: {
+                  'service-fabrik-operation': token
+                },
+                accepts_incomplete: true
+              })
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(200);
+                const expectedDescription = `Unlocked deployment ${deploymentName}`;
+                expect(res.body.description).to.be.eql(expectedDescription);
+                mocks.verify();
+              })
+            );
+        });
+        it('should receive the update request from cloud controller and if deployment is already unlocked, should return back successfully', function () {
+          mocks.director.releaseLock(deploymentName, 404);
           return support.jwt
             .sign({
               guid: backup_guid,
@@ -212,7 +233,7 @@ describe('service-fabrik-api', function () {
               .catch(err => err.response)
               .then(res => {
                 expect(res).to.have.status(200);
-                expect(res.body.description).to.be.defined;
+                expect(res.body.description).to.be.eql(args.description);
                 mocks.verify();
               })
             );
@@ -280,7 +301,6 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
-          mocks.director.getDeployments();
           mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
@@ -362,7 +382,6 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.director.getDeployments();
           mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
@@ -388,7 +407,6 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
@@ -818,7 +836,6 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.verifyDeploymentLockStatus();

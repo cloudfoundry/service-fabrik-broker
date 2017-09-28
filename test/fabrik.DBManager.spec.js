@@ -266,7 +266,7 @@ describe('fabrik', function () {
       });
       it('On start if mongodb URL is configured, then it must connect to it successfully', function () {
         const dbManager = new DBManagerByUrl();
-        return Promise.delay(2).then(() => {
+        return Promise.delay(10).then(() => {
           expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManager.dbInitialized).to.eql(true);

@@ -38,6 +38,16 @@ const cloudProviders = {
     keyId: 'AKIAJQMIPSMOONXR6T3A',
     key: 'i7tXqp8DINojXzVH8Coo+fdnrYnxCPnodYYecCP1',
     containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
+  },
+  azure: {
+    subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    resource_group: 'rg-abc',
+    client_id: 'ccccccccc-cccc-cccc-cccc-cccccccccccc',
+    client_secret: 'abc4356=',
+    tenant_id: 'tttttttt-tttt-tttt-tttt-tttttttttttt',
+    storageAccount: 'storageacc',
+    storageAccessKey: 'YWJjMTIzIT8kKiYoKSctPUB+',
+    container: 'samplecontainer'
   }
 };
 const cloudProvider = cloudProviders.openstack;
