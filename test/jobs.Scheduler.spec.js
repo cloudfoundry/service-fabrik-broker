@@ -114,9 +114,9 @@ class Agenda extends EventEmitter {
     if (_.keys(options).length === 0) {
       return Promise.resolve(jobs);
     } else {
-      if (options['data._n_a_m_e_'] === '/^9999-8888-7777-6666_ScheduledBackup/') {
+      if (options['data._n_a_m_e_'].$regex === '^9999-8888-7777-6666_ScheduledBackup.*') {
         return Promise.resolve([jobResponse]);
-      } else if (options['data._n_a_m_e_'] === '/^9999-8888-7777-7777_ScheduledBackup/') {
+      } else if (options['data._n_a_m_e_'].$regex === '^9999-8888-7777-7777_ScheduledBackup.*') {
         const jobResp1 = _.cloneDeep(jobResponse);
         jobResp1.attrs.data._n_a_m_e_ = '9999-8888-7777-7777_ScheduledBackup';
         jobResp1.attrs.data.instance_id = '9999-8888-7777-7777';
@@ -778,8 +778,9 @@ describe('Jobs', function () {
                   $ne: null
                 }
               };
-              const jobName = `/^1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}/`;
-              criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = jobName;
+              criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = {
+                $regex: `^1234-5678-8888-3333_${CONST.JOB.SCHEDULED_BACKUP}.*`
+              };
               expect(agendaSpy.jobsAsync.firstCall.args[0]).to.be.eql(criteria);
               expect(job).to.eql(null);
             });
