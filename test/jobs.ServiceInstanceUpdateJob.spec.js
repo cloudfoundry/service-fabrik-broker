@@ -113,11 +113,11 @@ describe('Jobs', function () {
     });
     it('job must not start and error if update feature is turned off in config', function (done) {
       const sfClientStub = sinon.stub(ServiceInstanceUpdateJob, 'getFabrikClient');
-      config.feature.schedule_update = CONST.OFF;
+      config.feature.ServiceInstanceAutoUpdate = false;
       return ServiceInstanceUpdateJob
         .run(job, () => {})
         .then(() => {
-          config.feature.schedule_update = CONST.ON;
+          config.feature.ServiceInstanceAutoUpdate = true;
           const invalidInputMsg = `Schedule update feature is turned off. Cannot run update for ${job_sample.attrs.data.instance_name} - Deployment: ${job_sample.attrs.data.deployment_name}`;
           expect(sfClientStub).not.to.be.called;
           sfClientStub.restore();
