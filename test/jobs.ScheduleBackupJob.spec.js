@@ -71,6 +71,7 @@ describe('Jobs', function () {
             service_id: service_id,
             plan_id: plan_id,
             _n_a_m_e_: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
+            attempt: 1
           },
           lastRunAt: new Date(),
           nextRunAt: new Date(),
@@ -110,7 +111,7 @@ describe('Jobs', function () {
         cancelScheduleStub.reset();
         runAtStub.reset();
         delayStub.reset();
-        delete job.attrs.data.attempt;
+        job.attrs.data.attempt = 1;
         saveJobFailure = false;
       });
 

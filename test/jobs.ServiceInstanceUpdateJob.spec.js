@@ -523,7 +523,7 @@ describe('Jobs', function () {
     it(`Returns last run status as succeeded but diff after is returned as in-progress`, function () {
       returnResponse = CONST.OPERATION.SUCCEEDED;
       onlyFirstRunComplete = true;
-      const updateInProgressMsg = 'Update In-Progress';
+      const updateInProgressMsg = 'TBD';
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
           onlyFirstRunComplete = false;
@@ -534,12 +534,11 @@ describe('Jobs', function () {
     });
     it(`Returns in-progress last run status`, function () {
       returnResponse = CONST.OPERATION.IN_PROGRESS;
-      const updateInProgressMsg = 'Update In-Progress';
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
           expect(runstatus.status).to.be.equal(CONST.OPERATION.IN_PROGRESS);
           expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
-          expect(runstatus.diff.after).to.eql(updateInProgressMsg);
+          expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
         });
     });
   });
