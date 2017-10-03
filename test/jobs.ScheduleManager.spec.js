@@ -180,6 +180,7 @@ describe('Jobs', function () {
   describe('ScheduleManager', function () {
     let schedulerSpy = sinon.stub(schedulerStub);
     let repoSpy = sinon.stub(repositoryStub);
+    const dbStartedAt = new Date();
     const lastRunStatus = {
       name: instance_id,
       type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
@@ -196,7 +197,7 @@ describe('Jobs', function () {
       },
       statusCode: CONST.JOB_RUN_STATUS_CODE.SUCCEEDED,
       statusMessage: 'run successful',
-      startedAt: new Date(),
+      startedAt: dbStartedAt,
       createdAt: new Date(),
       createdBy: 'SYSTEM',
       processedBy: 'MAC1'
@@ -271,9 +272,11 @@ describe('Jobs', function () {
             const expectedRandomInterval = '0 0 0,7,14,21,28 * *';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.lastRunAt = dbStartedAt;
             mergedJobServInsUpd.repeatInterval = expectedRandomInterval;
             mergedJobServInsUpd.lastRunDetails = {
               status: CONST.OPERATION.SUCCEEDED,
+              lastRunAt: dbStartedAt,
               diff: {
                 after: [],
                 before: lastRunStatus.response.diff
@@ -390,8 +393,10 @@ describe('Jobs', function () {
           .then((jobResponse) => {
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.lastRunAt = dbStartedAt;
             mergedJobServInsUpd.lastRunDetails = {
               status: CONST.OPERATION.SUCCEEDED,
+              lastRunAt: dbStartedAt,
               diff: {
                 before: lastRunStatus.response.diff,
                 after: []
