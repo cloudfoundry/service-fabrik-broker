@@ -921,6 +921,10 @@ describe('Jobs', function () {
 
       it('should run the scheduled job successfully when system is not in maintenance', function () {
         const scheduler = new Scheduler();
+        const veryOldDate = new Date('1 Jan 1970');
+        const jb = _.cloneDeep(job);
+        jb.attrs.data.attempt = 2;
+        jb.attrs.data.firstAttemptAt = veryOldDate;
         scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
           mongoose: mongooseConnectionStub
         });
@@ -948,7 +952,7 @@ describe('Jobs', function () {
             expect(jobSpy.repeatEvery.firstCall.args[0]).to.eql('*/1 * * * *');
             expect(jobSpy.computeNextRunAt).to.be.calledOnce;
             expect(jobSpy.saveAsync).to.be.calledOnce;
-            return agendaJobs[0](job, jobDoneSpy);
+            return agendaJobs[0](jb, jobDoneSpy);
           })
           .then(() => {
             expect(baseJobLogRunHistoryStub).to.be.calledOnce;
@@ -956,7 +960,7 @@ describe('Jobs', function () {
             expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({
               status: 'success'
             });
-            expect(baseJobLogRunHistoryStub.firstCall.args[2]).to.equal(job);
+            expect(baseJobLogRunHistoryStub.firstCall.args[2]).to.equal(jb);
             expect(jobDoneSpy).to.be.calledOnce;
             return scheduler.shutDownHook();
           });
