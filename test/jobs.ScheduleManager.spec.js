@@ -142,6 +142,12 @@ class Repository {
     });
   }
 
+  static search() {
+    return Promise.try(() => {
+      return null;
+    });
+  }
+
   static findOne(model, criteria) {
     repositoryStub.findOne.call(repositoryStub, arguments);
     if (criteria.name !== instance_id) {
@@ -174,12 +180,47 @@ describe('Jobs', function () {
   describe('ScheduleManager', function () {
     let schedulerSpy = sinon.stub(schedulerStub);
     let repoSpy = sinon.stub(repositoryStub);
+    const lastRunStatus = {
+      name: instance_id,
+      type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+      interval: '12 12 * * *',
+      data: {
+        instance_id: instance_id,
+        attempt: 1,
+        _n_a_m_e_: `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`
+      },
+      response: {
+        diff: [{
+          releases: {}
+        }]
+      },
+      statusCode: CONST.JOB_RUN_STATUS_CODE.SUCCEEDED,
+      statusMessage: 'run successful',
+      startedAt: new Date(),
+      createdAt: new Date(),
+      createdBy: 'SYSTEM',
+      processedBy: 'MAC1'
+    };
 
-    let clock, randomIntStub;
+    let clock, randomIntStub, repoSinonStub;
     before(function () {
       clock = sinon.useFakeTimers();
       randomIntStub = sinon.stub(utils, 'getRandomInt', () => 0);
       //randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
+      repoSinonStub = sinon.stub(Repo, 'search', () => {
+        return Promise.try(() => {
+          const runStatus = _.cloneDeep(lastRunStatus);
+          runStatus.response.diff = [
+            []
+          ];
+          runStatus.data.attempt = 2;
+          return {
+            list: [lastRunStatus, runStatus],
+            totalRecordCount: 2,
+            nextOffset: -1
+          };
+        });
+      });
     });
 
     afterEach(function () {
@@ -197,6 +238,7 @@ describe('Jobs', function () {
     after(function () {
       clock.restore();
       randomIntStub.restore();
+      repoSinonStub.restore();
     });
 
     describe('#ScheduleJobs', function () {
@@ -232,6 +274,13 @@ describe('Jobs', function () {
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
             mergedJobServInsUpd.repeatInterval = expectedRandomInterval;
+            mergedJobServInsUpd.lastRunDetails = {
+              status: CONST.OPERATION.SUCCEEDED,
+              diff: {
+                after: null,
+                before: lastRunStatus.response.diff
+              }
+            };
             expect(jobResponse).to.eql(mergedJobServInsUpd);
             expect(schedulerSpy.schedule).to.be.calledOnce;
             expect(schedulerSpy.schedule.firstCall.args[0][0]).to.be.equal(instance_id);
@@ -314,41 +363,6 @@ describe('Jobs', function () {
     });
 
     describe('#getJobSchedule', function () {
-      let repositoryStub;
-      const lastRunStatus = {
-        name: instance_id,
-        type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
-        interval: '12 12 * * *',
-        data: {
-          instance_id: instance_id,
-          attempt: 1,
-          _n_a_m_e_: `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`
-        },
-        response: {
-          diff: [{
-            releases: {}
-          }]
-        },
-        statusCode: CONST.JOB_RUN_STATUS_CODE.SUCCEEDED,
-        statusMessage: 'run successful',
-        startedAt: new Date(),
-        createdAt: new Date(),
-        createdBy: 'SYSTEM',
-        processedBy: 'MAC1'
-      };
-      before(function () {
-        repositoryStub = sinon.stub(Repo, 'search', () => {
-          return Promise.try(() => {
-            const runStatus = _.cloneDeep(lastRunStatus);
-            runStatus.response.diff = [];
-            runStatus.data.attempt = 2;
-            return [lastRunStatus, runStatus];
-          });
-        });
-      });
-      after(function () {
-        repositoryStub.restore();
-      });
       it('should return the job schedule for scheduled job by merging job details from agenda & mongodb successfully', function () {
         return ScheduleManager
           .getSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
@@ -382,7 +396,7 @@ describe('Jobs', function () {
               status: CONST.OPERATION.SUCCEEDED,
               diff: {
                 before: lastRunStatus.response.diff,
-                after: []
+                after: null
               }
             };
             expect(jobResponse).to.eql(mergedJobServInsUpd);

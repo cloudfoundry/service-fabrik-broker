@@ -411,7 +411,7 @@ describe('Jobs', function () {
   });
 
   describe('#LastRunStatus', function () {
-    let repositoryStub, returnResponse, failedBecauseOfBackupInProgress;
+    let repositoryStub, returnResponse, failedBecauseOfBackupInProgress, onlyFirstRunComplete;
     const lastRunStatus = {
       name: instance_id,
       type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
@@ -446,19 +446,37 @@ describe('Jobs', function () {
               runStatus.data.attempt = x + 1;
               resp.push(runStatus);
             }
-            return resp;
+            return {
+              list: resp,
+              totalRecordCount: 2,
+              nextOffset: -1
+            };
           } else if (returnResponse === CONST.OPERATION.IN_PROGRESS) {
             const runStatus = _.cloneDeep(lastRunStatus);
             runStatus.statusCode = CONST.HTTP_STATUS_CODE.CONFLICT;
             runStatus.data.attempt = 2;
-            return [lastRunStatus, runStatus];
+            return {
+              list: [lastRunStatus, runStatus],
+              totalRecordCount: 2,
+              nextOffset: -1
+            };
           } else if (returnResponse === CONST.OPERATION.SUCCEEDED) {
             const runStatus = _.cloneDeep(lastRunStatus);
-            runStatus.response.diff = [];
+            runStatus.response.diff = [
+              []
+            ];
             runStatus.data.attempt = 2;
-            return [lastRunStatus, runStatus];
+            return {
+              list: onlyFirstRunComplete ? [lastRunStatus] : [lastRunStatus, runStatus],
+              totalRecordCount: 2,
+              nextOffset: -1
+            };
           } else {
-            return null;
+            return {
+              list: null,
+              totalRecordCount: 0,
+              nextOffset: -1
+            };
           }
         });
       });
@@ -472,7 +490,7 @@ describe('Jobs', function () {
         .then(runstatus => {
           expect(runstatus.status).to.be.equal(CONST.OPERATION.SUCCEEDED);
           expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
-          expect(runstatus.diff.after).to.eql([]);
+          expect(runstatus.diff.after).to.eql(null);
         });
     });
     it(`Returns null last run status when job run details are not found`, function () {
@@ -504,13 +522,26 @@ describe('Jobs', function () {
           expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
         });
     });
+    it(`Returns last run status as succeeded but diff after is returned as in-progress`, function () {
+      returnResponse = CONST.OPERATION.SUCCEEDED;
+      onlyFirstRunComplete = true;
+      const updateInProgressMsg = 'Update In-Progress';
+      return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
+        .then(runstatus => {
+          onlyFirstRunComplete = false;
+          expect(runstatus.status).to.be.equal(CONST.OPERATION.SUCCEEDED);
+          expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql(updateInProgressMsg);
+        });
+    });
     it(`Returns in-progress last run status`, function () {
       returnResponse = CONST.OPERATION.IN_PROGRESS;
+      const updateInProgressMsg = 'Update In-Progress';
       return ServiceInstanceUpdateJob.getLastRunStatus(instance_id)
         .then(runstatus => {
           expect(runstatus.status).to.be.equal(CONST.OPERATION.IN_PROGRESS);
           expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
-          expect(runstatus.diff.after).to.eql(lastRunStatus.response.diff);
+          expect(runstatus.diff.after).to.eql(updateInProgressMsg);
         });
     });
   });
