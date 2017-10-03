@@ -462,9 +462,7 @@ describe('Jobs', function () {
             };
           } else if (returnResponse === CONST.OPERATION.SUCCEEDED) {
             const runStatus = _.cloneDeep(lastRunStatus);
-            runStatus.response.diff = [
-              []
-            ];
+            runStatus.response.diff = [];
             runStatus.data.attempt = 2;
             return {
               list: onlyFirstRunComplete ? [lastRunStatus] : [lastRunStatus, runStatus],
@@ -490,7 +488,7 @@ describe('Jobs', function () {
         .then(runstatus => {
           expect(runstatus.status).to.be.equal(CONST.OPERATION.SUCCEEDED);
           expect(runstatus.diff.before).to.eql(lastRunStatus.response.diff);
-          expect(runstatus.diff.after).to.eql(null);
+          expect(runstatus.diff.after).to.eql([]);
         });
     });
     it(`Returns null last run status when job run details are not found`, function () {

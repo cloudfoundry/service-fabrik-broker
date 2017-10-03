@@ -210,9 +210,7 @@ describe('Jobs', function () {
       repoSinonStub = sinon.stub(Repo, 'search', () => {
         return Promise.try(() => {
           const runStatus = _.cloneDeep(lastRunStatus);
-          runStatus.response.diff = [
-            []
-          ];
+          runStatus.response.diff = [];
           runStatus.data.attempt = 2;
           return {
             list: [lastRunStatus, runStatus],
@@ -277,7 +275,7 @@ describe('Jobs', function () {
             mergedJobServInsUpd.lastRunDetails = {
               status: CONST.OPERATION.SUCCEEDED,
               diff: {
-                after: null,
+                after: [],
                 before: lastRunStatus.response.diff
               }
             };
@@ -396,7 +394,7 @@ describe('Jobs', function () {
               status: CONST.OPERATION.SUCCEEDED,
               diff: {
                 before: lastRunStatus.response.diff,
-                after: null
+                after: []
               }
             };
             expect(jobResponse).to.eql(mergedJobServInsUpd);
