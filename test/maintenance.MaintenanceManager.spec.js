@@ -129,7 +129,9 @@ describe('maintenance', function () {
       return maintenanceManager.getMaintenaceHistory(0, 50, 'completedAt')
         .then(() => {
           const criteria = {
-            sortBy: ['completedAt', 'desc']
+            sortBy: [
+              ['completedAt', 'desc']
+            ]
           };
           expect(repoSearchStub).to.be.calledOnce;
           expect(repoSearchStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
@@ -183,7 +185,9 @@ describe('maintenance', function () {
       return maintenanceManager.getMaintenaceHistory()
         .then(() => {
           const criteria = {
-            sortBy: ['createdAt', 'desc']
+            sortBy: [
+              ['createdAt', 'desc']
+            ]
           };
           expect(repoSearchStub).to.be.calledOnce;
           expect(repoSearchStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
