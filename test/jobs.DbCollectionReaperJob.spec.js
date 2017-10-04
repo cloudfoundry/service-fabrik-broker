@@ -20,7 +20,7 @@ describe('Jobs', function () {
       }
     };
     errorAgendaPurge = false;
-    const UnknownError = new Error('Unknown error');
+    const UnknownError = new Error('Simulated expected error');
     before(function () {
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));

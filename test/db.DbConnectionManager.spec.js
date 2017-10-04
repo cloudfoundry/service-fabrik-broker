@@ -39,7 +39,7 @@ class Mongoose {
           handlers.connected.call(handlers.connected);
         }
       } else {
-        throw new Error('MongoDb unreachable');
+        throw new Error('MongoDb unreachable.. Simulated test error. Expected Ignore!');
       }
     });
   }
@@ -78,7 +78,7 @@ describe('db', function () {
       sandbox.restore();
     });
 
-    it('Should initialize and publish Mongo-Operational event when MongoD is reachable', function (done) {
+    it('Should initialize and publish Mongo-Operational event when MongoD is reachable', function () {
       const config = {
         url: 'mongodb://localhost:27017/service-fabrik'
       };
@@ -94,11 +94,10 @@ describe('db', function () {
         expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_OPERATIONAL);
         expect(subscribeStub).to.be.calledOnce;
         expect(subscribeStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
-        done();
       });
     });
 
-    it('Should publish Mongo-Init-Failed event when MongoD is unreachable', function (done) {
+    it('Should publish Mongo-Init-Failed event when MongoD is unreachable', function () {
       const config = {
         url: 'mongodb://localhost:27017/service-fabrik',
         retry_connect: {
@@ -117,11 +116,10 @@ describe('db', function () {
           expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
           expect(publishStub).to.be.calledAtleastOnce;
           expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_INIT_FAILED);
-          done();
         });
     });
 
-    it('Should close mongo connections on recieving App shutdown event', function (done) {
+    it('Should close mongo connections on recieving App shutdown event', function () {
       const config = {
         url: 'mongodb://localhost:27017/service-fabrik'
       };
@@ -139,7 +137,6 @@ describe('db', function () {
         expect(subscribeStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
         publishStub(CONST.TOPIC.APP_SHUTTING_DOWN);
         expect(mongooseConnectionStub.close).to.be.calledOnce;
-        done();
       });
     });
   });

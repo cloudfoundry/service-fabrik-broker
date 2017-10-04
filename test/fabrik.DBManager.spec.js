@@ -25,9 +25,9 @@ const DirectorManagerStub = {
           }
         };
       } else if (bindPropertyFound === 1) {
-        throw new errors.ServiceBindingNotFound('SF Mongodb binding not found...');
+        throw new errors.ServiceBindingNotFound('SF Mongodb binding not found...Expected error.');
       } else {
-        throw new errors.ServiceUnavailable('BOSH is down...');
+        throw new errors.ServiceUnavailable('BOSH is down... simulated failure. Expected error.!');
       }
     });
   },
@@ -40,7 +40,7 @@ const DirectorManagerStub = {
     if (!failCreateUpdate) {
       return '1234';
     }
-    throw new errors.ServiceUnavailable('Bosh is down..');
+    throw new errors.ServiceUnavailable('Bosh is down... simulated failure. Expected error.!');
   })
 };
 let errorOnDbStart = false;
@@ -63,7 +63,7 @@ const proxyLibs = {
   '../db/DbConnectionManager': {
     startUp: () => Promise.try(() => {
       if (errorOnDbStart) {
-        throw new errors.ServiceUnavailable('DB Down...');
+        throw new errors.ServiceUnavailable('DB Down...Simulated expected test error.');
       }
       return Promise.resolve({});
     }),

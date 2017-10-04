@@ -1,4 +1,5 @@
 'use strict';
+const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const moment = require('moment');
@@ -28,6 +29,7 @@ describe('JobScheduler', function () {
     maintenance_mode_time_out: 1800000
   };
 
+  let JobWorkers = [];
   const proxyLibs = {
     'os': {
       cpus: () => ({
@@ -61,6 +63,7 @@ describe('JobScheduler', function () {
           send: (msg) => js.handleMessage(msg)
         };
         workers.push(worker);
+        JobWorkers.push(js);
         return count;
       }
     },
@@ -68,6 +71,11 @@ describe('JobScheduler', function () {
       scheduler: schedulerConfig
     }
   };
+
+  after(function () {
+    logger.info('unhooking all workers... cleaning up..!');
+    _.each(JobWorkers, (worker) => worker.unhook());
+  });
 
   describe('#Start', function () {
     let publishStub, sandbox, clock, processExitStub;
@@ -117,6 +125,7 @@ describe('JobScheduler', function () {
             }
             return Promise.try(() => {
               expect(count).to.eql(4 - 1);
+              JobScheduler.unhook();
             });
           });
         clock.tick(schedulerConfig.start_delay);
@@ -142,6 +151,7 @@ describe('JobScheduler', function () {
               expect(count).to.eql(6);
               //Fork should be invoked based on max_workers in config
               //In the above case because callback also results in additional call
+              JobScheduler.unhook();
             });
           });
         clock.tick(schedulerConfig.start_delay);
@@ -162,7 +172,7 @@ describe('JobScheduler', function () {
             }
             logger.info('count is>>', count);
             expect(count).to.eql(1);
-            JobScheduler.processUnhandledRejection(new errors.DBUnavailable('DB Down...'));
+            JobScheduler.processUnhandledRejection(new errors.DBUnavailable('DB Down ...Simulated expected error ...'));
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(publishStub).to.be.calledOnce;
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
@@ -170,6 +180,7 @@ describe('JobScheduler', function () {
             expect(processExitStub.firstCall.args[0]).to.eql(2);
             JobScheduler.handleMessage('INVALID_MESSAGE');
             //Nothing should be done when an invalid message is sent.
+            JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
         return js;
@@ -208,6 +219,7 @@ describe('JobScheduler', function () {
                 //count - indicates how many workers were created.
                 logger.debug('recreated all workers...');
                 expect(JobScheduler.workerCount).to.eql(5);
+                JobScheduler.unhook();
               });
           });
         clock.tick(schedulerConfig.start_delay);
@@ -251,6 +263,7 @@ describe('JobScheduler', function () {
             logger.info('count is>>', count);
             clock.tick(0);
             expect(count).to.eql(1);
+            JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
@@ -280,6 +293,7 @@ describe('JobScheduler', function () {
             expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             expect(processExitStub).not.to.be.called;
             expect(count).to.eql(1);
+            JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
@@ -309,6 +323,7 @@ describe('JobScheduler', function () {
             expect(processExitStub).to.have.been.calledOnce;
             expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.INTERNAL_ERROR);
             expect(count).to.eql(0);
+            JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
@@ -332,9 +347,11 @@ describe('JobScheduler', function () {
       processOnStub = sandbox.stub(process, 'on', (name, callback) => {
         eventHandlers[name] = callback;
         if (name === 'SIGINT') {
+          logger.info('int handler...');
           sigIntHandler = callback;
         }
         if (name === 'SIGTERM') {
+          logger.info('term handler...');
           sigTermHandler = callback;
         }
       });
@@ -356,14 +373,17 @@ describe('JobScheduler', function () {
         .ready
         .then(() => {
           clock.tick(0);
-          sigIntHandler();
-          sigTermHandler();
+          logger.info('calling int handler');
+          sigIntHandler('a');
+          logger.info('calling term handler');
+          sigTermHandler('b');
           return Promise.try(() => {
             expect(publishStub).to.be.calledTwice;
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
             expect(publishStub.secondCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
             expect(count).to.eql(1);
             //Fork should be invoked 1 less than number of cpus.
+            JobScheduler.unhook();
           });
         });
       clock.tick(schedulerConfig.start_delay);

@@ -32,9 +32,11 @@ class JobScheduler {
       this.workerType = '';
       this.serviceFabrikInMaintenance = true;
       this.intervalTimer = undefined;
-      process.on('SIGTERM', () => this.shutDown());
-      process.on('SIGINT', () => this.shutDown());
-      process.on('unhandledRejection', (reason, p) => this.processUnhandledRejection(reason, p));
+      this.shutDownHook = () => this.shutDown();
+      process.on('SIGTERM', this.shutDownHook);
+      process.on('SIGINT', this.shutDownHook);
+      this.unhandleRejectionHook = (reason, p) => this.processUnhandledRejection(reason, p);
+      process.on('unhandledRejection', this.unhandleRejectionHook);
       if (cluster.isMaster) {
         //This delay is added to ensure that DBManager is initialized prior to scheduler 
         //checking for maintenance status. Retry is anyways part of this check, but this 
@@ -193,13 +195,20 @@ class JobScheduler {
   }
 
   processUnhandledRejection(reason, p) {
-    logger.error('Unhandled Rejection at:', p, 'reason:', reason);
+    logger.error(`Unhandled Rejection in - ${this.workerType} - at:`, p, 'reason:', reason);
     if (reason && reason instanceof errors.DBUnavailable) {
       logger.error('DB unavailable. shutting down app');
       this.shutDown();
     } else {
       logger.error('Unhandled Rejection at:', p, 'reason:', reason);
     }
+  }
+
+  unhook() {
+    //Used primarily from tests
+    process.removeListener('SIGTERM', this.shutDownHook);
+    process.removeListener('SIGINT', this.shutDownHook);
+    process.removeListener('unhandledRejection', this.unhandleRejectionHook);
   }
 }
 

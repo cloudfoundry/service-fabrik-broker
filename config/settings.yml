@@ -67,7 +67,7 @@ defaults: &defaults
   sys_log_level: info
   enable_circuit_breaker: true
   feature:
-    ServiceInstanceAutoUpdate: false #Switch to turn on / turn off schedule_update feature
+    ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
     
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
@@ -718,7 +718,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: debug
+  log_level: warn
   enable_circuit_breaker: false
   external:
     <<: *external

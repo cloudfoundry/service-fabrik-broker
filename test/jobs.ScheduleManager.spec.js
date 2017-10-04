@@ -111,7 +111,7 @@ class Scheduler {
 }
 
 let DbDown = false;
-const DbUnavailable = new errors.DBUnavailable('DB Down..');
+const DbUnavailable = new errors.DBUnavailable('DB Down..Simulated Expected error..');
 const DELETE_RESPONSE = {
   result: {
     n: 10

@@ -61,9 +61,9 @@ describe('fabrik', function () {
         directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
         serviceFabrikClientStub = sandbox.stub(ServiceFabrikClient.prototype, 'abortLastBackup');
         serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke', () => Promise.try(() => {
-          logger.info('Unlock must fail:', failUnlock);
+          logger.warn('Unlock must fail:', failUnlock);
           if (failUnlock) {
-            throw errors.InternalServerError('Error occurred..');
+            throw new errors.InternalServerError('Simulated expected test error...');
           }
           return {};
         }));
@@ -157,7 +157,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(200).then(() => {
+          Promise.delay(50).then(() => {
             expect(directorOperationStub).to.be.calledTwice; //On recieving success response the response is set in instanceInfo
             expect(serviceFabrikClientStub).not.to.be.called;
             expect(serviceFabrikOperationStub.callCount >= 2).to.eql(true); //Retry for each invocation results in 3 calls. So expect atleast 6 (2 *3) calls
