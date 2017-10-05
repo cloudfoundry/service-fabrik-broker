@@ -15,6 +15,7 @@ const createdAt = new Date();
 const updatedAt = new Date();
 const lastRunAt = new Date();
 const nextRunAt = new Date();
+const dbStartedAt = new Date();
 const lockedAt = null;
 const jobData = {
   instance_id: instance_id,
@@ -33,7 +34,7 @@ const criteria = {
 const mergedJob = {
   name: `${instance_id}_${jobType}`,
   data: _.omit(jobData, 'timeZone'),
-  lastRunAt: lastRunAt,
+  lastRunAt: dbStartedAt,
   nextRunAt: nextRunAt,
   lockedAt: lockedAt,
   repeatInterval: interval,
@@ -41,7 +42,11 @@ const mergedJob = {
   createdBy: user.email,
   updatedBy: user.email,
   createdAt: createdAt,
-  updatedAt: updatedAt
+  updatedAt: updatedAt,
+  lastRunDetails: {
+    lastRunAt: dbStartedAt,
+    status: CONST.OPERATION.SUCCEEDED
+  }
 };
 const schedulerStub = {
   schedule: () => undefined,
@@ -180,7 +185,6 @@ describe('Jobs', function () {
   describe('ScheduleManager', function () {
     let schedulerSpy = sinon.stub(schedulerStub);
     let repoSpy = sinon.stub(repositoryStub);
-    const dbStartedAt = new Date();
     const lastRunStatus = {
       name: instance_id,
       type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
@@ -338,6 +342,7 @@ describe('Jobs', function () {
           .runAt(instance_id, CONST.JOB.SCHEDULED_BACKUP, scheduleAt, jobData, user)
           .then((jobResponse) => {
             const expectedResponse = _.cloneDeep(mergedJob);
+            delete expectedResponse.lastRunDetails;
             expectedResponse.repeatInterval = scheduleAt;
             expect(jobResponse).to.eql(expectedResponse);
             expect(schedulerSpy.runAt).to.be.calledOnce;

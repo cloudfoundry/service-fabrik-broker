@@ -107,7 +107,7 @@ describe('db', function () {
       };
       mongoReachable = false;
       const dbInit = dbInitializer.startUp(config);
-      return Promise.delay(20)
+      return Promise.delay(30)
         .then(() => {
           expect(mongooseConnectionStub.connect).to.be.calledTwice; //Once for initial connect and second during retry
           expect(mongooseConnectionStub.on.callCount).to.equal(6); //3*2 - 3 more times during retry.
