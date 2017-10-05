@@ -371,7 +371,7 @@ defaults: &defaults
     ###########################
     - &blueprint_plan1
       id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
-      name: 'v1.0-container'
+      name: 'v1.0-dev'
       free: true
       manager:
         name: 'docker'
@@ -403,7 +403,7 @@ defaults: &defaults
         - '100 MB Disk'
     - &blueprint_plan2
       id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
-      name: 'v1.0-container-large'
+      name: 'v1.0-dev-large'
       free: true
       manager:
         name: 'docker'
@@ -438,7 +438,7 @@ defaults: &defaults
     ###########################
     - &blueprint_plan3
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
-      name: 'v1.0-dedicated-xsmall'
+      name: 'v1.0-xsmall'
       free: false
       manager: &manager_plan3
         name: 'director'
@@ -465,8 +465,8 @@ defaults: &defaults
         - '1 GB Memory'
         - '1 GB Disk'
     - &blueprint_plan4
-      id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
-      name: 'v1.0-dedicated-large'
+      id: 'bc158c9a-7934-401e-94ab-057082a5073e'
+      name: 'v1.0-small'
       free: false
       manager: &manager_plan4
         name: 'director'
@@ -481,7 +481,7 @@ defaults: &defaults
             agent: *agent_blueprint
             resource_pool: micro
             disk_pool: hdd_2gb
-      description: 'Blueprint 1.0 service large (managed service in beta)'
+      description: 'Blueprint 1.0 service small (managed service in beta)'
       metadata:
         costs:
         - amount:
@@ -492,6 +492,36 @@ defaults: &defaults
         - '1 VM'
         - '1 vCPUs'
         - '1 GB Memory'
+        - '2 GB Disk'
+    - &blueprint_plan5
+      id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
+      name: 'v1.0-large'
+      free: false
+      manager: &manager_plan5
+        name: 'director'
+        settings: &settings_plan5
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          update_predecessors:
+          - 'bc158c9a-7934-401e-94ab-057082a5073f'
+          - 'bc158c9a-7934-401e-94ab-057082a5073e'
+          template: <%= base64_template('blueprint') %>
+          releases: *dedicated_releases
+          context: &context_plan5
+            agent: *agent_blueprint
+            resource_pool: micro
+            disk_pool: hdd_2gb
+      description: 'Blueprint 1.0 service large (managed service in beta)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '2 GB Memory'
         - '2 GB Disk'
 
 development: &development
@@ -541,6 +571,15 @@ development: &development
           agent: *agent_blueprint1
           context:
             <<: *context_plan4
+            agent: *agent_blueprint1
+    - <<: *blueprint_plan5
+      manager:
+        <<: *manager_plan5
+        settings:
+          <<: *settings_plan5
+          agent: *agent_blueprint1
+          context:
+            <<: *context_plan5
             agent: *agent_blueprint1
 
 
