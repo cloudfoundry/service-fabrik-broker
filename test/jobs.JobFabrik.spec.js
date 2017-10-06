@@ -18,7 +18,7 @@ describe('Jobs', function () {
       it('should return the requested Job Definition', function () {
         const backupJob = JobFabrik.getJob(CONST.JOB.SCHEDULED_BACKUP);
         expect(backupJob).to.eql(ScheduledBackup);
-        const reaperJob = JobFabrik.getJob(CONST.JOB.BAKUP_REAPER);
+        const reaperJob = JobFabrik.getJob(CONST.JOB.BACKUP_REAPER);
         expect(reaperJob).to.eql(BackupReaperJob);
         const statusPollerJob = JobFabrik.getJob(CONST.JOB.OPERATION_STATUS_POLLER);
         expect(statusPollerJob).to.eql(OperationStatusPollerJob);
