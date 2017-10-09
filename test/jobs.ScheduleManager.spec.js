@@ -218,7 +218,7 @@ describe('Jobs', function () {
           runStatus.response.diff = [];
           runStatus.data.attempt = 2;
           return {
-            list: [lastRunStatus, runStatus],
+            list: [runStatus, lastRunStatus],
             totalRecordCount: 2,
             nextOffset: -1
           };

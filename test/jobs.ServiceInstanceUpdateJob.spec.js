@@ -456,7 +456,7 @@ describe('Jobs', function () {
             runStatus.statusCode = CONST.HTTP_STATUS_CODE.CONFLICT;
             runStatus.data.attempt = 2;
             return {
-              list: [lastRunStatus, runStatus],
+              list: [runStatus, lastRunStatus],
               totalRecordCount: 2,
               nextOffset: -1
             };
@@ -465,7 +465,7 @@ describe('Jobs', function () {
             runStatus.response.diff = [];
             runStatus.data.attempt = 2;
             return {
-              list: onlyFirstRunComplete ? [lastRunStatus] : [lastRunStatus, runStatus],
+              list: onlyFirstRunComplete ? [lastRunStatus] : [runStatus, lastRunStatus],
               totalRecordCount: 2,
               nextOffset: -1
             };
