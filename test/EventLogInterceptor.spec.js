@@ -422,8 +422,8 @@ describe('EventLogInterceptor', function () {
         });
     });
 
-    //commenting this test as the event log is currently switched off for this API.
-    xit('should log metadata of a specific backup returned successfully', () => {
+    //skipping this test as the event log is currently switched off for this API.
+    it.skip('should log metadata of a specific backup returned successfully', () => {
       const pathParams = {
         backup_guid: 'f7a9cc40-b5ca-4a72-a093-9dbce9778e9b'
       };
