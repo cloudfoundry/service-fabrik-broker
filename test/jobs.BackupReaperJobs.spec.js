@@ -14,7 +14,7 @@ describe('Jobs', function () {
   /* jshint expr:true */
 
   describe('BackupReaperJob', function () {
-    const BackupReaperJob = JobFabrik.getJob(CONST.JOB.BAKUP_REAPER);
+    const BackupReaperJob = JobFabrik.getJob(CONST.JOB.BACKUP_REAPER);
 
     const index = mocks.director.networkSegmentIndex;
     const instance_id = mocks.director.uuidByIndex(index);
@@ -67,9 +67,9 @@ describe('Jobs', function () {
     };
     const job = {
       attrs: {
-        name: `${instance_id}_${CONST.JOB.BAKUP_REAPER}`,
+        name: `${instance_id}_${CONST.JOB.BACKUP_REAPER}`,
         data: {
-          delete_delay: 1000
+          delete_delay: 0
         },
         lastRunAt: new Date(),
         nextRunAt: new Date(),

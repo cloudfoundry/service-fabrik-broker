@@ -15,14 +15,15 @@ describe('Jobs', function () {
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     const job = {
       attrs: {
-        name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
+        name: CONST.JOB.SCHEDULED_BACKUP,
         data: {
           instance_id: instance_id,
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
           space_guid: space_guid,
           service_id: service_id,
-          plan_id: plan_id
+          plan_id: plan_id,
+          _n_a_m_e_: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
         },
         lastRunAt: new Date(),
         nextRunAt: new Date(),
@@ -64,28 +65,21 @@ describe('Jobs', function () {
     const user = {
       name: 'Hugo'
     };
-    const systemUser = {
-      name: CONST.USER.SYSTEM
-    };
+    const systemUser = CONST.SYSTEM_USER;
 
     describe('#LogRunHistory', function () {
-      let repositorySaveStub, repositoryDeleteStub;
+      let repositorySaveStub;
 
       before(function () {
         repositorySaveStub = sinon.stub(Repository, 'save');
-        repositoryDeleteStub = sinon.stub(Repository, 'delete');
-        repositoryDeleteStub.withArgs().returns(Promise.resolve({}));
-
       });
 
       afterEach(function () {
         repositorySaveStub.reset();
-        repositoryDeleteStub.reset();
       });
 
       after(function () {
         repositorySaveStub.restore();
-        repositoryDeleteStub.restore();
       });
 
       it('should log the success job run in history successfully', function () {
@@ -98,7 +92,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(user);
-          expect(repositoryDeleteStub).to.be.calledOnce;
         });
       });
       it('should log the failed job run in history successfully', function () {
@@ -114,7 +107,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(systemUser);
-          expect(repositoryDeleteStub).to.be.calledOnce;
         });
       });
       it('should gracefully handle scenarios when saving to db fails', function () {
@@ -132,7 +124,6 @@ describe('Jobs', function () {
           expect(repositorySaveStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.JOB_RUN_DETAIL);
           expect(repositorySaveStub.firstCall.args[1]).to.deep.equal(expectedJobRunDetail);
           expect(repositorySaveStub.firstCall.args[2]).to.eql(systemUser);
-          expect(repositoryDeleteStub).not.to.be.called;
           expect(responseCode).to.eql(-1);
         });
       });

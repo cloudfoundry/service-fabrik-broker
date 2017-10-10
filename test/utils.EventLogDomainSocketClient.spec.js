@@ -36,7 +36,7 @@ class Connection extends EventEmitter {
     netConnectionStub.end();
   }
 }
-const DomainSocketClient = proxyquire('../lib/utils/DomainSocketClient', {
+const DomainSocketClient = proxyquire('../lib/utils/EventLogDomainSocketClient', {
   net: {
     createConnection: (path, callback) => {
       return new Connection(path, callback);
@@ -51,7 +51,7 @@ const DomainSocketClient = proxyquire('../lib/utils/DomainSocketClient', {
 
 describe('utils', function () {
   /* jshint expr:true */
-  describe('DomainSocketClient', function () {
+  describe('EventLogDomainSocketClient', function () {
     let pubSubSpy, netConnWriteSpy, netConnEndSpy;
 
     beforeEach(function () {

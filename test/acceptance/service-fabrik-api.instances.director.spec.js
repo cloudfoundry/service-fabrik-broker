@@ -1,12 +1,12 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const moment = require('moment');
 const lib = require('../../lib');
 const ScheduleManager = require('../../lib/jobs');
 const CONST = require('../../lib/constants');
 const apps = require('../../apps');
-const bosh = require('../../lib/bosh');
 const catalog = lib.models.catalog;
 const config = lib.config;
 const errors = lib.errors;
@@ -25,7 +25,6 @@ describe('service-fabrik-api', function () {
       const base_url = '/api/v1';
       const broker_api_base_url = '/cf/v2';
       const broker_api_version = '2.9';
-      const director = bosh.director;
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;
       const adminAuthHeader = `bearer ${mocks.uaa.adminJwtToken}`;
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
@@ -62,9 +61,9 @@ describe('service-fabrik-api', function () {
         agent_ip: mocks.agent.ip
       };
 
-      const getJob = () => {
+      const getJob = (name, type) => {
         return Promise.resolve({
-          name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
+          name: `${instance_id}_${type === undefined? CONST.JOB.SCHEDULED_BACKUP : type}`,
           repeatInterval: repeatInterval,
           data: {
             instance_id: instance_id,
@@ -101,10 +100,6 @@ describe('service-fabrik-api', function () {
           fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
-      });
-
-      beforeEach(function () {
-        director.clearCache();
       });
 
       afterEach(function () {
@@ -175,7 +170,6 @@ describe('service-fabrik-api', function () {
         };
 
         it('should receive the update request from cloud controller and unlock deployment', function () {
-          mocks.director.getDeployments();
           mocks.director.releaseLock();
           return support.jwt
             .sign({
@@ -211,7 +205,6 @@ describe('service-fabrik-api', function () {
             );
         });
         it('should receive the update request from cloud controller and if deployment is already unlocked, should return back successfully', function () {
-          mocks.director.getDeployments();
           mocks.director.releaseLock(deploymentName, 404);
           return support.jwt
             .sign({
@@ -270,7 +263,27 @@ describe('service-fabrik-api', function () {
           state: 'succeeded',
           agent_ip: mocks.agent.ip
         };
-
+        const instanceInfo = {
+          space_guid: space_guid,
+          backup_guid: backup_guid,
+          instance_guid: instance_id,
+          agent_ip: '10.0.1.10',
+          service_id: service_id,
+          plan_id: plan_id,
+          deployment: mocks.director.deploymentNameByIndex(index),
+          started_at: new Date()
+        };
+        const lockInfo = {
+          username: 'admin',
+          lockedForOperation: 'backup',
+          createdAt: new Date(),
+          instanceInfo: instanceInfo
+        };
+        const FabrikStatusPoller = require('../../lib/fabrik/FabrikStatusPoller');
+        afterEach(function () {
+          FabrikStatusPoller.stopPoller = true;
+          FabrikStatusPoller.clearAllPollers();
+        });
         it('should initiate a start-backup operation at cloud controller via a service instance update', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
@@ -288,23 +301,6 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
-          mocks.director.getDeployments();
-          const instanceInfo = {
-            space_guid: space_guid,
-            backup_guid: backup_guid,
-            instance_guid: instance_id,
-            agent_ip: '10.0.1.10',
-            service_id: service_id,
-            plan_id: plan_id,
-            deployment: mocks.director.deploymentNameByIndex(index),
-            started_at: new Date()
-          };
-          const lockInfo = {
-            username: 'admin',
-            lockedForOperation: 'backup',
-            createdAt: new Date(),
-            instanceInfo: instanceInfo
-          };
           mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
@@ -320,7 +316,7 @@ describe('service-fabrik-api', function () {
                 expect(res.body).to.have.property('guid');
                 mocks.verify();
                 done();
-              }, 200);
+              }, 20);
             });
         });
 
@@ -386,6 +382,7 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.cloudController.updateServiceInstance(instance_id, body => {
@@ -402,15 +399,14 @@ describe('service-fabrik-api', function () {
               trigger: CONST.BACKUP.TRIGGER.SCHEDULED
             })
             .catch(err => err.response)
-            .then(res => {
+            .then(res => Promise.delay(20).then(() => {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('guid');
               mocks.verify();
-            });
+            }));
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
@@ -669,7 +665,6 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -841,7 +836,6 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.verifyDeploymentLockStatus();
@@ -1060,7 +1054,6 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1366,7 +1359,6 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1413,7 +1405,6 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1428,6 +1419,134 @@ describe('service-fabrik-api', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+      });
+
+      describe('#schedule-update', function () {
+        it('should return 503 - schedule update feature not enabled', function () {
+          const mongourl = config.mongodb.url;
+          const mongoprovision = config.mongodb.provision;
+          delete config.mongodb.url;
+          delete config.mongodb.provision;
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .set('Accept', 'application/json')
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(503);
+              expect(res.body.message).to.eql(`${CONST.FEATURE.SCHEDULED_UPDATE} feature not enabled`);
+              config.mongodb.url = mongourl;
+              config.mongodb.provision = mongoprovision;
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 - Badrequest on skipping mandatory params', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .send({})
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+
+        it('should return 201 OK', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.director.getDeployments();
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
+      });
+      describe('#GetUpdateSchedule', function () {
+        it('should return 200 OK', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
+        it('should return update required status if query param check_update_required is provided', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.director.getDeployments();
+          mocks.director.getDeploymentManifest(1);
+          const diff = [
+            ['- name: blueprint', null],
+            ['  version: 0.0.10', 'removed'],
+            ['  version: 0.0.11', 'added']
+          ];
+          mocks.director.diffDeploymentManifest(1, diff);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .query({
+              check_update_required: true
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
+              _.set(expectedJobResponse, 'update_required', true);
+              _.set(expectedJobResponse, 'update_details', diff);
+              expect(res.body).to.eql(expectedJobResponse);
               mocks.verify();
             });
         });

@@ -14,7 +14,7 @@ const riemanJSStub = {
   /* jshint unused:false */
   Event: (event) => true
 };
-const RiemannClient = proxyquire('../lib/utils/RiemannClient', {
+const RiemannClient = proxyquire('../lib/utils/EventLogRiemannClient', {
   riemannjs: {
     createClient: function () {
       return {
@@ -42,7 +42,7 @@ const RiemannClient = proxyquire('../lib/utils/RiemannClient', {
 
 describe('utils', function () {
   /* jshint expr:true */
-  describe('RiemannClient', function () {
+  describe('EventLogRiemannClient', function () {
     let pubSubSpy, riemanSendSpy, riemanEventSpy;
 
     beforeEach(function () {

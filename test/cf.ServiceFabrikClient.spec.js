@@ -80,6 +80,23 @@ describe('cf', function () {
             expect(result).to.eql(body);
           });
       });
+
+      it('should schedule auto-update successfully', function () {
+        const payLoad = {
+          instance_id: instance_id,
+          repeatInterval: '1 1 15 * *'
+        };
+        const [options, statusCode] = buildExpectedRequestArgs('PUT',
+          `/api/v1/service_instances/${instance_id}/schedule_update`,
+          201,
+          _.omit(payLoad, 'instance_id'));
+        return sfClient.scheduleUpdate(payLoad)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.eql(body);
+          });
+      });
     });
   });
 });
