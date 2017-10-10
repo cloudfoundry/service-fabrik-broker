@@ -568,23 +568,23 @@ describe('bosh', () => {
             type: 'result'
           }
         };
-        const body = [{
+        const body = {
           uuid: uuid.v4()
-        }];
+        };
         let response = {
-          body: `${_.map(body, JSON.stringify).join('\n')}\n`,
+          body: JSON.stringify(body),
           statusCode: 200
         };
 
-        new MockBoshDirectorClient(request, response).getTaskResult(bosh_taskId).then((content) => {
-          expect(content).to.eql(body);
+        return new MockBoshDirectorClient(request, response).getTaskResult(bosh_taskId).then((content) => {
+          expect(content).to.eql([body]);
           done();
-        }).catch(done);
+        });
       });
     });
 
     describe('#getTaskEvents', () => {
-      it('returns a JSON object', (done) => {
+      it('returns a JSON object even in case of errorneous partial response body', () => {
         let id1 = uuid.v4();
         let id2 = uuid.v4();
         let request = {
@@ -595,17 +595,16 @@ describe('bosh', () => {
           }
         };
         let response = {
-          body: `{\"uuid\": \"${id1}\"}\n{\"uuid\": \"${id2}\"}\n{uuid: ${id2}}`,
+          body: `{\"uuid\": \"${id1}\"}\n{\"uuid\": \"${id2}\"}\n{"uuid": ${id2}}\n`,
           statusCode: 200
         };
-
-        new MockBoshDirectorClient(request, response).getTaskEvents(bosh_taskId).then((content) => {
+        //Purposefully json is created errorneously to handle error scenarios.
+        return new MockBoshDirectorClient(request, response).getTaskEvents(bosh_taskId).then((content) => {
           expect(content).to.be.a('Array');
           expect(content).to.have.length(2);
           expect(content[0].uuid).to.eql(id1);
           expect(content[1].uuid).to.eql(id2);
-          done();
-        }).catch(done);
+        });
       });
     });
 

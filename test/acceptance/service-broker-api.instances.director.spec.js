@@ -6,7 +6,6 @@ const errors = require('../../lib/errors');
 const Promise = require('bluebird');
 const app = require('../../apps').internal;
 const utils = lib.utils;
-const bosh = require('../../lib/bosh');
 const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
@@ -20,7 +19,6 @@ describe('service-broker-api', function () {
     describe('director', function () {
       const base_url = '/cf/v2';
       const index = mocks.director.networkSegmentIndex;
-      const director = bosh.director;
       const api_version = '2.9';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -45,14 +43,13 @@ describe('service-broker-api', function () {
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
-      //To handle the rejection from deferred in #bind TC
-      let cancelScheduleStub, getScheduleStub;
+      let getScheduleStub;
+
       before(function () {
         backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         _.unset(fabrik.DirectorManager, plan_id);
-        cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule');
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
@@ -62,18 +59,12 @@ describe('service-broker-api', function () {
         ]);
       });
 
-      beforeEach(function () {
-        director.clearCache();
-      });
-
       afterEach(function () {
         mocks.reset();
-        cancelScheduleStub.reset();
         getScheduleStub.reset();
       });
 
       after(function () {
-        cancelScheduleStub.restore();
         getScheduleStub.restore();
       });
 
@@ -153,7 +144,6 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -191,7 +181,7 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-          mocks.director.getDeployments();
+          //mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.deprovision();
@@ -230,7 +220,6 @@ describe('service-broker-api', function () {
 
       describe('#lastOperation', function () {
         it('returns 200 OK (state = in progress)', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -258,8 +247,16 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK (state = succeeded)', function () {
           mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.director.getDeployments();
           mocks.cloudController.createSecurityGroup(instance_id);
+          const payload = {
+            repeatInterval: CONST.SCHEDULE.RANDOM,
+            timeZone: 'Asia/Kolkata'
+          };
+          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
+          const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
+          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -275,6 +272,9 @@ describe('service-broker-api', function () {
             })
             .catch(err => err.response)
             .then(res => {
+              delete config.mongodb.provision.plan_id;
+              randomIntStub.restore();
+              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
               expect(res).to.have.status(200);
               expect(res.body).to.eql({
                 description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
@@ -289,8 +289,7 @@ describe('service-broker-api', function () {
         it('returns 201 Created', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
-          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 500;
-          mocks.director.getDeployments();
+          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -334,7 +333,6 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();

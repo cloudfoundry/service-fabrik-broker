@@ -28,6 +28,7 @@ function startServer(app) {
   server.listen(port);
 
   function onerror(err) {
+    logger.error('Error occurred. Server will stop - ', err);
     if (err.syscall !== 'listen') {
       throw err;
     }

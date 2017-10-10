@@ -91,13 +91,13 @@ function getServiceInstancePermissions(guid) {
     });
 }
 
-function updateServiceInstance(guid, verifier, responseCode) {
+function updateServiceInstance(guid, verifier, responseCode, responseBody) {
   return nock(cloudControllerUrl)
     .put(`/v2/service_instances/${guid}`, verifier)
     .query({
       accepts_incomplete: true
     })
-    .reply(responseCode || 202, {
+    .reply(responseCode || 202, responseBody || {
       metadata: {
         guid: guid
       },
