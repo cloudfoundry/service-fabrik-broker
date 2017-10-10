@@ -113,10 +113,40 @@ describe('utils', function () {
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
           .value();
-        const expectedSecondResultObject = _
+        riemannClient.handleEvent(config.internal.event_type, {
+          event: event,
+          options: {
+            include_response_body: true
+          }
+        });
+        expect(riemanSendSpy).to.be.calledOnce;
+        expect(riemanEventSpy).to.be.calledOnce;
+        const firstResponse = riemanEventSpy.firstCall.args[0];
+        expect(firstResponse).to.be.an('object');
+        expect(firstResponse).to.eql(expectedFirstResultObject);
+      });
+
+      it('should log 2 events successfully to Riemann with response details', function () {
+        const event = {
+          host: 'INLN50932351A',
+          eventName: 'CF.broker.0.service-fabrik.director.create_instance ',
+          metric: 0,
+          state: 'ok',
+          description: 'Create a new service instance',
+          tags: ['create'],
+          time: 1483353454485,
+          request: {
+            user: {
+              name: 'broker'
+            },
+            instance_id: 'fe27a9ea-0e93-485a-86f2-600aa725fc88'
+          },
+          response: {}
+        };
+        const expectedFirstResultObject = _
           .chain(event)
           .pick('metric', 'state', 'description', 'tags')
-          .set('service', `${event.eventName}-guid-not-present-in-request`)
+          .set('service', event.eventName)
           .set('host', _.get(config, 'riemann.prefix', 'CF'))
           .set('attributes', [{
             key: 'request',
@@ -126,6 +156,20 @@ describe('utils', function () {
             value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
           }])
           .value();
+        const expectedSecondResultObject = _
+          .chain(event)
+          .pick('metric', 'state', 'description', 'tags')
+          .set('service', `${event.eventName}-instance_id-fe27a9ea-0e93-485a-86f2-600aa725fc88`)
+          .set('host', _.get(config, 'riemann.prefix', 'CF'))
+          .set('attributes', [{
+            key: 'request',
+            value: (typeof event.request === 'object' ? JSON.stringify(event.request) : event.request)
+          }, {
+            key: 'response',
+            value: (typeof event.response === 'object' ? JSON.stringify(event.response) : event.response)
+          }])
+          .value();
+
         riemannClient.handleEvent(config.internal.event_type, {
           event: event,
           options: {
@@ -135,9 +179,9 @@ describe('utils', function () {
         expect(riemanSendSpy).to.be.calledTwice;
         expect(riemanEventSpy).to.be.calledTwice;
         const firstResponse = riemanEventSpy.firstCall.args[0];
-        const secondResponse = riemanEventSpy.secondCall.args[0];
         expect(firstResponse).to.be.an('object');
         expect(firstResponse).to.eql(expectedFirstResultObject);
+        const secondResponse = riemanEventSpy.secondCall.args[0];
         expect(secondResponse).to.be.an('object');
         expect(secondResponse).to.eql(expectedSecondResultObject);
       });
@@ -185,8 +229,8 @@ describe('utils', function () {
             include_response_body: false
           }
         });
-        expect(riemanSendSpy).to.be.calledTwice;
-        expect(riemanEventSpy).to.be.calledTwice;
+        expect(riemanSendSpy).to.be.calledOnce;
+        expect(riemanEventSpy).to.be.calledOnce;
         const testResponse = riemanEventSpy.firstCall.args[0];
         expect(testResponse).to.be.an('object');
         expect(testResponse).to.eql(expectedResultObject);
