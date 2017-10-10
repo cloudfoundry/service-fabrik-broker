@@ -24,7 +24,7 @@ seqdiag {
     # controller starts update
     Controller -> Broker [label = "run update = backup"]
     Broker => Agent [label = "backup supported?", return = "yes"]
-    Broker => IaaS [label = "create lock"]
+    Broker => Bosh Director [label = "create _lock_ property"]
     Broker ->> Agent [label = "trigger backup"]
     Broker => IaaS [label = "create backup record"]
     Broker -> FabrikPoller [ label = "Start Poller" ]
@@ -56,6 +56,6 @@ seqdiag {
   }
   FabrikPoller -> Controller [ label = "trigger unlock" ]
   Controller -> Broker [ label = "run update = Unlock" ]
-  Broker => IaaS [label = "release lock"]
+  Broker => Bosh Director [label = "delete _lock_ property"]
   Controller <- Broker [ label = "ok"]
 }

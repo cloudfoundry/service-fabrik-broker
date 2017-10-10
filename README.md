@@ -8,7 +8,7 @@ Source files for all Service Fabrik relevant documentation.
 * `python-sphinx` for building the python library documentation
 
 NPM packages:
-* `aglio` for building the API documentation
+* `aglio` for building the API documentation (npm install -g aglio)
 * `marked, highlight.js` for rendering Markdown to HTML
 
 ### Build the documentation

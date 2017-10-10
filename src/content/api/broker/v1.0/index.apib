@@ -354,3 +354,48 @@ API mainly provided for clean up hooks in automated test scripts]
     + instance_guid - the guid of the service instance
 
 + Response 200
+
+# Group Service Instance Updates
+## Schedule Automated Service Instance Update [PUT /service_instances/{instance_guid}/schedule_update]
+By default when a service instance is successfully created service fabrik broker automatically schedules automated
+update job to be run once every 'x' days (ex. 7 Days). The schedule times are randomized (basic randomiaztion technique) to achieve some randomization
+in update schedules across instances in the landscape.
+
+The below API can be used to update the automated update schedule interval as defined by service fabrik broker at the service instance creation time.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + BODY.repeatInterval  - repeat interval of the update. Supported formats: valid cron expression or <a href='https://github.com/rschmukler/human-interval' target='_blank'>human-readable</a> intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days.
+    + BODY.timeZone (optional) - timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered
+
++ Request
+<!-- include(requests/PUT_service_instances_instanceGuid_schedule_update.apib) -->
+
++ Response 200
+<!-- include(responses/PUT_service_instances_instanceGuid_schedule_update_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
+
++ Response 501
+<!-- include(responses/501-schedule_update.apib) -->
+
+
+## Get Automated Service Instance Update Schedule [GET /service_instances/{instance_guid}/schedule_update?check_update_required=true]
+The below API can be used to retrieve the automated update schedule interval of the service instance.
+
++ Parameters
+    + instance_guid - the guid of the service instance
+    + check_update_required (optional) - flag which if passed returns back details if service instance requires an udpate or not.
+    
++ Response 200
+<!-- include(responses/GET_service_instances_instanceGuid_schedule_update_200.apib) -->
+
++ Response 401
+<!-- include(responses/401.apib) -->
+
++ Response 403
+<!-- include(responses/403.apib) -->
