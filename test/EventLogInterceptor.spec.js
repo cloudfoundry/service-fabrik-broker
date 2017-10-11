@@ -422,8 +422,7 @@ describe('EventLogInterceptor', function () {
         });
     });
 
-    //skipping this test as the event log is currently switched off for this API.
-    it.skip('should log metadata of a specific backup returned successfully', () => {
+    it('should log metadata of a specific backup returned successfully', () => {
       const pathParams = {
         backup_guid: 'f7a9cc40-b5ca-4a72-a093-9dbce9778e9b'
       };
@@ -439,6 +438,7 @@ describe('EventLogInterceptor', function () {
       };
       return Promise
         .try(() => {
+          externalAppEventLogInterceptor.EVENT_LOG_CONFIG['/api/v1/backups/:backup_guid'].GET.enabled = true;
           externalAppEventLogInterceptor.execute(request, response, respBody);
         })
         .then(() => {
