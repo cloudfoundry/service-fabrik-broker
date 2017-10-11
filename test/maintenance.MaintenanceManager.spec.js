@@ -18,12 +18,18 @@ describe('maintenance', function () {
       progress: []
     };
     let sandbox, repoSaveStub, repoSearchStub, clock, findOneStub, inMaintenance;
+    let maintenaceFound = true;
     before(function () {
       inMaintenance = true;
       clock = sinon.useFakeTimers(new Date().getTime());
       sandbox = sinon.sandbox.create();
       repoSaveStub = sandbox.stub(Repository, 'save');
-      repoSearchStub = sandbox.stub(Repository, 'search', () => Promise.resolve({}));
+      repoSearchStub = sandbox.stub(Repository, 'search', () => Promise.resolve({
+        totalRecordCount: maintenaceFound ? 1 : 0,
+        list: maintenaceFound ? [{
+          state: CONST.OPERATION.SUCCEEDED
+        }] : []
+      }));
       findOneStub = sandbox.stub(Repository, 'findOne', () => Promise.try(() => {
         if (inMaintenance) {
           return _.clone(maintenanceInfo);
@@ -36,6 +42,7 @@ describe('maintenance', function () {
       findOneStub.reset();
       repoSaveStub.reset();
       repoSearchStub.reset();
+      maintenaceFound = true;
     });
     after(function () {
       sandbox.restore();
@@ -106,6 +113,14 @@ describe('maintenance', function () {
         })
         .catch(errors.BadRequest, () => {});
     });
+    it('should throw error if progressInfo is blank', function () {
+      const maintInfo = _.clone(maintenanceInfo);
+      return maintenanceManager.updateMaintenace('', CONST.OPERATION.SUCCEEDED, CONST.SYSTEM_USER)
+        .then(() => {
+          throw new Error('Should throw error');
+        })
+        .catch(errors.BadRequest, () => {});
+    });
     it('should throw error if update of maintenance is tried when system is not in maintenance', function () {
       inMaintenance = false;
       const maintInfo = _.clone(maintenanceInfo);
@@ -123,6 +138,44 @@ describe('maintenance', function () {
           throw new Error('Should throw error');
         })
         .catch(errors.BadRequest, () => {});
+    });
+    it('should return the last maintenance state', function () {
+      inMaintenance = false;
+      return maintenanceManager.getLastMaintenaceState()
+        .then((response) => {
+          const criteria = {
+            sortBy: [
+              ['createdAt', 'desc']
+            ]
+          };
+          expect(repoSearchStub).to.be.calledOnce;
+          expect(repoSearchStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
+          expect(repoSearchStub.firstCall.args[1]).to.eql(criteria);
+          expect(repoSearchStub.firstCall.args[2]).to.eql({
+            records: 1,
+            offset: 0
+          });
+        });
+    });
+    it('should return the last maintenance state as null when maintenance state has never been set in system', function () {
+      inMaintenance = false;
+      maintenaceFound = false;
+      return maintenanceManager.getLastMaintenaceState()
+        .then((response) => {
+          const criteria = {
+            sortBy: [
+              ['createdAt', 'desc']
+            ]
+          };
+          expect(repoSearchStub).to.be.calledOnce;
+          expect(repoSearchStub.firstCall.args[0]).to.eql(CONST.DB_MODEL.MAINTENANCE_DETAIL);
+          expect(repoSearchStub.firstCall.args[1]).to.eql(criteria);
+          expect(repoSearchStub.firstCall.args[2]).to.eql({
+            records: 1,
+            offset: 0
+          });
+          expect(response).to.equal(null);
+        });
     });
     it('should retrieve history of maintenace for input criteria', function () {
       inMaintenance = false;
