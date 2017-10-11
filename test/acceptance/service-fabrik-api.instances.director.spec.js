@@ -441,10 +441,12 @@ describe('service-fabrik-api', function () {
               type: type,
               trigger: CONST.BACKUP.TRIGGER.SCHEDULED
             })
-            .then(() => expect(true).to.be.equal(false)) //Code should not return back normally..
+            .then(() => {
+              throw new Error('Should throw error');
+            })
             .catch(err => {
-              expect(err.response.body.status).to.equal(error_response_body.http.status);
-              expect(err.response.body.message).to.equal(LOCK_MESSAGE);
+              expect(_.get(err, 'response.body.status')).to.equal(error_response_body.http.status);
+              expect(_.get(err, 'response.body.message')).to.equal(LOCK_MESSAGE);
             });
         });
 

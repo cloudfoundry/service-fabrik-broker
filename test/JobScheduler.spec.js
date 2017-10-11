@@ -99,7 +99,10 @@ describe('JobScheduler', function () {
     describe('#NotInMaintenance', function () {
       let maintenaceManagerStub;
       before(function () {
-        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo', () => Promise.resolve(null));
+        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve({
+          createdAt: new Date(),
+          state: CONST.OPERATION.SUCCEEDED
+        }));
       });
       afterEach(function () {
         maintenaceManagerStub.reset();
@@ -230,7 +233,7 @@ describe('JobScheduler', function () {
     describe('#InMaintenance', function () {
       let getMaintenanceStub, updateMaintStub, updateStatus;
       beforeEach(function () {
-        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo');
+        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState');
         updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
           return Promise.try(() => {
             if (updateStatus) {
@@ -240,12 +243,17 @@ describe('JobScheduler', function () {
           });
         });
         getMaintenanceStub.onCall(0).returns(Promise.resolve({
-          createdAt: new Date()
+          createdAt: new Date(),
+          state: CONST.OPERATION.IN_PROGRESS
         }));
         getMaintenanceStub.onCall(1).returns(Promise.resolve({
-          createdAt: new Date()
+          createdAt: new Date(),
+          state: CONST.OPERATION.IN_PROGRESS
         }));
-        getMaintenanceStub.returns(Promise.resolve(null));
+        getMaintenanceStub.returns(Promise.resolve({
+          createdAt: new Date(),
+          state: CONST.OPERATION.SUCCEEDED
+        }));
       });
       afterEach(function () {
         getMaintenanceStub.restore();
@@ -338,11 +346,10 @@ describe('JobScheduler', function () {
   describe('#Shutdown', function () {
     let processOnStub, sandbox, publishStub, maintenaceManagerStub, clock, processExitStub;
     let eventHandlers = {};
-    let sigIntHandler;
-    let sigTermHandler;
+    let sigIntHandler, sigTermHandler, unhandledRejectHandler;
     before(function () {
       sandbox = sinon.sandbox.create();
-      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getMaintenaceInfo', () => Promise.resolve(null));
+      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve(null));
       processExitStub = sandbox.stub(process, 'exit');
       processOnStub = sandbox.stub(process, 'on', (name, callback) => {
         eventHandlers[name] = callback;
@@ -353,6 +360,9 @@ describe('JobScheduler', function () {
         if (name === 'SIGTERM') {
           logger.info('term handler...');
           sigTermHandler = callback;
+        }
+        if (name === 'unhandledRejection') {
+          unhandledRejectHandler = callback;
         }
       });
       publishStub = sandbox.stub(pubsub, 'publish');
@@ -377,6 +387,7 @@ describe('JobScheduler', function () {
           sigIntHandler('a');
           logger.info('calling term handler');
           sigTermHandler('b');
+          unhandledRejectHandler('Simulated Rejection...');
           return Promise.try(() => {
             expect(publishStub).to.be.calledTwice;
             expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.APP_SHUTTING_DOWN);
