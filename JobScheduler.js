@@ -138,16 +138,16 @@ class JobScheduler {
   pollMaintenanceStatus() {
     const checkMaintenanceStatus = (resolve, reject) => {
       return maintenanceManager
-        .getMaintenaceInfo()
+        .getLastMaintenaceState()
         .then(maintenanceInfo => {
-          if (maintenanceInfo === null) {
+          if (maintenanceInfo === null || _.get(maintenanceInfo, 'state', '') === CONST.OPERATION.SUCCEEDED) {
             logger.info('+-> System is not in maintenance');
             if (this.intervalTimer) {
               clearInterval(this.intervalTimer);
             }
             return resolve();
           } else {
-            logger.info('+-> System is in maintenance:', maintenanceInfo);
+            logger.info('+-> System is in maintenance or last maintenance operation has failed :', maintenanceInfo);
             const currTime = moment();
             const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
             if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
