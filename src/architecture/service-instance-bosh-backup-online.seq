@@ -30,7 +30,7 @@ seqdiag {
                                         but just a simple flag to indicate an on-going backup on the deployment."];
     BrokerApi ->> Agent [label = "trigger backup"];
     BrokerApi => IaaS [label = "create backup record",return = "true"];
-    Controller <-- BrokerApi [ label = "async ok 202" ];
+    Controller <-- BrokerApi [ label = "Synch ok 200" ];
     FabrikApi <-- Controller [ label = "update triggered", leftnote = 
               "response returned back to user & status check  
               performed via poller at regular intervals in background" ];
