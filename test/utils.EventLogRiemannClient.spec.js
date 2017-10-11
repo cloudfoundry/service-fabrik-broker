@@ -159,7 +159,7 @@ describe('utils', function () {
         const expectedSecondResultObject = _
           .chain(event)
           .pick('metric', 'state', 'description', 'tags')
-          .set('service', `${event.eventName}-instance_id-fe27a9ea-0e93-485a-86f2-600aa725fc88`)
+          .set('service', `${event.eventName}-instance_id.fe27a9ea-0e93-485a-86f2-600aa725fc88`)
           .set('host', _.get(config, 'riemann.prefix', 'CF'))
           .set('attributes', [{
             key: 'request',
