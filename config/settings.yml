@@ -66,7 +66,9 @@ defaults: &defaults
   colorize_log: false
   sys_log_level: info
   enable_circuit_breaker: true
-
+  feature:
+    ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
+    
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################
@@ -120,15 +122,30 @@ defaults: &defaults
   # SCHEDULER SETTINGS #
   ######################
   scheduler:
-    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper
+    job_types: ScheduledBackup, BluePrintJob, ScheduledOobDeploymentBackup, OperationStatusPoller, BackupReaper, ServiceInstanceAutoUpdate, DbCollectionReaper
     process_every: '3 minutes' # Process every 3 min by default
     run_with_web_process: true #if this flag is either undefined or set to true, then agenda scheduler can run along within web process
     max_workers: 2 # Can throttle the number of job workers to a value lesser than default number of cpus
     max_concurrency: 30
     default_concurrency: 20
+    start_delay: 120000 # Scheduler start must be delayed for DB connections to happen.
     default_lock_lifetime: 180000
+    maintenance_check_interval: 90000 #every (ms) scheduler checks for maitenance mode
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
-    job_history_retention_in_days: 30
+    maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
+    jobs:
+      reschedule_delay: '20 minutes from now'
+      scheduled_backup:
+        max_attempts: 3 # Incase of a conflicting operation (ex. update) in progress, the backup is rescheduled. This count defines upper limit on the number of attempts the job is rescheduled in case of conflict.
+      service_instance_update: 
+        max_attempts: 3  #In case of an error while initiating a backup, it is retried again after reschedule_delay. 
+                         #This defines the upper limit on # of retries. # of retries is not applicable in case a backup is in progress in which case it tries over and over.
+        run_every_xdays: 7 #every 7 days update is checked
+        should_start_after_hr: 8 #Service Instance update Job will be scheduled in a randomized hr between job_start_hr & job_end_hr
+        should_start_before_hr: 17
+        should_start_after_min: 0 #Service Instance update Job will be scheduled in a randomized hr between job_start_hr & job_end_hr
+        should_start_before_min: 59
+        time_zone: 'Asia/Kolkata' #Timezone in which the jobs will be running
     system_jobs:
       - name: 'service-fabrik-mongodb'
         type: ScheduledOobDeploymentBackup
@@ -138,15 +155,23 @@ defaults: &defaults
           deployment_name: service-fabrik-mongodb
           trigger: scheduled
           container: service-fabrik-mongodb
+        enabled: true
       - name: 'Backup_Reaper'
         type: BackupReaper
-        interval: '0 1 * * *' #Backup schedule interval for service fabrik DB
+        interval: '0 1 * * *' 
         job_data:
           delete_delay: 1000 #delay in processing between two tasks (in millisecond)
-      - name: 'MongoDB'
-        type: ServiceFabrikBackup
-        interval: '0 1 * * *'
-        enabled: false
+        enabled: true
+      - name: 'DbCollection_Reaper'
+        type: DbCollectionReaper
+        interval: '0 2 * * *' 
+        job_data:
+          reap_collections:
+            - name : JobRunDetail
+              retention_in_days: 60
+            - name : EventDetail
+              retention_in_days: 90
+        enabled: true
 
   #######################
   # MONITORING SETTINGS #
@@ -161,6 +186,7 @@ defaults: &defaults
     inprogress_metric: 2
     event_name_prefix: broker.0.service-fabrik
     include_response_body: false
+    events_logged_in_db: create_backup, update_instance
     unauthorized:
       http_status:
       - 401
@@ -731,7 +757,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: debug
+  log_level: warn
   enable_circuit_breaker: false
   external:
     <<: *external

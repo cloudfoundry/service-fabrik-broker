@@ -3,7 +3,6 @@
 const lib = require('../../lib');
 const app = require('../../apps').internal;
 const DBManager = require('../../lib/fabrik/DBManager');
-const bosh = require('../../lib/bosh');
 const fabrik = lib.fabrik;
 const config = lib.config;
 const backupStore = lib.iaas.backupStore;
@@ -18,7 +17,6 @@ describe('service-fabrik-admin', function () {
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const time = Date.now();
     const started_at = isoDate(time);
-    const director = bosh.director;
     const container = backupStore.containerName;
     let timestampStub, uuidv4Stub;
 
@@ -44,15 +42,12 @@ describe('service-fabrik-admin', function () {
       ]);
     });
 
-    beforeEach(function () {
-      director.clearCache();
-    });
-
     afterEach(function () {
       mocks.reset();
       timestampStub.reset();
       uuidv4Stub.reset();
     });
+
     after(function () {
       timestampStub.restore();
       uuidv4Stub.restore();
@@ -60,9 +55,14 @@ describe('service-fabrik-admin', function () {
     });
 
     describe('create', function () {
+      let clock;
+
+      beforeEach(function () {
+        clock = sinon.useFakeTimers(new Date().getTime());
+      });
 
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
-        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 200;
+        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 30;
         this.timeout(2000 + WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
         mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false);
@@ -71,9 +71,6 @@ describe('service-fabrik-admin', function () {
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.agent.getInfo();
         mocks.agent.createCredentials();
-        mocks.director.getDeployments({
-          'oob': true
-        });
         config.directors[0].default_task_poll_interval = 10;
         mocks.director.createBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
         return chai
@@ -83,9 +80,11 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
+            clock.tick(config.directors[0].default_task_poll_interval);
             expect(res.body.status).to.be.oneOf(['CREATE_UPDATE_IN_PROGRESS', 'DISCONNECTED']);
             expect(res.body.url).to.eql('');
             expect(res).to.have.status(202);
+            clock.restore();
             setTimeout(() => {
               mocks.verify();
               done();
@@ -95,15 +94,16 @@ describe('service-fabrik-admin', function () {
     });
 
     describe('update', function () {
+      let clock;
+      beforeEach(function () {
+        clock = sinon.useFakeTimers(new Date().getTime());
+      });
       it('should update service fabrik internal mongodb deployment ', function (done) {
-        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 500;
+        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 5;
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
-        mocks.director.getDeployments({
-          'oob': true
-        });
         config.directors[0].default_task_poll_interval = 10;
         return chai
           .request(app)
@@ -112,8 +112,10 @@ describe('service-fabrik-admin', function () {
           .auth(config.username, config.password)
           .catch(err => err.response)
           .then(res => {
+            clock.tick(config.directors[0].default_task_poll_interval);
             expect(res.body.status).to.be.oneOf(['CREATE_UPDATE_IN_PROGRESS', 'DISCONNECTED']);
             expect(res.body.url).to.be.oneOf([mocks.agent.credentials.uri, '']);
+            clock.restore();
             //If test case is run in isolation then URI will be blank initially.
             //However if the test suite is run, then create operation sets the URI which will be returned as part of update.
             expect(res).to.have.status(202);

@@ -32,4 +32,22 @@ describe('utils', function () {
       expect(utils.taskIdRegExp().exec(prefixedTaskId)[2]).to.eql('12345');
     });
   });
+
+  describe('#Random', function () {
+    let randomIntStub;
+    before(function () {
+      randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
+    });
+    after(function () {
+      randomIntStub.restore();
+    });
+    it('should return a random cron expression for once every 15 days', function () {
+      const AssertionError = require('assert').AssertionError;
+      expect(utils.getRandomCronForOnceEveryXDays.bind(utils, 29)).to.throw(AssertionError);
+      //bind returns a ref to function which is executed and checked for if it threw exception.
+      expect(utils.getRandomCronForOnceEveryXDays(2)).to.eql('1 1 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29 * *');
+      expect(utils.getRandomCronForOnceEveryXDays(7)).to.eql('1 1 1,8,15,22 * *');
+      expect(utils.getRandomCronForOnceEveryXDays(15)).to.eql('1 1 1,16 * *');
+    });
+  });
 });

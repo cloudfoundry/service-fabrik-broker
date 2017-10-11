@@ -45,9 +45,9 @@ describe('fabrik', function () {
     };
     const config = {
       backup: {
-        status_check_every: 50,
+        status_check_every: 10,
         abort_time_out: 180000,
-        retry_delay_on_error: 100,
+        retry_delay_on_error: 10,
         lock_check_delay_on_restart: 0
       }
     };
@@ -61,9 +61,9 @@ describe('fabrik', function () {
         directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
         serviceFabrikClientStub = sandbox.stub(ServiceFabrikClient.prototype, 'abortLastBackup');
         serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke', () => Promise.try(() => {
-          logger.info('Unlock must fail:', failUnlock);
+          logger.warn('Unlock must fail:', failUnlock);
           if (failUnlock) {
-            throw errors.InternalServerError('Error occurred..');
+            throw new errors.InternalServerError('Simulated expected test error...');
           }
           return {};
         }));
@@ -84,7 +84,6 @@ describe('fabrik', function () {
         directorOperationStub.returns(Promise.resolve({
           state: CONST.OPERATION.SUCCEEDED
         }));
-        // directorOperationStub.returns();
       });
       beforeEach(function () {
         directorConfigStub.lock_deployment_max_duration = 0;
@@ -109,7 +108,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(150).then(() => {
+          Promise.delay(20).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).not.to.be.called;
@@ -121,7 +120,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(150).then(() => {
+          Promise.delay(30).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.calledOnce;
@@ -133,21 +132,20 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(200).then(() => {
+          Promise.delay(50).then(() => {
             expect(directorOperationStub).to.be.atleastOnce;
             expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(serviceFabrikOperationStub).to.be.called;
           }));
       });
       it('Stop polling operation on backup completion &  unlock deployment', function () {
-        directorConfigStub.lock_deployment_max_duration = 3000;
         return FabrikStatusPoller.start(instanceInfo_Succeeded, CONST.OPERATION_TYPE.BACKUP, {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(200).then(() => {
-            expect(directorOperationStub).to.be.calledTwice;
-            expect(serviceFabrikClientStub).not.to.be.called;
+          Promise.delay(50).then(() => {
+            expect(directorOperationStub).to.be.atleastOnce;
+            expect(serviceFabrikClientStub).to.be.calledOnce;
             expect(FabrikStatusPoller.pollers.length).to.eql(0);
             expect(serviceFabrikOperationStub).to.be.called;
           }));
@@ -159,7 +157,7 @@ describe('fabrik', function () {
           name: 'hugo',
           email: 'hugo@sap.com'
         }).then(() =>
-          Promise.delay(200).then(() => {
+          Promise.delay(50).then(() => {
             expect(directorOperationStub).to.be.calledTwice; //On recieving success response the response is set in instanceInfo
             expect(serviceFabrikClientStub).not.to.be.called;
             expect(serviceFabrikOperationStub.callCount >= 2).to.eql(true); //Retry for each invocation results in 3 calls. So expect atleast 6 (2 *3) calls

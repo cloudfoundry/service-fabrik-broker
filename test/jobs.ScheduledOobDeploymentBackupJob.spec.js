@@ -5,7 +5,6 @@ const _ = require('lodash');
 const CONST = require('../lib/constants');
 const config = require('../lib/config');
 const lib = require('../lib');
-const bosh = require('../lib/bosh');
 const utils = require('../lib/utils');
 const BaseJob = require('../lib/jobs/BaseJob');
 const ScheduleManager = require('../lib/jobs/ScheduleManager');
@@ -21,7 +20,6 @@ describe('Jobs', function () {
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
-    const director = bosh.director;
     const started14DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
     const prefix = `${root_folder}/backup/${deploymentName}`;
@@ -73,7 +71,6 @@ describe('Jobs', function () {
 
     afterEach(function () {
       mocks.reset();
-      director.clearCache();
       cancelScheduleStub.reset();
       baseJobLogRunHistoryStub.reset();
     });
@@ -145,10 +142,6 @@ describe('Jobs', function () {
           backup_guid: backup_guid
         });
         mocks.director.getDeployment(deploymentName, true);
-        mocks.director.getDeployments({
-          'oob': true
-
-        });
         return ScheduledOobDeploymentBackupJob.run(job, () => {
           mocks.verify();
           const errStatusCode = 500;
@@ -174,10 +167,6 @@ describe('Jobs', function () {
           backup_guid: backup_guid
         });
         mocks.cloudProvider.list(container, prefix, [], 404);
-        mocks.director.getDeployments({
-          'oob': true
-
-        });
         return ScheduledOobDeploymentBackupJob.run(job, () => {
           mocks.verify();
           const failCode = 'Item not found';
@@ -212,10 +201,6 @@ describe('Jobs', function () {
           fileName14Daysprior
         ]);
         mocks.cloudProvider.download(pathname14, scheduled_data);
-        mocks.director.getDeployments({
-          'oob': true
-
-        });
         mocks.cloudProvider.list(container, `${root_folder}/backup`, [fileName14Daysprior]);
         mocks.cloudProvider.list(mongoDBContainer, backup_guid, [
           backupFileName14DayspriorToDelete
@@ -244,10 +229,6 @@ describe('Jobs', function () {
       it('should cancel backup job (itself) when there are no more backups to delete & deployment is deleted', function (done) {
         mocks.director.getDeployment(deploymentName, false);
         mocks.cloudProvider.list(container, prefix, []);
-        mocks.director.getDeployments({
-          'oob': true
-
-        });
         mocks.cloudProvider.list(container, prefix, []);
         return ScheduledOobDeploymentBackupJob.run(job, () => {
           mocks.verify();
@@ -281,10 +262,6 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-
-        mocks.director.getDeployments({
-          'oob': true
-        });
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
@@ -334,9 +311,6 @@ describe('Jobs', function () {
 
       it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
         mocks.director.getDeployment(deploymentName, false);
-        mocks.director.getDeployments({
-          'oob': true
-        });
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
