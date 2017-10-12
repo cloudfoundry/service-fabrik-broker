@@ -94,7 +94,7 @@ defaults:
     - backup
 "/api/v1/backups/:backup_guid":
   GET:
-    enabled: true
+    enabled: false
     event_name: get_backup_by_guid
     description: Retrieve metadata of a specific backup within the given space
     tags:
@@ -110,7 +110,7 @@ defaults:
     - 410
 "/api/v1/service_instances/:instance_id/schedule_backup":
   GET:
-    enabled: true
+    enabled: false
     event_name: get_backup_schedule
     description: Retrieving the backup schedule for a service instance
     tags:
