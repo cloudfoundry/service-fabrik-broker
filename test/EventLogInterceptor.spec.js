@@ -438,6 +438,7 @@ describe('EventLogInterceptor', function () {
       };
       return Promise
         .try(() => {
+          externalAppEventLogInterceptor.EVENT_LOG_CONFIG['/api/v1/backups/:backup_guid'].GET.enabled = true;
           externalAppEventLogInterceptor.execute(request, response, respBody);
         })
         .then(() => {
