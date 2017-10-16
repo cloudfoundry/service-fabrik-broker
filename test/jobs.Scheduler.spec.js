@@ -222,7 +222,7 @@ describe('Jobs', function () {
   });
   /* jshint expr:true */
   describe('Scheduler', function () {
-    let agendaSpy, subscribeSpy, publishSpy, agendaSpyInit, mongooseConnectionStub, sandbox, jobSpy, logSpy;
+    let agendaSpy, subscribeSpy, publishSpy, agendaSpyInit, mongooseConnectionStub, sandbox, jobSpy, logSpy, osCpuStub;
     before(function () {
       sandbox = sinon.sandbox.create();
       mongooseConnectionStub = sandbox.stub(mongoose);
@@ -234,6 +234,9 @@ describe('Jobs', function () {
       }));
       subscribeSpy = sandbox.stub(pubSubStub, 'subscribe');
       publishSpy = sandbox.stub(pubSubStub, 'publish');
+      osCpuStub = sandbox.stub(os, 'cpus', () => ({
+        length: 8
+      }));
     });
 
     function resetSpies() {
