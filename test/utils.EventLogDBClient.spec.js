@@ -15,10 +15,19 @@ describe('utils', function () {
         }
       }
     });
-    let subscribeStub, saveStub, eventHandler;
+    let subscribeStub, saveStub, processAppEventHandler, initializeHandler, shutDownHandler;
 
     before(function () {
-      subscribeStub = sinon.stub(pubsub, 'subscribe', (eventType, handler) => eventHandler = handler);
+      subscribeStub = sinon.stub(pubsub, 'subscribe', (eventType, handler) => {
+        if (eventType === CONST.TOPIC.MONGO_OPERATIONAL) {
+          initializeHandler = handler;
+        } else if (eventType === CONST.TOPIC.APP_SHUTTING_DOWN) {
+          shutDownHandler = handler;
+        } else {
+          processAppEventHandler = handler;
+        }
+        return handler;
+      });
       saveStub = sinon.stub(Repository, 'save');
     });
     afterEach(function () {
@@ -34,25 +43,31 @@ describe('utils', function () {
       const eventLogDBClient = new EventLogDBClient({
         event_type: 'SF.BROKER_EVENT'
       });
-      expect(subscribeStub).to.be.calledOnce;
+      initializeHandler();
+      shutDownHandler();
+      expect(subscribeStub).to.be.calledThrice;
       expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
     });
     it('#initialize - gracefully handles when input with invalid options', function () {
       const eventLogDBClient = new EventLogDBClient();
-      expect(subscribeStub).not.to.be.called;
+      initializeHandler();
+      expect(subscribeStub).to.be.calledTwice;
       expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
     });
 
     describe('#logevent', function () {
       it('ignores invalid events', function () {
         const eventLogDBClient = new EventLogDBClient();
+        initializeHandler();
         eventLogDBClient.handleEvent('', {
           event: {}
         });
+        shutDownHandler();
         expect(saveStub).not.to.be.called;
       });
       it('does not log events which are not configured', function () {
         const eventLogDBClient = new EventLogDBClient();
+        initializeHandler();
         const eventInfo = {
           host: '4c30f022-a041-4100-aa15-0c9979ca7938',
           eventName: 'CF.broker.0.service-fabrik.director.create_instance'
@@ -88,9 +103,10 @@ describe('utils', function () {
         const eventLogDBClient = new EventLogDBClient({
           event_type: 'SF.BROKER_EVENT'
         });
-        expect(subscribeStub).to.be.calledOnce;
+        initializeHandler();
+        expect(subscribeStub).to.be.calledThrice;
         expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
-        eventHandler('', {
+        processAppEventHandler('', {
           event: eventInfo
         });
         eventInfo.instanceId = '46d34d39-83b1-4b2d-8260-50f2d66a0957';
@@ -138,9 +154,10 @@ describe('utils', function () {
         const eventLogDBClient = new EventLogDBClient({
           event_type: 'SF.BROKER_EVENT'
         });
-        expect(subscribeStub).to.be.calledOnce;
+        initializeHandler();
+        expect(subscribeStub).to.be.calledThrice;
         expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
-        eventHandler('', {
+        processAppEventHandler('', {
           event: eventInfo
         });
         eventInfo.instanceId = '52c3b43f-8da8-4011-975b-107d2fa63c6c';
