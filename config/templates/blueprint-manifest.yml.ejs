@@ -1,4 +1,4 @@
-<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [p('resource_pool')]}) %>
+<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [{name: p('resource_pool')}]}) %>
 
 update:
   canaries: 0
