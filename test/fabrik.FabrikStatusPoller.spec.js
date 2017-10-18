@@ -70,19 +70,24 @@ describe('fabrik', function () {
         getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
         directorOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
-          state: CONST.OPERATION.IN_PROGRESS
+          state: CONST.OPERATION.IN_PROGRESS,
+          description: 'Backup operation in-progress'
         }));
         directorOperationStub.withArgs('backup', instanceInfo_aborting).onCall(0).returns(Promise.resolve({
-          state: CONST.OPERATION.ABORTING
+          state: CONST.OPERATION.ABORTING,
+          description: 'Backup operation abort in-progress'
         }));
         directorOperationStub.withArgs('backup', instanceInfo_aborting).onCall(1).returns(Promise.resolve({
-          state: CONST.OPERATION.ABORTED
+          state: CONST.OPERATION.ABORTED,
+          description: 'Backup operation aborted'
         }));
         directorOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
-          state: CONST.OPERATION.IN_PROGRESS
+          state: CONST.OPERATION.IN_PROGRESS,
+          description: 'Backup operation in-progress'
         }));
         directorOperationStub.returns(Promise.resolve({
-          state: CONST.OPERATION.SUCCEEDED
+          state: CONST.OPERATION.SUCCEEDED,
+          description: 'Backup operation Succeded'
         }));
       });
       beforeEach(function () {
