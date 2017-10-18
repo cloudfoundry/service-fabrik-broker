@@ -70,7 +70,6 @@ describe('bosh', () => {
       describe('#filterDiskPools', () => {
         it('returns an array containing one element', () => {
           let disk_pools = Header.filterDiskPools(header.disk_pools, ['bar']);
-
           expect(disk_pools).to.be.a('Array');
           expect(disk_pools).to.have.length(1);
         });
@@ -78,10 +77,23 @@ describe('bosh', () => {
 
       describe('#filterResourcePools', () => {
         it('returns an array containing one element', () => {
-          let disk_pools = Header.filterResourcePools(header.resource_pools, ['barfoo', 'foobar']);
-
-          expect(disk_pools).to.be.a('Array');
-          expect(disk_pools).to.have.length(1);
+          let resource_pools = Header.filterResourcePools(header.resource_pools, [{
+            name: 'foobar',
+            cloud_properties: {
+              azure: {
+                availability_set: 'bar'
+              }
+            }
+          }, {
+            name: 'barfoo',
+            cloud_properties: {
+              azure: {
+                availability_set: 'bar'
+              }
+            }
+          }]);
+          expect(resource_pools).to.be.a('Array');
+          expect(resource_pools).to.have.length(1);
         });
       });
     });
