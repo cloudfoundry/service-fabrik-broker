@@ -90,9 +90,9 @@ sudo make install
 ```shell
 git clone https://github.com/cloudfoundry/cf-deployment  
 cd cf-deployment  
-bosh2 -e vbox upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent  
-bosh2 -e vbox update-cloud-config bosh-lite/cloud-config.yml  
-bosh2 -e vbox -d cf deploy cf-deployment.yml -o operations/bosh-lite.yml --vars-store deployment-vars.yml -v system_domain=bosh-lite.com
+bosh -e vbox upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent
+bosh -e vbox update-cloud-config iaas-support/bosh-lite/cloud-config.yml
+bosh -e vbox -d cf deploy cf-deployment.yml -o operations/bosh-lite.yml --vars-store deployment-vars.yml -v system_domain=bosh-lite.com
 ```
 
 * Target, Login, Prepare Cloud Foundry Usage
@@ -102,7 +102,7 @@ cf login -u admin -p admin
 ```
 Password will be different in case if you are using using [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
 ```shell
-export CF_ADMIN_PASSWORD=$(bosh2 int ./deployment-vars.yml --path /cf_admin_password)  
+export CF_ADMIN_PASSWORD=$(bosh int ./deployment-vars.yml --path /cf_admin_password)
 cf auth admin $CF_ADMIN_PASSWORD
 ```
 Now, sample orgs and spaces can be created to start using it.
