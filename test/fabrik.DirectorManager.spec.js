@@ -55,22 +55,6 @@ describe('fabrik', function () {
         manager.findNetworkSegmentIndex(used_guid).then(res => expect(res).to.eql(21));
       });
     });
-    describe('#addVmtags', function () {
-      it('should append organization guid and space guid to manifest', function () {
-        //Test case #1 {When opts has org and space keys}
-        var test_manifest = 'properties:\n  a: 1\n  b: 2';
-        var opts = {
-          organization_guid: 'myorg',
-          space_guid: 'myspace'
-        };
-        var expected_manifest = 'properties:\n  a: 1\n  b: 2\ntags:\n  organization_guid: myorg\n  space_guid: myspace\n';
-        expect(manager.addVmtags(test_manifest, opts)).to.eql(expected_manifest);
-        //Test case #2 {When opts does not have org and space key}
-        opts = {};
-        expected_manifest = 'properties:\n  a: 1\n  b: 2\ntags:\n  organization_guid: null\n  space_guid: null\n';
-        expect(manager.addVmtags(test_manifest, opts)).to.eql(expected_manifest);
-      });
-    });
 
   });
 });
