@@ -209,14 +209,14 @@ describe('utils', function () {
               organization_guid: '5cfa2dad-1401-4fbd-9608-806070bbaf11',
               space_guid: '8ae0a163-f45c-4097-9aa7-bd79fafd4681'
             },
-            accepts_incomplete: 'true',
+            accepts_incomplete: true,
             instance_id: '10eb2660-d432-4cd4-a23c-469e02b6fa7c',
             user: {
               name: 'broker'
             }
           },
           response: {
-            status: '400',
+            status: 400,
             message: 'Update to plan \'v1.0-xsmall\' is not possible'
           }
         };
