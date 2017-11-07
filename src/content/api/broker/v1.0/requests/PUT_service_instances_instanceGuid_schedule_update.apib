@@ -1,0 +1,26 @@
+The request body must be a JSON object containing the repeat interval and may optionally contain the timezone to be taken into consideration for job runs.
+
+    + Body
+
+            {
+              "repeatInterval": "33 7,15,22 * * *",
+              "timeZone": "America/New_York"
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["repeatInterval"],
+              "properties": {
+                "repeatInterval": {
+                  "type": "string",
+                  "description": "Valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days."
+                },
+                "timeZone": {
+                  "type": "string",
+                  "description": "Timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered"
+                }
+              }
+            }

@@ -4,6 +4,12 @@
 
 node_modules/
 
+store/
+
+coverage/
+
+logs/
+
 architecture/example.png
 
 src/architecture/*.png

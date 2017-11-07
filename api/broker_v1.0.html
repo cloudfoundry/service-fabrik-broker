@@ -5,7 +5,7 @@
 	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
 	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
 </ul>
-<hr><div>API Versions:&nbsp;<a href="broker_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-show-broker-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Broker Information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#state">State</a></div><div class="collapse-content"><ul><li><a href="#state-show-state-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show State</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#backup">Backup</a></div><div class="collapse-content"><ul><li><a href="#backup-start-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Backup</a></li><li><a href="#backup-show-last-backup-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation</a></li><li><a href="#backup-abort-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#restore">Restore</a></div><div class="collapse-content"><ul><li><a href="#restore-start-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Restore</a></li><li><a href="#restore-show-last-restore-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation</a></li><li><a href="#restore-abort-restore-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Restore</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#managing-backups">Managing Backups</a></div><div class="collapse-content"><ul><li><a href="#managing-backups-show-last-backup-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation for all Instances</a></li><li><a href="#managing-backups-show-last-restore-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation for all Instances</a></li><li><a href="#managing-backups-show-all-backups-in-space-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show all Backups in Space</a></li><li><a href="#managing-backups-show-specific-backup-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show specific Backup</a></li><li><a href="#managing-backups-delete-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Delete Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#scheduling-backups">Scheduling Backups</a></div><div class="collapse-content"><ul><li><a href="#scheduling-backups-schedule-backup-put"><span class="badge put"><i class="fa fa-pencil"></i></span>Schedule Backup</a></li><li><a href="#scheduling-backups-get-backup-schedule-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Get Backup Schedule</a></li><li><a href="#scheduling-backups-cancel-automated-backups-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Cancel Automated Backups</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;broker-host&gt;:9292/api/v1">http://&lt;broker-host&gt;:9292/api/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Broker API - v1.0</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik Broker</a>
+<hr><div>API Versions:&nbsp;<a href="broker_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-show-broker-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Broker Information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#state">State</a></div><div class="collapse-content"><ul><li><a href="#state-show-state-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show State</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#backup">Backup</a></div><div class="collapse-content"><ul><li><a href="#backup-start-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Backup</a></li><li><a href="#backup-show-last-backup-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation</a></li><li><a href="#backup-abort-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#restore">Restore</a></div><div class="collapse-content"><ul><li><a href="#restore-start-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Restore</a></li><li><a href="#restore-show-last-restore-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation</a></li><li><a href="#restore-abort-restore-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Abort Restore</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#managing-backups">Managing Backups</a></div><div class="collapse-content"><ul><li><a href="#managing-backups-show-last-backup-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Backup Operation for all Instances</a></li><li><a href="#managing-backups-show-last-restore-operation-for-all-instances-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show Last Restore Operation for all Instances</a></li><li><a href="#managing-backups-show-all-backups-in-space-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show all Backups in Space</a></li><li><a href="#managing-backups-show-specific-backup-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Show specific Backup</a></li><li><a href="#managing-backups-delete-backup-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Delete Backup</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#scheduling-backups">Scheduling Backups</a></div><div class="collapse-content"><ul><li><a href="#scheduling-backups-schedule-backup-put"><span class="badge put"><i class="fa fa-pencil"></i></span>Schedule Backup</a></li><li><a href="#scheduling-backups-get-backup-schedule-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Get Backup Schedule</a></li><li><a href="#scheduling-backups-cancel-automated-backups-delete"><span class="badge delete"><i class="fa fa-times"></i></span>Cancel Automated Backups</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#service-instance-updates">Service Instance Updates</a></div><div class="collapse-content"><ul><li><a href="#service-instance-updates-schedule-automated-service-instance-update-put"><span class="badge put"><i class="fa fa-pencil"></i></span>Schedule Automated Service Instance Update</a></li><li><a href="#service-instance-updates-get-automated-service-instance-update-schedule-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Get Automated Service Instance Update Schedule</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;broker-host&gt;:9292/api/v1">http://&lt;broker-host&gt;:9292/api/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Broker API - v1.0</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik Broker</a>
 API documentation.</p>
 <p>Most of the below listed operations are service-specific and thus the Service Fabrik Broker will interact with the corresponding agents of the service instance
 in order to delegate the request.</p>
@@ -1143,4 +1143,380 @@ The returned info will contain job details like when the job will run next time,
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="scheduling-backups-cancel-automated-backups" class="resource"><div id="scheduling-backups-cancel-automated-backups-delete" class="action delete"><h4 class="action-heading"><div class="name">Cancel Automated Backups</div><a href="#scheduling-backups-cancel-automated-backups-delete" class="method delete">DELETE</a><code class="uri">/service_instances/{instance_guid}/schedule_backup</code></h4><p>[Note : This api can only be executed by users with ‘cloud_controller.admin’ scope.
 API mainly provided for clean up hooks in automated test scripts]</p>
 <div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
-</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div style="height: 10px"></div></div></div></section></div></div></div><p style="text-align: center;" class="text-muted">Copyright &copy; SAP SE 2016. Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio.</a></p><script src="../js/jquery.min.js"></script><script src="../js/bootstrap.min.js"></script><script src="../js/service-fabrik.js"></script></body></html>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div style="height: 10px"></div></div></div></section><section id="service-instance-updates" class="resource-group"><h2 class="group-heading">Service Instance Updates <a href="#service-instance-updates" class="permalink">&para;</a></h2><div id="service-instance-updates-schedule-automated-service-instance-update" class="resource"><div id="service-instance-updates-schedule-automated-service-instance-update-put" class="action put"><h4 class="action-heading"><div class="name">Schedule Automated Service Instance Update</div><a href="#service-instance-updates-schedule-automated-service-instance-update-put" class="method put">PUT</a><code class="uri">/service_instances/{instance_guid}/schedule_update</code></h4><p>By default when a service instance is successfully created service fabrik broker automatically schedules automated
+update job to be run once every ‘x’ days (ex. 7 Days). The schedule times are randomized (basic randomiaztion technique) to achieve some randomization
+in update schedules across instances in the landscape.</p>
+<p>The below API can be used to update the automated update schedule interval as defined by service fabrik broker at the service instance creation time.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd></dl><hr><div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object containing the repeat interval and may optionally contain the timezone to be taken into consideration for job runs.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>repeatInterval</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>repeat interval of the update. Supported formats: valid cron expression or <a href='https://github.com/rschmukler/human-interval' target='_blank'>human-readable</a> intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant ‘random’ - in this case update job is run once every ‘x’ (configured) number days.</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>timeZone</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered</p>
+</dd></dl><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"33 7,15,22 * * *"</span></span>,
+  "<span class="hljs-attribute">timeZone</span>": <span class="hljs-value"><span class="hljs-string">"America/New_York"</span>
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+    <span class="hljs-string">"repeatInterval"</span>
+  ]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">timeZone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job. If timezone is not specified, then default timezone of UTC would be considered"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>501</code>&nbsp;<span style="font-weight: normal;">-&nbsp;Feature 'scheduled update' not supported</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the details of the scheduled update job is returned back along with the last run details.
+The returned info will contain job details like when the job will run next time, when it was run last time.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b_ScheduledBackup"</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value"><span class="hljs-string">"3c9d161d-9fab-417e-a728-2d9f41d5bb4c"</span></span>,
+    "<span class="hljs-attribute">instance_name</span>": <span class="hljs-value"><span class="hljs-string">"demo-test3"</span></span>,
+    "<span class="hljs-attribute">deployment_name</span>": <span class="hljs-value"><span class="hljs-string">"service-fabrik-0186-3c9d161d-9fab-417e-a728-2d9f41d5bb4c"</span></span>,
+    "<span class="hljs-attribute">attempt</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+    "<span class="hljs-attribute">firstAttemptAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-10-05T10:03:00.583Z"</span>
+  </span>}</span>,
+  "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-17T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"33 7,15,22 * * *"</span></span>,
+  "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-14T06:31:00.607Z"</span></span>,
+  "<span class="hljs-attribute">failCount</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+  "<span class="hljs-attribute">failReason</span>": <span class="hljs-value"><span class="hljs-string">"Service Fabrik is currently under maintenance. Version upgrade from 5.4 to 5.5 started at Thu Oct 05 2017 10:02:37 GMT+0000 (UTC)"</span></span>,
+  "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-11T06:08:11.864Z"</span></span>,
+  "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:31:11.864Z"</span></span>,
+  "<span class="hljs-attribute">lastRunDetails</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"succeeded"</span></span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+    "<span class="hljs-attribute">diff</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">before</span>": <span class="hljs-value">[
+        [
+          <span class="hljs-string">"releases:"</span>,
+          <span class="hljs-literal">null</span>
+        ],
+        [
+          <span class="hljs-string">"- name: postgresql"</span>,
+          <span class="hljs-literal">null</span>
+        ],
+        [
+          <span class="hljs-string">"  version: '72'"</span>,
+          <span class="hljs-string">"removed"</span>
+        ],
+        [
+          <span class="hljs-string">"  version: '70'"</span>,
+          <span class="hljs-string">"added"</span>
+        ]
+      ]</span>,
+      "<span class="hljs-attribute">after</span>": <span class="hljs-value">[]
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the scheduled update job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">instance_name</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"name of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">deployment_name</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Deplpoyment name of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">attempt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"integer"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Attempt count"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">firstAttemptAt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"Date"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Date/time when the update was first attempted"</span>
+        </span>}
+      </span>}
+    </span>}</span>,
+    "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job will run next time (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was last run (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was locked (UTC format). This field if null, then it indicates that job is not running at present. If non-null, then it would mean that either the job is running or job has ended abruptly"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Repeat interval of the scheduled update. Supported formats: valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The last time the job failed (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failCount</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"number"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Number of times the jobs has failed till date"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failReason</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Reason for its last failure"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who created the update schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who updated the update schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time when the schedule was created for the first time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the schedule was updated the last time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunDetails</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">status</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"succeeded"</span>,
+            <span class="hljs-string">"failed"</span>,
+            <span class="hljs-string">"in progress"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Last run status of update job"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was last run (UTC format)"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">diff</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+          "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">before</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+              "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of changes before doing update"</span></span>,
+              "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span>
+              </span>}
+            </span>}</span>,
+            "<span class="hljs-attribute">after</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+              "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of changes after doing update (This list should be null in case of successful last update run)"</span></span>,
+              "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span>
+              </span>}
+            </span>}
+          </span>}
+        </span>}
+      </span>}
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div><div id="service-instance-updates-get-automated-service-instance-update-schedule" class="resource"><div id="service-instance-updates-get-automated-service-instance-update-schedule-get" class="action get"><h4 class="action-heading"><div class="name">Get Automated Service Instance Update Schedule</div><a href="#service-instance-updates-get-automated-service-instance-update-schedule-get" class="method get">GET</a><code class="uri">/service_instances/{instance_guid}/schedule_update?check_update_required=true</code></h4><p>The below API can be used to retrieve the automated update schedule interval of the service instance.</p>
+<div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
+</dd><dt>check_update_required</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>flag which if passed returns back details if service instance requires an udpate or not.</p>
+</dd></dl><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>403</code>&nbsp;<span style="font-weight: normal;">-&nbsp;access to resource forbidden</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the details of the update schedule is returned back along with the details if an update is required for the instance or not.</p>
+</div><h4>Example</h4><pre><code>{
+  "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"ebf5fb00-98e6-4431-a346-2db26e6f879b_ScheduledBackup"</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value"><span class="hljs-string">"3c9d161d-9fab-417e-a728-2d9f41d5bb4c"</span></span>,
+    "<span class="hljs-attribute">instance_name</span>": <span class="hljs-value"><span class="hljs-string">"demo-test3"</span></span>,
+    "<span class="hljs-attribute">deployment_name</span>": <span class="hljs-value"><span class="hljs-string">"service-fabrik-0186-3c9d161d-9fab-417e-a728-2d9f41d5bb4c"</span></span>,
+    "<span class="hljs-attribute">attempt</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+    "<span class="hljs-attribute">firstAttemptAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-10-05T10:03:00.583Z"</span>
+  </span>}</span>,
+  "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-17T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+  "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value"><span class="hljs-string">"33 7,15,22 * * *"</span></span>,
+  "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-14T06:31:00.607Z"</span></span>,
+  "<span class="hljs-attribute">failCount</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+  "<span class="hljs-attribute">failReason</span>": <span class="hljs-value"><span class="hljs-string">"Service Fabrik is currently under maintenance. Version upgrade from 5.4 to 5.5 started at Thu Oct 05 2017 10:02:37 GMT+0000 (UTC)"</span></span>,
+  "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value"><span class="hljs-literal">null</span></span>,
+  "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value"><span class="hljs-string">"admin"</span></span>,
+  "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-11T06:08:11.864Z"</span></span>,
+  "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:31:11.864Z"</span></span>,
+  "<span class="hljs-attribute">lastRunDetails</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"succeeded"</span></span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value"><span class="hljs-string">"2017-04-16T06:30:00.845Z"</span></span>,
+    "<span class="hljs-attribute">diff</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">before</span>": <span class="hljs-value">[
+        [
+          <span class="hljs-string">"releases:"</span>,
+          <span class="hljs-literal">null</span>
+        ],
+        [
+          <span class="hljs-string">"- name: postgresql"</span>,
+          <span class="hljs-literal">null</span>
+        ],
+        [
+          <span class="hljs-string">"  version: '72'"</span>,
+          <span class="hljs-string">"removed"</span>
+        ],
+        [
+          <span class="hljs-string">"  version: '70'"</span>,
+          <span class="hljs-string">"added"</span>
+        ]
+      ]</span>,
+      "<span class="hljs-attribute">after</span>": <span class="hljs-value">[]
+    </span>}
+  </span>}</span>,
+  "<span class="hljs-attribute">update_required</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+  "<span class="hljs-attribute">update_details</span>": <span class="hljs-value">[]
+</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the scheduled update job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">instance_id</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">instance_name</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"name of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">deployment_name</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Deplpoyment name of the service instance"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">attempt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"integer"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Attempt count"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">firstAttemptAt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"Date"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Date/time when the update was first attempted"</span>
+        </span>}
+      </span>}
+    </span>}</span>,
+    "<span class="hljs-attribute">nextRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job will run next time (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was last run (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lockedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was locked (UTC format). This field if null, then it indicates that job is not running at present. If non-null, then it would mean that either the job is running or job has ended abruptly"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatInterval</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Repeat interval of the scheduled update. Supported formats: valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">repeatTimezone</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Timezone to consider when running the batch job"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The last time the job failed (UTC format)"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failCount</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"number"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Number of times the jobs has failed till date"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">failReason</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Reason for its last failure"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who created the update schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedBy</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Name of the user who updated the update schedule for the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time when the schedule was created for the first time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">updatedAt</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the schedule was updated the last time (UTC format)."</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">lastRunDetails</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">status</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">enum</span>": <span class="hljs-value">[
+            <span class="hljs-string">"succeeded"</span>,
+            <span class="hljs-string">"failed"</span>,
+            <span class="hljs-string">"in progress"</span>
+          ]</span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Last run status of update job"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">lastRunAt</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+          "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The time at which the update job was last run (UTC format)"</span>
+        </span>}</span>,
+        "<span class="hljs-attribute">diff</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+          "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">before</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+              "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of changes before doing update"</span></span>,
+              "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span>
+              </span>}
+            </span>}</span>,
+            "<span class="hljs-attribute">after</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+              "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of changes after doing update (This list should be null in case of successful last update run)"</span></span>,
+              "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span>
+              </span>}
+            </span>}
+          </span>}
+        </span>}
+      </span>}
+    </span>}
+  </span>}</span>,
+  "<span class="hljs-attribute">update_required</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"boolean"</span></span>,
+    "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Flag which indicates if an update is required for the instance or not"</span>
+  </span>}</span>,
+  "<span class="hljs-attribute">update_details</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"array"</span></span>,
+    "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"List of changes that will be patched as part of the update operation"</span></span>,
+    "<span class="hljs-attribute">items</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section></div></div></div><p style="text-align: center;" class="text-muted">Copyright &copy; SAP SE 2016. Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio.</a></p><script src="../js/jquery.min.js"></script><script src="../js/bootstrap.min.js"></script><script src="../js/service-fabrik.js"></script></body></html>

@@ -7,38 +7,41 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; UAA; Controller; FabrikPoller; Broker; Agent; Service; IaaS;
+  User; UAA;Controller;FabrikApi;BrokerApi; BoshDirector; Agent; Service; IaaS;
 
   # get token
   User => UAA [label = "get token", return = "token"]
 
   # trigger backup
-  User ->> Broker [label = "trigger backup"]
-  Broker -> Controller [label = "trigger update", leftnote =
-        "done to shift work away from broker
-        and onto controller; controller will
-        now do heavy-lifting like polling
-        and preventing parallel operations;
-        payload contains user and operation"]
-    User <-- Broker [label = "ok"]
+  User -> FabrikApi [label = "trigger backup"]
+  FabrikApi -> Controller [label = "trigger update", leftnote =
+        "done to ensure mutual exclusivity with upgrade/delete operations"];
     # controller starts update
-    Controller -> Broker [label = "run update = backup"]
-    Broker => Agent [label = "backup supported?", return = "yes"]
-    Broker => IaaS [label = "create lock"]
-    Broker ->> Agent [label = "trigger backup"]
-    Broker => IaaS [label = "create backup record"]
-    Broker -> FabrikPoller [ label = "Start Poller" ]
-    Controller <-- Broker [ label = "async ok 202" ]
-    Broker <- Controller [ label = "update triggered" ]
+    Controller -> BrokerApi [label = "run update = backup"]
+    BrokerApi => Agent [label = "backup supported?", return = "yes"]
+    BrokerApi => BoshDirector [label = "create _lock_ property on deployment", return = "true", rightnote=
+                                        "This is a simple name/value stored at the deployment level.
+                                          HTTP Post:/deployments/${deploymentName}/properties
+                                        
+                                        For now since backup operation is internally sent via cf update operation, maintaining this
+                                        state via this property on bosh deployment is good enough & its truly not a semaphore
+                                        but just a simple flag to indicate an on-going backup on the deployment."];
+    BrokerApi ->> Agent [label = "trigger backup"]
+    BrokerApi => IaaS [label = "create backup record"]
+    Controller <-- BrokerApi [ label = "Synch ok 200" ]
+    FabrikApi <- Controller [ label = "update triggered", leftnote = 
+              "response returned back to user & status check  
+              performed via poller at regular intervals in background" ];
+    FabrikApi -> FabrikApi [ label = "Start Poller" ]
 
   # agent starts backup
   Agent => Service [label = "monit stop service"]
   Agent => IaaS [label = "create, attach, and mount temporary volume"]
   Agent => Agent [label = "create/encrypt tarball"]
 
-  # broker asks for last operation status
-  FabrikPoller => Broker [ label = "check status" ]{
-    Broker => Agent [label = "backup state?", return = "processing"]
+  # FabrikStatusPoller asks for last operation status
+  FabrikApi => FabrikApi [ label = "check status" ]{
+    FabrikApi => Agent [label = "backup state?", return = "processing"];
   }
 
   # agent continues backup
@@ -46,16 +49,19 @@ seqdiag {
   Agent => IaaS [label = "upload tarball to blob store"]
   Agent => IaaS [label = "unmount, detach, and delete temporary volume"]
   Agent => Service [label = "wait for service"]
-  Broker <<-- Agent [label = "backup completed\nno actual callback"]
+  FabrikApi <<-- Agent [label = "backup completed\nno actual callback"]
 
   # broker asks for last operation status
-  FabrikPoller => Broker [ label = "check status" ]{
-    Broker => Agent [label = "backup state?", return = "succeeded"]
-    Broker => Agent [label = "fetch logs", return = "logs"]
-    Broker => IaaS [label = "update backup record with logs"]
+  FabrikApi => FabrikApi [ label = "check status" ]{
+    FabrikApi => Agent [label = "backup state?", return = "succeeded"]
+    FabrikApi => Agent [label = "fetch logs", return = "logs"]
+    FabrikApi => IaaS [label = "update backup record with logs"]
   }
-  FabrikPoller -> Controller [ label = "trigger unlock" ]
-  Controller -> Broker [ label = "run update = Unlock" ]
-  Broker => IaaS [label = "release lock"]
-  Controller <- Broker [ label = "ok"]
+  FabrikApi -> Controller [ label = "trigger unlock" ]
+  Controller -> BrokerApi [ label = "run update = Unlock" ]
+  BrokerApi => BoshDirector [label = "delete _lock_ property on the deployment", rightnote=
+                          "HTTP Delete : /deployments/${deploymentName}/properties/${propertyName}
+                          Remove the flag once backup is complete"]
+  Controller <- BrokerApi [ label = "ok"]
+  FabrikApi <-- Controller [ label = "update complete" ]
 }

@@ -1,0 +1,187 @@
+In case of success, the details of the update schedule is returned back along with the details if an update is required for the instance or not.
+
+    + Body
+
+              {
+                "name": "ebf5fb00-98e6-4431-a346-2db26e6f879b_ScheduledBackup",
+                "data": {
+                  "instance_id": "3c9d161d-9fab-417e-a728-2d9f41d5bb4c",
+                  "instance_name": "demo-test3",
+                  "deployment_name": "service-fabrik-0186-3c9d161d-9fab-417e-a728-2d9f41d5bb4c",
+                  "attempt": 1,
+                  "firstAttemptAt": "2017-10-05T10:03:00.583Z"
+                },
+                "nextRunAt": "2017-04-17T06:30:00.845Z",
+                "lastRunAt": "2017-04-16T06:30:00.845Z",
+                "repeatInterval": "33 7,15,22 * * *",
+                "lockedAt" : null,
+                "failedAt" : "2017-04-14T06:31:00.607Z",
+                "failCount": 1,
+                "failReason": "Service Fabrik is currently under maintenance. Version upgrade from 5.4 to 5.5 started at Thu Oct 05 2017 10:02:37 GMT+0000 (UTC)",
+                "repeatTimezone": null,
+                "createdBy": "admin",
+                "updatedBy": "admin",
+                "createdAt": "2017-04-11T06:08:11.864Z",
+                "updatedAt": "2017-04-16T06:31:11.864Z",
+                "lastRunDetails": {
+                  "status": "succeeded",
+                  "lastRunAt": "2017-04-16T06:30:00.845Z",
+                  "diff": {
+                    "before": [
+                      [
+                        "releases:",
+                        null
+                      ],
+                      [
+                        "- name: postgresql",
+                        null
+                      ],
+                      [
+                        "  version: '72'",
+                        "removed"
+                      ],
+                      [
+                        "  version: '70'",
+                        "added"
+                      ]
+                    ],
+                    "after": []
+                  }
+                },
+                "update_required": false,
+	              "update_details": []
+              }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the scheduled update job"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "instance_id": {
+                        "type": "string",
+                        "description": "GUID of the service instance"
+                      },
+                     "instance_name": {
+                        "type": "string",
+                        "description": "name of the service instance"
+                      },
+                      "deployment_name": {
+                        "type": "string",
+                        "description": "Deplpoyment name of the service instance"
+                      },
+                      "attempt": {
+                        "type": "integer",
+                        "description": "Attempt count"
+                      },
+                      "firstAttemptAt": {
+                        "type": "Date",
+                        "description": "Date/time when the update was first attempted"
+                      }
+                    }
+                  },
+                  "nextRunAt": {
+                    "type": "string",
+                    "description": "The time at which the update job will run next time (UTC format)"
+                  },
+                  "lastRunAt": {
+                    "type": "string",
+                    "description": "The time at which the update job was last run (UTC format)"
+                  },
+                  "lockedAt": {
+                    "type": "string",
+                    "description": "The time at which the update job was locked (UTC format). This field if null, then it indicates that job is not running at present. If non-null, then it would mean that either the job is running or job has ended abruptly"
+                  },
+                  "repeatInterval": {
+                    "type": "string",
+                    "description": "Repeat interval of the scheduled update. Supported formats: valid cron expression or human-readable intervals (ex. 4 hours, 6 hours 30 minutes,etc.) or constant 'random' - in this case update job is run once every 'x' (configured) number days."
+                  },
+                  "repeatTimezone": {
+                    "type": "string",
+                    "description": "Timezone to consider when running the batch job"
+                  },
+                  "failedAt": {
+                    "type": "string",
+                    "description": "The last time the job failed (UTC format)"
+                  },
+                  "failCount": {
+                    "type": "number",
+                    "description": "Number of times the jobs has failed till date"
+                  },
+                  "failReason": {
+                    "type": "string",
+                    "description": "Reason for its last failure"
+                  },
+                  "createdBy": {
+                    "type": "string",
+                    "description": "Name of the user who created the update schedule for the service instance"
+                  },
+                  "updatedBy": {
+                    "type": "string",
+                    "description": "Name of the user who updated the update schedule for the service instance"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "description": "The time when the schedule was created for the first time (UTC format)."
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "description": "The time at which the schedule was updated the last time (UTC format)."
+                  },
+                  "lastRunDetails": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "succeeded",
+                          "failed",
+                          "in progress"
+                        ],
+                        "description": "Last run status of update job"
+                      },
+                      "lastRunAt": {
+                        "type": "string",
+                        "description": "The time at which the update job was last run (UTC format)"
+                      },
+                      "diff": {
+                        "type": "object",
+                        "properties": {
+                          "before": {
+                             "type": "array",
+                             "description": "List of changes before doing update",
+                             "items": {
+                               "type" : "string"
+                             }
+                          },
+                          "after": {
+                             "type": "array",
+                             "description": "List of changes after doing update (This list should be null in case of successful last update run)",
+                             "items": {
+                               "type" : "string"
+                             }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "update_required": {
+                    "type": "boolean",
+                    "description": "Flag which indicates if an update is required for the instance or not"
+                  },
+	              "update_details": {
+                  "type": "array",
+                  "description": "List of changes that will be patched as part of the update operation",
+                  "items": {
+                    "type" : "string"
+                  }
+                }
+             }
