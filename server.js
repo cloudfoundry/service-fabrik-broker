@@ -22,7 +22,11 @@ const internal = FabrikApp.createApp('internal', app => {
 });
 
 // exernal app
+<<<<<<< HEAD
 const external = FabrikApp.createApp('external', app => {
+=======
+const external = ExpressApp.createApp('external', app => {
+>>>>>>> Add report app
   // home
   app.get('/', (req, res) => {
     res.render('index', {

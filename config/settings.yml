@@ -155,6 +155,9 @@ defaults: &defaults
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
 
+  reporting:
+    max_allowed_no_backup_days_in_row: 4
+
   ####################
   # MONGODB SETTINGS #
   ####################
