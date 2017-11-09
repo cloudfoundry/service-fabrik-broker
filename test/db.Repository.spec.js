@@ -130,6 +130,14 @@ describe('db', function () {
         expect(response).to.eql(getJob(instance_id, time).value());
       });
     });
+    it.only('Should return the requested object from DB successfully', function () {
+      return Repository.distinct(CONST.DB_MODEL.JOB, '_id', {
+        name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
+      }).then(response => {
+        console.log(response);
+        return response;
+      });
+    });
 
     it('Should return null when requested for non-existing object', function () {
       return Repository.findOne(CONST.DB_MODEL.JOB, {
