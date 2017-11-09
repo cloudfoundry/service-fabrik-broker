@@ -1,5 +1,6 @@
 'use strict';
 
+// const _ = require('lodash');
 console.log('Starting Service Fabrik...');
 const lib = require('./lib');
 const routes = lib.routes;
@@ -8,36 +9,16 @@ const logger = lib.logger;
 const HttpServer = require('./ServerUtil');
 const ExpressApp = require('./ExpressApp');
 
-lib.bootstrap();
-const internal = ExpressApp.createApp('internal', app => {
-  // home
+const report = ExpressApp.createApp('report', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')
     });
   });
-  app.use('/admin', routes.admin);
-  // cloud foundry service broker api
-  app.use('/cf', routes.cf);
+  app.use('/report', routes.report);
 });
 
-// exernal app
-const external = ExpressApp.createApp('external', app => {
-  // home
-  app.get('/', (req, res) => {
-    res.render('index', {
-      title: app.get('title')
-    });
-  });
-  // service fabrik api
-  app.use('/api', routes.api);
-  // manage
-  app.use('/manage', routes.manage);
-});
-
-HttpServer.startServer(internal);
-HttpServer.startServer(external);
-
+HttpServer.startServer(report);
 process.on('SIGTERM', HttpServer.notifyShutDown);
 process.on('SIGINT', HttpServer.notifyShutDown);
 process.on('unhandledRejection', (reason, p) => {
