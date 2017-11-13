@@ -20,7 +20,11 @@ describe('cf', function () {
     const firstResource = {};
     const resources = [];
     const body = {
-      resources: resources
+      resources: resources,
+      entity: {
+        space_guid: 'space_guid',
+        organization_guid: 'org_guid'
+      }
     };
     const response = {
       statusCode: undefined,
@@ -319,5 +323,32 @@ describe('cf', function () {
           });
       });
     });
+    describe('#getSpaceGuid', function () {
+      const [options, statusCode] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
+
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getSpaceGuid(id)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.equal(body.entity.space_guid);
+          });
+      });
+    });
+
+    describe('#getOrgGuid', function () {
+      const [options, statusCode] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getOrgGuid(id)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+
+            expect(result).to.equal(body.entity.organization_guid);
+          });
+      });
+    });
+
+
   });
 });

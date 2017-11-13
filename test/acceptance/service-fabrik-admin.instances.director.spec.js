@@ -42,6 +42,13 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments);
+          _.each(_.range(numberOfDeployments), index => mocks.cloudController
+            .getServiceInstance(mocks.director.uuidByIndex(index), {
+              space_guid: space_guid
+            }));
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: org_guid
+          }, numberOfDeployments);
           return chai
             .request(apps.internal)
             .get(`${base_url}/deployments/outdated`)
@@ -107,6 +114,7 @@ describe('service-fabrik-admin', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           });
+
           return chai
             .request(apps.internal)
             .post(`${base_url}/deployments/${deployment_name}/update`)
@@ -127,6 +135,12 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.updateServiceInstance(instance_id, body => {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
+          });
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: org_guid
           });
           return chai
             .request(apps.internal)
@@ -171,6 +185,12 @@ describe('service-fabrik-admin', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           });
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: org_guid
+          });
           return chai
             .request(apps.internal)
             .post(`${base_url}/deployments/outdated/update`)
@@ -200,6 +220,12 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments, diff);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: org_guid
+          });
           return chai
             .request(apps.internal)
             .post(`${base_url}/deployments/outdated/update`)
