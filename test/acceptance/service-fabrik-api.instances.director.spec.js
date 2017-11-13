@@ -418,7 +418,7 @@ describe('service-fabrik-api', function () {
           const SERVER_ERROR_CODE = 502;
           const LOCK_MESSAGE = 'Deployment service-fabrik-0315-b9bf180e-1a67-48b6-9cad-32bd2e936849 __Locked__ by admin at Wed Oct 11 2017 04:09:38 GMT+0000 (UTC) for on-demand_backup';
           const error_response_body = {
-            description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true. 
+            description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true.
             Status Code: 422 Unprocessable Entity, Body: {"status":422,"message":"${LOCK_MESSAGE}"}`,
             error_code: 'CF-ServiceBrokerRequestRejected',
             code: 10001,
@@ -1567,6 +1567,12 @@ describe('service-fabrik-api', function () {
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
+          });
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
           });
           mocks.director.getDeployments();
           mocks.director.getDeploymentManifest(1);
