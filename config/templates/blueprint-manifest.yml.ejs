@@ -1,4 +1,4 @@
-<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [{name: p('resource_pool')}]}) %>
+<%= spec.header.select({disk_pools: [p('disk_type')], resource_pools: [{name: p('vm_type')}]}) %>
 
 update:
   canaries: 0
@@ -7,19 +7,21 @@ update:
   update_watch_time: 1000-100000
   serial: false
 
-jobs: &jobs
+instance_groups: &instance_groups
 <%
 const net = spec.networks[0];
+const stemcell = spec.stemcell;
 const members = net.static.slice(0,1);
 %>
-- name: blueprint_<%= net.az %>
+- name: blueprint
   instances: <%= members.length %>
   networks:
   - name: <%= net.name %>
     static_ips: <%= JSON.stringify(members) %>
-  resource_pool: <%= `${p('resource_pool')}_${net.az}` %>
-  persistent_disk_pool: <%= p('disk_pool') %>
-  templates:
+  vm_type: <%= p('vm_type') %>
+  persistent_disk_type: <%= p('disk_type') %>
+  stemcell: <%= stemcell.alias %>
+  jobs:
   - { name: blueprint, release: blueprint }
   - { name: blueprint-agent, release: blueprint }
 
@@ -49,6 +51,6 @@ properties:
     password: <%= p('agent.auth.password') %>
     provider: <%= JSON.stringify(p('agent.provider')) %>
     manifest:
-      jobs: *jobs
+      instance_groups: *instance_groups
       properties:
         blueprint: *blueprint

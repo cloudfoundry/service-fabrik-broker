@@ -44,7 +44,7 @@ describe('bosh', () => {
       describe('#dynamic', () => {
         it('returns one dynamic network object', () => {
           expect(networks.dynamic).to.have.length(1);
-          expect(networks.dynamic[0].name).to.eql('network1_z1');
+          expect(networks.dynamic[0].name).to.eql('network1');
         });
       });
 

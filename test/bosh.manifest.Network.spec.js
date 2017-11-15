@@ -11,12 +11,13 @@ describe('bosh', () => {
           let network = new Network({
             name: 'default',
             type: 'manual',
+            subnet_name: 'default_z1',
             cloud_properties: {
               name: 'random'
             }
           });
 
-          let expectedJSON = _.omit(network, ['cloud_properties']);
+          let expectedJSON = _.omit(network, ['cloud_properties', 'subnet_name']);
 
           expect(network.toJSON()).to.eql(expectedJSON);
         });
