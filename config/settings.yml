@@ -280,6 +280,7 @@ defaults: &defaults
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
     infrastructure: &director_infrastructure
       stemcell:
+        alias: bosh-wardern
         name: bosh-warden-boshlite-ubuntu-trusty-go_agent
         version: latest
       segmentation:
@@ -473,11 +474,13 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.3.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
             disk_pool: hdd_1gb
+            disk_type: hdd_1gb
+            vm_type: micro
       description: 'Blueprint 1.0 service x-small (managed service in beta)'
       metadata:
         costs:
@@ -615,11 +618,13 @@ boshlite2:
   password: 'secret'
   cf:
     <<: *cf
-    password: cf_password
+    password: gwcqura2wyfczets9voe
   directors:
   - <<: *director
     url: https://192.168.50.6:25555
-    password: director_password
+    password: nojlhyfr4slkwp2wq8qi
+    primary: true
+    support_create: true
     infrastructure:
       <<: *director_infrastructure
       networks:
@@ -636,7 +641,17 @@ boshlite2:
         reuse_compilation_vms: true
         workers: 4
         cloud_properties: { name: random }
-
+    services:
+      - <<: *blueprint_service
+        plans:
+        - *blueprint_plan1
+        - *blueprint_plan2
+        - <<: *blueprint_plan3
+          manager:
+            <<: *manager_plan3
+            settings:
+              <<: *settings_plan3
+              agent: *agent_blueprint1
 
 development_sc6: &sc6
   <<: *defaults
@@ -757,7 +772,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: warn
+  log_level: debug
   enable_circuit_breaker: false
   external:
     <<: *external

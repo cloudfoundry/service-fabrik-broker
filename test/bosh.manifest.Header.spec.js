@@ -61,39 +61,9 @@ describe('bosh', () => {
 
       describe('#toString', () => {
         it('returns a YAML object as string', () => {
-          let expectedString = 'name: 1\ndirector_uuid: 2\nreleases: 3\ncompilation: 4\ndisk_pools:\n  - name: foo\n  - name: bar\nresource_pools:\n  - name: foobar\n  - name: barfoo_abc\nnetworks: 7\n';
+          let expectedString = 'name: 1\nreleases: 3\n';
 
           expect(header.toString()).to.eql(expectedString);
-        });
-      });
-
-      describe('#filterDiskPools', () => {
-        it('returns an array containing one element', () => {
-          let disk_pools = Header.filterDiskPools(header.disk_pools, ['bar']);
-          expect(disk_pools).to.be.a('Array');
-          expect(disk_pools).to.have.length(1);
-        });
-      });
-
-      describe('#filterResourcePools', () => {
-        it('returns an array containing one element', () => {
-          let resource_pools = Header.filterResourcePools(header.resource_pools, [{
-            name: 'foobar',
-            cloud_properties: {
-              azure: {
-                availability_set: 'bar'
-              }
-            }
-          }, {
-            name: 'barfoo',
-            cloud_properties: {
-              azure: {
-                availability_set: 'bar'
-              }
-            }
-          }]);
-          expect(resource_pools).to.be.a('Array');
-          expect(resource_pools).to.have.length(1);
         });
       });
     });
