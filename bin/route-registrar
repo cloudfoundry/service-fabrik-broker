@@ -10,5 +10,5 @@ root="$(dirname "$(dirname "$(test -L "$0" && readlink "$0" || echo "$0")")")"
 
 # start the route registrar
 route-registrar \
-  -configPath="${root}/config/route-registrar.yml" \
+  -configPath="${root}/config/route-registrar.json" \
   -pidfile="${root}/tmp/route-registrar.pid"
