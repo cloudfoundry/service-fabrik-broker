@@ -105,7 +105,8 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeployments();
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c51e-769ad1c3ebfa';
+          mocks.director.getDeployment(deploymentName, false);
           mocks.uaa.getAccessToken();
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id_new}`)
@@ -144,8 +145,10 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeploymentManifest();
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
+          mocks.director.getDeployments();
           mocks.director.createOrUpdateDeployment(task_id);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
@@ -181,7 +184,6 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-          //mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.deprovision();
