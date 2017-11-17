@@ -18,38 +18,39 @@ const activePrimaryConfig = _.sample(_
     return director.support_create && director.primary;
   }));
 const directorUrl = activePrimaryConfig.url;
+
 const manifest = {
-  name: 'test-deployment-name',
-  jobs: [{
-    name: 'blueprint_z1',
-    networks: [{
-      name: 'default',
-      static_ips: [parseUrl(agent.url).hostname]
-    }]
-  }],
-  properties: {
-    blueprint: {
-      admin: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    mongodb: {
-      service_agent: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    agent: {
-      provider: {
-        name: 'openstack',
-        container: config.backup.provider.container
+    name: 'test-deployment-name',
+    jobs: [{
+      name: 'blueprint_z1',
+      networks: [{
+        name: 'default',
+        static_ips: [parseUrl(agent.url).hostname]
+      }]
+    }],
+    properties: {
+      blueprint: {
+        admin: {
+          username: 'admin',
+          password: 'admin'
+        }
       },
-      username: 'admin',
-      password: 'admin'
+      mongodb: {
+        service_agent: {
+          username: 'admin',
+          password: 'admin'
+        }
+      },
+      agent: {
+        provider: {
+          name: 'openstack',
+          container: config.backup.provider.container
+        },
+        username: 'admin',
+        password: 'admin'
+      }
     }
-  }
-};
+  };
 
 exports.url = directorUrl;
 exports.networkSegmentIndex = networkSegmentIndex;
@@ -209,12 +210,13 @@ function getLockProperty(deploymentName, found, lockInfo) {
     });
 }
 
-function getDeployment(deploymentName, found, boshDirectorUrlInput) {
+function getDeployment(deploymentName, found, boshDirectorUrlInput, attempts) {
   const boshDirectorUrl = boshDirectorUrlInput || directorUrl;
   if (!found) {
     return nock(boshDirectorUrl)
       .replyContentLength()
       .get(`/deployments/${deploymentName}`)
+      .times(attempts || 1)
       .reply(404, {
         'code': 70000,
         'description': `'Deployment ${deploymentName} doesn\'t exist'`
@@ -223,6 +225,7 @@ function getDeployment(deploymentName, found, boshDirectorUrlInput) {
   return nock(boshDirectorUrl)
     .replyContentLength()
     .get(`/deployments/${deploymentName}`)
+    .times(attempts || 1)
     .reply(200, {
       manifest: yaml.dump(manifest)
     });

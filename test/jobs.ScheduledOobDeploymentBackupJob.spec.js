@@ -7,6 +7,7 @@ const config = require('../lib/config');
 const lib = require('../lib');
 const utils = require('../lib/utils');
 const BaseJob = require('../lib/jobs/BaseJob');
+const logger = require('../lib/logger');
 const ScheduleManager = require('../lib/jobs/ScheduleManager');
 const backupStore = lib.iaas.backupStoreForOob;
 const filename = lib.iaas.backupStoreForOob.filename;
@@ -102,7 +103,7 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.remove(`/${mongoDBContainer}${backupFileName14DayspriorToDelete}`);
         mocks.cloudProvider.remove(pathname14);
-        mocks.director.getDeployment(deploymentName, true);
+        mocks.director.getDeployment(deploymentName, true, undefined);
         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
@@ -193,7 +194,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted', function (done) {
-        mocks.director.getDeployment(deploymentName, false);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
@@ -253,7 +254,6 @@ describe('Jobs', function () {
       });
 
       it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful (for bootstrap bosh deployments)', function (done) {
-
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -275,8 +275,8 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.remove(`/${mongoDBContainer}${backupFileName14DayspriorToDelete}`);
         mocks.cloudProvider.remove(pathname14);
-        mocks.director.getDeployment(deploymentName, true);
-        try {
+        mocks.director.getDeployment(deploymentName, true, undefined, 2);
+         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
           let bootStrapBackupJob = job;
@@ -310,7 +310,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
-        mocks.director.getDeployment(deploymentName, false);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
