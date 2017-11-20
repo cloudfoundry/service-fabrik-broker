@@ -20,6 +20,7 @@ exports.updateServiceInstance = updateServiceInstance;
 exports.findServiceBrokerByName = findServiceBrokerByName;
 exports.getServicePlans = getServicePlans;
 exports.getServicePlan = getServicePlan;
+exports.getSpace = getSpace;
 exports.getSpaces = getSpaces;
 exports.getOrganisations = getOrganisations;
 exports.getPlans = getPlans;
@@ -105,9 +106,24 @@ function updateServiceInstance(guid, verifier, responseCode, responseBody) {
     });
 }
 
-function getServiceInstance(guid, entity) {
+function getServiceInstance(guid, entity, times) {
   return nock(cloudControllerUrl)
     .get(`/v2/service_instances/${guid}`)
+    .times(times || 1)
+    .reply(200, {
+      metadata: {
+        guid: guid
+      },
+      entity: _.assign({
+        name: 'blueprint'
+      }, entity)
+    });
+}
+
+function getSpace(guid, entity, times) {
+  return nock(cloudControllerUrl)
+    .get(`/v2/spaces/${guid}`)
+    .times(times || 1)
     .reply(200, {
       metadata: {
         guid: guid
