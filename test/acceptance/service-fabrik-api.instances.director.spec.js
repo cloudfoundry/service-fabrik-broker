@@ -132,7 +132,6 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
