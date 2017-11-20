@@ -153,7 +153,6 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
-      let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       mocks.cloudController.getServiceInstance(instance_id, {
         space_guid: space_guid
