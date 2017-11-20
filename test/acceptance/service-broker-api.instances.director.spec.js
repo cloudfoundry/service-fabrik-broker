@@ -105,8 +105,6 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c51e-769ad1c3ebfa';
-          mocks.director.getDeployment(deploymentName, false);
           mocks.uaa.getAccessToken();
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id_new}`)
@@ -148,9 +146,7 @@ describe('service-broker-api', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
-          mocks.director.getDeployments();
           mocks.director.createOrUpdateDeployment(task_id);
-
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
