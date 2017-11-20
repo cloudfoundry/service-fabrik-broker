@@ -18,6 +18,7 @@ const activePrimaryConfig = _.sample(_
     return director.support_create && director.primary;
   }));
 const directorUrl = activePrimaryConfig.url;
+
 const manifest = {
   name: 'test-deployment-name',
   jobs: [{
@@ -204,12 +205,13 @@ function getLockProperty(deploymentName, found, lockInfo) {
     });
 }
 
-function getDeployment(deploymentName, found, boshDirectorUrlInput) {
+function getDeployment(deploymentName, found, boshDirectorUrlInput, attempts) {
   const boshDirectorUrl = boshDirectorUrlInput || directorUrl;
   if (!found) {
     return nock(boshDirectorUrl)
       .replyContentLength()
       .get(`/deployments/${deploymentName}`)
+      .times(attempts || 1)
       .reply(404, {
         'code': 70000,
         'description': `'Deployment ${deploymentName} doesn\'t exist'`
@@ -218,6 +220,7 @@ function getDeployment(deploymentName, found, boshDirectorUrlInput) {
   return nock(boshDirectorUrl)
     .replyContentLength()
     .get(`/deployments/${deploymentName}`)
+    .times(attempts || 1)
     .reply(200, {
       manifest: yaml.dump(manifest)
     });
