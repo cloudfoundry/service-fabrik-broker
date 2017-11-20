@@ -105,7 +105,6 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeployments();
           mocks.uaa.getAccessToken();
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id_new}`)
@@ -147,6 +146,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentManifest();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
+
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({

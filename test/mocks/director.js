@@ -75,11 +75,6 @@ exports.verifyDeploymentLockStatus = verifyDeploymentLockStatus;
 exports.acquireLock = acquireLock;
 exports.releaseLock = releaseLock;
 exports.manifest = manifest;
-//At app start DB Manager automatically fires this request before anything has started. So setting this mock to start with.
-//getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
-getDeployments({
-  oob: true
-});
 
 function uuidByIndex(index) {
   const buffer = new Buffer(1);
