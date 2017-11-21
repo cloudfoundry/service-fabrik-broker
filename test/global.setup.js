@@ -4,7 +4,7 @@ const lib = require('../lib');
 
 const director = lib.bosh.director;
 let cacheDetails = {};
-director.isReady.then(() => {
+director.ready.then(() => {
   cacheDetails = _.cloneDeep(director.cache);
 });
 beforeEach(function () {
