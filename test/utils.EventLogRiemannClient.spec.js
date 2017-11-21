@@ -185,7 +185,53 @@ describe('utils', function () {
         expect(secondResponse).to.be.an('object');
         expect(secondResponse).to.eql(expectedSecondResultObject);
       });
+
+      it('should not log any event in case of bad request', function () {
+        const event = {
+          host: 'INLN50932351A',
+          eventName: 'CF.broker.0.service-fabrik.director.update_instance ',
+          metric: 1,
+          state: 'critical',
+          description: 'Update existing service instance failed. HTTP Status : 400',
+          tags: ['update'],
+          time: 1483353454485,
+          request: {
+            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+            plan_id: 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3',
+            previous_values: {
+              plan_id: 'bba8beae-5699-11e7-b35c-02a8da424bc3',
+              service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+              organization_id: '5cfa2dad-1401-4fbd-9608-806070bbaf11',
+              space_id: '8ae0a163-f45c-4097-9aa7-bd79fafd4681'
+            },
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: '5cfa2dad-1401-4fbd-9608-806070bbaf11',
+              space_guid: '8ae0a163-f45c-4097-9aa7-bd79fafd4681'
+            },
+            accepts_incomplete: true,
+            instance_id: '10eb2660-d432-4cd4-a23c-469e02b6fa7c',
+            user: {
+              name: 'broker'
+            }
+          },
+          response: {
+            status: 400,
+            message: 'Update to plan \'v1.0-xsmall\' is not possible'
+          }
+        };
+        riemannClient.handleEvent(config.internal.event_type, {
+          event: event,
+          options: {
+            include_response_body: true
+          }
+        });
+        expect(riemanEventSpy).not.to.have.been.called;
+        expect(riemanSendSpy).not.to.have.been.called;
+      });
+
     });
+
     describe('sendAfterConnectionReset', function () {
       const riemannOptions = _
         .chain({})
