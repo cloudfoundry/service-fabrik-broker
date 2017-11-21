@@ -130,11 +130,9 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeployment(deploymentName, true);
-          mocks.director.getDeployments();
+          mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
           return chai.request(apps.external)
