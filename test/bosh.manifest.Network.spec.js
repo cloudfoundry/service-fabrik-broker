@@ -10,13 +10,14 @@ describe('bosh', () => {
         it('returns a JSON object', () => {
           let network = new Network({
             name: 'default',
+            subnet_name: 'default_z1',
             type: 'manual',
             cloud_properties: {
               name: 'random'
             }
           });
 
-          let expectedJSON = _.omit(network, ['cloud_properties']);
+          let expectedJSON = _.omit(network, ['cloud_properties', 'subnet_name']);
 
           expect(network.toJSON()).to.eql(expectedJSON);
         });
