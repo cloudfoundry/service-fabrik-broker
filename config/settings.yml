@@ -203,6 +203,8 @@ defaults: &defaults
     protocol : tcp
     show_errors: false
     prefix: CF
+    log_additional_event: true
+    skip_http_status_40x: true
   ###################
   # QUOTA MANAGEMENT SETTINGS #
   ###################
