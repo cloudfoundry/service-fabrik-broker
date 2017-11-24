@@ -12,6 +12,8 @@ const errors = lib.errors;
 const MethodNotAllowed = errors.MethodNotAllowed;
 const NotFound = errors.NotFound;
 const Unauthorized = errors.Unauthorized;
+const ServiceFabrikApiController = require('../lib/controllers/ServiceFabrikApiController');
+const config = require('../lib/config');
 
 class Response {
   constructor() {
@@ -167,5 +169,41 @@ describe('middleware', () => {
         expect(_.first(res.json.firstCall.args)).to.not.have.property('stack');
       });
     });
+  });
+});
+
+describe('#timeout', function () {
+  const original_http_timeout = config.http_timeout;
+  let app, getInfoStub;
+  before(function () {
+    getInfoStub = sinon.stub(ServiceFabrikApiController.prototype, 'getInfo');
+    config.http_timeout = 10;
+    delete require.cache[require.resolve('../apps')];
+    delete require.cache[require.resolve('../lib')];
+    delete require.cache[require.resolve('../lib/routes')];
+    delete require.cache[require.resolve('../lib/routes/api')];
+    delete require.cache[require.resolve('../lib/routes/api/v1')];
+    delete require.cache[require.resolve('../lib/controllers')];
+    app = require('../apps').external;
+  });
+  after(function () {
+    config.http_timeout = original_http_timeout;
+    getInfoStub.restore();
+    delete require.cache[require.resolve('../apps')];
+    delete require.cache[require.resolve('../lib')];
+    delete require.cache[require.resolve('../lib/routes')];
+    delete require.cache[require.resolve('../lib/routes/api')];
+    delete require.cache[require.resolve('../lib/routes/api/v1')];
+    delete require.cache[require.resolve('../lib/controllers')];
+    app = require('../apps').external;
+  });
+  it('should return 503 after timeout occurs', function () {
+    return chai.request(app)
+      .get(`/api/v1/info`)
+      .catch(err => err.response)
+      .then(
+        res => {
+          expect(res).to.have.status(503);
+        });
   });
 });
