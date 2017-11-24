@@ -193,7 +193,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted', function (done) {
-        mocks.director.getDeployment(deploymentName, false, undefined,2);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
