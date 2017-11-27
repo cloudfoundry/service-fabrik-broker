@@ -105,6 +105,6 @@
     "test": "rm -f ./logs/test.log && _mocha test/ test/acceptance/",
     "test-ci": "rm -f ./logs/test.log && babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/acceptance/ test/ ",
     "test-cov": "rm -f ./logs/test.log && babel-node ./node_modules/.bin/isparta cover _mocha -- test/ test/acceptance/",
-    "jsformat": "js-beautify -r $(find -iname '*.js' -not -path '*node_modules*' -not -path '*public/js*')"
+    "jsformat": "js-beautify -r $(find . -iname '*.js' -not -path '*node_modules*' -not -path '*public/js*')"
   }
 }

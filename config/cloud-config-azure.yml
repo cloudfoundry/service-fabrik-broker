@@ -1,0 +1,124 @@
+---
+vm_types:
+- name: micro
+  cloud_properties:
+    instance_type: Standard_D2s_v3
+- name: small
+  cloud_properties:
+    instance_type: Standard_D2s_v3
+- name: medium
+  cloud_properties:
+    instance_type: Standard_D2s_v3
+- name: large
+  cloud_properties:
+    instance_type: Standard_D2s_v3
+- name: mlarge
+  cloud_properties:
+    instance_type: Standard_D2s_v3
+- name: xlarge
+  cloud_properties:
+    instance_type: Standard_D4s_v3
+- name: 2xlarge
+  cloud_properties:
+    instance_type: Standard_D8s_v3
+- name: 4xlarge
+  cloud_properties:
+    instance_type: Standard_D16s_v3
+- name: 10xlarge
+  cloud_properties:
+    instance_type: Standard_D32s_v3
+
+disk_types:
+- name: hdd_1gb
+  disk_size: 1024
+- name: hdd_2gb
+  disk_size: 2000
+- name: hdd_4gb
+  disk_size: 4000
+- name: hdd_6gb
+  disk_size: 6000
+- name: hdd_8gb
+  disk_size: 8000
+- name: hdd_10gb
+  disk_size: 10000
+- name: hdd_20gb
+  disk_size: 20000
+- name: hdd_40gb
+  disk_size: 40000
+- name: hdd_60gb
+  disk_size: 60000
+- name: hdd_80gb
+  disk_size: 80000
+- name: hdd_100gb
+  disk_size: 100000
+- name: hdd_200gb
+  disk_size: 200000
+- name: hdd_400gb
+  disk_size: 400000
+- name: hdd_600gb
+  disk_size: 600000
+- name: hdd_800gb
+  disk_size: 800000
+- name: hdd_1tb
+  disk_size: 1000000
+- name: hdd_2tb
+  disk_size: 2000000
+- name: hdd_4tb
+  disk_size: 4000000
+- name: hdd_6tb
+  disk_size: 6000000
+- name: hdd_8tb
+  disk_size: 8000000
+
+networks:
+- name: compilation
+  type: dynamic
+- name: service_fabrik
+  type: manual
+  subnets:
+  - dns: ["168.63.129.16"]
+    range: 10.11.252.0/24
+    gateway: 10.11.252.1
+    static: [10.11.252.2 - 10.11.252.254]
+    reserved: [10.11.252.1, 10.11.252.255]
+    cloud_properties:
+      security_group: nsg-open-sf-azure-dev1
+      virtual_network_name: vnet-sf-azure-dev1
+      subnet_name: sf-1-service_fabrik_z1-sf-azure-dev1
+  - dns: ["168.63.129.16"]
+    range: 10.11.253.0/24
+    gateway: 10.11.253.1
+    static: [10.11.253.2 - 10.11.253.254]
+    reserved: [10.11.253.1, 10.11.253.255]
+    cloud_properties:
+      security_group: nsg-open-sf-azure-dev1
+      virtual_network_name: vnet-sf-azure-dev1
+      subnet_name: sf-1-service_fabrik_z2-sf-azure-dev1
+- name: default
+  type: manual
+  subnets:
+  - dns: ["168.63.129.16"]
+    range: 10.11.0.0/18
+    gateway: 10.11.0.1 
+    reserved: [10.11.0.1, 10.11.63.255]
+    static: [10.11.0.2 - 10.11.63.254]
+    cloud_properties:
+      security_group: nsg-open-sf-azure-dev1
+      virtual_network_name: vnet-sf-azure-dev1
+      subnet_name: sf-1-bosh_services_z1-sf-azure-dev1
+  - dns: ["168.63.129.16"]
+    range: 10.11.64.0/18
+    gateway: 10.11.64.1
+    reserved: [10.11.64.1, 10.11.127.255]
+    static: [10.11.64.2 - 10.11.127.254]
+    cloud_properties:
+      security_group: nsg-open-sf-azure-dev1
+      virtual_network_name: vnet-sf-azure-dev1
+      subnet_name: sf-1-bosh_services_z2-sf-azure-dev1
+
+compilation:
+  workers: 5
+  reuse_compilation_vms: true
+  vm_type: default
+  network: compilation
+
