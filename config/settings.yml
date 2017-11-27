@@ -68,6 +68,7 @@ defaults: &defaults
   enable_circuit_breaker: true
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
+  http_timeout: 120000
     
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
