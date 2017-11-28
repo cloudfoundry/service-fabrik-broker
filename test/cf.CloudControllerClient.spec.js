@@ -19,8 +19,18 @@ describe('cf', function () {
     const bearer = 'bearer';
     const firstResource = {};
     const resources = [];
+    const entity = {
+      name: name,
+      service_plan_guid: id,
+      space_guid: id,
+      service_plan_name: name,
+      space_name: name,
+      organization_guid: id,
+      organization_name: name
+    };
     const body = {
-      resources: resources
+      resources: resources,
+      entity: entity
     };
     const response = {
       statusCode: undefined,
@@ -320,14 +330,33 @@ describe('cf', function () {
       });
     });
 
-    describe('#getOrg', function () {
+    describe('#getSpace', function () {
       const [options, statusCode] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
       it('should return the JSON body with Status 200', function () {
-        return cloudController.getOrg(id)
+        return cloudController.getSpace(id)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
             expect(result).to.equal(body);
+          });
+      });
+    });
+    describe('#getServiceInstanceDetails', function () {
+      const [optionsInstance, statusCodeInstance] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
+      const [optionsPlan, statusCodePlan] = buildExpectedRequestArgs('GET', `/service_plans/${id}`);
+      const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
+      const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
+
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getServiceInstanceDetails(id)
+          .then(result => {
+            expect(getAccessTokenSpy.callCount).to.equal(4);
+            expect(requestSpy.callCount).to.equal(4);
+            expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsInstance, statusCodeInstance);
+            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsPlan, statusCodePlan);
+            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            expect(requestSpy.getCall(3)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            expect(result).to.deep.equal(entity);
           });
       });
     });

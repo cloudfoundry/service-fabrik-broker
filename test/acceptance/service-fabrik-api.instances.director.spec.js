@@ -1355,9 +1355,15 @@ describe('service-fabrik-api', function () {
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
+          }, 2);
+          mocks.cloudController.getServicePlan(plan_guid, plan_id);
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
           });
+          mocks.cloudController.getOrganization(organization_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
             .set('Authorization', authHeader)
