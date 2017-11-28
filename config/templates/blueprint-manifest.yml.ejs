@@ -27,6 +27,8 @@ if (!spec.previous_manifest) {
 }
 %>
 - name: blueprint
+  migrated_from: 
+  - name: blueprint_z1
   instances: <%= members.length %>
   networks:
   - name: <%= net.name %>
