@@ -23,7 +23,7 @@ if (!spec.previous_manifest) {
   };
 } else {
   /* update scenario: preserve previous service instance properties */
-  properties.blueprint = spec.previous_manifest.properties.blueprint;
+  properties.blueprint = spec.previous_manifest.instance_groups[0].jobs[0].properties;
 }
 %>
 - name: blueprint
