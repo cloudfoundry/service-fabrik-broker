@@ -111,7 +111,7 @@ defaults: &defaults
     retry_connect:
       max_attempt: 5 # MaxAttempts of 8 with a backoff factor of 2 leads to last attempt ~ at 4.3 hr from first error occurence time
       min_delay: 120000 # min 2 mins
-    url: mongodb://localhost:27017/service-fabrik #'mongodb://user:pass@localhost:port/database'
+    #url: mongodb://localhost:27017/service-fabrik #'mongodb://user:pass@localhost:port/database'
     record_max_fetch_count: 100  # Max number of records that can be fetched at a time
     backup:
       schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
@@ -376,7 +376,7 @@ defaults: &defaults
   - &blueprint_service
     id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
     name: 'blueprint'
-    force_update: true
+    #force_update: true
     description: &description 'Blueprint service for internal development, testing, and documentation purposes of the Service Fabrik'
     bindable: true
     tags:

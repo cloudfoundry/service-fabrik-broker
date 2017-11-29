@@ -1593,7 +1593,7 @@ describe('service-fabrik-api', function () {
               expect(res).to.have.status(200);
               const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
               _.set(expectedJobResponse, 'update_required', true);
-              _.set(expectedJobResponse, 'update_details', diff);
+              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({diff: diff}));
               expect(res.body).to.eql(expectedJobResponse);
               mocks.verify();
             });
