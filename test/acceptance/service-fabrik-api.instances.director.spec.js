@@ -30,6 +30,7 @@ describe('service-fabrik-api', function () {
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
       const index = mocks.director.networkSegmentIndex;
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+      const service_guid = '179620e7-f8e4-427f-9740-8b7f9b6abb82';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
       const plan = catalog.getPlan(plan_id);
@@ -1353,9 +1354,11 @@ describe('service-fabrik-api', function () {
         it('should return 201 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
+            service_guid: service_guid,
             space_guid: space_guid,
             service_plan_guid: plan_guid
           }, 2);
+          mocks.cloudController.getService(service_guid);
           mocks.cloudController.getServicePlan(plan_guid, plan_id);
           mocks.cloudController.getSpace(space_guid, {
             organization_guid: organization_guid

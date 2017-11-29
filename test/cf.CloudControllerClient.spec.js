@@ -15,12 +15,15 @@ describe('cf', function () {
     const id = 42;
     const guid = 'guid';
     const name = 'name';
+    const label = 'blueprint';
     const rules = [];
     const bearer = 'bearer';
     const firstResource = {};
     const resources = [];
     const entity = {
       name: name,
+      label: label,
+      service_guid: id,
       service_plan_guid: id,
       space_guid: id,
       service_plan_name: name,
@@ -114,6 +117,19 @@ describe('cf', function () {
 
       it('should return the JSON body with Status 200', function () {
         return cloudController.getServiceInstance(id)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.equal(body);
+          });
+      });
+    });
+
+    describe('#getService', function () {
+      const [options, statusCode] = buildExpectedRequestArgs('GET', `/services/${id}`);
+
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getService(id)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
@@ -343,20 +359,31 @@ describe('cf', function () {
     });
     describe('#getServiceInstanceDetails', function () {
       const [optionsInstance, statusCodeInstance] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
+      const [optionsService, statusCodeService] = buildExpectedRequestArgs('GET', `/services/${id}`);
       const [optionsPlan, statusCodePlan] = buildExpectedRequestArgs('GET', `/service_plans/${id}`);
       const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
       const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
-
+      const expectedResult = {
+        name: name,
+        label: label,
+        service_plan_guid: id,
+        space_guid: id,
+        service_plan_name: name,
+        space_name: name,
+        organization_guid: id,
+        organization_name: name
+      };
       it('should return the JSON body with Status 200', function () {
         return cloudController.getServiceInstanceDetails(id)
           .then(result => {
-            expect(getAccessTokenSpy.callCount).to.equal(4);
-            expect(requestSpy.callCount).to.equal(4);
+            expect(getAccessTokenSpy.callCount).to.equal(5);
+            expect(requestSpy.callCount).to.equal(5);
             expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsInstance, statusCodeInstance);
-            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsPlan, statusCodePlan);
-            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
-            expect(requestSpy.getCall(3)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
-            expect(result).to.deep.equal(entity);
+            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsService, statusCodeService);
+            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsPlan, statusCodePlan);
+            expect(requestSpy.getCall(3)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            expect(requestSpy.getCall(4)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            expect(result).to.deep.equal(expectedResult);
           });
       });
     });
