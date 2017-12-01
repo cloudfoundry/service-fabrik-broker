@@ -25,7 +25,7 @@ Certainly when you are a broker developer, but also if you are a service develop
 The famous Docker will be required for a local start of the broker. You can avoid this by removing any Docker service defintion from the broker settings/configuration/catalog.
 
 * Follow instructions at https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/
- 
+
 If you're using a Mac, we recommend to use [Docker for MAC](https://docs.docker.com/docker-for-mac/).
 
 * https://download.docker.com/mac/beta/Docker.dmg
@@ -57,14 +57,14 @@ Bosh Lite is a lightweight local development environment for BOSH using Warden/G
 
 Well, you know what Cloud Foundry is, otherwise you wouldn't be interested into a service broker to begin with.
 
-* Follow instructions at http://docs.cloudfoundry.org/deploying/boshlite/create_a_manifest.html
+* Follow instructions at https://docs.cloudfoundry.org/deploying/cf-release/boshlite/create_a_manifest.html
 * You may like to shorten the polling interval for asynchronous service instance operations in `cf-release/bosh-lite/deployments/cf.yml`:
 ```yaml
 properties:
   cc:
     broker_client_default_async_poll_interval_seconds: 1
 ```
-* Next follow instructions at http://docs.cloudfoundry.org/deploying/common/deploy.html to deploy Cloud Foundry
+* Next follow instructions at https://docs.cloudfoundry.org/deploying/cf-release/common/deploy.html to deploy Cloud Foundry
 * If you run into strange errors using bosh <command> and OpenSSL (when generating the manifest), update OpenSSL and patch the scripts:
 ```shell
 wget http://www.openssl.org/source/openssl-1.0.1p.tar.gz
@@ -88,8 +88,8 @@ sudo make install
 * If you have installed bosh-lite using [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment), then you can deploy cf using the following commands, using [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
 
 ```shell
-git clone https://github.com/cloudfoundry/cf-deployment  
-cd cf-deployment  
+git clone https://github.com/cloudfoundry/cf-deployment
+cd cf-deployment
 bosh -e vbox upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent
 bosh -e vbox update-cloud-config iaas-support/bosh-lite/cloud-config.yml
 bosh -e vbox -d cf deploy cf-deployment.yml -o operations/bosh-lite.yml --vars-store deployment-vars.yml -v system_domain=bosh-lite.com
@@ -98,7 +98,7 @@ bosh -e vbox -d cf deploy cf-deployment.yml -o operations/bosh-lite.yml --vars-s
 * Target, Login, Prepare Cloud Foundry Usage
 ```shell
 cf api --skip-ssl-validation api.bosh-lite.com
-cf login -u admin -p admin 
+cf login -u admin -p admin
 ```
 Password will be different in case if you are using using [cf-deployment](https://github.com/cloudfoundry/cf-deployment).
 ```shell
@@ -137,7 +137,7 @@ If you need to change the `settings.yml` configuration you should copy the file 
 ```shell
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
-# export SETTINGS_PATH=$(pwd)/config/settings.yml 
+# export SETTINGS_PATH=$(pwd)/config/settings.yml
 npm run -s start
 ```
 Check endpoint with curl
@@ -192,7 +192,7 @@ curl -s -X POST \
    -H "Travis-API-Version: 3" \
    -H "Authorization: token <TOKEN>" \
    -d '{ "quiet": true }' \
-   https://api.travis-ci.org/job/<JOB_ID>/debug 
+   https://api.travis-ci.org/job/<JOB_ID>/debug
 ```
 The Job ID is displayed in the build log after expanding "Build system information".
 
@@ -207,7 +207,7 @@ ssh ukjiuCEkxBBnRAe32Y8xCH0zj@ny2.tmate.io
 
 Please note that when the debug build is thus initiated, the job will skip the remaining phases after debug. Also, please consider removing the build log after you've finished debugging.
 
-Finally, once in the SSH session, [these bash functions](https://docs.travis-ci.com/user/running-build-in-debug-mode/#Things-to-do-once-you-are-inside-the-debug-VM) will come in handy to run the different phases in your build: 
+Finally, once in the SSH session, [these bash functions](https://docs.travis-ci.com/user/running-build-in-debug-mode/#Things-to-do-once-you-are-inside-the-debug-VM) will come in handy to run the different phases in your build:
 
 
 ## LICENSE
