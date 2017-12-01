@@ -12,6 +12,7 @@ const config = lib.config;
 const logger = lib.logger;
 const routes = lib.routes;
 const middleware = lib.middleware;
+const connectTimeout = require('connect-timeout');
 
 // internal app
 const internal = createApp('internal', app => {
@@ -76,6 +77,9 @@ function createApp(type, addRoutes) {
     stream: logger.stream
   }));
   app.use(middleware.requireHttps(cfg));
+  app.use(connectTimeout(config.http_timeout, {
+    respond: true
+  }));
   app.use(express.static(path.join(__dirname, 'public')));
   app.use(bodyParser.urlencoded({
     extended: true

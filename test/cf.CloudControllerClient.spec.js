@@ -319,5 +319,18 @@ describe('cf', function () {
           });
       });
     });
+
+    describe('#getOrg', function () {
+      const [options, statusCode] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getOrg(id)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.equal(body);
+          });
+      });
+    });
+
   });
 });

@@ -23,6 +23,8 @@ describe('Jobs', function () {
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const plan_id_forced_update = 'fc158c9a-7934-401e-94ab-057082a5073f';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+    const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
+    const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     let job;
     const job_sample = {
       attrs: {
@@ -152,6 +154,12 @@ describe('Jobs', function () {
     });
     it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, []);
       const expectedResponse = {
@@ -175,6 +183,12 @@ describe('Jobs', function () {
     });
     it(`if instance is outdated, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -213,6 +227,12 @@ describe('Jobs', function () {
     });
     it('if instance is outdated, and changes are in forbidden section then update must not be initiated', function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['jobs:', null],
         ['- name: blueprint_z1', null],
@@ -250,6 +270,12 @@ describe('Jobs', function () {
     });
     it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id_forced_update);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['jobs:', null],
         ['- name: blueprint_z1', null],
@@ -288,6 +314,12 @@ describe('Jobs', function () {
     });
     it(`if instance is outdated, update initiation attempt fails and then schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -325,6 +357,12 @@ describe('Jobs', function () {
     });
     it(`if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -363,6 +401,12 @@ describe('Jobs', function () {
     });
     it(`if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],

@@ -132,7 +132,6 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeployments();
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
@@ -301,7 +300,7 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
-          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
+          //mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -311,12 +310,10 @@ describe('service-fabrik-api', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              setTimeout(() => {
-                expect(res).to.have.status(202);
-                expect(res.body).to.have.property('guid');
-                mocks.verify();
-                done();
-              }, 20);
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+              done();
             });
         });
 
@@ -382,7 +379,7 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
+          //mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.cloudController.updateServiceInstance(instance_id, body => {
@@ -418,7 +415,7 @@ describe('service-fabrik-api', function () {
           const SERVER_ERROR_CODE = 502;
           const LOCK_MESSAGE = 'Deployment service-fabrik-0315-b9bf180e-1a67-48b6-9cad-32bd2e936849 __Locked__ by admin at Wed Oct 11 2017 04:09:38 GMT+0000 (UTC) for on-demand_backup';
           const error_response_body = {
-            description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true. 
+            description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true.
             Status Code: 422 Unprocessable Entity, Body: {"status":422,"message":"${LOCK_MESSAGE}"}`,
             error_code: 'CF-ServiceBrokerRequestRejected',
             code: 10001,
@@ -1563,13 +1560,20 @@ describe('service-fabrik-api', function () {
             });
         });
         it('should return update required status if query param check_update_required is provided', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.director.getDeployments();
-          mocks.director.getDeploymentManifest(1);
+          mocks.director.getDeployment(deploymentName, true);
           const diff = [
             ['- name: blueprint', null],
             ['  version: 0.0.10', 'removed'],

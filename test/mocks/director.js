@@ -18,6 +18,7 @@ const activePrimaryConfig = _.sample(_
     return director.support_create && director.primary;
   }));
 const directorUrl = activePrimaryConfig.url;
+
 const manifest = {
   name: 'test-deployment-name',
   jobs: [{
@@ -75,11 +76,6 @@ exports.verifyDeploymentLockStatus = verifyDeploymentLockStatus;
 exports.acquireLock = acquireLock;
 exports.releaseLock = releaseLock;
 exports.manifest = manifest;
-//At app start DB Manager automatically fires this request before anything has started. So setting this mock to start with.
-//getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
-getDeployments({
-  oob: true
-});
 
 function uuidByIndex(index) {
   const buffer = new Buffer(1);
@@ -209,12 +205,13 @@ function getLockProperty(deploymentName, found, lockInfo) {
     });
 }
 
-function getDeployment(deploymentName, found, boshDirectorUrlInput) {
+function getDeployment(deploymentName, found, boshDirectorUrlInput, attempts) {
   const boshDirectorUrl = boshDirectorUrlInput || directorUrl;
   if (!found) {
     return nock(boshDirectorUrl)
       .replyContentLength()
       .get(`/deployments/${deploymentName}`)
+      .times(attempts || 1)
       .reply(404, {
         'code': 70000,
         'description': `'Deployment ${deploymentName} doesn\'t exist'`
@@ -223,6 +220,7 @@ function getDeployment(deploymentName, found, boshDirectorUrlInput) {
   return nock(boshDirectorUrl)
     .replyContentLength()
     .get(`/deployments/${deploymentName}`)
+    .times(attempts || 1)
     .reply(200, {
       manifest: yaml.dump(manifest)
     });

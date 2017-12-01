@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const uuid = require('uuid');
 const _ = require('lodash');
 const errors = require('../lib/errors');
+const CONST = require('../lib/constants');
 const config = require('../lib/config');
 const logger = require('../lib/logger');
 const NotFound = errors.NotFound;
@@ -296,9 +297,8 @@ describe('bosh', () => {
             location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
           }
         };
-
         new MockBoshDirectorClient(request, response)
-          .createOrUpdateDeployment(manifest)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.CREATE, manifest)
           .then((content) => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();

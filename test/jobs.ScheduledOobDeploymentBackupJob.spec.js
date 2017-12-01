@@ -193,7 +193,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted', function (done) {
-        mocks.director.getDeployment(deploymentName, false);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
@@ -227,7 +227,7 @@ describe('Jobs', function () {
       });
 
       it('should cancel backup job (itself) when there are no more backups to delete & deployment is deleted', function (done) {
-        mocks.director.getDeployment(deploymentName, false);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.cloudProvider.list(container, prefix, []);
         return ScheduledOobDeploymentBackupJob.run(job, () => {
@@ -310,7 +310,7 @@ describe('Jobs', function () {
       });
 
       it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
-        mocks.director.getDeployment(deploymentName, false);
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
         ]);
