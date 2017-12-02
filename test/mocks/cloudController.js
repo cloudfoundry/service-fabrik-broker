@@ -15,7 +15,6 @@ exports.findSecurityGroupByName = findSecurityGroupByName;
 exports.deleteSecurityGroup = deleteSecurityGroup;
 exports.getServiceInstancePermissions = getServiceInstancePermissions;
 exports.getServiceInstance = getServiceInstance;
-exports.getService = getService;
 exports.getServiceInstances = getServiceInstances;
 exports.updateServiceInstance = updateServiceInstance;
 exports.findServiceBrokerByName = findServiceBrokerByName;
@@ -118,20 +117,6 @@ function getServiceInstance(guid, entity, times) {
       },
       entity: _.assign({
         name: 'blueprint'
-      }, entity)
-    });
-}
-
-function getService(guid, entity, times) {
-  return nock(cloudControllerUrl)
-    .get(`/v2/services/${guid}`)
-    .times(times || 1)
-    .reply(200, {
-      metadata: {
-        guid: guid
-      },
-      entity: _.assign({
-        label: 'blueprint'
       }, entity)
     });
 }

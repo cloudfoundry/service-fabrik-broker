@@ -5,6 +5,7 @@ const _ = require('lodash');
 const formatUrl = require('url').format;
 const CloudControllerClient = require('../lib/cf/CloudControllerClient');
 const errors = require('../lib/errors');
+const catalog = require('../lib').models.catalog;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 
@@ -15,18 +16,17 @@ describe('cf', function () {
     const id = 42;
     const guid = 'guid';
     const name = 'name';
-    const label = 'blueprint';
     const rules = [];
     const bearer = 'bearer';
     const firstResource = {};
     const resources = [];
+    const service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+    const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const entity = {
       name: name,
-      label: label,
-      service_guid: id,
-      service_plan_guid: id,
+      service_guid: service_guid,
+      service_plan_guid: service_plan_guid,
       space_guid: id,
-      service_plan_name: name,
       space_name: name,
       organization_guid: id,
       organization_name: name
@@ -117,19 +117,6 @@ describe('cf', function () {
 
       it('should return the JSON body with Status 200', function () {
         return cloudController.getServiceInstance(id)
-          .then(result => {
-            expect(getAccessTokenSpy).to.be.calledOnce;
-            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
-            expect(result).to.equal(body);
-          });
-      });
-    });
-
-    describe('#getService', function () {
-      const [options, statusCode] = buildExpectedRequestArgs('GET', `/services/${id}`);
-
-      it('should return the JSON body with Status 200', function () {
-        return cloudController.getService(id)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
@@ -359,16 +346,14 @@ describe('cf', function () {
     });
     describe('#getServiceInstanceDetails', function () {
       const [optionsInstance, statusCodeInstance] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
-      const [optionsService, statusCodeService] = buildExpectedRequestArgs('GET', `/services/${id}`);
-      const [optionsPlan, statusCodePlan] = buildExpectedRequestArgs('GET', `/service_plans/${id}`);
       const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
       const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
+
       const expectedResult = {
         name: name,
-        label: label,
-        service_plan_guid: id,
+        service_name: catalog.getService(service_guid).name,
+        service_plan_name: catalog.getPlan(service_plan_guid).name,
         space_guid: id,
-        service_plan_name: name,
         space_name: name,
         organization_guid: id,
         organization_name: name
@@ -376,13 +361,11 @@ describe('cf', function () {
       it('should return the JSON body with Status 200', function () {
         return cloudController.getServiceInstanceDetails(id)
           .then(result => {
-            expect(getAccessTokenSpy.callCount).to.equal(5);
-            expect(requestSpy.callCount).to.equal(5);
+            expect(getAccessTokenSpy.callCount).to.equal(3);
+            expect(requestSpy.callCount).to.equal(3);
             expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsInstance, statusCodeInstance);
-            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsService, statusCodeService);
-            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsPlan, statusCodePlan);
-            expect(requestSpy.getCall(3)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
-            expect(requestSpy.getCall(4)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
             expect(result).to.deep.equal(expectedResult);
           });
       });
