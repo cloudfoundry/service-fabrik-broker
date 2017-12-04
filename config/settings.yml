@@ -242,6 +242,19 @@ defaults: &defaults
       password: <%= cloudProvider.password %>
       strictSSL: false
       container: <%= cloudProvider.containerPrefix %>-broker
+  virtual_host:
+    provider:
+      name: openstack
+      authUrl: <%= cloudProvider.authUrl %>
+      keystoneAuthVersion: <%= cloudProvider.keystoneAuthVersion %>
+      domainName: <%= cloudProvider.domainName %>
+      projectDomainName: <%= cloudProvider.domainName %>
+      tenantId: <%= cloudProvider.tenantId %>
+      region: <%= cloudProvider.region %>
+      username: <%= cloudProvider.username %>
+      password: <%= cloudProvider.password %>
+      strictSSL: false
+      container: <%= cloudProvider.containerPrefix %>-broker
   #############################
   # CLOUD-CONTROLLER SETTINGS #
   #############################
