@@ -248,7 +248,7 @@ defaults: &defaults
   cf: &cf
     url: https://api.bosh-lite.com
     username: admin
-    password: hooayc00b3ep8y0q8ysm
+    password: admin
 
   ###################
   # DOCKER SETTINGS #
@@ -275,9 +275,9 @@ defaults: &defaults
     support_create: false
     name: bosh
     cpi: warden_cpi
-    url: https://192.168.50.6:25555
+    url: https://192.168.50.4:25555
     username: admin
-    password: ufvqxjm1rixq3w8isada
+    password: admin
     skip_ssl_validation: true
     default_task_poll_interval: 10000
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
@@ -476,7 +476,7 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
