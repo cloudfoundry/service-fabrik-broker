@@ -5,6 +5,7 @@ const CONST = require('../lib/constants');
 const utils = require('../lib/utils');
 const BaseJob = require('../lib/jobs/BaseJob');
 const ScheduleManager = require('../lib/jobs/ScheduleManager');
+const BackupStore = require('../lib/iaas/BackupStore');
 const OperationStatusPollerJob = require('../lib/jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {
@@ -18,6 +19,7 @@ describe('Jobs', function () {
         attrs: {
           name: `${deploymentName}_${operationName}_${backup_guid}_${CONST.JOB.OPERATION_STATUS_POLLER}`,
           data: {
+            _n_a_m_e_: `${deploymentName}_${operationName}_${backup_guid}_${CONST.JOB.OPERATION_STATUS_POLLER}`,
             deployment_name: deploymentName,
             type: CONST.BACKUP.TYPE.ONLINE,
             trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
@@ -50,13 +52,18 @@ describe('Jobs', function () {
       });
     }
 
-    let baseJobLogRunHistoryStub, cancelScheduleStub;
+    let sandbox, baseJobLogRunHistoryStub, cancelScheduleStub, patchBackupFileStub, patchRestoreFileStub;
 
     before(function () {
       mocks.reset();
+      sandbox = sinon.sandbox.create();
       cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
+      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
+      patchRestoreFileStub = sandbox.stub(BackupStore.prototype, 'patchRestoreFile');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
+      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
+      patchRestoreFileStub.withArgs().returns(Promise.resolve({}));
       return mocks.setup([]);
     });
 
@@ -64,11 +71,13 @@ describe('Jobs', function () {
       mocks.reset();
       cancelScheduleStub.reset();
       baseJobLogRunHistoryStub.reset();
+      patchBackupFileStub.reset();
     });
 
     after(function () {
       cancelScheduleStub.restore();
       baseJobLogRunHistoryStub.restore();
+      sandbox.restore();
     });
 
     describe('#CheckBackupStatus', function () {
@@ -96,6 +105,30 @@ describe('Jobs', function () {
         }
       });
 
+      it('restore status check should be succesful and status is succeeded', function (done) {
+        mocks.serviceBrokerClient.getDeploymentRestoreStatus(deploymentName, getTokenBasedOnOperation('restore'), 'succeeded');
+        try {
+          const job = getJobBasedOnOperation('restore');
+          return OperationStatusPollerJob.run(job, () => {
+            mocks.verify();
+            expect(cancelScheduleStub).to.be.calledOnce;
+            expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_restore_${backup_guid}`);
+            expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.OPERATION_STATUS_POLLER);
+            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+            expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('succeeded');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Restore completed successfully');
+            expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+            expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+            done();
+          });
+        } catch (ex) {
+          console.log('exception occurred');
+          mocks.verify();
+        }
+      });
+
+
       it('backup status check should be succesful and status is processing', function (done) {
         mocks.serviceBrokerClient.getDeploymentBackupStatus(deploymentName, getTokenBasedOnOperation('backup'));
 
@@ -113,6 +146,21 @@ describe('Jobs', function () {
         });
       });
 
+      it('restore status check should be succesful and status is processing', function (done) {
+        mocks.serviceBrokerClient.getDeploymentRestoreStatus(deploymentName, getTokenBasedOnOperation('restore'));
+
+        const job = getJobBasedOnOperation('restore');
+        return OperationStatusPollerJob.run(job, () => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('processing');
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        });
+      });
 
       it('backup status check should be succesful and status is processing for longer than timeout should cancel itself', function (done) {
         mocks.serviceBrokerClient.getDeploymentBackupStatus(deploymentName, getTokenBasedOnOperation('backup'), 'processing');
@@ -122,17 +170,60 @@ describe('Jobs', function () {
         config.backup.backup_restore_status_poller_timeout = 0;
         return OperationStatusPollerJob.run(job, () => {
           mocks.verify();
-          const expectedMsg = `Deployment ${deploymentName} backup with backup guid ${backup_guid} exceeding timeout time 
-                      ${config.backup.backup_restore_status_poller_timeout / 1000 / 60} (mins). Stopping status check`;
           config.backup.backup_restore_status_poller_timeout = old_frequency;
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${backup_guid}`);
           expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.OPERATION_STATUS_POLLER);
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusCode).to.eql('ERR_BACKUP_TIME_OUT');
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql(expectedMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('processing');
           expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Creating volume');
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        });
+      });
+
+      it('backup status check should fail with Not Found and job should cancel itself', function (done) {
+        mocks.serviceBrokerClient.getDeploymentBackupStatus(deploymentName, getTokenBasedOnOperation('backup'), 'processing', undefined, 404);
+
+        const job = getJobBasedOnOperation('backup');
+        const old_frequency = config.backup.backup_restore_status_poller_timeout;
+        config.backup.backup_restore_status_poller_timeout = 0;
+        return OperationStatusPollerJob.run(job, () => {
+          mocks.verify();
+          config.backup.backup_restore_status_poller_timeout = old_frequency;
+          expect(cancelScheduleStub).to.be.calledOnce;
+          expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${backup_guid}`);
+          expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.OPERATION_STATUS_POLLER);
+          expect(patchBackupFileStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('NotFound');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(404);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({});
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        });
+      });
+
+      it('restore status check should fail with Not Found and job should cancel itself', function (done) {
+        mocks.serviceBrokerClient.getDeploymentRestoreStatus(deploymentName, getTokenBasedOnOperation('restore'), 'processing', 404);
+
+        const job = getJobBasedOnOperation('restore');
+        const old_frequency = config.backup.backup_restore_status_poller_timeout;
+        config.backup.backup_restore_status_poller_timeout = 0;
+        return OperationStatusPollerJob.run(job, () => {
+          mocks.verify();
+          config.backup.backup_restore_status_poller_timeout = old_frequency;
+          expect(cancelScheduleStub).to.be.calledOnce;
+          expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_restore_${backup_guid}`);
+          expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.OPERATION_STATUS_POLLER);
+          expect(patchRestoreFileStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('NotFound');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(404);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({});
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
           done();
