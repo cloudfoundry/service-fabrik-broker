@@ -32,7 +32,7 @@ function startDeploymentBackup(name, response, payload) {
     });
 }
 
-function getDeploymentBackupStatus(name, token, state, boshDirector) {
+function getDeploymentBackupStatus(name, token, state, boshDirector, responseStatus) {
   const backupState = {
     state: state || 'processing',
     stage: 'Creating volume',
@@ -50,17 +50,21 @@ function getDeploymentBackupStatus(name, token, state, boshDirector) {
     .replyContentLength()
     .get(`/admin/deployments/${name}/backup/status`)
     .query(queryParams)
-    .reply(200, backupState);
+    .reply(responseStatus || 200, backupState);
 }
 
-function getDeploymentRestoreStatus(name, token, state) {
+function getDeploymentRestoreStatus(name, token, state, responseStatus) {
   const restoreState = {
     state: state || 'processing',
     stage: 'Restore completed successfully',
     updated_at: isoDate(Date.now())
   };
+  let queryParams = {
+    token: token
+  };
   return nock(serviceBrokerUrl)
     .replyContentLength()
-    .get(`/admin/deployments/${name}/restore/status?token=${token}`)
-    .reply(200, restoreState);
+    .get(`/admin/deployments/${name}/restore/status`)
+    .query(queryParams)
+    .reply(responseStatus || 200, restoreState);
 }
