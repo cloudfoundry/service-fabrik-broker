@@ -1356,7 +1356,7 @@ describe('service-fabrik-api', function () {
             service_guid: service_id,
             space_guid: space_guid,
             service_plan_guid: plan_id
-          }, 2);
+          });
           mocks.cloudController.getSpace(space_guid, {
             organization_guid: organization_guid
           });
