@@ -251,7 +251,7 @@ function getServiceInstances(plan_guid, size, space_guid, org_guid) {
     .chain(mocks.director.getDeploymentNames(size))
     .map(deployment => ({
       metadata: {
-        guid: _.nth(DirectorManager.parseDeploymentName(deployment.name), 2)
+        guid: _.nth(DirectorManager.parseDeploymentName(deployment.name), 1)
       },
       entity: {
         service_plan_guid: plan_guid,

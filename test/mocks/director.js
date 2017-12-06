@@ -84,7 +84,7 @@ function uuidByIndex(index) {
 }
 
 function deploymentNameByIndex(index) {
-  return `${prefix}-${_.padStart(index, 4, '0')}-${uuidByIndex(index)}`;
+  return `${prefix}-${uuidByIndex(index)}`;
 }
 
 function getDeploymentNames(capacity, queued, oob) {

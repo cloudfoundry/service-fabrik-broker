@@ -70,9 +70,6 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 202 Accepted', function () {
-          mocks.director.getDeployments({
-            queued: true
-          });
           mocks.director.createOrUpdateDeployment(task_id);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
@@ -101,9 +98,6 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 202 Accepted when invoked with bosh name', function () {
-          mocks.director.getDeployments({
-            queued: true
-          });
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.uaa.getAccessToken();
           return chai.request(app)
@@ -143,7 +137,7 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          let deploymentName = 'service-fabrik-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
