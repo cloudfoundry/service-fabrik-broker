@@ -178,7 +178,7 @@ cf delete-service -f my-service
 ```
 ## How to obtain support
 
-If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](https://github.com/sap/service-fabrik-broker/issues). We shall get back to you.
+If you need any support, have any question or have found a bug, please report it in the [GitHub bug tracking system](https://github.com/cloudfoundry-incubator/service-fabrik-broker/issues). You can also reach us out on our [Slack Channel](https://cloudfoundry.slack.com/messages/C814KVC59).
 
 ## Advanced Debugging
 
