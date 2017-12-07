@@ -35,6 +35,9 @@ const instance_id2 = 'de99-8888-7777-66az';
 const criteria = {
   name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
 };
+const aggregateCriteria = [{
+  $match: criteria
+}];
 const listOfJobs = [];
 for (let i = 1; i <= 10; i++) {
   let job = getJob(instance_id, Date.now()).value();
@@ -73,6 +76,7 @@ describe('db', function () {
           updatedAt: 'defined'
         }
       };
+      modelStub.aggregate = sandbox.stub(mongoModel, 'aggregate');
       modelStub.findByIdAsync = sandbox.stub(mongoModel, 'findByIdAsync');
       modelStub.populateAsync = sandbox.stub(mongoModel, 'populateAsync');
       modelStub.removeAsync = sandbox.stub(mongoModel, 'removeAsync');
@@ -94,6 +98,7 @@ describe('db', function () {
 
     beforeEach(function () {
       modelStub.findOne.withArgs(criteria).returns(new Query(getJob(instance_id, time)));
+      modelStub.aggregate.withArgs(aggregateCriteria).returns(getJob(instance_id, time));
       modelStub.findOne.withArgs().returns(new Query(Promise.resolve(null)));
       modelStub.findByIdAsync.withArgs().returns(Promise.resolve(getJob(instance_id, time)));
       modelStub.populateAsync.withArgs().returns(getJob(instance_id, time));
@@ -106,6 +111,7 @@ describe('db', function () {
 
     afterEach(function () {
       modelStub.findOne.reset();
+      modelStub.aggregate.reset();
       modelStub.findByIdAsync.reset();
       modelStub.populateAsync.reset();
       modelStub.removeAsync.reset();
@@ -127,6 +133,13 @@ describe('db', function () {
         name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
       }).then(response => {
         expect(modelStub.findOne).to.be.calledOnce;
+        expect(response).to.eql(getJob(instance_id, time).value());
+      });
+    });
+
+    it('Should return the requested aggregated object from DB successfully', function () {
+      return Repository.aggregate(CONST.DB_MODEL.JOB, aggregateCriteria).then(response => {
+        expect(modelStub.aggregate).to.be.calledOnce;
         expect(response).to.eql(getJob(instance_id, time).value());
       });
     });
