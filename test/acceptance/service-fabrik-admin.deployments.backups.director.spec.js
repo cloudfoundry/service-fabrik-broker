@@ -63,7 +63,6 @@ describe('service-fabrik-admin', function () {
       backup_guid: backup_guid,
       deployment_name: deployment_name,
       state: 'succeeded',
-      logs: [],
       trigger: CONST.BACKUP.TRIGGER.SCHEDULED
     };
     const restore_data = {
