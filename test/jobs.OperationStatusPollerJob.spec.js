@@ -95,6 +95,8 @@ describe('Jobs', function () {
             expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
             expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('succeeded');
             expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Creating volume');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(false);
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(true);
             expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
             expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
             done();
@@ -118,6 +120,8 @@ describe('Jobs', function () {
             expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
             expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('succeeded');
             expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Restore completed successfully');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(false);
+            expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(true);
             expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
             expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
             done();
@@ -140,6 +144,8 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('processing');
           expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Creating volume');
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(false);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(false);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
           done();
@@ -156,6 +162,8 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('processing');
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(false);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(false);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
           done();
@@ -178,6 +186,8 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('processing');
           expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Creating volume');
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(true);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
           done();
@@ -265,6 +275,23 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('BadRequest');
           expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Bad Request');
           expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(400);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({});
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        });
+      });
+
+      it('should log error in case  operation is other than backup or restore', function (done) {
+        let sfClientStub;
+        sfClientStub = sinon.stub(OperationStatusPollerJob, 'getBrokerClient');
+        const job = getJobBasedOnOperation('snapshot');
+        OperationStatusPollerJob.run(job, () => {
+          const invalidInputMsg = `Operation pollinng not supported for operation - snapshot`;
+          expect(sfClientStub).not.to.be.called;
+          sfClientStub.restore();
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql(invalidInputMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusCode).to.eql(`ERR_SNAPSHOT_NOT_SUPPORTED`);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql({});
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
