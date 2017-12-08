@@ -68,8 +68,9 @@ defaults: &defaults
   enable_circuit_breaker: true
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
-  http_timeout: 120000
-    
+  # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
+  http_timeout: 175000
+
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################
@@ -113,7 +114,7 @@ defaults: &defaults
       max_attempt: 5 # MaxAttempts of 8 with a backoff factor of 2 leads to last attempt ~ at 4.3 hr from first error occurence time
       min_delay: 120000 # min 2 mins
     #url: mongodb://localhost:27017/service-fabrik #'mongodb://user:pass@localhost:port/database'
-    record_max_fetch_count: 100  # Max number of records that can be fetched at a time
+    record_max_fetch_count: 300  # Max number of records that can be fetched at a time
     backup:
       schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
       status_check_every: 120000 # (ms) Check the status of service fabrik backup once every 2 mins
@@ -138,8 +139,8 @@ defaults: &defaults
       reschedule_delay: '20 minutes from now'
       scheduled_backup:
         max_attempts: 3 # Incase of a conflicting operation (ex. update) in progress, the backup is rescheduled. This count defines upper limit on the number of attempts the job is rescheduled in case of conflict.
-      service_instance_update: 
-        max_attempts: 3  #In case of an error while initiating a backup, it is retried again after reschedule_delay. 
+      service_instance_update:
+        max_attempts: 3  #In case of an error while initiating a backup, it is retried again after reschedule_delay.
                          #This defines the upper limit on # of retries. # of retries is not applicable in case a backup is in progress in which case it tries over and over.
         run_every_xdays: 7 #every 7 days update is checked
         should_start_after_hr: 8 #Service Instance update Job will be scheduled in a randomized hr between job_start_hr & job_end_hr
@@ -159,13 +160,13 @@ defaults: &defaults
         enabled: true
       - name: 'Backup_Reaper'
         type: BackupReaper
-        interval: '0 1 * * *' 
+        interval: '0 1 * * *'
         job_data:
           delete_delay: 1000 #delay in processing between two tasks (in millisecond)
         enabled: true
       - name: 'DbCollection_Reaper'
         type: DbCollectionReaper
-        interval: '0 2 * * *' 
+        interval: '0 2 * * *'
         job_data:
           reap_collections:
             - name : JobRunDetail

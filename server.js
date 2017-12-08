@@ -10,6 +10,7 @@ const apps = require('./apps');
 const CONST = require('./lib/constants');
 const errors = require('./lib/errors');
 const logger = lib.logger;
+const config = lib.config;
 
 lib.bootstrap();
 
@@ -26,6 +27,7 @@ function startServer(app) {
   server.on('error', onerror);
   server.on('listening', onlistening);
   server.listen(port);
+  server.timeout = config.http_timeout;
 
   function onerror(err) {
     logger.error('Error occurred. Server will stop - ', err);
