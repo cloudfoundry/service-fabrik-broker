@@ -236,7 +236,7 @@ describe('service-fabrik-admin', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.length(1);
               expect(res.body[0]).to.have.property('error');
-              expect(res.body[0].error).to.have.status(403);
+              expect(res.body[0].error).to.have.status(500);
               mocks.verify();
             });
         });
