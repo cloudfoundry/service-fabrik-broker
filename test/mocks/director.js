@@ -403,6 +403,10 @@ function getDeploymentVms(deploymentName, vms, boshDirectorUrlInput) {
     .reply(200, vms || [{
       cid: '081e3263-e066-4a5a-868f-b420c72a260d',
       job: 'blueprint_z1',
-      index: 0
+      index: 0,
+      ips: [
+        parseUrl(agent.url).hostname
+      ],
+      vm_created_at: '2017-12-11T02:52:25Z'
     }]);
 }

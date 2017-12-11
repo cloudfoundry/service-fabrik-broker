@@ -36,7 +36,6 @@ if (!spec.previous_manifest) {
   instances: <%= members.length %>
   networks:
   - name: <%= net.name %>
-    static_ips: <%= JSON.stringify(members) %>
   vm_type: <%= p('vm_type') %>
   persistent_disk_type: <%= p('disk_type') %>
   stemcell: <%= stemcell.alias %>

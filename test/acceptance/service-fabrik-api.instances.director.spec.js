@@ -132,7 +132,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
           return chai.request(apps.external)
@@ -448,7 +448,7 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.getDeploymentVms(deployment_name);
@@ -877,7 +877,7 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.verifyDeploymentLockStatus();
           mocks.agent.getInfo();
@@ -1593,7 +1593,9 @@ describe('service-fabrik-api', function () {
               expect(res).to.have.status(200);
               const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
               _.set(expectedJobResponse, 'update_required', true);
-              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({diff: diff}));
+              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({
+                diff: diff
+              }));
               expect(res.body).to.eql(expectedJobResponse);
               mocks.verify();
             });

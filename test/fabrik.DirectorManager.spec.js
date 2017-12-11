@@ -24,6 +24,20 @@ var boshStub = {
     },
     getDeploymentNameForInstanceId: function () {
       return Promise.resolve([`service-fabrik-0021-${used_guid}`]);
+    },
+    getDeploymentVms: function () {
+      return Promise.resolve([{
+        agent_id: 'fdbb2b4c-cfc8-49aa-8d5e-1994f8fe9a1c',
+        cid: '7cac3814-644c-4b83-408d-f42cd059d25f',
+        job: 'blueprint',
+        index: 0,
+        id: '942963f9-7a01-45ef-b92d-16a02d3d92a1',
+        az: null,
+        ips: [
+          '10.244.0.9'
+        ],
+        vm_created_at: '2017-12-11T02:52:25Z'
+      }]);
     }
   }
 };
@@ -36,7 +50,6 @@ describe('fabrik', function () {
   describe('DirectorManager', function () {
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     let manager;
-
     before(function () {
       manager = new DirectorManager(catalog.getPlan(plan_id));
     });
@@ -53,6 +66,12 @@ describe('fabrik', function () {
     describe.skip('#findNetworkSegmentIndex', function () {
       it('should append guid and network segment index to deployment name', function () {
         manager.findNetworkSegmentIndex(used_guid).then(res => expect(res).to.eql(21));
+      });
+    });
+    describe('#getDeploymentIps', function () {
+      it('should return the IPs in the deployment', function () {
+        manager.getDeploymentIps(`service-fabrik-${used_guid}`)
+          .then(ipList => expect(ipList).to.eql(['10.244.0.9']));
       });
     });
 

@@ -68,7 +68,7 @@ describe('service-fabrik-admin', function () {
         mocks.director.getDeployment(config.mongodb.deployment_name, false);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
-        mocks.director.getDeployment(config.mongodb.deployment_name, true);
+        mocks.director.getDeploymentVms(config.mongodb.deployment_name);
         mocks.agent.getInfo();
         mocks.agent.createCredentials();
         config.directors[0].default_task_poll_interval = 10;
