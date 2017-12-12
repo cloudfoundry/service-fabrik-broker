@@ -475,7 +475,7 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0+dev.13, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.3.0+dev.16, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
