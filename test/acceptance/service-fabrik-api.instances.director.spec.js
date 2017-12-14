@@ -51,7 +51,11 @@ describe('service-fabrik-api', function () {
         type: 'update',
         subtype: 'backup',
         deployment: deployment_name,
-        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        },
         backup_guid: backup_guid,
         agent_ip: mocks.agent.ip
       };
@@ -59,7 +63,11 @@ describe('service-fabrik-api', function () {
         type: 'update',
         subtype: 'restore',
         deployment: deployment_name,
-        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        },
         agent_ip: mocks.agent.ip
       };
 
@@ -183,11 +191,14 @@ describe('service-fabrik-api', function () {
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
                 previous_values: {
                   plan_id: plan_id,
-                  service_id: service_id,
-                  organization_id: organization_guid,
-                  space_id: space_guid
+                  service_id: service_id
                 },
                 parameters: {
                   'service-fabrik-operation': token
@@ -218,11 +229,14 @@ describe('service-fabrik-api', function () {
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
                 previous_values: {
                   plan_id: plan_id,
-                  service_id: service_id,
-                  organization_id: organization_guid,
-                  space_id: space_guid
+                  service_id: service_id
                 },
                 parameters: {
                   'service-fabrik-operation': token
@@ -476,11 +490,14 @@ describe('service-fabrik-api', function () {
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
                 previous_values: {
                   plan_id: plan_id,
-                  service_id: service_id,
-                  organization_id: organization_guid,
-                  space_id: space_guid
+                  service_id: service_id
                 },
                 parameters: {
                   'service-fabrik-operation': token
@@ -523,7 +540,7 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
+        ///
         it('should download the backup logs and update the metadata', function () {
           const state = 'succeeded';
           const backupState = {
@@ -1049,11 +1066,14 @@ describe('service-fabrik-api', function () {
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
                 previous_values: {
                   plan_id: plan_id,
-                  service_id: service_id,
-                  organization_id: organization_guid,
-                  space_id: space_guid
+                  service_id: service_id
                 },
                 parameters: {
                   'service-fabrik-operation': token
@@ -1100,7 +1120,7 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-
+        /////
         it('should download the restore logs and update the metadata', function () {
           const state = 'succeeded';
           const restoreState = {
