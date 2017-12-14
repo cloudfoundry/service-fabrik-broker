@@ -422,6 +422,17 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
+    rabbitmq: &agent_rabbitmq
+      version: '1'
+      hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy
   ########################################
   # SERVICES CATALOG - BLUEPRINT SERVICE #
   ########################################
@@ -604,18 +615,77 @@ defaults: &defaults
         - '2 GB Memory'
         - '2 GB Disk'
 
+  ####################
+  # RABBITMQ SERVICE #
+  ####################
+  - &rabbitmq_service
+    id: '19f17a7a-5247-4ee2-94b5-03eac6756388'
+    name: 'rabbitmq'
+    description: &description 'RabbitMQ messaging'
+    bindable: true
+    tags:
+    - 'rabbitmq'
+    - 'mbus'
+    - 'pubsub'
+    - 'amqp'
+    metadata:
+      displayName: 'rabbitmq'
+      longDescription: *description
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://www.rabbitmq.com/documentation.html'
+      supportUrl: 'https://www.rabbitmq.com/community.html'
+    dashboard_client:
+      id: 'service-fabrik-rabbitmq-client1'
+      secret: 'service-fabrik-rabbitmq-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &rabbitmq_plan1
+      id: 'b715f834-2048-11e7-a560-080027afc1e6'
+      name: 'v3.6-xsmall'
+      free: false
+      manager: &manager_plan6
+        name: 'director'
+        settings: &settings_plan6
+          prefix: 'rabbitmq'
+          agent: *agent_rabbitmq
+          template: <%= base64_template('rabbitmq') %>
+          releases: &dedicated_releases
+          - { name: rabbitmq, version: 14 }
+          - { name: broker-agent-rabbitmq, version: 25+dev.1 }
+          context: &context_plan6
+            agent: *agent_rabbitmq
+            resource_pool: micro
+            disk_pool: hdd_1gb
+      description: 'RabbitMQ 3.6 service x-small'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '3 Node Cluster'
+        - '1 GB Memory'
+        - '10 GB Disk'
+
     ###########################
     # SHARED SERVICE PLANS #
     ###########################
     - &shared_plan1
-      id: 'd7f3287b-f094-478d-8eb2-dee714bc0e5f'
+      id: 'd035f948-5d3a-43d7-9aec-954e134c3e9d'
       name: 'virtual_host'
       free: true
       manager: &virtual_host_manager
         name: 'virtual_host'
         settings: &settings_virtual_host
-          prefix: 'blueprint'
-          agent: *agent_blueprint
+          prefix: 'rabbitmq'
+          agent: *agent_rabbitmq
+          context: &context_plan7
+            agent: *agent_rabbitmq
       description: 'Virtual host in a RabbitMQ cluster (managed service in beta)'
       metadata:
         costs:
@@ -652,7 +722,17 @@ development: &development
       - state
       - lifecycle
       - credentials
-      - multi_tenancy
+    rabbitmq: &agent_rabbitmq1
+      version: '1'
+      hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy  
   services:
   - <<: *blueprint_service
     plans:
@@ -685,12 +765,26 @@ development: &development
           context:
             <<: *context_plan5
             agent: *agent_blueprint1
+  - <<: *rabbitmq_service
+    plans:
+    - <<: *rabbitmq_plan1
+      manager:
+        <<: *manager_plan6
+        settings:
+          <<: *settings_plan6
+          agent: *agent_rabbitmq1
+          context:
+            <<: *context_plan6
+            agent: *agent_rabbitmq1        
     - <<: *shared_plan1
       manager:
         <<: *virtual_host_manager
         settings:
           <<: *settings_virtual_host
-          agent: *agent_blueprint1
+          agent: *agent_rabbitmq1
+          context:
+            <<: *context_plan7
+            agent: *agent_rabbitmq1 
 
 boshlite2:
   <<: *development
