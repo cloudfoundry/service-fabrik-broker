@@ -67,8 +67,11 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
-              organization_guid: organization_guid,
-              space_guid: space_guid,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               parameters: parameters,
               accepts_incomplete: accepts_incomplete
             })
@@ -95,11 +98,14 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id,
               parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               previous_values: {
                 plan_id: plan_id,
-                service_id: service_id,
-                organization_id: organization_guid,
-                space_id: space_guid
+                service_id: service_id
               },
               accepts_incomplete: accepts_incomplete
             })

@@ -82,8 +82,11 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
-              organization_guid: organization_guid,
-              space_guid: space_guid,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               parameters: parameters,
               accepts_incomplete: accepts_incomplete
             })
@@ -92,10 +95,14 @@ describe('service-broker-api', function () {
               expect(res.body.dashboard_url).to.equal(dashboard_url);
               expect(res.body).to.have.property('operation');
               const decoded = utils.decodeBase64(res.body.operation);
-              expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
+              expect(_.pick(decoded, ['type', 'parameters', 'context'])).to.eql({
                 type: 'create',
                 parameters: parameters,
-                space_guid: space_guid
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                }
               });
               expect(decoded.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -114,8 +121,11 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
-              organization_guid: organization_guid,
-              space_guid: space_guid,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               parameters: {
                 bosh_director_name: 'bosh',
                 username: 'admin',
@@ -128,14 +138,18 @@ describe('service-broker-api', function () {
               expect(res.body.dashboard_url).to.equal(dashboard_url_new);
               expect(res.body).to.have.property('operation');
               const decoded = utils.decodeBase64(res.body.operation);
-              expect(_.pick(decoded, ['type', 'parameters', 'space_guid'])).to.eql({
+              expect(_.pick(decoded, ['type', 'parameters', 'context'])).to.eql({
                 type: 'create',
                 parameters: {
                   bosh_director_name: 'bosh',
                   username: 'admin',
                   password: 'admin'
                 },
-                space_guid: space_guid
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                }
               });
               mocks.verify();
             });
@@ -172,11 +186,14 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id_update,
               parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               previous_values: {
                 plan_id: plan_id,
-                service_id: service_id,
-                organization_id: organization_guid,
-                space_id: space_guid
+                service_id: service_id
               },
               accepts_incomplete: accepts_incomplete
             })
@@ -250,7 +267,11 @@ describe('service-broker-api', function () {
               operation: utils.encodeBase64({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
-                space_guid: space_guid
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                }
               })
             })
             .catch(err => err.response)
@@ -286,7 +307,11 @@ describe('service-broker-api', function () {
               operation: utils.encodeBase64({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
-                space_guid: space_guid
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                }
               })
             })
             .catch(err => err.response)
