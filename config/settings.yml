@@ -206,7 +206,9 @@ defaults: &defaults
     show_errors: false
     prefix: CF
     log_additional_event: true
-    skip_http_status_40x: true
+    skip_http_status_response_codes:
+    - 400
+    - 409
   ###################
   # QUOTA MANAGEMENT SETTINGS #
   ###################
