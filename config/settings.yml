@@ -209,7 +209,6 @@ defaults: &defaults
     skip_http_status_response_codes:
     - 400
     - 409
-    - 422
   ###################
   # QUOTA MANAGEMENT SETTINGS #
   ###################
