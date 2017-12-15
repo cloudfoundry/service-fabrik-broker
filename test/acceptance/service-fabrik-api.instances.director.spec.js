@@ -755,7 +755,7 @@ describe('service-fabrik-api', function () {
           backup: _.pick(backupMetadata, 'type', 'secret')
         };
 
-        it('should return 400 Bad Request (no or invalid backup_guid given)', function () {
+        it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -766,6 +766,28 @@ describe('service-fabrik-api', function () {
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid backup_guid given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              backup_guid: 'invalid-guid'
+            })
             .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
