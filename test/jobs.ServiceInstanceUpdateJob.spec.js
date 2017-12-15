@@ -255,9 +255,9 @@ describe('Jobs', function () {
           const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden section(s) \'jobs\'';
           expect(cancelScheduleStub).not.to.be.called;
           expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Forbidden');
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(403);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('ForbiddenManifestChangesError');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Error due to changes in forbidden sections of the manifest');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(500);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
