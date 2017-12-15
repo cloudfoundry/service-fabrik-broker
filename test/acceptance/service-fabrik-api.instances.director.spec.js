@@ -39,6 +39,8 @@ describe('service-fabrik-api', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const time = Date.now();
       const started_at = isoDate(time);
+      const timeAfte = moment(time).add(2, 'seconds').toDate();
+      const restore_at = new Date(timeAfte).toISOString().replace(/\.\d*/, '');
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
@@ -772,6 +774,28 @@ describe('service-fabrik-api', function () {
             });
         });
 
+        it('should return 400 Bad Request (invalid time_stamp given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: '2017-12-04T07:560:02.203Z'
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
         it('should return 422 Unprocessable Entity (no backup with this guid found)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -786,6 +810,29 @@ describe('service-fabrik-api', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
               backup_guid: backup_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 422 Unprocessable Entity (no backup with before given time_stamp found)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, []);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -821,6 +868,32 @@ describe('service-fabrik-api', function () {
             });
         });
 
+        it('should return 422 Unprocessable Entity PITR based (backup still in progress)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, {
+            state: 'processing'
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
         it('should return 422 Unprocessable Entity (plan ids do not match)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -838,6 +911,32 @@ describe('service-fabrik-api', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
               backup_guid: backup_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 422 Unprocessable Entity PITR based (plan ids do not match)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, {
+            plan_id: 'some-other-plan-id'
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -867,6 +966,35 @@ describe('service-fabrik-api', function () {
             .set('Authorization', authHeader)
             .send({
               backup_guid: backup_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
+
+        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, backupMetadata);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: restore_at
             })
             .catch(err => err.response)
             .then(res => {
