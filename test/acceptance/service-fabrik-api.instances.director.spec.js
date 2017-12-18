@@ -39,7 +39,7 @@ describe('service-fabrik-api', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const time = Date.now();
       const started_at = isoDate(time);
-      const timeAfte = moment(time).add(2, 'seconds').toDate();
+      const timeAfte = moment(time).add(1, 'seconds').toDate();
       const restore_at = new Date(timeAfte).toISOString().replace(/\.\d*/, '');
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
@@ -841,7 +841,7 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it('should return 422 Unprocessable Entity (no backup with before given time_stamp found)', function () {
+        it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,

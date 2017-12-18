@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const moment = require('moment');
 const lib = require('../../lib');
 const logger = lib.logger;
 const app = require('../support/apps').internal;
@@ -20,6 +21,8 @@ describe('service-fabrik-admin', function () {
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
+    const timeAfte = moment(time).add(1, 'seconds').toDate();
+    const restore_at = new Date(timeAfte).toISOString().replace(/\.\d*/, '');
     const container = backupStore.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
@@ -59,6 +62,7 @@ describe('service-fabrik-admin', function () {
     const pathname = `/${container}/${filenameObj}`;
     const restorePathname = `/${container}/${restoreFileName}`;
     const prefix = `${root_folder_name}/${operation_backup}/${deployment_name}.${backup_guid}`;
+    const pitrPrefix = `${root_folder_name}/${operation_backup}/${deployment_name}`;
     const data = {
       backup_guid: backup_guid,
       deployment_name: deployment_name,
@@ -287,8 +291,49 @@ describe('service-fabrik-admin', function () {
           });
       });
 
+      it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
 
-      it('should initiate ccdb restore operation successfully', function () {
+      it('should return 400 Bad Request (invalid backup_guid given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            backup_guid: 'invalid-guid'
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
+
+      it('should return 400 Bad Request (invalid time_stamp given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: '2017-12-04T07:560:02.203Z'
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
+
+      it('should initiate ccdb restore operation successfully: backup_guid', function () {
         mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentManifest();
         mocks.director.getDeploymentVms(deployment_name, deploymentVms);
@@ -319,6 +364,101 @@ describe('service-fabrik-admin', function () {
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_restore);
             expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
+          });
+      });
+
+      it('should initiate ccdb restore operation successfully: PITR', function () {
+        mocks.director.getDeployment(deployment_name, true);
+        mocks.director.getDeploymentManifest();
+        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, data);
+        mocks.agent.getInfo();
+        mocks.agent.startRestore();
+        logger.debug(`uploading json here: ${pathname}`);
+        mocks.cloudProvider.upload(restorePathname, body => {
+          expect(body.username).to.equal(config.username);
+          expect(body.state).to.equal('processing');
+          return true;
+        });
+        mocks.cloudProvider.headObject(restorePathname);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(scheduleStub).to.be.calledOnce;
+            expect(res).to.have.status(202);
+            expect(res.body.time_stamp).to.eql(restore_at);
+            expect(res.body.operation).to.eql(operation_restore);
+            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
+        mocks.cloudProvider.list(container, pitrPrefix, []);
+        logger.debug(`uploading json here: ${pathname}`);
+
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (backup still in progress)', function () {
+        mocks.cloudProvider.list(container, prefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, {
+          state: 'processing'
+        });
+        logger.debug(`uploading json here: ${pathname}`);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            backup_guid: backup_guid
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (backup still in progress): PITR', function () {
+        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, {
+          state: 'processing'
+        });
+        logger.debug(`uploading json here: ${pathname}`);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
             mocks.verify();
           });
       });
