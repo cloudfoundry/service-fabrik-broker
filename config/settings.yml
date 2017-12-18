@@ -284,6 +284,7 @@ defaults: &defaults
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
     infrastructure: &director_infrastructure
       stemcell:
+        alias: service_fabrik_stemcell
         name: bosh-warden-boshlite-ubuntu-trusty-go_agent
         version: latest
       segmentation:
@@ -480,8 +481,8 @@ defaults: &defaults
           - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_1gb
+            disk_type: disk_1G
+            vm_type: micro
       description: 'Blueprint 1.0 service x-small (managed service in beta)'
       metadata:
         costs:
@@ -509,8 +510,8 @@ defaults: &defaults
           releases: *dedicated_releases
           context: &context_plan4
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_2gb
+            vm_type: micro
+            disk_type: disk_2G
       description: 'Blueprint 1.0 service small (managed service in beta)'
       metadata:
         costs:
@@ -539,8 +540,8 @@ defaults: &defaults
           releases: *dedicated_releases
           context: &context_plan5
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_2gb
+            vm_type: micro
+            disk_type: disk_2G
       description: 'Blueprint 1.0 service large (managed service in beta)'
       metadata:
         costs:
@@ -624,6 +625,8 @@ boshlite2:
   - <<: *director
     url: https://192.168.50.6:25555
     password: v5o4z3qg3og1gjct0eea
+    primary: true
+    support_create: true
     infrastructure:
       <<: *director_infrastructure
       networks:
@@ -640,7 +643,64 @@ boshlite2:
         reuse_compilation_vms: true
         workers: 4
         cloud_properties: { name: random }
+  services:
+    - <<: *blueprint_service
+      plans:
+      - *blueprint_plan1
+      - *blueprint_plan2
+      - <<: *blueprint_plan3
+        manager:
+          <<: *manager_plan3
+          settings:
+            <<: *settings_plan3
+            agent: *agent_blueprint1
 
+azure_dev1: &azure_dev1
+  <<: *defaults
+  log_level: debug
+  password: 'secret'
+  directors:
+  - <<: *director
+    prefix: service-fabrik-azure-dev1
+    url: https://127.0.0.1:35555
+    password: admin
+    primary: true
+    support_create: true
+    infrastructure:
+      <<: *director_infrastructure
+      stemcell:
+        alias: service_fabrik_stemcell
+        name: bosh-azure-hyperv-ubuntu-trusty-go_agent
+        version: latest
+      networks:
+      - name: default
+        type: manual
+        subnets:
+        - range: 10.11.0.0/18
+          az: z1
+          cloud_properties:
+            security_group: nsg-open-sf-azure-dev1
+            subnet_name: sf-1-bosh_services_z2-sf-azure-dev1
+            virtual_network_name: vnet-sf-azure-dev1
+      - &fabrik_network
+        name: service_fabrik
+        type: manual
+        segmentation:
+          # calculate capacity based on the network range
+          capacity: -1
+          offset: 1
+          size: 10
+        subnets:
+        - { range: 10.11.252.0/24, az: z1, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.253.0/24, az: z2, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.254.0/24, az: z3, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+      - name: compilation
+        type: dynamic
+        cloud_properties:
+          net_id: b7089c41-e529-4044-943b-174b92ad6074
+          security_groups:
+          - service-fabrik-compilation
+          subnet: b7089c41-e529-4044-943b-174b92ad6074
 
 development_sc6: &sc6
   <<: *defaults
@@ -650,9 +710,12 @@ development_sc6: &sc6
   - <<: *director
     prefix: service-fabrik-backup
     url: https://127.0.0.1:25555
+    primary: true
+    support_create: true
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: service_fabrik_stemcell
         name: bosh-openstack-kvm-ubuntu-trusty-go_agent
         version: latest
       vm_types:
@@ -707,6 +770,7 @@ development_aws:
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: service_fabrik_stemcell
         name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
         version: latest
       azs:
