@@ -16,6 +16,7 @@ exports.deleteSecurityGroup = deleteSecurityGroup;
 exports.getServiceInstancePermissions = getServiceInstancePermissions;
 exports.getServiceInstance = getServiceInstance;
 exports.getServiceInstances = getServiceInstances;
+exports.getServiceInstancesInSpaceWithName = getServiceInstancesInSpaceWithName;
 exports.updateServiceInstance = updateServiceInstance;
 exports.findServiceBrokerByName = findServiceBrokerByName;
 exports.getServicePlans = getServicePlans;
@@ -27,6 +28,7 @@ exports.getOrganization = getOrganization;
 exports.getPlans = getPlans;
 exports.findServicePlan = findServicePlan;
 exports.getSpaceDevelopers = getSpaceDevelopers;
+exports.findServicePlanByInstanceId = findServicePlanByInstanceId;
 
 function getInfo(options) {
   return nock(cloudControllerUrl)
@@ -285,6 +287,43 @@ function getServiceInstances(plan_guid, size, space_guid, org_guid) {
     })
     .reply(200, {
       resources: instances
+    });
+}
+
+function getServiceInstancesInSpaceWithName(instance_name, space_guid, present) {
+  let instances = [];
+  if (present === true) {
+    instances = [{
+      metadata: {
+        guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+      }
+    }];
+  }
+  return nock(cloudControllerUrl)
+    .get(`/v2/service_instances`)
+    .query({
+      q: [`space_guid:${space_guid}`, `name:${instance_name}`]
+    })
+    .reply(200, {
+      resources: instances
+    });
+}
+
+function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id) {
+  return nock(cloudControllerUrl)
+    .get('/v2/service_plans')
+    .query({
+      q: `service_instance_guid:${instance_id}`
+    })
+    .reply(200, {
+      resources: [{
+        metadata: {
+          guid: plan_guid
+        },
+        entity: {
+          unique_id: plan_unique_id
+        }
+      }]
     });
 }
 
