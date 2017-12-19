@@ -656,8 +656,8 @@ defaults: &defaults
           agent: *agent_rabbitmq
           template: <%= base64_template('rabbitmq') %>
           releases: &dedicated_releases
-          - { name: rabbitmq, version: 14 }
-          - { name: broker-agent-rabbitmq, version: 25+dev.1 }
+          - { name: rabbitmq, version: 16 }
+          - { name: broker-agent-rabbitmq, version: 26 }
           context: &context_plan6
             agent: *agent_rabbitmq
             resource_pool: micro
