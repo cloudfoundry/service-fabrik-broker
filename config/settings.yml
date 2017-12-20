@@ -657,7 +657,7 @@ defaults: &defaults
           template: <%= base64_template('rabbitmq') %>
           releases: &dedicated_releases
           - { name: rabbitmq, version: 16 }
-	        # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-rabbitmq, version: 26 }
           context: &context_plan6
             agent: *agent_rabbitmq
