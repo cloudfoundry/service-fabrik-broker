@@ -41,6 +41,7 @@ describe('dashboard', function () {
     });
 
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
+      this.slow(1500);
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
