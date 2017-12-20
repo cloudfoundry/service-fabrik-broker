@@ -128,7 +128,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
-          mocks.director.createBindingProperty(binding_id);
+          mocks.director.createBindingProperty(binding_id, {}, deployment_name, mocks.virtualHostAgent.credentials);
           mocks.cloudProvider.download(pathname, data);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -146,7 +146,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                credentials: mocks.agent.credentials
+                credentials: mocks.virtualHostAgent.credentials
               });
             });
         });
@@ -157,7 +157,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentManifest();
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
-          mocks.director.getBindingProperty(binding_id);
+          mocks.director.getBindingProperty(binding_id, {}, deployment_name, false, mocks.virtualHostAgent.credentials);
           mocks.director.deleteBindingProperty(binding_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)

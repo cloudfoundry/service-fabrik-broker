@@ -41,8 +41,6 @@ describe('dashboard', function () {
     });
 
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
-      this.slow(1500);
-
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
@@ -83,10 +81,10 @@ describe('dashboard', function () {
           .then(res => {
             expect(res.body.userId).to.equal('me');
             expect(res.body.instance.metadata.guid).to.equal(instance_id);
+            expect(res.body.parent_instance.metadata.guid).to.equal(parent_instance_id);
             mocks.verify();
           });
       });
-
     });
   });
 });

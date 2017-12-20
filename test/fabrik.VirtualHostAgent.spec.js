@@ -26,21 +26,13 @@ describe('fabrik', function () {
     const credentials = {
       password: 'secret'
     };
-    const logs = [{
-      level: 'info',
-      msg: 'foo'
-    }, {
-      level: 'critical',
-      msg: 'bar'
-    }];
     let version = 2;
     let protocol = 'http';
     let pathname = 'foo';
     let expectedStatus;
     let api_version = '1.1';
     let supported_features = ['state', 'lifecycle', 'credentials', 'backup', 'multi_tenancy'];
-    let url;
-    let agent;
+    let agent = createAgent();
     let requestStub;
     const instanceId = '06e18533-48c9-4533-8686-603cbfa61c7e';
 
@@ -57,10 +49,31 @@ describe('fabrik', function () {
       return `${protocol}://${ip}:${port}/v${version}/${pathname}`;
     }
 
-    beforeEach(function () {
-      url = createUrl(pathname);
-      agent = createAgent();
+    function createStubsForPost() {
       requestStub = sinon.stub(agent, 'request');
+      requestStub
+        .withArgs({
+          method: 'POST',
+          url: createUrl(pathname),
+          auth: auth,
+          body: body
+        }, expectedStatus)
+        .returns(Promise.resolve(response));
+    }
+
+    function createStubsForDelete() {
+      requestStub = sinon.stub(agent, 'request');
+      requestStub
+        .withArgs({
+          method: 'DELETE',
+          url: createUrl(pathname),
+          auth: auth,
+          body: body
+        }, expectedStatus)
+        .returns(Promise.resolve(response));
+    }
+
+    beforeEach(function () {
       requestStub
         .withArgs({
           method: 'GET',
@@ -71,43 +84,6 @@ describe('fabrik', function () {
             api_version: api_version,
             supported_features: supported_features
           }
-        }));
-      requestStub
-        .withArgs({
-          method: 'POST',
-          url: createUrl(pathname),
-          auth: auth,
-          body: body
-        }, expectedStatus)
-        .returns(Promise.resolve(response));
-      requestStub
-        .withArgs({
-          method: 'DELETE',
-          url: createUrl(pathname),
-          auth: auth,
-          body: body
-        }, expectedStatus)
-        .returns(Promise.resolve(response));
-      requestStub
-        .withArgs({
-          method: 'GET',
-          url: createUrl(pathname),
-          auth: auth
-        }, expectedStatus)
-        .returns(Promise.resolve(response));
-      requestStub
-        .withArgs({
-          method: 'GET',
-          url: createUrl(pathname),
-          auth: auth,
-          json: false
-        }, expectedStatus)
-        .returns(Promise.resolve({
-          body: _
-            .chain(logs)
-            .map(JSON.stringify)
-            .join('\n')
-            .value(),
         }));
     });
 
@@ -120,6 +96,7 @@ describe('fabrik', function () {
         pathname = `tenants/${instanceId}`;
         expectedStatus = 200;
         _.set(body, 'parameters', {});
+        createStubsForPost();
       });
 
       after(function () {
@@ -131,6 +108,8 @@ describe('fabrik', function () {
           .createVirtualHost(ips, instanceId)
           .then(() => {
             expect(requestStub).to.have.been.calledTwice;
+            expect(requestStub.firstCall.args[0].method).to.eql('GET');
+            expect(requestStub.secondCall.args[0].method).to.eql('POST');
           });
       });
     });
@@ -140,6 +119,7 @@ describe('fabrik', function () {
         pathname = `tenants/${instanceId}`;
         expectedStatus = 204;
         _.set(body, 'parameters', {});
+        createStubsForDelete();
       });
 
       it('returns a JSON object', function () {
@@ -147,6 +127,8 @@ describe('fabrik', function () {
           .deleteVirtualHost(ips, instanceId)
           .then(() => {
             expect(requestStub).to.have.been.calledTwice;
+            expect(requestStub.firstCall.args[0].method).to.eql('GET');
+            expect(requestStub.secondCall.args[0].method).to.eql('DELETE');
           });
       });
 
@@ -157,6 +139,7 @@ describe('fabrik', function () {
         pathname = `tenants/${instanceId}/credentials`;
         expectedStatus = 200;
         _.set(body, 'parameters', parameters);
+        createStubsForPost();
       });
 
       after(function () {
@@ -169,6 +152,8 @@ describe('fabrik', function () {
           .then(body => {
             expect(body).to.equal(response.body);
             expect(requestStub).to.have.been.calledTwice;
+            expect(requestStub.firstCall.args[0].method).to.eql('GET');
+            expect(requestStub.secondCall.args[0].method).to.eql('POST');
           });
       });
     });
@@ -178,6 +163,7 @@ describe('fabrik', function () {
         pathname = `tenants/${instanceId}/credentials`;
         expectedStatus = 204;
         _.set(body, 'credentials', credentials);
+        createStubsForDelete();
       });
 
       after(function () {
@@ -189,6 +175,8 @@ describe('fabrik', function () {
           .deleteCredentials(ips, instanceId, credentials)
           .then(() => {
             expect(requestStub).to.have.been.calledTwice;
+            expect(requestStub.firstCall.args[0].method).to.eql('GET');
+            expect(requestStub.secondCall.args[0].method).to.eql('DELETE');
           });
       });
     });
