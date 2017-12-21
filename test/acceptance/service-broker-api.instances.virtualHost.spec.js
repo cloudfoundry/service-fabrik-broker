@@ -100,29 +100,6 @@ describe('service-broker-api', function () {
         });
       });
 
-      describe('#deprovision', function () {
-        it('returns 200 OK', function () {
-          mocks.director.getDeploymentManifest();
-          mocks.agent.getInfo();
-          mocks.virtualHostAgent.deleteVirtualHost(instance_id);
-          mocks.cloudProvider.remove(pathname);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              accepts_incomplete: accepts_incomplete
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              mocks.verify();
-            });
-        });
-      });
-
       describe('#bind', function () {
         it('returns 201 Created', function () {
           mocks.director.getDeploymentManifest();
@@ -171,6 +148,48 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+      });
+
+      describe('#deprovision', function () {
+        it('returns 200 OK', function () {
+          mocks.director.getDeploymentManifest();
+          mocks.agent.getInfo();
+          mocks.virtualHostAgent.deleteVirtualHost(instance_id);
+          mocks.cloudProvider.remove(pathname);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              mocks.verify();
+            });
+        });
+        it('returns 410 Gone when parent service instance is deleted', function () {
+          mocks.director.getDeployment(deployment_name, false, undefined, 2);
+          mocks.cloudProvider.download(pathname, data);
+          mocks.cloudProvider.remove(pathname);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(410);
               mocks.verify();
             });
         });
