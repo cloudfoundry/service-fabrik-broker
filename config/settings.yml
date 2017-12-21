@@ -156,7 +156,7 @@ defaults: &defaults
       cert: <%= certificate('broker.crt') %>
 
   reporting:
-    max_allowed_no_backup_days_in_row: 4
+    max_allowed_no_backup_days_in_row: 3
 
   ####################
   # MONGODB SETTINGS #
