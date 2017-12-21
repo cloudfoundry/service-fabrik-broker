@@ -23,15 +23,23 @@ const redirect_uri = `${external.protocol}://${external.host}/manage/auth/cf/cal
 
 const cloudProviders = {
   openstack: {
-    authUrl: 'https://myopenstackcloud.com:5000',
+   
+    auth_url: 'https://cluster-4.eu-de-1.cloud.sap:5000/v3',
+    authUrl: 'https://cluster-4.eu-de-1.cloud.sap:5000/v3',
+    container: 'cf.service-fabrik-dev2.sc6.sapcloud.io-service-fabrik-broker',
+    domainName: 'HCP_CF_01',
     keystoneAuthVersion: 'v3',
-    domainName: 'MYDOMAIN',
-    tenantName: 'service-fabrik',
-    tenantId: 'tenant_id',
+    name: 'openstack',
+    password: 'C8KA9AdhS9E3hWXp',
+    projectDomainName: 'HCP_CF_01',
     region: 'eu-de-1',
-    username: 'service-fabrik-broker-backup-service-fabrik',
-    password: 'rabbitmq_password',
-    containerPrefix: 'cf.service-fabrik.myopenstack.com-service-fabrik'
+    strictSSL: false,
+    tenant_id: '945806d1a6c94eecb44a1e8946377b5d',
+    tenant_name: 'sf-docker',
+    tenantId: '945806d1a6c94eecb44a1e8946377b5d',
+    tenantName: 'sf-docker',
+    user_domain_name: 'HCP_CF_01',
+    username: 'swift-backing-service'
   },
   amazon: {
     region: 'eu-central-1',
@@ -475,7 +483,7 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0+dev.16, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.3.0+dev.19, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
@@ -707,6 +715,9 @@ development_sc6: &sc6
   <<: *defaults
   log_level: debug
   password: 'secret'
+  cf:
+    <<: *cf
+    password: gwcqura2wyfczets9voe
   directors:
   - <<: *director
     prefix: service-fabrik-backup
@@ -716,6 +727,7 @@ development_sc6: &sc6
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: ubuntu-trusty
         name: bosh-openstack-kvm-ubuntu-trusty-go_agent
         version: latest
       vm_types:
