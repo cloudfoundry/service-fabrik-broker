@@ -23,6 +23,7 @@ haproxy: net.static.slice(3,3+p('haproxy.instances',0))
   persistent_disk_pool: <%= p('disk_pool') %>
   templates:
   - { name: rabbitmq-server, release: rabbitmq }
+  # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
   - { name: broker-agent, release: broker-agent-rabbitmq }
 
 - name: haproxy_<%= net.az %>
