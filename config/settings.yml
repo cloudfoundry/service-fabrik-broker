@@ -156,7 +156,7 @@ defaults: &defaults
       cert: <%= certificate('broker.crt') %>
 
   reporting:
-    max_allowed_no_backup_days_in_row: 4
+    max_allowed_no_backup_days_in_row: 3
 
   ####################
   # MONGODB SETTINGS #
@@ -303,7 +303,7 @@ defaults: &defaults
 
   #################################
   # VIRTUAL HOST MANAGER SETTINGS #
-  #################################      
+  #################################
   virtual_host:
     provider:
       name: openstack
@@ -317,7 +317,7 @@ defaults: &defaults
       password: <%= virtualHostCloudProvider.password %>
       strictSSL: false
       container: <%= virtualHostCloudProvider.containerPrefix %>-rabbitmq
-      
+
   #############################
   # CLOUD-CONTROLLER SETTINGS #
   #############################
@@ -758,7 +758,7 @@ development: &development
       - state
       - lifecycle
       - credentials
-      - multi_tenancy  
+      - multi_tenancy
   services:
   - <<: *blueprint_service
     plans:
@@ -801,7 +801,7 @@ development: &development
           agent: *agent_rabbitmq1
           context:
             <<: *context_plan6
-            agent: *agent_rabbitmq1        
+            agent: *agent_rabbitmq1
     - <<: *shared_plan1
       manager:
         <<: *virtual_host_manager
@@ -810,7 +810,7 @@ development: &development
           agent: *agent_rabbitmq1
           context:
             <<: *context_plan7
-            agent: *agent_rabbitmq1 
+            agent: *agent_rabbitmq1
 
 boshlite2:
   <<: *development

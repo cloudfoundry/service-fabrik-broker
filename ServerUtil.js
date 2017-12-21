@@ -10,8 +10,6 @@ const logger = lib.logger;
 class HttpServer {
   static startServer(app) {
     const port = app.get('port');
-    console.log(port);
-    console.log('=>>>>>>>>>>>>>>>>>');
     const title = app.get('title');
     const ssl = app.get('ssl');
     const type = app.get('type');

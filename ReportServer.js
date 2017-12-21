@@ -1,6 +1,5 @@
 'use strict';
 
-// const _ = require('lodash');
 console.log('Starting Service Fabrik...');
 const lib = require('./lib');
 const routes = lib.routes;
