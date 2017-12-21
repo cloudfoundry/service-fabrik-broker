@@ -51,6 +51,38 @@ const cloudProviders = {
   }
 };
 const cloudProvider = cloudProviders.openstack;
+
+const virtualHostCloudProviders = {
+  openstack: {
+    authUrl: 'https://myopenstackcloud.com:5000',
+    keystoneAuthVersion: 'v3',
+    domainName: 'MYDOMAIN',
+    tenantName: 'service-fabrik',
+    tenantId: '95e3d3a07ac545a9b35bdf7b788a5dc1',
+    region: 'eu-de-1',
+    username: 'service-fabrik-rabbitmq-backup-service-fabrik',
+    password: 'eaRp0vq4p/4TB9nuyGlpxV/A',
+    containerPrefix: 'cf.service-fabrik.myopenstack.com-service-fabrik'
+  },
+  amazon: {
+    region: 'eu-central-1',
+    keyId: 'AKIAJQMIPSMOONXR6T3A',
+    key: 'i7tXqp8DINojXzVH8Coo+fdnrYnxCPnodYYecCP1',
+    containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
+  },
+  azure: {
+    subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    resource_group: 'rg-abc',
+    client_id: 'ccccccccc-cccc-cccc-cccc-cccccccccccc',
+    client_secret: 'abc4356=',
+    tenant_id: 'tttttttt-tttt-tttt-tttt-tttttttttttt',
+    storageAccount: 'storageacc',
+    storageAccessKey: 'YWJjMTIzIT8kKiYoKSctPUB+',
+    container: 'rabbitmqsamplecontainer'
+  }
+};
+const virtualHostCloudProvider = virtualHostCloudProviders.openstack;
+
 %>---
 defaults: &defaults
   ####################
@@ -245,6 +277,24 @@ defaults: &defaults
       password: <%= cloudProvider.password %>
       strictSSL: false
       container: <%= cloudProvider.containerPrefix %>-broker
+
+  #################################
+  # VIRTUAL HOST MANAGER SETTINGS #
+  #################################      
+  virtual_host:
+    provider:
+      name: openstack
+      authUrl: <%= virtualHostCloudProvider.authUrl %>
+      keystoneAuthVersion: <%= virtualHostCloudProvider.keystoneAuthVersion %>
+      domainName: <%= virtualHostCloudProvider.domainName %>
+      projectDomainName: <%= virtualHostCloudProvider.domainName %>
+      tenantId: <%= virtualHostCloudProvider.tenantId %>
+      region: <%= virtualHostCloudProvider.region %>
+      username: <%= virtualHostCloudProvider.username %>
+      password: <%= virtualHostCloudProvider.password %>
+      strictSSL: false
+      container: <%= virtualHostCloudProvider.containerPrefix %>-rabbitmq
+      
   #############################
   # CLOUD-CONTROLLER SETTINGS #
   #############################
@@ -374,6 +424,17 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
+    rabbitmq: &agent_rabbitmq
+      version: '1'
+      hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy
   ########################################
   # SERVICES CATALOG - BLUEPRINT SERVICE #
   ########################################
@@ -556,6 +617,89 @@ defaults: &defaults
         - '2 GB Memory'
         - '2 GB Disk'
 
+  ####################
+  # RABBITMQ SERVICE #
+  ####################
+  - &rabbitmq_service
+    id: '19f17a7a-5247-4ee2-94b5-03eac6756388'
+    name: 'rabbitmq'
+    description: &description 'RabbitMQ messaging'
+    bindable: true
+    tags:
+    - 'rabbitmq'
+    - 'mbus'
+    - 'pubsub'
+    - 'amqp'
+    metadata:
+      displayName: 'rabbitmq'
+      longDescription: *description
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://www.rabbitmq.com/documentation.html'
+      supportUrl: 'https://www.rabbitmq.com/community.html'
+    dashboard_client:
+      id: 'service-fabrik-rabbitmq-client1'
+      secret: 'service-fabrik-rabbitmq-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &rabbitmq_plan1
+      id: 'b715f834-2048-11e7-a560-080027afc1e6'
+      name: 'v3.6-xsmall'
+      free: false
+      manager: &manager_plan6
+        name: 'director'
+        settings: &settings_plan6
+          prefix: 'rabbitmq'
+          agent: *agent_rabbitmq
+          template: <%= base64_template('rabbitmq') %>
+          releases: &dedicated_releases
+          - { name: rabbitmq, version: 16 }
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          - { name: broker-agent-rabbitmq, version: 26 }
+          context: &context_plan6
+            agent: *agent_rabbitmq
+            resource_pool: micro
+            disk_pool: hdd_1gb
+      description: 'RabbitMQ 3.6 service x-small'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '3 Node Cluster'
+        - '1 GB Memory'
+        - '10 GB Disk'
+
+    ###########################
+    # SHARED SERVICE PLANS #
+    ###########################
+    - &shared_plan1
+      id: 'd035f948-5d3a-43d7-9aec-954e134c3e9d'
+      name: 'virtual_host'
+      free: true
+      manager: &virtual_host_manager
+        name: 'virtual_host'
+        settings: &settings_virtual_host
+          prefix: 'rabbitmq'
+          agent: *agent_rabbitmq
+          context: &context_plan7
+            agent: *agent_rabbitmq
+      description: 'Virtual host in a RabbitMQ cluster (managed service in beta)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Shared Deployment'
+        - '1 VirtualHost'
+
+
 development: &development
   <<: *defaults
   log_level: debug
@@ -581,6 +725,17 @@ development: &development
       - state
       - lifecycle
       - credentials
+    rabbitmq: &agent_rabbitmq1
+      version: '1'
+      hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy  
   services:
   - <<: *blueprint_service
     plans:
@@ -613,7 +768,26 @@ development: &development
           context:
             <<: *context_plan5
             agent: *agent_blueprint1
-
+  - <<: *rabbitmq_service
+    plans:
+    - <<: *rabbitmq_plan1
+      manager:
+        <<: *manager_plan6
+        settings:
+          <<: *settings_plan6
+          agent: *agent_rabbitmq1
+          context:
+            <<: *context_plan6
+            agent: *agent_rabbitmq1        
+    - <<: *shared_plan1
+      manager:
+        <<: *virtual_host_manager
+        settings:
+          <<: *settings_virtual_host
+          agent: *agent_rabbitmq1
+          context:
+            <<: *context_plan7
+            agent: *agent_rabbitmq1 
 
 boshlite2:
   <<: *development
