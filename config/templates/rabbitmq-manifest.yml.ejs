@@ -1,0 +1,151 @@
+<%= spec.header.select({disk_pools: [p('disk_pool')], resource_pools: [{name: p('resource_pool')}]}) %>
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 1000-100000
+  update_watch_time: 1000-100000
+  serial: false
+
+jobs: &jobs
+<%
+const net = spec.networks[0];
+const members = {
+rabbitmq: net.static.slice(0,3),
+haproxy: net.static.slice(3,3+p('haproxy.instances',0))
+};
+%>
+- name: rabbitmq_<%= net.az %>
+  instances: <%= members.rabbitmq.length %>
+  networks:
+  - name: <%= net.name %>
+    static_ips: <%= JSON.stringify(members.rabbitmq) %>
+  resource_pool: <%= `${p('resource_pool')}_${net.az}` %>
+  persistent_disk_pool: <%= p('disk_pool') %>
+  templates:
+  - { name: rabbitmq-server, release: rabbitmq }
+  # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+  - { name: broker-agent, release: broker-agent-rabbitmq }
+
+- name: haproxy_<%= net.az %>
+  instances: <%= members.haproxy.length %>
+  networks:
+  - name: <%= net.name %>
+    static_ips: <%= JSON.stringify(members.haproxy) %>
+  resource_pool: <%= `${p('resource_pool')}_${net.az}` %>
+  persistent_disk_pool: <%= p('disk_pool') %>
+  templates:
+  - { name: rabbitmq-haproxy, release: rabbitmq }
+  - { name: broker-agent, release: broker-agent-rabbitmq }
+
+<%
+const properties = {};
+
+if (!spec.previous_manifest) {
+/* create scenario: pick random service instance properties */
+properties.rabbitmq = {
+ administrators: {
+   broker: {
+     username: SecureRandom.hex(16),
+     password: SecureRandom.hex(16)
+   }
+ },
+ cookie: SecureRandom.hex(16)
+};
+properties.haproxy = {
+ stats: {
+   username: SecureRandom.hex(16),
+   password: SecureRandom.hex(16)
+ }
+};
+properties.plugin = {
+ mqtt_enabled: false,
+ stomp_enabled: false
+};
+} else {
+/* ensure that the first IP is not changed - clutset will not start otherwise */
+var new_ip = members.rabbitmq[0];
+var job_name = `rabbitmq_${net.az}`;
+var old_job = spec.previous_manifest.jobs.find((job) => {
+ return job.name === job_name;
+});
+var old_ip = old_job.networks[0].static_ips[0]
+if (old_ip !== new_ip) {
+ throw new Error(`IP addresses must not change! Old IP: ${old_ip}  new ip: ${new_ip}`);
+}
+/* update scenario: preserve previous service instance properties */
+properties.rabbitmq = spec.previous_manifest.properties['rabbitmq-server'];
+properties.haproxy = spec.previous_manifest.properties['rabbitmq-haproxy'];
+properties.plugin = spec.previous_manifest.properties.plugin;
+properties.plugin = {
+ mqtt_enabled: _.get(spec.parameters, 'mqtt_enabled', properties.plugin.mqtt_enabled),
+ stomp_enabled: _.get(spec.parameters, 'stomp_enabled', properties.plugin.stomp_enabled)
+};
+}
+properties.rabbitmq.static_ips = members.rabbitmq;
+if ( members.haproxy.length ) {
+properties.haproxy.static_ips =  members.haproxy;
+}
+properties.plugin.endpoint_ips = members.haproxy.length ? members.haproxy : members.rabbitmq;
+%>
+
+properties:
+<% if ( properties.haproxy.static_ips ) { %>
+ haproxy:    
+   static_ips: <%= JSON.stringify(properties.haproxy.static_ips) %>
+<% } %>
+ rabbitmq-server: &rabbitmq_server
+  plugins:
+   - rabbitmq_management
+   - rabbitmq_jms_topic_exchange
+    <% if (properties.plugin.mqtt_enabled) { %>
+    - rabbitmq_mqtt
+    - rabbitmq_web_mqtt
+    <% } %>
+    <% if (properties.plugin.stomp_enabled) { %>
+    - rabbitmq_stomp
+    - rabbitmq_web_stomp
+    <% } %>
+  administrators:
+   management:
+     username: <%= properties.rabbitmq.administrators.broker.username %>
+     password: <%= properties.rabbitmq.administrators.broker.password %>
+   broker:
+     username: <%= properties.rabbitmq.administrators.broker.username %>
+     password: <%= properties.rabbitmq.administrators.broker.password %>
+  cookie: <%= properties.rabbitmq.cookie %>
+  static_ips: <%= JSON.stringify(properties.rabbitmq.static_ips) %>
+  disk_alarm_threshold: 50000000
+ rabbitmq-haproxy: &rabbitmq_haproxy
+  ports:
+    - 5672
+    <% if (properties.plugin.mqtt_enabled) { %>
+    - 1883
+    - 15675
+    <% } %>
+    <% if (properties.plugin.stomp_enabled) { %>
+    - 61613
+    - 15674
+    <% } %>
+    - 15672
+  server_ips: <%= JSON.stringify(properties.rabbitmq.static_ips) %>
+  stats:
+   username: <%= properties.haproxy.stats.username %>
+   password: <%= properties.haproxy.stats.password %>
+ plugin: &plugin
+  vhost_name: production
+  endpoint_ips: <%= JSON.stringify(properties.plugin.endpoint_ips) %>
+  operator_set_policy:
+   enabled: true
+   name: "operator_set_policy"
+   priority: 50
+  mqtt_enabled:  <%= properties.plugin.mqtt_enabled %>
+  stomp_enabled: <%= properties.plugin.stomp_enabled %>
+ agent:
+  username: <%= JSON.stringify(p('agent.auth.username')) %>
+  password: <%= JSON.stringify(p('agent.auth.password')) %>
+  manifest:
+   jobs: *jobs
+   properties:
+     rabbitmq-server: *rabbitmq_server
+     rabbitmq-haproxy: *rabbitmq_haproxy
+     plugin: *plugin

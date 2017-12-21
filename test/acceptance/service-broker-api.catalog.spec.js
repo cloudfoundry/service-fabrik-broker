@@ -17,7 +17,7 @@ describe('service-broker-api', function () {
         .then(res => {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
-          expect(res.body.services).to.have.length(1);
+          expect(res.body.services).to.have.length(2);
         });
     });
 
