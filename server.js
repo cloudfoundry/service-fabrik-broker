@@ -6,10 +6,10 @@ const routes = lib.routes;
 const errors = require('./lib/errors');
 const logger = lib.logger;
 const HttpServer = require('./ServerUtil');
-const ExpressApp = require('./ExpressApp');
+const FabrikApp = require('./FabrikApp');
 
 lib.bootstrap();
-const internal = ExpressApp.createApp('internal', app => {
+const internal = FabrikApp.createApp('internal', app => {
   // home
   app.get('/', (req, res) => {
     res.render('index', {
@@ -22,7 +22,7 @@ const internal = ExpressApp.createApp('internal', app => {
 });
 
 // exernal app
-const external = ExpressApp.createApp('external', app => {
+const external = FabrikApp.createApp('external', app => {
   // home
   app.get('/', (req, res) => {
     res.render('index', {

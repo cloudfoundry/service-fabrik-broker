@@ -1,14 +1,14 @@
 'use strict';
 
-console.log('Starting Service Fabrik...');
+console.log('Starting Service Fabrik Report App...');
 const lib = require('./lib');
 const routes = lib.routes;
 const errors = require('./lib/errors');
 const logger = lib.logger;
 const HttpServer = require('./ServerUtil');
-const ExpressApp = require('./ExpressApp');
+const FabrikApp = require('./FabrikApp');
 
-const report = ExpressApp.createApp('report', app => {
+const report = FabrikApp.createApp('report', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')

@@ -13,7 +13,7 @@ const logger = lib.logger;
 const middleware = lib.middleware;
 const connectTimeout = require('connect-timeout');
 
-class ExpressApp {
+class FabrikApp {
   static createApp(type, addRoutes) {
     const app = express();
     app.locals.moment = moment;
@@ -66,4 +66,4 @@ class ExpressApp {
     return app;
   }
 }
-module.exports = ExpressApp;
+module.exports = FabrikApp;
