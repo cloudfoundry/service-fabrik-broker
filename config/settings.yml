@@ -475,7 +475,7 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0+dev.13, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.3.0+dev.19, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
@@ -501,6 +501,7 @@ defaults: &defaults
       manager: &manager_plan4
         name: 'director'
         settings: &settings_plan4
+          ip_management: dynamic
           prefix: 'blueprint'
           agent: *agent_blueprint
           update_predecessors:
@@ -716,6 +717,7 @@ development_sc6: &sc6
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: ubuntu-trusty
         name: bosh-openstack-kvm-ubuntu-trusty-go_agent
         version: latest
       vm_types:
@@ -732,6 +734,17 @@ development_sc6: &sc6
             security_groups:
             - service-fabrik-bosh-services
             subnet: b7089c41-e529-4044-943b-174b92ad6074
+      - name: default_dynamic
+        type: manual
+        ip_management: dynamic
+        subnets:
+        - range: 10.11.64.0/18
+          az: z1
+          cloud_properties:
+            net_id: fd602ea5-2a2c-410f-b7f4-50b23cc901dc
+            security_groups:
+            - service-fabrik-bosh-services
+            subnet: 4054d12c-0105-4b2b-b691-80a26634c132
       - &fabrik_network
         name: service_fabrik
         type: manual
@@ -824,7 +837,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: warn
+  log_level: debug
   enable_circuit_breaker: false
   external:
     <<: *external

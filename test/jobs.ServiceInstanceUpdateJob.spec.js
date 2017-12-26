@@ -174,7 +174,6 @@ describe('Jobs', function () {
         .then(() => {
           mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
-          console.log(baseJobLogRunHistoryStub.firstCall.args[0]);
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -208,7 +207,9 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_operation_guid: backup_guid,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       return ServiceInstanceUpdateJob
         .run(job, () => {})
@@ -247,7 +248,9 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       return ServiceInstanceUpdateJob
         .run(job, () => {})
@@ -295,7 +298,9 @@ describe('Jobs', function () {
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
         update_operation_guid: backup_guid,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       return ServiceInstanceUpdateJob
         .run(job, () => {})
@@ -338,7 +343,9 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       return ServiceInstanceUpdateJob
         .run(job, () => {})
@@ -381,7 +388,9 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
       config.scheduler.jobs.service_instance_update.max_attempts = 1;
@@ -432,7 +441,9 @@ describe('Jobs', function () {
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.FAILED,
-        diff: utils.unifyDiffResult({diff: diff})
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
       };
       const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
       config.scheduler.jobs.service_instance_update.max_attempts = 0;

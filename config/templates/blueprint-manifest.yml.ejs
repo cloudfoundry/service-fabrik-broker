@@ -10,6 +10,7 @@ update:
 instance_groups: &instance_groups
 <%
 const net = spec.networks[0];
+const ip_management = net.ip_management;
 const stemcell = spec.stemcell;
 const members = net.static.slice(0,1);
 const properties = {};
@@ -36,7 +37,9 @@ if (!spec.previous_manifest) {
   instances: <%= members.length %>
   networks:
   - name: <%= net.name %>
+   <% if (ip_management != "dynamic") {%>
     static_ips: <%= JSON.stringify(members) %>
+   <% } %>
   vm_type: <%= p('vm_type') %>
   persistent_disk_type: <%= p('disk_type') %>
   stemcell: <%= stemcell.alias %>

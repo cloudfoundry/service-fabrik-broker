@@ -12,13 +12,12 @@ describe('bosh', () => {
             name: 'default',
             subnet_name: 'default_z1',
             type: 'manual',
+            ip_management: 'static',
             cloud_properties: {
               name: 'random'
             }
           });
-
-          let expectedJSON = _.omit(network, ['cloud_properties', 'subnet_name']);
-
+          const expectedJSON = _.omit(network, ['cloud_properties', 'subnet_name', 'ip_management']);
           expect(network.toJSON()).to.eql(expectedJSON);
         });
       });
