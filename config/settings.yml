@@ -155,9 +155,6 @@ defaults: &defaults
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
 
-  reporting:
-    max_allowed_no_backup_days_in_row: 3
-
   ####################
   # MONGODB SETTINGS #
   ####################
@@ -288,6 +285,7 @@ defaults: &defaults
     backup_restore_status_poller_timeout: 86400000 # (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
     backup_restore_status_check_every: 120000 # (ms) Check the status of deployment backup/restore once every 2 mins
     abort_time_out: 300000 #(ms) Timeout time for abort of backup to complete
+    max_allowed_no_backup_days_in_row: 3 # Max allowed no backup days in a row
     provider:
       name: openstack
       authUrl: <%= cloudProvider.authUrl %>
