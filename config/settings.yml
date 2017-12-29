@@ -874,10 +874,10 @@ development_sc6: &sc6
         - range: 10.11.0.0/18
           az: z1
           cloud_properties:
-            net_id: b7089c41-e529-4044-943b-174b92ad6074
+            net_id: 6bfbdf39-4a91-4d23-9093-dde1d6924791
             security_groups:
             - service-fabrik-bosh-services
-            subnet: 0eb5279a-a228-4bf0-a29f-a63ad36db979
+            subnet: 5757fec6-0566-4c97-8f37-e15c097f0d63
       - &fabrik_network
         name: service_fabrik
         type: manual
