@@ -5,7 +5,7 @@ const lib = require('./lib');
 const routes = lib.routes;
 const errors = require('./lib/errors');
 const logger = lib.logger;
-const HttpServer = require('./ServerUtil');
+const HttpServer = require('./HttpServer');
 const FabrikApp = require('./FabrikApp');
 
 lib.bootstrap();

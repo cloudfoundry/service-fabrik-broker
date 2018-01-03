@@ -4,10 +4,10 @@ const lib = require('../../lib');
 const app = require('../../apps').report;
 const config = lib.config;
 
-describe('service-fabrik-admin', function () {
+describe('service-fabrik-report', function () {
   /* jshint expr:true */
   describe('backupreport', function () {
-    const base_url = '/report';
+    const base_url = '/admin/report';
     const start_time = '2017-11-09';
     const end_time = '2017-11-26';
     const instance_id = '9999-8888-7777-6666';

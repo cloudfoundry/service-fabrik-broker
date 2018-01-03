@@ -19,17 +19,17 @@ class HttpServer {
     server.listen(port);
 
     function onerror(err) {
-      logger.error('Error occurred. Server will stop - ', err);
+      logger.error(`${title}: Error occurred. Server will stop - `, err);
       if (err.syscall !== 'listen') {
         throw err;
       }
       switch (err.code) {
       case 'EACCES':
-        logger.error('Port ' + port + ' requires elevated privileges');
+        logger.error(`${title}: Port ${port} requires elevated privileges`);
         process.exit(1);
         break;
       case 'EADDRINUSE':
-        logger.error('Port ' + port + ' is already in use');
+        logger.error(`${title}: Port ${port} is already in use`);
         process.exit(1);
         break;
       default:
@@ -38,7 +38,7 @@ class HttpServer {
     }
 
     function onlistening() {
-      logger.info(`${title} successfully started listening on port ${port}`);
+      logger.info(`${title}: successfully started listening on port ${port}`);
       pubsub.publish(CONST.TOPIC.APP_STARTUP, {
         type: type
       });

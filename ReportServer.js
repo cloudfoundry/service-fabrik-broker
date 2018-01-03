@@ -5,7 +5,7 @@ const lib = require('./lib');
 const routes = lib.routes;
 const errors = require('./lib/errors');
 const logger = lib.logger;
-const HttpServer = require('./ServerUtil');
+const HttpServer = require('./HttpServer');
 const FabrikApp = require('./FabrikApp');
 
 const report = FabrikApp.createApp('report', app => {
@@ -14,7 +14,7 @@ const report = FabrikApp.createApp('report', app => {
       title: app.get('title')
     });
   });
-  app.use('/report', routes.report);
+  app.use('/admin/report', routes.report);
 });
 
 HttpServer.startServer(report);

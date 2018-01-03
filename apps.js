@@ -38,7 +38,7 @@ const report = FabrikApp.createApp('report', app => {
       title: app.get('title')
     });
   });
-  app.use('/report', routes.report);
+  app.use('/admin/report', routes.report);
 });
 
 module.exports = _
