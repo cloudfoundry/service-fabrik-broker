@@ -35,6 +35,9 @@ var DirectorManager = proxyquire('../lib/fabrik/DirectorManager', {
 describe('fabrik', function () {
   describe('DirectorManager', function () {
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+    const xsmall_plan_id = plan_id;
+    const small_plan_id = 'bc158c9a-7934-401e-94ab-057082a5073e';
+    let killJsHintWarning;
     let manager;
 
     before(function () {
@@ -55,6 +58,26 @@ describe('fabrik', function () {
         manager.findNetworkSegmentIndex(used_guid).then(res => expect(res).to.eql(21));
       });
     });
-
+    describe('#isRestorePossible', function () {
+      it('should return false when plan not in restore_predecessors', function () {
+        // restore not possible from small to xsmall
+        manager = new DirectorManager(catalog.getPlan(xsmall_plan_id));
+        manager.update_predecessors = [];
+        killJsHintWarning = expect(manager.isRestorePossible(small_plan_id)).to.be.false;
+      });
+      it('should return true when plan not in restore_predecessors', function () {
+        // restore possible from xsmall to small
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        manager.update_predecessors = [xsmall_plan_id];
+        killJsHintWarning = expect(manager.isRestorePossible(xsmall_plan_id)).to.be.true;
+      });
+    });
+    describe('#restorePredecessors', function () {
+      it('should return update_predecessors if restore_predecessors is not defined', function () {
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        manager.update_predecessors = [xsmall_plan_id];
+        expect(manager.restorePredecessors).to.eql(manager.update_predecessors);
+      });
+    });
   });
 });

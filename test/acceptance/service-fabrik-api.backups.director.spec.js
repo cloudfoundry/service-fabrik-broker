@@ -15,13 +15,12 @@ describe('service-fabrik-api', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-      const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const container = backupStore.containerName;
       const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const instance_id = 'ab0ed6d6-42d9-4318-9b65-721f34719499';
       const started_at = '2015-11-18T11-28-42Z';
       const prefix = `${space_guid}/backup`;
-      const filename = `${prefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+      const filename = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
       const pathname = `/${container}/${filename}`;
       const data = {
         backup_guid: backup_guid,

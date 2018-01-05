@@ -239,7 +239,7 @@ describe('service-fabrik-api', function () {
         });
       });
       describe('#backup-start', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}.${backup_guid}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
         const filename = `${prefix}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const type = 'online';
@@ -252,7 +252,7 @@ describe('service-fabrik-api', function () {
           type: type,
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
         };
-        const list_prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time+1)}.json`;
         const list_pathname = `/${container}/${list_filename}`;
@@ -579,7 +579,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-state', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const filename = `${prefix}.${backup_guid}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -670,7 +670,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-abort', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const filename = `${prefix}.${backup_guid}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -735,10 +735,10 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-start', function () {
-        const restorePrefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const restoreFilename = `${restorePrefix}.json`;
-        const backupFilename = `${backupPrefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
         const name = 'restore';
@@ -1005,7 +1005,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-state', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const filename = `${prefix}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -1061,7 +1061,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-abort', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const filename = `${prefix}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -1124,9 +1124,9 @@ describe('service-fabrik-api', function () {
 
       describe('#listLastBackups', function () {
         const prefix = `${space_guid}/backup/${service_id}`;
-        const filename1 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename2 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${isoDate(time+1)}.json`;
-        const filename3 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${isoDate(time+2)}.json`;
+        const filename1 = `${prefix}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const filename2 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+1)}.json`;
+        const filename3 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+2)}.json`;
         const pathname3 = `/${container}/${filename3}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
@@ -1165,8 +1165,8 @@ describe('service-fabrik-api', function () {
       describe('#listLastRestores', function () {
         const instance_id2 = 'fff659f7-3fb4-4034-aaf3-ab103698f6b0';
         const prefix = `${space_guid}/restore/${service_id}`;
-        const filename1 = `${prefix}.${plan_id}.${instance_id}.json`;
-        const filename2 = `${prefix}.${plan_id}.${instance_id2}.json`;
+        const filename1 = `${prefix}.${instance_id}.json`;
+        const filename2 = `${prefix}.${instance_id2}.json`;
         const pathname1 = `/${container}/${filename1}`;
         const pathname2 = `/${container}/${filename2}`;
         const data = {
@@ -1209,8 +1209,8 @@ describe('service-fabrik-api', function () {
         const prefix = `${space_guid}/backup`;
         const started14DaysPrior = filename.isoDate(moment()
           .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-        const filenameObj = `${prefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename14DaysPrior = `${prefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
+        const filenameObj = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const filename14DaysPrior = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
         const pathname = `/${container}/${filenameObj}`;
         const pathName14DaysPrior = `/${container}/${filename14DaysPrior}`;
         const data = {
