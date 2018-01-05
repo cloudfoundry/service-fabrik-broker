@@ -1,6 +1,6 @@
 'use strict';
 
-console.log('Starting Service Fabrik...');
+console.log('Starting Service Fabrik Report App...');
 const lib = require('./lib');
 const routes = lib.routes;
 const errors = require('./lib/errors');
@@ -8,36 +8,16 @@ const logger = lib.logger;
 const HttpServer = require('./HttpServer');
 const FabrikApp = require('./FabrikApp');
 
-lib.bootstrap();
-const internal = FabrikApp.createApp('internal', app => {
-  // home
+const report = FabrikApp.createApp('report', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')
     });
   });
-  app.use('/admin', routes.admin);
-  // cloud foundry service broker api
-  app.use('/cf', routes.cf);
+  app.use('/admin/report', routes.report);
 });
 
-// exernal app
-const external = FabrikApp.createApp('external', app => {
-  // home
-  app.get('/', (req, res) => {
-    res.render('index', {
-      title: app.get('title')
-    });
-  });
-  // service fabrik api
-  app.use('/api', routes.api);
-  // manage
-  app.use('/manage', routes.manage);
-});
-
-HttpServer.startServer(internal);
-HttpServer.startServer(external);
-
+HttpServer.startServer(report);
 process.on('SIGTERM', HttpServer.notifyShutDown);
 process.on('SIGINT', HttpServer.notifyShutDown);
 process.on('unhandledRejection', (reason, p) => {
