@@ -19,6 +19,11 @@ const external = {
   host: `${broker_name}.bosh-lite.com`,
   port: 9292
 };
+const report = {
+  protocol: 'https',
+  ip: ip,
+  port: 9294
+};
 const redirect_uri = `${external.protocol}://${external.host}/manage/auth/cf/callback`;
 
 const cloudProviders = {
@@ -131,6 +136,21 @@ defaults: &defaults
     ip: <%= internal.ip %>
     protocol: <%= internal.protocol%>
     host: <%= `${internal.ip}:${internal.port}` %>
+    ssl:
+      key: <%= certificate('broker.key') %>
+      cert: <%= certificate('broker.crt') %>
+
+
+  ##############################
+  # REPORT ENDPOINT SETTINGS #
+  ##############################
+  report: &report
+    log_event: true
+    event_type: SF.REPORT
+    port: <%= report.port %>
+    ip: <%= report.ip %>
+    protocol: <%= report.protocol%>
+    host: <%= `${report.ip}:${report.port}` %>
     ssl:
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
@@ -265,6 +285,7 @@ defaults: &defaults
     backup_restore_status_poller_timeout: 86400000 # (ms) Deployment backup/restore must finish within this timeout time (24 hrs)
     backup_restore_status_check_every: 120000 # (ms) Check the status of deployment backup/restore once every 2 mins
     abort_time_out: 300000 #(ms) Timeout time for abort of backup to complete
+    consecutive_backup_failure_sla_count: 3 # Max allowed no backup days in a row
     provider:
       name: openstack
       authUrl: <%= cloudProvider.authUrl %>
@@ -280,7 +301,7 @@ defaults: &defaults
 
   #################################
   # VIRTUAL HOST MANAGER SETTINGS #
-  #################################      
+  #################################
   virtual_host:
     provider:
       name: openstack
@@ -294,7 +315,7 @@ defaults: &defaults
       password: <%= virtualHostCloudProvider.password %>
       strictSSL: false
       container: <%= virtualHostCloudProvider.containerPrefix %>-rabbitmq
-      
+
   #############################
   # CLOUD-CONTROLLER SETTINGS #
   #############################
@@ -735,7 +756,7 @@ development: &development
       - state
       - lifecycle
       - credentials
-      - multi_tenancy  
+      - multi_tenancy
   services:
   - <<: *blueprint_service
     plans:
@@ -778,7 +799,7 @@ development: &development
           agent: *agent_rabbitmq1
           context:
             <<: *context_plan6
-            agent: *agent_rabbitmq1        
+            agent: *agent_rabbitmq1
     - <<: *shared_plan1
       manager:
         <<: *virtual_host_manager
@@ -787,7 +808,7 @@ development: &development
           agent: *agent_rabbitmq1
           context:
             <<: *context_plan7
-            agent: *agent_rabbitmq1 
+            agent: *agent_rabbitmq1
 
 boshlite2:
   <<: *development

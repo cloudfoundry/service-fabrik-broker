@@ -1,0 +1,26 @@
+---
+defaults:
+  http_success_codes:
+  - 200
+  - 201
+  http_inprogress_codes:
+  - 202
+  log_inprogress_state: true # flag that is used to determine if async operations in-progress state is to be logged
+  cf_last_operation: false # flag to indicate if a particular HTTP operation is to be treated as cf-lastoperation semantics additionally
+  ignore_service_fabrik_operation: false # flag to indicate if service-fabrik operations are to be excluded. for ex. broker update (HTTP Patch)
+                                         #  gets invoked via backup/restore etc, which are to be ignored when coming via HTTP Patch.
+  include_response_body: false # wheter HTTP response body is to be logged after sanitization or not
+"/report/backups/summary/:instance_id":
+  GET:
+    enabled: true
+    event_name: instance_backup_summary
+    description: Get backup summary of instance
+    tags:
+    - backup
+"/report/backups/scheduled_instances":
+  GET:
+    enabled: true
+    event_name: scheduled_backup_instance_list
+    description: Get list of scheduled backup instances
+    tags:
+    - backup

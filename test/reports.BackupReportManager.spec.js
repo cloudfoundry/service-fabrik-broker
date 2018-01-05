@@ -214,7 +214,7 @@ describe('BackupReportManager', function () {
         backupsSucceeded: succeededBackupCount,
         backupFailed: (resultBackups.length - succeededBackupCount),
         failedBackupGuids: resultBackups.slice(succeededBackupCount),
-        failedBackups3daysInARow: 2
+        failureCountForNConsecutiveDays: 2
       };
       return BackupReportManager.getInstanceBackupSummary(instanceId, startTime, endTime)
         .then(summary => {
