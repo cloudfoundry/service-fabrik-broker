@@ -14,7 +14,7 @@ const middleware = lib.middleware;
 const connectTimeout = require('connect-timeout');
 
 class FabrikApp {
-  static createApp(type, addRoutes) {
+  static create(type, addRoutes) {
     const app = express();
     app.locals.moment = moment;
     const cfg = _.get(config, type);

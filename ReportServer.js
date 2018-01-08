@@ -3,12 +3,10 @@
 console.log('Starting Service Fabrik Report App...');
 const lib = require('./lib');
 const routes = lib.routes;
-const errors = require('./lib/errors');
-const logger = lib.logger;
 const HttpServer = require('./HttpServer');
 const FabrikApp = require('./FabrikApp');
 
-const report = FabrikApp.createApp('report', app => {
+const report = FabrikApp.create('report', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')
@@ -17,16 +15,7 @@ const report = FabrikApp.createApp('report', app => {
   app.use('/admin/report', routes.report);
 });
 
-HttpServer.startServer(report);
-process.on('SIGTERM', HttpServer.notifyShutDown);
-process.on('SIGINT', HttpServer.notifyShutDown);
-process.on('unhandledRejection', (reason, p) => {
-  if (reason && reason instanceof errors.DBUnavailable) {
-    logger.error('DB unavailable. shutting down app');
-    HttpServer.notifyShutDown();
-  } else {
-    logger.error('Unhandled Rejection at:', p, 'reason:', reason);
-  }
-});
+HttpServer.start(report);
+HttpServer.handleShutdown();
 
 //https://github.com/nodejs/node-v0.x-archive/issues/5054
