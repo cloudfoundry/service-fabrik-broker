@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const lib = require('../../lib');
 const Repository = require('../../lib/db').Repository;
-const apps = require('../../apps');
+const apps = require('../support/apps');
 const config = lib.config;
 
 describe('service-fabrik-admin', function () {

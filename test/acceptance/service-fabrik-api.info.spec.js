@@ -1,6 +1,6 @@
 'use strict';
 
-const app = require('../../apps').external;
+const app = require('../support/apps').external;
 
 describe('service-fabrik-api', function () {
   describe('info', function () {

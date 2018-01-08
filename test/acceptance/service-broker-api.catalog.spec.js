@@ -1,7 +1,7 @@
 'use strict';
 
 const lib = require('../../lib');
-const app = require('../../apps').internal;
+const app = require('../support/apps').internal;
 const config = lib.config;
 
 
