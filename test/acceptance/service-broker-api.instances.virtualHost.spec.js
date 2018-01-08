@@ -2,7 +2,7 @@
 
 const lib = require('../../lib');
 const Promise = require('bluebird');
-const app = require('../../apps').internal;
+const app = require('../support/apps').internal;
 const config = lib.config;
 const virtualHostStore = lib.iaas.virtualHostStore;
 

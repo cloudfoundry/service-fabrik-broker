@@ -6,9 +6,10 @@ const pubsub = require('pubsub-js');
 const lib = require('./lib');
 const CONST = require('./lib/constants');
 const logger = lib.logger;
+const errors = require('./lib/errors');
 
 class HttpServer {
-  static startServer(app) {
+  static start(app) {
     const port = app.get('port');
     const title = app.get('title');
     const ssl = app.get('ssl');
@@ -43,6 +44,19 @@ class HttpServer {
         type: type
       });
     }
+  }
+
+  static handleShutdown() {
+    process.on('SIGTERM', HttpServer.notifyShutDown);
+    process.on('SIGINT', HttpServer.notifyShutDown);
+    process.on('unhandledRejection', (reason, p) => {
+      if (reason && reason instanceof errors.DBUnavailable) {
+        logger.error('DB unavailable. shutting down app');
+        HttpServer.notifyShutDown();
+      } else {
+        logger.error('Unhandled Rejection at:', p, 'reason:', reason);
+      }
+    });
   }
 
   static notifyShutDown() {

@@ -1,7 +1,7 @@
 'use strict';
 
 const lib = require('../../lib');
-const app = require('../../apps').report;
+const app = require('../support/apps').report;
 const config = lib.config;
 
 describe('service-fabrik-report', function () {
