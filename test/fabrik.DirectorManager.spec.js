@@ -37,7 +37,7 @@ describe('fabrik', function () {
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const xsmall_plan_id = plan_id;
     const small_plan_id = 'bc158c9a-7934-401e-94ab-057082a5073e';
-    let killJsHintWarning;
+    let return_value;
     let manager;
 
     before(function () {
@@ -63,13 +63,13 @@ describe('fabrik', function () {
         // restore not possible from small to xsmall
         manager = new DirectorManager(catalog.getPlan(xsmall_plan_id));
         manager.update_predecessors = [];
-        killJsHintWarning = expect(manager.isRestorePossible(small_plan_id)).to.be.false;
+        return_value = expect(manager.isRestorePossible(small_plan_id)).to.be.false;
       });
       it('should return true when plan not in restore_predecessors', function () {
         // restore possible from xsmall to small
         manager = new DirectorManager(catalog.getPlan(small_plan_id));
         manager.update_predecessors = [xsmall_plan_id];
-        killJsHintWarning = expect(manager.isRestorePossible(xsmall_plan_id)).to.be.true;
+        return_value = expect(manager.isRestorePossible(xsmall_plan_id)).to.be.true;
       });
     });
     describe('#restorePredecessors', function () {
