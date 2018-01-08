@@ -21,35 +21,40 @@ const directorUrl = activePrimaryConfig.url;
 
 const manifest = {
   name: 'test-deployment-name',
-  jobs: [{
-    name: 'blueprint_z1',
+  instance_groups: [{
+    name: 'blueprint',
     networks: [{
       name: 'default',
       static_ips: [parseUrl(agent.url).hostname]
-    }]
-  }],
-  properties: {
-    blueprint: {
-      admin: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    mongodb: {
-      service_agent: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    agent: {
-      provider: {
-        name: 'openstack',
-        container: config.backup.provider.container
+    }],
+    jobs: [{
+        name: 'blueprint',
+        properties: {
+          admin: {
+            username: 'admin',
+            password: 'admin'
+          },
+          mongodb: {
+            service_agent: {
+              username: 'admin',
+              password: 'admin'
+            }
+          }
+        }
       },
-      username: 'admin',
-      password: 'admin'
-    }
-  }
+      {
+        name: 'broker-agent',
+        properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
+        }
+      }
+    ]
+  }],
 };
 
 exports.url = directorUrl;

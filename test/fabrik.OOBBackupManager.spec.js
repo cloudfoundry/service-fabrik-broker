@@ -96,28 +96,22 @@ describe('fabrik', function () {
     };
 
     const manifest = {
-      jobs: [{
-        name: 'postgresql_master_z1',
+      instance_groups: [{
+        name: 'postgresql',
         instances: 1,
         networks: [{
           name: 'default',
-          static_ips: ['10.11.0.2']
+          static_ips: ['10.11.0.2', '10.11.0.3']
+        }],
+        jobs: [{
+          name: 'broker-agent',
+          properties: {
+            provider: 'openstack',
+            username: 'admin',
+            password: 'admin'
+          }
         }]
-      }, {
-        name: 'postgresql_slave_z1',
-        instances: 1,
-        networks: [{
-          name: 'default',
-          static_ips: ['10.11.0.3']
-        }]
-      }],
-      properties: {
-        agent: {
-          provider: 'openstack',
-          username: 'admin',
-          password: 'admin'
-        }
-      }
+      }]
     };
 
     before(function () {
