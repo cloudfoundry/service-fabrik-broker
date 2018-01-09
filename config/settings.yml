@@ -107,6 +107,7 @@ defaults: &defaults
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
   http_timeout: 175000
+  multi_az_enabled: false
 
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
