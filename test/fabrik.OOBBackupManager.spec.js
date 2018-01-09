@@ -25,6 +25,7 @@ describe('fabrik', function () {
       cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
       job: 'postgresql_master_z1',
       index: 0,
+      ips: ['10.11.0.2'],
       iaas_vm_metadata: {
         'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
       },
@@ -34,6 +35,7 @@ describe('fabrik', function () {
       cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
       job: 'postgresql_slave_z1',
       index: 0,
+      ips: ['10.11.0.3'],
       iaas_vm_metadata: {
         'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
       },
@@ -189,6 +191,7 @@ describe('fabrik', function () {
         backup_guid: undefined,
         agent_ip: '10.11.0.2'
       };
+      mocks.director.getDeploymentVms(deploymentName);
       return oobBackupManager.startBackup(opts).then(result => {
         expect(startBackupStub).to.be.calledOnce;
         expect(putFileStub).to.be.calledOnce;

@@ -76,10 +76,10 @@ class MockBoshDirectorClient extends BoshDirectorClient {
   }
 
   populateCache() {
-    this.cache = {};
+    this.boshConfigCache = {};
     this.cacheLoadInProgress = populateCacheInProgress;
     logger.info(`Stubbed populate cache - cache load in-progress : ${populateCacheInProgress}`);
-    this.cache[deployment_name] = primary_config;
+    this.boshConfigCache[deployment_name] = primary_config;
   }
 }
 
@@ -89,7 +89,7 @@ describe('bosh', () => {
     describe('#constructor', () => {
       it('initializes variables', () => {
         const dc = new MockBoshDirectorClient();
-        expect(dc.cache).to.be.an('object');
+        expect(dc.boshConfigCache).to.be.an('object');
       });
     });
 
@@ -130,7 +130,7 @@ describe('bosh', () => {
       it('empties the cache', () => {
         const dc = new MockBoshDirectorClient();
         dc.clearCache();
-        expect(dc.cache).to.eql({});
+        expect(dc.boshConfigCache).to.eql({});
       });
     });
 

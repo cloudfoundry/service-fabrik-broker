@@ -52,6 +52,7 @@ describe('iaas', function () {
       });
 
       it('blob list operation should be successful', function () {
+        mocks.reset();
         const blobList = ['blob1.txt', 'blob2.txt'];
         const expectedResponse = {
           headers: {
