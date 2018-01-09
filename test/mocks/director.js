@@ -264,7 +264,7 @@ function diffDeploymentManifest(times, diff) {
     });
 }
 
-function createBindingProperty(binding_id, parameters, deployment) {
+function createBindingProperty(binding_id, parameters, deployment, binding_credentials) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
 
   return nock(directorUrl)
@@ -272,19 +272,19 @@ function createBindingProperty(binding_id, parameters, deployment) {
       return body.name === `binding-${binding_id}` &&
         _.isEqual(JSON.parse(body.value), {
           id: binding_id,
-          credentials: credentials,
+          credentials: binding_credentials || credentials,
           parameters: parameters || {}
         });
     })
     .reply(204);
 }
 
-function updateBindingProperty(binding_id, parameters) {
+function updateBindingProperty(binding_id, parameters, binding_credentials) {
   return nock(directorUrl)
     .put(`/deployments/${deploymentNameByIndex(networkSegmentIndex)}/properties/binding-${binding_id}`, body => {
       return _.isEqual(JSON.parse(body.value), {
         id: binding_id,
-        credentials: credentials,
+        credentials: binding_credentials || credentials,
         parameters: parameters || {}
       });
     })
@@ -297,7 +297,7 @@ function deleteBindingProperty(binding_id) {
     .reply(204);
 }
 
-function getBindingProperty(binding_id, parameters, deployment, notFound) {
+function getBindingProperty(binding_id, parameters, deployment, notFound, binding_credentials) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
   if (notFound) {
     return nock(directorUrl)
@@ -311,7 +311,7 @@ function getBindingProperty(binding_id, parameters, deployment, notFound) {
     .reply(200, {
       value: JSON.stringify({
         id: binding_id,
-        credentials: credentials,
+        credentials: binding_credentials || credentials,
         parameters: parameters || {}
       })
     });

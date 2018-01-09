@@ -4,26 +4,35 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const lib = require('../../lib');
 const app = require('../support/apps').external;
-const catalog = lib.models.catalog;
-const docker = lib.docker;
 const fabrik = lib.fabrik;
-
+const virtualHostStore = lib.iaas.virtualHostStore;
+const config = lib.config;
 
 describe('dashboard', function () {
-  describe('docker', function () {
+  describe('virtualHost', function () {
 
-    const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-    const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
-    const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
-    const plan = catalog.getPlan(plan_id);
+    const service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
+    const plan_id = 'd035f948-5d3a-43d7-9aec-954e134c3e9d';
+    const plan_guid = 'f6280923-b144-4f02-adf7-76a7b5ef3a4a';
+    const index = mocks.director.networkSegmentIndex;
+    const instance_id = mocks.director.uuidByIndex(index);
+    const parent_instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+    const deployment_name = mocks.director.deploymentNameByIndex(index);
+    const filename = `virtual_hosts/${instance_id}/${instance_id}.json`;
+    const container = virtualHostStore.containerName;
+    const pathname = `/${container}/${filename}`;
+    const data = {
+      instance_guid: instance_id,
+      deployment_name: deployment_name
+    };
 
     before(function () {
-      _.unset(fabrik.DockerManager, plan_id);
-      mocks.docker.inspectImage();
-      mocks.docker.getAllContainers([]);
+      _.unset(fabrik.VirtualHostManager, plan_id);
+      virtualHostStore.cloudProvider = new lib.iaas.CloudProviderClient(config.virtual_host.provider);
+      mocks.cloudProvider.auth();
+      mocks.cloudProvider.getContainer(container);
       return mocks.setup([
-        fabrik.DockerManager.load(plan),
-        docker.updatePortRegistry()
+        virtualHostStore.cloudProvider.getContainer()
       ]);
     });
 
@@ -33,7 +42,6 @@ describe('dashboard', function () {
 
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
       this.slow(1500);
-
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
@@ -42,9 +50,9 @@ describe('dashboard', function () {
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
-        mocks.docker.inspectContainer(instance_id);
-        mocks.docker.listContainerProcesses();
-        mocks.docker.getContainerLogs();
+        mocks.cloudController.getServiceInstance(parent_instance_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+        mocks.cloudProvider.download(pathname, data);
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
           .set('Accept', 'application/json')
@@ -74,14 +82,10 @@ describe('dashboard', function () {
           .then(res => {
             expect(res.body.userId).to.equal('me');
             expect(res.body.instance.metadata.guid).to.equal(instance_id);
-            expect(res.body.processes).to.eql([
-              ['UID', 'PID'],
-              ['root', '13642']
-            ]);
+            expect(res.body.parent_instance.metadata.guid).to.equal(parent_instance_id);
             mocks.verify();
           });
       });
-
     });
   });
 });

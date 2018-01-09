@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const lib = require('../../lib');
-const app = require('../../apps').external;
+const app = require('../support/apps').external;
 const config = lib.config;
 const backupStore = lib.iaas.backupStore;
 

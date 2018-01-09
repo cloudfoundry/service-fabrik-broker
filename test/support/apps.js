@@ -1,12 +1,11 @@
 'use strict';
 
-console.log('Starting Service Fabrik...');
-const lib = require('./lib');
+const _ = require('lodash');
+const lib = require('./../../lib');
 const routes = lib.routes;
-const HttpServer = require('./HttpServer');
-const FabrikApp = require('./FabrikApp');
+const FabrikApp = require('./../../FabrikApp');
 
-lib.bootstrap();
+// internal app
 const internal = FabrikApp.create('internal', app => {
   // home
   app.get('/', (req, res) => {
@@ -33,8 +32,22 @@ const external = FabrikApp.create('external', app => {
   app.use('/manage', routes.manage);
 });
 
-HttpServer.start(internal);
-HttpServer.start(external);
-HttpServer.handleShutdown();
+const report = FabrikApp.create('report', app => {
+  app.get('/', (req, res) => {
+    res.render('index', {
+      title: app.get('title')
+    });
+  });
+  app.use('/admin/report', routes.report);
+});
 
-//https://github.com/nodejs/node-v0.x-archive/issues/5054
+module.exports = _
+  .chain([
+    internal,
+    external,
+    report
+  ])
+  .set('internal', internal)
+  .set('external', external)
+  .set('report', report)
+  .value();

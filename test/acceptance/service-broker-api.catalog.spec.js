@@ -1,7 +1,7 @@
 'use strict';
 
 const lib = require('../../lib');
-const app = require('../../apps').internal;
+const app = require('../support/apps').internal;
 const config = lib.config;
 
 
@@ -17,7 +17,7 @@ describe('service-broker-api', function () {
         .then(res => {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
-          expect(res.body.services).to.have.length(1);
+          expect(res.body.services).to.have.length(2);
         });
     });
 
