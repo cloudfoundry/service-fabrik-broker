@@ -712,6 +712,7 @@ defaults: &defaults
             agent: *agent_rabbitmq
       description: 'Virtual host in a RabbitMQ cluster (managed service in beta)'
       metadata:
+        skip_quota_check: true
         costs:
         - amount:
             usd: 0.0
