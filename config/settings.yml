@@ -32,26 +32,26 @@ const cloudProviders = {
     keystoneAuthVersion: 'v3',
     domainName: 'MYDOMAIN',
     tenantName: 'service-fabrik',
-    tenantId: '95e3d3a07ac545a9b35bdf7b788a5dc1',
+    tenantId: 'xxxxxxxxxxxxxxxxxx',
     region: 'eu-de-1',
     username: 'service-fabrik-broker-backup-service-fabrik',
-    password: 'eaRp0vq4p/4TB9nuyGlpxV/A',
+    password: 'xxxxxxxxxxxxxxxxxxx',
     containerPrefix: 'cf.service-fabrik.myopenstack.com-service-fabrik'
   },
   amazon: {
     region: 'eu-central-1',
-    keyId: 'AKIAJQMIPSMOONXR6T3A',
-    key: 'i7tXqp8DINojXzVH8Coo+fdnrYnxCPnodYYecCP1',
+    keyId: 'xxxxxxxxxxxxxxxxxxx',
+    key: 'xxxxxxxxxxxxxxxxxx',
     containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
   },
   azure: {
     subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     resource_group: 'rg-abc',
     client_id: 'ccccccccc-cccc-cccc-cccc-cccccccccccc',
-    client_secret: 'abc4356=',
+    client_secret: 'xxxxxxxxxxxxxx',
     tenant_id: 'tttttttt-tttt-tttt-tttt-tttttttttttt',
     storageAccount: 'storageacc',
-    storageAccessKey: 'YWJjMTIzIT8kKiYoKSctPUB+',
+    storageAccessKey: 'xxxxxxxxxxxxxxxxxx',
     container: 'samplecontainer'
   }
 };
@@ -63,16 +63,16 @@ const virtualHostCloudProviders = {
     keystoneAuthVersion: 'v3',
     domainName: 'MYDOMAIN',
     tenantName: 'service-fabrik',
-    tenantId: '95e3d3a07ac545a9b35bdf7b788a5dc1',
+    tenantId: 'xxxxxxxxxxxxxxxxxx',
     region: 'eu-de-1',
     username: 'service-fabrik-rabbitmq-backup-service-fabrik',
-    password: 'eaRp0vq4p/4TB9nuyGlpxV/A',
+    password: 'xxxxxxxxxxxxxxxxxx',
     containerPrefix: 'cf.service-fabrik.myopenstack.com-service-fabrik'
   },
   amazon: {
     region: 'eu-central-1',
-    keyId: 'AKIAJQMIPSMOONXR6T3A',
-    key: 'i7tXqp8DINojXzVH8Coo+fdnrYnxCPnodYYecCP1',
+    keyId: 'xxxxxxxxxxxxxxxxxx',
+    key: 'xxxxxxxxxxxxxxxxxx',
     containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
   },
   azure: {
@@ -82,7 +82,7 @@ const virtualHostCloudProviders = {
     client_secret: 'abc4356=',
     tenant_id: 'tttttttt-tttt-tttt-tttt-tttttttttttt',
     storageAccount: 'storageacc',
-    storageAccessKey: 'YWJjMTIzIT8kKiYoKSctPUB+',
+    storageAccessKey: 'xxxxxxxxxxxxxxxxxx',
     container: 'rabbitmqsamplecontainer'
   }
 };
@@ -895,7 +895,7 @@ development_sc6: &sc6
 development_aws:
   env: &resource_pool_env
     bosh:
-      password: $6$HxZK4cuZ$fDIQ6d.IJ/PXtA.U71APyEQYKRZoxWap2pxt/oDLP5OZdZ0xk7q3fYqvK/w25nZTb8r8hCq5Qqf/i.ibYU37Q.
+      password: XXXXXXXXXXXXXXXXXXXX
   <<: *defaults
   log_level: debug
   password: 'secret'
