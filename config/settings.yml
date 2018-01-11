@@ -278,6 +278,7 @@ defaults: &defaults
   - &director
     primary: true
     support_create: false
+    service_network_cloud_config: sf-network
     name: bosh
     cpi: warden_cpi
     url: https://192.168.50.4:25555
@@ -291,7 +292,7 @@ defaults: &defaults
         alias: bosh-warden
         name: bosh-warden-boshlite-ubuntu-trusty-go_agent
         version: latest
-      segmentation:
+      segmentation: &network_segmentation
         network_name: default
         # calculate capacity based on the network range
         capacity: -1
@@ -731,11 +732,14 @@ development_sc6: &sc6
         alias: ubuntu-trusty
         name: bosh-openstack-kvm-ubuntu-trusty-go_agent
         version: latest
+      segmentation: 
+        <<: *network_segmentation
+        network_name: sf_bosh_services
       vm_types:
       - { name: micro, cloud_properties: {availability_zone: rot_1, instance_type: small_1_1 } }
       - { name: medium, cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 } }
       networks:
-      - name: default
+      - name: sf_bosh_services
         type: manual
         subnets:
         - range: 10.11.0.0/18
