@@ -264,6 +264,8 @@ and a list of all virtual machines belonging to the service instance.</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.cid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>GUID of the VM used by the IaaS provider to identify it</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.job</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The (BOSH) name of the job running on this VM</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.index</dt><dd><code>number</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The (BOSH) index of the job running on this VM</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.iaas_vm_metadata</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>IaaS specific metadata of the VM</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.iaas_vm_metadata.vm_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure.</p>
 </dd></dl><h4>Example</h4><pre><code>{
   "<span class="hljs-attribute">backup</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-string">"72a330a5-e15f-4cb2-829f-cf7047848b80"</span></span>,
@@ -272,16 +274,25 @@ and a list of all virtual machines belonging to the service instance.</p>
   </span>}</span>,
   "<span class="hljs-attribute">vms</span>": <span class="hljs-value">[
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"9efd029c-8c30-4be6-9be4-b6f3fecbd318"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"9efd029c-8c30-4be6-9be4-b6f3fecbd318"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">0</span>
     </span>},
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"42efdcda-a60f-4d47-9f40-2a3c1a105302"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"42efdcda-a60f-4d47-9f40-2a3c1a105302"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">1</span>
     </span>},
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"cb81950a-de56-4b11-bb37-90994d94c19c"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"cb81950a-de56-4b11-bb37-90994d94c19c"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">2</span>
@@ -326,9 +337,23 @@ and a list of all virtual machines belonging to the service instance.</p>
         "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
           <span class="hljs-string">"cid"</span>,
           <span class="hljs-string">"job"</span>,
-          <span class="hljs-string">"index"</span>
+          <span class="hljs-string">"index"</span>,
+          <span class="hljs-string">"iaas_vm_metadata"</span>
         ]</span>,
         "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"IaaS specific metadata of the VM"</span></span>,
+            "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+              <span class="hljs-string">"vm_id"</span>
+            ]</span>,
+            "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure."</span>
+              </span>}
+            </span>}
+          </span>}</span>,
           "<span class="hljs-attribute">cid</span>": <span class="hljs-value">{
             "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
             "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The guid of the VM used by the IaaS provider to identify it"</span>
@@ -435,6 +460,8 @@ the backup has been generated.</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.cid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>GUID of the VM used by the IaaS provider to identify it</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.job</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The (BOSH) name of the job running on this VM</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.index</dt><dd><code>number</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The (BOSH) index of the job running on this VM</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.iaas_vm_metadata</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>IaaS specific metadata of the VM</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>vms.iaas_vm_metadata.vm_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure.</p>
 </dd></dl><h4>Example</h4><pre><code>{
   "<span class="hljs-attribute">backup</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-string">"72a330a5-e15f-4cb2-829f-cf7047848b80"</span></span>,
@@ -443,16 +470,25 @@ the backup has been generated.</p>
   </span>}</span>,
   "<span class="hljs-attribute">vms</span>": <span class="hljs-value">[
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"9efd029c-8c30-4be6-9be4-b6f3fecbd318"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"9efd029c-8c30-4be6-9be4-b6f3fecbd318"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">0</span>
     </span>},
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"42efdcda-a60f-4d47-9f40-2a3c1a105302"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"42efdcda-a60f-4d47-9f40-2a3c1a105302"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">1</span>
     </span>},
     {
+      "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value"><span class="hljs-string">"cb81950a-de56-4b11-bb37-90994d94c19c"</span>
+      </span>}</span>,
       "<span class="hljs-attribute">cid</span>": <span class="hljs-value"><span class="hljs-string">"cb81950a-de56-4b11-bb37-90994d94c19c"</span></span>,
       "<span class="hljs-attribute">job</span>": <span class="hljs-value"><span class="hljs-string">"mongodb_z1"</span></span>,
       "<span class="hljs-attribute">index</span>": <span class="hljs-value"><span class="hljs-number">2</span>
@@ -497,9 +533,23 @@ the backup has been generated.</p>
         "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
           <span class="hljs-string">"cid"</span>,
           <span class="hljs-string">"job"</span>,
-          <span class="hljs-string">"index"</span>
+          <span class="hljs-string">"index"</span>,
+          <span class="hljs-string">"iaas_vm_metadata"</span>
         ]</span>,
         "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+          "<span class="hljs-attribute">iaas_vm_metadata</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"IaaS specific metadata of the VM"</span></span>,
+            "<span class="hljs-attribute">required</span>": <span class="hljs-value">[
+              <span class="hljs-string">"vm_id"</span>
+            ]</span>,
+            "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+              "<span class="hljs-attribute">vm_id</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure."</span>
+              </span>}
+            </span>}
+          </span>}</span>,
           "<span class="hljs-attribute">cid</span>": <span class="hljs-value">{
             "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
             "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The guid of the VM used by the IaaS provider to identify it"</span>
