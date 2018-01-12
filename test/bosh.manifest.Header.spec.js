@@ -9,7 +9,7 @@ describe('bosh', () => {
         name: 1,
         releases: 3,
         stemcells: [{
-          alias: 'service_fabrik_stemcell',
+          alias: 'ubuntu-trusty',
           name: 'bosh-openstack-kvm-ubuntu-trusty-go_agent',
           version: 'latest'
         }],
@@ -21,7 +21,7 @@ describe('bosh', () => {
 
       describe('#toString', () => {
         it('returns a YAML object as string', () => {
-          let expectedString = 'name: 1\nreleases: 3\nstemcells:\n  - alias: service_fabrik_stemcell\n    name: bosh-openstack-kvm-ubuntu-trusty-go_agent\n    version: latest\ntags:\n  space_guid: \'1234\'\n  organization_guid: \'4567\'\n';
+          let expectedString = 'name: 1\nreleases: 3\nstemcells:\n  - alias: ubuntu-trusty\n    name: bosh-openstack-kvm-ubuntu-trusty-go_agent\n    version: latest\ntags:\n  space_guid: \'1234\'\n  organization_guid: \'4567\'\n';
 
           expect(header.toString()).to.eql(expectedString);
         });
