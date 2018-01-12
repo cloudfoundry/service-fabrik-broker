@@ -31,7 +31,7 @@ describe('service-fabrik-admin', function () {
         started_at: started_at,
         space_guid: space_guid
       };
-      const backups = [_.omit(filenameObject, 'operation')];
+      const backups = [_.omit(filenameObject, 'operation', 'plan_id')];
       const filenameObj = filename.create(filenameObject).name;
       const pathname = `/${container}/${filenameObj}`;
       const data = {
@@ -94,7 +94,7 @@ describe('service-fabrik-admin', function () {
       });
 
       describe('#deleteBackup', function () {
-        const prefix = `${space_guid}/${operation}/${service_id}.${plan_id}.${instance_id}.${backup_guid}`;
+        const prefix = `${space_guid}/${operation}/${service_id}.${instance_id}.${backup_guid}`;
         it('should successfully delete an existing backup', function () {
           mocks.cloudProvider.list(container, prefix, [filenameObj]);
           mocks.cloudProvider.remove(pathname);
