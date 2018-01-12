@@ -173,6 +173,7 @@ describe('quota', () => {
       const smallPlanId = 'bc158c9a-7934-401e-94ab-057082a5073e';
       const xsmallPlanId = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const smallPlanGuid = 'c77ff479-ea63-42ea-b6d1-d824c4012f1c';
+      const rabbitmqVirtualHostPlanGuid = 'd035f948-5d3a-43d7-9aec-954e134c3e9d';
       const smallServicePlan = [{
         'metadata': {
           'guid': 'c77ff479-ea63-42ea-b6d1-d824c4012f1c',
@@ -339,6 +340,13 @@ describe('quota', () => {
         return quotaManager.checkQuota(orgId, smallPlanId)
           .then(value => {
             expect(value).to.eql(1);
+          });
+      });
+
+      it('returns quota exists when for a plan skip_quota_check is enabled', () => {
+        return quotaManager.checkQuota(orgId, rabbitmqVirtualHostPlanGuid)
+          .then(value => {
+            expect(value).to.eql(0);
           });
       });
 

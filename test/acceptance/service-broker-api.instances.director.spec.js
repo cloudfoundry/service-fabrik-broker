@@ -179,7 +179,7 @@ describe('service-broker-api', function () {
 
       describe('#deprovision', function () {
         it('returns 202 Accepted', function () {
-          const restoreFilename = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}.json`;
+          const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();

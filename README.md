@@ -117,9 +117,16 @@ cf target -o dev -s broker
 * Clone this repo (assuming your working directory is ~/workspace)
 ```shell
 cd ~/workspace
-git clone https://github.com/sap/service-fabrik-broker
-cd service-fabrik-broker
 ```
+* Clone and setup fork and git-secrets ( requires [hub] and [git secrets] to be
+  installed)
+  ```
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/master/bin/clone-for-development)"
+  cd service-fabrik-broker
+  git checkout -b my-new-feature
+  # make code changes
+  git push <github_username> my-new-feature
+  ```
 * Install dependencies
 ```shell
 npm install
@@ -213,3 +220,6 @@ Finally, once in the SSH session, [these bash functions](https://docs.travis-ci.
 ## LICENSE
 
 This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSE) file.
+
+[hub]: https://github.com/github/hub
+[git secrets]: https://github.com/awslabs/git-secrets
