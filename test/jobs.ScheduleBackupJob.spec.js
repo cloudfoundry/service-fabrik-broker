@@ -35,8 +35,8 @@ describe('Jobs', function () {
         .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
       const started14DaysPrior = filename.isoDate(moment()
         .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-      const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
-      const failed_prefix = `${space_guid}/backup/${service_id}.${plan_id}.${failed_instance_id}`;
+      const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
+      const failed_prefix = `${space_guid}/backup/${service_id}.${failed_instance_id}`;
       const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
       const fileName14Daysprior = `${prefix}.${backup_guid}.${started14DaysPrior}.json`;
       const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
