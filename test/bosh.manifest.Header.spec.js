@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Header = require('../lib/bosh/manifest/Header');
 
 describe('bosh', () => {
