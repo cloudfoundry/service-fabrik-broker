@@ -166,7 +166,7 @@ describe('service-fabrik-admin', function () {
       });
 
 
-      it('should list all backups for bootstrap bosh deployment', function () {
+      it('should list all backups for bosh-sf deployment', function () {
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         return chai
@@ -174,7 +174,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/backup`)
           .query({
             backup_guid: backup_guid,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -187,7 +187,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should initiate bootstrap bosh deployment backup operation successfully', function () {
+      it('should initiate bosh-sf deployment backup operation successfully', function () {
         mocks.director.getDeploymentManifest(1);
         mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.agent.getInfo();
@@ -207,7 +207,7 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/backup`)
           .send({
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -222,7 +222,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should return the status of last bootstrap bosh deployment backup operation', function () {
+      it('should return the status of last bosh-sf deployment backup operation', function () {
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -240,7 +240,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/backup/status`)
           .query({
             token: token,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -358,13 +358,13 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should list restore info for bootstrap bosh deployment', function () {
+      it('should list restore info for bosh-sf deployment', function () {
         mocks.cloudProvider.download(restorePathname, restore_data);
         return chai
           .request(app)
           .get(`${base_url}/deployments/${deployment_name}/restore`)
           .query({
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -375,7 +375,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should initiate bootstrap bosh deployment restore operation successfully', function () {
+      it('should initiate bosh-sf deployment restore operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
@@ -395,7 +395,7 @@ describe('service-fabrik-admin', function () {
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
             backup_guid: backup_guid,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -410,7 +410,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should return the status of bootstrap bosh deployment restore operation', function () {
+      it('should return the status of bosh-sf deployment restore operation', function () {
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -428,7 +428,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/restore/status`)
           .query({
             token: token,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
