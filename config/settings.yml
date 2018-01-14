@@ -103,6 +103,7 @@ defaults: &defaults
   colorize_log: false
   sys_log_level: info
   enable_circuit_breaker: true
+  enable_swarm_manager: true
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
