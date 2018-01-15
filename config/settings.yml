@@ -494,6 +494,7 @@ defaults: &defaults
           image: 'servicefabrikjenkins/blueprint'
           tag: 'latest'
           memory: '128m'
+          dashboard_template_path: <%= dashboard_template_path('blueprint') %>
           persistent_volumes:
           - name: 'data'
             path: '/data'
@@ -561,6 +562,7 @@ defaults: &defaults
           prefix: 'blueprint'
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
+          dashboard_template_path: <%= dashboard_template_path('blueprint') %>
           releases: &dedicated_releases
           - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
