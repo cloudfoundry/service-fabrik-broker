@@ -10,8 +10,6 @@ http:
   statistical_window_length: 120000 #ms the metrics are caclucated for, after this the metrics are reset.
   statistical_window_number_of_buckets: 10 #statistical window length is sliced into this configured number of buckets
   apis:
-    "https://192.168.50.3:25555":
-      name: "Bosh-sf Bosh Director"
       # sleep_window_in_ms : 30000
       # statistical_window_length: 5000
       # api_overrides:
