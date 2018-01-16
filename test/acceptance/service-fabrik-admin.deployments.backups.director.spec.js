@@ -35,25 +35,6 @@ describe('service-fabrik-admin', function () {
       deployment_name: deployment_name,
       root_folder: root_folder_name
     };
-    const deploymentVms = [{
-      agent_id: '21dd1d0a-0f53-4485-8927-78c9857fa0f2',
-      cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
-      job: 'postgresql_master_z1',
-      index: 0,
-      iaas_vm_metadata: {
-        'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
-      },
-      id: '9b199ea6-94a3-463d-b3d4-4d4fe89cc364'
-    }, {
-      agent_id: '21dd1d0a-0f53-4485-8927-78c9857fa0f2',
-      cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
-      job: 'postgresql_slave_z1',
-      index: 1,
-      iaas_vm_metadata: {
-        'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
-      },
-      id: '9b199ea6-94a3-463d-b3d4-4d4fe89cc364'
-    }];
     const filenameObj = filename.create(filenameObject).name;
     const restoreFileName = filename.create(restoreFilenameObject).name;
     const pathname = `/${container}/${filenameObj}`;
@@ -126,9 +107,8 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(1);
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -208,8 +188,8 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate bootstrap bosh deployment backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(2);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentManifest(1);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -290,8 +270,7 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate ccdb restore operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentManifest();
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -398,8 +377,7 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate bootstrap bosh deployment restore operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentManifest(1);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
