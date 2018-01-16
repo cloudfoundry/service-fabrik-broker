@@ -53,7 +53,7 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 created', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createVirtualHost(instance_id);
@@ -102,7 +102,7 @@ describe('service-broker-api', function () {
 
       describe('#bind', function () {
         it('returns 201 Created', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
           mocks.director.createBindingProperty(binding_id, {}, deployment_name, mocks.virtualHostAgent.credentials);
@@ -131,7 +131,7 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
           mocks.director.getBindingProperty(binding_id, {}, deployment_name, false, mocks.virtualHostAgent.credentials);
@@ -155,7 +155,7 @@ describe('service-broker-api', function () {
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);
           mocks.cloudProvider.remove(pathname);
@@ -175,7 +175,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
-          mocks.director.getDeployment(deployment_name, false, undefined, 2);
+          mocks.director.getDeploymentVms(deployment_name, undefined, undefined, undefined, false);
+          mocks.director.getDeployment(deployment_name, false, undefined, 1);
           mocks.cloudProvider.download(pathname, data);
           mocks.cloudProvider.remove(pathname);
           return chai.request(app)
