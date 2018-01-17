@@ -337,14 +337,6 @@ defaults: &defaults
   # DIRECTOR SETTINGS #
   #####################
   directors:
-  - url: https://192.168.50.3:25555
-    primary: false        # is true if the director takes part in lifecycle operations except create
-    support_create: false  # is true if director is expected to 'create deployments'
-    name: bootstrap-bosh
-    username: admin
-    password: admin
-    skip_ssl_validation: true
-    cpi: warden_cpi
   - &director
     primary: true
     support_create: false

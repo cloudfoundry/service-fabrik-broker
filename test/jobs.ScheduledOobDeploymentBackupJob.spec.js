@@ -252,7 +252,7 @@ describe('Jobs', function () {
         });
       });
 
-      it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful (for bootstrap bosh deployments)', function (done) {
+      it('should initiate deployment backup, delete scheduled backup older than 14 days & backup operation status is succesful (for bosh-sf deployments)', function (done) {
 
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
@@ -266,7 +266,7 @@ describe('Jobs', function () {
           fileName14Daysprior
         ]);
         mocks.serviceBrokerClient.startDeploymentBackup(deploymentName, backupResponse, {
-          bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+          bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
         });
         mocks.cloudProvider.download(pathname14, scheduled_data);
         mocks.cloudProvider.list(container, `${root_folder}/backup`, [fileName14Daysprior]);
@@ -279,9 +279,9 @@ describe('Jobs', function () {
         try {
           const old_frequency = config.backup.backup_restore_status_check_every;
           config.backup.backup_restore_status_check_every = 200;
-          let bootStrapBackupJob = job;
-          bootStrapBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH;
-          return ScheduledOobDeploymentBackupJob.run(bootStrapBackupJob, () => {
+          let boshSfBackupJob = job;
+          boshSfBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOSH_SF;
+          return ScheduledOobDeploymentBackupJob.run(boshSfBackupJob, () => {
             mocks.verify();
             const expectedBackupResponse = {
               start_backup_status: {
@@ -309,7 +309,7 @@ describe('Jobs', function () {
         }
       });
 
-      it('should delete scheduled backup even when deployment is deleted (bootstrap bosh deployments)', function (done) {
+      it('should delete scheduled backup even when deployment is deleted (bosh-sf deployments)', function (done) {
         mocks.director.getDeployment(deploymentName, false, undefined, 2);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior
@@ -324,9 +324,9 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.remove(`/${mongoDBContainer}${backupFileName14DayspriorToDelete}`);
         mocks.cloudProvider.remove(pathname14);
-        let bootStrapBackupJob = job;
-        bootStrapBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH;
-        return ScheduledOobDeploymentBackupJob.run(bootStrapBackupJob, () => {
+        let boshSfBackupJob = job;
+        boshSfBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOSH_SF;
+        return ScheduledOobDeploymentBackupJob.run(boshSfBackupJob, () => {
           mocks.verify();
           const expectedJobResponse = {
             start_backup_status: 'deployment_deleted',

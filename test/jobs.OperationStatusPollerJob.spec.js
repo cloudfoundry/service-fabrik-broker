@@ -240,13 +240,13 @@ describe('Jobs', function () {
         });
       });
 
-      it('backup status check should be succesful and status is succeeded (bootstrap bosh deployment)', function (done) {
+      it('backup status check should be succesful and status is succeeded (bosh-sf deployment)', function (done) {
         mocks.serviceBrokerClient.getDeploymentBackupStatus(deploymentName, getTokenBasedOnOperation('backup'),
-          'succeeded', CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH);
+          'succeeded', CONST.BOSH_DIRECTORS.BOSH_SF);
 
-        let bootStrapBackupJob = getJobBasedOnOperation('backup');
-        bootStrapBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH;
-        return OperationStatusPollerJob.run(bootStrapBackupJob, () => {
+        let boshSfBackupJob = getJobBasedOnOperation('backup');
+        boshSfBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOSH_SF;
+        return OperationStatusPollerJob.run(boshSfBackupJob, () => {
           mocks.verify();
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${backup_guid}`);
@@ -255,7 +255,7 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql('succeeded');
           expect(baseJobLogRunHistoryStub.firstCall.args[1].stage).to.eql('Creating volume');
-          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(bootStrapBackupJob.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(boshSfBackupJob.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
           done();
         });
