@@ -298,6 +298,7 @@ defaults: &defaults
         capacity: -1
         offset: 1
         size: 8
+        no_of_reserved_ip: 8
       azs:
       - { name: z1, cloud_properties: { name: random } }
       - { name: z2, cloud_properties: { name: random } }
@@ -474,10 +475,10 @@ defaults: &defaults
     # DEDICATED SERVICE PLANS #
     ###########################
     - &blueprint_plan3
-      id: 'bc158c9a-7934-401e-94ab-057082a5073f'
+      id: 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3'
       name: 'v1.0-xsmall'
       free: false
-      actions: ReserveIps
+      actions: ReserveIps, HelloWorld
       manager: &manager_plan3
         name: 'director'
         settings: &settings_plan3
@@ -719,10 +720,10 @@ development_sc6: &sc6
   password: 'secret'
   cf:
     <<: *cf
-    password: gwcqura2wyfczets9voe
+    password: secret
   directors:
   - <<: *director
-    prefix: service-fabrik-backup
+    prefix: service-fabrik
     url: https://127.0.0.1:25555
     primary: true
     support_create: true
@@ -749,6 +750,10 @@ development_sc6: &sc6
             security_groups:
             - service-fabrik-bosh-services
             subnet: b7089c41-e529-4044-943b-174b92ad6074
+        - range: 10.11.64.0/18
+          az: z2
+        - range: 10.11.128.0/18
+          az: z3
       - &fabrik_network
         name: service_fabrik
         type: manual
