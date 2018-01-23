@@ -183,7 +183,7 @@ describe('service-broker-api', function () {
           const restorePathname = `/${container}/${restoreFilename}`;
 
           mocks.director.getDeploymentVms(deployment_name);
-          mocks.agent.getInfo();
+          mocks.agent.getInfo(2);
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
           mocks.cloudController.findSecurityGroupByName(instance_id);

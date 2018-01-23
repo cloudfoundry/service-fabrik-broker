@@ -21,8 +21,8 @@ describe('service-fabrik-admin', function () {
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
-    const timeAfte = moment(time).add(1, 'seconds').toDate();
-    const restore_at = new Date(timeAfte).toISOString().replace(/\.\d*/, '');
+    const timeAfter = moment(time).add(2, 'seconds').toDate();
+    const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
     const container = backupStore.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
@@ -349,8 +349,7 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate ccdb restore operation successfully: PITR', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentManifest();
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
