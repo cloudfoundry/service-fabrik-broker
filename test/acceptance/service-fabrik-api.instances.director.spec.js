@@ -39,8 +39,8 @@ describe('service-fabrik-api', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const time = Date.now();
       const started_at = isoDate(time);
-      const timeAfte = moment(time).add(1, 'seconds').toDate();
-      const restore_at = new Date(timeAfte).toISOString().replace(/\.\d*/, '');
+      const timeAfter = moment(time).add(1, 'seconds').toDate();
+      const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
