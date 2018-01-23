@@ -42,7 +42,8 @@ function auth() {
   };
   return nock(cloudProviderUrl)
     .replyContentLength()
-    .post(`/${provider.keystoneAuthVersion}/auth/tokens`, body => _.isObject(body.auth))
+    //.post(`/${provider.keystoneAuthVersion}/auth/tokens`, body => _.isObject(body.auth))
+    .post(`/auth/tokens`, body => _.isObject(body.auth))
     .reply(201, response.body, response.headers);
 }
 

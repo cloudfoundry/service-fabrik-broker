@@ -475,10 +475,10 @@ defaults: &defaults
     # DEDICATED SERVICE PLANS #
     ###########################
     - &blueprint_plan3
-      id: 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3'
+      id: 'bc158c9a-7934-401e-94ab-057082a5073f' # 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3'
       name: 'v1.0-xsmall'
       free: false
-      actions: ReserveIps, HelloWorld
+      #actions: ReserveIps, HelloWorld
       manager: &manager_plan3
         name: 'director'
         settings: &settings_plan3
@@ -719,7 +719,8 @@ development_sc6: &sc6
   log_level: debug
   password: 'secret'
   cf:
-    <<: *cf
+    url: https://api.cf.service-fabrik-dev2.sc6.sapcloud.io
+    username: admin_service-fabrik
     password: secret
   directors:
   - <<: *director
