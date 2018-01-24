@@ -40,6 +40,8 @@ mixin renderPropertyListValue(value)
       td= _.first(value)
   else if /^https?:\/\//.test(value)
     td: a(href=value)= value
+  else if /^adt:\/\//.test(value)
+    td: a(href=value)= value
   else
     td= value
 

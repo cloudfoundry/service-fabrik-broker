@@ -1,6 +1,6 @@
 include controls.pug
 
-mixin showSectionService(service, plan, instance, options)
+mixin showSectionService(service, plan, instance, curstomAttrs)
   section#service.section
     .container
       .row
@@ -15,20 +15,20 @@ mixin showSectionService(service, plan, instance, options)
               Tags: service.tags.join(', '),
               Documentation: service.metadata.documentationUrl,
               Support: service.metadata.supportUrl
-           }, options.service))
+           }, curstomAttrs.service))
         .col-lg-6
           +renderPropertyListPanel('Plan', _.assign({
             ID: plan.id,
             Name: plan.name,
             Description: plan.description,
             Bullets: plan.metadata.bullets.join(', ')
-          }, options.plan))
+          }, curstomAttrs.plan))
         .col-lg-6
           +renderPropertyListPanel('Service Instance', _.assign({
             GUID: instance.metadata.guid,
             Name: instance.entity.name,
             Manager: plan.manager.name
-          }, options.service_instance))
+          }, curstomAttrs.service_instance))
 
 mixin showSectionContainer(details, processes)
   section#container.section
