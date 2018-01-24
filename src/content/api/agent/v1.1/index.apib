@@ -199,6 +199,8 @@ The agent is asked to perform a backup of all service-specific relevant data a u
     + BODY.vms.cid: `` (string) - GUID of the VM used by the IaaS provider to identify it
     + BODY.vms.job: `` (string) - The (BOSH) name of the job running on this VM
     + BODY.vms.index: `` (number) - The (BOSH) index of the job running on this VM
+    + BODY.vms.iaas_vm_metadata: `` (object) - IaaS specific metadata of the VM
+    + BODY.vms.iaas_vm_metadata.vm_id: `` (string) - GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure.
 
 + Request
 <!-- include(requests/backup_start.apib) -->
@@ -280,6 +282,8 @@ The agent is asked to perform a restore of all service-specific relevant data of
     + BODY.vms.cid: `` (string) - GUID of the VM used by the IaaS provider to identify it
     + BODY.vms.job: `` (string) - The (BOSH) name of the job running on this VM
     + BODY.vms.index: `` (number) - The (BOSH) index of the job running on this VM
+    + BODY.vms.iaas_vm_metadata: `` (object) - IaaS specific metadata of the VM
+    + BODY.vms.iaas_vm_metadata.vm_id: `` (string) - GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure.
 
 + Request
 <!-- include(requests/restore_start.apib) -->

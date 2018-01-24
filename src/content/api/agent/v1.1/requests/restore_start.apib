@@ -13,16 +13,25 @@ the backup has been generated.
               },
               "vms": [
                 {
+                    "iaas_vm_metadata": {
+                        "vm_id": "9efd029c-8c30-4be6-9be4-b6f3fecbd318"
+                    },
                     "cid": "9efd029c-8c30-4be6-9be4-b6f3fecbd318",
                     "job": "mongodb_z1",
                     "index": 0
                 },
                 {
+                    "iaas_vm_metadata": {
+                        "vm_id": "42efdcda-a60f-4d47-9f40-2a3c1a105302"
+                    },                 
                     "cid": "42efdcda-a60f-4d47-9f40-2a3c1a105302",
                     "job": "mongodb_z1",
                     "index": 1
                 },
                 {
+                    "iaas_vm_metadata": {
+                        "vm_id": "cb81950a-de56-4b11-bb37-90994d94c19c"
+                    },
                     "cid": "cb81950a-de56-4b11-bb37-90994d94c19c",
                     "job": "mongodb_z1",
                     "index": 2
@@ -62,8 +71,19 @@ the backup has been generated.
                   "minItems": 1,
                   "items": {
                     "type": "object",
-                    "required": ["cid", "job", "index"],
+                    "required": ["cid", "job", "index", "iaas_vm_metadata"],
                     "properties": {
+                      "iaas_vm_metadata": {
+                        "type": "object",
+                        "description": "IaaS specific metadata of the VM",
+                        "required": ["vm_id"],
+                        "properties": {
+                          "vm_id": {
+                          "type": "string",
+                          "description": "GUID of the VM used by the IaaS provider to identify it. This is mostly same as vms.cid except for Azure."
+                          }
+                        }
+                      },                      
                       "cid": {
                         "type": "string",
                         "description": "The guid of the VM used by the IaaS provider to identify it"
