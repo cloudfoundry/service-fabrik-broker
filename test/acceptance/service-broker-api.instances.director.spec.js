@@ -181,8 +181,9 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
+
           mocks.director.getDeploymentVms(deployment_name);
-          mocks.agent.getInfo();
+          mocks.agent.getInfo(2);
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
           mocks.cloudController.findSecurityGroupByName(instance_id);

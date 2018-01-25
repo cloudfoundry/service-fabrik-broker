@@ -26,7 +26,7 @@ describe('fabrik', function () {
     const credentials = {
       password: 'secret'
     };
-    let version = 2;
+    let version = 1;
     let protocol = 'http';
     let pathname = 'foo';
     let expectedStatus;
@@ -78,6 +78,18 @@ describe('fabrik', function () {
         .withArgs({
           method: 'GET',
           url: createUrl('info')
+        }, 200)
+        .returns(Promise.resolve({
+          body: {
+            api_version: api_version,
+            supported_features: supported_features
+          }
+        }));
+
+      requestStub
+        .withArgs({
+          method: 'GET',
+          url: `${protocol}://${ip}:${port}/info`
         }, 200)
         .returns(Promise.resolve({
           body: {
