@@ -67,7 +67,7 @@ describe('Jobs', function () {
             instance_id: instance_id,
             type: 'online',
             trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
-            space_guid: space_guid,
+            tenant_guid: space_guid,
             service_id: service_id,
             plan_id: plan_id,
             _n_a_m_e_: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,

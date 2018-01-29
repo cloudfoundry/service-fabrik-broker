@@ -267,12 +267,18 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK (state = succeeded)', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
+          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
@@ -288,11 +294,7 @@ describe('service-broker-api', function () {
               operation: utils.encodeBase64({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                }
+                context: context
               })
             })
             .catch(err => err.response)

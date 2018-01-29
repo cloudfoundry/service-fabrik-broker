@@ -23,7 +23,7 @@ describe('fabrik', function () {
     const ABORTING_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180ba';
     const UNLOCK_FAILED_BACKUP_GUID = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
     const instanceInfo = {
-      space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
+      tenant_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
       instance_guid: mocks.director.uuidByIndex(index),
       agent_ip: '10.10.0.15',
       service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
