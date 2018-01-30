@@ -61,7 +61,7 @@ describe('service-broker-api', function () {
           mocks.docker.startContainer();
           mocks.docker.inspectContainer();
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({

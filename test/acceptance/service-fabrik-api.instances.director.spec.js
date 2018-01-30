@@ -187,7 +187,7 @@ describe('service-fabrik-api', function () {
             }, name)
             .then(token => chai
               .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}`)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
@@ -225,7 +225,7 @@ describe('service-fabrik-api', function () {
             }, name, args)
             .then(token => chai
               .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}`)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
@@ -486,7 +486,7 @@ describe('service-fabrik-api', function () {
             }, name, args)
             .then(token => chai
               .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}`)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
@@ -1061,7 +1061,7 @@ describe('service-fabrik-api', function () {
             }, name, args)
             .then(token => chai
               .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}`)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
               .send({
                 plan_id: plan_id,
                 service_id: service_id,
