@@ -236,10 +236,10 @@ describe('Jobs', function () {
         organization_guid: organization_guid
       });
       const diff = [
-        ['jobs:', null],
-        ['- name: blueprint_z1', null],
-        ['  instances: 2', 'removed'],
-        ['  instances: 1', 'added']
+        [ 'instance_groups:', null ],
+        [ '- name: blueprint', null ],
+        [ '  instances: 1', 'removed' ],
+        [ '  instances: 2', 'added' ]
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
@@ -256,7 +256,7 @@ describe('Jobs', function () {
         .run(job, () => {})
         .then(() => {
           mocks.verify();
-          const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden section(s) \'jobs\'';
+          const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden section(s) \'instance_groups\'';
           expect(cancelScheduleStub).not.to.be.called;
           expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');
