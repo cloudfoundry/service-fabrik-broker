@@ -236,10 +236,10 @@ describe('Jobs', function () {
         organization_guid: organization_guid
       });
       const diff = [
-        [ 'instance_groups:', null ],
-        [ '- name: blueprint', null ],
-        [ '  instances: 1', 'removed' ],
-        [ '  instances: 2', 'added' ]
+        ['instance_groups:', null],
+        ['- name: blueprint', null],
+        ['  instances: 1', 'removed'],
+        ['  instances: 2', 'added']
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
