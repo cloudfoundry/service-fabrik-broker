@@ -302,7 +302,7 @@ describe('Jobs', function () {
         .run(job, () => {})
         .then(() => {
           mocks.verify();
-          const invalidInputMsg = 'Automatic update not possible. Job definition removed:   - name: broker-agent,removed';
+          const invalidInputMsg = 'Automatic update not possible. Job definition removed:   - name: broker-agent';
           expect(cancelScheduleStub).not.to.be.called;
           expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');
