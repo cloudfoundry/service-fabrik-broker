@@ -227,7 +227,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it('if instance is outdated, and changes are in forbidden section then update must not be initiated', function (done) {
+    it('if instance is outdated, and changes are in forbidden section trying to increase/decrease # of instances then update must not be initiated', function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       mocks.cloudController.getServiceInstance(instance_id, {
         space_guid: space_guid
@@ -236,10 +236,10 @@ describe('Jobs', function () {
         organization_guid: organization_guid
       });
       const diff = [
-        ['jobs:', null],
-        ['- name: blueprint_z1', null],
-        ['  instances: 2', 'removed'],
-        ['  instances: 1', 'added']
+        ['instance_groups:', null],
+        ['- name: blueprint', null],
+        ['  instances: 1', 'removed'],
+        ['  instances: 2', 'added']
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
@@ -256,7 +256,53 @@ describe('Jobs', function () {
         .run(job, () => {})
         .then(() => {
           mocks.verify();
-          const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden section(s) \'jobs\'';
+          const invalidInputMsg = 'Automatic update not possible. Detected changes in forbidden sections:  instances: 1,removed,  instances: 2,added';
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].reason).to.eql('Forbidden');
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(403);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+    it('if instance is outdated, and changes are in forbidden section trying to remove a job, then update must not be initiated', function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
+      const diff = [
+        ['instance_groups:', null],
+        ['- name: blueprint', null],
+        ['  jobs:', null],
+        ['  - name: broker-agent', 'removed'],
+        ['    release: blueprint', 'removed']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          const invalidInputMsg = 'Automatic update not possible. Job definition removed:   - name: broker-agent';
           expect(cancelScheduleStub).not.to.be.called;
           expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql(invalidInputMsg);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Forbidden');

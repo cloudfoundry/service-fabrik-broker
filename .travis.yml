@@ -10,6 +10,8 @@ before_install:
     cd git-secrets
     sudo make install
     popd
+env:
+  - SETTINGS_PATH="$(pwd)/config/settings.yml"
 script:
   - |
      SECRETS=$(git diff "$TRAVIS_COMMIT_RANGE" | git secrets --scan -)
