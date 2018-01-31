@@ -117,9 +117,16 @@ cf target -o dev -s broker
 * Clone this repo (assuming your working directory is ~/workspace)
 ```shell
 cd ~/workspace
-git clone https://github.com/sap/service-fabrik-broker
-cd service-fabrik-broker
 ```
+* Clone and setup fork and git-secrets ( requires [hub] and [git secrets] to be
+  installed)
+  ```
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/master/bin/clone-for-development)"
+  cd service-fabrik-broker
+  git checkout -b my-new-feature
+  # make code changes
+  git push <github_username> my-new-feature
+  ```
 * Install dependencies
 ```shell
 npm install
@@ -137,7 +144,8 @@ If you need to change the `settings.yml` configuration you should copy the file 
 ```shell
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
-# export SETTINGS_PATH=$(pwd)/config/settings.yml
+# cp $(pwd)/config/settings.yml $(pwd)/config/my-settings.yml
+# export SETTINGS_PATH=$(pwd)/config/my-settings.yml
 npm run -s start
 ```
 Check endpoint with curl
@@ -213,3 +221,6 @@ Finally, once in the SSH session, [these bash functions](https://docs.travis-ci.
 ## LICENSE
 
 This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSE) file.
+
+[hub]: https://github.com/github/hub
+[git secrets]: https://github.com/awslabs/git-secrets

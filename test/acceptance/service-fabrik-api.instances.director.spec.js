@@ -39,6 +39,8 @@ describe('service-fabrik-api', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const time = Date.now();
       const started_at = isoDate(time);
+      const timeAfter = moment(time).add(1, 'seconds').toDate();
+      const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
@@ -132,7 +134,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeploymentManifest();
+          mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
           return chai.request(apps.external)
@@ -239,7 +241,7 @@ describe('service-fabrik-api', function () {
         });
       });
       describe('#backup-start', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}.${backup_guid}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
         const filename = `${prefix}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const type = 'online';
@@ -252,7 +254,7 @@ describe('service-fabrik-api', function () {
           type: type,
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
         };
-        const list_prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time+1)}.json`;
         const list_pathname = `/${container}/${list_filename}`;
@@ -448,10 +450,9 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.getDeploymentManifest();
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentVms(deployment_name, 2);
           mocks.agent.getInfo();
           mocks.agent.startBackup();
           mocks.cloudProvider.upload(pathname, body => {
@@ -579,7 +580,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-state', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const filename = `${prefix}.${backup_guid}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -670,7 +671,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-abort', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const filename = `${prefix}.${backup_guid}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -735,10 +736,10 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-start', function () {
-        const restorePrefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const restoreFilename = `${restorePrefix}.json`;
-        const backupFilename = `${backupPrefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
         const name = 'restore';
@@ -753,7 +754,7 @@ describe('service-fabrik-api', function () {
           backup: _.pick(backupMetadata, 'type', 'secret')
         };
 
-        it('should return 400 Bad Request (no or invalid backup_guid given)', function () {
+        it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -764,6 +765,50 @@ describe('service-fabrik-api', function () {
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid backup_guid given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              backup_guid: 'invalid-guid'
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid time_stamp given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: '2017-12-04T07:560:02.203Z'
+            })
             .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
@@ -786,6 +831,29 @@ describe('service-fabrik-api', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
               backup_guid: backup_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, []);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -821,6 +889,32 @@ describe('service-fabrik-api', function () {
             });
         });
 
+        it('should return 422 Unprocessable Entity PITR based (backup still in progress)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, {
+            state: 'processing'
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
         it('should return 422 Unprocessable Entity (plan ids do not match)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -838,6 +932,32 @@ describe('service-fabrik-api', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
               backup_guid: backup_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 422 Unprocessable Entity PITR based (plan ids do not match)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, {
+            plan_id: 'some-other-plan-id'
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: restore_at
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -876,9 +996,37 @@ describe('service-fabrik-api', function () {
             });
         });
 
+        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, backupMetadata);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: restore_at
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
+
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeploymentManifest();
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentVms(deployment_name, 2);
           mocks.director.verifyDeploymentLockStatus();
           mocks.agent.getInfo();
           mocks.agent.startRestore();
@@ -1005,7 +1153,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-state', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const filename = `${prefix}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -1061,7 +1209,7 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-abort', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${plan_id}.${instance_id}`;
+        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const filename = `${prefix}.json`;
         const pathname = `/${container}/${filename}`;
         const data = {
@@ -1124,9 +1272,9 @@ describe('service-fabrik-api', function () {
 
       describe('#listLastBackups', function () {
         const prefix = `${space_guid}/backup/${service_id}`;
-        const filename1 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename2 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${isoDate(time+1)}.json`;
-        const filename3 = `${prefix}.${plan_id}.${instance_id}.${backup_guid}.${isoDate(time+2)}.json`;
+        const filename1 = `${prefix}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const filename2 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+1)}.json`;
+        const filename3 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+2)}.json`;
         const pathname3 = `/${container}/${filename3}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
@@ -1165,8 +1313,8 @@ describe('service-fabrik-api', function () {
       describe('#listLastRestores', function () {
         const instance_id2 = 'fff659f7-3fb4-4034-aaf3-ab103698f6b0';
         const prefix = `${space_guid}/restore/${service_id}`;
-        const filename1 = `${prefix}.${plan_id}.${instance_id}.json`;
-        const filename2 = `${prefix}.${plan_id}.${instance_id2}.json`;
+        const filename1 = `${prefix}.${instance_id}.json`;
+        const filename2 = `${prefix}.${instance_id2}.json`;
         const pathname1 = `/${container}/${filename1}`;
         const pathname2 = `/${container}/${filename2}`;
         const data = {
@@ -1209,8 +1357,8 @@ describe('service-fabrik-api', function () {
         const prefix = `${space_guid}/backup`;
         const started14DaysPrior = filename.isoDate(moment()
           .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-        const filenameObj = `${prefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename14DaysPrior = `${prefix}/${service_id}.${plan_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
+        const filenameObj = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const filename14DaysPrior = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
         const pathname = `/${container}/${filenameObj}`;
         const pathName14DaysPrior = `/${container}/${filename14DaysPrior}`;
         const data = {
@@ -1599,7 +1747,9 @@ describe('service-fabrik-api', function () {
               expect(res).to.have.status(200);
               const expectedJobResponse = getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value();
               _.set(expectedJobResponse, 'update_required', true);
-              _.set(expectedJobResponse, 'update_details', diff);
+              _.set(expectedJobResponse, 'update_details', utils.unifyDiffResult({
+                diff: diff
+              }));
               expect(res.body).to.eql(expectedJobResponse);
               mocks.verify();
             });

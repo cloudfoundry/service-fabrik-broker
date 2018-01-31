@@ -19,7 +19,6 @@ describe('Jobs', function () {
     const index = mocks.director.networkSegmentIndex;
     const instance_id = mocks.director.uuidByIndex(index);
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-    const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const backup_guid2 = '081acb05-66a3-471b-af3c-8bbf1e4180bf';
     //const backup_guid3 = '091acb05-66a3-471b-af3c-8bbf1e4180bg';
@@ -31,7 +30,7 @@ describe('Jobs', function () {
       .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
     const started16DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 2, 'days').toISOString());
-    const prefix = `${space_guid}/backup/${service_id}.${plan_id}.${instance_id}`;
+    const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
     //const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
     const fileName16Daysprior = `${prefix}.${backup_guid}.${started16DaysPrior}.json`;
     const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;

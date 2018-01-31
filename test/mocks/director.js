@@ -21,35 +21,40 @@ const directorUrl = activePrimaryConfig.url;
 
 const manifest = {
   name: 'test-deployment-name',
-  jobs: [{
-    name: 'blueprint_z1',
+  instance_groups: [{
+    name: 'blueprint',
     networks: [{
       name: 'default',
       static_ips: [parseUrl(agent.url).hostname]
-    }]
-  }],
-  properties: {
-    blueprint: {
-      admin: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    mongodb: {
-      service_agent: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    agent: {
-      provider: {
-        name: 'openstack',
-        container: config.backup.provider.container
+    }],
+    jobs: [{
+        name: 'blueprint',
+        properties: {
+          admin: {
+            username: 'admin',
+            password: 'admin'
+          },
+          mongodb: {
+            service_agent: {
+              username: 'admin',
+              password: 'admin'
+            }
+          }
+        }
       },
-      username: 'admin',
-      password: 'admin'
-    }
-  }
+      {
+        name: 'broker-agent',
+        properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
+        }
+      }
+    ]
+  }],
 };
 
 exports.url = directorUrl;
@@ -396,13 +401,25 @@ function unbindDeployment(guid, binding_id) {
     .reply(204);
 }
 
-function getDeploymentVms(deploymentName, vms, boshDirectorUrlInput) {
+function getDeploymentVms(deploymentName, times, vms, boshDirectorUrlInput, found) {
   const boshDirectorUrl = boshDirectorUrlInput || directorUrl;
-  return nock(boshDirectorUrl)
-    .get(`/deployments/${deploymentName}/vms`)
-    .reply(200, vms || [{
-      cid: '081e3263-e066-4a5a-868f-b420c72a260d',
-      job: 'blueprint_z1',
-      index: 0
-    }]);
+  if (found === false) {
+    return nock(boshDirectorUrl)
+      .get(`/deployments/${deploymentName}/vms`)
+      .times(times || 1)
+      .reply(404, {
+        'code': 70000,
+        'description': `'Deployment ${deploymentName} doesn\'t exist'`
+      });
+  } else {
+    return nock(boshDirectorUrl)
+      .get(`/deployments/${deploymentName}/vms`)
+      .times(times || 1)
+      .reply(200, vms || [{
+        cid: '081e3263-e066-4a5a-868f-b420c72a260d',
+        job: 'blueprint_z1',
+        ips: [parseUrl(agent.url).hostname],
+        index: 0
+      }]);
+  }
 }
