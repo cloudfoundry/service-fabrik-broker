@@ -2,6 +2,8 @@
 language: node_js
 node_js:
   - "6.9"
+env:
+  - SETTINGS_PATH="$(pwd)/config/settings.yml"
 script:
   - |
      IFS='' CHANGED_FILES=$(npm run -s jsformat -- | grep -v "unchanged")
