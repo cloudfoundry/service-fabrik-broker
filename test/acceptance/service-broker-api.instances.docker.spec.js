@@ -61,7 +61,7 @@ describe('service-broker-api', function () {
           mocks.docker.startContainer();
           mocks.docker.inspectContainer();
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
@@ -72,8 +72,7 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              parameters: parameters
             })
             .then(res => {
               expect(res).to.have.status(201);
@@ -106,8 +105,7 @@ describe('service-broker-api', function () {
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
-              },
-              accepts_incomplete: accepts_incomplete
+              }
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
@@ -130,8 +128,7 @@ describe('service-broker-api', function () {
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
               service_id: service_id,
-              plan_id: plan_id,
-              accepts_incomplete: accepts_incomplete
+              plan_id: plan_id
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
