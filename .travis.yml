@@ -6,7 +6,7 @@ before_install:
   - pip install --user truffleHog
   - |
     pushd /tmp
-    git clone https://github.com/awslabs/git-secrets
+    git clone --depth 1 https://github.com/awslabs/git-secrets
     cd git-secrets
     sudo make install
     popd
