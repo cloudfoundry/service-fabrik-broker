@@ -486,7 +486,7 @@ defaults: &defaults
           agent: *agent_blueprint
           template: <%= base64_template('blueprint') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0+dev.19, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: 1.3.0+dev.18, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
             resource_pool: micro
@@ -640,13 +640,16 @@ boshlite2:
     support_create: true
     infrastructure:
       <<: *director_infrastructure
+      segmentation: 
+        <<: *network_segmentation
+        network_name: service_fabrik_bosh_services
       networks:
-      - name: default
+      - name: service_fabrik_bosh_services
         type: manual
         subnets:
-        - { range: 10.244.11.0/20, az: z1, cloud_properties: { name: random } }
-        - { range: 10.244.12.0/20, az: z2, cloud_properties: { name: random } }
-        - { range: 10.244.13.0/20, az: z3, cloud_properties: { name: random } }
+        - { range: 10.244.11.0/24, cloud_properties: { name: random } }
+        - { range: 10.244.12.0/24, cloud_properties: { name: random } }
+        - { range: 10.244.13.0/24, cloud_properties: { name: random } }
       - name: compilation
         type: dynamic
       compilation:
