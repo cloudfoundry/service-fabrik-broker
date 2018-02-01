@@ -38,9 +38,7 @@ mixin renderPropertyListValue(value)
       td: +renderUnstyledList(value)
     else
       td= _.first(value)
-  else if /^https?:\/\//.test(value)
-    td: a(href=value)= value
-  else if /^adt:\/\//.test(value)
+  else if /:\/\//.test(value)
     td: a(href=value)= value
   else
     td= value

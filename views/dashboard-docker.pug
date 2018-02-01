@@ -7,6 +7,6 @@ block navbar
 
 block content
   include mixins/sections.pug
-  +showSectionService(service, plan, instance)
+  +showSectionService(service, plan, instance, customAttrs)
   +showSectionContainer(details, processes)
   +showSectionFiles('Log Files', files)
