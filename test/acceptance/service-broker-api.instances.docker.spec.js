@@ -26,7 +26,6 @@ describe('service-broker-api', function () {
       const parameters = {
         foo: 'bar'
       };
-      const accepts_incomplete = true;
       const usedPorts = [38782, 44635];
       const docker_url = parseUrl(config.docker.url);
       const protocol = config.external.protocol;
