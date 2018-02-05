@@ -738,6 +738,7 @@ describe('service-fabrik-api', function () {
       describe('#restore-start', function () {
         const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
+        const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
         const restoreFilename = `${restorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
@@ -848,7 +849,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix, []);
+          mocks.cloudProvider.list(container, backupPrefix1, []);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -897,7 +898,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
             state: 'processing'
           });
@@ -949,7 +950,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
             plan_id: 'some-other-plan-id'
           });
@@ -1004,7 +1005,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
           mocks.cloudController.updateServiceInstance(instance_id, body => {
             const token = _.get(body.parameters, 'service-fabrik-operation');
