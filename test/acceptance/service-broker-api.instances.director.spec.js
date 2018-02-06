@@ -167,8 +167,7 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              parameters: parameters
             })
             .catch(err => err.response)
             .then(res => {
@@ -248,8 +247,7 @@ describe('service-broker-api', function () {
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
-              },
-              accepts_incomplete: accepts_incomplete
+              }
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
@@ -265,6 +263,88 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not in query', function () {
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=false`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
       });
 
       describe('#deprovision', function () {
@@ -304,12 +384,78 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
               });
-              //expect(cancelScheduleStub).to.be.calledOnce;
-              //expect(cancelScheduleStub.firstCall.args[0]).to.eql(instance_id);
-              //expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
               mocks.verify();
             });
         });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not in query', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: undefined
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: false
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
       });
 
       describe('#lastOperation', function () {
