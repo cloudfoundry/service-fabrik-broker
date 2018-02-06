@@ -271,7 +271,11 @@ describe('service-broker-api', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo(2);
           mocks.agent.deprovision();
@@ -310,6 +314,11 @@ describe('service-broker-api', function () {
 
       describe('#lastOperation', function () {
         it('returns 200 OK (state = in progress)', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -345,6 +354,7 @@ describe('service-broker-api', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
@@ -390,6 +400,12 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -433,6 +449,12 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();

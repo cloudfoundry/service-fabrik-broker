@@ -75,6 +75,7 @@ exports.createBindingProperty = createBindingProperty;
 exports.updateBindingProperty = updateBindingProperty;
 exports.deleteBindingProperty = deleteBindingProperty;
 exports.createDeploymentProperty = createDeploymentProperty;
+exports.getDeploymentProperty = getDeploymentProperty;
 exports.bindDeployment = bindDeployment;
 exports.unbindDeployment = unbindDeployment;
 exports.getDeploymentVms = getDeploymentVms;
@@ -289,6 +290,23 @@ function createDeploymentProperty(name, value, deployment) {
         _.isEqual(JSON.parse(body.value), value);
     })
     .reply(204);
+}
+
+function getDeploymentProperty(deploymentName, found, key, value) {
+  if (!found) {
+    return nock(directorUrl)
+      .replyContentLength()
+      .get(`/deployments/${deploymentName}/properties/${key}`)
+      .reply(404, {});
+  }
+  return nock(directorUrl)
+    .replyContentLength()
+    .get(`/deployments/${deploymentName}/properties/${key}`)
+    .reply(200, {
+      value: JSON.stringify({
+        value: value
+      } || {})
+    });
 }
 
 function updateBindingProperty(binding_id, parameters, binding_credentials) {

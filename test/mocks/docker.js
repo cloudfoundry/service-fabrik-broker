@@ -14,7 +14,8 @@ const exposedPorts = {
 
 const environment = [
   'BLUEPRINT_USER_NAME=user',
-  'BLUEPRINT_USER_PASS=secret'
+  'BLUEPRINT_USER_PASS=secret',
+  'context={"platform":"cloudfoundry"}'
 ];
 const portBindings = {
   '8080/tcp': [{

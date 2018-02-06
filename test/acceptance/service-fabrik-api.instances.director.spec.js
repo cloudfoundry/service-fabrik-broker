@@ -521,6 +521,7 @@ describe('service-fabrik-api', function () {
             stage: 'Creating volume',
             updated_at: new Date(Date.now())
           };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', backupOperation.context);
           mocks.agent.lastBackupOperation(backupState);
           return chai
             .request(apps.internal)
@@ -563,7 +564,7 @@ describe('service-fabrik-api', function () {
             .map(JSON.stringify)
             .join('\n')
             .value();
-
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', backupOperation.context);
           mocks.cloudProvider.list(container, prefix, [filename]);
           mocks.cloudProvider.download(pathname, {});
           mocks.agent.lastBackupOperation(backupState);
@@ -1101,6 +1102,7 @@ describe('service-fabrik-api', function () {
             stage: 'Attaching volume',
             updated_at: new Date(Date.now())
           };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', restoreOperation.context);
           mocks.agent.lastRestoreOperation(restoreState);
           return chai
             .request(apps.internal)
@@ -1142,7 +1144,7 @@ describe('service-fabrik-api', function () {
             .map(JSON.stringify)
             .join('\n')
             .value();
-
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', restoreOperation.context);
           mocks.cloudProvider.download(restorePathname, {});
           mocks.agent.lastRestoreOperation(restoreState);
           mocks.agent.getRestoreLogs(restoreLogsStream);

@@ -119,9 +119,10 @@ describe('service-broker-api', function () {
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
+          mocks.docker.inspectContainer(instance_id);
           mocks.cloudController.findSecurityGroupByName(instance_id);
           mocks.cloudController.deleteSecurityGroup(instance_id);
-          mocks.docker.deleteContainer(instance_id);
+          mocks.docker.deleteContainer();
           mocks.docker.deleteVolumes(instance_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -142,6 +143,7 @@ describe('service-broker-api', function () {
       describe('#bind', function () {
         it('returns 201 Created', function () {
           mocks.docker.inspectContainer(instance_id);
+          mocks.docker.inspectContainer();
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -174,6 +176,7 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
+          mocks.docker.inspectContainer(instance_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
