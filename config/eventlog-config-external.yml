@@ -127,3 +127,16 @@ defaults:
     description: Cancel automated scheduled backup for a service instance
     tags:
     - schedule_backup
+"/api/v1/service_instances/:instance_id/schedule_update":
+  GET:
+    enabled: true
+    event_name: get_update_schedule
+    description: Retrieving the update schedule for a service instance
+    tags:
+    - schedule_update
+  PUT:
+    enabled: true
+    event_name: schedule_update
+    description: Schedule update for a service instance
+    tags:
+    - schedule_update
