@@ -130,7 +130,7 @@ describe('BackupReportManager', function () {
           'data.instance_name': 1,
           'data.plan_id': 1,
           'data.service_plan_name': 1,
-          'data.space_guid': 1,
+          'data.tenant_guid': 1,
           'data.space_name': 1,
           'data.organization_guid': 1,
           'data.organization_name': 1
