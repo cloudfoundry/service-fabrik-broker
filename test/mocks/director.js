@@ -302,11 +302,11 @@ function getDeploymentProperty(deploymentName, found, key, value) {
   return nock(directorUrl)
     .replyContentLength()
     .get(`/deployments/${deploymentName}/properties/${key}`)
-    .reply(200, {
-      value: JSON.stringify({
+    .reply(200,
+      JSON.stringify({
         value: value
       } || {})
-    });
+    );
 }
 
 function updateBindingProperty(binding_id, parameters, binding_credentials) {
