@@ -77,6 +77,17 @@ describe('fabrik', function () {
             expect(err).to.be.instanceof(NotImplemented);
           });
       });
+
+      it('should throw NotImplemented error from  ensureTenantId', function () {
+        expect(platformManager.guid).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9');
+        expect(platformManager.platform).to.eql(context.platform);
+        expect(platformManager.context).to.eql(context);
+        expect(platformManager.manager).to.be.instanceof(DirectorManager);
+        return Promise.try(() => platformManager.ensureTenantId({}))
+          .catch(err => {
+            expect(err).to.be.instanceof(NotImplemented);
+          });
+      });
     });
 
     describe('#docker', function () {
@@ -126,6 +137,17 @@ describe('fabrik', function () {
         expect(platformManager.context).to.eql(context);
         expect(platformManager.manager).to.be.instanceof(DockerManager);
         return Promise.try(() => platformManager.postInstanceDeleteOperations({}))
+          .catch(err => {
+            expect(err).to.be.instanceof(NotImplemented);
+          });
+      });
+
+      it('should throw NotImplemented error from  ensureTenantId', function () {
+        expect(platformManager.guid).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9');
+        expect(platformManager.platform).to.eql(context.platform);
+        expect(platformManager.context).to.eql(context);
+        expect(platformManager.manager).to.be.instanceof(DockerManager);
+        return Promise.try(() => platformManager.ensureTenantId({}))
           .catch(err => {
             expect(err).to.be.instanceof(NotImplemented);
           });
