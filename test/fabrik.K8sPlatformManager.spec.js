@@ -67,12 +67,12 @@ describe('fabrik', function () {
           });
       });
 
-      it('should throw NotImplemented error from  postInstanceDeleteOperations', function () {
+      it('should throw NotImplemented error from  postInstanceUpdateOperations', function () {
         expect(platformManager.guid).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9');
         expect(platformManager.platform).to.eql(context.platform);
         expect(platformManager.context).to.eql(context);
         expect(platformManager.manager).to.be.instanceof(DirectorManager);
-        return Promise.try(() => platformManager.postInstanceDeleteOperations({}))
+        return Promise.try(() => platformManager.postInstanceUpdateOperations({}))
           .catch(err => {
             expect(err).to.be.instanceof(NotImplemented);
           });
@@ -131,12 +131,12 @@ describe('fabrik', function () {
           });
       });
 
-      it('should throw NotImplemented error from  postInstanceDeleteOperations', function () {
+      it('should throw NotImplemented error from  postInstanceUpdateOperations', function () {
         expect(platformManager.guid).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9');
         expect(platformManager.platform).to.eql(context.platform);
         expect(platformManager.context).to.eql(context);
         expect(platformManager.manager).to.be.instanceof(DockerManager);
-        return Promise.try(() => platformManager.postInstanceDeleteOperations({}))
+        return Promise.try(() => platformManager.postInstanceUpdateOperations({}))
           .catch(err => {
             expect(err).to.be.instanceof(NotImplemented);
           });
