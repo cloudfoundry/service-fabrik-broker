@@ -53,6 +53,11 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 created', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeploymentVms(deployment_name);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
@@ -71,6 +76,7 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
+              context: context,
               accepts_incomplete: accepts_incomplete
             })
             .then(res => {

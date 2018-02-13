@@ -230,6 +230,11 @@ describe('service-broker-api', function () {
       describe('#update', function () {
         it('returns 202 Accepted', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -239,11 +244,7 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id_update,
               parameters: parameters,
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: organization_guid,
-                space_guid: space_guid
-              },
+              context: context,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -258,7 +259,8 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters
+                parameters: parameters,
+                context: context
               });
               mocks.verify();
             });
