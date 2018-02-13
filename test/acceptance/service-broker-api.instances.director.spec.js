@@ -23,6 +23,7 @@ describe('service-broker-api', function () {
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
+      const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -137,6 +138,24 @@ describe('service-broker-api', function () {
                 space_guid: space_guid
               });
               mocks.verify();
+            });
+        });
+        it('returns 403 for deprecated plan', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_deprecated,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(403);
             });
         });
       });
@@ -357,3 +376,6 @@ describe('service-broker-api', function () {
     });
   });
 });
+
+
+
