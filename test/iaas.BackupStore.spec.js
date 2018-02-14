@@ -34,15 +34,6 @@ describe('iaas', function () {
         sandbox.restore();
       });
 
-
-      function getPredicate(isoDate) {
-        return function predicate(filenameobject) {
-          //backUpStartedBefore defaults to current timestamp as part of isoDate function.
-          return (filenameobject.operation === 'backup') &&
-            _.lt(filenameobject.started_at, isoDate);
-        };
-      }
-
       it('should list all service instance backup file names', function () {
         var files = backupStore.listBackupFilenames(Date.now()).then(filenameObject => {
           expect(filenameObject.service_id).to.equal(service_guid);
