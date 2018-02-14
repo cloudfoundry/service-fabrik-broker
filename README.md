@@ -136,6 +136,26 @@ npm install
 npm run -s test
 ```
 
+### Uploading the cloud-config:
+Then, we need to upload the cloud-config required for service-fabrik on bosh.
+
+For bosh-lite, you can upload cloud-config in the following manner:
+```shell
+cd templates
+bosh –e bosh upload-cloud-config cloud-config-boshlite.yml
+```
+The file `cloud-config-boshlite.yml` can be found here: https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/templates/cloud-config-boshlite.yml
+
+For AWS, we need to update the vars-files for the cloud-config. 
+The vars file to be edited is `cloud-config-aws-vars.yml`. It can be found in the `templates` directory.
+Once the vars file is filled with proper details, the cloud-config can be uploaded:
+```shell
+cd templates
+bosh –e bosh upload-cloud-config --vars-store=cloud-config-aws-vars.yml cloud-config-aws.yml
+```
+The required files mentioned above can be found here: https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/tree/master/templates
+
+
 ### Launch the Broker
 
 Useful prerequisites: When working with the broker, install `curl` (`sudo apt-get install curl`), [`jq`](https://stedolan.github.io/jq/download), and [`yaml2json`](https://github.com/bronze1man/yaml2json).
