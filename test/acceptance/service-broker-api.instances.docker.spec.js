@@ -1,4 +1,3 @@
-
 'use strict';
 
 const _ = require('lodash');
@@ -54,7 +53,7 @@ describe('service-broker-api', function () {
           expect(docker.portRegistry.getPorts('tcp')).to.eql([33331].concat(usedPorts));
         });
       });
-      
+
       describe('#provision', function () {
         it('returns 201 Created', function () {
           mocks.cloudController.createSecurityGroup(instance_id);
@@ -189,45 +188,45 @@ describe('service-broker-api', function () {
             });
         });
       });
-    describe('docker-deprecated-plans', function () {
-      const plan_id = '61a8d1f7-6477-4eb7-a85d-57ac067e80c4';
-      const plan = catalog.getPlan(plan_id);
+      describe('docker-deprecated-plans', function () {
+        const plan_id = '61a8d1f7-6477-4eb7-a85d-57ac067e80c4';
+        const plan = catalog.getPlan(plan_id);
 
-      before(function () {
-        _.unset(fabrik.DockerManager, plan_id);
-        mocks.docker.inspectImage();
-        mocks.docker.getAllContainers(usedPorts);
-        return mocks.setup([
-          fabrik.DockerManager.load(plan),
-          docker.updatePortRegistry()
-        ]);
-      });
+        before(function () {
+          _.unset(fabrik.DockerManager, plan_id);
+          mocks.docker.inspectImage();
+          mocks.docker.getAllContainers(usedPorts);
+          return mocks.setup([
+            fabrik.DockerManager.load(plan),
+            docker.updatePortRegistry()
+          ]);
+        });
 
-      afterEach(function () {
-        mocks.reset();
-      });
+        afterEach(function () {
+          mocks.reset();
+        });
 
-      describe('#provision', function () {
-        it('returns 403 for deprecated plan', function () {
-          return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              organization_guid: organization_guid,
-              space_guid: space_guid,
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(403);
-            });
+        describe('#provision', function () {
+          it('returns 403 for deprecated plan', function () {
+            return chai.request(app)
+              .put(`${base_url}/service_instances/${instance_id}`)
+              .set('X-Broker-API-Version', api_version)
+              .auth(config.username, config.password)
+              .send({
+                service_id: service_id,
+                plan_id: plan_id,
+                organization_guid: organization_guid,
+                space_guid: space_guid,
+                parameters: parameters,
+                accepts_incomplete: accepts_incomplete
+              })
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(403);
+              });
+          });
         });
       });
-    });
     });
   });
 });
