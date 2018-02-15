@@ -14,8 +14,7 @@ const exposedPorts = {
 
 const environment = [
   'BLUEPRINT_USER_NAME=user',
-  'BLUEPRINT_USER_PASS=secret',
-  'context={"platform":"cloudfoundry"}'
+  'BLUEPRINT_USER_PASS=secret'
 ];
 const portBindings = {
   '8080/tcp': [{
@@ -126,13 +125,21 @@ function deleteContainer(guid) {
     .reply(204);
 }
 
-function inspectContainer(guid, options) {
+function inspectContainer(guid, options, notFound) {
   if (_.isObject(guid)) {
     options = guid;
     guid = undefined;
   }
   const name = getContainerName(guid);
-  const body = _.merge({
+
+  if (notFound) {
+    return nock(dockerUrl)
+      .replyContentLength()
+      .get(`/containers/${name || containerId}/json`)
+      .reply(404, {});
+  }
+
+  const body = _.assign({
     Id: containerId,
     Name: name ? `/${name}` : undefined,
     Config: {
