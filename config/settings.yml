@@ -500,6 +500,39 @@ defaults: &defaults
         - 'Container Deployment'
         - '256 MB Memory'
         - '200 MB Disk'
+    - &blueprint_plan7
+      id: '61a8d1f7-6477-4eb7-a85d-57ac067e80c4'
+      name: 'v1.0-container-large-deprecated'
+      free: true
+      manager:
+        name: 'docker'
+        settings:
+          image: 'servicefabrikjenkins/blueprint'
+          tag: 'latest'
+          memory: '256m'
+          persistent_volumes:
+          - name: 'data'
+            path: '/data'
+            size: '200m'
+      credentials:
+        username:
+          key: 'BLUEPRINT_USER_NAME'
+        password:
+          key: 'BLUEPRINT_USER_PASS'
+        uri:
+          prefix: 'http'
+          port: 8080/tcp
+      description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
+      metadata:
+        state: deprecated
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Container Deployment'
+        - '256 MB Memory'
+        - '200 MB Disk'
     ###########################
     # DEDICATED SERVICE PLANS #
     ###########################
@@ -591,7 +624,36 @@ defaults: &defaults
         - '1 vCPUs'
         - '2 GB Memory'
         - '2 GB Disk'
-
+    - &blueprint_plan6
+      id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
+      name: 'v1.0-dedicated-large-deprecated'
+      free: false
+      manager: &manager_plan6
+        name: 'director'
+        settings: &settings_plan6
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          update_predecessors:
+          - 'bc158c9a-7934-401e-94ab-057082a5073f'
+          template: <%= base64_template('blueprint-manifest') %>
+          releases: *dedicated_releases
+          context: &context_plan6
+            agent: *agent_blueprint
+            vm_type: micro
+            disk_type: disk_2G
+      description: 'Blueprint 1.0 service large (managed service in beta)'
+      metadata:
+        state: deprecated
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '2 GB Memory'
+        - '2 GB Disk' 
   ####################
   # RABBITMQ SERVICE #
   ####################
