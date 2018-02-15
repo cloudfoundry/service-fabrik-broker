@@ -54,6 +54,15 @@ describe('utils', function () {
       expect(subscribeStub).to.be.calledTwice;
       expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
     });
+    it('#initialize - subscribe only once to events', function () {
+      const eventLogDBClient = new EventLogDBClient({
+        event_type: 'SF.BROKER_EVENT'
+      });
+      initializeHandler();
+      initializeHandler();
+      expect(subscribeStub).to.be.calledThrice;
+      expect(eventLogDBClient.eventsToBeLoggedInDB.length).to.equal(2);
+    });
 
     describe('#logevent', function () {
       it('ignores invalid events', function () {
