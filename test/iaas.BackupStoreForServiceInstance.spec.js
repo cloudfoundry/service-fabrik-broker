@@ -17,7 +17,7 @@ describe('iaas', function () {
       const instance_guid = 'instance-guid';
       const oob_backup_started_at_suffix = new Date((new Date()).getTime() - 1000 * 600).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
       const service_instance_backup_started_at_suffix = new Date((new Date()).getTime() - 1000 * 600).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
-      const operation = "backup";
+      const operation = 'backup';
       before(function () {
         sandbox = sinon.sandbox.create();
         listStub = sandbox.stub(CloudProviderClient.prototype, 'list');
@@ -41,5 +41,5 @@ describe('iaas', function () {
         });
       });
     });
-  })
+  });
 });
