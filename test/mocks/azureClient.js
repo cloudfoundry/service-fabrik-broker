@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const nock = require('nock');
+const utils = require('../../lib/utils');
+
 const config = {
   backup: {
     retention_period_in_days: 14,
@@ -41,10 +43,15 @@ function encodePath(pathname) {
 }
 
 function auth() {
+  const token = {
+    type: 'update',
+    parameters: {},
+    task_id: 'service-fabrik-1790-46d34d39-83b1-4b2d-8260-50f2d66a0957_23598'
+  };
   return nock('https://login.microsoftonline.com')
     .replyContentLength()
     .post(`/${provider.tenant_id}/oauth2/token?api-version=1.0`, body => _.isObject(body))
-    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSIsImtpZCI6Ik1uQ19WWmNBVGZNNXBPWWlKSE1iYTlnb0VLWSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuY29yZS53aW5kb3dzLm5ldC8iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC83MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDcvIiwiaWF0IjoxNDYyNTUzMjY5LCJuYmYiOjE0NjI1NTMyNjksImV4cCI6MTQ2MjU1NzE2OSwiYXBwaWQiOiJiOWU2ZTA3Yi1jNDNlLTQ3MzEtODVjYS05ODE3ODkyNzI0Y2QiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC83MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDcvIiwib2lkIjoiNGUwNDNmODYtYjMzZC00YzNiLThjNTYtNWM3NTkyOGEzNzBlIiwic3ViIjoiNGUwNDNmODYtYjMzZC00YzNiLThjNTYtNWM3NTkyOGEzNzBlIiwidGlkIjoiNzJmOTg4YmYtODZmMS00MWFmLTkxYWItMmQ3Y2QwMTFkYjQ3IiwidmVyIjoiMS4wIn0.rROtJoq7sd0BIfLtS-Ra9-xIN9lQPXnN0NvR8BWgEP8imEp1M3ryN8v1IUldiQeb6yhsf0Jg1QqA_vI8HUvCpDoCA7MvmSrMCVfrY7hKFDl9cJeFMILVXjWRbCHp29k0A_pz1r8au07_MmGGrEpBpc0Z5P1rr9qwOe4SmLCuC1poyNuERpwMtHXS4MwJ7mjz9OHsn_pvVxV9TMA-lcBxqfsxWPf8kbmHiFeyLonBftD-h0X7wjwJ-EGK6WSQ-bBtWyJNyJ6sDxqSUB4WpuywVVe_pCPcnKLhqD5tbW_thkyQG7nJ4bM_qqXvKIEtgxO0HGDIA7KS5AdMgBx8uNAC7g\"}', {
+    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"' + utils.encodeBase64(token) + '\"}', {
       'cache-control': 'no-cache, no-store',
       pragma: 'no-cache',
       'content-type': 'application/json; charset=utf-8',
@@ -57,7 +64,7 @@ function auth() {
       'strict-transport-security': 'max-age=31536000; includeSubDomains',
       p3p: 'CP="DSP CUR OTPi IND OTRi ONL FIN"',
       'set-cookie': ['flight-uxoptin=true; path=/; secure; HttpOnly',
-        'esctx=AAABAAAAiL9Kn2Z27UubvWFPbm0gLY4-QrqiDgIz-sINlFJRDZ0O7CIVv7bQh4gFoVbsaXSs0r-5GztukLogUf2sAb9wT6h5SUOGBdHR8xuG1x0McpdIN6sEiyFu3A7y5h3qXk8STZhFpvCkUWhiOFtvGbebH1-MPESKUGn6BEfkVi7O8nkXgvT5ey-gEQHD9TsrLGtjIAA; domain=.login.microsoftonline.com; path=/; secure; HttpOnly',
+        'esctx=XXXXXXXXXX9XX2X27XXXXXXXXX0XXX4-XXXXXXXX-XXXXXXXXX0X7XXXX7XXX4XXXXXXXXXX0X-5XXXXXXXXXX2XXX9XX6X5XXXXXXXX8XXX1X0XXXXXX6XXXXXX3X7X5X3XXX8XXXXXXXXXXXXXXXXXXXXXX1-XXXXXXXX6XXXXXX7X8XXXXXX5XX-XXXXX9XXXXXXXXXX; domain=.login.microsoftonline.com; path=/; secure; HttpOnly',
         'x-ms-gateway-slice=productiona; path=/; secure; HttpOnly',
         'stsservicecookie=ests; path=/; secure; HttpOnly'
       ],
