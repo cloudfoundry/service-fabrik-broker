@@ -202,8 +202,7 @@ describe('service-fabrik-api', function () {
                 },
                 parameters: {
                   'service-fabrik-operation': token
-                },
-                accepts_incomplete: true
+                }
               })
               .set('X-Broker-API-Version', broker_api_version)
               .auth(config.username, config.password)
@@ -240,8 +239,7 @@ describe('service-fabrik-api', function () {
                 },
                 parameters: {
                   'service-fabrik-operation': token
-                },
-                accepts_incomplete: true
+                }
               })
               .set('X-Broker-API-Version', broker_api_version)
               .auth(config.username, config.password)
@@ -316,13 +314,108 @@ describe('service-fabrik-api', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           }, 201);
-          //mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
             .send({
               type: type
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('should initiate a start-backup operation with optional space_guid', function (done) {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudProvider.list(container, list_prefix, [
+            list_filename
+          ]);
+          mocks.cloudProvider.download(list_pathname, data);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          }, 201);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type,
+              space_guid: space_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('should initiate a start-backup operation with context', function (done) {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudProvider.list(container, list_prefix, [
+            list_filename
+          ]);
+          mocks.cloudProvider.download(list_pathname, data);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          }, 201);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type,
+              context: {
+                platform: 'cloudfoundry',
+                space_guid: space_guid
+              }
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('should initiate a start-backup operation with context', function (done) {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudProvider.list(container, list_prefix, [
+            list_filename
+          ]);
+          mocks.cloudProvider.download(list_pathname, data);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          }, 201);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type,
+              context: {
+                platform: 'cloudfoundry',
+                space_guid: space_guid
+              }
             })
             .catch(err => err.response)
             .then(res => {
@@ -501,8 +594,7 @@ describe('service-fabrik-api', function () {
                 },
                 parameters: {
                   'service-fabrik-operation': token
-                },
-                accepts_incomplete: true
+                }
               })
               .set('X-Broker-API-Version', broker_api_version)
               .auth(config.username, config.password)
@@ -653,6 +745,55 @@ describe('service-fabrik-api', function () {
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              const result = _
+                .chain(data)
+                .omit('agent_ip')
+                .value();
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(result);
+              mocks.verify();
+            });
+        });
+
+        it('should return 200 Ok - backup state retrieved from meta information with space_guid', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename]);
+          mocks.cloudProvider.download(pathname, data);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .query({
+              space_guid: space_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              const result = _
+                .chain(data)
+                .omit('agent_ip')
+                .value();
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(result);
+              mocks.verify();
+            });
+        });
+
+        it('should return 200 Ok - backup state retrieved from meta information with platform and tenant_id', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename]);
+          mocks.cloudProvider.download(pathname, data);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .query({
+              platform: 'cloudfoundry',
+              tenant_id: space_guid
+            })
             .catch(err => err.response)
             .then(res => {
               const result = _
@@ -1076,8 +1217,7 @@ describe('service-fabrik-api', function () {
                 },
                 parameters: {
                   'service-fabrik-operation': token
-                },
-                accepts_incomplete: true
+                }
               })
               .set('X-Broker-API-Version', broker_api_version)
               .auth(config.username, config.password)
