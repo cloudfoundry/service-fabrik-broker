@@ -36,6 +36,11 @@ describe('service-broker-api', function () {
       };
       const filename = `virtual_hosts/${instance_id}/${instance_id}.json`;
       const pathname = `/${container}/${filename}`;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
       Promise.onPossiblyUnhandledRejection(() => {});
 
       before(function () {
@@ -53,11 +58,6 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 created', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
           mocks.director.getDeploymentVms(deployment_name);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
@@ -97,7 +97,8 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              accepts_incomplete: accepts_incomplete,
+              context: context
             })
             .catch(res => {
               expect(res).to.have.status(404);
@@ -123,7 +124,8 @@ describe('service-broker-api', function () {
               app_guid: app_guid,
               bind_resource: {
                 app_guid: app_guid
-              }
+              },
+              context: context
             })
             .catch(err => err.response)
             .then(res => {
@@ -137,6 +139,7 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
@@ -161,6 +164,7 @@ describe('service-broker-api', function () {
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);
@@ -181,6 +185,7 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name, undefined, undefined, undefined, false);
           mocks.director.getDeployment(deployment_name, false, undefined, 1);
           mocks.cloudProvider.download(pathname, data);

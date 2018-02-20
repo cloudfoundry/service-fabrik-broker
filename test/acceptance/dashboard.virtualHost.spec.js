@@ -25,6 +25,13 @@ describe('dashboard', function () {
       instance_guid: instance_id,
       deployment_name: deployment_name
     };
+    const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
+    const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
+    const context = {
+      platform: 'cloudfoundry',
+      organization_guid: organization_guid,
+      space_guid: space_guid
+    };
 
     before(function () {
       _.unset(fabrik.VirtualHostManager, plan_id);
@@ -43,6 +50,8 @@ describe('dashboard', function () {
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
       this.slow(1500);
       it('should redirect to authorization server', function () {
+        mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
+        mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
         const agent = chai.request.agent(app);
         agent.app.listen(0);
         mocks.uaa.getAuthorizationCode(service_id);
