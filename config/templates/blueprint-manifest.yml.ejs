@@ -13,7 +13,7 @@ var net;
 var azs;
 if (spec.multi_az_enabled){
   net = spec.networks[1];
-  azs = '[z1, z2]';
+  azs = '[z2]';
 } else {
   net = spec.networks[0];
   azs = '[z1]';
@@ -38,13 +38,14 @@ if (!spec.previous_manifest) {
 }
 %>
 - name: blueprint
-  migrated_from: 
+  migrated_from:
   - name: blueprint_z1
   instances: <%= members.length %>
   networks:
   - name: <%= net.name %>
     static_ips: <%= JSON.stringify(members) %>
   vm_type: <%= p('vm_type') %>
+  azs: <%= azs %>
   persistent_disk_type: <%= p('disk_type') %>
   stemcell: <%= stemcell.alias %>
   jobs:
