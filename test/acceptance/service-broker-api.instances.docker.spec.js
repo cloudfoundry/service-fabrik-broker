@@ -26,6 +26,7 @@ describe('service-broker-api', function () {
       const parameters = {
         foo: 'bar'
       };
+      const accepts_incomplete = true;
       const usedPorts = [38782, 44635];
       const docker_url = parseUrl(config.docker.url);
       const protocol = config.external.protocol;
@@ -66,14 +67,10 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: organization_guid,
-                space_guid: space_guid
-              },
               organization_guid: organization_guid,
               space_guid: space_guid,
-              parameters: parameters
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
             })
             .then(res => {
               expect(res).to.have.status(201);
@@ -83,35 +80,6 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
-
-        it('returns 201 Created: For K8S', function () {
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
-          return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              context: {
-                platform: 'kubernetes',
-                namespace: 'default'
-              },
-              organization_guid: organization_guid,
-              space_guid: space_guid,
-              parameters: parameters
-            })
-            .then(res => {
-              expect(res).to.have.status(201);
-              expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
-              });
-              mocks.verify();
-            });
-        });
-
       });
 
       describe('#update', function () {
@@ -127,17 +95,13 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id,
               parameters: parameters,
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: organization_guid,
-                space_guid: space_guid
-              },
-              organization_guid: organization_guid,
-              space_guid: space_guid,
               previous_values: {
                 plan_id: plan_id,
-                service_id: service_id
-              }
+                service_id: service_id,
+                organization_id: organization_guid,
+                space_id: space_guid
+              },
+              accepts_incomplete: accepts_incomplete
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
@@ -148,57 +112,20 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
-        it('returns 200 OK : For K8S', function () {
-          mocks.docker.inspectContainer(instance_id);
-          mocks.docker.deleteContainer();
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
-          return chai.request(app)
-            .patch(`${base_url}/service_instances/${instance_id}`)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              parameters: parameters,
-              context: {
-                platform: 'kubernetes',
-                namespace: 'default'
-              },
-              organization_guid: organization_guid,
-              space_guid: space_guid,
-              previous_values: {
-                plan_id: plan_id,
-                service_id: service_id
-              }
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
       });
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"cloudfoundry"}']
-            }
-          });
           mocks.cloudController.findSecurityGroupByName(instance_id);
           mocks.cloudController.deleteSecurityGroup(instance_id);
-          mocks.docker.deleteContainer();
+          mocks.docker.deleteContainer(instance_id);
           mocks.docker.deleteVolumes(instance_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
@@ -208,51 +135,6 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
-
-        it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id);
-          mocks.cloudController.findSecurityGroupByName(instance_id);
-          mocks.cloudController.deleteSecurityGroup(instance_id);
-          mocks.docker.deleteContainer();
-          mocks.docker.deleteVolumes(instance_id);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
-        it('returns 200 OK: In K8S platform', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"kubernetes"}']
-            }
-          });
-          mocks.docker.deleteContainer();
-          mocks.docker.deleteVolumes(instance_id);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
       });
 
       describe('#bind', function () {
@@ -268,11 +150,6 @@ describe('service-broker-api', function () {
               app_guid: app_guid,
               bind_resource: {
                 app_guid: app_guid
-              },
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: organization_guid,
-                space_guid: space_guid
               }
             })
             .then(res => {
@@ -295,11 +172,6 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"cloudfoundry"}']
-            }
-          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -315,47 +187,6 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
-
-        it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
-        it('returns 200 OK: In K8S Platform', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"kubernetes"}']
-            }
-          });
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
       });
       describe('docker-deprecated-plans', function () {
         const plan_id = '61a8d1f7-6477-4eb7-a85d-57ac067e80c4';
@@ -387,11 +218,7 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid,
                 parameters: parameters,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                }
+                accepts_incomplete: accepts_incomplete
               })
               .catch(err => err.response)
               .then(res => {

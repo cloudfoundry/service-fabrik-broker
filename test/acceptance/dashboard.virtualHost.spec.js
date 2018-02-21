@@ -25,6 +25,7 @@ describe('dashboard', function () {
       instance_guid: instance_id,
       deployment_name: deployment_name
     };
+
     before(function () {
       _.unset(fabrik.VirtualHostManager, plan_id);
       virtualHostStore.cloudProvider = new lib.iaas.CloudProviderClient(config.virtual_host.provider);
