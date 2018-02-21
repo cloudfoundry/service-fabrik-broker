@@ -139,7 +139,6 @@ describe('service-broker-api', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
@@ -164,7 +163,6 @@ describe('service-broker-api', function () {
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);
@@ -185,7 +183,6 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name, undefined, undefined, undefined, false);
           mocks.director.getDeployment(deployment_name, false, undefined, 1);
           mocks.cloudProvider.download(pathname, data);
