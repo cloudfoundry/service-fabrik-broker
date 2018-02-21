@@ -16,10 +16,10 @@ const BaseAction = require('./BaseAction');
 class ReserveIps extends BaseAction {
   /* jshint unused:false */
   static executePreCreate(instanceId, deploymentName, reqParams, sfOperationArgs) {
-    return Promise.try(()=> {
-    logger.info(`Executing ReserveIPs.preCreate for ${instanceId} - ${deploymentName} with request params - `, reqParams);
-    //TODO: This is a dummy implementation. Actual implementation present in branch feature/dynamic_ip
-    return ['10.244.11.247'];
+    return Promise.try(() => {
+      logger.info(`Executing ReserveIPs.preCreate for ${instanceId} - ${deploymentName} with request params - `, reqParams);
+      //TODO: This is a dummy implementation. Actual implementation present in branch feature/dynamic_ip
+      return ['10.244.11.247'];
     });
   }
   static executePostCreate() {}
