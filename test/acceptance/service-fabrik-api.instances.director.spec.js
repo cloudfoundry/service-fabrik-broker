@@ -196,6 +196,8 @@ describe('service-fabrik-api', function () {
                   organization_guid: organization_guid,
                   space_guid: space_guid
                 },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
                 previous_values: {
                   plan_id: plan_id,
                   service_id: service_id
@@ -233,6 +235,8 @@ describe('service-fabrik-api', function () {
                   organization_guid: organization_guid,
                   space_guid: space_guid
                 },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
                 previous_values: {
                   plan_id: plan_id,
                   service_id: service_id
@@ -588,6 +592,8 @@ describe('service-fabrik-api', function () {
                   organization_guid: organization_guid,
                   space_guid: space_guid
                 },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
                 previous_values: {
                   plan_id: plan_id,
                   service_id: service_id
@@ -1211,6 +1217,8 @@ describe('service-fabrik-api', function () {
                   organization_guid: organization_guid,
                   space_guid: space_guid
                 },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
                 previous_values: {
                   plan_id: plan_id,
                   service_id: service_id

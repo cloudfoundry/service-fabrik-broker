@@ -87,8 +87,9 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
             })
             .then(res => {
               expect(res).to.have.status(202);
@@ -124,8 +125,9 @@ describe('service-broker-api', function () {
                 platform: 'kubernetes',
                 namespace: 'default'
               },
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
             })
             .then(res => {
               expect(res).to.have.status(202);
@@ -162,6 +164,8 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               parameters: {
                 bosh_director_name: 'bosh',
                 username: 'admin',
@@ -193,7 +197,7 @@ describe('service-broker-api', function () {
 
         it('returns 403 for deprecated plan', function () {
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
@@ -202,7 +206,6 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
-              accepts_incomplete: accepts_incomplete,
               context: {
                 platform: 'cloudfoundry',
                 organization_guid: organization_guid,
@@ -306,6 +309,8 @@ describe('service-broker-api', function () {
               plan_id: plan_id_update,
               parameters: parameters,
               context: context,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -343,6 +348,8 @@ describe('service-broker-api', function () {
               plan_id: plan_id_update,
               parameters: parameters,
               context: context,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id

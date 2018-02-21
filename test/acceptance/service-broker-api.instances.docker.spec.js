@@ -71,6 +71,8 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               parameters: parameters
             })
             .then(res => {
@@ -97,6 +99,8 @@ describe('service-broker-api', function () {
                 platform: 'kubernetes',
                 namespace: 'default'
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               parameters: parameters
             })
             .then(res => {
@@ -128,6 +132,8 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -158,6 +164,8 @@ describe('service-broker-api', function () {
                 platform: 'kubernetes',
                 namespace: 'default'
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
