@@ -74,6 +74,8 @@ exports.getBindingProperty = getBindingProperty;
 exports.createBindingProperty = createBindingProperty;
 exports.updateBindingProperty = updateBindingProperty;
 exports.deleteBindingProperty = deleteBindingProperty;
+exports.createDeploymentProperty = createDeploymentProperty;
+exports.getDeploymentProperty = getDeploymentProperty;
 exports.bindDeployment = bindDeployment;
 exports.unbindDeployment = unbindDeployment;
 exports.getDeploymentVms = getDeploymentVms;
@@ -277,6 +279,34 @@ function createBindingProperty(binding_id, parameters, deployment, binding_crede
         });
     })
     .reply(204);
+}
+
+function createDeploymentProperty(name, value, deployment) {
+  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
+
+  return nock(directorUrl)
+    .post(`/deployments/${deploymentName}/properties`, body => {
+      return body.name === name &&
+        _.isEqual(JSON.parse(body.value), value);
+    })
+    .reply(204);
+}
+
+function getDeploymentProperty(deploymentName, found, key, value) {
+  if (!found) {
+    return nock(directorUrl)
+      .replyContentLength()
+      .get(`/deployments/${deploymentName}/properties/${key}`)
+      .reply(404, {});
+  }
+  return nock(directorUrl)
+    .replyContentLength()
+    .get(`/deployments/${deploymentName}/properties/${key}`)
+    .reply(200,
+      JSON.stringify({
+        value: value
+      } || {})
+    );
 }
 
 function updateBindingProperty(binding_id, parameters, binding_credentials) {
