@@ -43,8 +43,6 @@ describe('dashboard', function () {
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
         mocks.docker.inspectContainer(instance_id);
-        mocks.docker.inspectContainer(instance_id);
-        mocks.docker.inspectContainer();
         mocks.docker.listContainerProcesses();
         mocks.docker.getContainerLogs();
         return agent

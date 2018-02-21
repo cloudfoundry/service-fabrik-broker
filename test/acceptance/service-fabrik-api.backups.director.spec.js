@@ -69,46 +69,6 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-        it('should return 200 OK - with platform', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          return chai.request(app)
-            .get(`${base_url}/backups`)
-            .query({
-              space_guid: space_guid,
-              platform: 'cloudfoundry'
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              const body = [_.omit(data, 'logs')];
-              expect(res.body).to.eql(body);
-              mocks.verify();
-            });
-        });
-        it('should return 200 OK - with random platform defaults to cf', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          return chai.request(app)
-            .get(`${base_url}/backups`)
-            .query({
-              space_guid: space_guid,
-              platform: 'random'
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              const body = [_.omit(data, 'logs')];
-              expect(res.body).to.eql(body);
-              mocks.verify();
-            });
-        });
       });
 
       describe('#getBackup', function () {
@@ -121,44 +81,6 @@ describe('service-fabrik-api', function () {
             .get(`${base_url}/backups/${backup_guid}`)
             .query({
               space_guid: space_guid
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql(data);
-              mocks.verify();
-            });
-        });
-        it('should return 200 OK - with platform', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          return chai.request(app)
-            .get(`${base_url}/backups/${backup_guid}`)
-            .query({
-              space_guid: space_guid,
-              platform: 'cloudfoundry'
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql(data);
-              mocks.verify();
-            });
-        });
-        it('should return 200 OK - with random platform defaults to cf', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          return chai.request(app)
-            .get(`${base_url}/backups/${backup_guid}`)
-            .query({
-              space_guid: space_guid,
-              platform: 'random'
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -193,50 +115,6 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it('should return 200 OK - with platform', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.remove(pathname);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename]);
-          mocks.cloudProvider.remove(archivePathname);
-          return chai.request(app)
-            .delete(`${base_url}/backups/${backup_guid}`)
-            .query({
-              space_guid: space_guid,
-              platform: 'cloudfoundry'
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-        it('should return 200 OK - with random platform defaults to cf', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.remove(pathname);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename]);
-          mocks.cloudProvider.remove(archivePathname);
-          return chai.request(app)
-            .delete(`${base_url}/backups/${backup_guid}`)
-            .query({
-              space_guid: space_guid,
-              platform: 'random'
-            })
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
         it('should return 410 Gone', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
