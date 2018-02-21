@@ -210,10 +210,10 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id, undefined, true);
+          mocks.docker.inspectContainer(instance_id);
           mocks.cloudController.findSecurityGroupByName(instance_id);
           mocks.cloudController.deleteSecurityGroup(instance_id);
-          mocks.docker.deleteContainer(instance_id);
+          mocks.docker.deleteContainer();
           mocks.docker.deleteVolumes(instance_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -317,7 +317,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id, undefined, true);
+          mocks.docker.inspectContainer(instance_id);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({

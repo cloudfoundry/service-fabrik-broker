@@ -125,20 +125,12 @@ function deleteContainer(guid) {
     .reply(204);
 }
 
-function inspectContainer(guid, options, notFound) {
+function inspectContainer(guid, options) {
   if (_.isObject(guid)) {
     options = guid;
     guid = undefined;
   }
   const name = getContainerName(guid);
-
-  if (notFound) {
-    return nock(dockerUrl)
-      .replyContentLength()
-      .get(`/containers/${name || containerId}/json`)
-      .reply(404, {});
-  }
-
   const body = _.assign({
     Id: containerId,
     Name: name ? `/${name}` : undefined,
