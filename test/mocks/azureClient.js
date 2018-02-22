@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const nock = require('nock');
+const utils = require('../../lib/utils');
+
 const config = {
   backup: {
     retention_period_in_days: 14,
@@ -41,10 +43,15 @@ function encodePath(pathname) {
 }
 
 function auth() {
+  const token = {
+    type: 'update',
+    parameters: {},
+    task_id: 'service-fabrik-1790-46d34d39-83b1-4b2d-8260-50f2d66a0957_23598'
+  };
   return nock('https://login.microsoftonline.com')
     .replyContentLength()
     .post(`/${provider.tenant_id}/oauth2/token?api-version=1.0`, body => _.isObject(body))
-    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"jwt_signed_string\"}', {
+    .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"' + utils.encodeBase64(token) + '\"}', {
       'cache-control': 'no-cache, no-store',
       pragma: 'no-cache',
       'content-type': 'application/json; charset=utf-8',
@@ -57,7 +64,7 @@ function auth() {
       'strict-transport-security': 'max-age=31536000; includeSubDomains',
       p3p: 'CP="DSP CUR OTPi IND OTRi ONL FIN"',
       'set-cookie': ['flight-uxoptin=true; path=/; secure; HttpOnly',
-        'esctx=XXXXXXXXXX9XX2X27XXXXXXXXX0XXX4-XXXXXXXX-XXXXXXXXX0X7XXXX7XXX4XXXXXXXXXX0X-5XXXXXXXXXX2XXX9XX6X5XXXXXXXX8XXX1X0XXXXXX6XXXXXX3X7X5X3XXX8XXXXXXXXXXXXXXXXXXXXXX1-XXXXXXXX6XXXXXX7X8XXXXXX5XX-XXXXX9XXXXXXXXXX; domain=.login.microsoftonline.com; path=/; secure; HttpOnly',
+        'esctx=XXXXXXXXXX9XX2X27XXXXXXXXX0XXX4-XXXXXXXX-XXXXXXXXX0X7XXXX7XXX4XXXXXXXXXX0X-5XXXXXXXXXX2XXX9XX6X5XXXXXXXX8XXX1X0XXXXXX6XXXXXX3X7X5X3XXX8passwordXX1-XXXXXXXX6XXXXXX7X8XXXXXX5XX-XXXXX9XXXXXXXXXX; domain=.login.microsoftonline.com; path=/; secure; HttpOnly',
         'x-ms-gateway-slice=productiona; path=/; secure; HttpOnly',
         'stsservicecookie=ests; path=/; secure; HttpOnly'
       ],
