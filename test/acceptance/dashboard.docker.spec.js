@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const parseUrl = require('url').parse;
 const lib = require('../../lib');
-const app = require('../../apps').external;
+const app = require('../support/apps').external;
 const catalog = lib.models.catalog;
 const docker = lib.docker;
 const fabrik = lib.fabrik;
@@ -43,6 +43,8 @@ describe('dashboard', function () {
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
         mocks.docker.inspectContainer(instance_id);
+        mocks.docker.inspectContainer(instance_id);
+        mocks.docker.inspectContainer();
         mocks.docker.listContainerProcesses();
         mocks.docker.getContainerLogs();
         return agent

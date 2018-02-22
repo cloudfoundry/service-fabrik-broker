@@ -21,35 +21,40 @@ const directorUrl = activePrimaryConfig.url;
 
 const manifest = {
   name: 'test-deployment-name',
-  jobs: [{
-    name: 'blueprint_z1',
+  instance_groups: [{
+    name: 'blueprint',
     networks: [{
       name: 'default',
       static_ips: [parseUrl(agent.url).hostname]
-    }]
-  }],
-  properties: {
-    blueprint: {
-      admin: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    mongodb: {
-      service_agent: {
-        username: 'admin',
-        password: 'admin'
-      }
-    },
-    agent: {
-      provider: {
-        name: 'openstack',
-        container: config.backup.provider.container
+    }],
+    jobs: [{
+        name: 'blueprint',
+        properties: {
+          admin: {
+            username: 'admin',
+            password: 'admin'
+          },
+          mongodb: {
+            service_agent: {
+              username: 'admin',
+              password: 'admin'
+            }
+          }
+        }
       },
-      username: 'admin',
-      password: 'admin'
-    }
-  }
+      {
+        name: 'broker-agent',
+        properties: {
+          username: 'admin',
+          password: 'admin',
+          provider: {
+            name: 'openstack',
+            container: config.backup.provider.container
+          }
+        }
+      }
+    ]
+  }],
 };
 
 exports.url = directorUrl;
@@ -69,6 +74,8 @@ exports.getBindingProperty = getBindingProperty;
 exports.createBindingProperty = createBindingProperty;
 exports.updateBindingProperty = updateBindingProperty;
 exports.deleteBindingProperty = deleteBindingProperty;
+exports.createDeploymentProperty = createDeploymentProperty;
+exports.getDeploymentProperty = getDeploymentProperty;
 exports.bindDeployment = bindDeployment;
 exports.unbindDeployment = unbindDeployment;
 exports.getDeploymentVms = getDeploymentVms;
@@ -259,7 +266,7 @@ function diffDeploymentManifest(times, diff) {
     });
 }
 
-function createBindingProperty(binding_id, parameters, deployment) {
+function createBindingProperty(binding_id, parameters, deployment, binding_credentials) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
 
   return nock(directorUrl)
@@ -267,19 +274,47 @@ function createBindingProperty(binding_id, parameters, deployment) {
       return body.name === `binding-${binding_id}` &&
         _.isEqual(JSON.parse(body.value), {
           id: binding_id,
-          credentials: credentials,
+          credentials: binding_credentials || credentials,
           parameters: parameters || {}
         });
     })
     .reply(204);
 }
 
-function updateBindingProperty(binding_id, parameters) {
+function createDeploymentProperty(name, value, deployment) {
+  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
+
+  return nock(directorUrl)
+    .post(`/deployments/${deploymentName}/properties`, body => {
+      return body.name === name &&
+        _.isEqual(JSON.parse(body.value), value);
+    })
+    .reply(204);
+}
+
+function getDeploymentProperty(deploymentName, found, key, value) {
+  if (!found) {
+    return nock(directorUrl)
+      .replyContentLength()
+      .get(`/deployments/${deploymentName}/properties/${key}`)
+      .reply(404, {});
+  }
+  return nock(directorUrl)
+    .replyContentLength()
+    .get(`/deployments/${deploymentName}/properties/${key}`)
+    .reply(200,
+      JSON.stringify({
+        value: value
+      } || {})
+    );
+}
+
+function updateBindingProperty(binding_id, parameters, binding_credentials) {
   return nock(directorUrl)
     .put(`/deployments/${deploymentNameByIndex(networkSegmentIndex)}/properties/binding-${binding_id}`, body => {
       return _.isEqual(JSON.parse(body.value), {
         id: binding_id,
-        credentials: credentials,
+        credentials: binding_credentials || credentials,
         parameters: parameters || {}
       });
     })
@@ -292,7 +327,7 @@ function deleteBindingProperty(binding_id) {
     .reply(204);
 }
 
-function getBindingProperty(binding_id, parameters, deployment, notFound) {
+function getBindingProperty(binding_id, parameters, deployment, notFound, binding_credentials) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
   if (notFound) {
     return nock(directorUrl)
@@ -306,7 +341,7 @@ function getBindingProperty(binding_id, parameters, deployment, notFound) {
     .reply(200, {
       value: JSON.stringify({
         id: binding_id,
-        credentials: credentials,
+        credentials: binding_credentials || credentials,
         parameters: parameters || {}
       })
     });
@@ -396,13 +431,25 @@ function unbindDeployment(guid, binding_id) {
     .reply(204);
 }
 
-function getDeploymentVms(deploymentName, vms, boshDirectorUrlInput) {
+function getDeploymentVms(deploymentName, times, vms, boshDirectorUrlInput, found) {
   const boshDirectorUrl = boshDirectorUrlInput || directorUrl;
-  return nock(boshDirectorUrl)
-    .get(`/deployments/${deploymentName}/vms`)
-    .reply(200, vms || [{
-      cid: '081e3263-e066-4a5a-868f-b420c72a260d',
-      job: 'blueprint_z1',
-      index: 0
-    }]);
+  if (found === false) {
+    return nock(boshDirectorUrl)
+      .get(`/deployments/${deploymentName}/vms`)
+      .times(times || 1)
+      .reply(404, {
+        'code': 70000,
+        'description': `'Deployment ${deploymentName} doesn\'t exist'`
+      });
+  } else {
+    return nock(boshDirectorUrl)
+      .get(`/deployments/${deploymentName}/vms`)
+      .times(times || 1)
+      .reply(200, vms || [{
+        cid: '081e3263-e066-4a5a-868f-b420c72a260d',
+        job: 'blueprint_z1',
+        ips: [parseUrl(agent.url).hostname],
+        index: 0
+      }]);
+  }
 }

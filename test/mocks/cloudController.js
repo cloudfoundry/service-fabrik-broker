@@ -16,16 +16,19 @@ exports.deleteSecurityGroup = deleteSecurityGroup;
 exports.getServiceInstancePermissions = getServiceInstancePermissions;
 exports.getServiceInstance = getServiceInstance;
 exports.getServiceInstances = getServiceInstances;
+exports.getServiceInstancesInSpaceWithName = getServiceInstancesInSpaceWithName;
 exports.updateServiceInstance = updateServiceInstance;
 exports.findServiceBrokerByName = findServiceBrokerByName;
 exports.getServicePlans = getServicePlans;
 exports.getServicePlan = getServicePlan;
 exports.getSpace = getSpace;
 exports.getSpaces = getSpaces;
-exports.getOrganisations = getOrganisations;
+exports.getOrganizations = getOrganizations;
+exports.getOrganization = getOrganization;
 exports.getPlans = getPlans;
 exports.findServicePlan = findServicePlan;
 exports.getSpaceDevelopers = getSpaceDevelopers;
+exports.findServicePlanByInstanceId = findServicePlanByInstanceId;
 
 function getInfo(options) {
   return nock(cloudControllerUrl)
@@ -186,7 +189,7 @@ function getSpaces(broker_guid, space_guid) {
     });
 }
 
-function getOrganisations(broker_guid, org_guid) {
+function getOrganizations(broker_guid, org_guid) {
   return nock(cloudControllerUrl)
     .get('/v2/organizations')
     .query({
@@ -199,6 +202,20 @@ function getOrganisations(broker_guid, org_guid) {
         },
         entity: {}
       }]
+    });
+}
+
+function getOrganization(guid, entity, times) {
+  return nock(cloudControllerUrl)
+    .get(`/v2/organizations/${guid}`)
+    .times(times || 1)
+    .reply(200, {
+      metadata: {
+        guid: guid
+      },
+      entity: _.assign({
+        name: 'blueprint'
+      }, entity)
     });
 }
 
@@ -220,13 +237,14 @@ function getPlans(broker_guid, plan_guid, plan_unique_id) {
     });
 }
 
-function getServicePlan(plan_guid, plan_unique_id) {
+function getServicePlan(plan_guid, plan_unique_id, entity) {
   return nock(cloudControllerUrl)
     .get(`/v2/service_plans/${plan_guid}`)
     .reply(200, {
-      entity: {
-        unique_id: plan_unique_id
-      }
+      entity: _.assign({
+        unique_id: plan_unique_id,
+        name: 'blueprint'
+      }, entity)
     });
 }
 
@@ -269,6 +287,43 @@ function getServiceInstances(plan_guid, size, space_guid, org_guid) {
     })
     .reply(200, {
       resources: instances
+    });
+}
+
+function getServiceInstancesInSpaceWithName(instance_name, space_guid, present) {
+  let instances = [];
+  if (present === true) {
+    instances = [{
+      metadata: {
+        guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+      }
+    }];
+  }
+  return nock(cloudControllerUrl)
+    .get(`/v2/service_instances`)
+    .query({
+      q: [`space_guid:${space_guid}`, `name:${instance_name}`]
+    })
+    .reply(200, {
+      resources: instances
+    });
+}
+
+function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id) {
+  return nock(cloudControllerUrl)
+    .get('/v2/service_plans')
+    .query({
+      q: `service_instance_guid:${instance_id}`
+    })
+    .reply(200, {
+      resources: [{
+        metadata: {
+          guid: plan_guid
+        },
+        entity: {
+          unique_id: plan_unique_id
+        }
+      }]
     });
 }
 

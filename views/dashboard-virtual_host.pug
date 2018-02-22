@@ -1,0 +1,9 @@
+extends dashboard
+
+block navbar
+  li: a.page-scroll(href='#service') Service
+
+block content
+  include mixins/sections.pug
+  +showSectionService(service, plan, instance, customAttrs)
+  +showSectionParentService(parent_plan, parent_instance)

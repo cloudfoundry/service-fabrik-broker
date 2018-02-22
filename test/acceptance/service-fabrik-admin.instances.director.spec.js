@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const lib = require('../../lib');
 const Repository = require('../../lib/db').Repository;
-const apps = require('../../apps');
+const apps = require('../support/apps');
 const config = lib.config;
 
 describe('service-fabrik-admin', function () {
@@ -71,7 +71,7 @@ describe('service-fabrik-admin', function () {
           });
           mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
           mocks.cloudController.getSpaces(broker_guid, space_guid);
-          mocks.cloudController.getOrganisations(broker_guid, org_guid);
+          mocks.cloudController.getOrganizations(broker_guid, org_guid);
           mocks.cloudController.getPlans(broker_guid, plan_guid, plan_unique_id);
           mocks.cloudController.getServiceInstances(plan_guid, space_guid, org_guid);
           return chai

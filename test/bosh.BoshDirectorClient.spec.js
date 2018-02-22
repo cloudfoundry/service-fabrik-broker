@@ -15,7 +15,7 @@ const id = uuid.v4();
 const deployment_name = id;
 const taskId = Math.floor(Math.random() * 123456789);
 const bosh_taskId = `bosh_${taskId}`;
-let populateCacheInProgress = false;
+let populateConfigCacheInProgress = false;
 const manifest = yaml.safeDump({
   name: id
 });
@@ -75,11 +75,11 @@ class MockBoshDirectorClient extends BoshDirectorClient {
     }
   }
 
-  populateCache() {
-    this.cache = {};
-    this.cacheLoadInProgress = populateCacheInProgress;
-    logger.info(`Stubbed populate cache - cache load in-progress : ${populateCacheInProgress}`);
-    this.cache[deployment_name] = primary_config;
+  populateConfigCache() {
+    this.boshConfigCache = {};
+    this.cacheLoadInProgress = populateConfigCacheInProgress;
+    logger.info(`Stubbed populate cache - cache load in-progress : ${populateConfigCacheInProgress}`);
+    this.boshConfigCache[deployment_name] = primary_config;
   }
 }
 
@@ -89,7 +89,7 @@ describe('bosh', () => {
     describe('#constructor', () => {
       it('initializes variables', () => {
         const dc = new MockBoshDirectorClient();
-        expect(dc.cache).to.be.an('object');
+        expect(dc.boshConfigCache).to.be.an('object');
       });
     });
 
@@ -126,11 +126,11 @@ describe('bosh', () => {
 
     // #getDirectorConfig is currently covered in Acceptance Test. Need to add unit test here.
 
-    describe('#clearCache', () => {
+    describe('#clearConfigCache', () => {
       it('empties the cache', () => {
         const dc = new MockBoshDirectorClient();
-        dc.clearCache();
-        expect(dc.cache).to.eql({});
+        dc.clearConfigCache();
+        expect(dc.boshConfigCache).to.eql({});
       });
     });
 
@@ -222,15 +222,15 @@ describe('bosh', () => {
           }),
           statusCode: 200
         };
-        populateCacheInProgress = true;
+        populateConfigCacheInProgress = true;
         const director = new MockBoshDirectorClient(request, response);
         const deployments = director
           .getDeploymentNamesFromCache('bosh').then((content) => {
             expect(content).to.eql([deployment_name]);
             done();
           }).catch(done);
-        populateCacheInProgress = false;
-        director.populateCache();
+        populateConfigCacheInProgress = false;
+        director.populateConfigCache();
         clock.tick(500);
         return deployments;
       });
