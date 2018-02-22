@@ -131,7 +131,7 @@ function inspectContainer(guid, options) {
     guid = undefined;
   }
   const name = getContainerName(guid);
-  const body = _.merge({
+  const body = _.assign({
     Id: containerId,
     Name: name ? `/${name}` : undefined,
     Config: {
