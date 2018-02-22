@@ -686,9 +686,9 @@ defaults: &defaults
       id: 'b715f834-2048-11e7-a560-080027afc1e6'
       name: 'v3.6-xsmall'
       free: false
-      manager: &manager_plan6
+      manager: &manager_plan9
         name: 'director'
-        settings: &settings_plan6
+        settings: &settings_plan9
           prefix: 'rabbitmq'
           agent: *agent_rabbitmq
           template: <%= base64_template('rabbitmq-manifest') %>
@@ -696,7 +696,7 @@ defaults: &defaults
           - { name: rabbitmq, version: 16 }
           # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-rabbitmq, version: 26 }
-          context: &context_plan6
+          context: &context_plan9
             agent: *agent_rabbitmq
             resource_pool: micro
             disk_pool: hdd_1gb
@@ -774,58 +774,6 @@ development: &development
       - lifecycle
       - credentials
       - multi_tenancy
-  services:
-  - <<: *blueprint_service
-    plans:
-    - *blueprint_plan1
-    - *blueprint_plan2
-    - <<: *blueprint_plan3
-      manager:
-        <<: *manager_plan3
-        settings:
-          <<: *settings_plan3
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan3
-            agent: *agent_blueprint1
-    - <<: *blueprint_plan4
-      manager:
-        <<: *manager_plan4
-        settings:
-          <<: *settings_plan4
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan4
-            agent: *agent_blueprint1
-    - <<: *blueprint_plan5
-      manager:
-        <<: *manager_plan5
-        settings:
-          <<: *settings_plan5
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan5
-            agent: *agent_blueprint1
-  - <<: *rabbitmq_service
-    plans:
-    - <<: *rabbitmq_plan1
-      manager:
-        <<: *manager_plan6
-        settings:
-          <<: *settings_plan6
-          agent: *agent_rabbitmq1
-          context:
-            <<: *context_plan6
-            agent: *agent_rabbitmq1
-    - <<: *shared_plan1
-      manager:
-        <<: *virtual_host_manager
-        settings:
-          <<: *settings_virtual_host
-          agent: *agent_rabbitmq1
-          context:
-            <<: *context_plan7
-            agent: *agent_rabbitmq1
 
 boshlite2:
   <<: *development
@@ -849,17 +797,6 @@ boshlite2:
         - { range: 10.244.11.0/20, az: z1, cloud_properties: { name: random } }
         - { range: 10.244.12.0/20, az: z2, cloud_properties: { name: random } }
         - { range: 10.244.13.0/20, az: z3, cloud_properties: { name: random } }
-  services:
-    - <<: *blueprint_service
-      plans:
-      - *blueprint_plan1
-      - *blueprint_plan2
-      - <<: *blueprint_plan3
-        manager:
-          <<: *manager_plan3
-          settings:
-            <<: *settings_plan3
-            agent: *agent_blueprint1
 
 azure_dev1: &azure_dev1
   <<: *defaults
