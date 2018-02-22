@@ -82,7 +82,7 @@ describe('iaas', function () {
       const deployment_name = 'ccdb-postgresql';
       const oob_backup_guid = 'oob-backup-guid';
       const service_instance_backup_guid = 'service-instance-backup-guid';
-      const space_guid = 'space-guid';
+      const tenant_id = 'space-guid';
       const service_guid = 'service-guid';
       const instance_guid = 'instance-guid';
       const oob_backup_started_at_suffix = new Date((new Date()).getTime() - 1000 * 600).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
@@ -94,7 +94,7 @@ describe('iaas', function () {
         listStub.returns(Promise.resolve([{
           name: `${CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME}/${operation}/${deployment_name}.${oob_backup_guid}.${oob_backup_started_at_suffix}.json`
         }, {
-          name: `${space_guid}/${operation}/${service_guid}.${instance_guid}.${service_instance_backup_guid}.${service_instance_backup_started_at_suffix}.json`
+          name: `${tenant_id}/${operation}/${service_guid}.${instance_guid}.${service_instance_backup_guid}.${service_instance_backup_started_at_suffix}.json`
         }]));
       });
       afterEach(function () {
