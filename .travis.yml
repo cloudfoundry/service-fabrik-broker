@@ -37,4 +37,4 @@ script:
      trufflehog --json --entropy true ./
      high_entropy=$(trufflehog --json --entropy true --regex ./)
      echo "Truffle hog output : $high_entropy"
-     [[ -n "$high_entropy" ]] && exit 1
+     if [[ "$high_entropy" != "" ]] ; then exit 1; fi
