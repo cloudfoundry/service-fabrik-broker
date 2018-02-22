@@ -14,7 +14,7 @@ describe('service-broker-api', function () {
     /* jshint expr:true */
     describe('docker', function () {
       const base_url = '/cf/v2';
-      const api_version = '2.9';
+      const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
       const plan = catalog.getPlan(plan_id);

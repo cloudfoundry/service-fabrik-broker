@@ -19,7 +19,7 @@ describe('service-broker-api', function () {
     describe('director', function () {
       const base_url = '/cf/v2';
       const index = mocks.director.networkSegmentIndex;
-      const api_version = '2.9';
+      const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
