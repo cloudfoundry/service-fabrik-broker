@@ -304,7 +304,7 @@ function getDeploymentProperty(deploymentName, found, key, value) {
     .get(`/deployments/${deploymentName}/properties/${key}`)
     .reply(200,
       JSON.stringify({
-        value: value
+        value: JSON.stringify(value)
       } || {})
     );
 }
