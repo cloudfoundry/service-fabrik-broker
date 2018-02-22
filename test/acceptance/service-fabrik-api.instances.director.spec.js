@@ -24,7 +24,7 @@ describe('service-fabrik-api', function () {
     describe('director', function () {
       const base_url = '/api/v1';
       const broker_api_base_url = '/cf/v2';
-      const broker_api_version = '2.9';
+      const broker_api_version = '2.12';
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;
       const adminAuthHeader = `bearer ${mocks.uaa.adminJwtToken}`;
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
