@@ -76,7 +76,7 @@ describe('service-broker-api', function () {
           });
           mocks.director.createOrUpdateDeployment(task_id);
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
@@ -87,8 +87,9 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
             })
             .then(res => {
               expect(res).to.have.status(202);
@@ -108,6 +109,43 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+        it('returns 202 Accepted: In K8S platform', function () {
+          mocks.director.getDeployments({
+            queued: true
+          });
+          mocks.director.createOrUpdateDeployment(task_id);
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              expect(res.body).to.have.property('operation');
+              const decoded = utils.decodeBase64(res.body.operation);
+              expect(_.pick(decoded, ['type', 'parameters', 'context'])).to.eql({
+                type: 'create',
+                parameters: parameters,
+                context: {
+                  platform: 'kubernetes',
+                  namespace: 'default'
+                }
+              });
+              expect(decoded.task_id).to.eql(`${deployment_name}_${task_id}`);
+              mocks.verify();
+            });
+        });
         it('returns 202 Accepted when invoked with bosh name', function () {
           mocks.director.getDeployments({
             queued: true
@@ -115,7 +153,7 @@ describe('service-broker-api', function () {
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.uaa.getAccessToken();
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id_new}`)
+            .put(`${base_url}/service_instances/${instance_id_new}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
@@ -126,6 +164,8 @@ describe('service-broker-api', function () {
                 organization_guid: organization_guid,
                 space_guid: space_guid
               },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
               parameters: {
                 bosh_director_name: 'bosh',
                 username: 'admin',
@@ -154,9 +194,10 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+
         it('returns 403 for deprecated plan', function () {
           return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}`)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .send({
@@ -165,21 +206,265 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              }
             })
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(403);
             });
         });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not passed in query', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              parameters: parameters
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete undefined', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not true', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=false`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 400 BadRequest when space_guid missing', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+            });
+        });
+
+        it('returns 400 BadRequest when organization_guid missing', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              space_guid: space_guid,
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+            });
+        });
+
+        it('returns 400 BadRequest when both organization_guid and space_guid missing', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+            });
+        });
+
+        it('returns 400 BadRequest when both organization_guid and space_guid missing: for K8S', function () {
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              parameters: parameters,
+              accepts_incomplete: accepts_incomplete
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+            });
+        });
+
       });
 
       describe('#update', function () {
         it('returns 202 Accepted', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                parameters: parameters,
+                context: context
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 Accepted: In K8s platform', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.director.createOrUpdateDeployment(task_id);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                parameters: parameters,
+                context: context
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete not in query', function () {
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -194,30 +479,83 @@ describe('service-broker-api', function () {
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
-              },
-              accepts_incomplete: accepts_incomplete
+              }
             })
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('operation');
-              expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'update',
-                parameters: parameters
-              });
-              mocks.verify();
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
             });
         });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=false`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
       });
 
       describe('#deprovision', function () {
         it('returns 202 Accepted', function () {
           const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
-
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo(2);
           mocks.agent.deprovision();
@@ -246,16 +584,152 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
               });
-              //expect(cancelScheduleStub).to.be.calledOnce;
-              //expect(cancelScheduleStub.firstCall.args[0]).to.eql(instance_id);
-              //expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
               mocks.verify();
             });
         });
+
+        it('returns 202 Accepted : existing deployments having no platform-context', function () {
+          const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
+          const restorePathname = `/${container}/${restoreFilename}`;
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.deprovision();
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.cloudController.findSecurityGroupByName(instance_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.deleteSecurityGroup(instance_id);
+          mocks.director.deleteDeployment(task_id);
+          mocks.cloudProvider.remove(restorePathname);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'delete',
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 Accepted : In K8S Platform', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'kubernetes',
+            namespace: 'default'
+          });
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.verifyDeploymentLockStatus();
+
+          mocks.director.deleteDeployment(task_id);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: accepts_incomplete
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'delete',
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not in query', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: undefined
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
+        it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          });
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              accepts_incomplete: false
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              expect(res.body.error).to.be.eql('AsyncRequired');
+              expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
+            });
+        });
+
       });
 
       describe('#lastOperation', function () {
-        it('returns 200 OK (state = in progress)', function () {
+        it('create: returns 200 OK (state = in progress)', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -285,8 +759,14 @@ describe('service-broker-api', function () {
             });
         });
 
-        it('returns 200 OK (state = succeeded)', function () {
+        it('create: returns 200 OK (state = succeeded)', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
@@ -307,11 +787,7 @@ describe('service-broker-api', function () {
               operation: utils.encodeBase64({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                }
+                context: context
               })
             })
             .catch(err => err.response)
@@ -327,6 +803,274 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+
+        it('create: returns 200 OK (state = in progress): In K8S platform', function () {
+          mocks.director.getDeploymentTask(task_id, 'processing');
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'create',
+                context: {
+                  platform: 'kubernetes',
+                  namespace: 'default'
+                }
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Create deployment ${deployment_name} is still in progress`,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: returns 200 OK (state = succeeded): In K8S platform', function () {
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeploymentTask(task_id, 'done');
+          const payload = {
+            repeatInterval: CONST.SCHEDULE.RANDOM,
+            timeZone: 'Asia/Kolkata'
+          };
+          mocks.director.createDeploymentProperty('platform-context', context);
+          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
+          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'create',
+                context: context
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              delete config.mongodb.provision.plan_id;
+              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: returns 200 OK (state = in progress)', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentTask(task_id, 'processing');
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                context: context
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Update deployment ${deployment_name} is still in progress`,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: returns 200 OK (state = succeeded)', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.findSecurityGroupByName(instance_id);
+          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                context: context
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              delete config.mongodb.provision.plan_id;
+              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+        it('update: returns 200 OK (state = in progress): In K8S platform', function () {
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeploymentTask(task_id, 'processing');
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                context: context
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Update deployment ${deployment_name} is still in progress`,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: returns 200 OK (state = succeeded): In K8S platform', function () {
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeploymentTask(task_id, 'done');
+          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                context: context
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              delete config.mongodb.provision.plan_id;
+              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('delete: returns 200 OK (state = in progress)', function () {
+          const context = {
+            platform: 'cloudfoundry'
+          };
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
+          mocks.director.getDeploymentTask(task_id, 'processing');
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Delete deployment ${deployment_name} is still in progress`,
+                state: 'in progress'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('delete: returns 200 OK (state = succeeded)', function () {
+          const context = {
+            platform: 'cloudfoundry'
+          };
+          /* Don't change second argument of following mock 'false'.
+           As in delete last operation in query platform won't be sent. 
+           It won't be found in deployment property.*/
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
+          mocks.director.getDeploymentTask(task_id, 'done');
+          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              delete config.mongodb.provision.plan_id;
+              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
       });
 
       describe('#bind', function () {
@@ -334,6 +1078,11 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
@@ -352,7 +1101,8 @@ describe('service-broker-api', function () {
               app_guid: app_guid,
               bind_resource: {
                 app_guid: app_guid
-              }
+              },
+              context: context
             })
             .catch(err => err.response)
             .then(res => {
@@ -373,10 +1123,65 @@ describe('service-broker-api', function () {
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
+        it('returns 201 Created: In K8S platform', function (done) {
+          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+          deferred.reject(new errors.NotFound('Schedule not found'));
+          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.createCredentials();
+          mocks.director.createBindingProperty(binding_id);
+          mocks.serviceFabrikClient.scheduleBackup(instance_id, {
+            type: CONST.BACKUP.TYPE.ONLINE,
+            repeatInterval: 'daily'
+          });
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              app_guid: app_guid,
+              bind_resource: {
+                app_guid: app_guid
+              },
+              context: context
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql({
+                credentials: mocks.agent.credentials
+              });
+              setTimeout(() => {
+                delete config.mongodb.provision.plan_id;
+                expect(getScheduleStub).to.be.calledOnce;
+                expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
+                expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+                mocks.verify();
+                done();
+                //Schedule operation is performed in background after response has been returned,
+                //hence added this delay of 500 ms which should work in all cases.
+                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+              }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
+            });
+        });
+
       });
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
@@ -397,6 +1202,56 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+        it('returns 200 OK : for existing deployment having no platform-context', function () {
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getBindingProperty(binding_id);
+          mocks.agent.getInfo();
+          mocks.agent.deleteCredentials();
+          mocks.director.deleteBindingProperty(binding_id);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+
+        it('returns 200 OK: In K8S platform', function () {
+          const context = {
+            platform: 'kubernetes',
+            namespace: 'default'
+          };
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getBindingProperty(binding_id);
+          mocks.agent.getInfo();
+          mocks.agent.deleteCredentials();
+          mocks.director.deleteBindingProperty(binding_id);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+
       });
     });
   });
