@@ -12,7 +12,7 @@ describe('service-broker-api', function () {
     describe('virtualHost', function () {
       const base_url = '/cf/v2';
       const index = mocks.director.networkSegmentIndex;
-      const api_version = '2.9';
+      const api_version = '2.12';
       const service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
       const plan_id = 'd035f948-5d3a-43d7-9aec-954e134c3e9d';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
@@ -36,6 +36,11 @@ describe('service-broker-api', function () {
       };
       const filename = `virtual_hosts/${instance_id}/${instance_id}.json`;
       const pathname = `/${container}/${filename}`;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
       Promise.onPossiblyUnhandledRejection(() => {});
 
       before(function () {
@@ -71,6 +76,7 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
+              context: context,
               accepts_incomplete: accepts_incomplete
             })
             .then(res => {
@@ -91,7 +97,8 @@ describe('service-broker-api', function () {
               organization_guid: organization_guid,
               space_guid: space_guid,
               parameters: parameters,
-              accepts_incomplete: accepts_incomplete
+              accepts_incomplete: accepts_incomplete,
+              context: context
             })
             .catch(res => {
               expect(res).to.have.status(404);
@@ -117,7 +124,8 @@ describe('service-broker-api', function () {
               app_guid: app_guid,
               bind_resource: {
                 app_guid: app_guid
-              }
+              },
+              context: context
             })
             .catch(err => err.response)
             .then(res => {
