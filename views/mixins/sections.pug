@@ -1,6 +1,6 @@
 include controls.pug
 
-mixin showSectionService(service, plan, instance)
+mixin showSectionService(service, plan, instance, customAttrs)
   section#service.section
     .container
       .row
@@ -8,27 +8,27 @@ mixin showSectionService(service, plan, instance)
           h4 Service Information
       .row
         .col-lg-6
-           +renderPropertyListPanel('Service', {
+           +renderPropertyListPanel('Service', _.assign({
               ID: service.id,
               Name: service.name,
               Description: service.metadata.longDescription || service.description,
               Tags: service.tags.join(', '),
               Documentation: service.metadata.documentationUrl,
               Support: service.metadata.supportUrl
-           })
+           }, customAttrs.service))
         .col-lg-6
-          +renderPropertyListPanel('Plan', {
+          +renderPropertyListPanel('Plan', _.assign({
             ID: plan.id,
             Name: plan.name,
             Description: plan.description,
             Bullets: plan.metadata.bullets.join(', ')
-          })
+          }, customAttrs.plan))
         .col-lg-6
-          +renderPropertyListPanel('Service Instance', {
+          +renderPropertyListPanel('Service Instance', _.assign({
             GUID: instance.metadata.guid,
             Name: instance.entity.name,
             Manager: plan.manager.name
-          })
+          }, customAttrs.service_instance))
 
 mixin showSectionContainer(details, processes)
   section#container.section
@@ -55,3 +55,24 @@ mixin showSectionFiles(title, logs)
       .row
         .col-lg-12
           +renderTabs(logs)
+
+mixin showSectionParentService(plan, instance)
+  section#service.section
+    .container
+      .row
+        .col-lg-12
+          h4 Parent Service Instance Information
+      .row
+        .col-lg-6
+          +renderPropertyListPanel('Plan', {
+            ID: plan.id,
+            Name: plan.name,
+            Description: plan.description,
+            Bullets: plan.metadata.bullets.join(', ')
+          })
+        .col-lg-6
+          +renderPropertyListPanel('Service Instance', {
+            GUID: instance.metadata.guid,
+            Name: instance.entity.name,
+            Manager: plan.manager.name
+          })

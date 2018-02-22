@@ -1,9 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
+const moment = require('moment');
 const lib = require('../../lib');
 const logger = lib.logger;
-const app = require('../../apps').internal;
+const app = require('../support/apps').internal;
 const config = lib.config;
 const backupStore = lib.iaas.backupStoreForOob;
 const filename = backupStore.filename;
@@ -20,6 +21,8 @@ describe('service-fabrik-admin', function () {
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
+    const timeAfter = moment(time).add(2, 'seconds').toDate();
+    const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
     const container = backupStore.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
@@ -35,35 +38,16 @@ describe('service-fabrik-admin', function () {
       deployment_name: deployment_name,
       root_folder: root_folder_name
     };
-    const deploymentVms = [{
-      agent_id: '21dd1d0a-0f53-4485-8927-78c9857fa0f2',
-      cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
-      job: 'postgresql_master_z1',
-      index: 0,
-      iaas_vm_metadata: {
-        'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
-      },
-      id: '9b199ea6-94a3-463d-b3d4-4d4fe89cc364'
-    }, {
-      agent_id: '21dd1d0a-0f53-4485-8927-78c9857fa0f2',
-      cid: '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5',
-      job: 'postgresql_slave_z1',
-      index: 1,
-      iaas_vm_metadata: {
-        'vm_id': '3ffaefe0-e59b-43cc-4f25-940dfc12aeb5'
-      },
-      id: '9b199ea6-94a3-463d-b3d4-4d4fe89cc364'
-    }];
     const filenameObj = filename.create(filenameObject).name;
     const restoreFileName = filename.create(restoreFilenameObject).name;
     const pathname = `/${container}/${filenameObj}`;
     const restorePathname = `/${container}/${restoreFileName}`;
     const prefix = `${root_folder_name}/${operation_backup}/${deployment_name}.${backup_guid}`;
+    const pitrPrefix = `${root_folder_name}/${operation_backup}/${deployment_name}`;
     const data = {
       backup_guid: backup_guid,
       deployment_name: deployment_name,
       state: 'succeeded',
-      logs: [],
       trigger: CONST.BACKUP.TRIGGER.SCHEDULED
     };
     const restore_data = {
@@ -127,9 +111,8 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should initiate ccdb backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(1);
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -187,7 +170,7 @@ describe('service-fabrik-admin', function () {
       });
 
 
-      it('should list all backups for bootstrap bosh deployment', function () {
+      it('should list all backups for bosh-sf deployment', function () {
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         return chai
@@ -195,7 +178,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/backup`)
           .query({
             backup_guid: backup_guid,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -208,9 +191,9 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should initiate bootstrap bosh deployment backup operation successfully', function () {
-        mocks.director.getDeploymentManifest(2);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+      it('should initiate bosh-sf deployment backup operation successfully', function () {
+        mocks.director.getDeploymentManifest(1);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -228,7 +211,7 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/backup`)
           .send({
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -243,7 +226,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should return the status of last bootstrap bosh deployment backup operation', function () {
+      it('should return the status of last bosh-sf deployment backup operation', function () {
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -261,7 +244,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/backup/status`)
           .query({
             token: token,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -288,11 +271,51 @@ describe('service-fabrik-admin', function () {
           });
       });
 
+      it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
 
-      it('should initiate ccdb restore operation successfully', function () {
+      it('should return 400 Bad Request (invalid backup_guid given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            backup_guid: 'invalid-guid'
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
+
+      it('should return 400 Bad Request (invalid time_stamp given)', function () {
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: '2017-12-04T07:560:02.203Z'
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(400);
+          });
+      });
+
+      it('should initiate ccdb restore operation successfully: backup_guid', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentManifest();
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -320,6 +343,100 @@ describe('service-fabrik-admin', function () {
             expect(res.body.backup_guid).to.eql(backup_guid);
             expect(res.body.operation).to.eql(operation_restore);
             expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
+          });
+      });
+
+      it('should initiate ccdb restore operation successfully: PITR', function () {
+        mocks.director.getDeployment(deployment_name, true);
+        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, data);
+        mocks.agent.getInfo();
+        mocks.agent.startRestore();
+        logger.debug(`uploading json here: ${pathname}`);
+        mocks.cloudProvider.upload(restorePathname, body => {
+          expect(body.username).to.equal(config.username);
+          expect(body.state).to.equal('processing');
+          return true;
+        });
+        mocks.cloudProvider.headObject(restorePathname);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(scheduleStub).to.be.calledOnce;
+            expect(res).to.have.status(202);
+            expect(res.body.time_stamp).to.eql(restore_at);
+            expect(res.body.operation).to.eql(operation_restore);
+            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
+        mocks.cloudProvider.list(container, pitrPrefix, []);
+        logger.debug(`uploading json here: ${pathname}`);
+
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (backup still in progress)', function () {
+        mocks.cloudProvider.list(container, prefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, {
+          state: 'processing'
+        });
+        logger.debug(`uploading json here: ${pathname}`);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            backup_guid: backup_guid
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
+            mocks.verify();
+          });
+      });
+
+      it('should return 422 Unprocessable Entity (backup still in progress): PITR', function () {
+        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
+        mocks.cloudProvider.download(pathname, {
+          state: 'processing'
+        });
+        logger.debug(`uploading json here: ${pathname}`);
+        return chai
+          .request(app)
+          .post(`${base_url}/deployments/${deployment_name}/restore`)
+          .send({
+            time_stamp: restore_at
+          })
+          .set('Accept', 'application/json')
+          .auth(config.username, config.password)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(422);
             mocks.verify();
           });
       });
@@ -380,13 +497,13 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should list restore info for bootstrap bosh deployment', function () {
+      it('should list restore info for bosh-sf deployment', function () {
         mocks.cloudProvider.download(restorePathname, restore_data);
         return chai
           .request(app)
           .get(`${base_url}/deployments/${deployment_name}/restore`)
           .query({
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -397,10 +514,9 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should initiate bootstrap bosh deployment restore operation successfully', function () {
+      it('should initiate bosh-sf deployment restore operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentManifest(1);
-        mocks.director.getDeploymentVms(deployment_name, deploymentVms);
+        mocks.director.getDeploymentVms(deployment_name, 2);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -418,7 +534,7 @@ describe('service-fabrik-admin', function () {
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
             backup_guid: backup_guid,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -433,7 +549,7 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should return the status of bootstrap bosh deployment restore operation', function () {
+      it('should return the status of bosh-sf deployment restore operation', function () {
         const token = utils.encodeBase64({
           backup_guid: backup_guid,
           agent_ip: mocks.agent.ip,
@@ -451,7 +567,7 @@ describe('service-fabrik-admin', function () {
           .get(`${base_url}/deployments/${deployment_name}/restore/status`)
           .query({
             token: token,
-            bosh_director: CONST.BOSH_DIRECTORS.BOOSTRAP_BOSH
+            bosh_director: CONST.BOSH_DIRECTORS.BOSH_SF
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)

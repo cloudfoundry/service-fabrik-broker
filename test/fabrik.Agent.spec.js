@@ -44,11 +44,11 @@ describe('fabrik', function () {
     }];
     const state = 'processing';
     const operational = true;
-    let version = 2;
+    let version = 1;
     let protocol = 'http';
     let pathname = 'foo';
     let expectedStatus;
-    let api_version = '1.1';
+    let api_version = '1';
     let supported_features = ['state', 'lifecycle', 'credentials', 'backup'];
     let url;
     let agent;
@@ -75,6 +75,17 @@ describe('fabrik', function () {
         .withArgs({
           method: 'GET',
           url: createUrl('info')
+        }, 200)
+        .returns(Promise.resolve({
+          body: {
+            api_version: api_version,
+            supported_features: supported_features
+          }
+        }));
+      requestStub
+        .withArgs({
+          method: 'GET',
+          url: `${protocol}://${ip}:${port}/info`
         }, 200)
         .returns(Promise.resolve({
           body: {
@@ -119,7 +130,9 @@ describe('fabrik', function () {
 
     describe('#basePath', function () {
       it('returns a string', function () {
-        expect(agent.basePath).to.equal(`/v${version}`);
+        return agent
+          .basePath(ip)
+          .then(path => expect(path).to.equal(`/v${version}`));
       });
     });
 
@@ -156,8 +169,15 @@ describe('fabrik', function () {
     });
 
     describe('#getUrl', function () {
+      before(function () {
+        expectedStatus = 200;
+      });
       it('returns a formatted url', function () {
-        expect(agent.getUrl(ip, pathname)).to.equal(url);
+        return agent
+          .getUrl(ip, pathname)
+          .then(hostUrl => {
+            expect(hostUrl).to.equal(url);
+          });
       });
     });
 
@@ -176,14 +196,14 @@ describe('fabrik', function () {
           .then(expect.fail)
           .catchReturn(FeatureNotSupportedByAnyAgent, null);
       });
-      describe('where api version is 1.0', function () {
+      describe('where api version is 1', function () {
         const store = {};
 
         before(function () {
           store.api_version = api_version;
           store.supported_features = supported_features;
-          api_version = '1.0';
-          supported_features = undefined;
+          api_version = '1';
+          supported_features = ['credentials'];
         });
 
         after(function () {

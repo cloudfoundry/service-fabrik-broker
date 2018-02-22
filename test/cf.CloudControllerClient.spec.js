@@ -19,8 +19,24 @@ describe('cf', function () {
     const bearer = 'bearer';
     const firstResource = {};
     const resources = [];
+    const service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+    const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
+    const entity = {
+      name: name,
+      service_guid: service_guid,
+      service_plan_guid: service_plan_guid,
+      space_guid: id,
+      space_name: name,
+      organization_guid: id,
+      organization_name: name
+    };
+    const metadata = {
+      guid: id
+    };
     const body = {
-      resources: resources
+      resources: resources,
+      entity: entity,
+      metadata: metadata
     };
     const response = {
       statusCode: undefined,
@@ -320,14 +336,45 @@ describe('cf', function () {
       });
     });
 
-    describe('#getOrg', function () {
+    describe('#getSpace', function () {
       const [options, statusCode] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
       it('should return the JSON body with Status 200', function () {
-        return cloudController.getOrg(id)
+        return cloudController.getSpace(id)
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
             expect(result).to.equal(body);
+          });
+      });
+    });
+
+    describe('#getOrgAndSpaceDetails', function () {
+      const [optionsInstance, statusCodeInstance] = buildExpectedRequestArgs('GET', `/service_instances/${id}`);
+      const [optionsSpace, statusCodeSpace] = buildExpectedRequestArgs('GET', `/spaces/${id}`);
+      const [optionsOrg, statusCodeOrg] = buildExpectedRequestArgs('GET', `/organizations/${id}`);
+      const expectedResult = {
+        space_guid: id,
+        space_name: name,
+        organization_guid: id,
+        organization_name: name
+      };
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getOrgAndSpaceDetails(id)
+          .then(result => {
+            expect(getAccessTokenSpy.callCount).to.equal(3);
+            expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsInstance, statusCodeInstance);
+            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            expect(requestSpy.getCall(2)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            expect(result).to.deep.equal(expectedResult);
+          });
+      });
+      it('should return the JSON body with Status 200', function () {
+        return cloudController.getOrgAndSpaceDetails(id, id)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledTwice;
+            expect(requestSpy.getCall(0)).to.be.calledWithExactly(optionsSpace, statusCodeSpace);
+            expect(requestSpy.getCall(1)).to.be.calledWithExactly(optionsOrg, statusCodeOrg);
+            expect(result).to.deep.equal(expectedResult);
           });
       });
     });
