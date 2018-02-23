@@ -33,6 +33,7 @@ script:
   - |
      git secrets --scan-history || exit 1
   - |
+     echo "XXXXXXXXXXXXXXXXXXXX"
      echo "Full repo scan of truffleHog"
      trufflehog --json --entropy true ./
      high_entropy=$(trufflehog --json --entropy true --regex ./)
