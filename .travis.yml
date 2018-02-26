@@ -33,6 +33,7 @@ script:
   - |
      git secrets --scan-history || exit 1
   - |
+     echo "Add high entropy string for test TkVW0DINL9cc6T6UU7vV39KHFbUWWLmY3SqsM0l8f1MWbxQygOJfvjxggoGcayLA "
      echo "Full repo scan of truffleHog"
      # truffleHog only scans git endpoints which have a ref.
      # truffleHog check fails to detect changed because travis merge creates a detached HEAD
