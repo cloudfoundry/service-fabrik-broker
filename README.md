@@ -212,7 +212,7 @@ If you need any support, have any question or have found a bug, please report it
 
 Now you can start restarting your builds in Debug mode with an API request. To trigger a debug job:
 
-1. Get the API token using the CLI and send a POST request to /job/:job_id/debug replacing the TOKEN and JOB_ID values below:
+1. Get the API token using the travis CLI and send a POST request to /job/:job_id/debug replacing the [TOKEN](https://blog.travis-ci.com/2013-01-28-token-token-token) and JOB_ID values below:
 ```
 curl -s -X POST \
    -H "Content-Type: application/json" \
