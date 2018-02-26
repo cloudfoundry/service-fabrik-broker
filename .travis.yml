@@ -34,6 +34,7 @@ script:
      git secrets --scan-history || exit 1
   - |
      echo "Full repo scan of truffleHog"
+     echo "Test high entropy TkVW0DINL9cc6T6UU7vV39KHFbUWWLmY3SqsM0l8f1MWbxQygOJfvjxggoGcayLA "
      high_entropy=$(trufflehog --json --entropy true --regex "$TRAVIS_BUILD_DIR")
      echo "Truffle hog output : $high_entropy"
      if [[ "$high_entropy" != "" ]] ; then exit 1; fi
