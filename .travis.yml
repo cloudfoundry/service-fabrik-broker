@@ -34,6 +34,7 @@ script:
      git secrets --scan-history || exit 1
   - |
      echo "Full repo scan of truffleHog"
+     echo "Add test password XXXXXXXXXXXXXXXXXXXX"
      # truffleHog only scans git endpoints which have a ref.
      # truffleHog check fails to detect changed because travis merge creates a detached HEAD
      # Creating a branch to fix this issue
