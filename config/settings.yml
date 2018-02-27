@@ -410,6 +410,12 @@ defaults: &defaults
       - credentials
       - multi_tenancy
   ########################################
+  # DEPLOYMENT ACTIONS #
+  ########################################
+  actions:
+    "ReserveIps.js" : <%= base64_template('templates/actions/ReserveIps.js') %>
+    "Blueprint_PreCreate": <%= base64_template('templates/actions/Blueprint_PreCreate') %>
+  ########################################
   # SERVICES CATALOG - BLUEPRINT SERVICE #
   ########################################
   services:
@@ -435,6 +441,7 @@ defaults: &defaults
     supported_platform:
     - k8s
     - cf
+    actions: ReserveIps
     plans:
     ###########################
     # CONTAINER SERVICE PLANS #
@@ -543,14 +550,14 @@ defaults: &defaults
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
       free: false
-      #actions: ReserveIps, HelloWorld
+      actions: Blueprint
       manager: &manager_plan3
         name: 'director'
         settings: &settings_plan3
           prefix: 'blueprint'
           agent: *agent_blueprint
-          template: <%= base64_template('blueprint-manifest') %>
-          dashboard_template: <%= base64_template('blueprint-dashboard') %>
+          template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
+          dashboard_template: <%= base64_template('templates/blueprint-dashboard.yml.ejs') %>
           releases: &dedicated_releases
           - { name: blueprint, version: 1.3.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
@@ -583,7 +590,7 @@ defaults: &defaults
           agent: *agent_blueprint
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
-          template: <%= base64_template('blueprint-manifest') %>
+          template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
           releases: *dedicated_releases
           context: &context_plan4
             agent: *agent_blueprint
@@ -616,7 +623,7 @@ defaults: &defaults
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
           - 'bc158c9a-7934-401e-94ab-057082a5073e'
-          template: <%= base64_template('blueprint-manifest') %>
+          template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
           releases: *dedicated_releases
           context: &context_plan5
             agent: *agent_blueprint
@@ -648,7 +655,7 @@ defaults: &defaults
           agent: *agent_blueprint
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
-          template: <%= base64_template('blueprint-manifest') %>
+          template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
           releases: *dedicated_releases
           context: &context_plan6
             agent: *agent_blueprint
@@ -704,7 +711,7 @@ defaults: &defaults
         settings: &settings_plan9
           prefix: 'rabbitmq'
           agent: *agent_rabbitmq
-          template: <%= base64_template('rabbitmq-manifest') %>
+          template: <%= base64_template('templates/rabbitmq-manifest.yml.ejs') %>
           releases: &dedicated_releases
           - { name: rabbitmq, version: 16 }
           # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
