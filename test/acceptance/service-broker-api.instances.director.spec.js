@@ -1143,18 +1143,12 @@ describe('service-broker-api', function () {
 
       describe('#bind', function () {
         it('no context : returns 201 Created', function (done) {
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry'
           });
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
           mocks.director.getDeploymentVms(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
