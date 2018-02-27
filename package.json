@@ -61,7 +61,8 @@
     "session-file-store": "0.2.0",
     "uuid": "2.0.2",
     "winston": "2.2.0",
-    "winston-syslog": "1.2.5"
+    "winston-syslog": "1.2.5",
+    "aws-sdk": "2.35.0"
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",
@@ -85,8 +86,7 @@
     "nock": "^8.0.0",
     "proxyquire": "^1.7.9",
     "sinon": "^1.17.4",
-    "sinon-chai": "^2.8.0",
-    "aws-sdk": "2.35.0"
+    "sinon-chai": "^2.8.0"
   },
   "engines": {
     "node": ">= 6.2.1"
