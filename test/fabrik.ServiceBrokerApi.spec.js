@@ -48,8 +48,8 @@ describe('fabrik', function () {
         req.headers['x-broker-api-version'] = '2.11';
         return api
           .apiVersion(req, res)
-          .throw(expectToThrow(ContinueWithNext))
-          .catch(err => expect(err).to.be.instanceof(ContinueWithNext));
+          .throw(expectToThrow(PreconditionFailed))
+          .catch(err => expect(err).to.be.instanceof(PreconditionFailed));
       });
 
       it('should call the next handler when version is 2.12', function () {
