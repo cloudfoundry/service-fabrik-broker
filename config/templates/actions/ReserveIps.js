@@ -5,9 +5,9 @@ const logger = require('../../../logger');
 const BaseAction = require('./BaseAction');
 
 class ReserveIps extends BaseAction {
-  static executePreCreate(instanceId, deploymentName, reqParams, sfOperationArgs) {
+  static executePreCreate(context) {
     return Promise.try(() => {
-      logger.info(`Executing ReserveIPs.preCreate for ${instanceId} - ${deploymentName} with request params - `, reqParams, ' sf operation params - ', sfOperationArgs);
+      logger.info(`Executing ReserveIPs.preCreate with parameters: ${context}`);
       return ['10.244.11.247'];
     });
   }

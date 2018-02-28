@@ -897,18 +897,6 @@ development_sc6: &sc6
         - { range: 10.11.252.0/24, az: z1, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
         - { range: 10.11.253.0/24, az: z2, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
         - { range: 10.11.254.0/24, az: z3, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
-      - name: compilation
-        type: dynamic
-        cloud_properties:
-          net_id: b7089c41-e529-4044-943b-174b92ad6074
-          security_groups:
-          - service-fabrik-compilation
-          subnet: d29304b0-37b6-4f99-99eb-491cd4bfc32e
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 20
-        cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 }
 
 development_aws:
   env: &resource_pool_env

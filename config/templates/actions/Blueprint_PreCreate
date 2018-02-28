@@ -1,2 +1,3 @@
 #!/bin/bash -eu
-echo '{"message" : "HelloWorld", "code": "0"}'
+
+echo "{PreCreate Input Params:" $@ "}"
