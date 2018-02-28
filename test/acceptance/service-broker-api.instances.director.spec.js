@@ -109,6 +109,40 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
+        it('no context returns 202 Accepted', function () {
+          mocks.director.getDeployments({
+            queued: true
+          });
+          mocks.director.createOrUpdateDeployment(task_id);
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              expect(res.body).to.have.property('operation');
+              const decoded = utils.decodeBase64(res.body.operation);
+              expect(_.pick(decoded, ['type', 'parameters', 'context'])).to.eql({
+                type: 'create',
+                parameters: parameters,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                }
+              });
+              expect(decoded.task_id).to.eql(`${deployment_name}_${task_id}`);
+              mocks.verify();
+            });
+        });
         it('returns 202 Accepted: In K8S platform', function () {
           mocks.director.getDeployments({
             queued: true
@@ -389,6 +423,40 @@ describe('service-broker-api', function () {
       });
 
       describe('#update', function () {
+        it('no context : returns 202 Accepted', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.director.createOrUpdateDeployment(task_id);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              //context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                parameters: parameters
+              });
+              mocks.verify();
+            });
+        });
         it('returns 202 Accepted', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           const context = {
@@ -1074,6 +1142,53 @@ describe('service-broker-api', function () {
       });
 
       describe('#bind', function () {
+        it('no context : returns 201 Created', function (done) {
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+          deferred.reject(new errors.NotFound('Schedule not found'));
+          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.createCredentials();
+          mocks.director.createBindingProperty(binding_id);
+          mocks.serviceFabrikClient.scheduleBackup(instance_id, {
+            type: CONST.BACKUP.TYPE.ONLINE,
+            repeatInterval: 'daily'
+          });
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              app_guid: app_guid,
+              bind_resource: {
+                app_guid: app_guid
+              }
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql({
+                credentials: mocks.agent.credentials
+              });
+              setTimeout(() => {
+                delete config.mongodb.provision.plan_id;
+                expect(getScheduleStub).to.be.calledOnce;
+                expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
+                expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+                mocks.verify();
+                done();
+                //Schedule operation is performed in background after response has been returned,
+                //hence added this delay of 500 ms which should work in all cases.
+                //In case asserts are failing, try increasing the timeout first & then debug. :-)
+              }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
+            });
+        });
+
         it('returns 201 Created', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
