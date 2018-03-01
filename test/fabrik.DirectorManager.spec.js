@@ -5,6 +5,7 @@ const catalog = lib.models.catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const errors = require('../lib/errors');
+const CONST = require('../lib/constants');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
@@ -77,6 +78,50 @@ describe('fabrik', function () {
         manager = new DirectorManager(catalog.getPlan(small_plan_id));
         manager.update_predecessors = [xsmall_plan_id];
         expect(manager.restorePredecessors).to.eql(manager.update_predecessors);
+      });
+    });
+    describe('#executeActions', function () {
+      const rabbit_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
+      const context = {
+        deployment_name: 'my-deployment'
+      };
+      it('should return empty response if no actions are defined', function () {
+        manager = new DirectorManager(catalog.getPlan(rabbit_plan_id));
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .then(actionResponse => {
+            expect(actionResponse).to.eql({});
+          });
+      });
+      it('should return empty response if actions are not provided', function () {
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        let temp_actions = manager.service.actions;
+        manager.service.actions = '';
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .then(actionResponse => {
+            manager.service.actions = temp_actions;
+            expect(actionResponse).to.eql({});
+          });
+      });
+      it('should return correct action response', function () {
+        manager = new DirectorManager(catalog.getPlan(xsmall_plan_id));
+        let expectResponse = {
+          ReserveIps: ['10.244.11.247'],
+          'Blueprint': '{PreCreate Input Params: {\"deployment_name\":\"my-deployment\"} }\n'
+        };
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .then(actionResponse => {
+            expect(actionResponse).to.eql(expectResponse);
+          });
+      });
+      it('should return not implemented if actions scripts are not provided', function () {
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        let temp_actions = manager.service.actions;
+        manager.service.actions = 'MyAction';
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .catch(err => {
+            manager.service.actions = temp_actions;
+            expect(err).to.have.status(501);
+          });
       });
     });
   });
