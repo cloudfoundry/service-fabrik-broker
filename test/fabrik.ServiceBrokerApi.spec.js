@@ -51,8 +51,8 @@ describe('fabrik', function () {
         };
         return api
           .apiVersion(req, res)
-          .throw(expectToThrow(ContinueWithNext))
-          .catch(err => expect(err).to.be.instanceof(ContinueWithNext));
+          .throw(expectToThrow(PreconditionFailed))
+          .catch(err => expect(err).to.be.instanceof(PreconditionFailed));
       });
 
       it('For K8S : should call the next handler when version is 2.11', function () {
