@@ -3,7 +3,6 @@
 const lib = require('../../lib');
 const app = require('../support/apps').internal;
 const config = lib.config;
-const logger = lib.logger;
 const CONST = require('../../lib/constants');
 
 
