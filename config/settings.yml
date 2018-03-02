@@ -162,6 +162,7 @@ defaults: &defaults
   ####################
   mongodb:
     provision:
+      plan_id: bc158c9a-7934-401e-94ab-057082a5073f
       network_index: 1
     deployment_name: service-fabrik-mongodb
     retry_connect:
