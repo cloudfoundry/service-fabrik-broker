@@ -1,12 +1,15 @@
 'use strict';
 
 const lib = require('../lib');
+const config = lib.config;
 const catalog = lib.models.catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const errors = require('../lib/errors');
 const CONST = require('../lib/constants');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
+const fs = require('fs');
+const path = require('path');
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var free_guid = '87599704-adc9-1acd-0be9-795e6a3bc803';
@@ -121,6 +124,25 @@ describe('fabrik', function () {
           .catch(err => {
             manager.service.actions = temp_actions;
             expect(err).to.have.status(501);
+          });
+      });
+      it('should return timeout error if action scripts exceeds time limit', function () {
+        let actionScriptName = 'MyAction_PreCreate';
+        let actionFilePath = path.join(__dirname, '../lib/fabrik/actions/sh', `${actionScriptName}`);
+        fs.writeFileSync(actionFilePath, 'sleep 1', {
+          mode: CONST.FILE_PERMISSIONS.RWXR_XR_X
+        });
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        let temp_actions = manager.service.actions;
+        let temp_deployment_action_timeout = config.deployment_action_timeout;
+        config.deployment_action_timeout = 800;
+        manager.service.actions = 'MyAction';
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .catch(err => {
+            fs.unlinkSync(actionFilePath);
+            manager.service.actions = temp_actions;
+            config.deployment_action_timeout = temp_deployment_action_timeout;
+            expect(err).to.have.status(500);
           });
       });
     });
