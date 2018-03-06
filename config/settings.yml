@@ -134,10 +134,12 @@ defaults: &defaults
   colorize_log: false
   sys_log_level: info
   enable_circuit_breaker: true
+  enable_swarm_manager: true
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
   http_timeout: 175000
+  multi_az_enabled: false
 
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
@@ -367,14 +369,6 @@ defaults: &defaults
   # DIRECTOR SETTINGS #
   #####################
   directors:
-  - url: https://192.168.50.3:25555
-    primary: false        # is true if the director takes part in lifecycle operations except create
-    support_create: false  # is true if director is expected to 'create deployments'
-    name: bootstrap-bosh
-    username: admin
-    password: admin
-    skip_ssl_validation: true
-    cpi: warden_cpi
   - &director
     primary: true
     support_create: false
@@ -388,6 +382,7 @@ defaults: &defaults
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
     infrastructure: &director_infrastructure
       stemcell:
+        alias: ubuntu-trusty
         name: bosh-warden-boshlite-ubuntu-trusty-go_agent
         version: latest
       segmentation:
@@ -396,40 +391,6 @@ defaults: &defaults
         capacity: -1
         offset: 1
         size: 8
-      azs:
-      - { name: z1, cloud_properties: { name: random } }
-      - { name: z2, cloud_properties: { name: random } }
-      - { name: z3, cloud_properties: { name: random } }
-      vm_types:
-      - { name: micro,    cloud_properties: { name: random } }
-      - { name: small,    cloud_properties: { name: random } }
-      - { name: medium,   cloud_properties: { name: random } }
-      - { name: large,    cloud_properties: { name: random } }
-      - { name: xlarge,   cloud_properties: { name: random } }
-      - { name: 2xlarge,  cloud_properties: { name: random } }
-      - { name: 4xlarge,  cloud_properties: { name: random } }
-      - { name: 10xlarge, cloud_properties: { name: random } }
-      disk_types:
-      - { name: hdd_1gb,   disk_size:     1_024 } # minimum size 1GiB (2^30), everything else is similar to hard disk vendors (10^x)
-      - { name: hdd_2gb,   disk_size:     2_000 }
-      - { name: hdd_4gb,   disk_size:     4_000 }
-      - { name: hdd_6gb,   disk_size:     6_000 }
-      - { name: hdd_8gb,   disk_size:     8_000 }
-      - { name: hdd_10gb,  disk_size:    10_000 }
-      - { name: hdd_20gb,  disk_size:    20_000 }
-      - { name: hdd_40gb,  disk_size:    40_000 }
-      - { name: hdd_60gb,  disk_size:    60_000 }
-      - { name: hdd_80gb,  disk_size:    80_000 }
-      - { name: hdd_100gb, disk_size:   100_000 }
-      - { name: hdd_200gb, disk_size:   200_000 }
-      - { name: hdd_400gb, disk_size:   400_000 }
-      - { name: hdd_600gb, disk_size:   600_000 }
-      - { name: hdd_800gb, disk_size:   800_000 }
-      - { name: hdd_1tb,   disk_size: 1_000_000 }
-      - { name: hdd_2tb,   disk_size: 2_000_000 }
-      - { name: hdd_4tb,   disk_size: 4_000_000 }
-      - { name: hdd_6tb,   disk_size: 6_000_000 }
-      - { name: hdd_8tb,   disk_size: 8_000_000 }
       networks:
       - &default_network
         name: default
@@ -438,14 +399,6 @@ defaults: &defaults
         - { range: 10.244.10.0/24, az: z1, cloud_properties: { name: random } }
         - { range: 10.244.11.0/24, az: z2, cloud_properties: { name: random } }
         - { range: 10.244.12.0/24, az: z3, cloud_properties: { name: random } }
-      - &compilation_network
-        name: compilation
-        type: dynamic
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 4
-        cloud_properties: { name: random }
   - cpi: warden_cpi
     url: https://192.168.50.4:25555
     username: admin
@@ -578,6 +531,39 @@ defaults: &defaults
         - 'Container Deployment'
         - '256 MB Memory'
         - '200 MB Disk'
+    - &blueprint_plan7
+      id: '61a8d1f7-6477-4eb7-a85d-57ac067e80c4'
+      name: 'v1.0-container-large-deprecated'
+      free: true
+      manager:
+        name: 'docker'
+        settings:
+          image: 'servicefabrikjenkins/blueprint'
+          tag: 'latest'
+          memory: '256m'
+          persistent_volumes:
+          - name: 'data'
+            path: '/data'
+            size: '200m'
+      credentials:
+        username:
+          key: 'BLUEPRINT_USER_NAME'
+        password:
+          key: 'BLUEPRINT_USER_PASS'
+        uri:
+          prefix: 'http'
+          port: 8080/tcp
+      description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
+      metadata:
+        state: deprecated
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Container Deployment'
+        - '256 MB Memory'
+        - '200 MB Disk'
     ###########################
     # DEDICATED SERVICE PLANS #
     ###########################
@@ -590,13 +576,14 @@ defaults: &defaults
         settings: &settings_plan3
           prefix: 'blueprint'
           agent: *agent_blueprint
-          template: <%= base64_template('blueprint') %>
+          template: <%= base64_template('blueprint-manifest') %>
+          dashboard_template: <%= base64_template('blueprint-dashboard') %>
           releases: &dedicated_releases
           - { name: blueprint, version: 1.0.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_1gb
+            disk_type: service_fabrik_hdd_1gb
+            vm_type: service_fabrik_vm_micro
       description: 'Blueprint 1.0 service x-small (managed service in beta)'
       metadata:
         costs:
@@ -620,12 +607,12 @@ defaults: &defaults
           agent: *agent_blueprint
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
-          template: <%= base64_template('blueprint') %>
+          template: <%= base64_template('blueprint-manifest') %>
           releases: *dedicated_releases
           context: &context_plan4
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_2gb
+            vm_type: service_fabrik_vm_micro
+            disk_type: service_fabrik_hdd_2gb
       description: 'Blueprint 1.0 service small (managed service in beta)'
       metadata:
         costs:
@@ -650,12 +637,12 @@ defaults: &defaults
           update_predecessors:
           - 'bc158c9a-7934-401e-94ab-057082a5073f'
           - 'bc158c9a-7934-401e-94ab-057082a5073e'
-          template: <%= base64_template('blueprint') %>
+          template: <%= base64_template('blueprint-manifest') %>
           releases: *dedicated_releases
           context: &context_plan5
             agent: *agent_blueprint
-            resource_pool: micro
-            disk_pool: hdd_2gb
+            vm_type: service_fabrik_vm_micro
+            disk_type: service_fabrik_hdd_2gb
       description: 'Blueprint 1.0 service large (managed service in beta)'
       metadata:
         costs:
@@ -668,7 +655,36 @@ defaults: &defaults
         - '1 vCPUs'
         - '2 GB Memory'
         - '2 GB Disk'
-
+    - &blueprint_plan6
+      id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
+      name: 'v1.0-dedicated-large-deprecated'
+      free: false
+      manager: &manager_plan6
+        name: 'director'
+        settings: &settings_plan6
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          update_predecessors:
+          - 'bc158c9a-7934-401e-94ab-057082a5073f'
+          template: <%= base64_template('blueprint-manifest') %>
+          releases: *dedicated_releases
+          context: &context_plan6
+            agent: *agent_blueprint
+            vm_type: micro
+            disk_type: disk_2G
+      description: 'Blueprint 1.0 service large (managed service in beta)'
+      metadata:
+        state: deprecated
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '2 GB Memory'
+        - '2 GB Disk' 
   ####################
   # RABBITMQ SERVICE #
   ####################
@@ -701,17 +717,17 @@ defaults: &defaults
       id: 'b715f834-2048-11e7-a560-080027afc1e6'
       name: 'v3.6-xsmall'
       free: false
-      manager: &manager_plan6
+      manager: &manager_plan9
         name: 'director'
-        settings: &settings_plan6
+        settings: &settings_plan9
           prefix: 'rabbitmq'
           agent: *agent_rabbitmq
-          template: <%= base64_template('rabbitmq') %>
+          template: <%= base64_template('rabbitmq-manifest') %>
           releases: &dedicated_releases
           - { name: rabbitmq, version: 16 }
           # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
           - { name: broker-agent-rabbitmq, version: 26 }
-          context: &context_plan6
+          context: &context_plan9
             agent: *agent_rabbitmq
             resource_pool: micro
             disk_pool: hdd_1gb
@@ -789,58 +805,6 @@ development: &development
       - lifecycle
       - credentials
       - multi_tenancy
-  services:
-  - <<: *blueprint_service
-    plans:
-    - *blueprint_plan1
-    - *blueprint_plan2
-    - <<: *blueprint_plan3
-      manager:
-        <<: *manager_plan3
-        settings:
-          <<: *settings_plan3
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan3
-            agent: *agent_blueprint1
-    - <<: *blueprint_plan4
-      manager:
-        <<: *manager_plan4
-        settings:
-          <<: *settings_plan4
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan4
-            agent: *agent_blueprint1
-    - <<: *blueprint_plan5
-      manager:
-        <<: *manager_plan5
-        settings:
-          <<: *settings_plan5
-          agent: *agent_blueprint1
-          context:
-            <<: *context_plan5
-            agent: *agent_blueprint1
-  - <<: *rabbitmq_service
-    plans:
-    - <<: *rabbitmq_plan1
-      manager:
-        <<: *manager_plan6
-        settings:
-          <<: *settings_plan6
-          agent: *agent_rabbitmq1
-          context:
-            <<: *context_plan6
-            agent: *agent_rabbitmq1
-    - <<: *shared_plan1
-      manager:
-        <<: *virtual_host_manager
-        settings:
-          <<: *settings_virtual_host
-          agent: *agent_rabbitmq1
-          context:
-            <<: *context_plan7
-            agent: *agent_rabbitmq1
 
 boshlite2:
   <<: *development
@@ -852,7 +816,9 @@ boshlite2:
   directors:
   - <<: *director
     url: https://192.168.50.6:25555
-    password: director_password
+    password: xxxxxxxxxxx
+    primary: true
+    support_create: true
     infrastructure:
       <<: *director_infrastructure
       networks:
@@ -862,14 +828,46 @@ boshlite2:
         - { range: 10.244.11.0/20, az: z1, cloud_properties: { name: random } }
         - { range: 10.244.12.0/20, az: z2, cloud_properties: { name: random } }
         - { range: 10.244.13.0/20, az: z3, cloud_properties: { name: random } }
-      - name: compilation
-        type: dynamic
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 4
-        cloud_properties: { name: random }
 
+azure_dev1: &azure_dev1
+  <<: *defaults
+  log_level: debug
+  password: 'secret'
+  directors:
+  - <<: *director
+    prefix: service-fabrik-azure-dev1
+    url: https://127.0.0.1:35555
+    password: admin
+    primary: true
+    support_create: true
+    infrastructure:
+      <<: *director_infrastructure
+      stemcell:
+        alias: ubuntu-trusty
+        name: bosh-azure-hyperv-ubuntu-trusty-go_agent
+        version: latest
+      networks:
+      - name: default
+        type: manual
+        subnets:
+        - range: 10.11.0.0/18
+          az: z1
+          cloud_properties:
+            security_group: nsg-open-sf-azure-dev1
+            subnet_name: sf-1-bosh_services_z2-sf-azure-dev1
+            virtual_network_name: vnet-sf-azure-dev1
+      - &fabrik_network
+        name: service_fabrik
+        type: manual
+        segmentation:
+          # calculate capacity based on the network range
+          capacity: -1
+          offset: 1
+          size: 10
+        subnets:
+        - { range: 10.11.252.0/24, az: z1, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.253.0/24, az: z2, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
+        - { range: 10.11.254.0/24, az: z3, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
 
 development_sc6: &sc6
   <<: *defaults
@@ -879,14 +877,14 @@ development_sc6: &sc6
   - <<: *director
     prefix: service-fabrik-backup
     url: https://127.0.0.1:25555
+    primary: true
+    support_create: true
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: ubuntu-trusty
         name: bosh-openstack-kvm-ubuntu-trusty-go_agent
         version: latest
-      vm_types:
-      - { name: micro, cloud_properties: {availability_zone: rot_1, instance_type: small_1_1 } }
-      - { name: medium, cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 } }
       networks:
       - name: default
         type: manual
@@ -910,18 +908,6 @@ development_sc6: &sc6
         - { range: 10.11.252.0/24, az: z1, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
         - { range: 10.11.253.0/24, az: z2, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
         - { range: 10.11.254.0/24, az: z3, cloud_properties: { net_id: b7089c41-e529-4044-943b-174b92ad6074, security_groups:[service-fabrik] } }
-      - name: compilation
-        type: dynamic
-        cloud_properties:
-          net_id: b7089c41-e529-4044-943b-174b92ad6074
-          security_groups:
-          - service-fabrik-compilation
-          subnet: b7089c41-e529-4044-943b-174b92ad6074
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 20
-        cloud_properties: {availability_zone: rot_1, instance_type: medium_2_4 }
 
 development_aws:
   env: &resource_pool_env
@@ -936,24 +922,9 @@ development_aws:
     infrastructure:
       <<: *director_infrastructure
       stemcell:
+        alias: ubuntu-trusty
         name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
         version: latest
-      azs:
-        - name: z1
-          cloud_properties:
-            availability_zone: eu-central-1a
-        - name: z2
-          cloud_properties:
-            availability_zone: eu-central-1b
-      vm_types:
-      - { name: micro,    env: *resource_pool_env, cloud_properties: { instance_type: t2.micro } }
-      - { name: small,    env: *resource_pool_env, cloud_properties: { instance_type: t2.small } }
-      - { name: medium,   env: *resource_pool_env, cloud_properties: { instance_type: t2.medium } }
-      - { name: large,    env: *resource_pool_env, cloud_properties: { instance_type: t2.large } }
-      - { name: xlarge,   env: *resource_pool_env, cloud_properties: { instance_type: m4.xlarge } }
-      - { name: 2xlarge,  env: *resource_pool_env, cloud_properties: { instance_type: m4.2xlarge } }
-      - { name: 4xlarge,  env: *resource_pool_env, cloud_properties: { instance_type: m4.4xlarge } }
-      - { name: 10xlarge, env: *resource_pool_env, cloud_properties: { instance_type: m4.10xlarge } }
       networks:
       - name: default
         type: manual
@@ -970,19 +941,6 @@ development_aws:
             subnet: subnet-4faa9634
             security_groups:
             - sg-14644d7c
-      - name: compilation
-        type: dynamic
-        cloud_properties:
-          subnet: subnet-88b251e0
-          security_groups:
-          - sg-5e51fd36
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 4
-        cloud_properties:
-          availability_zone: eu-central-1a
-          instance_type: t2.medium
 
 production:
   <<: *defaults
@@ -1010,11 +968,5 @@ test:
       <<: *director_infrastructure
       networks:
       - *default_network
-      - *compilation_network
       - *fabrik_network
-      compilation:
-        network: compilation
-        reuse_compilation_vms: true
-        workers: 4
-        cloud_properties: { name: random }
   password: 'secret'

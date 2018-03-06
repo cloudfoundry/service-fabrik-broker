@@ -29,9 +29,9 @@ describe('service-fabrik-admin', function () {
         instance_guid: instance_id,
         backup_guid: backup_guid,
         started_at: started_at,
-        space_guid: space_guid
+        tenant_id: space_guid
       };
-      const backups = [_.omit(filenameObject, 'operation')];
+      const backups = [_.omit(filenameObject, 'operation', 'plan_id')];
       const filenameObj = filename.create(filenameObject).name;
       const pathname = `/${container}/${filenameObj}`;
       const data = {
@@ -94,17 +94,19 @@ describe('service-fabrik-admin', function () {
       });
 
       describe('#deleteBackup', function () {
-        const prefix = `${space_guid}/${operation}/${service_id}.${plan_id}.${instance_id}.${backup_guid}`;
+        const prefix = `${space_guid}/${operation}/${service_id}.${instance_id}.${backup_guid}`;
         it('should successfully delete an existing backup', function () {
           mocks.cloudProvider.list(container, prefix, [filenameObj]);
           mocks.cloudProvider.remove(pathname);
           mocks.cloudProvider.download(pathname, data);
           mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename]);
           mocks.cloudProvider.remove(archivePathname);
+          const body = _.pick(filenameObject, 'service_id', 'plan_id', 'instance_guid', 'space_guid');
+          body.space_guid = filenameObject.tenant_id;
           return chai
             .request(app)
             .post(`${base_url}/backups/${backup_guid}/delete`)
-            .send(_.pick(filenameObject, 'service_id', 'plan_id', 'instance_guid', 'space_guid'))
+            .send(body)
             .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)

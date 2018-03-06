@@ -3,10 +3,13 @@ const _ = require('lodash');
 const lib = require('../lib');
 
 const director = lib.bosh.director;
-let cacheDetails = {};
+let boshConfigCacheDetails = {};
+let deploymentIpsCacheDetails = {};
 director.ready.then(() => {
-  cacheDetails = _.cloneDeep(director.cache);
+  boshConfigCacheDetails = _.cloneDeep(director.boshConfigCache);
+  deploymentIpsCacheDetails = _.cloneDeep(director.deploymentIpsCache);
 });
 beforeEach(function () {
-  director.cache = _.cloneDeep(cacheDetails);
+  director.boshConfigCache = _.cloneDeep(boshConfigCacheDetails);
+  director.deploymentIpsCache = _.cloneDeep(deploymentIpsCacheDetails);
 });

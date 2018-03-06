@@ -5,8 +5,11 @@ const lib = require('./lib');
 const routes = lib.routes;
 const HttpServer = require('./HttpServer');
 const FabrikApp = require('./FabrikApp');
+const config = lib.config;
 
-lib.bootstrap();
+if (config.enable_swarm_manager) {
+  lib.bootstrap();
+}
 const internal = FabrikApp.create('internal', app => {
   // home
   app.get('/', (req, res) => {
