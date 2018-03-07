@@ -432,6 +432,9 @@ defaults: &defaults
       secret: 'service-fabrik-blueprint-secret'
       redirect_uri: <%= redirect_uri %>
     plan_updateable: true
+    supported_platform:
+    - k8s
+    - cf
     plans:
     ###########################
     # CONTAINER SERVICE PLANS #
@@ -565,6 +568,9 @@ defaults: &defaults
         - '1 vCPUs'
         - '1 GB Memory'
         - '1 GB Disk'
+      supported_platform:
+      - k8s
+      - cf
     - &blueprint_plan4
       id: 'bc158c9a-7934-401e-94ab-057082a5073e'
       name: 'v1.0-small'
@@ -594,6 +600,9 @@ defaults: &defaults
         - '1 vCPUs'
         - '1 GB Memory'
         - '2 GB Disk'
+      supported_platform:
+      - k8s
+      - cf
     - &blueprint_plan5
       id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
       name: 'v1.0-large'
@@ -624,6 +633,9 @@ defaults: &defaults
         - '1 vCPUs'
         - '2 GB Memory'
         - '2 GB Disk'
+      supported_platform:
+      - k8s
+      - cf
     - &blueprint_plan6
       id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
       name: 'v1.0-dedicated-large-deprecated'
