@@ -443,7 +443,7 @@ defaults: &defaults
     supported_platform:
     - k8s
     - cf
-    actions: ReserveIps
+    actions: Blueprint
     plans:
     ###########################
     # CONTAINER SERVICE PLANS #
@@ -552,7 +552,7 @@ defaults: &defaults
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
       free: false
-      actions: Blueprint
+      actions: ReserveIps
       manager: &manager_plan3
         name: 'director'
         settings: &settings_plan3

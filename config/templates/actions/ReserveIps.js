@@ -7,7 +7,7 @@ const BaseAction = require('./BaseAction');
 class ReserveIps extends BaseAction {
   static executePreCreate(context) {
     return Promise.try(() => {
-      logger.info(`Executing ReserveIPs.preCreate with parameters: ${context}`);
+      logger.info('Executing ReserveIPs.preCreate with parameters: ', context);
       return ['10.244.11.247'];
     });
   }

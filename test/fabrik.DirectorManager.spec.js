@@ -109,7 +109,11 @@ describe('fabrik', function () {
         manager = new DirectorManager(catalog.getPlan(xsmall_plan_id));
         let expectResponse = {
           ReserveIps: ['10.244.11.247'],
-          'Blueprint': '{PreCreate Input Params: {\"deployment_name\":\"my-deployment\"} }\n'
+          Blueprint: {
+            precreate_input: {
+              deployment_name: 'my-deployment'
+            }
+          }
         };
         return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
           .then(actionResponse => {
@@ -129,13 +133,13 @@ describe('fabrik', function () {
       it('should return timeout error if action scripts exceeds time limit', function () {
         let actionScriptName = 'MyAction_PreCreate';
         let actionFilePath = path.join(__dirname, '../lib/fabrik/actions/sh', `${actionScriptName}`);
-        fs.writeFileSync(actionFilePath, 'sleep 1', {
+        fs.writeFileSync(actionFilePath, 'sleep 0.1', {
           mode: CONST.FILE_PERMISSIONS.RWXR_XR_X
         });
         manager = new DirectorManager(catalog.getPlan(small_plan_id));
         let temp_actions = manager.service.actions;
         let temp_deployment_action_timeout = config.deployment_action_timeout;
-        config.deployment_action_timeout = 800;
+        config.deployment_action_timeout = 80;
         manager.service.actions = 'MyAction';
         return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
           .catch(err => {
