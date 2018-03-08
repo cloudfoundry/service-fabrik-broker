@@ -350,6 +350,30 @@ describe('bosh', () => {
       });
     });
 
+    describe('#getDeploymentInstances', () => {
+      it('returns the instance details of input deployment name', () => {
+        const vm = {
+          cid: '081e3263-e066-4a5a-868f-b420c72a260d',
+          job: 'blueprint_z1',
+          ips: ['10.244.10.160'],
+          index: 0
+        };
+        const vms = [vm];
+        let request = {
+          method: 'GET',
+          url: `/deployments/${id}/instances`
+        };
+        let response = {
+          body: JSON.stringify(vms),
+          statusCode: 200
+        };
+
+        return new MockBoshDirectorClient(request, response)
+          .getDeploymentInstances(id)
+          .then(body => expect(body).to.eql(vms));
+      });
+    });
+
     describe('#getDeploymentProperties', () => {
       it('returns a JSON object', (done) => {
         let request = {
