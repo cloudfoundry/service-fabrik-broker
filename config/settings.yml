@@ -114,7 +114,8 @@ const virtualHostCloudProviders = {
       "token_uri": "https://myaccounts.com/oauth2/token",
       "auth_provider_x509_cert_url": "https://myaccounts.com/oauth2/v1/certs",
       "client_x509_cert_url": "https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com" 
-    }
+    },
+    container: 'samplecontainer'
   }
 };
 const virtualHostCloudProvider = virtualHostCloudProviders.openstack;

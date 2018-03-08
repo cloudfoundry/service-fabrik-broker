@@ -46,6 +46,14 @@ describe('iaas', function () {
           credentials: {
             'type': 'service_account',
             'project_id': 'my-gcp-dev',
+            'private_key_id': 'kkkkkkkk',
+            'private_key': '-----BEGIN PRIVATE KEY-----\nlllllllllllllllllllllll\n-----END PRIVATE KEY-----\n',
+            'client_email': 'my-test-user@my-gcp-dev.iam.myaccounts.com',
+            'client_id': '000000000000000',
+            'auth_uri': 'https://myaccounts.com/oauth2/auth',
+            'token_uri': 'https://myaccounts.com/oauth2/token',
+            'auth_provider_x509_cert_url': 'https://myaccounts.com/oauth2/v1/certs',
+            'client_x509_cert_url': 'https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com'
           }
         };
         expect(() => GcpClient.validateParams(config)).to.throw();
@@ -54,6 +62,25 @@ describe('iaas', function () {
         var config = {
           name: 'gcp',
           projectId: 'my-project-id'
+        };
+        expect(() => GcpClient.validateParams(config)).to.throw();
+      });
+      it('should throw an error if credentials object provided in config is missing any params', function () {
+        var config = {
+          name: 'gcp',
+          projectId: 'my-project-id',
+          credentials: {
+            'type': 'service_account',
+            'project_id': 'my-gcp-dev',
+            'private_key_id': 'kkkkkkkk',
+            'private_key': '-----BEGIN PRIVATE KEY-----\nlllllllllllllllllllllll\n-----END PRIVATE KEY-----\n',
+            'client_email': 'my-test-user@my-gcp-dev.iam.myaccounts.com',
+            'client_id': '000000000000000',
+            'auth_uri': 'https://myaccounts.com/oauth2/auth',
+            'token_uri': 'https://myaccounts.com/oauth2/token',
+            'auth_provider_x509_cert_url': 'https://myaccounts.com/oauth2/v1/certs',
+            // missing client_x509_cert_url param
+          }
         };
         expect(() => GcpClient.validateParams(config)).to.throw();
       });
