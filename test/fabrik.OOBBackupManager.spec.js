@@ -16,7 +16,8 @@ describe('fabrik', function () {
     let oobBackupManager;
     let sandbox, getDeploymentVMsStub, startBackupStub, putFileStub, getFileStub, startRestoreStub,
       listOobBackupFilesStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub,
-      getRestoreLastOperationStub, getRestoreLogsStub, patchRestoreFileStub, getRestoreFileStub, getDeploymentManifestStub;
+      getRestoreLastOperationStub, getRestoreLogsStub, patchRestoreFileStub, getRestoreFileStub,
+      getDeploymentManifestStub, getDeploymentInstancesStub;
     const db_backup_guid = '925eb8f4-1e14-42f6-b7cd-cdcf05205bb2';
     const dbIps = ['10.11.0.2', '10.11.0.3'];
     const deploymentName = 'ccdb';
@@ -119,6 +120,7 @@ describe('fabrik', function () {
     before(function () {
       sandbox = sinon.sandbox.create();
       getDeploymentVMsStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentVms');
+      getDeploymentInstancesStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentInstances');
       getDeploymentManifestStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentManifest');
       startBackupStub = sandbox.stub(Agent.prototype, 'startBackup');
       startRestoreStub = sandbox.stub(Agent.prototype, 'startRestore');
@@ -133,6 +135,7 @@ describe('fabrik', function () {
       listOobBackupFilesStub = sandbox.stub(BackupStore.prototype, 'listBackupFiles');
       getRestoreFileStub = sandbox.stub(BackupStore.prototype, 'getRestoreFile');
       getDeploymentVMsStub.withArgs(deploymentName).returns(Promise.resolve(deploymentVms));
+      getDeploymentInstancesStub.withArgs(deploymentName).returns(Promise.resolve(deploymentVms));
       getDeploymentManifestStub.withArgs(deploymentName).returns(new Promise.resolve(manifest));
       startBackupStub.withArgs().returns(Promise.resolve('10.11.0.2'));
       startRestoreStub.withArgs().returns(Promise.resolve('10.11.0.2'));
@@ -151,6 +154,7 @@ describe('fabrik', function () {
 
     afterEach(function () {
       getDeploymentManifestStub.reset();
+      getDeploymentInstancesStub.reset();
       getDeploymentVMsStub.reset();
       startBackupStub.reset();
       startRestoreStub.reset();
@@ -191,7 +195,6 @@ describe('fabrik', function () {
         backup_guid: undefined,
         agent_ip: '10.11.0.2'
       };
-      mocks.director.getDeploymentVms(deploymentName);
       return oobBackupManager.startBackup(opts).then(result => {
         expect(startBackupStub).to.be.calledOnce;
         expect(putFileStub).to.be.calledOnce;
@@ -200,6 +203,7 @@ describe('fabrik', function () {
         expect(startBackupStub.firstCall.args[1].type).to.eql('online');
         expect(startBackupStub.firstCall.args[2]).to.eql(expectedVms);
         expect(result.operation).to.eql(expectedResult.operation);
+
         expect(result.agent_ip).to.eql(expectedResult.agent_ip);
         expect(BaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
       });

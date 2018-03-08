@@ -66,7 +66,7 @@ describe('service-fabrik-admin', function () {
         this.timeout(2000 + WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
         mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 2);
-        mocks.director.getDeploymentVms(config.mongodb.deployment_name);
+        mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         mocks.agent.getInfo();
