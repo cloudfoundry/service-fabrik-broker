@@ -149,6 +149,22 @@ describe('fabrik', function () {
             expect(err).to.have.status(500);
           });
       });
+      it('should return error with error message if action scripts throws an error', function () {
+        let actionScriptName = 'MyAction_PreCreate';
+        let actionFilePath = path.join(__dirname, '../lib/fabrik/actions/sh', `${actionScriptName}`);
+        fs.writeFileSync(actionFilePath, 'echo "Error occured in action script";exit 1', {
+          mode: CONST.FILE_PERMISSIONS.RWXR_XR_X
+        });
+        manager = new DirectorManager(catalog.getPlan(small_plan_id));
+        let temp_actions = manager.service.actions;
+        manager.service.actions = 'MyAction';
+        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
+          .catch(err => {
+            fs.unlinkSync(actionFilePath);
+            manager.service.actions = temp_actions;
+            expect(err.description).to.equal('Error occured in action script\n');
+          });
+      });
     });
   });
 });
