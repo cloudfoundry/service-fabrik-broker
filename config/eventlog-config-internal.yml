@@ -10,14 +10,14 @@ defaults:
   ignore_service_fabrik_operation: false # flag to indicate if service-fabrik operations are to be excluded. for ex. broker update (HTTP Patch)
                                          #  gets invoked via backup/restore etc, which are to be ignored when coming via HTTP Patch.
   include_response_body: false # wheter HTTP response body is to be logged after sanitization or not
-"/cf/v2/catalog":
+"/:platform(cf|k8s)/v2/catalog":
   GET:
     enabled: true
     event_name: broker_catalog
     description: Get broker service catalog
     tags:
     - catalog
-"/cf/v2/service_instances/:instance_id":
+"/:platform(cf|k8s)/v2/service_instances/:instance_id":
   PUT:
     enabled: true
     event_name: create_instance
@@ -40,7 +40,7 @@ defaults:
     http_success_codes:
     - 200
     - 410
-"/cf/v2/service_instances/:instance_id/service_bindings/:binding_id":
+"/:platform(cf|k8s)/v2/service_instances/:instance_id/service_bindings/:binding_id":
   PUT:
     enabled: true
     event_name: create_binding
@@ -57,7 +57,7 @@ defaults:
     http_success_codes:
     - 200
     - 410
-"/cf/v2/service_instances/:instance_id/last_operation":
+"/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation":
   GET:
     enabled: true
     cf_last_operation: true
