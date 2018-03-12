@@ -15,7 +15,7 @@ const internal = FabrikApp.create('internal', app => {
   });
   app.use('/admin', routes.admin);
   // cloud foundry service broker api
-  app.use('/cf', routes.cf);
+  app.use('/:platform(cf|k8s)', routes.broker);
 });
 
 // exernal app

@@ -74,7 +74,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
-      const route = '/cf/v2/service_instances/:instance_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, dockerManager, respBody, 200);
       return Promise
@@ -99,7 +99,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
-      const route = '/cf/v2/service_instances/:instance_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, dockerManager, respBody, 200);
       return Promise
@@ -124,7 +124,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15';
-      const route = '/cf/v2/service_instances/:instance_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorManager, respBody, 202);
       return Promise
@@ -149,7 +149,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15';
-      const route = '/cf/v2/service_instances/:instance_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 202);
       return Promise
@@ -176,7 +176,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
-      const route = '/cf/v2/service_instances/:instance_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('PATCH', url, route, {}, pathParams, {}, directorManager, respBody, 202);
       return Promise
@@ -235,7 +235,7 @@ describe('EventLogInterceptor', function () {
         binding_id: '082da7c8-c557-4b3d-b698-3b0a9a3ca947'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/service_bindings/082da7c8-c557-4b3d-b698-3b0a9a3ca947';
-      const route = '/cf/v2/service_instances/:instance_id/service_bindings/:binding_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/service_bindings/:binding_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorManager, respBody, 201);
       return Promise
@@ -262,7 +262,7 @@ describe('EventLogInterceptor', function () {
         binding_id: '082da7c8-c557-4b3d-b698-3b0a9a3ca947'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/service_bindings/082da7c8-c557-4b3d-b698-3b0a9a3ca947';
-      const route = '/cf/v2/service_instances/:instance_id/service_bindings/:binding_id';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/service_bindings/:binding_id';
       const respBody = {};
       const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 200);
       return Promise
@@ -605,7 +605,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'succeeded',
@@ -646,7 +646,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'succeeded',
@@ -687,7 +687,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'failed',
@@ -728,7 +728,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'failed',
@@ -769,7 +769,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'succeeded',
@@ -810,7 +810,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const timestamp = new Date();
       const respBody = {
         state: 'failed',
@@ -851,7 +851,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const op = {
         type: 'update',
         subtype: 'backup',
@@ -893,7 +893,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const op = {
         type: 'update',
         subtype: 'backup',
@@ -935,7 +935,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const op = {
         type: 'update',
         subtype: 'restore',
@@ -977,7 +977,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
-      const route = '/cf/v2/service_instances/:instance_id/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
       const op = {
         type: 'update',
         subtype: 'restore',

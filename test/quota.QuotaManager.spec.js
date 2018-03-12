@@ -479,7 +479,7 @@ describe('quota', () => {
         v2smallPlan.name = v2smallPlanName;
         v2smallPlan.id = v2smallPlanId;
 
-        const extendedCatalog = _.clone(catalog);
+        const extendedCatalog = _.cloneDeep(catalog);
         const bpService = _.find(extendedCatalog.services, ['name', serviceName]);
         bpService.plans.push(v2smallPlan);
 
