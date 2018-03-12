@@ -147,7 +147,7 @@ class JobScheduler {
             }
             return resolve();
           } else {
-            logger.info('+-> System is in maintenance or last maintenance operation has failed :', maintenanceInfo);
+            logger.info('+-> System is in maintenance or last maintenance operation has failed :', _.pick(maintenanceInfo, ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy']));
             const currTime = moment();
             const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
             if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {

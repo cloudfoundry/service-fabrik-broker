@@ -44,7 +44,8 @@ describe('Jobs', function () {
           deployment_name: deploymentName,
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
-          container: mongoDBContainer
+          container: mongoDBContainer,
+          delete_delay: 1
         },
         lastRunAt: new Date(),
         nextRunAt: new Date(),
