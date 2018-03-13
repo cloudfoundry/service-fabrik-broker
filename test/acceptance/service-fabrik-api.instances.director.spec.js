@@ -456,7 +456,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(403);
-              expect(res.body.message).to.eql(`Reached max quota of ${config.backup.max_num_on_demand_backup} ${CONST.BACKUP.TRIGGER.ON_DEMAND} backups`);
+              expect(res.body.description).to.eql(`Reached max quota of ${config.backup.max_num_on_demand_backup} ${CONST.BACKUP.TRIGGER.ON_DEMAND} backups`);
               mocks.verify();
             });
         });
@@ -481,7 +481,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(403);
-              expect(res.body.message).to.eql('Scheduled backups can only be initiated by the System User');
+              expect(res.body.description).to.eql('Scheduled backups can only be initiated by the System User');
               mocks.verify();
             });
         });
@@ -556,7 +556,7 @@ describe('service-fabrik-api', function () {
             })
             .catch(err => {
               expect(_.get(err, 'response.body.status')).to.equal(error_response_body.http.status);
-              expect(_.get(err, 'response.body.message')).to.equal(LOCK_MESSAGE);
+              expect(_.get(err, 'response.body.description')).to.equal(LOCK_MESSAGE);
             });
         });
 
@@ -1583,7 +1583,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(403);
-              expect(res.body.message).to.eql(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
+              expect(res.body.description).to.eql(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
               mocks.verify();
             });
         });
@@ -1638,7 +1638,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(503);
-              expect(res.body.message).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
+              expect(res.body.description).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
               config.mongodb.url = mongourl;
               config.mongodb.provision = mongoprovision;
               mocks.verify();
@@ -1715,7 +1715,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(503);
-              expect(res.body.message).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
+              expect(res.body.description).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
               config.mongodb.url = mongourl;
               config.mongodb.provision = mongodbprovision;
               mocks.verify();
@@ -1761,7 +1761,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(503);
-              expect(res.body.message).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
+              expect(res.body.description).to.eql(`${CONST.FEATURE.SCHEDULED_BACKUP} feature not enabled`);
               config.mongodb.url = mongourl;
               config.mongodb.provision = mongoprovision;
               mocks.verify();
@@ -1810,7 +1810,7 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(503);
-              expect(res.body.message).to.eql(`${CONST.FEATURE.SCHEDULED_UPDATE} feature not enabled`);
+              expect(res.body.description).to.eql(`${CONST.FEATURE.SCHEDULED_UPDATE} feature not enabled`);
               config.mongodb.url = mongourl;
               config.mongodb.provision = mongoprovision;
               mocks.verify();
