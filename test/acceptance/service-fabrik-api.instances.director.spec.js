@@ -142,7 +142,7 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
           return chai.request(apps.external)
@@ -563,7 +563,8 @@ describe('service-fabrik-api', function () {
         it('should receive the update request from cloud controller and start the backup', function () {
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
-          mocks.director.getDeploymentVms(deployment_name, 2);
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.startBackup();
           mocks.cloudProvider.upload(pathname, body => {
@@ -1190,7 +1191,8 @@ describe('service-fabrik-api', function () {
         });
 
         it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeploymentVms(deployment_name, 2);
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.verifyDeploymentLockStatus();
           mocks.agent.getInfo();
           mocks.agent.startRestore();
