@@ -95,14 +95,17 @@ describe('middleware', () => {
     const error = {
       message: 'a message',
       foo: 'bar',
-      stack: 'a stack trace'
+      stack: 'a stack trace',
+      reason: 'error'
     };
     const originalError = _.clone(error);
 
     describe('with stack trace', () => {
       const errorWithStackMiddleware = middleware.error(true);
-      const errorResponse = _.assign(_.pick(originalError, 'message', 'stack'), {
-        status: 500
+      const errorResponse = _.assign(_.pick(originalError, 'stack'), {
+        status: 500,
+        error: originalError.reason,
+        description: originalError.message
       });
       let responseFormatter;
 
