@@ -163,7 +163,7 @@ defaults: &defaults
   ####################
   mongodb:
     provision:
-      plan_id: bc158c9a-7934-401e-94ab-057082a5073f
+      #plan_id: bc158c9a-7934-401e-94ab-057082a5073f
       network_index: 1
     deployment_name: service-fabrik-mongodb
     retry_connect:
@@ -213,6 +213,7 @@ defaults: &defaults
           deployment_name: service-fabrik-mongodb
           trigger: scheduled
           container: service-fabrik-mongodb
+          delete_delay: 1000 #delay in processing between two tasks (in millisecond)
         enabled: true
       - name: 'Backup_Reaper'
         type: BackupReaper
