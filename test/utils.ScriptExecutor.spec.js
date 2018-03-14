@@ -22,7 +22,7 @@ describe('utils', function () {
       fs.writeFileSync(actionScriptAbsPath, 'echo error response\nexit 1', {
         mode: 0o755
       });
-      let executor = new ScriptExecutor(actionScriptAbsPath);
+      let executor = new ScriptExecutor(actionScriptAbsPath, actionScriptAbsPath);
       return executor.execute()
         .then(() => fs.unlinkSync(actionScriptAbsPath))
         .catch(err => {
