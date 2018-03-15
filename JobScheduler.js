@@ -160,7 +160,8 @@ class JobScheduler {
                     clearInterval(this.intervalTimer);
                     return resolve();
                   }
-                });
+                })
+                .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
               logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
               const currTime = moment();
