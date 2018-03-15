@@ -115,10 +115,16 @@ function remove(remote, expectedResponse) {
     .reply(expectedResponse.status || 202, '', expectedResponse.headers);
 }
 
-function deleteSnapshot(remote, expectedResponse) {
-  return nock('https://management.azure.com')
-    .delete(remote)
-    .reply(expectedResponse.status || 204, '', expectedResponse.headers);
+function deleteSnapshot(remote, expectedResponse, errorMessage) {
+  if (errorMessage === undefined) {
+    return nock('https://management.azure.com')
+      .delete(remote)
+      .reply(expectedResponse.status || 204, '', expectedResponse.headers);
+  } else {
+    return nock('https://management.azure.com')
+      .delete(remote)
+      .replyWithError(errorMessage);
+  }
 }
 
 function getContainer(remote, headers) {

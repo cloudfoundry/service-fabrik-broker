@@ -338,6 +338,17 @@ describe('iaas', function () {
           });
       });
 
+      it('should bubble up error if snapshot delete failed', function () {
+        const snapshotName = 'fake-snap';
+        const errorMessageExpected = 'fake-snap not found';
+        mocks.azureClient.auth();
+        mocks.azureClient.deleteSnapshot(
+          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2016-04-30-preview`,
+          undefined, errorMessageExpected);
+        return client.deleteSnapshot(snapshotName)
+          .catch(err => expect(err.message).to.equal(errorMessageExpected));
+      });
+
     });
 
   });
