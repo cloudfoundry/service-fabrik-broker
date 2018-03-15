@@ -23,7 +23,7 @@ describe('iaas', function () {
           region: 'region'
         });
         const errorMessageExpected = 'fake-snap not found';
-        const deleteSnapshotStub = sinon.stub(client.blockstorage, 'deleteSnapshot')
+        const deleteSnapshotStub = sinon.stub(client.blockstorage, 'deleteSnapshot');
         deleteSnapshotStub.withArgs({
           SnapshotId: 'fake-snap'
         }).throws(Error(errorMessageExpected));
