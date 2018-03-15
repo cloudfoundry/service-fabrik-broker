@@ -6,6 +6,7 @@ const moment = require('moment');
 const CONST = require('../lib/constants');
 const errors = require('../lib/errors');
 const maintenanceManager = require('../lib/maintenance').maintenanceManager;
+const serviceFabrikClient = require('../lib/cf').serviceFabrikClient;
 const logger = require('../lib/logger');
 
 describe('JobScheduler', function () {
@@ -79,15 +80,19 @@ describe('JobScheduler', function () {
 
   describe('#Start', function () {
     let publishStub, sandbox, clock, processExitStub;
+
     before(function () {
       sandbox = sinon.sandbox.create();
       publishStub = sandbox.stub(pubsub, 'publish');
-      processExitStub = sandbox.stub(process, 'exit');
       clock = sinon.useFakeTimers(new Date().getTime());
+    });
+    beforeEach(function () {
+      processExitStub = sandbox.stub(process, 'exit');
     });
     afterEach(function () {
       publishStub.reset();
       processExitStub.reset();
+      processExitStub.restore();
       workers.splice(0, workers.length);
       clock.reset();
     });
@@ -230,8 +235,61 @@ describe('JobScheduler', function () {
       });
     });
 
+    describe('#MaintenanceStateNotDetermined', function () {
+      let getMaintenanceStub;
+      before(function () {
+        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => {
+          return Promise.try(() => {
+            throw new Error('Error occurred while fetching maintenance state...');
+          });
+        });
+      });
+      afterEach(function () {
+        getMaintenanceStub.reset();
+      });
+      after(function () {
+        getMaintenanceStub.restore();
+      });
+      it('JobScheduler starts & if it cannot fetch maintenance window info, then exits the process', function () {
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>', count);
+            expect(processExitStub).not.to.be.called;
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+            JobScheduler.unhook();
+          });
+        clock.tick(schedulerConfig.start_delay);
+        return jb;
+      });
+    });
+
     describe('#InMaintenance', function () {
-      let getMaintenanceStub, updateMaintStub, updateStatus;
+      let getMaintenanceStub, updateMaintStub, updateStatus, sfClientStub;
+      let sfConnectedToDB = true;
+      before(function () {
+        sfClientStub = sandbox.stub(serviceFabrikClient, 'getInfo', () => {
+          const sfState = {
+            name: 'service-fabrik-broker',
+            api_version: '1.0',
+            ready: true,
+            db_status: CONST.DB.STATE.DISCONNECTED
+          };
+          return Promise.try(() => {
+            if (sfConnectedToDB) {
+              return _.chain(sfState)
+                .clone()
+                .set('db_status', CONST.DB.STATE.CONNECTED)
+                .value();
+            }
+            return sfState;
+          });
+        });
+      });
       beforeEach(function () {
         getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState');
         updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
@@ -258,6 +316,10 @@ describe('JobScheduler', function () {
       afterEach(function () {
         getMaintenanceStub.restore();
         updateMaintStub.restore();
+        sfClientStub.reset();
+      });
+      after(function () {
+        sfClientStub.restore();
       });
 
       it('JobScheduler starts, waits for system to come out of maintenance & then initializes all workers', function () {
@@ -280,8 +342,50 @@ describe('JobScheduler', function () {
           return jb;
         });
       });
-      it('If maintenance duration exceeds timeout, then terminates maintenance window & on success, initializes all workers', function () {
+      it('If maintenance duration exceeds timeout, then terminates maintenance window. On successful abort & on SF being connected to DB, initializes all workers', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        getMaintenanceStub.onCall(3).returns(Promise.resolve({
+          state: CONST.OPERATION.ABORTED,
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        updateStatus = true;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>>>', count);
+            clock.tick(0);
+            expect(getMaintenanceStub.callCount).to.equal(4); // 4times from the JobScheduler
+            expect(updateMaintStub).to.be.calledOnce;
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
+            expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
+            expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
+            expect(processExitStub).not.to.be.called;
+            expect(count).to.eql(1);
+            JobScheduler.unhook();
+          });
+        clock.tick(schedulerConfig.start_delay);
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
+      it('If maintenance duration exceeds timeout, then terminates maintenance window. If SF is not connected to DB then continues polling', function () {
+        sfConnectedToDB = false;
+        getMaintenanceStub.onCall(2).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        getMaintenanceStub.onCall(3).returns(Promise.resolve({
+          state: CONST.OPERATION.ABORTED,
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;
@@ -294,9 +398,9 @@ describe('JobScheduler', function () {
           .then(() => {
             logger.info('count is>>>>', count);
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
-            expect(getMaintenanceStub.callCount).to.equal(3); // 3times from the JobScheduler
+            expect(getMaintenanceStub.callCount).to.equal(5); // 4times from the JobScheduler
             expect(updateMaintStub).to.be.calledOnce;
-            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins)`);
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
             expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
             expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             expect(processExitStub).not.to.be.called;
@@ -307,11 +411,16 @@ describe('JobScheduler', function () {
         return Promise.try(() => {}).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
           return jb;
         });
       });
       it('If maintenance duration exceeds timeout & if it cannot update maintenance window, then exits the process', function () {
-        getMaintenanceStub.onCall(2).returns(Promise.resolve({
+        logger.info('New maint test started...');
+
+        getMaintenanceStub.onCall(1).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;
@@ -327,7 +436,7 @@ describe('JobScheduler', function () {
             //When in maintenance mode invoking addJobWorker will not create the worker.
             expect(JobScheduler.workerCount).to.eql(0);
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
-            expect(getMaintenanceStub.callCount).to.equal(3); // 3times from the JobScheduler & 1 from test.
+            expect(getMaintenanceStub.callCount).to.equal(2); // 3times from the JobScheduler & 1 from test.
             expect(processExitStub).to.have.been.calledOnce;
             expect(processExitStub.firstCall.args[0]).to.eql(CONST.ERR_CODES.INTERNAL_ERROR);
             expect(count).to.eql(0);
@@ -335,7 +444,6 @@ describe('JobScheduler', function () {
           });
         clock.tick(schedulerConfig.start_delay);
         return Promise.try(() => {}).then(() => {
-          clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
           return jb;
         });
