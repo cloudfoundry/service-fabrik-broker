@@ -148,9 +148,10 @@ class JobScheduler {
             }
             return resolve();
           } else {
+            const maintInfoAttrs = ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
               logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected. `);
-              logger.info('checking if service fabrik is up, inspite of unexpected maintenance state');
+              logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
               this.isServiceFabrikUp()
                 .then(status => {
                   logger.info(`SF Connected to DB :- ${status}`);
@@ -161,7 +162,7 @@ class JobScheduler {
                   }
                 });
             } else {
-              logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy']));
+              logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
               const currTime = moment();
               const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
               if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
