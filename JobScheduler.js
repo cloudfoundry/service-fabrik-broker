@@ -200,7 +200,6 @@ class JobScheduler {
       .then(info => {
         logger.info('SF Status :', info);
         if (info.db_status === CONST.DB.STATE.CONNECTED) {
-          logger.info('SF is connected to DB, can go ahead with starting scheduler.');
           return true;
         }
         return false;
