@@ -1,13 +1,12 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../../../logger');
 const BaseAction = require('./BaseAction');
 
 class ReserveIps extends BaseAction {
+  /*jshint unused:false*/
   static executePreCreate(context) {
     return Promise.try(() => {
-      logger.info('Executing ReserveIPs.preCreate with parameters: ', context);
       return ['10.244.11.247'];
     });
   }
