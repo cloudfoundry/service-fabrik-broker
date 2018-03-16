@@ -196,13 +196,7 @@ class JobScheduler {
 
   isServiceFabrikUp() {
     return serviceFabrikClient.getInfo()
-      .then(info => {
-        logger.info('SF Status :', info);
-        if (info.db_status === CONST.DB.STATE.CONNECTED) {
-          return true;
-        }
-        return false;
-      });
+      .then(info => info && info.db_status === CONST.DB.STATE.CONNECTED);
   }
 
   ensureSystemNotInMainenanceThenInitMaster() {
