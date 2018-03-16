@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const formatUrl = require('url').format;
 const ServiceFabrikClient = require('../lib/cf/ServiceFabrikClient');
+const CONST = require('../lib/constants');
 
 const tokenIssuerStub = {
   getAccessToken: () => undefined
@@ -14,11 +15,11 @@ describe('cf', function () {
       /* jshint expr:true */
       const instance_id = '9999-8888-7777-6666';
       const bearer = 'bearer';
-      const body = {
+      let body = {
         name: 'backup',
         guid: 'a6b39499-8b8b-4e1b-aaec-b2bc11d396e4'
       };
-      const response = {
+      let response = {
         statusCode: undefined,
         body: body
       };
@@ -49,6 +50,7 @@ describe('cf', function () {
           }
         }
         _.set(response, 'statusCode', statusCode || 200);
+        _.set(response, 'body', body);
         return [options, response.statusCode];
       }
 
@@ -80,7 +82,6 @@ describe('cf', function () {
             expect(result).to.eql(body);
           });
       });
-
       it('should schedule auto-update successfully', function () {
         const payLoad = {
           instance_id: instance_id,
@@ -91,6 +92,23 @@ describe('cf', function () {
           201,
           _.omit(payLoad, 'instance_id'));
         return sfClient.scheduleUpdate(payLoad)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledWithExactly(options, statusCode);
+            expect(result).to.eql(body);
+          });
+      });
+      it('should retrieve sf info  successfully', function () {
+        body = {
+          name: 'service-fabrik-broker',
+          api_version: '1.0',
+          db_status: CONST.DB.STATE.CONNECTED,
+          ready: true
+        };
+        const [options, statusCode] = buildExpectedRequestArgs('GET',
+          `/api/v1/info`,
+          200);
+        return sfClient.getInfo()
           .then(result => {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);

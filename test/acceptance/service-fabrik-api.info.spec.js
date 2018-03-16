@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+const assert = require('assert');
 const app = require('../support/apps').external;
 
 describe('service-fabrik-api', function () {
@@ -16,8 +18,9 @@ describe('service-fabrik-api', function () {
         .get(`${baseUrl}/info`)
         .catch(err => err.response)
         .then(res => {
+          assert.ok(res.body.db_status, 'Service fabrik info must return back db status');
           expect(res).to.have.status(200);
-          expect(res.body).to.be.eql({
+          expect(_.omit(res.body, 'db_status')).to.be.eql({
             name: 'service-fabrik-broker',
             api_version: '1.0',
             ready: true

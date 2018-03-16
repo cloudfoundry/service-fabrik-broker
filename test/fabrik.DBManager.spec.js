@@ -231,7 +231,7 @@ describe('fabrik', function () {
       });
       const validateConnected = (dbManager, expectedInitCount) => {
         return Promise.delay(10).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
           (expectedInitCount === 1) ? expect(dbInitializeSpy).to.be.calledOnce: expect(dbInitializeSpy.callCount >= 2).to.eql(true);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManager.dbInitialized).to.eql(true);
@@ -240,13 +240,13 @@ describe('fabrik', function () {
       it('Initialization must return if mongodb configuration not found', function () {
         const dbMgr = new DBManagerNoProxy();
         return Promise.delay(5).then(() => {
-          expect(dbMgr.dbState).to.eql(DBManager.DB_STATES.NOT_CONFIGURED);
+          expect(dbMgr.dbState).to.eql(CONST.DB.STATE.NOT_CONFIGURED);
         });
       });
       it('If just plan name is configured with no deployment name, then initialization must return back', function () {
         const dbMgr = new DBManagerWithUndefinedDeploymentName();
         return Promise.delay(5).then(() => {
-          expect(dbMgr.dbState).to.eql(DBManager.DB_STATES.NOT_CONFIGURED);
+          expect(dbMgr.dbState).to.eql(CONST.DB.STATE.NOT_CONFIGURED);
         });
       });
       it('should initalize & connect to existing mongodb', function () {
@@ -257,7 +257,7 @@ describe('fabrik', function () {
         bindPropertyFound = 2;
         const dbManager = new DBManager();
         return Promise.delay(10).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.TB_INIT);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManager.dbInitialized).to.eql(false);
           bindPropertyFound = 0;
@@ -267,7 +267,7 @@ describe('fabrik', function () {
       it('On start if mongodb URL is configured, then it must connect to it successfully', function () {
         const dbManager = new DBManagerByUrl();
         return Promise.delay(10).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManager.dbInitialized).to.eql(true);
         });
@@ -276,7 +276,7 @@ describe('fabrik', function () {
         errorOnDbStart = true;
         const dbManager = new DBManagerByUrl();
         return Promise.delay(10).then(() => {
-          const validStatesDuringDBStartError = [DBManager.DB_STATES.CONNECTION_FAILED, DBManager.DB_STATES.CONNECTING, DBManager.DB_STATES.TB_INIT];
+          const validStatesDuringDBStartError = [CONST.DB.STATE.CONNECTION_FAILED, CONST.DB.STATE.CONNECTING, CONST.DB.STATE.TB_INIT];
           expect(validStatesDuringDBStartError).to.include(dbManager.dbState);
           expect(dbInitializeByUrlSpy.callCount >= 2).to.eql(true);
           expect(loggerWarnSpy).not.to.be.called;
@@ -295,7 +295,7 @@ describe('fabrik', function () {
       it('If just plan name is configured with no deployment name, then create operation should just log error and return', function () {
         const dbMgr = new DBManagerWithUndefinedDeploymentName();
         return Promise.delay(5)
-          .then(() => expect(dbMgr.dbState).to.eql(DBManager.DB_STATES.NOT_CONFIGURED))
+          .then(() => expect(dbMgr.dbState).to.eql(CONST.DB.STATE.NOT_CONFIGURED))
           .then(() => dbMgr.createOrUpdateDbDeployment(true))
           .then(() => {
             throw new Error('Create deployment should have errorred');
@@ -306,7 +306,7 @@ describe('fabrik', function () {
         deferred.reject(new errors.NotFound('Deployment not found'));
         const dbMgr = new DBManagerWithUndefinedNetworkSegmentIdx();
         return Promise.delay(5)
-          .then(() => expect(dbMgr.dbState).to.eql(DBManager.DB_STATES.TB_INIT))
+          .then(() => expect(dbMgr.dbState).to.eql(CONST.DB.STATE.TB_INIT))
           .then(() => dbMgr.createOrUpdateDbDeployment(true))
           .then(() => {
             throw new Error('Create deployment should have errorred');
@@ -323,7 +323,7 @@ describe('fabrik', function () {
         const dbManager = new DBManager();
         deferred.reject(new errors.NotFound('Deployment not found'));
         return Promise.delay(2).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.TB_INIT);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).to.be.calledOnce;
           expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
           let taskId;
@@ -335,7 +335,7 @@ describe('fabrik', function () {
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb-new');
               expect(pollTaskStatusTillCompleteStub).to.be.calledOnce;
               expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
-              expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+              expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
               expect(dbManager.dbInitialized).to.eql(true);
             });
         });
@@ -345,7 +345,7 @@ describe('fabrik', function () {
         const dbManager = new DBManager();
         deferred.reject(new errors.NotFound('Deployment not found'));
         return Promise.delay(2).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.TB_INIT);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).to.be.calledOnce;
           expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
           let taskId;
@@ -360,7 +360,7 @@ describe('fabrik', function () {
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb-new');
               expect(pollTaskStatusTillCompleteStub).to.be.calledOnce;
               expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
-              expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CREATE_UPDATE_FAILED);
+              expect(dbManager.dbState).to.eql(CONST.DB.STATE.CREATE_UPDATE_FAILED);
               expect(dbManager.dbInitialized).to.eql(false);
             });
         });
@@ -370,7 +370,7 @@ describe('fabrik', function () {
         const dbManager = new DBManager();
         deferred.reject(new errors.NotFound('Deployment not found'));
         return Promise.delay(5).then(() => {
-          expect(dbManager.dbState).to.eql(DBManager.DB_STATES.TB_INIT);
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbInitializeSpy).called;
           bindPropertyFound = 1;
@@ -384,7 +384,7 @@ describe('fabrik', function () {
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb-new');
               expect(pollTaskStatusTillCompleteStub).to.be.calledOnce;
               expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
-              expect(dbManager.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+              expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
               expect(dbManager.dbInitialized).to.eql(true);
             });
         });
@@ -408,7 +408,7 @@ describe('fabrik', function () {
       it('DB update should succeed when deployment is found', function () {
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(5).then(() => {
-          expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+          expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.CONNECTING);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManagerForUpdate.dbInitialized).to.eql(true);
           let taskId;
@@ -416,7 +416,7 @@ describe('fabrik', function () {
             .then(id => {
               taskId = id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
-              const validStatesDuringCreation = [DBManager.DB_STATES.TB_INIT];
+              const validStatesDuringCreation = [CONST.DB.STATE.TB_INIT];
               expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);
               //Can be any one of the state
             })
@@ -426,7 +426,7 @@ describe('fabrik', function () {
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb');
               expect(pollTaskStatusTillCompleteStub).to.be.calledOnce;
               expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
-              expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+              expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.CONNECTING);
               expect(dbManagerForUpdate.dbInitialized).to.eql(true);
             });
         });
@@ -435,7 +435,7 @@ describe('fabrik', function () {
         bindPropertyFound = 2;
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(2).then(() => {
-          expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.TB_INIT);
+          expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManagerForUpdate.dbInitialized).to.eql(false);
           let taskId;
@@ -444,13 +444,13 @@ describe('fabrik', function () {
             .then(id => {
               taskId = id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
-              expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.BIND_IN_PROGRESS);
+              expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.BIND_IN_PROGRESS);
             })
             .then(() => Promise.delay(5))
             .then(() => {
               expect(dbCreateUpdateSucceededSpy.callCount >= 2).to.eql(true);
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
-              const validStatesDuringRetry = [DBManager.DB_STATES.TB_INIT, DBManager.DB_STATES.BIND_FAILED, DBManager.DB_STATES.BIND_IN_PROGRESS];
+              const validStatesDuringRetry = [CONST.DB.STATE.TB_INIT, CONST.DB.STATE.BIND_FAILED, CONST.DB.STATE.BIND_IN_PROGRESS];
               //While retrying the operaiton, it can be in either of the states.
               expect(validStatesDuringRetry).to.include(dbManagerForUpdate.dbState);
             });
@@ -460,13 +460,13 @@ describe('fabrik', function () {
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(10).then(() => {
           failCreateUpdate = true;
-          expect(dbManagerForUpdate.dbState).to.eql(DBManager.DB_STATES.CONNECTING);
+          expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.CONNECTING);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManagerForUpdate.dbInitialized).to.eql(true);
           let taskId;
           return dbManagerForUpdate.createOrUpdateDbDeployment(false)
             .then(id => {
-              expect(dbManagerForUpdate.dbState).to.include(DBManager.DB_STATES.CREATE_UPDATE_FAILED);
+              expect(dbManagerForUpdate.dbState).to.include(CONST.DB.STATE.CREATE_UPDATE_FAILED);
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
             });
         });
@@ -481,8 +481,9 @@ describe('fabrik', function () {
       it('get state of DB state of connected successfully', function () {
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(2).then(() => {
+          dbConnectionState = 1;
           const expectedResponse = {
-            status: DBManager.DB_STATES.CONNECTED,
+            status: CONST.DB.STATE.CONNECTED,
             url: mongoDBUrl
           };
           let dbState = dbManagerForUpdate.getState();
@@ -490,12 +491,12 @@ describe('fabrik', function () {
 
           dbConnectionState = 2;
           dbState = dbManagerForUpdate.getState();
-          expectedResponse.status = DBManager.DB_STATES.DISCONNECTED;
+          expectedResponse.status = CONST.DB.STATE.DISCONNECTED;
           expect(dbState).to.eql(expectedResponse);
 
           dbConnectionState = 3;
           dbState = dbManagerForUpdate.getState();
-          expectedResponse.status = DBManager.DB_STATES.SHUTTING_DOWN;
+          expectedResponse.status = CONST.DB.STATE.SHUTTING_DOWN;
           expect(dbState).to.eql(expectedResponse);
         });
       });
