@@ -14,6 +14,25 @@ describe('iaas', function () {
       createClientSpy.reset();
     });
 
+    describe('#deleteSnapshot', function () {
+      it('bubbles up the error if cloudprovider throws error', function () {
+        const client = new CloudProviderClient({
+          name: 'aws',
+          key: 'key',
+          keyId: 'keyId',
+          region: 'region'
+        });
+        const errorMessageExpected = 'fake-snap not found';
+        const deleteSnapshotStub = sinon.stub(client.blockstorage, 'deleteSnapshot');
+        deleteSnapshotStub.withArgs({
+          SnapshotId: 'fake-snap'
+        }).throws(Error(errorMessageExpected));
+        client
+          .deleteSnapshot('fake-snap')
+          .catch(err => expect(err.message).to.equal(errorMessageExpected));
+      });
+    });
+
     describe('#constructor', function () {
 
       it('should create an aws client instance', function () {
