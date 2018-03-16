@@ -148,11 +148,16 @@ class JobScheduler {
             }
             return resolve();
           } else {
+            if (this.intervalTimer === undefined) {
+              logger.info(`Poll maintenance status once every - ${config.scheduler.maintenance_check_interval} (ms)`);
+              this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
+                config.scheduler.maintenance_check_interval);
+            }
             const maintInfoAttrs = ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
               logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected. `);
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
-              this.isServiceFabrikUp()
+              return this.isServiceFabrikUp()
                 .then(status => {
                   logger.info(`SF Connected to DB :- ${status}`);
                   if (status === true) {
@@ -168,7 +173,7 @@ class JobScheduler {
               const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
               if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
                 logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout  ${config.scheduler.maintenance_mode_time_out} (ms). Flagging the current maintenance window as aborted.`);
-                maintenanceManager
+                return maintenanceManager
                   .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`,
                     CONST.OPERATION.ABORTED,
                     CONST.SYSTEM_USER)
@@ -179,12 +184,6 @@ class JobScheduler {
                     reject(err);
                   });
               }
-            }
-            if (this.intervalTimer === undefined) {
-              logger.info(`Poll maintenance status once every - ${config.scheduler.maintenance_check_interval} (ms)`);
-              this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
-                config.scheduler.maintenance_check_interval);
-              return;
             }
           }
         })
