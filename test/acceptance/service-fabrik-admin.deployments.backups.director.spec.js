@@ -112,7 +112,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate ccdb backup operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -193,7 +194,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate bosh-sf deployment backup operation successfully', function () {
         mocks.director.getDeploymentManifest(1);
-        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         const type = 'online';
@@ -315,7 +317,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate ccdb restore operation successfully: backup_guid', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -349,7 +352,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate ccdb restore operation successfully: PITR', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
         mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();
@@ -516,7 +520,8 @@ describe('service-fabrik-admin', function () {
 
       it('should initiate bosh-sf deployment restore operation successfully', function () {
         mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name, 2);
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, data);
         mocks.agent.getInfo();

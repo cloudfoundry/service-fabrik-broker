@@ -256,6 +256,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -279,6 +280,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -303,6 +305,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=false`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -327,6 +330,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -343,7 +347,7 @@ describe('service-broker-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
         });
@@ -352,6 +356,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -368,7 +373,7 @@ describe('service-broker-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
         });
@@ -377,6 +382,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -392,7 +398,7 @@ describe('service-broker-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
         });
@@ -401,6 +407,7 @@ describe('service-broker-api', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
@@ -415,7 +422,7 @@ describe('service-broker-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.body.error).to.be.eql('BadRequest');
+              expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
         });
@@ -550,6 +557,7 @@ describe('service-broker-api', function () {
               }
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -577,6 +585,7 @@ describe('service-broker-api', function () {
               }
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -604,6 +613,7 @@ describe('service-broker-api', function () {
               }
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -624,7 +634,7 @@ describe('service-broker-api', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo(2);
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
@@ -664,7 +674,7 @@ describe('service-broker-api', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
@@ -701,7 +711,7 @@ describe('service-broker-api', function () {
             platform: 'kubernetes',
             namespace: 'default'
           });
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.verifyDeploymentLockStatus();
 
           mocks.director.deleteDeployment(task_id);
@@ -739,6 +749,7 @@ describe('service-broker-api', function () {
               plan_id: plan_id
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -762,6 +773,7 @@ describe('service-broker-api', function () {
               accepts_incomplete: undefined
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -785,6 +797,7 @@ describe('service-broker-api', function () {
               accepts_incomplete: false
             })
             .set('X-Broker-API-Version', api_version)
+            .set('Accept', 'application/json')
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
@@ -1149,7 +1162,7 @@ describe('service-broker-api', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
           mocks.director.createBindingProperty(binding_id);
@@ -1198,7 +1211,7 @@ describe('service-broker-api', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
           mocks.director.createBindingProperty(binding_id);
@@ -1246,7 +1259,7 @@ describe('service-broker-api', function () {
             platform: 'kubernetes',
             namespace: 'default'
           };
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
           mocks.director.createBindingProperty(binding_id);
@@ -1297,7 +1310,7 @@ describe('service-broker-api', function () {
             space_guid: space_guid
           };
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
@@ -1319,7 +1332,7 @@ describe('service-broker-api', function () {
         });
         it('returns 200 OK : for existing deployment having no platform-context', function () {
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
@@ -1346,7 +1359,7 @@ describe('service-broker-api', function () {
             namespace: 'default'
           };
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
-          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();

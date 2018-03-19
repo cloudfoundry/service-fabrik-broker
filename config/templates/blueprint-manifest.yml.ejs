@@ -38,7 +38,7 @@ if (!spec.previous_manifest) {
 }
 %>
 - name: blueprint
-  migrated_from: 
+  migrated_from:
   - name: blueprint_z1
   instances: <%= members.length %>
   networks:
@@ -54,6 +54,7 @@ if (!spec.previous_manifest) {
     blueprint: &blueprint
     properties:
       port: 8080
+      actionResponse: <%= JSON.stringify(spec.actions) %>
       admin:
         username: <%= properties.blueprint.admin.username %>
         password: <%= properties.blueprint.admin.password %>

@@ -23,3 +23,8 @@ my*
 # Ignore coverage results
 /coverage
 .vscode/
+
+
+#ingoring files created during unit tests
+lib/fabrik/actions/js/ReserveIps.js
+lib/fabrik/actions/sh/
