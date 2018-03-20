@@ -269,6 +269,94 @@ describe('Jobs', function () {
             expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
           });
       });
+      it('should throw an error when incorrect hourly human format is input', function () {
+        return ScheduleManager
+          .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, 'blah hours', jobData, user)
+          .then(() => {
+            throw 'Test should have thrown an error, but it did not!';
+          })
+          .catch(errors.BadRequest, () => {});
+      });
+      it('should schedule a job with random hourly schedule when input with human interval of hrs and save it in mongodb successfully', function () {
+        return ScheduleManager
+          .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, '8 hours', jobData, user)
+          .then((jobResponse) => {
+            const expectedRandomInterval = '0 0,8,16 * * *';
+            const mergedJobServInsUpd = _.clone(mergedJob);
+            mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.lastRunAt = dbStartedAt;
+            mergedJobServInsUpd.repeatInterval = expectedRandomInterval;
+            mergedJobServInsUpd.lastRunDetails = {
+              status: CONST.OPERATION.SUCCEEDED,
+              lastRunAt: dbStartedAt,
+              diff: {
+                after: [],
+                before: lastRunStatus.response.diff
+              }
+            };
+            expect(jobResponse).to.eql(mergedJobServInsUpd);
+            expect(schedulerSpy.schedule).to.be.calledOnce;
+            expect(schedulerSpy.schedule.firstCall.args[0][0]).to.be.equal(instance_id);
+            expect(schedulerSpy.schedule.firstCall.args[0][1]).to.be.equal(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+            expect(schedulerSpy.schedule.firstCall.args[0][2]).to.be.equal(expectedRandomInterval);
+            expect(schedulerSpy.schedule.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+              interval: expectedRandomInterval,
+              data: jobData,
+              runOnlyOnce: false
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql({
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+            });
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+          });
+      });
+      it('should schedule a job with input human interval of x hrs (where multiple of x!=24) and save it in mongodb successfully', function () {
+        return ScheduleManager
+          .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, '7 hours', jobData, user)
+          .then((jobResponse) => {
+            const expectedRandomInterval = '7 hours';
+            const mergedJobServInsUpd = _.clone(mergedJob);
+            mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
+            mergedJobServInsUpd.lastRunAt = dbStartedAt;
+            mergedJobServInsUpd.repeatInterval = expectedRandomInterval;
+            mergedJobServInsUpd.lastRunDetails = {
+              status: CONST.OPERATION.SUCCEEDED,
+              lastRunAt: dbStartedAt,
+              diff: {
+                after: [],
+                before: lastRunStatus.response.diff
+              }
+            };
+            expect(jobResponse).to.eql(mergedJobServInsUpd);
+            expect(schedulerSpy.schedule).to.be.calledOnce;
+            expect(schedulerSpy.schedule.firstCall.args[0][0]).to.be.equal(instance_id);
+            expect(schedulerSpy.schedule.firstCall.args[0][1]).to.be.equal(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+            expect(schedulerSpy.schedule.firstCall.args[0][2]).to.be.equal(expectedRandomInterval);
+            expect(schedulerSpy.schedule.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE,
+              interval: expectedRandomInterval,
+              data: jobData,
+              runOnlyOnce: false
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql({
+              name: instance_id,
+              type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+            });
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+          });
+      });
       it('should schedule a job with random schedule and save it in mongodb successfully', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, CONST.SCHEDULE.RANDOM, jobData, user)
