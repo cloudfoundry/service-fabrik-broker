@@ -45,7 +45,7 @@ const storageUrl = 'https://myaccounts.com/storage/v1';
 const bucketUrl = '/b';
 const region = 'EUROPE-WEST1';
 const storageClass = 'REGIONAL';
-const bucketMetadataResponse = [{},
+const bucketMetadataResponse = [{ /* Bucket Object */ },
   {
     kind: 'storage#bucket',
     id: 'sample-container',
@@ -235,15 +235,6 @@ const snapshotFailedStub = {
 
 describe('iaas', function () {
   describe('GcpClient', function () {
-    let sandbox, client;
-    before(function () {
-      sandbox = sinon.sandbox.create();
-      client = new GcpClient(settings);
-    });
-    after(function () {
-      sandbox.restore();
-    });
-
     describe('#ValidateParams', function () {
       it('should throw an error if config not passed', function () {
         expect(() => GcpClient.validateParams(null)).to.throw();
@@ -321,25 +312,34 @@ describe('iaas', function () {
     });
 
     describe('#BlobOperations', function () {
+      let sandbox, client;
       before(function () {
+        sandbox = sinon.sandbox.create();
+        client = new GcpClient(settings);
         sandbox.stub(GcpStorage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
         sandbox.stub(utils, 'streamToPromise', utilsStreamToPromiseStub);
       });
       after(function () {
         sandbox.restore();
       });
+      afterEach(function () {
+        streamEventHandlers = {};
+      });
 
       it('container properties should be retrived successfully', function () {
         return client.getContainer()
           .then(result => {
-            expect(result[1].name).to.equal(settings.container);
-            expect(result[1].id).to.equal(settings.container);
-            expect(result[1].location).to.equal(region);
-            expect(result[1].storageClass).to.equal(storageClass);
-            expect(result[1].selfLink).to.equal(storageUrl + bucketUrl + '/' + settings.container);
+            expect(result.name).to.equal(settings.container);
+            expect(result.id).to.equal(settings.container);
+            expect(result.location).to.equal(region);
+            expect(result.storageClass).to.equal(storageClass);
+            expect(result.selfLink).to.equal(storageUrl + bucketUrl + '/' + settings.container);
+          })
+          .catch(err => {
+            logger.error(err);
+            throw new Error('expected container properties to be retrived successfully');
           });
       });
-
       it('list of files/blobs should be returned', function () {
         const options = {
           prefix: 'blob'
@@ -356,24 +356,34 @@ describe('iaas', function () {
             expect(result).to.be.an('array');
             expect(result).to.have.lengthOf(2);
             expect(result).to.be.eql(expectedResponse);
+          })
+          .catch(err => {
+            logger.error(err);
+            throw new Error('expected list of files/blobs to be returned successfully');
           });
       });
-
       it('file/blob deletion should be successful', function () {
         return client.remove(validBlobName)
-          .then(result => expect(result[0]).to.be.undefined);
+          .then(result => expect(result).to.be.undefined)
+          .catch(err => {
+            logger.error(err);
+            throw new Error('expected file/blob deletion to be successful');
+          });
       });
-
       it('file/blob deletion should be throw NotFound exception', function () {
         return client.remove(notFoundBlobName)
+          .then(() => {
+            throw new Error('expected file/blob deletion to throw NotFound exception');
+          })
           .catch(err => expect(err).to.be.instanceof(NotFound));
       });
-
       it('file/blob deletion should be throw Forbidden exception', function () {
-        return client.remove('blob4.txt')
+        return client.remove('some-blob.txt')
+          .then(() => {
+            throw new Error('expected file/blob deletion to throw Forbidden exception');
+          })
           .catch(err => expect(err).to.be.instanceof(Forbidden));
       });
-
       it('file/blob upload should be successful', function () {
         var uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
@@ -387,12 +397,12 @@ describe('iaas', function () {
           .then(() => {
             return uploadJsonPromise
               .then(response => expect(response).to.be.eql(jsonContent))
-              .catch(() => {
+              .catch(err => {
+                logger.err(err);
                 throw new Error('expected upload to be successful');
               });
           });
       });
-
       it('file/blob upload should fail', function () {
         const uploadErrMsg = 'Upload failed';
         var uploadJsonPromise = client.uploadJson(validBlobName, jsonContent);
@@ -412,7 +422,6 @@ describe('iaas', function () {
               .catch(err => expect(err).to.eql(uploadErrMsg));
           });
       });
-
       it('file/blob download should be successful', function () {
         var downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
@@ -431,7 +440,6 @@ describe('iaas', function () {
               });
           });
       });
-
       it('file/blob download should fail', function () {
         const downloadErrMsg = 'Download failed';
         var downloadJsonPromise = client.downloadJson(validBlobName);
@@ -451,7 +459,6 @@ describe('iaas', function () {
               .catch(err => expect(err).to.eql(downloadErrMsg));
           });
       });
-
       it('file/blob download should fail with NotFound error', function () {
         var downloadJsonPromise = client.downloadJson(validBlobName);
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
@@ -473,23 +480,23 @@ describe('iaas', function () {
     });
 
     describe('#ComputeOperations', function () {
+      let sandbox, client;
       before(function () {
+        sandbox = sinon.sandbox.create();
+        client = new GcpClient(settings);
         sandbox.stub(GcpCompute.prototype, 'snapshot').returns(snapshotStub);
       });
       after(function () {
         sandbox.restore();
+      });
+      afterEach(function () {
+        deleteSnapshotEventHandlers = {};
       });
 
       it('snapshot should be deleted successfully', function () {
         var deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
           .then(() => {
-            if (deleteSnapshotEventHandlers.running && _.isFunction(deleteSnapshotEventHandlers.running)) {
-              deleteSnapshotEventHandlers.running.call(deleteSnapshotEventHandlers.running);
-              logger.log('Deleting snapshot...');
-            } else {
-              throw new Error('Event Handlers not registered in delete snapshot');
-            }
             if (deleteSnapshotEventHandlers.complete && _.isFunction(deleteSnapshotEventHandlers.complete)) {
               return deleteSnapshotEventHandlers.complete.call(deleteSnapshotEventHandlers.complete);
             } else {
@@ -504,7 +511,6 @@ describe('iaas', function () {
               });
           });
       });
-
       it('snapshot delete should fail', function () {
         var deleteSnapshotPromise = client.deleteSnapshot('snapshot-1');
         return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
@@ -523,7 +529,6 @@ describe('iaas', function () {
               .catch(err => expect(err).to.eql(deleteSnapshotErrMsg));
           });
       });
-
       it('snapshot delete request should fail', function () {
         sandbox.restore();
         sandbox.stub(GcpCompute.prototype, 'snapshot').returns(snapshotFailedStub);
