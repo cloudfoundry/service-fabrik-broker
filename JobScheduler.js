@@ -102,7 +102,10 @@ class JobScheduler {
     this.serviceFabrikInMaintenance = true;
     _.each(this.jobWorkers, (id, key) => {
       logger.info(`+-> message From -> ${this.workerType} - To worker - ${id} - ${key}-${JSON.stringify(cluster.workers[key])}}`);
-      cluster.workers[key].send(CONST.TOPIC.APP_SHUTTING_DOWN);
+      if (cluster.workers[key]) {
+        //Dont send message to the same worker which threw the exception as it will be non-existent.
+        cluster.workers[key].send(CONST.TOPIC.APP_SHUTTING_DOWN);
+      }
     });
     this.workerCount = 0;
     this.jobWorkers = [];
