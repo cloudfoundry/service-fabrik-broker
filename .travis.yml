@@ -28,7 +28,7 @@ script:
        echo "No changes to the code formatting required.. "
      fi
   - "npm run -s jshint-ci"
-  - "npm run -s test-ci"
+  - "npm run -s test-coverall"
   - "npm run -s jsdoc"
   - |
      git secrets --scan-history || exit 1
