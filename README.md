@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-incubator/service-fabrik-broker/badge.svg?branch=master)](https://coveralls.io/github/cloudfoundry-incubator/service-fabrik-broker?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-incubator/service-fabrik-broker/badge.svg?branch=master)](https://coveralls.io/github/cloudfoundry-incubator/service-fabrik-broker?branch=master) [![Travis Build Status](https://travis-ci.org/cloudfoundry-incubator/service-fabrik-broker.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/service-fabrik-broker.svg?branch=master)
 
 # Service Fabrik Broker for Cloud Foundry
 
