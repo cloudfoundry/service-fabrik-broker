@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/cloudfoundry-incubator/service-fabrik-broker/badge.svg?branch=master)](https://coveralls.io/github/cloudfoundry-incubator/service-fabrik-broker?branch=master)
+
 # Service Fabrik Broker for Cloud Foundry
 
 This broker was inspired  by the [cf-containers-broker](https://github.com/cloudfoundry-community/cf-containers-broker). It supports Docker and Bosh-based service deployments. More details on the implemented Cloud Foundry contract can be found [here](http://docs.cloudfoundry.org/services/api.html). Read the [Big Picture](https://github.com/SAP/service-fabrik-broker/wiki/Big-Picture) behind Service Fabrik Broker.
