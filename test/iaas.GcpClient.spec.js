@@ -10,6 +10,7 @@ const lib = require('../lib');
 const GcpClient = lib.iaas.GcpClient;
 const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
+const UnprocessableEntity = errors.UnprocessableEntity;
 
 const CONNECTION_WAIT_SIMULATED_DELAY = 5;
 const config = {
@@ -475,6 +476,24 @@ describe('iaas', function () {
                 throw new Error('expected download to fail');
               })
               .catch(err => expect(err).to.be.instanceof(NotFound));
+          });
+      });
+      it('file/blob download should fail with UnprocessableEntity error', function () {
+        var downloadJsonPromise = client.downloadJson(validBlobName);
+        return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
+          .then(() => {
+            if (streamEventHandlers.error && _.isFunction(streamEventHandlers.error)) {
+              return streamEventHandlers.error.call(streamEventHandlers.error, new SyntaxError('Error parsing data'));
+            } else {
+              throw new Error('Event Handlers not registered in delete snapshot');
+            }
+          })
+          .then(() => {
+            return downloadJsonPromise
+              .then(() => {
+                throw new Error('expected download to fail');
+              })
+              .catch(err => expect(err).to.be.instanceof(UnprocessableEntity));
           });
       });
     });
