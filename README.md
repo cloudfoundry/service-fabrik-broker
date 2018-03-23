@@ -20,6 +20,7 @@ This broker was inspired  by the [cf-containers-broker](https://github.com/cloud
 
 ## Local Development Setup (Ubuntu)
 
+
 Certainly when you are a broker developer, but also if you are a service developer, you may want to work locally with the broker without packaging it into a Bosh release and deploying it. You can do so using [Bosh Lite](http://docs.cloudfoundry.org/deploying/boshlite) and starting and registering the broker locally:
 
 ### Installing Docker
