@@ -157,7 +157,6 @@ defaults: &defaults
     ssl:
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
-
   ####################
   # MONGODB SETTINGS #
   ####################
@@ -562,11 +561,11 @@ defaults: &defaults
           template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
           dashboard_template: <%= base64_template('templates/blueprint-dashboard.yml.ejs') %>
           releases: &dedicated_releases
-          - { name: blueprint, version: 1.3.0, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
+          - { name: blueprint, version: latest, git: "https://github.com/sap/service-fabrik-blueprint-boshrelease.git" }
           context: &context_plan3
             agent: *agent_blueprint
-            disk_type: service_fabrik_hdd_1gb
-            vm_type: service_fabrik_vm_micro
+            disk_type: 1GB
+            vm_type: default
       description: 'Blueprint 1.0 service x-small (managed service in beta)'
       metadata:
         costs:
@@ -597,8 +596,8 @@ defaults: &defaults
           releases: *dedicated_releases
           context: &context_plan4
             agent: *agent_blueprint
-            vm_type: service_fabrik_vm_micro
-            disk_type: service_fabrik_hdd_2gb
+            vm_type: default
+            disk_type: 5GB
       description: 'Blueprint 1.0 service small (managed service in beta)'
       metadata:
         costs:
@@ -630,8 +629,8 @@ defaults: &defaults
           releases: *dedicated_releases
           context: &context_plan5
             agent: *agent_blueprint
-            vm_type: service_fabrik_vm_micro
-            disk_type: service_fabrik_hdd_2gb
+            vm_type: default
+            disk_type: 10GB
       description: 'Blueprint 1.0 service large (managed service in beta)'
       metadata:
         costs:
