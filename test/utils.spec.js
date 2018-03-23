@@ -49,5 +49,13 @@ describe('utils', function () {
       expect(utils.getRandomCronForOnceEveryXDays(7)).to.eql('1 1 1,8,15,22 * *');
       expect(utils.getRandomCronForOnceEveryXDays(15)).to.eql('1 1 1,16 * *');
     });
+    it('should return a random cron expression for every x hours for the day', function () {
+      const AssertionError = require('assert').AssertionError;
+      expect(utils.getRandomCronForEveryDayAtXHoursInterval.bind(utils, 29)).to.throw(AssertionError);
+      //bind returns a ref to function which is executed and checked for if it threw exception.
+      expect(utils.getRandomCronForEveryDayAtXHoursInterval(8)).to.eql('1 1,9,17 * * *');
+      expect(utils.getRandomCronForEveryDayAtXHoursInterval(7)).to.eql('1 1,8,15,22 * * *');
+      expect(utils.getRandomCronForEveryDayAtXHoursInterval(3)).to.eql('1 1,4,7,10,13,16,19,22 * * *');
+    });
   });
 });
