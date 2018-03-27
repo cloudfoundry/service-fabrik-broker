@@ -347,6 +347,30 @@ describe('JobScheduler', function () {
           return jb;
         });
       });
+      it('on checking maintenance state if broker update is not in progress, it initializes all workers & scheduler starts', function () {
+        count = 0;
+        getMaintenanceStub.onCall(0).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          broker_update_initiated: false,
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        logger.info('count is', count);
+        cpus = 1;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>', count);
+            clock.tick(0);
+            expect(count).to.eql(1);
+            JobScheduler.unhook();
+          });
+        clock.tick(schedulerConfig.start_delay);
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
       it('If maintenance duration exceeds timeout, then terminates maintenance window. On successful abort & on SF being connected to DB, initializes all workers', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
