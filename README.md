@@ -144,7 +144,7 @@ For bosh-lite, you can upload cloud-config in the following manner:
 cd templates
 bosh –e bosh upload-cloud-config config/cloud-config.yml
 ```
-To use along the the boshrelease of Service-Fabrik, `cloud-config-boshlite.yml` is provided here : https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/templates/cloud-config-boshlite.yml
+To use along with the boshrelease of Service-Fabrik, `cloud-config-boshlite.yml` is provided here : https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/templates/cloud-config-boshlite.yml
 
 For AWS, we need to update the vars-files for the cloud-config. 
 The vars file to be edited is `cloud-config-aws-vars.yml`. It can be found in the `templates` directory.
