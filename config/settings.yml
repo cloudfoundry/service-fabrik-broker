@@ -110,6 +110,7 @@ defaults: &defaults
   http_timeout: 175000
   deployment_action_timeout: 80000
   multi_az_enabled: false
+  broker_drain_message: 'BROKER_DRAIN_INITIATED'
 
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
@@ -940,7 +941,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: warn
+  log_level: debug
   enable_circuit_breaker: false
   external:
     <<: *external

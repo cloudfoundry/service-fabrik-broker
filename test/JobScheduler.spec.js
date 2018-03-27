@@ -4,6 +4,7 @@ const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const moment = require('moment');
 const CONST = require('../lib/constants');
+const config = require('../lib/config');
 const errors = require('../lib/errors');
 const maintenanceManager = require('../lib/maintenance').maintenanceManager;
 const serviceFabrikClient = require('../lib/cf').serviceFabrikClient;
@@ -302,10 +303,14 @@ describe('JobScheduler', function () {
         });
         getMaintenanceStub.onCall(0).returns(Promise.resolve({
           createdAt: new Date(),
+          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          broker_update_initiated: true,
           state: CONST.OPERATION.IN_PROGRESS
         }));
         getMaintenanceStub.onCall(1).returns(Promise.resolve({
           createdAt: new Date(),
+          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          broker_update_initiated: true,
           state: CONST.OPERATION.IN_PROGRESS
         }));
         getMaintenanceStub.returns(Promise.resolve({
@@ -345,6 +350,8 @@ describe('JobScheduler', function () {
       it('If maintenance duration exceeds timeout, then terminates maintenance window. On successful abort & on SF being connected to DB, initializes all workers', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
+          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          broker_update_initiated: true,
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
@@ -382,6 +389,8 @@ describe('JobScheduler', function () {
         sfConnectedToDB = false;
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
+          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          broker_update_initiated: true,
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
@@ -417,10 +426,10 @@ describe('JobScheduler', function () {
         });
       });
       it('If maintenance duration exceeds timeout & if it cannot update maintenance window, then exits the process', function () {
-        logger.info('New maint test started...');
-
         getMaintenanceStub.onCall(1).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
+          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          broker_update_initiated: true,
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;

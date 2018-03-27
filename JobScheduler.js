@@ -156,9 +156,9 @@ class JobScheduler {
               this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
                 config.scheduler.maintenance_check_interval);
             }
-            const maintInfoAttrs = ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
+            const maintInfoAttrs = ['progress', 'state', 'broker_update_initiated', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
-              logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected. `);
+              logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected.`);
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
               return this.isServiceFabrikUp()
                 .then(status => {
@@ -172,6 +172,11 @@ class JobScheduler {
                 .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
               logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
+              if (!_.get(maintenanceInfo, 'broker_update_initiated', false)) {
+                logger.info('broker is yet to be updated (docker update in progress), so going ahead and starting scheduler');
+                clearInterval(this.intervalTimer);
+                return resolve();
+              }
               const currTime = moment();
               const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
               if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {

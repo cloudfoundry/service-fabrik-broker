@@ -904,7 +904,8 @@ describe('Jobs', function () {
         maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo',
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
           (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
-            maintenance: true
+            maintenance: true,
+            broker_update_initiated: true,
           })));
         jobDoneSpy = sinon.spy();
         processExitStub = runSandBox.stub(process, 'exit');
