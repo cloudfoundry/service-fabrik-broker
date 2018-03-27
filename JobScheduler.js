@@ -140,6 +140,7 @@ class JobScheduler {
   }
 
   pollMaintenanceStatus() {
+    this.intervalTimer = undefined;
     const checkMaintenanceStatus = (resolve, reject) => {
       return maintenanceManager
         .getLastMaintenaceState()
