@@ -97,6 +97,9 @@ defaults:
       tags:
       - delete
       log_inprogress_state: false
+      http_success_codes:
+      - 200
+      - 410
 "/admin/deployments":
   GET:
     enabled: true
