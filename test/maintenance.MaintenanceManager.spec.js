@@ -144,7 +144,7 @@ describe('maintenance', function () {
       return maintenanceManager.getMaintenaceInfo()
         .then((response) => {
           expect(findOneStub).to.be.calledOnce;
-          expect(response.broker_update_initiated).to.be.eql(true);
+          expect(maintenanceManager.getDowntimePhase(response, config.scheduler.downtime_maintenance_phases) !== undefined).to.be.eql(true);
         });
     });
     it('should return the last maintenance state', function () {

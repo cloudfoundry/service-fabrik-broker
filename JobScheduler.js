@@ -33,6 +33,7 @@ class JobScheduler {
       this.workerType = '';
       this.serviceFabrikInMaintenance = true;
       this.intervalTimer = undefined;
+      this.maintenanceStartTime = undefined;
       this.shutDownHook = () => this.shutDown();
       process.on('SIGTERM', this.shutDownHook);
       process.on('SIGINT', this.shutDownHook);
@@ -140,7 +141,7 @@ class JobScheduler {
   }
 
   pollMaintenanceStatus() {
-    this.intervalTimer = undefined;
+    this.intervalTimer = this.maintenanceStartTime = undefined;
     const checkMaintenanceStatus = (resolve, reject) => {
       return maintenanceManager
         .getLastMaintenaceState()
@@ -157,7 +158,7 @@ class JobScheduler {
               this.intervalTimer = setInterval(() => checkMaintenanceStatus.call(this, resolve, reject),
                 config.scheduler.maintenance_check_interval);
             }
-            const maintInfoAttrs = ['progress', 'state', 'broker_update_initiated', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
+            const maintInfoAttrs = ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
               logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected.`);
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
@@ -173,15 +174,25 @@ class JobScheduler {
                 .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
               logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
-              if (!_.get(maintenanceInfo, 'broker_update_initiated', false)) {
-                logger.info('broker is yet to be updated (docker update in progress), so going ahead and starting scheduler');
+              const downTimePhase = maintenanceManager.getDowntimePhase(maintenanceInfo, config.scheduler.downtime_maintenance_phases);
+              if (downTimePhase === undefined) {
+                logger.info('Current Maintenance phase does not affect scheduler downtime. So going ahead and starting it...');
                 clearInterval(this.intervalTimer);
                 return resolve();
               }
-              logger.info('broker update has been initiated, will wait till maintenance state changes from in-progress to completed state');
+              logger.info(`SF in phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
+              const phaseStartTimeInMs = Date.parse(downTimePhase.substring(downTimePhase.lastIndexOf('at') + 2));
+              logger.info(`phaseStartTimeInMs - ${phaseStartTimeInMs} , maint timeout - ${config.scheduler.maintenance_mode_time_out}`);
+              if (!isNaN(phaseStartTimeInMs)) {
+                //Try to get the start time of maintenance from maintenance phase. If not, then set current time. 
+                //Format of maintenance phase when updated can be found in 'MaintenanceManager.updateMaintenace' 
+                this.maintenanceStartTime = new Date(phaseStartTimeInMs);
+              } else {
+                //Current time could lead to being in longer maintenance window by a few minutes (This is a fallback)
+                this.maintenanceStartTime = this.maintenanceStartTime || new Date();
+              }
               const currTime = moment();
-              const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
-              if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
+              if (this.maintenanceStartTime && currTime.diff(this.maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
                 logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout  ${config.scheduler.maintenance_mode_time_out} (ms). Flagging the current maintenance window as aborted.`);
                 return maintenanceManager
                   .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`,

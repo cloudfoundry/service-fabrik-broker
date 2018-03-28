@@ -28,7 +28,12 @@ describe('JobScheduler', function () {
     max_workers: 5,
     start_delay: 0,
     maintenance_check_interval: 9000,
-    maintenance_mode_time_out: 1800000
+    maintenance_mode_time_out: 1800000,
+    downtime_maintenance_phases: [
+      'BROKER_DRAIN_INITIATED',
+      'BROKER_REGISTRATION',
+      'UPDATE_SF_MONGODB'
+    ]
   };
 
   let JobWorkers = [];
@@ -56,7 +61,12 @@ describe('JobScheduler', function () {
           './lib/config': {
             scheduler: {
               max_workers: 5,
-              start_delay: 0
+              start_delay: 0,
+              downtime_maintenance_phases: [
+                'BROKER_DRAIN_INITIATED',
+                'BROKER_REGISTRATION',
+                'UPDATE_SF_MONGODB'
+              ]
             }
           }
         });
@@ -205,6 +215,8 @@ describe('JobScheduler', function () {
             for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
+            workers.splice(0, 1);
+            //ensure that key is removed from workers as its going to be terminated
             workerExitHandlers[0]({
               id: 1
             }, CONST.ERR_CODES.SF_IN_MAINTENANCE, null);
@@ -271,16 +283,20 @@ describe('JobScheduler', function () {
 
     describe('#InMaintenance', function () {
       let getMaintenanceStub, updateMaintStub, updateStatus, sfClientStub;
-      let sfConnectedToDB = true;
+      let sfConnectedToDB = true,
+        sfIsDown = false;
       before(function () {
         sfClientStub = sandbox.stub(serviceFabrikClient, 'getInfo', () => {
-          const sfState = {
-            name: 'service-fabrik-broker',
-            api_version: '1.0',
-            ready: true,
-            db_status: CONST.DB.STATE.DISCONNECTED
-          };
           return Promise.try(() => {
+            if (sfIsDown) {
+              throw new Error('Service Fabrik unreachable');
+            }
+            const sfState = {
+              name: 'service-fabrik-broker',
+              api_version: '1.0',
+              ready: true,
+              db_status: CONST.DB.STATE.DISCONNECTED
+            };
             if (sfConnectedToDB) {
               return _.chain(sfState)
                 .clone()
@@ -292,6 +308,8 @@ describe('JobScheduler', function () {
         });
       });
       beforeEach(function () {
+        sfIsDown = false;
+        sfConnectedToDB = true;
         getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState');
         updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
           return Promise.try(() => {
@@ -303,7 +321,7 @@ describe('JobScheduler', function () {
         });
         getMaintenanceStub.onCall(0).returns(Promise.resolve({
           createdAt: new Date(),
-          progress: [`${config.broker_drain_message} at ${new Date()}`],
+          progress: [`${config.broker_drain_message}}`],
           broker_update_initiated: true,
           state: CONST.OPERATION.IN_PROGRESS
         }));
@@ -351,7 +369,7 @@ describe('JobScheduler', function () {
         count = 0;
         getMaintenanceStub.onCall(0).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
-          broker_update_initiated: false,
+          progress: [`Docker update in progress at ${new Date()}`],
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         logger.info('count is', count);
@@ -372,10 +390,48 @@ describe('JobScheduler', function () {
         });
       });
       it('If maintenance duration exceeds timeout, then terminates maintenance window. On successful abort & on SF being connected to DB, initializes all workers', function () {
+        sfIsDown = true;
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
-          progress: [`${config.broker_drain_message} at ${new Date()}`],
-          broker_update_initiated: true,
+          progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        getMaintenanceStub.onCall(3).returns(Promise.resolve({
+          state: CONST.OPERATION.ABORTED,
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+        }));
+        count = 0;
+        logger.info('count is', count);
+        cpus = 1;
+        updateStatus = true;
+        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        const jb = JobScheduler
+          .ready
+          .then(() => {
+            logger.info('count is>>>>', count);
+            clock.tick(0);
+            expect(getMaintenanceStub.callCount).to.equal(4); // 4times from the JobScheduler
+            expect(updateMaintStub).to.be.calledOnce;
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
+            expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
+            expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+            expect(processExitStub).to.be.called;
+            expect(count).to.eql(0);
+            JobScheduler.unhook();
+          });
+        clock.tick(schedulerConfig.start_delay);
+        return Promise.try(() => {}).then(() => {
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          clock.tick(schedulerConfig.maintenance_check_interval);
+          return jb;
+        });
+      });
+      it('If maintenance duration exceeds timeout, then terminates maintenance window. If service fabrik status cant be determined then terminates itself.', function () {
+        getMaintenanceStub.onCall(2).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
@@ -413,8 +469,7 @@ describe('JobScheduler', function () {
         sfConnectedToDB = false;
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
-          progress: [`${config.broker_drain_message} at ${new Date()}`],
-          broker_update_initiated: true,
+          progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
@@ -452,8 +507,7 @@ describe('JobScheduler', function () {
       it('If maintenance duration exceeds timeout & if it cannot update maintenance window, then exits the process', function () {
         getMaintenanceStub.onCall(1).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
-          progress: [`${config.broker_drain_message} at ${new Date()}`],
-          broker_update_initiated: true,
+          progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
           createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;
@@ -524,9 +578,7 @@ describe('JobScheduler', function () {
         .ready
         .then(() => {
           clock.tick(0);
-          logger.info('calling int handler');
           sigIntHandler('a');
-          logger.info('calling term handler');
           sigTermHandler('b');
           unhandledRejectHandler('Simulated Rejection...');
           return Promise.try(() => {

@@ -188,7 +188,12 @@ const schedulerConfig = {
   job_history_retention_in_days: 1,
   jobs: {
     reschedule_delay: '20 mins from now'
-  }
+  },
+  downtime_maintenance_phases: [
+    'BROKER_DRAIN_INITIATED',
+    'BROKER_REGISTRATION',
+    'UPDATE_SF_MONGODB'
+  ]
 };
 const proxyLibs = {
   'bluebird': {
@@ -905,7 +910,7 @@ describe('Jobs', function () {
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
           (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
             maintenance: true,
-            broker_update_initiated: true,
+            progress: [`${schedulerConfig.downtime_maintenance_phases[0]} at ${new Date()}`],
           })));
         jobDoneSpy = sinon.spy();
         processExitStub = runSandBox.stub(process, 'exit');
