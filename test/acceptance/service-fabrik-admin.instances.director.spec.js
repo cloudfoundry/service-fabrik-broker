@@ -316,7 +316,7 @@ describe('service-fabrik-admin', function () {
             .then(res => {
               expect(res).to.have.status(403);
               expect(res.body.errorMessage).to.eql('System already in maintenance mode');
-              expect(res.body.maintenanceInfo).to.eql(maintenanceInfo);
+              expect(res.body.maintenanceInfo).to.eql(_.set(_.clone(maintenanceInfo), 'broker_update_initiated', false));
             });
         });
         it('should update progress of on-going maintenance mode ', function () {
@@ -358,7 +358,10 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(200);
-              expect(res.body).to.eql(maintenanceInfo);
+              expect(res.body).to.eql(_.chain(_.clone(maintenanceInfo))
+                .set('broker_update_initiated', false)
+                .set('system_in_maintenance', true)
+                .value());
             });
         });
         it('should return 404 if service-fabrik is not in maintenance mode ', function () {

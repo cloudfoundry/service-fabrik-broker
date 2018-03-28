@@ -599,7 +599,8 @@ describe('Jobs', function () {
       };
       let ScheduleManager2;
       const systemUser = CONST.SYSTEM_USER;
-      let sandbox, cancelStub, scheduleStub, subStub, startSchedulerHandler;
+
+      let sandbox, cancelStub, scheduleStub, subStub, startSchedulerHandler, getScheduleStub, notFound;
       before(function () {
         sandbox = sinon.sandbox.create();
         subStub = sandbox.stub(pubsub, 'subscribe', (topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
@@ -609,31 +610,57 @@ describe('Jobs', function () {
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');
+        getScheduleStub = sandbox.stub(ScheduleManager2, 'getSchedule', (name) => {
+          return Promise.try(() => {
+            if (notFound) {
+              return {};
+            } else {
+              return {
+                repeatInterval: _.filter(systemJobConfig.scheduler.system_jobs, (item) => item.name === name)[0].interval
+              };
+            }
+          });
+        });
+
       });
       afterEach(function () {
         cancelStub.reset();
         scheduleStub.reset();
+        getScheduleStub.reset();
+        notFound = false;
       });
       after(function () {
         sandbox.restore();
       });
 
       it('should schedule system jobs in agenda and save it in mongodb successfully', function () {
-        startSchedulerHandler();
-        expect(cancelStub).to.be.calledOnce;
-        expect(cancelStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[2].name);
-        expect(cancelStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[2].type);
-        expect(scheduleStub).to.be.calledTwice;
-        expect(scheduleStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[0].name);
-        expect(scheduleStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[0].type);
-        expect(scheduleStub.firstCall.args[2]).to.eql(systemJobConfig.scheduler.system_jobs[0].interval);
-        expect(scheduleStub.firstCall.args[3]).to.eql(systemJobConfig.scheduler.system_jobs[0].job_data);
-        expect(scheduleStub.firstCall.args[4]).to.eql(systemUser);
-        expect(scheduleStub.secondCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[1].name);
-        expect(scheduleStub.secondCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[1].type);
-        expect(scheduleStub.secondCall.args[2]).to.eql(systemJobConfig.scheduler.system_jobs[1].interval);
-        expect(scheduleStub.secondCall.args[3]).to.eql(systemJobConfig.scheduler.system_jobs[1].job_data);
-        expect(scheduleStub.secondCall.args[4]).to.eql(systemUser);
+        notFound = true;
+        return startSchedulerHandler()
+          .then(() => {
+            expect(cancelStub).to.be.calledOnce;
+            expect(cancelStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[2].name);
+            expect(cancelStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[2].type);
+            expect(scheduleStub).to.be.calledTwice;
+            expect(scheduleStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[0].name);
+            expect(scheduleStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[0].type);
+            expect(scheduleStub.firstCall.args[2]).to.eql(systemJobConfig.scheduler.system_jobs[0].interval);
+            expect(scheduleStub.firstCall.args[3]).to.eql(systemJobConfig.scheduler.system_jobs[0].job_data);
+            expect(scheduleStub.firstCall.args[4]).to.eql(systemUser);
+            expect(scheduleStub.secondCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[1].name);
+            expect(scheduleStub.secondCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[1].type);
+            expect(scheduleStub.secondCall.args[2]).to.eql(systemJobConfig.scheduler.system_jobs[1].interval);
+            expect(scheduleStub.secondCall.args[3]).to.eql(systemJobConfig.scheduler.system_jobs[1].job_data);
+            expect(scheduleStub.secondCall.args[4]).to.eql(systemUser);
+          });
+      });
+      it('should not schedule system jobs if they are already scheduled', function () {
+        return startSchedulerHandler()
+          .then(() => {
+            expect(cancelStub).to.be.calledOnce;
+            expect(cancelStub.firstCall.args[0]).to.eql(systemJobConfig.scheduler.system_jobs[2].name);
+            expect(cancelStub.firstCall.args[1]).to.eql(systemJobConfig.scheduler.system_jobs[2].type);
+            expect(scheduleStub).not.to.be.called;
+          });
       });
     });
   });

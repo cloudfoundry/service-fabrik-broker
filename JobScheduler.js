@@ -178,6 +178,7 @@ class JobScheduler {
                 clearInterval(this.intervalTimer);
                 return resolve();
               }
+              logger.info('broker update has been initiated, will wait till maintenance state changes from in-progress to completed state');
               const currTime = moment();
               const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
               if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {

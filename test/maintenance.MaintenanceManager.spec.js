@@ -15,7 +15,7 @@ describe('maintenance', function () {
       fromVersion: '2.0',
       toVersion: '2.1',
       releaseNotes: 'Made Changes to blah, blah',
-      progress: []
+      progress: [`${config.broker_drain_message} at ${new Date()}`]
     };
     let sandbox, repoSaveStub, repoSearchStub, clock, findOneStub, inMaintenance;
     let maintenaceFound = true;
@@ -138,6 +138,14 @@ describe('maintenance', function () {
           throw new Error('Should throw error');
         })
         .catch(errors.BadRequest, () => {});
+    });
+    it('should return any on-going maintenance status', function () {
+      inMaintenance = true;
+      return maintenanceManager.getMaintenaceInfo()
+        .then((response) => {
+          expect(findOneStub).to.be.calledOnce;
+          expect(response.broker_update_initiated).to.be.eql(true);
+        });
     });
     it('should return the last maintenance state', function () {
       inMaintenance = false;
