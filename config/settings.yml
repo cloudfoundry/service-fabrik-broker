@@ -193,9 +193,9 @@ defaults: &defaults
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
     maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
     downtime_maintenance_phases:
-    - 'BROKER_DRAIN_INITIATED'
-    - 'BROKER_REGISTRATION'
-    - 'UPDATE_SF_MONGODB'
+      - 'BROKER_DRAIN_INITIATED'
+      - 'BROKER_REGISTRATION_INITIATED'
+      - 'SF_MONGODB_UPDATE_INITIATED'
     jobs:
       reschedule_delay: '20 minutes from now'
       scheduled_backup:

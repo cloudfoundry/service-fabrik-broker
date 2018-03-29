@@ -164,7 +164,7 @@ class JobScheduler {
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
               return this.isServiceFabrikUp()
                 .then(status => {
-                  logger.info(`SF Connected to DB :- ${status}`);
+                  logger.info(`Scheduler Connected to DB :- ${status}`);
                   if (status === true) {
                     logger.info('Service fabrik is up, going ahead with starting the scheduler.');
                     clearInterval(this.intervalTimer);
@@ -180,7 +180,7 @@ class JobScheduler {
                 clearInterval(this.intervalTimer);
                 return resolve();
               }
-              logger.info(`SF in phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
+              logger.info(`Scheduler in downtime phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
               const phaseStartTimeInMs = Date.parse(downTimePhase.substring(downTimePhase.lastIndexOf('at') + 2));
               logger.info(`phaseStartTimeInMs - ${phaseStartTimeInMs} , maint timeout - ${config.scheduler.maintenance_mode_time_out}`);
               if (!isNaN(phaseStartTimeInMs)) {
