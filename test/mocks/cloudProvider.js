@@ -16,7 +16,7 @@ exports.getContainer = getContainer;
 exports.list = list;
 exports.remove = remove;
 
-function auth() {
+function auth(times) {
   const time = Date.now();
   const response = {
     body: {
@@ -43,6 +43,7 @@ function auth() {
   return nock(cloudProviderUrl)
     .replyContentLength()
     .post(`/${provider.keystoneAuthVersion}/auth/tokens`, body => _.isObject(body.auth))
+    .times(times || 1)
     .reply(201, response.body, response.headers);
 }
 
@@ -50,7 +51,7 @@ function encodePath(pathname) {
   return pathname.replace(/:/g, '%3A');
 }
 
-function download(remote, body) {
+function download(remote, body, times) {
   const headers = {
     'content-type': 'application/json'
   };
@@ -66,6 +67,7 @@ function download(remote, body) {
   return nock(objectStoreUrl)
     .replyContentLength()
     .get(encodePath(remote))
+    .times(times || 1)
     .reply(status, body, headers);
 }
 
@@ -101,7 +103,7 @@ function getContainer(containerName) {
     });
 }
 
-function list(containerName, prefix, filenames, responseStatusCode) {
+function list(containerName, prefix, filenames, responseStatusCode, times) {
   const files = _
     .chain(filenames)
     .map(name => ({
@@ -119,6 +121,7 @@ function list(containerName, prefix, filenames, responseStatusCode) {
     .replyContentLength()
     .get(`/${containerName}`)
     .query(qs)
+    .times(times || 1)
     .reply(responseStatusCode || 200, files, {
       'X-Container-Object-Count': '42'
     });

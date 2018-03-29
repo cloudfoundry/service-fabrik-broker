@@ -16,7 +16,6 @@ describe('Jobs', function () {
   /* jshint expr:true */
   describe('ScheduledOobDeploymentBackupJob', function () {
     const container = backupStore.containerName;
-    console.log(`Container name: ${container}`);
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
