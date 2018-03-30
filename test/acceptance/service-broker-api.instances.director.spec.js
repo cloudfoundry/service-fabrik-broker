@@ -661,6 +661,9 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
+                context: {
+                  platform: 'cloudfoundry'
+                }
               });
               mocks.verify();
             });
@@ -701,6 +704,9 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
+                context: {
+                  platform: 'cloudfoundry'
+                }
               });
               mocks.verify();
             });
@@ -731,6 +737,9 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'delete',
+                context: {
+                  platform: 'kubernetes'
+                }
               });
               mocks.verify();
             });
