@@ -173,7 +173,7 @@ class JobScheduler {
                 .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
               logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
-              const downTimePhase = maintenanceManager.getDowntimePhase(maintenanceInfo, config.scheduler.downtime_maintenance_phases);
+              const downTimePhase = maintenanceManager.getLastDowntimePhase(maintenanceInfo, config.scheduler.downtime_maintenance_phases);
               if (downTimePhase === undefined) {
                 logger.info('Current Maintenance phase does not affect scheduler downtime. So going ahead and starting it...');
                 clearInterval(this.intervalTimer);

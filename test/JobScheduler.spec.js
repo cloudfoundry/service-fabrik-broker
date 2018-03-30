@@ -117,6 +117,7 @@ describe('JobScheduler', function () {
       before(function () {
         maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve({
           createdAt: new Date(),
+          updatedAt: new Date(),
           state: CONST.OPERATION.SUCCEEDED
         }));
       });
@@ -370,7 +371,8 @@ describe('JobScheduler', function () {
         getMaintenanceStub.onCall(0).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           progress: [`Docker update in progress at ${new Date()}`],
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         logger.info('count is', count);
         cpus = 1;
@@ -394,11 +396,13 @@ describe('JobScheduler', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
           state: CONST.OPERATION.ABORTED,
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;
         logger.info('count is', count);
@@ -432,11 +436,13 @@ describe('JobScheduler', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
           state: CONST.OPERATION.ABORTED,
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: new Date()
         }));
         count = 0;
         logger.info('count is', count);
@@ -470,11 +476,13 @@ describe('JobScheduler', function () {
         getMaintenanceStub.onCall(2).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         getMaintenanceStub.onCall(3).returns(Promise.resolve({
           state: CONST.OPERATION.ABORTED,
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: new Date()
         }));
         count = 0;
         logger.info('count is', count);
@@ -508,7 +516,8 @@ describe('JobScheduler', function () {
         getMaintenanceStub.onCall(1).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           progress: [`${config.broker_drain_message} at ${moment().subtract(schedulerConfig.maintenance_mode_time_out)}`],
-          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
+          createdAt: moment().subtract(schedulerConfig.maintenance_mode_time_out),
+          updatedAt: moment().subtract(schedulerConfig.maintenance_mode_time_out)
         }));
         count = 0;
         logger.info('count is', count);
