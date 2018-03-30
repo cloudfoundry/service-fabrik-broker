@@ -162,14 +162,13 @@ class JobScheduler {
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
               logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected.`);
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
-              return this.isServiceFabrikUp()
-                .then(status => {
-                  logger.info(`Scheduler Connected to DB :- ${status}`);
-                  if (status === true) {
-                    logger.info('Service fabrik is up, going ahead with starting the scheduler.');
-                    clearInterval(this.intervalTimer);
-                    return resolve();
-                  }
+              return serviceFabrikClient.getInfo()
+                .then(info => {
+                  logger.info('Going ahead with starting the scheduler, as SF is up & responding back :-', info);
+                  //Ignore DB status as returned from SF as in case of DB update failure it returns back CREATE_UPDATE_FAILED.
+                  //However DB would stil be reachable and connected. If DB is down scheduler anyway goes down itslef.
+                  clearInterval(this.intervalTimer);
+                  return resolve();
                 })
                 .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
@@ -182,7 +181,7 @@ class JobScheduler {
               }
               logger.info(`Scheduler in downtime phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
               const phaseStartTimeInMs = Date.parse(downTimePhase.substring(downTimePhase.lastIndexOf('at') + 2));
-              logger.info(`phaseStartTimeInMs - ${phaseStartTimeInMs} , maint timeout - ${config.scheduler.maintenance_mode_time_out}`);
+              logger.info(`Downtime Phase StartTime - ${new Date(phaseStartTimeInMs)} , maint timeout - ${config.scheduler.maintenance_mode_time_out/(1000*60)}(mins)`);
               if (!isNaN(phaseStartTimeInMs)) {
                 //Try to get the start time of maintenance from maintenance phase. If not, then set current time. 
                 //Format of maintenance phase when updated can be found in 'MaintenanceManager.updateMaintenace' 
@@ -213,11 +212,6 @@ class JobScheduler {
     return new Promise((resolve, reject) => {
       checkMaintenanceStatus.call(this, resolve, reject);
     });
-  }
-
-  isServiceFabrikUp() {
-    return serviceFabrikClient.getInfo()
-      .then(info => info && info.db_status === CONST.DB.STATE.CONNECTED);
   }
 
   ensureSystemNotInMainenanceThenInitMaster() {
