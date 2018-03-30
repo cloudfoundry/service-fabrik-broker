@@ -180,16 +180,7 @@ class JobScheduler {
                 return resolve();
               }
               logger.info(`Scheduler in downtime phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
-              const phaseStartTimeInMs = Date.parse(downTimePhase.substring(downTimePhase.lastIndexOf('at') + 2));
-              logger.info(`Downtime Phase StartTime - ${new Date(phaseStartTimeInMs)} , maint timeout - ${config.scheduler.maintenance_mode_time_out/(1000*60)}(mins)`);
-              if (!isNaN(phaseStartTimeInMs)) {
-                //Try to get the start time of maintenance from maintenance phase. If not, then set current time. 
-                //Format of maintenance phase when updated can be found in 'MaintenanceManager.updateMaintenace' 
-                this.maintenanceStartTime = new Date(phaseStartTimeInMs);
-              } else {
-                //Current time could lead to being in longer maintenance window by a few minutes (This is a fallback)
-                this.maintenanceStartTime = this.maintenanceStartTime || new Date();
-              }
+              this.maintenanceStartTime = this.maintenanceStartTime || maintenanceInfo.updatedAt;
               const currTime = moment();
               if (this.maintenanceStartTime && currTime.diff(this.maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
                 logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout  ${config.scheduler.maintenance_mode_time_out} (ms). Flagging the current maintenance window as aborted.`);
