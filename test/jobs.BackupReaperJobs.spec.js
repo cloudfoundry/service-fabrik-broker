@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const CONST = require('../lib/constants');
 const config = require('../lib/config');
 const moment = require('moment');
@@ -7,6 +8,8 @@ const lib = require('../lib');
 const JobFabrik = require('../lib/jobs/JobFabrik');
 const BaseJob = require('../lib/jobs/BaseJob');
 const ScheduleManager = require('../lib/jobs/ScheduleManager');
+const errors = require('../lib/errors');
+const NotFound = errors.NotFound;
 const backupStore = lib.iaas.backupStore;
 const filename = lib.iaas.backupStore.filename;
 
@@ -19,27 +22,34 @@ describe('Jobs', function () {
     const index = mocks.director.networkSegmentIndex;
     const instance_id = mocks.director.uuidByIndex(index);
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-    const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+    const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+    const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
+    const backup_guidOob = '071acb05-66a3-471b-af3c-8bbf1e4180bd';
     const backup_guid2 = '081acb05-66a3-471b-af3c-8bbf1e4180bf';
-    //const backup_guid3 = '091acb05-66a3-471b-af3c-8bbf1e4180bg';
+    const backup_guid2Oob = '081acb05-66a3-471b-af3c-8bbf1e4180ba';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     const container = backupStore.containerName;
     const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
-    //const started1DaysPrior = filename.isoDate(moment().subtract(1, 'days').toISOString());
+    const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
+    const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
     const started18DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
     const started16DaysPrior = filename.isoDate(moment()
       .subtract(config.backup.retention_period_in_days + 2, 'days').toISOString());
     const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-    //const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
+    const prefixOob = `${root_folder}/backup/${deploymentName}`;
     const fileName16Daysprior = `${prefix}.${backup_guid}.${started16DaysPrior}.json`;
     const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
     const pathname16 = `/${container}/${fileName16Daysprior}`;
     const pathname18 = `/${container}/${fileName18DaysPrior}`;
+    //For OOB
+    const fileName16DayspriorOob = `${prefixOob}.${backup_guidOob}.${started16DaysPrior}.json`;
+    const fileName18DaysPriorOob = `${prefixOob}.${backup_guid2Oob}.${started18DaysPrior}.json`;
+    const pathname16Oob = `/${container}/${fileName16DayspriorOob}`;
+    const pathname18Oob = `/${container}/${fileName18DaysPriorOob}`;
+
     const archiveFilename1 = `${backup_guid}/volume.tgz.enc`;
     const archivePathname1 = `/${blueprintContainer}/${archiveFilename1}`;
-    // const archiveFilename2 = `${backup_guid2}/volume.tgz.enc`;
-    // const archivePathname2 = `/${blueprintContainer}/${archiveFilename2}`;
     const repeatInterval = '*/1 * * * *';
     const repeatTimezone = 'America/New_York';
     const time = Date.now();
@@ -54,6 +64,16 @@ describe('Jobs', function () {
       service_id: service_id,
       instance_guid: instance_id
     };
+    const scheduled_data_oob = {
+      trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
+      type: 'online',
+      state: 'succeeded',
+      backup_guid: backup_guidOob,
+      started_at: started16DaysPrior,
+      agent_ip: mocks.agent.ip,
+      deployment_name: deploymentName,
+      container: blueprintContainer
+    };
     const ondemand_data = {
       trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
       type: 'online',
@@ -63,6 +83,16 @@ describe('Jobs', function () {
       agent_ip: mocks.agent.ip,
       service_id: service_id,
       instance_guid: instance_id
+    };
+    const ondemand_data_oob = {
+      trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
+      type: 'online',
+      state: 'succeeded',
+      backup_guid: backup_guid2Oob,
+      started_at: started18DaysPrior,
+      agent_ip: mocks.agent.ip,
+      deployment_name: deploymentName,
+      container: blueprintContainer
     };
     const job = {
       attrs: {
@@ -102,34 +132,27 @@ describe('Jobs', function () {
     let baseJobLogRunHistoryStub, getScheduleStub;
 
     before(function () {
-      backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
       mocks.reset();
-      mocks.cloudProvider.auth();
-      mocks.cloudProvider.getContainer(container);
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      return mocks.setup([backupStore.cloudProvider.getContainer()]);
+      return mocks.setup();
     });
 
     beforeEach(function () {
-      mocks.reset();
       baseJobLogRunHistoryStub.reset();
-      getScheduleStub.reset();
     });
 
     afterEach(function () {
       mocks.reset();
       baseJobLogRunHistoryStub.reset();
-      getScheduleStub.reset();
     });
 
     after(function () {
       baseJobLogRunHistoryStub.restore();
-      getScheduleStub.restore();
     });
 
     it('should delete scheduled backup older than 14 days', function (done) {
+      mocks.cloudProvider.auth(1);
       mocks.cloudProvider.list(container, undefined, [
         fileName16Daysprior
       ]);
@@ -141,16 +164,33 @@ describe('Jobs', function () {
       mocks.cloudProvider.remove(archivePathname1);
       //Out of 3 files 1 day prior is filtered out will not be deleted
       mocks.cloudProvider.download(pathname16, scheduled_data);
+
+      // For Oob
+      mocks.cloudProvider.list(container, `${root_folder}/backup`, [
+        fileName16DayspriorOob
+      ], undefined, 2);
+      mocks.cloudProvider.remove(pathname16Oob);
+      mocks.cloudProvider.list(blueprintContainer, backup_guidOob, [archiveFilename1]);
+      mocks.cloudProvider.remove(archivePathname1);
+      //Out of 3 files 1 day prior is filtered out will not be deleted
+      mocks.cloudProvider.list(container, `${prefixOob}.${backup_guidOob}`, [
+        fileName16DayspriorOob
+      ]);
+      mocks.cloudProvider.download(pathname16Oob, scheduled_data_oob, 2);
+      //Mocks done
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {
-          deleted_guids: [backup_guid]
+          deleted_guids: [backup_guid, backup_guidOob]
         };
+        expect(getScheduleStub).to.be.callCount(0);
         expect(baseJobLogRunHistoryStub).to.be.calledOnce;
         expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
         expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
         expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
         expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        getScheduleStub.restore();
         done();
       });
     });
@@ -162,28 +202,160 @@ describe('Jobs', function () {
       mocks.cloudProvider.list(container, `${space_guid}/backup`, [
         fileName18DaysPrior
       ]);
-      // mocks.cloudProvider.remove(pathname18);
-      // mocks.cloudProvider.list(blueprintContainer, backup_guid2, [archiveFilename2]);
-      // mocks.cloudProvider.remove(archivePathname2);
-      //Out of 3 files 1 day prior is filtered out will not be deleted
       mocks.cloudProvider.download(pathname18, ondemand_data);
+      // For OOB
+      mocks.cloudProvider.list(container, `${root_folder}/backup`, [
+        fileName18DaysPriorOob
+      ], undefined, 2);
+      mocks.cloudProvider.download(pathname18Oob, ondemand_data_oob, 2);
+      mocks.cloudProvider.list(container, `${prefixOob}.${backup_guid2Oob}`, [
+        fileName18DaysPriorOob
+      ]);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {
-          deleted_guids: [undefined]
+          deleted_guids: [undefined, undefined]
         };
+        expect(getScheduleStub).to.be.callCount(2);
         expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-        expect(getScheduleStub).to.be.calledOnce;
         expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
         expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
         expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
         expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        getScheduleStub.restore();
+        done();
+      });
+    });
+
+    it('should not delete on-demand backup when schedule job not found and deployment or service instance present', function (done) {
+      mocks.cloudProvider.list(container, undefined, [
+        fileName18DaysPrior
+      ]);
+      mocks.cloudProvider.list(container, `${space_guid}/backup`, [
+        fileName18DaysPrior
+      ]);
+      mocks.cloudProvider.download(pathname18, ondemand_data);
+      // For OOB
+      mocks.cloudProvider.list(container, `${root_folder}/backup`, [
+        fileName18DaysPriorOob
+      ], undefined, 2);
+      mocks.cloudProvider.download(pathname18Oob, ondemand_data_oob, 2);
+      mocks.cloudProvider.list(container, `${prefixOob}.${backup_guid2Oob}`, [
+        fileName18DaysPriorOob
+      ]);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', () => {
+        return Promise.try(() => {
+          throw new NotFound('Schedulde not found.');
+        });
+      });
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.director.getDeployment(deploymentName, true);
+      return BackupReaperJob.run(job, () => {
+        mocks.verify();
+        const expectedBackupResponse = {
+          deleted_guids: [undefined, undefined]
+        };
+        expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+        expect(getScheduleStub).to.be.callCount(2);
+        expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+        expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+        expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+        expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        getScheduleStub.restore();
+        done();
+      });
+    });
+
+    it('should delete 14 days older on-demand backup when schedule job not found and deployment or service instance deleted', function (done) {
+      mocks.cloudProvider.list(container, undefined, [
+        fileName18DaysPrior
+      ]);
+      mocks.cloudProvider.list(container, `${space_guid}/backup`, [
+        fileName18DaysPrior
+      ]);
+      mocks.cloudProvider.download(pathname18, ondemand_data);
+      mocks.cloudProvider.list(blueprintContainer, `${backup_guid2}`, [
+        `${backup_guid2}/volume.tgz.enc`
+      ]);
+      mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid2}/volume.tgz.enc`);
+      mocks.cloudProvider.remove(pathname18);
+      // For OOB
+      mocks.cloudProvider.list(container, `${root_folder}/backup`, [
+        fileName18DaysPriorOob
+      ], undefined, 2);
+      mocks.cloudProvider.download(pathname18Oob, ondemand_data_oob, 2);
+      mocks.cloudProvider.list(container, `${prefixOob}.${backup_guid2Oob}`, [
+        fileName18DaysPriorOob
+      ]);
+      mocks.cloudProvider.list(blueprintContainer, `${backup_guid2Oob}`, [
+        `${backup_guid2Oob}/volume.tgz.enc`
+      ]);
+      mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid2Oob}/volume.tgz.enc`);
+      mocks.cloudProvider.remove(pathname18Oob);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', () => {
+        return Promise.try(() => {
+          throw new NotFound('Schedulde not found.');
+        });
+      });
+      mocks.cloudController.findServicePlan(instance_id);
+      mocks.director.getDeployment(deploymentName, false, undefined, 2);
+      return BackupReaperJob.run(job, () => {
+        mocks.verify();
+        const expectedBackupResponse = {
+          deleted_guids: [backup_guid2, backup_guid2Oob]
+        };
+        expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+        expect(getScheduleStub).to.be.callCount(2);
+        expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+        expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+        expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+        expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        getScheduleStub.restore();
+        done();
+      });
+    });
+
+    it('should not delete scheduled older oob backup not having container in metadata', function (done) {
+      mocks.cloudProvider.list(container, undefined, [
+        fileName16Daysprior
+      ]);
+      mocks.cloudProvider.list(container, `${space_guid}/backup`, [
+        fileName16Daysprior
+      ]);
+      mocks.cloudProvider.remove(pathname16);
+      mocks.cloudProvider.list(blueprintContainer, backup_guid, [archiveFilename1]);
+      mocks.cloudProvider.remove(archivePathname1);
+      //Out of 3 files 1 day prior is filtered out will not be deleted
+      mocks.cloudProvider.download(pathname16, scheduled_data);
+
+      // For Oob
+      mocks.cloudProvider.list(container, `${root_folder}/backup`, [
+        fileName16DayspriorOob
+      ], undefined, 1);
+      mocks.cloudProvider.list(container, `${prefixOob}.${backup_guidOob}`, [
+        fileName16DayspriorOob
+      ]);
+      mocks.cloudProvider.download(pathname16Oob, _.chain(scheduled_data_oob).omit('container').value());
+      //Mocks done
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
+      return BackupReaperJob.run(job, () => {
+        mocks.verify();
+        const expectedBackupResponse = {
+          deleted_guids: [backup_guid, undefined]
+        };
+        expect(getScheduleStub).to.be.callCount(0);
+        expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+        expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+        expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+        expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+        expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        getScheduleStub.restore();
         done();
       });
     });
 
     it('should log delete backup as failed', function (done) {
-      //mocks.cloudController.findServicePlan(instance_id, plan_id);
       mocks.cloudProvider.list(container, undefined, [], 404);
       return BackupReaperJob.run(job, () => {
         mocks.verify();

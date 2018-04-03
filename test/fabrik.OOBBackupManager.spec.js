@@ -9,6 +9,9 @@ const BaseController = require('../lib/controllers/BaseController');
 const CONST = require('../lib/constants');
 const OobBackupManager = require('../lib/fabrik/OobBackupManager');
 const bosh = require('../lib/bosh');
+const lib = require('../lib');
+const backupStoreForOob = lib.iaas.backupStoreForOob;
+
 
 describe('fabrik', function () {
   /* jshint expr:true */
@@ -184,6 +187,35 @@ describe('fabrik', function () {
     });
 
     it('should initiate backup of CCDB deployment successfully', function () {
+      const opts = {
+        deploymentName: deploymentName,
+        user: {
+          name: 'frodo'
+        },
+        arguments: {
+          container: `${backupStoreForOob.containerPrefix}-postgresql`
+        }
+      };
+      const expectedResult = {
+        operation: 'backup',
+        backup_guid: undefined,
+        agent_ip: '10.11.0.2'
+      };
+      return oobBackupManager.startBackup(opts).then(result => {
+        expect(startBackupStub).to.be.calledOnce;
+        expect(putFileStub).to.be.calledOnce;
+        expect(startBackupStub.firstCall.args[0]).to.eql(dbIps);
+        expect(startBackupStub.firstCall.args[1].trigger).to.eql(CONST.BACKUP.TRIGGER.ON_DEMAND);
+        expect(startBackupStub.firstCall.args[1].type).to.eql('online');
+        expect(startBackupStub.firstCall.args[2]).to.eql(expectedVms);
+        expect(result.operation).to.eql(expectedResult.operation);
+
+        expect(result.agent_ip).to.eql(expectedResult.agent_ip);
+        expect(BaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
+      });
+    });
+
+    it('should initiate backup of CCDB deployment successfully - without container', function () {
       const opts = {
         deploymentName: deploymentName,
         user: {
