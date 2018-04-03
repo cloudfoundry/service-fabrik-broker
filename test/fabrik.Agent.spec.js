@@ -282,6 +282,24 @@ describe('fabrik', function () {
 
     });
 
+    describe('#preupdate', function () {
+      before(function () {
+        pathname = 'lifecycle/preupdate';
+        expectedStatus = 200;
+        context = {};
+      });
+
+      it('returns a JSON object', function () {
+        return agent
+          .preUpdate(ips, context)
+          .then(body => {
+            expect(body).to.equal(response.body);
+            expect(requestStub).to.have.been.calledTwice;
+          });
+      });
+
+    });
+
     describe('#createCredentials', function () {
       before(function () {
         pathname = 'credentials/create';

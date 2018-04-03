@@ -15,6 +15,7 @@ exports.credentials = credentials;
 exports.getInfo = getInfo;
 exports.getState = getState;
 exports.deprovision = deprovision;
+exports.preUpdate = preUpdate;
 exports.createCredentials = createCredentials;
 exports.deleteCredentials = deleteCredentials;
 exports.startBackup = startBackup;
@@ -56,6 +57,13 @@ function deprovision() {
     .replyContentLength()
     .post('/v1/lifecycle/deprovision', {})
     .reply(200, {});
+}
+
+function preUpdate(expectedReturnStatusCode) {
+  return nock(agentUrl)
+    .replyContentLength()
+    .post('/v1/lifecycle/preupdate', {})
+    .reply(expectedReturnStatusCode || 200, {});
 }
 
 function createCredentials() {
