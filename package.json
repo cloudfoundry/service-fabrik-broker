@@ -1,7 +1,7 @@
 {
   "name": "service-fabrik-broker",
   "description": "Service Fabrik Broker",
-  "version": "3.0.1",
+  "version": "3.1.1",
   "license": "Apache-2.0",
   "contributors": [
     "Franzke, Rafael",
@@ -62,6 +62,8 @@
     "uuid": "2.0.2",
     "winston": "2.2.0",
     "winston-syslog": "1.2.5",
+    "@google-cloud/compute": "0.9.1",
+    "@google-cloud/storage": "1.6.0",
     "aws-sdk": "2.35.0"
   },
   "devDependencies": {

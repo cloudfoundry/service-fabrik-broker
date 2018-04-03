@@ -53,6 +53,22 @@ const cloudProviders = {
     storageAccount: 'storageacc',
     storageAccessKey: 'xxxxxxxxxxxxxxxxxx',
     container: 'samplecontainer'
+  },
+  gcp: {
+    projectId: 'my-gcp-dev',
+    credentials: {
+      "type": "service_account",
+      "project_id": "my-gcp-dev",
+      "private_key_id": "kkkkkkkk",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nlllllllllllllllllllllll\n-----END PRIVATE KEY-----\n",
+      "client_email": "my-test-user@my-gcp-dev.iam.myaccounts.com",
+      "client_id": "000000000000000",
+      "auth_uri": "https://myaccounts.com/oauth2/auth",
+      "token_uri": "https://myaccounts.com/oauth2/token",
+      "auth_provider_x509_cert_url": "https://myaccounts.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com" 
+    },
+    container: 'samplecontainer'
   }
 };
 const cloudProvider = cloudProviders.openstack;
@@ -84,6 +100,22 @@ const virtualHostCloudProviders = {
     storageAccount: 'storageacc',
     storageAccessKey: 'xxxxxxxxxxxxxxxxxx',
     container: 'rabbitmqsamplecontainer'
+  },
+  gcp: {
+    projectId: 'my-gcp-dev',
+    credentials: {
+      "type": "service_account",
+      "project_id": "my-gcp-dev",
+      "private_key_id": "kkkkkkkk",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nlllllllllllllllllllllll\n-----END PRIVATE KEY-----\n",
+      "client_email": "my-test-user@my-gcp-dev.iam.myaccounts.com",
+      "client_id": "000000000000000",
+      "auth_uri": "https://myaccounts.com/oauth2/auth",
+      "token_uri": "https://myaccounts.com/oauth2/token",
+      "auth_provider_x509_cert_url": "https://myaccounts.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com" 
+    },
+    container: 'samplecontainer'
   }
 };
 const virtualHostCloudProvider = virtualHostCloudProviders.openstack;
