@@ -42,6 +42,7 @@ const cloudProviders = {
     region: 'eu-central-1',
     keyId: 'xxxxxxxxxxxxxxxxxxx',
     key: 'xxxxxxxxxxxxxxxxxx',
+    max_retries: 10,
     containerPrefix: 'cf.service-fabrik.myaws.com-service-fabrik'
   },
   azure: {
