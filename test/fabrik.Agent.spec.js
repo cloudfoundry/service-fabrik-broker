@@ -49,7 +49,7 @@ describe('fabrik', function () {
     let pathname = 'foo';
     let expectedStatus;
     let api_version = '1';
-    let supported_features = ['state', 'lifecycle', 'credentials', 'backup'];
+    let supported_features = ['state', 'lifecycle', 'credentials', 'backup', 'deploymenthooks'];
     let url;
     let agent;
     let requestStub;
@@ -283,8 +283,9 @@ describe('fabrik', function () {
     });
 
     describe('#preupdate', function () {
+      let context = {};
       before(function () {
-        pathname = 'lifecycle/preupdate';
+        pathname = 'deploymenthooks/preupdate';
         expectedStatus = 200;
         context = {};
       });
