@@ -31,6 +31,25 @@ describe('iaas', function () {
           .deleteSnapshot('fake-snap')
           .catch(err => expect(err.message).to.equal(errorMessageExpected));
       });
+      it('should throw error for openstack cloudprovider client', function () {
+        const client = new CloudProviderClient({
+          name: 'os',
+          authUrl: 'https://keystone.org:5000/test/v3',
+          keystoneAuthVersion: 'v3',
+          domainName: 'domain',
+          tenantName: 'service-fabrik',
+          username: 'user',
+          password: 'secret'
+        });
+        const errorMessageExpected = 'ComputeClient is not supported for openstack';
+        client
+          .deleteSnapshot('fake-snap')
+          .catch(err => err)
+          .then(err => {
+            expect(err.status).to.equal(501);
+            expect(err.message).to.equal(errorMessageExpected);
+          });
+      });
     });
 
     describe('#constructor', function () {
@@ -47,6 +66,23 @@ describe('iaas', function () {
             provider: 'amazon',
             key: 'key',
             keyId: 'keyId'
+          });
+      });
+
+      it('should create an aws client instance with max_retries', function () {
+        const client = new CloudProviderClient({
+          name: 'aws',
+          key: 'key',
+          keyId: 'keyId',
+          max_retries: 12
+        });
+        expect(client.provider).to.equal('amazon');
+        expect(createClientSpy)
+          .to.be.calledWith({
+            provider: 'amazon',
+            key: 'key',
+            keyId: 'keyId',
+            max_retries: 12
           });
       });
 
