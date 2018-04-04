@@ -36,6 +36,12 @@ if (!spec.previous_manifest) {
     properties.blueprint = spec.previous_manifest.instance_groups[0].jobs[0].properties;
   }
 }
+if(!spec.preUpdateActionResponse){
+  properties.blueprint.preUpdateActionResponse = spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateActionResponse;
+}
+else{
+  properties.blueprint.preUpdateActionResponse = JSON.stringify(spec.preUpdateActionResponse);
+}
 %>
 - name: blueprint
   migrated_from:
@@ -54,7 +60,7 @@ if (!spec.previous_manifest) {
     blueprint: &blueprint
     properties:
       port: 8080
-      actionResponse: <%= JSON.stringify(spec.actions) %>
+      preUpdateActionResponse: <%= properties.blueprint.preUpdateActionResponse %>
       admin:
         username: <%= properties.blueprint.admin.username %>
         password: <%= properties.blueprint.admin.password %>
