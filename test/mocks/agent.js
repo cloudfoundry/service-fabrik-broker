@@ -34,7 +34,7 @@ function getInfo(times) {
     .times(times || 1)
     .reply(200, {
       api_version: '1',
-      supported_features: ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'deploymenthooks']
+      supported_features: ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'preupdate']
     });
 }
 
@@ -62,7 +62,7 @@ function deprovision() {
 function preUpdate(expectedReturnStatusCode) {
   return nock(agentUrl)
     .replyContentLength()
-    .post('/v1/deploymenthooks/preupdate', {})
+    .post('/v1/preupdate', {})
     .reply(expectedReturnStatusCode || 200, {});
 }
 
