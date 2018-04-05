@@ -27,14 +27,18 @@ exports.abortRestore = abortRestore;
 exports.lastRestoreOperation = lastRestoreOperation;
 exports.getRestoreLogs = getRestoreLogs;
 
-function getInfo(times) {
+function getInfo(times, featureNotSupported) {
+  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'preupdate'];
+  if (featureNotSupported) {
+    supportedFeatures.splice(supportedFeatures.indexOf(featureNotSupported), 1);
+  }
   return nock(agentUrl)
     .replyContentLength()
     .get('/v1/info')
     .times(times || 1)
     .reply(200, {
       api_version: '1',
-      supported_features: ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'preupdate']
+      supported_features: supportedFeatures
     });
 }
 
