@@ -11,13 +11,17 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                         "platform": "cloudfoundry",
                         "space_guid": "12345678-1234-5678-1234-123456781234"
                     },
+                    "previous_values": {
+                        plan_id: '12345678-1234-5678-1234-123456781234',
+                        service_id: '12345678-1234-5678-1234-123456781234',
+                        organization_id: '12345678-1234-5678-1234-123456781234',
+                        space_id: '12345678-1234-5678-1234-1234567812341'
+                    },
                     "plan_id": "12345678-1234-5678-1234-123456781234",
                     "service_id": "12345678-1234-5678-1234-123456781234",
-                    "organization_guid": "12345678-1234-5678-1234-123456781234",
                     "previous_manifest": {
                         ...
-                    },
-                    "space_guid": "12345678-1234-5678-1234-123456781234"
+                    }
                 },
                 "sf_operations_args": {}
             }
@@ -45,6 +49,28 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                             "type": "object",
                             "description": "context from cf request"
                         },
+                        "previous_values": {
+                            "type": "object",
+                            "description": "Information about the service instance prior to the update."
+                            "properties": {
+                                "plan_id": {
+                                    "type": "string",
+                                    "description": "previous plan id"
+                                },
+                                "service_id": {
+                                    "type": "string",
+                                    "description": "Service Id"
+                                },
+                                "organization_guid": {
+                                    "type": "string",
+                                    "description": "Organization Guid"
+                                },
+                                "space_guid": {
+                                    "type": "string",
+                                    "description": "Space Guid"
+                                }
+                            }
+                        }
                         "plan_id": {
                             "type": "string",
                             "description": "Current plan id"
@@ -52,14 +78,6 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                         "service_id": {
                             "type": "string",
                             "description": "Service Id"
-                        },
-                        "space_guid": {
-                            "type": "string",
-                            "description": "Space Guid"
-                        },
-                        "organization_guid": {
-                            "type": "string",
-                            "description": "Organization Guid"
                         },
                         "previous_manifest": {
                             "type": "object",
