@@ -1,0 +1,75 @@
+The request body must be a JSON object with exactly 4 properties, includes deployment_name, instance_guid, sf_operations_args, params.
+
+    + Body
+
+            {
+                "deployment_name": "service-fabrik-1234-12345678-1234-5678-1234-123456781234",
+                "instance_guid": "12345678-1234-5678-1234-123456781234",
+                "params": {
+                    "context": {
+                        "organization_guid": "12345678-1234-5678-1234-123456781234",
+                        "platform": "cloudfoundry",
+                        "space_guid": "12345678-1234-5678-1234-123456781234"
+                    },
+                    "plan_id": "12345678-1234-5678-1234-123456781234",
+                    "service_id": "12345678-1234-5678-1234-123456781234",
+                    "organization_guid": "12345678-1234-5678-1234-123456781234",
+                    "previous_manifest": {
+                        ...
+                    },
+                    "space_guid": "12345678-1234-5678-1234-123456781234"
+                },
+                "sf_operations_args": {}
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["deployment_name", "instance_guid", "params"],
+              "properties": {
+                "deployment_name": {
+                  "type": "string",
+                  "description": "Deployment Name"
+                },
+                "instance_guid": {
+                  "type": "string",
+                  "description": "Instance Guid of service instance"
+                },
+                "params": {
+                    "type": "object",
+                    "description": "params that comes as part of cf update request and previous_manifest",
+                    "properties": {
+                        "context": {
+                            "type": "object",
+                            "description": "context from cf request"
+                        },
+                        "plan_id": {
+                            "type": "string",
+                            "description": "Current plan id"
+                        },
+                        "service_id": {
+                            "type": "string",
+                            "description": "Service Id"
+                        },
+                        "space_guid": {
+                            "type": "string",
+                            "description": "Space Guid"
+                        },
+                        "organization_guid": {
+                            "type": "string",
+                            "description": "Organization Guid"
+                        },
+                        "previous_manifest": {
+                            "type": "object",
+                            "description": "Previous Manifest of the deployment"
+                        }
+                  }
+                },
+                "sf_operations_args": {
+                    "type": "object",
+                    "description": "Arguments passed as optional parameter to cf update-service, can be an empty object"
+                }
+              }
+            }

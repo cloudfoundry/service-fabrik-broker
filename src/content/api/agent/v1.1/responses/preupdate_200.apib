@@ -1,0 +1,21 @@
+In case of success, the agent has successfully peformed operations required before the service instance gets updated. The response body must have exactly one property named actionResponse.
+
+    + Body
+
+            {
+                actionResponse: "Blueprint-PreUpdate-Action"
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "required": ["actionResponse"],
+                "properties": {
+                    "operational": {
+                        "type": "string/object",
+                        "description": "Preupdate action response."
+                    }
+                }
+            }
