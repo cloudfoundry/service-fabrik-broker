@@ -33,6 +33,7 @@ class JobScheduler {
       this.workerType = '';
       this.serviceFabrikInMaintenance = true;
       this.intervalTimer = undefined;
+      this.maintenanceStartTime = undefined;
       this.shutDownHook = () => this.shutDown();
       process.on('SIGTERM', this.shutDownHook);
       process.on('SIGINT', this.shutDownHook);
@@ -140,7 +141,7 @@ class JobScheduler {
   }
 
   pollMaintenanceStatus() {
-    this.intervalTimer = undefined;
+    this.intervalTimer = this.maintenanceStartTime = undefined;
     const checkMaintenanceStatus = (resolve, reject) => {
       return maintenanceManager
         .getLastMaintenaceState()
@@ -159,23 +160,29 @@ class JobScheduler {
             }
             const maintInfoAttrs = ['progress', 'state', 'completedAt', 'reason', 'toVersion', 'fromVersion', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
             if (_.get(maintenanceInfo, 'state', '') !== CONST.OPERATION.IN_PROGRESS) {
-              logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected. `);
+              logger.info(`+-> System is not in maintenance, but its current state is: ${_.get(maintenanceInfo, 'state', '')}, not as expected.`);
               logger.info('checking if service fabrik is up, inspite of unexpected maintenance state - ', _.pick(maintenanceInfo, maintInfoAttrs));
-              return this.isServiceFabrikUp()
-                .then(status => {
-                  logger.info(`SF Connected to DB :- ${status}`);
-                  if (status === true) {
-                    logger.info('Service fabrik is up, going ahead with starting the scheduler.');
-                    clearInterval(this.intervalTimer);
-                    return resolve();
-                  }
+              return serviceFabrikClient.getInfo()
+                .then(info => {
+                  logger.info('Going ahead with starting the scheduler, as SF is up & responding back :-', info);
+                  //Ignore DB status as returned from SF as in case of DB update failure it returns back CREATE_UPDATE_FAILED.
+                  //However DB would stil be reachable and connected. If DB is down scheduler anyway goes down itslef.
+                  clearInterval(this.intervalTimer);
+                  return resolve();
                 })
                 .catch(err => reject('error occurred while fetching service fabrik broker status:', err));
             } else {
               logger.info('+-> System is in maintenance :', _.pick(maintenanceInfo, maintInfoAttrs));
+              const downTimePhase = maintenanceManager.getLastDowntimePhase(maintenanceInfo, config.scheduler.downtime_maintenance_phases);
+              if (downTimePhase === undefined) {
+                logger.info('Current Maintenance phase does not affect scheduler downtime. So going ahead and starting it...');
+                clearInterval(this.intervalTimer);
+                return resolve();
+              }
+              logger.info(`Scheduler in downtime phase: ${downTimePhase}, will wait till maintenance state changes from in-progress to completed state`);
+              this.maintenanceStartTime = this.maintenanceStartTime || maintenanceInfo.updatedAt;
               const currTime = moment();
-              const maintenanceStartTime = _.get(maintenanceInfo, 'createdAt');
-              if (maintenanceStartTime && currTime.diff(maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
+              if (this.maintenanceStartTime && currTime.diff(this.maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
                 logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout  ${config.scheduler.maintenance_mode_time_out} (ms). Flagging the current maintenance window as aborted.`);
                 return maintenanceManager
                   .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`,
@@ -196,11 +203,6 @@ class JobScheduler {
     return new Promise((resolve, reject) => {
       checkMaintenanceStatus.call(this, resolve, reject);
     });
-  }
-
-  isServiceFabrikUp() {
-    return serviceFabrikClient.getInfo()
-      .then(info => info && info.db_status === CONST.DB.STATE.CONNECTED);
   }
 
   ensureSystemNotInMainenanceThenInitMaster() {

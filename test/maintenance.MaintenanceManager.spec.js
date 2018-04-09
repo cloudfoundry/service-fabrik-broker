@@ -11,11 +11,12 @@ describe('maintenance', function () {
   /* jshint unused:false */
   /* jshint expr:true */
   describe('#MaintenanceManager', function () {
+    const downTimePhse = `${config.broker_drain_message} at ${new Date()}`;
     const maintenanceInfo = {
       fromVersion: '2.0',
       toVersion: '2.1',
       releaseNotes: 'Made Changes to blah, blah',
-      progress: []
+      progress: [downTimePhse]
     };
     let sandbox, repoSaveStub, repoSearchStub, clock, findOneStub, inMaintenance;
     let maintenaceFound = true;
@@ -32,7 +33,7 @@ describe('maintenance', function () {
       }));
       findOneStub = sandbox.stub(Repository, 'findOne', () => Promise.try(() => {
         if (inMaintenance) {
-          return _.clone(maintenanceInfo);
+          return _.cloneDeep(maintenanceInfo);
         }
         return null;
       }));
@@ -50,10 +51,10 @@ describe('maintenance', function () {
     });
 
     it('should successfully update start of maintenance', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       maintInfo.fromVersion = undefined;
       maintInfo.progress = undefined;
-      return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER)
+      return maintenanceManager.startMaintenace(_.cloneDeep(maintInfo), CONST.SYSTEM_USER)
         .then(() => {
           maintInfo.progress = [`Service-fabrik maintenace mode is being initiated ${new Date()}`];
           maintInfo.state = CONST.OPERATION.IN_PROGRESS;
@@ -66,10 +67,10 @@ describe('maintenance', function () {
         });
     });
     it('should successfully update start of maintenance with provided progress info', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       maintInfo.progress = 'Start Maintenance Mode';
       maintInfo.toVersion = undefined;
-      return maintenanceManager.startMaintenace(_.clone(maintInfo), CONST.SYSTEM_USER)
+      return maintenanceManager.startMaintenace(_.cloneDeep(maintInfo), CONST.SYSTEM_USER)
         .then(() => {
           maintInfo.progress = [`${maintInfo.progress} at ${new Date()}`];
           maintInfo.state = CONST.OPERATION.IN_PROGRESS;
@@ -82,7 +83,7 @@ describe('maintenance', function () {
         });
     });
     it('should successfully update progress of maintenance with provided progress info', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('SF Deployed', CONST.OPERATION.SUCCEEDED, CONST.SYSTEM_USER)
         .then(() => {
           maintInfo.progress.push(`SF Deployed at ${new Date()}`);
@@ -95,7 +96,7 @@ describe('maintenance', function () {
         });
     });
     it('should successfully update progress of maintenance with provided progress info & state remains unchanged', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('SF Deployed', undefined, CONST.SYSTEM_USER)
         .then(() => {
           maintInfo.progress.push(`SF Deployed at ${new Date()}`);
@@ -106,7 +107,7 @@ describe('maintenance', function () {
         });
     });
     it('should throw error if update sate input is invalid', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('SF Deployed', 'INVALID_STATE', CONST.SYSTEM_USER)
         .then(() => {
           throw new Error('Should throw error');
@@ -114,7 +115,7 @@ describe('maintenance', function () {
         .catch(errors.BadRequest, () => {});
     });
     it('should throw error if progressInfo is blank', function () {
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('', CONST.OPERATION.SUCCEEDED, CONST.SYSTEM_USER)
         .then(() => {
           throw new Error('Should throw error');
@@ -123,7 +124,7 @@ describe('maintenance', function () {
     });
     it('should throw error if update of maintenance is tried when system is not in maintenance', function () {
       inMaintenance = false;
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('SF Deployed', CONST.OPERATION.SUCCEEDED, CONST.SYSTEM_USER)
         .then(() => {
           throw new Error('Should throw error');
@@ -132,12 +133,20 @@ describe('maintenance', function () {
     });
     it('should throw error if update of maintenance is tried with empty progress info', function () {
       inMaintenance = false;
-      const maintInfo = _.clone(maintenanceInfo);
+      const maintInfo = _.cloneDeep(maintenanceInfo);
       return maintenanceManager.updateMaintenace('', CONST.OPERATION.SUCCEEDED, CONST.SYSTEM_USER)
         .then(() => {
           throw new Error('Should throw error');
         })
         .catch(errors.BadRequest, () => {});
+    });
+    it('should return the last downtime phase of an on-going maintenance', function () {
+      inMaintenance = true;
+      return maintenanceManager.getMaintenaceInfo()
+        .then((response) => {
+          expect(findOneStub).to.be.calledOnce;
+          expect(maintenanceManager.getLastDowntimePhase(response, config.scheduler.downtime_maintenance_phases)).to.be.eql(downTimePhse);
+        });
     });
     it('should return the last maintenance state', function () {
       inMaintenance = false;

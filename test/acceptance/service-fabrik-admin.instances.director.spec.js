@@ -358,7 +358,9 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(200);
-              expect(res.body).to.eql(maintenanceInfo);
+              expect(res.body).to.eql(_.chain(_.clone(maintenanceInfo))
+                .set('system_in_maintenance', true)
+                .value());
             });
         });
         it('should return 404 if service-fabrik is not in maintenance mode ', function () {

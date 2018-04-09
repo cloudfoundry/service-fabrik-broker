@@ -142,7 +142,8 @@ defaults: &defaults
   http_timeout: 175000
   deployment_action_timeout: 80000
   multi_az_enabled: false
-
+  broker_drain_message: 'BROKER_DRAIN_INITIATED'
+  
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################
@@ -222,6 +223,10 @@ defaults: &defaults
     maintenance_check_interval: 90000 #every (ms) scheduler checks for maitenance mode
     agenda_collection: agendaJobDetails #Collectin name that is to be used by agenda scheduler
     maintenance_mode_time_out: 36000000 # (ms) - 60 minutes wait for sf deployment to complete
+    downtime_maintenance_phases:
+      - 'BROKER_DRAIN_INITIATED'
+      - 'BROKER_REGISTRATION_INITIATED'
+      - 'SF_MONGODB_UPDATE_INITIATED'
     jobs:
       reschedule_delay: '20 minutes from now'
       scheduled_backup:
@@ -971,7 +976,7 @@ production:
 
 test:
   <<: *defaults
-  log_level: warn
+  log_level: debug
   enable_circuit_breaker: false
   external:
     <<: *external

@@ -62,8 +62,7 @@ describe('service-fabrik-admin', function () {
       });
 
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
-        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 30;
-        this.timeout(2000 + WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION);
+        const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 50;
         mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 2);
         mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
