@@ -3,7 +3,7 @@ language: node_js
 node_js:
   - "6.9"
 before_install:
-  - pip install --user truffleHog
+  - pip install --user truffleHog==2.0.89
   - |
     pushd /tmp
     git clone --depth 1 https://github.com/awslabs/git-secrets
