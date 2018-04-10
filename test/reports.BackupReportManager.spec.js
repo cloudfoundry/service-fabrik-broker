@@ -15,15 +15,18 @@ const getInstance = (instanceId) => {
 };
 const getBackup = (backupGuid, time, metric) => {
   return Promise.resolve({
-    _id: `${backupGuid}-12121`,
+    request: {
+      backup_guid: `${backupGuid}-12121`
+    },
+    response: 'Response: string',
     metric: metric,
     createdAt: time
   });
 };
 const repositoryStub = {
-  aggregate: () => undefined,
   findOne: () => undefined,
-  search: () => undefined
+  search: () => undefined,
+  count: () => undefined
 };
 const startTime = moment.utc(Date.now()).subtract(12, 'days').startOf('day').toDate();
 const endTime = moment.utc(startTime).add(12, 'days').endOf('day').toDate();
@@ -45,14 +48,14 @@ for (let i = 0; i < triggeredBackupCount / 2; i++) {
   triggeredBackups.push(backup1);
 }
 const resultBackups = [];
-const succeededBackupCount = 7;
-const failedBackupCount = 10;
-for (let i = 0; i < succeededBackupCount; i++) {
+const succeededBackupCount = 5;
+const failedBackupCount = 9;
+for (let i = 1; i <= succeededBackupCount; i++) {
   let time = moment.utc(startTime).add(2, 'hours').add(i, 'days').toDate();
   let backup = getBackup(`${backupGuid}-${i}`, time, 0).value();
   resultBackups.push(backup);
 }
-for (let i = 0; i < failedBackupCount; i++) {
+for (let i = 1; i <= failedBackupCount; i++) {
   let time = moment.utc(startTime).add(2, 'hours').add(i, 'days').toDate();
   let backup = getBackup(`${backupGuid}-1-${i}`, time, 1).value();
   resultBackups.push(backup);
@@ -60,12 +63,18 @@ for (let i = 0; i < failedBackupCount; i++) {
 
 class Repository {
   static search(model, searchCriteria, paginateOpts) {
+    let returnedList = [];
+    if (model === CONST.DB_MODEL.JOB) {
+      returnedList = listOfInstances;
+    } else {
+      returnedList = resultBackups;
+    }
     repositoryStub.search(arguments);
     return Promise.try(() => {
       let nextOffset = paginateOpts.offset + paginateOpts.records;
       nextOffset = nextOffset >= numOfInstances ? -1 : nextOffset;
       return {
-        list: _.slice(listOfInstances, paginateOpts.offset, paginateOpts.offset + paginateOpts.records),
+        list: _.slice(returnedList, paginateOpts.offset, paginateOpts.offset + paginateOpts.records),
         totalRecordCount: 10,
         nextOffset: nextOffset
       };
@@ -85,12 +94,13 @@ class Repository {
     });
   }
 
-  static aggregate(model, aggregateCriteria) {
-    repositoryStub.aggregate.call(repositoryStub, arguments);
-    if (aggregateCriteria[0].$match.metric === 2) {
-      return Promise.try(() => triggeredBackups);
+  static count(model, criteria) {
+    repositoryStub.count.call(repositoryStub, arguments);
+    let returnCount = 0;
+    if (criteria.createdAt.$gt === startTime && criteria.createdAt.$lt === endTime) {
+      returnCount = triggeredBackupCount;
     }
-    return Promise.try(() => resultBackups);
+    return Promise.try(() => returnCount);
   }
 }
 
@@ -108,8 +118,8 @@ describe('BackupReportManager', function () {
   });
   afterEach(function () {
     repoSpy.findOne.reset();
-    repoSpy.aggregate.reset();
     repoSpy.search.reset();
+    repoSpy.count.reset();
     clock.reset();
   });
   after(function () {
@@ -153,22 +163,54 @@ describe('BackupReportManager', function () {
     });
   });
 
-  describe('#getBackupTriggerRecord', function () {
-    it('should return list of triggered backups successfully', function () {
-      return BackupReportManager.getBackupTriggerRecord(instanceId, startTime, endTime)
-        .then(triggeredBackup => {
-          expect(triggeredBackup).to.deep.eql(triggeredBackups);
-          expect(repoSpy.aggregate.callCount).to.equal(1);
+  describe('#getBackupTriggerCount', function () {
+    it('should return count of triggered backups successfully', function () {
+      return BackupReportManager.getBackupTriggerCount(instanceId, startTime, endTime)
+        .then(count => {
+          expect(count).to.eql(triggeredBackupCount);
+          expect(repoSpy.count.callCount).to.equal(1);
         });
     });
   });
 
   describe('#getBackupResult', function () {
     it('should return list of successful and failed backups successfully', function () {
+      const criteria = {
+        searchBy: {
+          eventName: 'create_backup',
+          instanceId: instanceId,
+          metric: {
+            '$ne': config.monitoring.inprogress_metric
+          },
+          createdAt: {
+            '$gte': startTime,
+            '$lt': endTime
+          }
+        },
+        projection: {
+          metric: 1,
+          'request.backup_guid': 1,
+          response: 1,
+          createdAt: 1
+        },
+        sortBy: {
+          metric: CONST.REPORT_BACKUP.SORT.ASC,
+          createdAt: CONST.REPORT_BACKUP.SORT.ASC
+        }
+      };
+      const paginateOpts = {
+        records: config.mongodb.record_max_fetch_count,
+        offset: config.mongodb.record_max_fetch_count
+      };
       return BackupReportManager.getBackupResult(instanceId, startTime, endTime)
-        .then(backup => {
-          expect(backup).to.deep.eql(resultBackups);
-          expect(repoSpy.aggregate.callCount).to.equal(1);
+        .then(backups => {
+          // console.log(backups);
+          expect(backups).to.deep.eql(resultBackups);
+          expect(repoSpy.search.callCount).to.equal(2);
+          expect(repoSpy.search.firstCall.args[0][0]).to.be.equal(CONST.DB_MODEL.EVENT_DETAIL);
+          expect(repoSpy.search.firstCall.args[0][1]).to.deep.equal(criteria);
+          expect(repoSpy.search.firstCall.args[0][2]).to.deep.equal(paginateOpts);
+
         });
     });
   });
@@ -205,10 +247,10 @@ describe('BackupReportManager', function () {
         instanceCreateTime: moment.utc(startTime).toDate(),
         instanceDeleteTime: moment.utc(startTime).add(10, 'days').add(2, 'hours').toDate(),
         noBackupDays: [
+          moment.utc(startTime).add(6, 'days').toDate(),
           moment.utc(startTime).add(7, 'days').toDate(),
           moment.utc(startTime).add(8, 'days').toDate(),
-          moment.utc(startTime).add(9, 'days').toDate(),
-          moment.utc(startTime).add(10, 'days').toDate(),
+          moment.utc(startTime).add(9, 'days').toDate()
         ],
         backupsTriggerred: triggeredBackupCount,
         backupsSucceeded: succeededBackupCount,
@@ -220,7 +262,9 @@ describe('BackupReportManager', function () {
         .then(summary => {
           expect(summary).to.deep.eql(expectedResult);
           expect(repoSpy.findOne.callCount).to.equal(2);
-          expect(repoSpy.aggregate.callCount).to.equal(2);
+          expect(repoSpy.search.callCount).to.equal(2);
+          expect(repoSpy.count.callCount).to.equal(3);
+
         });
     });
   });
