@@ -345,6 +345,41 @@ describe('Jobs', function () {
         });
       });
 
+      it('should delete scheduled backup even when backup data not found', function (done) {
+        mocks.director.getDeployment(deploymentName, false, undefined, 2);
+        mocks.cloudProvider.list(container, prefix, [
+          fileName14Daysprior
+        ]);
+        mocks.cloudProvider.list(container, prefix, [
+          fileName14Daysprior
+        ]);
+        mocks.cloudProvider.download(pathname14, scheduled_data);
+        mocks.cloudProvider.list(container, `${root_folder}/backup`, [fileName14Daysprior]);
+        mocks.cloudProvider.list(mongoDBContainer, backup_guid, [
+          backupFileName14DayspriorToDelete
+        ], 404);
+        mocks.cloudProvider.remove(pathname14);
+        let boshSfBackupJob = job;
+        boshSfBackupJob.attrs.data.bosh_director = CONST.BOSH_DIRECTORS.BOSH_SF;
+        return ScheduledOobDeploymentBackupJob.run(boshSfBackupJob, () => {
+          mocks.verify();
+          const expectedJobResponse = {
+            start_backup_status: 'deployment_deleted',
+            delete_backup_status: {
+              deleted_guids: [backup_guid],
+              job_cancelled: false,
+              deployment_deleted: true
+            }
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedJobResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        });
+      });
+
       it('should log error in case deployment name and type are absent in Job data', function (done) {
         let sfClientStub;
         sfClientStub = sinon.stub(ScheduledOobDeploymentBackupJob, 'getFabrikClient');
