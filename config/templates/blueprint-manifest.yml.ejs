@@ -36,11 +36,11 @@ if (!spec.previous_manifest) {
     properties.blueprint = spec.previous_manifest.instance_groups[0].jobs[0].properties;
   }
 }
-if(!spec.preUpdateActionResponse){
-  properties.blueprint.preUpdateActionResponse = spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateActionResponse;
+if(!spec.preUpdateAgentResponse){
+  properties.blueprint.preUpdateAgentResponse = spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateAgentResponse;
 }
 else{
-  properties.blueprint.preUpdateActionResponse = JSON.stringify(spec.preUpdateActionResponse);
+  properties.blueprint.preUpdateAgentResponse = JSON.stringify(spec.preUpdateAgentResponse);
 }
 %>
 - name: blueprint
@@ -60,7 +60,7 @@ else{
     blueprint: &blueprint
     properties:
       port: 8080
-      preUpdateActionResponse: <%= properties.blueprint.preUpdateActionResponse %>
+      preUpdateAgentResponse: <%= properties.blueprint.preUpdateAgentResponse %>
       admin:
         username: <%= properties.blueprint.admin.username %>
         password: <%= properties.blueprint.admin.password %>
