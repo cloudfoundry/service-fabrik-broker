@@ -39,7 +39,7 @@ for (let i = 1; i <= numOfInstances; i++) {
   listOfInstances.push(instance);
 }
 const triggeredBackups = [];
-const triggeredBackupCount = 20;
+const triggeredBackupCount = 14;
 for (let i = 0; i < triggeredBackupCount / 2; i++) {
   let time = moment.utc(startTime).add(2, 'hours').add(i, 'days').toDate();
   let backup = getBackup(`${backupGuid}-${i}`, time, 2).value();
@@ -255,7 +255,7 @@ describe('BackupReportManager', function () {
         backupsTriggerred: triggeredBackupCount,
         backupsSucceeded: succeededBackupCount,
         backupFailed: (resultBackups.length - succeededBackupCount),
-        failedBackupGuids: resultBackups.slice(succeededBackupCount),
+        failedBackups: resultBackups.slice(succeededBackupCount),
         failureCountForNConsecutiveDays: 2
       };
       return BackupReportManager.getInstanceBackupSummary(instanceId, startTime, endTime)
