@@ -104,6 +104,9 @@ describe('service-fabrik-admin', function () {
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         config.directors[0].default_task_poll_interval = 10;
+        mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.preUpdate();
         return chai
           .request(app)
           .put(`${base_url}/service-fabrik/db`)

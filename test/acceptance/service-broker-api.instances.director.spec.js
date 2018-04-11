@@ -438,6 +438,9 @@ describe('service-broker-api', function () {
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.getInfo(2);
+          mocks.agent.preUpdate();
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
@@ -474,6 +477,9 @@ describe('service-broker-api', function () {
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.getInfo();
+          mocks.agent.preUpdate();
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
@@ -511,6 +517,9 @@ describe('service-broker-api', function () {
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.preUpdate();
+          mocks.agent.getInfo();
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
@@ -623,6 +632,111 @@ describe('service-broker-api', function () {
             });
         });
 
+        it('returns 202 when preupdate is not implemented by agent', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.getInfo();
+          // mocks.agent.preUpdate();
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              // context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                parameters: parameters
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 when preupdate feature is not implemented by agent', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.getInfo(1, 'preupdate');
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              // context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('operation');
+              expect(utils.decodeBase64(res.body.operation)).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
+                type: 'update',
+                parameters: parameters
+              });
+              mocks.verify();
+            });
+        });
+
+        it('returns 500 when preupdate api throws error', function () {
+          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.verifyDeploymentLockStatus();
+          mocks.director.getDeploymentInstances(deploymentName);
+          mocks.agent.getInfo();
+          mocks.agent.preUpdate(500);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: parameters,
+              // context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(500);
+              mocks.verify();
+            });
+        });
       });
 
       describe('#deprovision', function () {
@@ -635,7 +749,7 @@ describe('service-broker-api', function () {
             space_guid: space_guid
           });
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo(2);
+          mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
           mocks.cloudController.findSecurityGroupByName(instance_id);

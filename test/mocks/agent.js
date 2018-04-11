@@ -15,6 +15,7 @@ exports.credentials = credentials;
 exports.getInfo = getInfo;
 exports.getState = getState;
 exports.deprovision = deprovision;
+exports.preUpdate = preUpdate;
 exports.createCredentials = createCredentials;
 exports.deleteCredentials = deleteCredentials;
 exports.startBackup = startBackup;
@@ -26,14 +27,18 @@ exports.abortRestore = abortRestore;
 exports.lastRestoreOperation = lastRestoreOperation;
 exports.getRestoreLogs = getRestoreLogs;
 
-function getInfo(times) {
+function getInfo(times, featureNotSupported) {
+  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'lifecycle.preupdate'];
+  if (featureNotSupported) {
+    supportedFeatures.splice(supportedFeatures.indexOf(featureNotSupported), 1);
+  }
   return nock(agentUrl)
     .replyContentLength()
     .get('/v1/info')
     .times(times || 1)
     .reply(200, {
       api_version: '1',
-      supported_features: ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy']
+      supported_features: supportedFeatures
     });
 }
 
@@ -56,6 +61,13 @@ function deprovision() {
     .replyContentLength()
     .post('/v1/lifecycle/deprovision', {})
     .reply(200, {});
+}
+
+function preUpdate(expectedReturnStatusCode) {
+  return nock(agentUrl)
+    .replyContentLength()
+    .post('/v1/lifecycle/preupdate', {})
+    .reply(expectedReturnStatusCode || 200, {});
 }
 
 function createCredentials() {

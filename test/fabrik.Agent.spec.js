@@ -49,7 +49,7 @@ describe('fabrik', function () {
     let pathname = 'foo';
     let expectedStatus;
     let api_version = '1';
-    let supported_features = ['state', 'lifecycle', 'credentials', 'backup'];
+    let supported_features = ['state', 'lifecycle', 'credentials', 'backup', 'lifecycle.preupdate'];
     let url;
     let agent;
     let requestStub;
@@ -274,6 +274,25 @@ describe('fabrik', function () {
       it('returns a JSON object', function () {
         return agent
           .deprovision(ips)
+          .then(body => {
+            expect(body).to.equal(response.body);
+            expect(requestStub).to.have.been.calledTwice;
+          });
+      });
+
+    });
+
+    describe('#preupdate', function () {
+      let context = {};
+      before(function () {
+        pathname = 'lifecycle/preupdate';
+        expectedStatus = 200;
+        context = {};
+      });
+
+      it('returns a JSON object', function () {
+        return agent
+          .preUpdate(ips, context)
           .then(body => {
             expect(body).to.equal(response.body);
             expect(requestStub).to.have.been.calledTwice;
