@@ -14,7 +14,7 @@ to enable autonomous releases, and to avoid dependencies between the Service Fab
 * `GET /info` now returns `supported_features` field, showing a list of features the agent supports at the moment he receives the request.
 * `GET /state` get an indicator whether the service instance is currently operational.
 * `POST /lifecycle/deprovision` perform any operations before the deprovision of the service instance.
-* `POST /preupdate` perform any operations before the update of the service instance.
+* `POST /lifecycle/preupdate` perform any operations before the update of the service instance.
 * `POST /backup/start` start a backup of service-specific data.
 * `POST /backup/abort` abort a running backup.
 * `GET /backup` retrieve the last operation during a backup
@@ -97,24 +97,33 @@ The agent is asked to perform any necessary operations before the broker execute
 + Response 500
 <!-- include(responses/500.apib) -->
 
-# Group PreUpdate
+# Group Lifecycle.PreUpdate
 Whenever someone asks the broker to update a service instance, it commissions an agent to perform any operations required to be executed before the actual update of the instance gets triggered.
 
-## PreUpdate [POST /preupdate]
+## PreUpdate [POST /lifecycle/preupdate]
 Called when ```cf update-service``` is invoked on a BOSH service instance.
 The agent is asked to perform any necessary operations before the broker executes the update of the service instance.
 
 + Parameters
     + BODY.deployment_name: `` (string) - Deployment Name
     + BODY.instance_guid: `` (string) - Instance Guid of service instance
-    + BODY.params: `` (object) - params that comes as part of cf update request, includes context, plan_id, service_id, previous_values and previous_manifest
+    + BODY.params.context: `` (object) - Contextual data under which the service instance is created
+    + BODY.params.service_id: `` (string) - The ID of the service (from the catalog)
+    + BODY.params.plan_id: `` (string) - The ID of the plan (from the catalog) for which the service instance has been requested
+    + BODY.params.previous_manifest: `` (object) - Deployment Manifest of the service instance prior to the update
+    + BODY.params.parameters: `` (object) - Configuration options for the service instance
+    + BODY.params.previous_values: `` (object) - Information about the service instance prior to the update
+    + BODY.params.previous_values.service_id: `` (string) - ID of the service for the service instance
+    + BODY.params.previous_values.plan_id: `` (string) - ID of the plan prior to the update
+    + BODY.params.previous_values.organization_id: `` (string) - Organization for the service instance
+    + BODY.params.previous_values.space_id: `` (string) - Space for the service instance
     + BODY.sf_operations_args: `` (object) - Arguments passed as optional parameter to cf update-service, can be an empty object
 
 + Request
-<!-- include(requests/preupdate.apib) -->
+<!-- include(requests/lifecycle_preupdate.apib) -->
 
 + Response 200
-<!-- include(responses/preupdate_200.apib) -->
+<!-- include(responses/lifecycle_preupdate_200.apib) -->
 
 + Response 400
 <!-- include(responses/400.apib) -->

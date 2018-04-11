@@ -17,6 +17,10 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                         organization_id: '12345678-1234-5678-1234-123456781234',
                         space_id: '12345678-1234-5678-1234-1234567812341'
                     },
+                    "parameters": {
+                        "parameter1": 1,
+                        "parameter2": "foo"
+                    },
                     "plan_id": "12345678-1234-5678-1234-123456781234",
                     "service_id": "12345678-1234-5678-1234-123456781234",
                     "previous_manifest": {
@@ -47,7 +51,7 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                     "properties": {
                         "context": {
                             "type": "object",
-                            "description": "context from cf request"
+                            "description": "Contextual data under which the service instance is created"
                         },
                         "previous_values": {
                             "type": "object",
@@ -55,33 +59,37 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                             "properties": {
                                 "plan_id": {
                                     "type": "string",
-                                    "description": "previous plan id"
+                                    "description": "ID of the plan prior to the update"
                                 },
                                 "service_id": {
                                     "type": "string",
-                                    "description": "Service Id"
+                                    "description": "ID of the service for the service instance"
                                 },
                                 "organization_guid": {
                                     "type": "string",
-                                    "description": "Organization Guid"
+                                    "description": "Organization for the service instance"
                                 },
                                 "space_guid": {
                                     "type": "string",
-                                    "description": "Space Guid"
+                                    "description": "Space for the service instance"
                                 }
                             }
+                        },
+                        "parameters": {
+                            "type": "object",
+                            "description": "Configuration options for the service instance"
                         }
                         "plan_id": {
                             "type": "string",
-                            "description": "Current plan id"
+                            "description": "The ID of the plan (from the catalog) for which the service instance has been requested"
                         },
                         "service_id": {
                             "type": "string",
-                            "description": "Service Id"
+                            "description": "The ID of the service (from the catalog)"
                         },
                         "previous_manifest": {
                             "type": "object",
-                            "description": "Previous Manifest of the deployment"
+                            "description": "Deployment Manifest of the service instance prior to the update"
                         }
                   }
                 },
