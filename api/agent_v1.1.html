@@ -5,7 +5,7 @@
 	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
 	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
 </ul>
-<hr><div>API Versions:&nbsp;<a href="agent_v1.1.html">v1.1</a>,&nbsp;<a href="agent_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-retrieve-agent-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Agent Information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#state">State</a></div><div class="collapse-content"><ul><li><a href="#state-retrieve-service-instance-state-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Service Instance State</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#lifecycle">Lifecycle</a></div><div class="collapse-content"><ul><li><a href="#lifecycle-deprovision-post"><span class="badge post"><i class="fa fa-plus"></i></span>Deprovision</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#credentials">Credentials</a></div><div class="collapse-content"><ul><li><a href="#credentials-create-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Create Credentials</a></li><li><a href="#credentials-delete-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Delete Credentials</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#backup">Backup</a></div><div class="collapse-content"><ul><li><a href="#backup-start-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Backup</a></li><li><a href="#backup-abort-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Abort Backup</a></li><li><a href="#backup-retrieve-last-backup-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Last Backup Operation</a></li><li><a href="#backup-retrieve-latest-backup-logs-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Latest Backup Logs</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#restore">Restore</a></div><div class="collapse-content"><ul><li><a href="#restore-start-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Restore</a></li><li><a href="#restore-abort-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Abort Restore</a></li><li><a href="#restore-retrieve-last-restore-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Last Restore Operation</a></li><li><a href="#restore-retrieve-latest-restore-logs-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Latest Restore Logs</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;agent-ip-address&gt;:2718/v1">http://&lt;agent-ip-address&gt;:2718/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Agent API - v1.1</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik</a>
+<hr><div>API Versions:&nbsp;<a href="agent_v1.1.html">v1.1</a>,&nbsp;<a href="agent_v1.0.html">v1.0</a></div><div style="height: 10px"></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#general">General</a></div><div class="collapse-content"><ul><li><a href="#general-retrieve-agent-information-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Agent Information</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#state">State</a></div><div class="collapse-content"><ul><li><a href="#state-retrieve-service-instance-state-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Service Instance State</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#lifecycle">Lifecycle</a></div><div class="collapse-content"><ul><li><a href="#lifecycle-deprovision-post"><span class="badge post"><i class="fa fa-plus"></i></span>Deprovision</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#lifecycle.preupdate">Lifecycle.PreUpdate</a></div><div class="collapse-content"><ul><li><a href="#lifecycle.preupdate-preupdate-post"><span class="badge post"><i class="fa fa-plus"></i></span>PreUpdate</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#credentials">Credentials</a></div><div class="collapse-content"><ul><li><a href="#credentials-create-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Create Credentials</a></li><li><a href="#credentials-delete-credentials-post"><span class="badge post"><i class="fa fa-plus"></i></span>Delete Credentials</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#backup">Backup</a></div><div class="collapse-content"><ul><li><a href="#backup-start-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Backup</a></li><li><a href="#backup-abort-backup-post"><span class="badge post"><i class="fa fa-plus"></i></span>Abort Backup</a></li><li><a href="#backup-retrieve-last-backup-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Last Backup Operation</a></li><li><a href="#backup-retrieve-latest-backup-logs-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Latest Backup Logs</a></li></ul></div></div><div class="resource-group"><div class="heading"><div class="chevron"><i class="open fa fa-angle-down"></i></div><a href="#restore">Restore</a></div><div class="collapse-content"><ul><li><a href="#restore-start-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Start Restore</a></li><li><a href="#restore-abort-restore-post"><span class="badge post"><i class="fa fa-plus"></i></span>Abort Restore</a></li><li><a href="#restore-retrieve-last-restore-operation-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Last Restore Operation</a></li><li><a href="#restore-retrieve-latest-restore-logs-get"><span class="badge get"><i class="fa fa-arrow-down"></i></span>Retrieve Latest Restore Logs</a></li></ul></div></div><p style="text-align: center; word-wrap: break-word;"><a href="http://&lt;agent-ip-address&gt;:2718/v1">http://&lt;agent-ip-address&gt;:2718/v1</a></p></nav><div class="content"><header><h1 id="top">Service Fabrik Agent API - v1.1</h1></header><p>Welcome to the <a href="https://github.com/sap/service-fabrik-broker">Service Fabrik</a>
 Agent API documentation. Agents are supposed to perform service-specific operations. Due to that, an agent <strong>must</strong> be
 part of a BOSH service instance and will be contacted by the broker to delegate operations the broker can not handle by
 itself (e.g. creating/deleting credentials while binding/unbinding, running a backup or restore operation, etc.).
@@ -21,6 +21,9 @@ to enable autonomous releases, and to avoid dependencies between the Service Fab
 </li>
 <li>
 <p><code>POST /lifecycle/deprovision</code> perform any operations before the deprovision of the service instance.</p>
+</li>
+<li>
+<p><code>POST /lifecycle/preupdate</code> perform any operations before the update of the service instance.</p>
 </li>
 <li>
 <p><code>POST /backup/start</code> start a backup of service-specific data.</p>
@@ -151,8 +154,7 @@ dispatch an operation to the first agent that responds successfully and offeres 
       "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Any additional information returned from the service agent."</span>
     </span>}
   </span>}
-</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="lifecycle" class="resource-group"><h2 class="group-heading">Lifecycle <a href="#lifecycle" class="permalink">&para;</a></h2><p>Whenever someone asks the broker to delete a service instance, it commissions an agent to perform
-any operations required to be executed before the actual deprovisioning of the instance gets triggered.</p>
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="lifecycle" class="resource-group"><h2 class="group-heading">Lifecycle <a href="#lifecycle" class="permalink">&para;</a></h2><p>Whenever someone asks the broker to delete a service instance, it commissions an agent to perform any operations required to be executed before the actual deprovisioning of the instance gets triggered.</p>
 <div id="lifecycle-deprovision" class="resource"><div id="lifecycle-deprovision-post" class="action post"><h4 class="action-heading"><div class="name">Deprovision</div><a href="#lifecycle-deprovision-post" class="method post">POST</a><code class="uri">/lifecycle/deprovision</code></h4><p>Called when <code>cf delete-service</code> is invoked on a BOSH service instance.
 The agent is asked to perform any necessary operations before the broker executes the deprovisioning of the service instance.</p>
 <div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be an empty JSON object.</p>
@@ -162,7 +164,128 @@ The agent is asked to perform any necessary operations before the broker execute
   "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid request body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the agent has successfully peformed operations required before the service instance gets deprovisioned.
 The response body must always be an empty JSON object.</p>
-</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section><section id="credentials" class="resource-group"><h2 class="group-heading">Credentials <a href="#credentials" class="permalink">&para;</a></h2><p>Whenever someone asks to grant/refuse access to a service instance (either by binding/unbinding an application or by
+</div><h4>Example</h4><pre><code>{}</code></pre><div style="height: 1px;"></div><div><div class="inner"></div></div></div></div></section><section id="lifecycle.preupdate" class="resource-group"><h2 class="group-heading">Lifecycle.PreUpdate <a href="#lifecycle.preupdate" class="permalink">&para;</a></h2><p>Whenever someone asks the broker to update a service instance, it commissions an agent to perform any operations required to be executed before the actual update of the instance gets triggered.</p>
+<div id="lifecycle.preupdate-preupdate" class="resource"><div id="lifecycle.preupdate-preupdate-post" class="action post"><h4 class="action-heading"><div class="name">PreUpdate</div><a href="#lifecycle.preupdate-preupdate-post" class="method post">POST</a><code class="uri">/lifecycle/preupdate</code></h4><p>Called when <code>cf update-service</code> is invoked on a BOSH service instance.
+The agent is asked to perform any necessary operations before the broker executes the update of the service instance.</p>
+<div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object with exactly 4 properties, includes deployment_name, instance_guid, sf_operations_args, params.</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>deployment_name</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Deployment Name</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Instance Guid of service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.context</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Contextual data under which the service instance is created</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.service_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The ID of the service (from the catalog)</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.plan_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>The ID of the plan (from the catalog) for which the service instance has been requested</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_manifest</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Deployment Manifest of the service instance prior to the update</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.parameters</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Configuration options for the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_values</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Information about the service instance prior to the update</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_values.service_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>ID of the service for the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_values.plan_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>ID of the plan prior to the update</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_values.organization_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Organization for the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>params.previous_values.space_id</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Space for the service instance</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>sf_operations_args</dt><dd><code>object</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>Arguments passed as optional parameter to cf update-service, can be an empty object</p>
+</dd></dl><h4>Example</h4><pre><code>{
+    <span class="hljs-string">"deployment_name"</span>: <span class="hljs-string">"service-fabrik-1234-12345678-1234-5678-1234-123456781234"</span>,
+    <span class="hljs-string">"instance_guid"</span>: <span class="hljs-string">"12345678-1234-5678-1234-123456781234"</span>,
+    <span class="hljs-string">"params"</span>: {
+        <span class="hljs-string">"context"</span>: {
+            <span class="hljs-string">"organization_guid"</span>: <span class="hljs-string">"12345678-1234-5678-1234-123456781234"</span>,
+            <span class="hljs-string">"platform"</span>: <span class="hljs-string">"cloudfoundry"</span>,
+            <span class="hljs-string">"space_guid"</span>: <span class="hljs-string">"12345678-1234-5678-1234-123456781234"</span>
+        },
+        <span class="hljs-string">"previous_values"</span>: {
+            plan_id: <span class="hljs-string">'12345678-1234-5678-1234-123456781234'</span>,
+            service_id: <span class="hljs-string">'12345678-1234-5678-1234-123456781234'</span>,
+            organization_id: <span class="hljs-string">'12345678-1234-5678-1234-123456781234'</span>,
+            space_id: <span class="hljs-string">'12345678-1234-5678-1234-1234567812341'</span>
+        },
+        <span class="hljs-string">"parameters"</span>: {
+            <span class="hljs-string">"parameter1"</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-string">"parameter2"</span>: <span class="hljs-string">"foo"</span>
+        },
+        <span class="hljs-string">"plan_id"</span>: <span class="hljs-string">"12345678-1234-5678-1234-123456781234"</span>,
+        <span class="hljs-string">"service_id"</span>: <span class="hljs-string">"12345678-1234-5678-1234-123456781234"</span>,
+        <span class="hljs-string">"previous_manifest"</span>: {
+            ...
+        }
+    },
+    <span class="hljs-string">"sf_operations_args"</span>: {}
+}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+  "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+  "<span class="hljs-attribute">required</span>": <span class="hljs-value">[<span class="hljs-string">"deployment_name"</span>, <span class="hljs-string">"instance_guid"</span>, <span class="hljs-string">"params"</span>]</span>,
+  "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">deployment_name</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Deployment Name"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">instance_guid</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Instance Guid of service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">params</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"params that comes as part of cf update request and previous_manifest"</span></span>,
+        "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">context</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Contextual data under which the service instance is created"</span>
+            </span>}</span>,
+            "<span class="hljs-attribute">previous_values</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Information about the service instance prior to the update."</span>
+                <span class="hljs-string">"properties"</span>: {
+                    "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
+                        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"ID of the plan prior to the update"</span>
+                    </span>}</span>,
+                    "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+                        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"ID of the service for the service instance"</span>
+                    </span>}</span>,
+                    "<span class="hljs-attribute">organization_guid</span>": <span class="hljs-value">{
+                        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Organization for the service instance"</span>
+                    </span>}</span>,
+                    "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value">{
+                        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Space for the service instance"</span>
+                    </span>}
+                </span>}
+            </span>}</span>,
+            "<span class="hljs-attribute">parameters</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Configuration options for the service instance"</span>
+            </span>}
+            <span class="hljs-string">"plan_id"</span>: {
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The ID of the plan (from the catalog) for which the service instance has been requested"</span>
+            </span>}</span>,
+            "<span class="hljs-attribute">service_id</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The ID of the service (from the catalog)"</span>
+            </span>}</span>,
+            "<span class="hljs-attribute">previous_manifest</span>": <span class="hljs-value">{
+                "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+                "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Deployment Manifest of the service instance prior to the update"</span>
+            </span>}
+      </span>}
+    </span>}</span>,
+    "<span class="hljs-attribute">sf_operations_args</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+        "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Arguments passed as optional parameter to cf update-service, can be an empty object"</span>
+    </span>}
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid request body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the agent has successfully peformed operations required before the service instance gets updated.</p>
+</div><h4>Example</h4><pre><code>{
+    actionResponse: <span class="hljs-string">"Blueprint-PreUpdate-Action"</span>
+}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+    "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
+    "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+    "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">operational</span>": <span class="hljs-value">{
+            "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string/object"</span></span>,
+            "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Preupdate action response."</span>
+        </span>}
+    </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></section><section id="credentials" class="resource-group"><h2 class="group-heading">Credentials <a href="#credentials" class="permalink">&para;</a></h2><p>Whenever someone asks to grant/refuse access to a service instance (either by binding/unbinding an application or by
 manually creating/deleting service keys), the broker commissions an agent to perform the requested <em>service-specific</em>
 operation.</p>
 <div id="credentials-create-credentials" class="resource"><div id="credentials-create-credentials-post" class="action post"><h4 class="action-heading"><div class="name">Create Credentials</div><a href="#credentials-create-credentials-post" class="method post">POST</a><code class="uri">/credentials/create</code></h4><p>Called when <code>cf bind-service</code> or <code>cf create-service-key</code> is invoked on a BOSH service instance.
@@ -230,7 +353,7 @@ clustered and agents are present on multiple nodes which must be stopped indepen
 agents need to communicate among themselves and may freely choose any suitable protocol
 (the Service Fabrik does not prescribe any agent communication protocol).</p>
 <p>The agent is free in how it implements the backup functionality. However, to help abstract
-from the concrete infrastructures, we provide a <a href="https://github.com/sap/service-fabrik-backup-restore">Python-based library</a> for this purpose (documented <a href="https://github.com/pages/sap/service-fabrik-broker/backup-restore-library/overview.html">here</a>).
+from the concrete infrastructures, we provide a <a href="https://github.com/sap/service-fabrik-backup-restore">Python-based library</a> for this purpose.
 It offers primitives to interact with the VMs, volumes, snapshots and the BLOB store.
 Services don’t have to use it, but they have to store their backups in the BLOB store under
 a folder named by the backup GUID so that service/agent-independent backup management can be

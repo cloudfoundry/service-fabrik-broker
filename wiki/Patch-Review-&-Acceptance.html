@@ -29,22 +29,24 @@
 </nav>
 <div class="content">
 <header>
-<h1 id="top">Home</h1>
+<h1 id="top">Patch-Review-&-Acceptance</h1>
 </header>
-<h4 id="mission">Mission</h4>
-<blockquote>
-<p>Well defined contract and infrastructure to provision and operate CF services,<br/>so that we can grow our platform service offering significantly and sustainably.</p>
-</blockquote>
+<h3 id="patch-review-acceptance-process">Patch Review &amp; Acceptance Process</h3>
+<p>This is a 3 steps process as outlined below:</p>
 <ul>
-<li><strong><a href="Big-Picture">Big Picture</a></strong></li>
-<li><strong><a href="Architecture">Architecture</a></strong></li>
-<li><strong><a href="https://cloudfoundry-incubator.github.io/service-fabrik-broker/index.html">API Documentation</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Process-Guidelines">Process Guidelines</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Resources">Resources</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Service-Fabrik-Goals-Available-Features-&amp;-Roadmap">Service Fabrik Goals Available Features and Roadmap</a></strong></li>
+<li><strong>Step 1 - Automated test</strong> – Automated tests are being run using Travis. Whenever a PR is pushed travis run automated test on the PR. These tests are a combination of unit test, code checks for quality, CLA checks on the contributor.</li>
+<li><strong>Step 2 – Peer Review</strong> - This can be done by anyone however it is required that at-least 2 core contributors gives it acceptance on the patch. Core contributor will have the power to give a +2. However, a normal reviewer (which could be anyone) can give a +1 on the patch. At-least 2 “+2” are required for a patch to be approved. Use the &quot;Start a Review&quot; option in Github while making a review. Core reviewers can consider the following guidelines while evaluating the patch<ul>
+<li>Commit messages – This should clearly explain which bug this fix addresses, this should also clearly explain what is being proposed by the contributor</li>
+<li>Code quality &amp; standards</li>
+<li>Unit tests</li>
+<li>Proper logging</li>
+<li>Proper comments</li>
+<li>Local builds</li>
+<li>Readability of Code</li>
 </ul>
-<h4 id="components-quick-reference">Components Quick Reference</h4>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/component-quick-reference.png?raw=true" alt="Missing"></p>
+</li>
+<li><strong>Step 3 – Acceptance &amp; Merge</strong> – Once a patch has passed successfully through automated test and peer reviews one of the core committer should merge the fix. Please also recognize the contributor who has submitted this patch.</li>
+</ul>
 </div>
 </div>
 </div>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Deployment-hooks-for-service-lifecycle-operations</h1>
+</header>
+<h1 id="deployment-hooks">Deployment hooks</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Services are on boarded in Service Fabrik by providing the following:</p>
+<ol>
+<li>Service BOSH release</li>
+<li>Service catalog file (erb)</li>
+<li>Service manifest file (ejs)</li>
+</ol>
+<p>During Service Fabrik deployment, service release is uploaded (1) into BOSH &amp; its catalog (2) is evaluated &amp; is added in as part of service fabrik configuration, which is later used in generating the catalog of services offerred. During runtime when a service is to be provisioned, service fabrik provides a context and the ejs file (3) is evaluated/executed to generate the service manifest which is provided to bosh for deployment. This is a standard procedure and all the scripting that services need must go in either in the ejs file or they are to be part of the services bosh release itself (i.e. part of some jobs). Any action related to a service can only be executed during the deployment time.
+However, services may have some requirements which requires some custom actions to be executed prior to the deployment and the result of the same is to be provided for the service. Thus arises the need for Service Fabrik to provide a framework where in such custom actions or hooks can be executed in various phases (pre) of lifecycle (create/delete) of services which could be conditionally enabled.</p>
+<p><strong>[Note]: Service fabrik supports only pre lifecycle hooks as of now.</strong></p>
+<h2 id="onboarding-actions">Onboarding Actions</h2>
+<p>To create a new action which is to be executed as part of pre lifecycles of service, the action script (Which can be defined in either javascript file or an executable) has to be created. The format and input parameters to action scripts that fabrik provides will be discussed in details in later sections.</p>
+<h2 id="naming-conventions">Naming conventions</h2>
+<p>Action hooks implemented in JS must extend from &#39;BaseAction&#39;. BaseAction is an empty class with the following empty methods defined in it:</p>
+<ol>
+<li>executePreCreate</li>
+<li>executePreUpdate</li>
+<li>executePreDelete</li>
+<li>executePreBind</li>
+<li>executePreUnbind</li>
+</ol>
+<p>Depending on the kind of action to be executed in the required phase, appropriate method from the BaseAction must be overridden. For ex., if an action named &#39;ReserveIp&#39; must be executed during PreCreate phase, then the implementation details for the same must be provided in the overridden method &#39;executePreCreate&#39;. The method can be further modularised by adding any number of private methods, but the entry point to the phase, must be via the overridden method of that particular phase.</p>
+<p>Action hooks if to be written in shell script should follow the naming convention <code>${actionName}_${lifecycle_phase}</code>. Ex: if an action named &#39;Blueprint&#39; must be executed during PreCreate phase, then all the script contents must be put in a file named <code>Blueprint_PreCreate</code></p>
+<h3 id="where-to-put-these-action-files-">Where to put these action files?</h3>
+<p>If broker is running locally, then action scripts can be placed at <code>config/templates/actions</code></p>
+<p>In case broker is deployed on bosh then actions should be written at <code>services/actions</code> directory in <a href="https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/tree/master/services/actions">service-fabrik-boshrelease</a>.</p>
+<h2 id="sample-actions">Sample Actions</h2>
+<p>To demonstrate usage clearly, we will be writing 2 sample hooks, One in each scripting language (ie. js and shell script)
+Let&#39;s say we want to execute an action as part of PreCreate. We will name it <code>Blueprint</code>.
+The PreCreate action script for <code>Blueprint</code> action should be named <code>Blueprint_PreCreate</code>.
+And the other hook we will name <code>ReserveIps</code>.
+These sample hooks can be found <a href="https://github.com/cloudfoundry-incubator/service-fabrik-broker/tree/master/config/templates/actions">here</a></p>
+<p>Names of the actions that are to be executed during lifecycle of individual services can be configured in the services catalog either at service level or plan level. Actions configured at service level will be executed for all service plans and actions defined at a plan level is just executed during the lifecycle of an instance for the particular plan. More than one hook/action could be executed by specifying the actions as a comma separated list. The result of all the actions is aggregated and a name-value pair (name of action/ response of action) is then provided as context for the service&#39;s ejs during manifest creation, which can then use the action response appropriately.
+<a href="https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/services/blueprint.yml.erb#L27">https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/services/blueprint.yml.erb#L27</a>
+<a href="https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/services/blueprint-manifest.yml.ejs#L58">https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/services/blueprint-manifest.yml.ejs#L58</a></p>
+<p>These actions has to be defined in service-fabrik manifest if service-farbik is being deployed through bosh, in case of running broker locally, actions should be defined in <code>settings.yml</code>.
+<code>actions</code> node in manifest should have action script name and it&#39;s base64 encoded value as name value pair.</p>
+<p><a href="https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/config/settings.yml#L417">https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/config/settings.yml#L417</a></p>
+<h2 id="input-to-scripts">Input to scripts</h2>
+<p>The input arguments to the script will be an exhaustive but limited json object <code>context</code>.
+Context object will have deployment_name and instance_id for all lifecycle operation.
+For specific operations input parameters will include all the parameters that comes as part of cf operation request.</p>
+<h2 id="limitations">Limitations</h2>
+<ol>
+<li><p>Only prelifecycle hooks are supported</p>
+<ul>
+<li>PreCreate</li>
+<li>PreUpdate</li>
+<li>PreDelete</li>
+<li>PreBind</li>
+<li>PreUnBind</li>
+</ul>
+</li>
+<li><p>Timeout: Timeout for action scripts to run is configured to 80s ie. script should finish executing within 80s. If actions take more than 80s then sf will throw an exception leading to failure of that lifecycle operation</p>
+</li>
+<li><p>In case of JS hooks, it is assumed that all the dependent modules required by it in the script is already defined as a dependency in Service Fabrik&#39;s package.json. However if any dependent JS module as required is missing, then such modules must be added as a dependency in &#39;package.json&#39; in SF broker repo.</p>
+</li>
+<li><p>With regards to shell script as well, the script must only work with executables / commands that is available on the broker. Any additional software which are required to be invoked from the script is to be packaged as part of an independent bosh release which is to be deployed on to the broker VMs along with SF BOSH release.</p>
+</li>
+<li><p>In current implementation, service fabrik does not restrict resource usage by actions. As the action process will be running on the the same vm as service-fabrik, separation of resources is also not ensured. Hence hook owner has to take care of the usage and leakage of resources.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>

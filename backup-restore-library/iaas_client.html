@@ -1,29 +1,30 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>IaaS Client API Reference &#8212; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    
+    <title>IaaS Client API Reference &mdash; Service Fabrik Backup &amp; Restore Python Library Documentation v1.0</title>
+    
     <link rel="stylesheet" href="_static/style.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="Service Fabrik Backup &amp; Restore Python Library Documentation v1.0" href="index.html" />
     <link rel="next" title="Logging and Last Operation" href="logging.html" />
     <link rel="prev" title="Configuration Parameters" href="config_params.html" />
 <link rel="stylesheet" href="../css/font-awesome.min.css">
@@ -68,7 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="config_params.html#example-provide-configuration-manually">Example: Provide configuration manually</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">IaaS Client API Reference</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">IaaS Client API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general">General</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#volumes">Volumes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#snapshots">Snapshots</a></li>
@@ -94,37 +95,37 @@
 
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="iaas-client-api-reference">
 <h1>IaaS Client API Reference<a class="headerlink" href="#iaas-client-api-reference" title="Permalink to this headline">¶</a></h1>
-<p>To instantiate an IaaS client which abstracts the underlying provider specifics you have to import the <code class="docutils literal"><span class="pre">create_iaas_client()</span></code> function from the library:</p>
+<p>To instantiate an IaaS client which abstracts the underlying provider specifics you have to import the <tt class="docutils literal"><span class="pre">create_iaas_client()</span></tt> function from the library:</p>
 <dl class="function">
 <dt id="lib.clients.index.create_iaas_client">
-<code class="descclassname">lib.clients.index.</code><code class="descname">create_iaas_client</code><span class="sig-paren">(</span><em>operation_name</em>, <em>configuration</em>, <em>directory_persistent</em>, <em>directory_work_list</em>, <em>poll_delay_time=None</em>, <em>poll_maximum_time=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.index.create_iaas_client" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">lib.clients.index.</tt><tt class="descname">create_iaas_client</tt><big>(</big><em>operation_name</em>, <em>configuration</em>, <em>directory_persistent</em>, <em>directory_work_list</em>, <em>poll_delay_time=None</em>, <em>poll_maximum_time=None</em><big>)</big><a class="headerlink" href="#lib.clients.index.create_iaas_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an IaaS client which abstracts provider specifics.
 For a given iaas_client, the logger updates the last_operation file for each log message X with level INFO
-by ‘state=processing’ and ‘step=X’.</p>
+by &#8216;state=processing&#8217; and &#8216;step=X&#8217;.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>operation_name</strong> (<em>string</em>) – the name of the operation (either ‘backup’ or ‘restore’), used for the lastoperation file</li>
-<li><strong>configuration</strong> (<em>dict</em>) – dictionary containing configuration and credentials required for estabilishing connections (created from parse_options())</li>
-<li><strong>directory_persistent</strong> (<em>string</em>) – path of the persistent directory</li>
-<li><strong>directory_work_list</strong> (<em>list</em>) – list of paths to directories to work with during the backup/restore procedure</li>
-<li><strong>poll_delay_time</strong> (<em>integer</em>) – time in seconds for polling events, e.g. checking if a created volume is ready (default: 5)</li>
-<li><strong>poll_maximum_time</strong> (<em>integer</em>) – maximum waiting time in seconds for events to finish before aborting (default: 300)</li>
+<li><strong>operation_name</strong> (<em>string</em>) &#8211; the name of the operation (either &#8216;backup&#8217; or &#8216;restore&#8217;), used for the lastoperation file</li>
+<li><strong>configuration</strong> (<em>dict</em>) &#8211; dictionary containing configuration and credentials required for estabilishing connections (created from parse_options())</li>
+<li><strong>directory_persistent</strong> (<em>string</em>) &#8211; path of the persistent directory</li>
+<li><strong>directory_work_list</strong> (<em>list</em>) &#8211; list of paths to directories to work with during the backup/restore procedure</li>
+<li><strong>poll_delay_time</strong> (<em>integer</em>) &#8211; time in seconds for polling events, e.g. checking if a created volume is ready (default: 5)</li>
+<li><strong>poll_maximum_time</strong> (<em>integer</em>) &#8211; maximum waiting time in seconds for events to finish before aborting (default: 300)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">an <code class="docutils literal"><span class="pre">AwsClient</span></code> or <code class="docutils literal"><span class="pre">OpenstackClient</span></code> or <code class="docutils literal"><span class="pre">BoshliteClient</span></code> object</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">an <tt class="docutils literal"><span class="pre">AwsClient</span></tt> or <tt class="docutils literal"><span class="pre">OpenstackClient</span></tt> or <tt class="docutils literal"><span class="pre">BoshliteClient</span></tt> object</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">configuration</span> <span class="o">=</span> <span class="n">parse_options</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">)</span>
-<span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="s1">&#39;backup&#39;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="s1">&#39;/var/vcap/store&#39;</span><span class="p">,</span>
-                                 <span class="p">[</span><span class="s1">&#39;/tmp/service-fabrik-backup/snapshot&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp/service-fabrik-backup/uploads&#39;</span><span class="p">])</span>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">configuration</span> <span class="o">=</span> <span class="n">parse_options</span><span class="p">(</span><span class="s">&#39;backup&#39;</span><span class="p">)</span>
+<span class="n">iaas_client</span> <span class="o">=</span> <span class="n">create_iaas_client</span><span class="p">(</span><span class="s">&#39;backup&#39;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="s">&#39;/var/vcap/store&#39;</span><span class="p">,</span>
+                                 <span class="p">[</span><span class="s">&#39;/tmp/service-fabrik-backup/snapshot&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/service-fabrik-backup/uploads&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 </td>
@@ -136,23 +137,23 @@ by ‘state=processing’ and ‘step=X’.</p>
 <p>The following methods can be used to interact with the IaaS, independently from the actual provider (thus, you have to implement backup/restore only <em>once</em>):</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">You should use the <code class="docutils literal"><span class="pre">initialize()</span></code> and <code class="docutils literal"><span class="pre">finalize()</span></code> methods in order to update your last operation state approriately at the beginning and the end.</p>
+<p class="last">You should use the <tt class="docutils literal"><span class="pre">initialize()</span></tt> and <tt class="docutils literal"><span class="pre">finalize()</span></tt> methods in order to update your last operation state approriately at the beginning and the end.</p>
 </div>
 <div class="section" id="general">
 <h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.initialize">
-<code class="descclassname">BaseClient.</code><code class="descname">initialize</code><span class="sig-paren">(</span><em>message=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.initialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write initial log statements and set the last operation state to ‘processing’.</p>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">initialize</tt><big>(</big><em>message=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write initial log statements and set the last operation state to &#8216;processing&#8217;.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – (optional) a log statement</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> &#8211; (optional) a log statement</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
-<span class="n">iaas_client</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="s1">&#39;A log messages before the program begins.&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="s">&#39;A log messages before the program begins.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -163,17 +164,17 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.finalize">
-<code class="descclassname">BaseClient.</code><code class="descname">finalize</code><span class="sig-paren">(</span><em>message=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.finalize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write final log statements and set the last operation state to ‘succeeded’.</p>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">finalize</tt><big>(</big><em>message=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.finalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write final log statements and set the last operation state to &#8216;succeeded&#8217;.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – (optional) a log statement</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> &#8211; (optional) a log statement</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
-<span class="n">iaas_client</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="s1">&#39;A log messages before the program ends.&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="s">&#39;A log messages before the program ends.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -184,22 +185,22 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.shell">
-<code class="descclassname">BaseClient.</code><code class="descname">shell</code><span class="sig-paren">(</span><em>command</em>, <em>log_command=True</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.shell" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">shell</tt><big>(</big><em>command</em>, <em>log_command=True</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.shell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute a shell command.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>command</strong> – the shell command to be executed</li>
-<li><strong>log_command</strong> – a boolean indicating whether the result of the command should be logged</li>
+<li><strong>command</strong> &#8211; the shell command to be executed</li>
+<li><strong>log_command</strong> &#8211; a boolean indicating whether the result of the command should be logged</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">None if an error occurred, or the result string in case of success (if the result is None, then True is returned)</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">shell</span><span class="p">(</span><span class="s1">&#39;ps aux | grep blueprint&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">shell</span><span class="p">(</span><span class="s">&#39;ps aux | grep blueprint&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -210,20 +211,20 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.last_operation">
-<code class="descclassname">BaseClient.</code><code class="descname">last_operation</code><span class="sig-paren">(</span><em>stage</em>, <em>state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.last_operation" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">last_operation</tt><big>(</big><em>stage</em>, <em>state=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.last_operation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write the current state and the current stage to the file storing information about the last operation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stage</strong> – a string with an explanation of the last operation</li>
-<li><strong>state</strong> – (optional) change the current state (processing, aborting, succeeded, failed, aborted), default: processing</li>
+<li><strong>stage</strong> &#8211; a string with an explanation of the last operation</li>
+<li><strong>state</strong> &#8211; (optional) change the current state (processing, aborting, succeeded, failed, aborted), default: processing</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">last_operation</span><span class="p">(</span><span class="s1">&#39;Creating Volume&#39;</span><span class="p">)</span>
-<span class="n">iaas_client</span><span class="o">.</span><span class="n">last_operation</span><span class="p">(</span><span class="s1">&#39;Backup completed successfully&#39;</span><span class="p">,</span> <span class="s1">&#39;succeeded&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">last_operation</span><span class="p">(</span><span class="s">&#39;Creating Volume&#39;</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">last_operation</span><span class="p">(</span><span class="s">&#39;Backup completed successfully&#39;</span><span class="p">,</span> <span class="s">&#39;succeeded&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -234,13 +235,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.clean_up">
-<code class="descclassname">BaseClient.</code><code class="descname">clean_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.clean_up" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">clean_up</tt><big>(</big><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.clean_up" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detach and remove all volumes and snapshots.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">clean_up</span><span class="p">()</span>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">clean_up</span><span class="p">()</span>
 </pre></div>
 </div>
 </td>
@@ -251,16 +252,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.exit">
-<code class="descclassname">BaseClient.</code><code class="descname">exit</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.exit" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">exit</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.exit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clean up all created resources, start the service job and exit the process.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> – a log statement</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>message</strong> &#8211; a log statement</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Something unpredictable happened.&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s">&#39;Something unpredictable happened.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -274,13 +275,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>Volumes<a class="headerlink" href="#volumes" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_volume">
-<code class="descclassname">BaseClient.</code><code class="descname">get_volume</code><span class="sig-paren">(</span><em>volume_id</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_volume" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_volume</tt><big>(</big><em>volume_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> – the volume id</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> &#8211; the volume id</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the volume (in case of success) or None (in case of errors)</p>
@@ -289,7 +290,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Volume object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_volume</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -300,13 +301,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_attached_volumes_for_instance">
-<code class="descclassname">BaseClient.</code><code class="descname">get_attached_volumes_for_instance</code><span class="sig-paren">(</span><em>instance_id</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_attached_volumes_for_instance" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_attached_volumes_for_instance</tt><big>(</big><em>instance_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_attached_volumes_for_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a list of volumes attached to an instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>instance_id</strong> – the instance id</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>instance_id</strong> &#8211; the instance id</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the list</p>
@@ -315,7 +316,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">List of Volume objects</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_attached_volumes_for_instance</span><span class="p">(</span><span class="s1">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_attached_volumes_for_instance</span><span class="p">(</span><span class="s">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -326,13 +327,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_persistent_volume_for_instance">
-<code class="descclassname">BaseClient.</code><code class="descname">get_persistent_volume_for_instance</code><span class="sig-paren">(</span><em>instance_id</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_persistent_volume_for_instance" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_persistent_volume_for_instance</tt><big>(</big><em>instance_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_persistent_volume_for_instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the persistent volume attached to an instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>instance_id</strong> – the IaaS id of the instance</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>instance_id</strong> &#8211; the IaaS id of the instance</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the volume</p>
@@ -341,7 +342,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Volume object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_persistent_volume_for_instance</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_persistent_volume_for_instance</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -352,15 +353,15 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.create_volume">
-<code class="descclassname">BaseClient.</code><code class="descname">create_volume</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_volume" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">create_volume</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>size</strong> – the desired size of the volume (in GB)</li>
-<li><strong>snapshot_id</strong> – (optional) the id of a snapshot to be copied from</li>
+<li><strong>size</strong> &#8211; the desired size of the volume (in GB)</li>
+<li><strong>snapshot_id</strong> &#8211; (optional) the id of a snapshot to be copied from</li>
 </ul>
 </td>
 </tr>
@@ -370,8 +371,8 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Volume object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_volume</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
-<span class="n">iaas_client</span><span class="o">.</span><span class="n">create_volume</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_volume</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">create_volume</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">,</span> <span class="s">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -382,16 +383,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.delete_volume">
-<code class="descclassname">BaseClient.</code><code class="descname">delete_volume</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_volume" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">delete_volume</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a volume (must be detached from all instances!).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> – the id of the volume to be deleted</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> &#8211; the id of the volume to be deleted</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_volume</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_volume</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -402,15 +403,15 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.create_attachment">
-<code class="descclassname">BaseClient.</code><code class="descname">create_attachment</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_attachment" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">create_attachment</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_attachment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Attach a volume to an instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>volume_id</strong> – the id of the volume to be attached</li>
-<li><strong>instance_id</strong> – the id of the instance</li>
+<li><strong>volume_id</strong> &#8211; the id of the volume to be attached</li>
+<li><strong>instance_id</strong> &#8211; the id of the instance</li>
 </ul>
 </td>
 </tr>
@@ -420,7 +421,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Attachment object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_attachment</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s1">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_attachment</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -431,19 +432,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.delete_attachment">
-<code class="descclassname">BaseClient.</code><code class="descname">delete_attachment</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_attachment" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">delete_attachment</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_attachment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detach a volume from an instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>volume_id</strong> – the id of the volume to be detached</li>
-<li><strong>instance_id</strong> – the id of the instance</li>
+<li><strong>volume_id</strong> &#8211; the id of the volume to be detached</li>
+<li><strong>instance_id</strong> &#8211; the id of the instance</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_attachment</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s1">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_attachment</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s">&#39;254989f8-6e81-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -457,13 +458,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>Snapshots<a class="headerlink" href="#snapshots" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_snapshot">
-<code class="descclassname">BaseClient.</code><code class="descname">get_snapshot</code><span class="sig-paren">(</span><em>snapshot_id</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_snapshot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_snapshot</tt><big>(</big><em>snapshot_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_snapshot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a snapshot.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snapshot_id</strong> – the snapshot id</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snapshot_id</strong> &#8211; the snapshot id</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the snapshot (in case of success) or None (in case of errors)</p>
@@ -472,7 +473,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Snapshot object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_snapshot</span><span class="p">(</span><span class="s1">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_snapshot</span><span class="p">(</span><span class="s">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -483,13 +484,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.create_snapshot">
-<code class="descclassname">BaseClient.</code><code class="descname">create_snapshot</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_snapshot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">create_snapshot</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_snapshot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a snapshot of a volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> – the id of the volume the snapshot should be created from</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>volume_id</strong> &#8211; the id of the volume the snapshot should be created from</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the snapshot (in case of success) or None (in case of errors)</p>
@@ -498,7 +499,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Snapshot object</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_snapshot</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_snapshot</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -509,16 +510,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.delete_snapshot">
-<code class="descclassname">BaseClient.</code><code class="descname">delete_snapshot</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_snapshot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">delete_snapshot</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_snapshot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a snapshot of a volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snapshot_id</strong> – the id of the snapshot to be deleted</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>snapshot_id</strong> &#8211; the id of the snapshot to be deleted</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_snapshot</span><span class="p">(</span><span class="s1">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_snapshot</span><span class="p">(</span><span class="s">&#39;ed1258f8-6e80-11e6-8b77-86f30ca893d3&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -532,15 +533,15 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>Mounting and Formatting<a class="headerlink" href="#mounting-and-formatting" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_mountpoint">
-<code class="descclassname">BaseClient.</code><code class="descname">get_mountpoint</code><span class="sig-paren">(</span><em>volume_id</em>, <em>partition=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_mountpoint" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_mountpoint</tt><big>(</big><em>volume_id</em>, <em>partition=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_mountpoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the device name of an attached volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>volume_id</strong> – the volume id</li>
-<li><strong>partition</strong> (<em>String</em>) – the partition number</li>
+<li><strong>volume_id</strong> &#8211; the volume id</li>
+<li><strong>partition</strong> (<em>String</em>) &#8211; the partition number</li>
 </ul>
 </td>
 </tr>
@@ -550,7 +551,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">String</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="s1">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="s">&#39;948fb2e4-6e7f-11e6-8b77-86f30ca893d3&#39;</span><span class="p">,</span> <span class="s">&#39;1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -561,40 +562,42 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.mount_device">
-<code class="descclassname">BaseClient.</code><code class="descname">mount_device</code><span class="sig-paren">(</span><em>device</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.mount_device" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">mount_device</tt><big>(</big><em>device</em>, <em>directory</em>, <em>filesystem='ext4'</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.mount_device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mount a volume to the filesystem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>device</strong> – the device name of the volume</li>
-<li><strong>directory</strong> – a directory in the filesystem to mount the device to</li>
+<li><strong>device</strong> &#8211; the device name of the volume</li>
+<li><strong>directory</strong> &#8211; a directory in the filesystem to mount the device to</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="n">iaas_client</span><span class="o">.</span><span class="n">mount_device</span><span class="p">(</span><span class="n">mountpoint_volume</span><span class="p">,</span> <span class="s1">&#39;/tmp/backup&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">mount_device</span><span class="p">(</span><span class="n">mountpoint_volume</span><span class="p">,</span> <span class="s">&#39;/tmp/backup&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
 </tr>
 </tbody>
 </table>
+<p>XFS doesn&#8217;t allow multiple volumes to be mounted with the same UUID.
+Since it&#8217;s a volume created from the snapshot, the UUID doesn&#8217;t change, hence the &#8220;nouuid&#8221; option</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.unmount_device">
-<code class="descclassname">BaseClient.</code><code class="descname">unmount_device</code><span class="sig-paren">(</span><em>device</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.unmount_device" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">unmount_device</tt><big>(</big><em>device</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.unmount_device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unmount a volume from the filesystem.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>device</strong> – the device name of the volume</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>device</strong> &#8211; the device name of the volume</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 <span class="n">iaas_client</span><span class="o">.</span><span class="n">unmount_device</span><span class="p">(</span><span class="n">mountpoint_volume</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -606,16 +609,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.format_device">
-<code class="descclassname">BaseClient.</code><code class="descname">format_device</code><span class="sig-paren">(</span><em>device</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.format_device" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">format_device</tt><big>(</big><em>device</em>, <em>filesystem='ext4'</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.format_device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an ext4 filesystem on a volume identified by its device name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>device</strong> – the device name of the volume</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>device</strong> &#8211; the device name of the volume</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">mountpoint_volume</span> <span class="o">=</span> <span class="n">iaas_client</span><span class="o">.</span><span class="n">get_mountpoint</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 <span class="n">iaas_client</span><span class="o">.</span><span class="n">format_device</span><span class="p">(</span><span class="n">mountpoint_volume</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -630,19 +633,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>Encrypt Directories and Files<a class="headerlink" href="#encrypt-directories-and-files" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.create_and_encrypt_tarball_of_directory">
-<code class="descclassname">BaseClient.</code><code class="descname">create_and_encrypt_tarball_of_directory</code><span class="sig-paren">(</span><em>directory_to_encrypt</em>, <em>encrypted_tarball_name</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_and_encrypt_tarball_of_directory" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">create_and_encrypt_tarball_of_directory</tt><big>(</big><em>directory_to_encrypt</em>, <em>encrypted_tarball_name</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_and_encrypt_tarball_of_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a tarball of a directory and encrypt it with the secret provided at class instantiation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>directory_to_encrypt</strong> – the path to the directory to be archived and encrypted</li>
-<li><strong>encrypted_tarball_name</strong> – the path where to store the resulting archive</li>
+<li><strong>directory_to_encrypt</strong> &#8211; the path to the directory to be archived and encrypted</li>
+<li><strong>encrypted_tarball_name</strong> &#8211; the path where to store the resulting archive</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_and_encrypt_tarball_of_directory</span><span class="p">(</span><span class="s1">&#39;/var/vcap/store/blueprint/files&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_and_encrypt_tarball_of_directory</span><span class="p">(</span><span class="s">&#39;/var/vcap/store/blueprint/files&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -653,19 +656,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.decrypt_and_extract_tarball_of_directory">
-<code class="descclassname">BaseClient.</code><code class="descname">decrypt_and_extract_tarball_of_directory</code><span class="sig-paren">(</span><em>encrypted_tarball_name</em>, <em>directory_to_extract</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.decrypt_and_extract_tarball_of_directory" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">decrypt_and_extract_tarball_of_directory</tt><big>(</big><em>encrypted_tarball_name</em>, <em>directory_to_extract</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.decrypt_and_extract_tarball_of_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decrypt with the secret provided at class instantiation, and extract an encrypted tarball of a directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>encrypted_tarball_name</strong> – the path to the directory to be decrypted and extracted</li>
-<li><strong>directory_to_extract</strong> – the path to a directory where to move the extracted files</li>
+<li><strong>encrypted_tarball_name</strong> &#8211; the path to the directory to be decrypted and extracted</li>
+<li><strong>directory_to_extract</strong> &#8211; the path to a directory where to move the extracted files</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">decrypt_and_extract_tarball_of_directory</span><span class="p">(</span><span class="s1">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;/var/vcap/store/blueprint/files&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">decrypt_and_extract_tarball_of_directory</span><span class="p">(</span><span class="s">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;/var/vcap/store/blueprint/files&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -676,19 +679,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.encrypt_file">
-<code class="descclassname">BaseClient.</code><code class="descname">encrypt_file</code><span class="sig-paren">(</span><em>file_to_encrypt</em>, <em>encrypted_file_name</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.encrypt_file" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">encrypt_file</tt><big>(</big><em>file_to_encrypt</em>, <em>encrypted_file_name</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.encrypt_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Encrypt a given file with the secret provided at class instantiation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>file_to_encrypt</strong> – the path to the file to be encrypted</li>
-<li><strong>encrypted_file_name</strong> – the path where to store the encrypted result</li>
+<li><strong>file_to_encrypt</strong> &#8211; the path to the file to be encrypted</li>
+<li><strong>encrypted_file_name</strong> &#8211; the path where to store the encrypted result</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_and_encrypt_file</span><span class="p">(</span><span class="s1">&#39;/var/vcap/store/blueprint/list.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp/backup/list.txt.enc&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_and_encrypt_file</span><span class="p">(</span><span class="s">&#39;/var/vcap/store/blueprint/list.txt&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/backup/list.txt.enc&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -699,19 +702,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.decrypt_file">
-<code class="descclassname">BaseClient.</code><code class="descname">decrypt_file</code><span class="sig-paren">(</span><em>encrypted_file_name</em>, <em>decrypted_file_name</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.decrypt_file" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">decrypt_file</tt><big>(</big><em>encrypted_file_name</em>, <em>decrypted_file_name</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.decrypt_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decrypt an encrypted file with the secret provided at class instantiation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>encrypted_file_name</strong> – the path of the encrypted file</li>
-<li><strong>decrypted_file_name</strong> – the path of the decrypted file</li>
+<li><strong>encrypted_file_name</strong> &#8211; the path of the encrypted file</li>
+<li><strong>decrypted_file_name</strong> &#8211; the path of the decrypted file</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">decrypt_and_extract_file</span><span class="p">(</span><span class="s1">&#39;/tmp/restore/list.txt.enc&#39;</span><span class="p">,</span> <span class="s1">&#39;/var/vcap/store/blueprint/list.txt&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">decrypt_and_extract_file</span><span class="p">(</span><span class="s">&#39;/tmp/restore/list.txt.enc&#39;</span><span class="p">,</span> <span class="s">&#39;/var/vcap/store/blueprint/list.txt&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -725,7 +728,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>BLOB Storage Interaction<a class="headerlink" href="#blob-storage-interaction" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_container">
-<code class="descclassname">BaseClient.</code><code class="descname">get_container</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_container" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_container</tt><big>(</big><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_container" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the container provided at class instantiation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -734,7 +737,7 @@ by ‘state=processing’ and ‘step=X’.</p>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the container (in case of success) or None (in case of errors)</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_container</span><span class="p">()</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">get_container</span><span class="p">()</span>
 </pre></div>
 </div>
 </td>
@@ -745,19 +748,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.upload_to_blobstore">
-<code class="descclassname">BaseClient.</code><code class="descname">upload_to_blobstore</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.upload_to_blobstore" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">upload_to_blobstore</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.upload_to_blobstore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Upload a file to the BLOB storage.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>blob_to_upload_path</strong> – the path of the file to be uploaded</li>
-<li><strong>blob_target_name</strong> – the name of the uploaded file in the BLOB storage</li>
+<li><strong>blob_to_upload_path</strong> &#8211; the path of the file to be uploaded</li>
+<li><strong>blob_target_name</strong> &#8211; the name of the uploaded file in the BLOB storage</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">upload_to_blobstore</span><span class="p">(</span><span class="s1">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;files.tar.gz&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">upload_to_blobstore</span><span class="p">(</span><span class="s">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;files.tar.gz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -768,19 +771,19 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.download_from_blobstore">
-<code class="descclassname">BaseClient.</code><code class="descname">download_from_blobstore</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.download_from_blobstore" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">download_from_blobstore</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.download_from_blobstore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Download a file from the BLOB storage.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>blob_to_download_name</strong> – the name of the file to be downloaded</li>
-<li><strong>blob_download_target_path</strong> – the path where the file should be downloaded to</li>
+<li><strong>blob_to_download_name</strong> &#8211; the name of the file to be downloaded</li>
+<li><strong>blob_download_target_path</strong> &#8211; the path where the file should be downloaded to</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">download_from_blobstore</span><span class="p">(</span><span class="s1">&#39;files.tar.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">download_from_blobstore</span><span class="p">(</span><span class="s">&#39;files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -794,13 +797,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 <h2>Miscellaneous Functions<a class="headerlink" href="#miscellaneous-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.start_service_job">
-<code class="descclassname">BaseClient.</code><code class="descname">start_service_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.start_service_job" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start the service job (basically executes ‘monit start &lt;name&gt;’).</p>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">start_service_job</tt><big>(</big><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.start_service_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the service job (basically executes &#8216;monit start &lt;name&gt;&#8217;).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">start_service_job</span><span class="p">()</span>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">start_service_job</span><span class="p">()</span>
 </pre></div>
 </div>
 </td>
@@ -811,13 +814,13 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.stop_service_job">
-<code class="descclassname">BaseClient.</code><code class="descname">stop_service_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.stop_service_job" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop the service job (basically executes ‘monit stop &lt;name&gt;’).</p>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">stop_service_job</tt><big>(</big><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.stop_service_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the service job (basically executes &#8216;monit stop &lt;name&gt;&#8217;).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">stop_service_job</span><span class="p">()</span>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">stop_service_job</span><span class="p">()</span>
 </pre></div>
 </div>
 </td>
@@ -828,22 +831,22 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.wait_for_service_job_status">
-<code class="descclassname">BaseClient.</code><code class="descname">wait_for_service_job_status</code><span class="sig-paren">(</span><em>status</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.wait_for_service_job_status" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wait for the service job’s monit status to be as provided in the ‘status’ parameter.</p>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">wait_for_service_job_status</tt><big>(</big><em>status</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.wait_for_service_job_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the service job&#8217;s monit status to be as provided in the &#8216;status&#8217; parameter.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>status</strong> – the desired status to wait for</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>status</strong> &#8211; the desired status to wait for</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if the service job’s monit status is as desired, and False otherwise.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if the service job&#8217;s monit status is as desired, and False otherwise.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">Boolean</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">wait_for_service_job_status</span><span class="p">(</span><span class="s1">&#39;running&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">wait_for_service_job_status</span><span class="p">(</span><span class="s">&#39;running&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -854,16 +857,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.create_directory">
-<code class="descclassname">BaseClient.</code><code class="descname">create_directory</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_directory" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">create_directory</tt><big>(</big><em>directory</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.create_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>directory</strong> – the name/path of the directory</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>directory</strong> &#8211; the name/path of the directory</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_directory</span><span class="p">(</span><span class="s1">&#39;/tmp/backup/files&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">create_directory</span><span class="p">(</span><span class="s">&#39;/tmp/backup/files&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -874,16 +877,16 @@ by ‘state=processing’ and ‘step=X’.</p>
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.delete_directory">
-<code class="descclassname">BaseClient.</code><code class="descname">delete_directory</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_directory" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">delete_directory</tt><big>(</big><em>directory</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.delete_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete a directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>directory</strong> – the name/path of the directory</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>directory</strong> &#8211; the name/path of the directory</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_directory</span><span class="p">(</span><span class="s1">&#39;/tmp/backup/files&#39;</span><span class="p">)</span>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">delete_directory</span><span class="p">(</span><span class="s">&#39;/tmp/backup/files&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>

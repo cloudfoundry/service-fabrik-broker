@@ -29,22 +29,37 @@
 </nav>
 <div class="content">
 <header>
-<h1 id="top">Home</h1>
+<h1 id="top">Process-to-Submit-a-Patch</h1>
 </header>
-<h4 id="mission">Mission</h4>
-<blockquote>
-<p>Well defined contract and infrastructure to provision and operate CF services,<br/>so that we can grow our platform service offering significantly and sustainably.</p>
-</blockquote>
+<h3 id="steps-to-create-a-patch">Steps to Create a patch</h3>
 <ul>
-<li><strong><a href="Big-Picture">Big Picture</a></strong></li>
-<li><strong><a href="Architecture">Architecture</a></strong></li>
-<li><strong><a href="https://cloudfoundry-incubator.github.io/service-fabrik-broker/index.html">API Documentation</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Process-Guidelines">Process Guidelines</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Resources">Resources</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Service-Fabrik-Goals-Available-Features-&amp;-Roadmap">Service Fabrik Goals Available Features and Roadmap</a></strong></li>
+<li>Fork the repository and make a local clone. If already cloned, then <a href="https://help.github.com/articles/syncing-a-fork/">synch</a> them.</li>
+<li>Create a topic branch use the branch name as “bug/<bug-number>” or “feature/<feature-name>”</li>
+<li>A patch should always have a reference bug/issue number</li>
+<li>Make the changes and run all the necessary tests</li>
+<li>Never use <code>git commit -m</code> option instead just use <code>git commit</code>.</li>
+<li>Provide the following fields once you hit the vim or nano editor<ul>
+<li>Closes-Bug: issues: bug_Id</li>
+<li>Description: Add single liner to explain what it does a bug or a feature</li>
+<li>Describe what the fix does in as much details as possible</li>
+<li>Maintain a width of 72 characters for each line</li>
+<li>There are commands available for nano or vim which helps to maintain the required line width</li>
 </ul>
-<h4 id="components-quick-reference">Components Quick Reference</h4>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/component-quick-reference.png?raw=true" alt="Missing"></p>
+</li>
+<li>Push the changes to your fork</li>
+<li>Have one single commit for each pull request</li>
+<li>Now create a pull request to the master branch</li>
+<li>To append a change after staging the file use the <code>git commit –amend</code>, rest of the flow remains same</li>
+</ul>
+<h4 id="how-to-squash-multiple-commits">How to squash multiple commits</h4>
+<p>A simple way to merge last 3 commits and to write the new commit message from scratch is:</p>
+<pre><code>git <span class="hljs-keyword">reset</span> <span class="hljs-comment">--soft HEAD~3 &amp;&amp; git commit</span>
+</code></pre><h4 id="synch-your-cloned-repo-with-master">Synch your cloned repo with master</h4>
+<p>Whenever you start working on a new fix/feature, if you have already cloned the repo first ensure its kept in synch with master. It can be easily done with the following:</p>
+<pre><code>git fetch upstream
+git reset --hard upstream/<span class="hljs-keyword">master</span>
+<span class="hljs-title">git</span> push --force origin <span class="hljs-literal">master</span>
+</code></pre><p><strong>References</strong><br>[1] How to write good <a href="https://wiki.openstack.org/wiki/GitCommitMessages">commit</a> messages</p>
 </div>
 </div>
 </div>

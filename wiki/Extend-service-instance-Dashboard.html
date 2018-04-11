@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Extend-service-instance-Dashboard</h1>
+</header>
+<h3 id="how-to-extend-service-instance-dashboard">How to extend service instance dashboard</h3>
+<p>Service Fabrik provides a default dashboard for service instances, the link to the same can be found in service instance description.</p>
+<pre><code>cf service blueprint-instance
+
+Service instance: blueprint-instance
+Service: blueprint
+Bound apps:
+<span class="hljs-keyword">Tags:</span>
+Plan: v1.0-small
+Description: Blueprint service for internal development, testing, and documentation purposes of the Service Fabrik
+Documentation url: https://sap.com/
+Dashboard: https://service-fabrik-broker.bosh-lite.com/manage/instances/24731fb8<span class="hljs-string">-7</span>b84<span class="hljs-string">-4</span>f57<span class="hljs-string">-914</span>f-c3d55d793dd4/bc158c9a<span class="hljs-string">-7934</span><span class="hljs-string">-401</span>e<span class="hljs-string">-94</span>ab<span class="hljs-string">-057082</span>a5073e/5e41a60a-c9ea<span class="hljs-string">-4523</span><span class="hljs-string">-8416</span>-d545fc4dbfc5
+
+</code></pre><p>Service information section of dashboard looks like following by default</p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/default-dashboard.png?raw=true" alt="Missing"></p>
+<p>This section of service instance dashboard can be configured to have extra rows in each panel.
+Let&#39;s add Additional information in each panel. To do that, we will have to write a dashboard template and specify added fields inside template. Let&#39;s write a template example.</p>
+<pre><code>&lt;%
+const plan_manager = plan.manager.name;
+const instance_create_time = <span class="hljs-keyword">instance</span>.metadata.created_at;
+%&gt;
+
+service:
+Additional: <span class="hljs-string">'This is template example'</span>
+
+plan:
+Manager: &lt;%= plan_manager %&gt;
+URL: <span class="hljs-string">'protocol://example.com'</span>
+
+service_instance:
+Creation Time: &lt;%= instance_create_time %&gt;
+
+</code></pre><p>Above template will add &#39;Additional&#39; row in service panel, &#39;Manager&#39; and &#39;URL&#39; in plan panel, &#39;Creation Time&#39; in service_instance panel.</p>
+<p>Save this template file as <code>/config/templates/blueprint-dashboard.yml.ejs</code>
+Apart from this we will also have to add dashboard_template node in service plan in <code>config/settings.yml</code></p>
+<pre><code><span class="hljs-symbol">plan:</span>
+<span class="hljs-symbol">  manager:</span>
+<span class="hljs-symbol">    settings:</span>
+<span class="hljs-symbol">      dashboard_template:</span> <span class="hljs-params">&lt;%= base64_template('blueprint-dashboard') %&gt;</span>
+</code></pre><p>Now, added fields can be seen in updated dashboard</p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/custom-dashboard.png?raw=true" alt="Missing"></p>
+<p>In custom dashboard, introduced fields can be seen in highlights.</p>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>
