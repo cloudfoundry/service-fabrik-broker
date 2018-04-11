@@ -435,6 +435,7 @@ defaults: &defaults
       - credentials
       - backup
       - restore
+      - lifecycle.blueprint
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
@@ -823,6 +824,7 @@ development: &development
       - state
       - lifecycle
       - credentials
+      - lifecycle.blueprint
     rabbitmq: &agent_rabbitmq1
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>

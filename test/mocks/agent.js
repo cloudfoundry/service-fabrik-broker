@@ -28,7 +28,7 @@ exports.lastRestoreOperation = lastRestoreOperation;
 exports.getRestoreLogs = getRestoreLogs;
 
 function getInfo(times, featureNotSupported) {
-  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'preupdate'];
+  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'lifecycle.preupdate'];
   if (featureNotSupported) {
     supportedFeatures.splice(supportedFeatures.indexOf(featureNotSupported), 1);
   }
@@ -66,7 +66,7 @@ function deprovision() {
 function preUpdate(expectedReturnStatusCode) {
   return nock(agentUrl)
     .replyContentLength()
-    .post('/v1/preupdate', {})
+    .post('/v1/lifecycle/preupdate', {})
     .reply(expectedReturnStatusCode || 200, {});
 }
 
