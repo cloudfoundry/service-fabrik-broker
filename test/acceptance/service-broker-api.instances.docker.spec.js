@@ -205,6 +205,29 @@ describe('service-broker-api', function () {
             });
         });
 
+        it('returns 410 Gone', function () {
+          mocks.docker.inspectContainer(instance_id, {
+            Config: {
+              Env: ['context={"platform":"cloudfoundry"}']
+            }
+          },404);
+          return chai.request(app)
+            .delete(`${base_url}/service_instances/${instance_id}`)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(410);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+
+
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.docker.inspectContainer(instance_id);
           mocks.cloudController.findSecurityGroupByName(instance_id);
@@ -220,7 +243,7 @@ describe('service-broker-api', function () {
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .then(res => {
-              expect(res).to.have.status(200);
+              expect(res).to.have.status(410);
               expect(res.body).to.eql({});
               mocks.verify();
             });

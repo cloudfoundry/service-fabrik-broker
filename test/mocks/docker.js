@@ -114,7 +114,7 @@ function startContainer() {
     .reply(204);
 }
 
-function deleteContainer(guid) {
+function deleteContainer(guid, status) {
   const name = getContainerName(guid);
   return nock(dockerUrl)
     .delete(`/containers/${name || containerId}`)
@@ -122,10 +122,10 @@ function deleteContainer(guid) {
       v: true,
       force: true
     })
-    .reply(204);
+    .reply(status || 204);
 }
 
-function inspectContainer(guid, options) {
+function inspectContainer(guid, options, status) {
   if (_.isObject(guid)) {
     options = guid;
     guid = undefined;
@@ -156,7 +156,7 @@ function inspectContainer(guid, options) {
   return nock(dockerUrl)
     .replyContentLength()
     .get(`/containers/${name || containerId}/json`)
-    .reply(200, body);
+    .reply( status || 200, body);
 }
 
 function deleteVolumes(guid) {
