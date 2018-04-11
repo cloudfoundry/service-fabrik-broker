@@ -1,0 +1,101 @@
+The request body must be a JSON object with exactly 4 properties, includes deployment_name, instance_guid, sf_operations_args, params.
+
+    + Body
+
+            {
+                "deployment_name": "service-fabrik-1234-12345678-1234-5678-1234-123456781234",
+                "instance_guid": "12345678-1234-5678-1234-123456781234",
+                "params": {
+                    "context": {
+                        "organization_guid": "12345678-1234-5678-1234-123456781234",
+                        "platform": "cloudfoundry",
+                        "space_guid": "12345678-1234-5678-1234-123456781234"
+                    },
+                    "previous_values": {
+                        plan_id: '12345678-1234-5678-1234-123456781234',
+                        service_id: '12345678-1234-5678-1234-123456781234',
+                        organization_id: '12345678-1234-5678-1234-123456781234',
+                        space_id: '12345678-1234-5678-1234-1234567812341'
+                    },
+                    "parameters": {
+                        "parameter1": 1,
+                        "parameter2": "foo"
+                    },
+                    "plan_id": "12345678-1234-5678-1234-123456781234",
+                    "service_id": "12345678-1234-5678-1234-123456781234",
+                    "previous_manifest": {
+                        ...
+                    }
+                },
+                "sf_operations_args": {}
+            }
+
+    + Schema
+
+            {
+              "$schema": "http://json-schema.org/draft-04/schema#",
+              "type": "object",
+              "required": ["deployment_name", "instance_guid", "params"],
+              "properties": {
+                "deployment_name": {
+                  "type": "string",
+                  "description": "Deployment Name"
+                },
+                "instance_guid": {
+                  "type": "string",
+                  "description": "Instance Guid of service instance"
+                },
+                "params": {
+                    "type": "object",
+                    "description": "params that comes as part of cf update request and previous_manifest",
+                    "properties": {
+                        "context": {
+                            "type": "object",
+                            "description": "Contextual data under which the service instance is created"
+                        },
+                        "previous_values": {
+                            "type": "object",
+                            "description": "Information about the service instance prior to the update."
+                            "properties": {
+                                "plan_id": {
+                                    "type": "string",
+                                    "description": "ID of the plan prior to the update"
+                                },
+                                "service_id": {
+                                    "type": "string",
+                                    "description": "ID of the service for the service instance"
+                                },
+                                "organization_guid": {
+                                    "type": "string",
+                                    "description": "Organization for the service instance"
+                                },
+                                "space_guid": {
+                                    "type": "string",
+                                    "description": "Space for the service instance"
+                                }
+                            }
+                        },
+                        "parameters": {
+                            "type": "object",
+                            "description": "Configuration options for the service instance"
+                        }
+                        "plan_id": {
+                            "type": "string",
+                            "description": "The ID of the plan (from the catalog) for which the service instance has been requested"
+                        },
+                        "service_id": {
+                            "type": "string",
+                            "description": "The ID of the service (from the catalog)"
+                        },
+                        "previous_manifest": {
+                            "type": "object",
+                            "description": "Deployment Manifest of the service instance prior to the update"
+                        }
+                  }
+                },
+                "sf_operations_args": {
+                    "type": "object",
+                    "description": "Arguments passed as optional parameter to cf update-service, can be an empty object"
+                }
+              }
+            }

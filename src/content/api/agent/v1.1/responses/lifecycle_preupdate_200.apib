@@ -1,0 +1,20 @@
+In case of success, the agent has successfully peformed operations required before the service instance gets updated.
+
+    + Body
+
+            {
+                actionResponse: "Blueprint-PreUpdate-Action"
+            }
+
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "properties": {
+                    "operational": {
+                        "type": "string/object",
+                        "description": "Preupdate action response."
+                    }
+                }
+            }
