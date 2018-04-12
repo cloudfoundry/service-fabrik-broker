@@ -243,7 +243,7 @@ describe('service-broker-api', function () {
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .then(res => {
-              expect(res).to.have.status(410);
+              expect(res).to.have.status(200);
               expect(res.body).to.eql({});
               mocks.verify();
             });
