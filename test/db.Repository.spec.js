@@ -144,6 +144,12 @@ describe('db', function () {
       });
     });
 
+    it('Should return the count from DB successfully', function () {
+      return Repository.count(CONST.DB_MODEL.JOB, criteria).then(response => {
+        expect(modelStub.count).to.be.calledOnce;
+      });
+    });
+
     it('Should return null when requested for non-existing object', function () {
       return Repository.findOne(CONST.DB_MODEL.JOB, {
         name: `${instance_id}_NONAME`
