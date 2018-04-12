@@ -125,7 +125,7 @@ function deleteContainer(guid) {
     .reply(204);
 }
 
-function inspectContainer(guid, options) {
+function inspectContainer(guid, options, status) {
   if (_.isObject(guid)) {
     options = guid;
     guid = undefined;
@@ -156,7 +156,7 @@ function inspectContainer(guid, options) {
   return nock(dockerUrl)
     .replyContentLength()
     .get(`/containers/${name || containerId}/json`)
-    .reply(200, body);
+    .reply( status || 200, body);
 }
 
 function deleteVolumes(guid) {
