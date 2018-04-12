@@ -206,7 +206,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 410 Gone', function () {
-          mocks.docker.inspectContainer(instance_id, {},404);
+          mocks.docker.inspectContainer(instance_id, {}, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({

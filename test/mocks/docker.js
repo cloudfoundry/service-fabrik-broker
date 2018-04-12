@@ -156,7 +156,7 @@ function inspectContainer(guid, options, status) {
   return nock(dockerUrl)
     .replyContentLength()
     .get(`/containers/${name || containerId}/json`)
-    .reply( status || 200, body);
+    .reply(status || 200, body);
 }
 
 function deleteVolumes(guid) {
