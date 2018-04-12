@@ -269,4 +269,51 @@ describe('BackupReportManager', function () {
     });
   });
 
+  describe('#getReportStartTime', function () {
+    it('should return correct start time for report if jobdetails are present', function () {
+      let jobdetails = {
+        createdAt: moment.utc(startTime).add(2, 'hours').toDate()
+      };
+      let instanceRecord = {};
+      return BackupReportManager.getReportStartTime(instanceId, jobdetails, instanceRecord, startTime)
+        .then(startDay => {
+          expect(startDay).to.eql(moment.utc(startTime).add(1, 'days').toDate());
+          expect(repoSpy.count.callCount).to.equal(1);
+        });
+    });
+    it('should return correct start time for report if jobdetails are not present', function () {
+      /*jshint -W080 */
+      let jobdetails = undefined;
+      let instanceRecord = {};
+      return BackupReportManager.getReportStartTime(instanceId, jobdetails, instanceRecord, startTime, endTime)
+        .then(startDay => {
+          expect(startDay).to.eql(endTime);
+        });
+    });
+  });
+
+  describe('#getReportEndTime', function () {
+    it('should return correct end time for report if lastrundetails are present', function () {
+      let lastrundetails = {
+        createdAt: moment.utc(endTime).subtract(1, 'days').toDate()
+      };
+      let instanceRecord = {};
+      return BackupReportManager.getReportEndTime(instanceId, lastrundetails, instanceRecord, endTime)
+        .then(endDay => {
+          expect(endDay).to.eql(moment.utc(endTime).subtract(2, 'days').toDate());
+          expect(repoSpy.count.callCount).to.equal(1);
+        });
+    });
+    it('should return end start time for report if lastrundetails are not present', function () {
+      /*jshint -W080 */
+      let lastrundetails = undefined;
+      let instanceRecord = {};
+      return BackupReportManager.getReportEndTime(instanceId, lastrundetails, instanceRecord, endTime)
+        .then(endDay => {
+          expect(endDay).to.eql(endTime);
+        });
+    });
+  });
+
+
 });
