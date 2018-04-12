@@ -114,7 +114,7 @@ function startContainer() {
     .reply(204);
 }
 
-function deleteContainer(guid, status) {
+function deleteContainer(guid) {
   const name = getContainerName(guid);
   return nock(dockerUrl)
     .delete(`/containers/${name || containerId}`)
@@ -122,7 +122,7 @@ function deleteContainer(guid, status) {
       v: true,
       force: true
     })
-    .reply(status || 204);
+    .reply(204);
 }
 
 function inspectContainer(guid, options, status) {

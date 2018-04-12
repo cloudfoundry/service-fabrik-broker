@@ -206,11 +206,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 410 Gone', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"cloudfoundry"}']
-            }
-          },404);
+          mocks.docker.inspectContainer(instance_id, {},404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -226,7 +222,6 @@ describe('service-broker-api', function () {
               mocks.verify();
             });
         });
-
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.docker.inspectContainer(instance_id);
