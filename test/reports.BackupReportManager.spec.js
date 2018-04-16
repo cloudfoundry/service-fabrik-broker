@@ -39,7 +39,7 @@ for (let i = 1; i <= numOfInstances; i++) {
   listOfInstances.push(instance);
 }
 const triggeredBackups = [];
-const triggeredBackupCount = 14;
+let triggeredBackupCount = 14;
 for (let i = 0; i < triggeredBackupCount / 2; i++) {
   let time = moment.utc(startTime).add(2, 'hours').add(i, 'days').toDate();
   let backup = getBackup(`${backupGuid}-${i}`, time, 2).value();
@@ -47,9 +47,9 @@ for (let i = 0; i < triggeredBackupCount / 2; i++) {
   triggeredBackups.push(backup);
   triggeredBackups.push(backup1);
 }
-const resultBackups = [];
-const succeededBackupCount = 5;
-const failedBackupCount = 9;
+let resultBackups = [];
+let succeededBackupCount = 5;
+let failedBackupCount = 9;
 for (let i = 1; i <= succeededBackupCount; i++) {
   let time = moment.utc(startTime).add(2, 'hours').add(i, 'days').toDate();
   let backup = getBackup(`${backupGuid}-${i}`, time, 0).value();
@@ -260,6 +260,40 @@ describe('BackupReportManager', function () {
       };
       return BackupReportManager.getInstanceBackupSummary(instanceId, startTime, endTime)
         .then(summary => {
+          expect(summary).to.deep.eql(expectedResult);
+          expect(repoSpy.findOne.callCount).to.equal(2);
+          expect(repoSpy.search.callCount).to.equal(2);
+          expect(repoSpy.count.callCount).to.equal(3);
+
+        });
+    });
+    it('should return backup summary of instance successfully if failed backups are 0', function () {
+      let backupResultTemp = resultBackups;
+      let backupsTriggerredTemp = triggeredBackupCount;
+      let failedBackupCountTemp = failedBackupCount;
+      resultBackups = resultBackups.slice(0, succeededBackupCount);
+      failedBackupCount = 0;
+      triggeredBackupCount = succeededBackupCount - 2;
+      const expectedResult = {
+        instanceCreateTime: moment.utc(startTime).toDate(),
+        instanceDeleteTime: moment.utc(startTime).add(10, 'days').add(2, 'hours').toDate(),
+        noBackupDays: [
+          moment.utc(startTime).add(6, 'days').toDate(),
+          moment.utc(startTime).add(7, 'days').toDate(),
+          moment.utc(startTime).add(8, 'days').toDate(),
+          moment.utc(startTime).add(9, 'days').toDate()
+        ],
+        backupsTriggerred: triggeredBackupCount,
+        backupsSucceeded: succeededBackupCount,
+        backupFailed: 0,
+        failedBackups: [],
+        failureCountForNConsecutiveDays: 2
+      };
+      return BackupReportManager.getInstanceBackupSummary(instanceId, startTime, endTime)
+        .then(summary => {
+          resultBackups = backupResultTemp;
+          triggeredBackupCount = backupsTriggerredTemp;
+          failedBackupCount = failedBackupCountTemp;
           expect(summary).to.deep.eql(expectedResult);
           expect(repoSpy.findOne.callCount).to.equal(2);
           expect(repoSpy.search.callCount).to.equal(2);
