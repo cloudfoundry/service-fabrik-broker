@@ -275,9 +275,22 @@ describe('BackupReportManager', function () {
         createdAt: moment.utc(startTime).add(2, 'hours').toDate()
       };
       let instanceRecord = {};
+      const expectedCriteria = {
+        type: CONST.JOB.SCHEDULED_BACKUP,
+        'data.instance_id': instanceId,
+        'response.delete_backup_status.instance_deleted': {
+          $ne: true
+        },
+        createdAt: {
+          $gt: moment.utc(startTime).toDate(),
+          $lt: moment.utc(startTime).endOf('day').toDate()
+        }
+      };
       return BackupReportManager.getReportStartTime(instanceId, jobdetails, instanceRecord, startTime)
         .then(startDay => {
           expect(startDay).to.eql(moment.utc(startTime).add(1, 'days').toDate());
+          expect(repoSpy.count.firstCall.args[0][0]).to.be.equal(CONST.DB_MODEL.JOB_RUN_DETAIL);
+          expect(repoSpy.count.firstCall.args[0][1]).to.deep.equal(expectedCriteria);
           expect(repoSpy.count.callCount).to.equal(1);
         });
     });
@@ -298,9 +311,22 @@ describe('BackupReportManager', function () {
         createdAt: moment.utc(endTime).subtract(1, 'days').toDate()
       };
       let instanceRecord = {};
+      const expectedCriteria = {
+        type: CONST.JOB.SCHEDULED_BACKUP,
+        'data.instance_id': instanceId,
+        'response.delete_backup_status.instance_deleted': {
+          $ne: true
+        },
+        createdAt: {
+          $gt: moment.utc(endTime).subtract(1, 'days').startOf('day').toDate(),
+          $lt: moment.utc(endTime).subtract(1, 'days').toDate()
+        }
+      };
       return BackupReportManager.getReportEndTime(instanceId, lastrundetails, instanceRecord, endTime)
         .then(endDay => {
           expect(endDay).to.eql(moment.utc(endTime).subtract(2, 'days').toDate());
+          expect(repoSpy.count.firstCall.args[0][0]).to.be.equal(CONST.DB_MODEL.JOB_RUN_DETAIL);
+          expect(repoSpy.count.firstCall.args[0][1]).to.deep.equal(expectedCriteria);
           expect(repoSpy.count.callCount).to.equal(1);
         });
     });
