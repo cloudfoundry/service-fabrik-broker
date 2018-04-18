@@ -1,6 +1,6 @@
 'use strict';
 
-const TokenInfo = require('../lib/cf/TokenInfo');
+const TokenInfo = require('../broker/lib/cf/TokenInfo');
 
 const tokenType = 'bearer';
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9.msVIuUXhvFBvkf9A6JOkQndeuRZiGKuj0ojGdvR2dPI';

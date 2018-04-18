@@ -1,6 +1,6 @@
 'use strict';
 
-const Service = require('../lib/models/Service');
+const Service = require('../broker/lib/models/Service');
 
 describe('models', () => {
   describe('Service', () => {

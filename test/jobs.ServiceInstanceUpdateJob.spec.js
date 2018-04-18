@@ -1,16 +1,16 @@
 'use strict';
 const _ = require('lodash');
 const Promise = require('bluebird');
-const CONST = require('../lib/constants');
-const catalog = require('../lib/models/catalog');
-const utils = require('../lib/utils');
-const config = require('../lib/config');
-const errors = require('../lib/errors');
-const BaseJob = require('../lib/jobs/BaseJob');
-const JobFabrik = require('../lib/jobs/JobFabrik');
-const ScheduleManager = require('../lib/jobs/ScheduleManager');
-const Repository = require('../lib/db').Repository;
-const NetworkSegmentIndex = require('../lib/bosh/NetworkSegmentIndex');
+const CONST = require('../broker/lib/constants');
+const catalog = require('../broker/lib/models/catalog');
+const utils = require('../broker/lib/utils');
+const config = require('../broker/lib/config');
+const errors = require('../broker/lib/errors');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const JobFabrik = require('../broker/lib/jobs/JobFabrik');
+const ScheduleManager = require('../broker/lib/jobs/ScheduleManager');
+const Repository = require('../common/db').Repository;
+const NetworkSegmentIndex = require('../broker/lib/bosh/NetworkSegmentIndex');
 
 describe('Jobs', function () {
   const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);

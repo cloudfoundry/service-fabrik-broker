@@ -3,12 +3,12 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const moment = require('moment');
-const CONST = require('../lib/constants');
-const config = require('../lib/config');
-const errors = require('../lib/errors');
-const maintenanceManager = require('../lib/maintenance').maintenanceManager;
-const serviceFabrikClient = require('../lib/cf').serviceFabrikClient;
-const logger = require('../lib/logger');
+const CONST = require('../broker/lib/constants');
+const config = require('../broker/lib/config');
+const errors = require('../broker/lib/errors');
+const maintenanceManager = require('../broker/lib/maintenance').maintenanceManager;
+const serviceFabrikClient = require('../broker/lib/cf').serviceFabrikClient;
+const logger = require('../broker/lib/logger');
 
 describe('JobScheduler', function () {
   /* jshint expr:true */
@@ -50,7 +50,7 @@ describe('JobScheduler', function () {
       fork: () => {
         count++;
         logger.info('forking child..', count);
-        const js = proxyquire('../JobScheduler', {
+        const js = proxyquire('../broker/JobScheduler', {
           'cluster': {
             isMaster: false,
             on: on,
@@ -137,7 +137,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 4;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -159,7 +159,7 @@ describe('JobScheduler', function () {
       it('Create workers based on max_worker config & on error recreate the worker', function () {
         count = 0;
         cpus = 8;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
         const js = JobScheduler
           .ready
@@ -187,7 +187,7 @@ describe('JobScheduler', function () {
         cpus = 1;
         throwUnhandledError = true;
         const EXPECTED_NUM_OF_WORKERS = cpus;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -214,7 +214,7 @@ describe('JobScheduler', function () {
         count = 0;
         cpus = 8;
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const js = JobScheduler
           .ready
           .then(() => {
@@ -265,7 +265,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -347,7 +347,7 @@ describe('JobScheduler', function () {
         count = 0;
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -373,7 +373,7 @@ describe('JobScheduler', function () {
         }));
         logger.info('count is', count);
         cpus = 1;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -405,7 +405,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -413,7 +413,7 @@ describe('JobScheduler', function () {
             clock.tick(0);
             expect(getMaintenanceStub.callCount).to.equal(4); // 4times from the JobScheduler
             expect(updateMaintStub).to.be.calledOnce;
-            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out / 1000 / 60} (mins). JobScheduler aborting it.`);
             expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
             expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
@@ -445,7 +445,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -453,7 +453,7 @@ describe('JobScheduler', function () {
             clock.tick(0);
             expect(getMaintenanceStub.callCount).to.equal(4); // 4times from the JobScheduler
             expect(updateMaintStub).to.be.calledOnce;
-            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out / 1000 / 60} (mins). JobScheduler aborting it.`);
             expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
             expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             expect(processExitStub).not.to.be.called;
@@ -485,7 +485,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = true;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -493,7 +493,7 @@ describe('JobScheduler', function () {
             clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
             expect(getMaintenanceStub.callCount).to.equal(5); // 4times from the JobScheduler
             expect(updateMaintStub).to.be.calledOnce;
-            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`);
+            expect(updateMaintStub.firstCall.args[0]).to.eql(`System in maintenance beyond configured timeout time ${schedulerConfig.maintenance_mode_time_out / 1000 / 60} (mins). JobScheduler aborting it.`);
             expect(updateMaintStub.firstCall.args[1]).to.eql(CONST.OPERATION.ABORTED);
             expect(updateMaintStub.firstCall.args[2]).to.eql(CONST.SYSTEM_USER);
             expect(processExitStub).not.to.be.called;
@@ -520,7 +520,7 @@ describe('JobScheduler', function () {
         logger.info('count is', count);
         cpus = 1;
         updateStatus = false;
-        JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+        JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
         const jb = JobScheduler
           .ready
           .then(() => {
@@ -582,7 +582,7 @@ describe('JobScheduler', function () {
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {
       count = 0;
       cpus = 1;
-      JobScheduler = proxyquire('../JobScheduler', proxyLibs);
+      JobScheduler = proxyquire('../broker/JobScheduler', proxyLibs);
       const js = JobScheduler
         .ready
         .then(() => {

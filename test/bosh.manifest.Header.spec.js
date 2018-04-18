@@ -1,6 +1,6 @@
 'use strict';
 
-const Header = require('../lib/bosh/manifest/Header');
+const Header = require('../broker/lib/bosh/manifest/Header');
 
 describe('bosh', () => {
   describe('manifest', () => {

@@ -4,8 +4,8 @@ const Mongoose = require('mongoose');
 const Promise = require('bluebird');
 Promise.promisifyAll([require('mongoose/lib/model')]);
 const mongoModel = require('mongoose/lib/model');
-const CONST = require('../lib/constants');
-const Repository = require('../lib/db').Repository;
+const CONST = require('../common/constants');
+const Repository = require('../common/db').Repository;
 
 const time = Date.now();
 const repeatInterval = '*/1 * * * *';

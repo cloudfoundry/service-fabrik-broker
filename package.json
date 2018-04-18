@@ -100,15 +100,15 @@
     "LICENSE",
     "NOTICE",
     "README.md",
-    "server.js",
-    "apps.js",
-    "lib/"
+    "broker/server.js",
+    "common/app.js",
+    "broker/lib/"
   ],
   "scripts": {
-    "start": "node lib/LoadDeploymentActions.js && node server.js",
+    "start": "node broker/lib/LoadDeploymentActions.js && node broker/server.js",
     "jsdoc": "jsdoc -c jsdoc.json",
-    "jshint": "jshint --exclude coverage,docs,jsdoc,node_modules,public,tmp  --reporter=node_modules/jshint-stylish .",
-    "jshint-ci": "jshint --exclude coverage,docs,jsdoc,node_modules,public,tmp --reporter=checkstyle .",
+    "jshint": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp  --reporter=node_modules/jshint-stylish .",
+    "jshint-ci": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp --reporter=checkstyle .",
     "test": "rm -f ./logs/test.log && _mocha test/ test/acceptance/",
     "test-ci": "rm -f ./logs/test.log && babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/acceptance/ test/ ",
     "test-cov": "rm -f ./logs/test.log && babel-node ./node_modules/.bin/isparta cover _mocha -- test/ test/acceptance/",

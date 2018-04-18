@@ -1,12 +1,12 @@
 'use strict';
 
-const config = require('../lib/config');
-const CONST = require('../lib/constants');
-const utils = require('../lib/utils');
-const BaseJob = require('../lib/jobs/BaseJob');
-const ScheduleManager = require('../lib/jobs/ScheduleManager');
-const BackupStore = require('../lib/iaas/BackupStore');
-const OperationStatusPollerJob = require('../lib/jobs/OperationStatusPollerJob');
+const config = require('../broker/lib/config');
+const CONST = require('../broker/lib/constants');
+const utils = require('../broker/lib/utils');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const ScheduleManager = require('../broker/lib/jobs/ScheduleManager');
+const BackupStore = require('../broker/lib/iaas/BackupStore');
+const OperationStatusPollerJob = require('../broker/lib/jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const errors = require('../lib/errors');
+const errors = require('../broker/lib/errors');
 const ServiceNotFound = errors.ServiceNotFound;
 const ServicePlanNotFound = errors.ServicePlanNotFound;
 
@@ -20,7 +20,7 @@ let service1 = {
   plans: [plan1, plan2]
 };
 
-const catalog = proxyquire('../lib/models/catalog', {
+const catalog = proxyquire('../broker/lib/models/catalog', {
   '../config': {
     services: [service1]
   },

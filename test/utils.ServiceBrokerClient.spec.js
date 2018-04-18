@@ -1,6 +1,6 @@
 'use strict';
 
-const brokerClient = require('../lib/utils').serviceBrokerClient;
+const brokerClient = require('../broker/lib/utils/ServiceBrokerClient');
 
 describe('Utils', function () {
   describe('ServiceBrokerClient', function () {

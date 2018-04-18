@@ -1,6 +1,6 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const DirectorManager = lib.fabrik.DirectorManager;
 const utils = lib.utils;
 

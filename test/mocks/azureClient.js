@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const utils = require('../../lib/utils');
+const utils = require('../../broker/lib/utils');
 
 const config = {
   backup: {

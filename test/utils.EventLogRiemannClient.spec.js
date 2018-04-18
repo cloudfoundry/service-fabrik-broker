@@ -1,7 +1,7 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../lib').config;
+const config = require('../broker/lib').config;
 const _ = require('lodash');
 
 const pubSubStub = {
@@ -14,7 +14,7 @@ const riemanJSStub = {
   /* jshint unused:false */
   Event: (event) => true
 };
-const RiemannClient = proxyquire('../lib/utils/EventLogRiemannClient', {
+const RiemannClient = proxyquire('../common/utils/EventLogRiemannClient', {
   riemannjs: {
     createClient: function () {
       return {

@@ -15,7 +15,7 @@ const expectedResultObject = _.assign({}, responseObject, {
   body: responseBody
 });
 
-const HttpClient = proxyquire('../lib/utils/HttpClient', {
+const HttpClient = proxyquire('../common/utils/HttpClient', {
   bluebird: {
     promisify(fun) {
       return fun;
@@ -160,7 +160,7 @@ describe('utils', () => {
           options.respondWithBody || responseBody
         ]);
       };
-      const httpClientWithCircuitBreaker = proxyquire('../lib/utils/HttpClient', {
+      const httpClientWithCircuitBreaker = proxyquire('../common/utils/HttpClient', {
         bluebird: {
           promisify(fun) {
             return fun;

@@ -1,6 +1,6 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const catalog = lib.models.catalog;
 const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = lib.bosh.BoshDirectorClient;
@@ -30,7 +30,7 @@ let networks = [{
 
 let mock_config;
 
-const NetworkSegmentIndex = proxyquire('../lib/bosh/NetworkSegmentIndex', {
+const NetworkSegmentIndex = proxyquire('../broker/lib/bosh/NetworkSegmentIndex', {
   lodash: {
     sample: function (collection) {
       return collection[2];

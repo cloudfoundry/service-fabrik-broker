@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const quota = require('../lib/quota');
+const quota = require('../broker/lib/quota');
 const proxyquire = require('proxyquire');
 const quotaManager = quota.quotaManager;
-const catalog = require('../lib/models/catalog');
-const CloudControllerClient = require('../lib/cf/CloudControllerClient');
+const catalog = require('../broker/lib/models/catalog');
+const CloudControllerClient = require('../broker/lib/cf/CloudControllerClient');
 
 
 describe('quota', () => {
@@ -124,7 +124,7 @@ describe('quota', () => {
     });
 
     describe('checkQuota', () => {
-      const QuotaManager = proxyquire('../lib/quota/QuotaManager', {
+      const QuotaManager = proxyquire('../broker/lib/quota/QuotaManager', {
         '../config': {
           quota: {
             enabled: true,
@@ -421,7 +421,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is not whitelisted', () => {
-        const QuotaManager = proxyquire('../lib/quota/QuotaManager', {
+        const QuotaManager = proxyquire('../broker/lib/quota/QuotaManager', {
           '../config': {
             quota: {
               enabled: true,
@@ -438,7 +438,7 @@ describe('quota', () => {
       });
 
       it('returns that the org is whitelisted', () => {
-        const QuotaManager = proxyquire('../lib/quota/QuotaManager', {
+        const QuotaManager = proxyquire('../broker/lib/quota/QuotaManager', {
           '../config': {
             quota: {
               enabled: true,

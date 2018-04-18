@@ -3,8 +3,8 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const CloudControllerClient = require('../lib/cf/CloudControllerClient');
-const errors = require('../lib/errors');
+const CloudControllerClient = require('../broker/lib/cf/CloudControllerClient');
+const errors = require('../broker/lib/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 
@@ -288,7 +288,7 @@ describe('cf', function () {
           return firstUrl;
         }
         if (i <= calls.length) {
-          return `${firstUrl}&order-direction=asc&page=${i+1}`;
+          return `${firstUrl}&order-direction=asc&page=${i + 1}`;
         }
         return null;
       }

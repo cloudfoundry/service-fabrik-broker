@@ -1,14 +1,14 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../lib/constants');
-const config = require('../lib/config');
+const CONST = require('../broker/lib/constants');
+const config = require('../broker/lib/config');
 const moment = require('moment');
-const lib = require('../lib');
-const JobFabrik = require('../lib/jobs/JobFabrik');
-const BaseJob = require('../lib/jobs/BaseJob');
-const ScheduleManager = require('../lib/jobs/ScheduleManager');
-const errors = require('../lib/errors');
+const lib = require('../broker/lib');
+const JobFabrik = require('../broker/lib/jobs/JobFabrik');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const ScheduleManager = require('../broker/lib/jobs/ScheduleManager');
+const errors = require('../broker/lib/errors');
 const NotFound = errors.NotFound;
 const backupStore = lib.iaas.backupStore;
 const filename = lib.iaas.backupStore.filename;

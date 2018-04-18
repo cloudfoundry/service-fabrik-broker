@@ -11,7 +11,7 @@ before_install:
     sudo make install
     popd
 env:
-  - SETTINGS_PATH="$(pwd)/config/settings.yml"
+  - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
 script:
   - |
      git secrets --install

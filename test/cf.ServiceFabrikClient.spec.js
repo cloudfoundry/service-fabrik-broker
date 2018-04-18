@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const ServiceFabrikClient = require('../lib/cf/ServiceFabrikClient');
-const CONST = require('../lib/constants');
+const ServiceFabrikClient = require('../broker/lib/cf/ServiceFabrikClient');
+const CONST = require('../broker/lib/constants');
 
 const tokenIssuerStub = {
   getAccessToken: () => undefined

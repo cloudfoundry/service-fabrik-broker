@@ -1,6 +1,6 @@
 'use strict';
 
-const errors = require('../lib/errors');
+const errors = require('../common/errors');
 const HttpError = errors.HttpError;
 const HttpClientError = errors.HttpClientError;
 const BadRequest = errors.BadRequest;

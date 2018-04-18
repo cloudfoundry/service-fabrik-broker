@@ -3,9 +3,9 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const moment = require('moment');
-const lib = require('../../lib');
-const ScheduleManager = require('../../lib/jobs');
-const CONST = require('../../lib/constants');
+const lib = require('../../broker/lib');
+const ScheduleManager = require('../../broker/lib/jobs');
+const CONST = require('../../broker/lib/constants');
 const apps = require('../support/apps');
 const catalog = lib.models.catalog;
 const config = lib.config;
@@ -73,7 +73,7 @@ describe('service-fabrik-api', function () {
 
       const getJob = (name, type) => {
         return Promise.resolve({
-          name: `${instance_id}_${type === undefined? CONST.JOB.SCHEDULED_BACKUP : type}`,
+          name: `${instance_id}_${type === undefined ? CONST.JOB.SCHEDULED_BACKUP : type}`,
           repeatInterval: repeatInterval,
           data: {
             instance_id: instance_id,
@@ -272,7 +272,7 @@ describe('service-fabrik-api', function () {
         };
         const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
-        const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time+1)}.json`;
+        const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time + 1)}.json`;
         const list_pathname = `/${container}/${list_filename}`;
         const list_pathname2 = `/${container}/${list_filename2}`;
         const data = {
@@ -296,7 +296,7 @@ describe('service-fabrik-api', function () {
           createdAt: new Date(),
           instanceInfo: instanceInfo
         };
-        const FabrikStatusPoller = require('../../lib/fabrik/FabrikStatusPoller');
+        const FabrikStatusPoller = require('../../broker/lib/fabrik/FabrikStatusPoller');
         afterEach(function () {
           FabrikStatusPoller.stopPoller = true;
           FabrikStatusPoller.clearAllPollers();
@@ -1442,8 +1442,8 @@ describe('service-fabrik-api', function () {
       describe('#listLastBackups', function () {
         const prefix = `${space_guid}/backup/${service_id}`;
         const filename1 = `${prefix}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename2 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+1)}.json`;
-        const filename3 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time+2)}.json`;
+        const filename2 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time + 1)}.json`;
+        const filename3 = `${prefix}.${instance_id}.${backup_guid}.${isoDate(time + 2)}.json`;
         const pathname3 = `/${container}/${filename3}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,

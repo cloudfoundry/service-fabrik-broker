@@ -1,6 +1,6 @@
 'use strict';
 
-const lib = require('../../lib');
+const lib = require('../../broker/lib');
 const app = require('../support/apps').report;
 const config = lib.config;
 

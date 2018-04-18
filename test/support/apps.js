@@ -1,12 +1,12 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('./../../lib');
+const lib = require('../../broker/lib');
 const routes = lib.routes;
-const FabrikApp = require('./../../FabrikApp');
+const ExpressApp = require('../../common/app');
 
 // internal app
-const internal = FabrikApp.create('internal', app => {
+const internal = ExpressApp.create('internal', app => {
   // home
   app.get('/', (req, res) => {
     res.render('index', {
@@ -19,7 +19,7 @@ const internal = FabrikApp.create('internal', app => {
 });
 
 // exernal app
-const external = FabrikApp.create('external', app => {
+const external = ExpressApp.create('external', app => {
   // home
   app.get('/', (req, res) => {
     res.render('index', {
@@ -32,7 +32,7 @@ const external = FabrikApp.create('external', app => {
   app.use('/manage', routes.manage);
 });
 
-const report = FabrikApp.create('report', app => {
+const report = ExpressApp.create('report', app => {
   app.get('/', (req, res) => {
     res.render('index', {
       title: app.get('title')

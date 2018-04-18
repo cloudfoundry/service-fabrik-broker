@@ -2,14 +2,14 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const BoshDirectorClient = require('../lib/bosh/BoshDirectorClient');
-const BackupStore = require('../lib/iaas/BackupStore');
-const Agent = require('../lib/fabrik/Agent');
-const BaseController = require('../lib/controllers/BaseController');
-const CONST = require('../lib/constants');
-const OobBackupManager = require('../lib/fabrik/OobBackupManager');
-const bosh = require('../lib/bosh');
-const lib = require('../lib');
+const BoshDirectorClient = require('../broker/lib/bosh/BoshDirectorClient');
+const BackupStore = require('../broker/lib/iaas/BackupStore');
+const Agent = require('../broker/lib/fabrik/Agent');
+const FabrikBaseController = require('../broker/lib/controllers/FabrikBaseController');
+const CONST = require('../broker/lib/constants');
+const OobBackupManager = require('../broker/lib/fabrik/OobBackupManager');
+const bosh = require('../broker/lib/bosh');
+const lib = require('../broker/lib');
 const backupStoreForOob = lib.iaas.backupStoreForOob;
 
 
@@ -211,7 +211,7 @@ describe('fabrik', function () {
         expect(result.operation).to.eql(expectedResult.operation);
 
         expect(result.agent_ip).to.eql(expectedResult.agent_ip);
-        expect(BaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
+        expect(FabrikBaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
       });
     });
 
@@ -237,7 +237,7 @@ describe('fabrik', function () {
         expect(result.operation).to.eql(expectedResult.operation);
 
         expect(result.agent_ip).to.eql(expectedResult.agent_ip);
-        expect(BaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
+        expect(FabrikBaseController.uuidPattern.test(result.backup_guid)).to.eql(true);
       });
     });
 

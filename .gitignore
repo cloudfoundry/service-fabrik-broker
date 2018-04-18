@@ -15,7 +15,8 @@
 npm-debug.log
 
 # Ignore developer's settings files
-config/settings.*.yml
+broker/config/settings.*.yml
+common/config/settings.*.yml
 
 # Ignore all files starting with "my"
 my*
@@ -26,5 +27,5 @@ my*
 
 
 #ingoring files created during unit tests
-lib/fabrik/actions/js/ReserveIps.js
-lib/fabrik/actions/sh/
+broker/lib/fabrik/actions/js/ReserveIps.js
+broker/lib/fabrik/actions/sh/

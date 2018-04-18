@@ -13,7 +13,7 @@ const agent = require('./agent');
 const virtualHostAgent = require('./virtualHostAgent');
 const serviceFabrikClient = require('./serviceFabrikClient');
 const serviceBrokerClient = require('./serviceBrokerClient');
-const lib = require('../../lib');
+const lib = require('../../broker/lib');
 const logger = lib.logger;
 
 exports = module.exports = init;

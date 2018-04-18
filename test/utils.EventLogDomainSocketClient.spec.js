@@ -1,8 +1,8 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../lib').config;
-const logger = require('../lib').logger;
+const config = require('../broker/lib').config;
+const logger = require('../broker/lib').logger;
 var EventEmitter = require('events').EventEmitter;
 const _ = require('lodash');
 
@@ -36,7 +36,7 @@ class Connection extends EventEmitter {
     netConnectionStub.end();
   }
 }
-const DomainSocketClient = proxyquire('../lib/utils/EventLogDomainSocketClient', {
+const DomainSocketClient = proxyquire('../common/utils/EventLogDomainSocketClient', {
   net: {
     createConnection: (path, callback) => {
       return new Connection(path, callback);

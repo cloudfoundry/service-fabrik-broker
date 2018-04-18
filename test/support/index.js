@@ -37,5 +37,5 @@ global.expect = global.chai.expect;
 global.chai.use(require('sinon-chai'));
 global.chai.use(require('chai-http'));
 //Load action scripts after decoding them from base64 from config.
-const ScriptExecutor = require('../../lib/utils/ScriptExecutor');
-(new ScriptExecutor(`node ${path.join(__dirname, '../..', 'lib', 'LoadDeploymentActions.js')}`)).execute();
+const ScriptExecutor = require('../../broker/lib/utils/ScriptExecutor');
+(new ScriptExecutor(`node ${path.join(__dirname, '../../broker', 'lib', 'LoadDeploymentActions.js')}`)).execute();

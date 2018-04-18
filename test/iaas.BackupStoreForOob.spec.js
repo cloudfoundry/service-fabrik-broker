@@ -1,7 +1,7 @@
 'use strict';
 
-const lib = require('../lib');
-const CONST = require('../lib/constants');
+const lib = require('../broker/lib');
+const CONST = require('../broker/lib/constants');
 const CloudProviderClient = lib.iaas.CloudProviderClient;
 const backupStoreForOob = lib.iaas.backupStoreForOob;
 
