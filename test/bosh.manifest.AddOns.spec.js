@@ -1,6 +1,7 @@
 'use strict';
 
 const AddOns = require('../lib/bosh/manifest/AddOns');
+const CONST = require('../lib/constants');
 const Networks = require('../lib/bosh/manifest/Networks');
 
 describe('bosh', () => {
@@ -33,10 +34,10 @@ describe('bosh', () => {
       describe('#getAll', () => {
         it('returns list of addon jobs that are to be configured for the service', () => {
           let expectedJSON = [{
-            name: 'iptables-manager',
+            name: CONST.ADD_ON_JOBS.IP_TABLES_MANAGER,
             jobs: [{
-              name: 'iptables-manager',
-              release: 'service-fabrik',
+              name: CONST.ADD_ON_JOBS.IP_TABLES_MANAGER,
+              release: CONST.SERVICE_FABRIK_PREFIX,
               properties: {
                 allow_ips_list: '127.0.0.2,127.1.0.2,127.2.0.2',
                 block_ips_list: '127.0.0.1/26,127.1.0.1/26,127.2.0.1/26'
