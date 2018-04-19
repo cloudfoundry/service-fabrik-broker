@@ -128,6 +128,8 @@ defaults: &defaults
   ####################
   broker_name: <%= broker_name %>
   deployment_name: service-fabrik
+  release_name: service-fabrik
+  release_version: latest
   username: broker
   password: ~
   skip_ssl_validation: true
