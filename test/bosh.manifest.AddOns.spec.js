@@ -1,12 +1,12 @@
 'use strict';
 
-const AddOns = require('../lib/bosh/manifest/AddOns');
+const Addons = require('../lib/bosh/manifest/Addons');
 const CONST = require('../lib/constants');
 const Networks = require('../lib/bosh/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {
-    describe('AddOns', () => {
+    describe('Addons', () => {
       const networks = new Networks([{
         name: 'network1',
         type: 'manual',
@@ -44,11 +44,11 @@ describe('bosh', () => {
               }
             }]
           }];
-          const addOns = new AddOns(context).getAll();
+          const addOns = new Addons(context).getAll();
           expect(addOns).to.eql(expectedJSON);
         });
         it('throws error when requesting for an addon job thats not configured', () => {
-          const addOns = new AddOns(context);
+          const addOns = new Addons(context);
           expect(addOns.getAddOn.bind(addOns, 'iptables')).to.throw('Invalid add-on job type. iptables does not exist');
         });
       });
