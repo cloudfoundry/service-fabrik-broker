@@ -23,6 +23,9 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                     },
                     "plan_id": "12345678-1234-5678-1234-123456781234",
                     "service_id": "12345678-1234-5678-1234-123456781234",
+                    "agent_properties": {
+                        ...
+                    },
                     "previous_manifest": {
                         ...
                     }
@@ -47,7 +50,7 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                 },
                 "params": {
                     "type": "object",
-                    "description": "params that comes as part of cf update request and previous_manifest",
+                    "description": "params that comes as part of cf update request, agent_properties and previous_manifest",
                     "properties": {
                         "context": {
                             "type": "object",
@@ -86,6 +89,10 @@ The request body must be a JSON object with exactly 4 properties, includes deplo
                         "service_id": {
                             "type": "string",
                             "description": "The ID of the service (from the catalog)"
+                        },
+                        "agent_properties": {
+                            "type": "object",
+                            "description": "Agent properties for the plan prior to the update"
                         },
                         "previous_manifest": {
                             "type": "object",
