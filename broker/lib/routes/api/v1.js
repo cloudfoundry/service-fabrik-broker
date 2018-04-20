@@ -2,7 +2,7 @@
 
 const express = require('express');
 const middleware = require('../../middleware');
-const common_middleware = require('../../../../common/middleware');
+const commonMiddleware = require('../../../../common/middleware');
 const CONST = require('../../constants');
 const controller = require('../../controllers').serviceFabrikApi;
 
@@ -18,13 +18,13 @@ const operationRouter = express.Router({
 /* Service Fabrik API Router */
 router.route('/info')
   .get(controller.handler('getInfo'))
-  .all(common_middleware.methodNotAllowed(['GET']));
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 router.use(controller.handler('verifyAccessToken'));
 router.use('/service_instances/:operation(backup|restore)', operationRouter);
 router.use('/service_instances/:instance_id', instanceRouter);
 router.use('/backups', backupRouter);
-router.use(common_middleware.notFound());
-router.use(common_middleware.error({
+router.use(commonMiddleware.notFound());
+router.use(commonMiddleware.error({
   defaultFormat: 'json'
 }));
 
@@ -32,42 +32,42 @@ router.use(common_middleware.error({
 operationRouter.use(controller.handler('verifyTenantPermission'));
 operationRouter.route('/')
   .get(controller.handler('listLastOperationOfAllInstances'))
-  .all(common_middleware.methodNotAllowed(['GET']));
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 
 /* Service Instance Router */
 instanceRouter.use(controller.handler('verifyTenantPermission'));
 instanceRouter.use(controller.handler('assignManager'));
 instanceRouter.route('/')
   .get(controller.handler('getServiceInstanceState'))
-  .all(common_middleware.methodNotAllowed(['GET']));
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 instanceRouter.route('/backup')
   .post(controller.handler('startBackup'))
   .get(controller.handler('getLastBackup'))
   .delete(controller.handler('abortLastBackup'))
-  .all(common_middleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
+  .all(commonMiddleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
 instanceRouter.route('/schedule_backup')
   .all(middleware.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP))
   .put(controller.handler('scheduleBackup'))
   .get(controller.handler('getBackupSchedule'))
   .delete(controller.handler('cancelScheduledBackup'))
-  .all(common_middleware.methodNotAllowed(['PUT', 'GET', 'DELETE']));
+  .all(commonMiddleware.methodNotAllowed(['PUT', 'GET', 'DELETE']));
 instanceRouter.route('/restore')
   .post(controller.handler('startRestore'))
   .get(controller.handler('getLastRestore'))
   .delete(controller.handler('abortLastRestore'))
-  .all(common_middleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
+  .all(commonMiddleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
 instanceRouter.route('/schedule_update')
   .all(middleware.isFeatureEnabled(CONST.FEATURE.SCHEDULED_UPDATE))
   .put(controller.handler('scheduleUpdate'))
   .get(controller.handler('getUpdateSchedule'))
-  .all(common_middleware.methodNotAllowed(['PUT', 'GET']));
+  .all(commonMiddleware.methodNotAllowed(['PUT', 'GET']));
 
 /* Backup Router */
 backupRouter.use(controller.handler('verifyTenantPermission'));
 backupRouter.route('/')
   .get(controller.handler('listBackups'))
-  .all(common_middleware.methodNotAllowed(['GET']));
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 backupRouter.route('/:backup_guid')
   .get(controller.handler('getBackup'))
   .delete(controller.handler('deleteBackup'))
-  .all(common_middleware.methodNotAllowed(['GET', 'DELETE']));
+  .all(commonMiddleware.methodNotAllowed(['GET', 'DELETE']));

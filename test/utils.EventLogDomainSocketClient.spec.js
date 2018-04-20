@@ -69,6 +69,15 @@ describe('utils', function () {
     });
 
     describe('create', function () {
+      it('should throw an error if domain socket path is empty', function () {
+        const domainSockOpts = {};
+        try {
+          const domainSockClient = new DomainSocketClient(domainSockOpts);
+        } catch (err) {
+          expect(err.message).to.eql('Domain socket path cannot be empty');
+        }
+      });
+
       it('should create DomainSocketClient Successfully and subscribe to the input event type', function () {
         const domainSockOpts = _
           .chain({})

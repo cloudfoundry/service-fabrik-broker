@@ -12,7 +12,7 @@ const logger = require('./logger');
 const middleware = require('./middleware');
 const connectTimeout = require('connect-timeout');
 
-class app {
+class ExpressApp {
   static create(type, addRoutes) {
     const app = express();
     app.locals.moment = moment;
@@ -65,4 +65,4 @@ class app {
     return app;
   }
 }
-module.exports = app;
+module.exports = ExpressApp;

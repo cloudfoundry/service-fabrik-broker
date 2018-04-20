@@ -4,7 +4,7 @@ console.log('Starting Service Fabrik Report App...');
 const lib = require('./lib');
 const routes = lib.routes;
 const HttpServer = require('../common/HttpServer');
-const ExpressApp = require('../common/app');
+const ExpressApp = require('../common/ExpressApp');
 
 const report = ExpressApp.create('report', app => {
   app.get('/', (req, res) => {

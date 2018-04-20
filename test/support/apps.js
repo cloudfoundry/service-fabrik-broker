@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const lib = require('../../broker/lib');
 const routes = lib.routes;
-const ExpressApp = require('../../common/app');
+const ExpressApp = require('../../common/ExpressApp');
 
 // internal app
 const internal = ExpressApp.create('internal', app => {

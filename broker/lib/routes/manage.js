@@ -5,7 +5,7 @@ const express = require('express');
 const expressSession = require('express-session');
 const store = require('../store');
 const config = require('../config');
-const common_middleware = require('../../../common/middleware');
+const commonMiddleware = require('../../../common/middleware');
 const controller = require('../controllers').dashboard;
 Promise.promisifyAll(expressSession.Session.prototype);
 
@@ -35,7 +35,7 @@ router.get('/auth/cf/callback', controller.handler('handleAuthorizationResponse'
 router.use('/instances/:service_id/:plan_id/:instance_id', instanceRouter);
 
 /* Service Fabrik Instance Router */
-instanceRouter.use(common_middleware.csp());
+instanceRouter.use(commonMiddleware.csp());
 instanceRouter.use(controller.handler('validateServiceInstanceId'));
 instanceRouter.use(controller.handler('validateSession'));
 instanceRouter.use(controller.handler('validateServiceAndPlan'));
@@ -45,4 +45,4 @@ instanceRouter.use(controller.handler('ensureAllNecessaryScopesAreApproved'));
 instanceRouter.use(controller.handler('ensureCanManageInstance'));
 instanceRouter.route('/')
   .get(controller.handler('show'))
-  .all(common_middleware.methodNotAllowed(['GET']));
+  .all(commonMiddleware.methodNotAllowed(['GET']));

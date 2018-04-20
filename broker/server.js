@@ -4,7 +4,7 @@ console.log('Starting Service Fabrik...');
 const lib = require('./lib');
 const routes = lib.routes;
 const HttpServer = require('../common/HttpServer');
-const ExpressApp = require('../common/app');
+const ExpressApp = require('../common/ExpressApp');
 const config = lib.config;
 
 if (config.enable_swarm_manager) {

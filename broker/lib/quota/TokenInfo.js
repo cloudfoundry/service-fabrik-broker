@@ -1,6 +1,6 @@
 'use strict';
 
-const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9.msVIuUXhvFBvkf9A6JOkQndeuRZiGKuj0ojGdvR2dPI';
+const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 class TokenInfo {
 
