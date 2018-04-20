@@ -9,7 +9,7 @@ const {
 } = require('etcd3');
 
 
-describe.only('eventmesh', () => {
+describe('eventmesh', () => {
   describe('Etcd3EventMeshServer', () => {
     let sandbox, valueStub, prefixWatcherStub, keyWatcherStub;
     sandbox = sinon.sandbox.create();
