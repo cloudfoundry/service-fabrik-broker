@@ -16,7 +16,9 @@ describe('bosh', () => {
         tags: {
           space_guid: '1234',
           organization_guid: '4567'
-        }
+        },
+        release_name: 'service-fabrik',
+        release_version: 'latest'
       });
 
       describe('#toString', () => {
