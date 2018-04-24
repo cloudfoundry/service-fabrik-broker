@@ -95,11 +95,15 @@ describe('eventmesh', () => {
 
     describe('#updateResourceState', () => {
       it('should update resource state with state value', () => {
-        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', 'stateValue')
+        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', CONST.RESOURCE_STATE.IN_QUEUE)
           .then(() => {
             expect(putstub.args[0][0]).to.equal('deployments/fakeResourceType/fakeResourceId/state');
-            expect(valueStub.args[0][0]).to.equal('stateValue');
+            expect(valueStub.args[0][0]).to.equal(CONST.RESOURCE_STATE.IN_QUEUE);
           });
+      });
+      it('should throw error if the state value is invalid', () => {
+        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', 'stateValue')
+          .catch(e => expect(e.message).to.eql('Could not find state stateValue'));
       });
     });
 

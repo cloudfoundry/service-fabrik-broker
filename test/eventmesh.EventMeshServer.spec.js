@@ -1,11 +1,43 @@
 'use strict';
 const EventMeshServer = require('../lib/eventmesh/EventMeshServer');
+const CONST = require('../lib/constants');
 const errors = require('../lib/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 describe('eventmesh', () => {
   describe('EventMeshServer', () => {
     let eventmesh = new EventMeshServer();
+
+    describe('#checkValidState', () => {
+      it('should throw error if state is invalid', () => {
+        return eventmesh.checkValidState()
+          .catch(e => expect(e.message).to.eql('Could not find state undefined'));
+      });
+      it('should return if state is valid', () => {
+        return eventmesh.checkValidState(CONST.RESOURCE_STATE.IN_QUEUE)
+          .catch(() => {
+            throw new Error('No exception expected');
+          });
+      });
+    });
+
+    describe('#getServiceFolderName', () => {
+      it('should return the key name for services', () => {
+        expect(eventmesh.getServiceFolderName('foo', 'bar')).to.eql('services/foo/bar');
+      });
+    });
+
+    describe('#getResourceFolderName', () => {
+      it('should return the key name for resources', () => {
+        expect(eventmesh.getResourceFolderName('foo', 'bar')).to.eql('deployments/foo/bar');
+      });
+    });
+
+    describe('#getAnnotationFolderName', () => {
+      it('should return the key name for annotation', () => {
+        expect(eventmesh.getAnnotationFolderName('Lorem', 'ipsum', 'dolor', 'sit', 'amet')).to.eql('deployments/Lorem/ipsum/dolor/sit/amet');
+      });
+    });
 
     describe('#registerService', () => {
       it('should thow error if not implemented by subclass', () => {
