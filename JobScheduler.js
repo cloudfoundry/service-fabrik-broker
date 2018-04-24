@@ -40,6 +40,7 @@ class JobScheduler {
       this.unhandleRejectionHook = (reason, p) => this.processUnhandledRejection(reason, p);
       process.on('unhandledRejection', this.unhandleRejectionHook);
       if (cluster.isMaster) {
+        cluster.on('exit', (worker, code, signal) => this.workerExitHandler(worker, code, signal));
         //This delay is added to ensure that DBManager is initialized prior to scheduler 
         //checking for maintenance status. Retry is anyways part of this check, but this 
         //delay ensures we dont have exception always on first try. 
@@ -57,7 +58,8 @@ class JobScheduler {
     this.serviceFabrikInMaintenance = false;
     logger.info(`Configured number of workers ${config.scheduler.max_workers} - No. of CPUs : ${cpus.length} - job workers : ${maxWorkers}`);
     this.workerType = `MASTER - ${process.pid}`;
-    cluster.on('exit', (worker, code, signal) => this.workerExitHandler(worker, code, signal));
+    this.workerCount = 0;
+    this.jobWorkers = [];
     // Create a worker for each CPU
     for (var i = 0, delay = 0; i < maxWorkers; i += 1, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
       logger.debug(`Set scheduled job worker ${i} with delay ${delay} - ${this.workerCount}`);
@@ -91,12 +93,16 @@ class JobScheduler {
     if (code === CONST.ERR_CODES.SF_IN_MAINTENANCE) {
       logger.info('System is in maintenance, stop all workers');
       this.placeSchedulerInMaintenance();
-    }
-    setTimeout(() => {
+    } else {
       logger.info(`Batch Job worker :${worker.id} - ${process.pid} shutdown complete`);
       this.removeJobWorker(worker.id);
-      this.addJobWorker();
-    }, CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
+      if (!this.serviceFabrikInMaintenance) {
+        //worker has crashed for other reasons, so just recreate it with delay if sf is not in maintenance.
+        setTimeout(() => {
+          this.addJobWorker();
+        }, CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
+      }
+    }
   }
 
   placeSchedulerInMaintenance() {
@@ -108,15 +114,13 @@ class JobScheduler {
         cluster.workers[key].send(CONST.TOPIC.APP_SHUTTING_DOWN);
       }
     });
-    this.workerCount = 0;
-    this.jobWorkers = [];
     this.ensureSystemNotInMainenanceThenInitMaster();
   }
 
   addJobWorker() {
-    logger.info('adding worker : ', !this.serviceFabrikInMaintenance);
     if (!this.serviceFabrikInMaintenance) {
       this.workerCount++;
+      logger.info(`SF not in maintenance, adding worker - ${this.workerCount}`);
       const worker = cluster.fork({
         job: 1,
         worker: this.workerCount
