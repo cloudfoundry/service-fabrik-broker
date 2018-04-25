@@ -123,7 +123,6 @@ describe('quota', () => {
       });
     });
 
-
     describe('checkQuota', () => {
       const QuotaManager = proxyquire('../lib/quota/QuotaManager', {
         '../config': {
@@ -390,6 +389,12 @@ describe('quota', () => {
           });
       });
 
+      it('returns quota valid when it is PATCH call and it is same plan or same sku update', () => {
+        return quotaManager.checkQuota(orgId, smallPlanId, smallPlanId, 'PATCH')
+          .then(value => {
+            expect(value).to.eql(0);
+          });
+      });
     });
 
     describe('isOrgWhitelisted', () => {
@@ -491,5 +496,38 @@ describe('quota', () => {
 
     });
 
+    describe('getSkuNameForPlan', function () {
+      it('should return sku names for plan', function () {
+        expect(quotaManager.getSkuNameForPlan('v1.0-xsmall')).to.eql('-xsmall');
+        expect(quotaManager.getSkuNameForPlan('v1.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
+        expect(quotaManager.getSkuNameForPlan('v2.0-xsmall')).to.eql('-xsmall');
+        expect(quotaManager.getSkuNameForPlan('v2.0-dedicated-xsmall')).to.eql('-dedicated-xsmall');
+      });
+    });
+
+    describe('isSamePlanOrSkuUpdate', function () {
+      /* jshint expr:true */
+      const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f'; // name: 'v1.0-xsmall'
+      const plan_id_major_version_update = 'gd158c9a-7934-401e-94ab-057082a5073e'; // name: 'v2.0-xsmall'
+      const plan_id_update = 'bc158c9a-7934-401e-94ab-057082a5073e'; // name: 'v1.0-small'
+      it('previous_plan_id not passed, should return true', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, undefined)).to.be.true;
+      });
+      it('plan_id not passed, should return true', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(undefined, plan_id)).to.be.true;
+      });
+      it('previous_plan_id sku and plan_id sku are same, should return true', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_major_version_update, plan_id)).to.be.true;
+      });
+      it('previous_plan_id and plan_id are same, should return true', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id, plan_id)).to.be.true;
+      });
+      it('previous_plan_id and plan_id are not same, should return false', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
+      });
+      it('previous_plan_id sku and plan_id sku are not same should return false', function () {
+        expect(quotaManager.isSamePlanOrSkuUpdate(plan_id_update, plan_id)).to.be.false;
+      });
+    });
   });
 });
