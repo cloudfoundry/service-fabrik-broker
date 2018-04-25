@@ -685,6 +685,38 @@ defaults: &defaults
       supported_platform:
       - k8s
       - cf
+    - &blueprint_plan8
+      id: 'gd158c9a-7934-401e-94ab-057082a5073e'
+      name: 'v2.0-xsmall'
+      free: false
+      manager: &manager_plan7
+        name: 'director'
+        settings: &settings_plan7
+          prefix: 'blueprint'
+          agent: *agent_blueprint
+          update_predecessors:
+          - 'bc158c9a-7934-401e-94ab-057082a5073f'
+          template: <%= base64_template('templates/blueprint-manifest.yml.ejs') %>
+          releases: *dedicated_releases
+          context: &context_plan7
+            agent: *agent_blueprint
+            vm_type: default
+            disk_type: 5GB
+      description: 'Blueprint 2.0 service small (managed service in beta)'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '1 VM'
+        - '1 vCPUs'
+        - '1 GB Memory'
+        - '2 GB Disk'
+      supported_platform:
+      - k8s
+      - cf
     - &blueprint_plan6
       id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
       name: 'v1.0-dedicated-large-deprecated'

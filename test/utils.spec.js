@@ -58,4 +58,29 @@ describe('utils', function () {
       expect(utils.getRandomCronForEveryDayAtXHoursInterval(3)).to.eql('1 1,4,7,10,13,16,19,22 * * *');
     });
   });
+
+  describe('#isServiceFabrikOperation', function () {
+    /* jshint expr:true */
+    const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+    const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
+    var queryParams = {
+      service_id: service_id,
+      plan_id: plan_id_update,
+      previous_values: {
+        service_id: service_id
+      }
+    };
+    it('not a service-fabrik-operation, should return false', function () {
+      queryParams.parameters = {
+        foo: 'bar'
+      };
+      expect(utils.isServiceFabrikOperation(queryParams)).to.be.false;
+    });
+    it('service-fabrik-operation, should return true', function () {
+      queryParams.parameters = {
+        'service-fabrik-operation': 'token'
+      };
+      expect(utils.isServiceFabrikOperation(queryParams)).to.be.true;
+    });
+  });
 });
