@@ -18,7 +18,7 @@ describe('JobScheduler', function () {
     count = 0,
     workerExitHandlers = [],
     throwUnhandledError,
-    workers = [];
+    workers = {};
 
   function on(event, callback) {
     workerExitHandlers[0] = callback;
@@ -72,11 +72,12 @@ describe('JobScheduler', function () {
         });
         const worker = {
           pid: count,
+          id: count,
           send: (msg) => js.handleMessage(msg)
         };
-        workers.push(worker);
+        workers[count] = worker;
         JobWorkers.push(js);
-        return count;
+        return worker;
       }
     },
     './lib/config': {
@@ -104,7 +105,11 @@ describe('JobScheduler', function () {
       publishStub.reset();
       processExitStub.reset();
       processExitStub.restore();
-      workers.splice(0, workers.length);
+      for (let attr in workers) {
+        if (workers.hasOwnProperty(attr)) {
+          delete workers[attr];
+        }
+      }
       clock.reset();
     });
     after(function () {
@@ -205,7 +210,7 @@ describe('JobScheduler', function () {
         clock.tick(schedulerConfig.start_delay);
         return js;
       });
-      it('workers should exit on system being in maintenance & scheduler must poll till system in maintenance', function () {
+      it('workers should exit on system being in maintenance & scheduler must shut all workers & exit gracefully', function () {
         count = 0;
         cpus = 8;
         const EXPECTED_NUM_OF_WORKERS = schedulerConfig.max_workers;
@@ -216,33 +221,25 @@ describe('JobScheduler', function () {
             for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
-            workers.splice(0, 1);
+            delete workers[1];
             //ensure that key is removed from workers as its going to be terminated
             workerExitHandlers[0]({
               id: 1
             }, CONST.ERR_CODES.SF_IN_MAINTENANCE, null);
+            workerExitHandlers[0]({
+              id: 1
+            }, 2, null);
+            //Should ignore any other exit signals recieved while in maintenance
             //Simulate kill one of the workers by invoking the exit handler callback & flag that system is in maintenance.
-            Promise.try(() => {
-              expect(count).to.eql(5);
-              expect(JobScheduler.workerCount).to.eql(0);
-              logger.info('All jobs are created & are destroyed after putting system in maintenance', JobScheduler.workerCount);
-              //All workers should be stopped & system should be in maintenance
-            });
-            //After all the Jobs are killed, check for maintenance window.
-            clock.tick(schedulerConfig.maintenance_check_interval);
-            return Promise.try(() => {})
-              .then(() => Promise.try(() => {}))
-              .then((maintinfo) => {
-                //Double Promise.try in the above induces the required lag for the actual maintenace check in JobScheduler, which runs in a promise.
-                logger.info('maintenance info as seen in test', maintinfo);
-                for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
-                  clock.tick(delay);
-                }
-                //count - indicates how many workers were created.
-                logger.debug('recreated all workers...');
-                expect(JobScheduler.workerCount).to.eql(5);
-                JobScheduler.unhook();
-              });
+            expect(count).to.eql(5);
+            for (let x = 0; x < EXPECTED_NUM_OF_WORKERS - 1; x++) {
+              clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+            }
+            clock.tick(CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME * EXPECTED_NUM_OF_WORKERS);
+            //count - indicates how many workers were created.
+            expect(processExitStub.callCount).to.equal(5); //4 from workers and 1 from main scheduler.
+            expect(JobScheduler.workerCount).to.eql(4); //4 workers because 1 is removed from the seccond exit handler which sends exit code:2
+            JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
         return js;
@@ -550,7 +547,7 @@ describe('JobScheduler', function () {
   describe('#Shutdown', function () {
     let processOnStub, sandbox, publishStub, maintenaceManagerStub, clock, processExitStub;
     let eventHandlers = {};
-    let sigIntHandler, sigTermHandler, unhandledRejectHandler;
+    let sigIntHandler, sigTermHandler, unhandledRejectHandler, messageHandler;
     before(function () {
       sandbox = sinon.sandbox.create();
       maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve(null));
@@ -567,6 +564,9 @@ describe('JobScheduler', function () {
         }
         if (name === 'unhandledRejection') {
           unhandledRejectHandler = callback;
+        }
+        if (name === 'message') {
+          messageHandler = callback;
         }
       });
       publishStub = sandbox.stub(pubsub, 'publish');
@@ -587,6 +587,7 @@ describe('JobScheduler', function () {
         .ready
         .then(() => {
           clock.tick(0);
+          messageHandler('c');
           sigIntHandler('a');
           sigTermHandler('b');
           unhandledRejectHandler('Simulated Rejection...');

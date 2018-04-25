@@ -40,6 +40,7 @@ class JobScheduler {
       this.unhandleRejectionHook = (reason, p) => this.processUnhandledRejection(reason, p);
       process.on('unhandledRejection', this.unhandleRejectionHook);
       if (cluster.isMaster) {
+        cluster.on('exit', (worker, code, signal) => this.workerExitHandler(worker, code, signal));
         //This delay is added to ensure that DBManager is initialized prior to scheduler 
         //checking for maintenance status. Retry is anyways part of this check, but this 
         //delay ensures we dont have exception always on first try. 
@@ -57,7 +58,8 @@ class JobScheduler {
     this.serviceFabrikInMaintenance = false;
     logger.info(`Configured number of workers ${config.scheduler.max_workers} - No. of CPUs : ${cpus.length} - job workers : ${maxWorkers}`);
     this.workerType = `MASTER - ${process.pid}`;
-    cluster.on('exit', (worker, code, signal) => this.workerExitHandler(worker, code, signal));
+    this.workerCount = 0;
+    this.jobWorkers = [];
     // Create a worker for each CPU
     for (var i = 0, delay = 0; i < maxWorkers; i += 1, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
       logger.debug(`Set scheduled job worker ${i} with delay ${delay} - ${this.workerCount}`);
@@ -69,19 +71,15 @@ class JobScheduler {
 
   initWorker() {
     this.workerType = `Worker - ${cluster.worker.id} - ${process.pid}`;
+    process.on('message', (msg) => this.handleMessage(msg));
     logger.info(`Starting Service Fabrik Batch Job worker: ${cluster.worker.id} - ${process.pid}  @${new Date()}`);
     require('./lib/jobs');
-    process.on('message', this.handleMessage);
   }
 
   handleMessage(msg) {
     logger.info(`recieved message :${msg} in - ${this.workerType} `);
     if (msg === CONST.TOPIC.APP_SHUTTING_DOWN) {
-      pubsub.publish(CONST.TOPIC.APP_SHUTTING_DOWN);
-      setTimeout(() => {
-        logger.info(`ServiceFabrik Batch Job ${this.workerType} shutdown complete ---`);
-        process.exit(2);
-      }, CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME);
+      this.shutDown();
     }
   }
 
@@ -91,32 +89,38 @@ class JobScheduler {
     if (code === CONST.ERR_CODES.SF_IN_MAINTENANCE) {
       logger.info('System is in maintenance, stop all workers');
       this.placeSchedulerInMaintenance();
-    }
-    setTimeout(() => {
+    } else {
       logger.info(`Batch Job worker :${worker.id} - ${process.pid} shutdown complete`);
       this.removeJobWorker(worker.id);
-      this.addJobWorker();
-    }, CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
+      if (!this.serviceFabrikInMaintenance) {
+        //worker has crashed for other reasons, so just recreate it with delay if sf is not in maintenance.
+        setTimeout(() => {
+          this.addJobWorker();
+        }, CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY);
+      }
+    }
   }
 
   placeSchedulerInMaintenance() {
     this.serviceFabrikInMaintenance = true;
-    _.each(this.jobWorkers, (id, key) => {
-      logger.info(`+-> message From -> ${this.workerType} - To worker - ${id} - ${key}-${JSON.stringify(cluster.workers[key])}}`);
-      if (cluster.workers[key]) {
+    _.each(this.jobWorkers, (id) => {
+      if (cluster.workers[id]) {
+        logger.info(`+-> Sending message From -> ${this.workerType} - To worker - ${id}`);
         //Dont send message to the same worker which threw the exception as it will be non-existent.
-        cluster.workers[key].send(CONST.TOPIC.APP_SHUTTING_DOWN);
+        cluster.workers[id].send(CONST.TOPIC.APP_SHUTTING_DOWN);
       }
     });
-    this.workerCount = 0;
-    this.jobWorkers = [];
-    this.ensureSystemNotInMainenanceThenInitMaster();
+    logger.info('Shutting scheduler down due to maintenance...');
+    //Shut yourself down (alternatively could have invoked ensureSystemNotInMainenanceThenInitMaster, however
+    //if more than one worker process runs and it also identifies that they are in maintenance, then you could have
+    //placeSchedulerInMaintenance being called 'n' times. Keeping it simple by shutting down and monit brings it back)
+    this.shutDown(CONST.ERR_CODES.SF_IN_MAINTENANCE, this.jobWorkers.length);
   }
 
   addJobWorker() {
-    logger.info('adding worker : ', !this.serviceFabrikInMaintenance);
     if (!this.serviceFabrikInMaintenance) {
       this.workerCount++;
+      logger.info(`SF not in maintenance, adding worker - ${this.workerCount}`);
       const worker = cluster.fork({
         job: 1,
         worker: this.workerCount
@@ -130,14 +134,15 @@ class JobScheduler {
     this.jobWorkers.splice(this.jobWorkers.indexOf(id), 1);
   }
 
-  shutDown() {
+  shutDown(exitCode, waitFactor) {
     logger.info(`ServiceFabrik Batch Job ${this.workerType} shutting down shortly...`);
+    waitFactor = waitFactor || 1;
+    exitCode = exitCode || 2;
     pubsub.publish(CONST.TOPIC.APP_SHUTTING_DOWN);
-    const waitBeforeShutdown = CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME;
     setTimeout(() => {
       logger.info(`ServiceFabrik Batch Job ${this.workerType} shutdown complete`);
-      process.exit(2);
-    }, waitBeforeShutdown);
+      process.exit(exitCode);
+    }, CONST.JOB_SCHEDULER.SHUTDOWN_WAIT_TIME * waitFactor);
   }
 
   pollMaintenanceStatus() {
