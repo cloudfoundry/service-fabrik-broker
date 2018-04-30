@@ -10,17 +10,11 @@ const {
 
 describe('eventmesh', () => {
   describe('Etcd3EventMeshServer', () => {
-    let sandbox, valueStub, prefixWatcherStub, keyWatcherStub;
-    sandbox = sinon.sandbox.create();
-    valueStub = sandbox.stub();
+    let prefixWatcherStub, keyWatcherStub;
+    let sandbox = sinon.sandbox.create();
+    let valueStub = sandbox.stub();
     let stringStub = sandbox.stub();
     let jsonStub = sandbox.stub();
-    sandbox.stub(Etcd3.prototype, 'watch', () => {
-      return {
-        prefix: prefixWatcherStub,
-        key: keyWatcherStub
-      };
-    });
     let putstub = sandbox.stub(Etcd3.prototype, 'put', () => {
       return {
         value: (val) => Promise.resolve(valueStub(val))
@@ -54,6 +48,13 @@ describe('eventmesh', () => {
       getstub.reset();
       jsonStub.reset();
       stringStub.reset();
+    });
+
+    sandbox.stub(Etcd3.prototype, 'watch', () => {
+      return {
+        prefix: prefixWatcherStub,
+        key: keyWatcherStub
+      };
     });
 
     describe('#registerService', () => {
