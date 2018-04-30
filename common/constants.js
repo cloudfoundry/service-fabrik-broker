@@ -203,6 +203,15 @@ module.exports = Object.freeze({
     SUCCEEDED: 'succeeded',
     ERROR: 'failed'
   },
+  RESOURCE_KEYS: {
+    STATE: 'state',
+    OPTONS: 'options',
+    LASTOPERATION: 'lastoperation'
+  },
+  ANNOTATION_KEYS: {
+    STATE: 'state',
+    OPTONS: 'options',
+  },
 
   PLATFORM: {
     CF: 'cloudfoundry',
