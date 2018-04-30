@@ -212,6 +212,10 @@ module.exports = Object.freeze({
     STATE: 'state',
     OPTONS: 'options',
   },
+  SERVICE_KEYS: {
+    ATTRIBUTES: 'attributes',
+    PLANS: 'plans'
+  },
 
   PLATFORM: {
     CF: 'cloudfoundry',
