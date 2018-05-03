@@ -38,6 +38,7 @@ script:
      # truffleHog check fails to detect changed because travis merge creates a detached HEAD
      # Creating a branch to fix this issue
      git checkout -b travis-merge
-     high_entropy=$(trufflehog --json --entropy true --regex "$TRAVIS_BUILD_DIR")
+     INITIAL_COMMIT="92b774d3cb30e33df996e6c111251212c5174ac4"
+     high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
      echo "Truffle hog output : $high_entropy"
      if [[ "$high_entropy" != "" ]] ; then exit 1; fi
