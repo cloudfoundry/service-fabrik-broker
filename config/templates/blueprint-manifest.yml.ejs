@@ -36,10 +36,10 @@ if (!spec.previous_manifest) {
     properties.blueprint = spec.previous_manifest.instance_groups[0].jobs[0].properties;
   }
 }
-if(!spec.preUpdateAgentResponse){
+if(!spec.preUpdateAgentResponse && spec.previous_manifest){
   properties.blueprint.preUpdateAgentResponse = spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateAgentResponse;
 }
-else{
+else if(spec.preUpdateAgentResponse){
   properties.blueprint.preUpdateAgentResponse = JSON.stringify(spec.preUpdateAgentResponse);
 }
 %>

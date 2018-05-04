@@ -128,6 +128,8 @@ defaults: &defaults
   ####################
   broker_name: <%= broker_name %>
   deployment_name: service-fabrik
+  release_name: service-fabrik
+  release_version: latest
   username: broker
   password: ~
   skip_ssl_validation: true
@@ -373,7 +375,11 @@ defaults: &defaults
     url: unix:///var/run/docker.sock # how to connect the broker to docker
     allocate_docker_host_ports: true # if true the broker will allocate fixed port mappings for the containers
     volume_driver: local
-
+  
+  #List of add on jobs that are to be added onto each service vm
+  service_addon_jobs:
+  - iptables-manager
+  
   #####################
   # DIRECTOR SETTINGS #
   #####################

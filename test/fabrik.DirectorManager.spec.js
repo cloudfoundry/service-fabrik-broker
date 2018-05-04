@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+const yaml = require('js-yaml');
 const lib = require('../lib');
 const config = lib.config;
 const catalog = lib.models.catalog;
@@ -164,6 +166,34 @@ describe('fabrik', function () {
             manager.service.actions = temp_actions;
             expect(err.description).to.equal('Error occured in action script\n');
           });
+      });
+    });
+    describe('#configureAddOns', function () {
+      it('should update manifest with addons', function () {
+        const plan = _.cloneDeep(catalog.getPlan(plan_id));
+        const directorManager = new DirectorManager(plan);
+        const updatedTemplate = directorManager.template + '\n' +
+          'addons: \n' +
+          '  - name: service-addon \n' +
+          '    jobs: \n' +
+          '    - name: service-addon \n' +
+          '      release: service-release';
+        directorManager.plan.manager.settings.template = Buffer.from(updatedTemplate).toString('base64');
+        expect(directorManager.plan.id).to.eql(plan_id);
+        expect(directorManager.getDeploymentName(used_guid, '90')).to.eql(`service-fabrik-90-${used_guid}`);
+        const manifest = yaml.safeLoad(directorManager.generateManifest(`service-fabrik-90-${used_guid}`, {}));
+        expect(manifest.addons.length).to.equal(2);
+        expect(manifest.releases.length).to.equal(2);
+      });
+      it('should not update manifest with addons with parameter skip_addons set to true', function () {
+        const directorManager = new DirectorManager(catalog.getPlan(plan_id));
+        expect(directorManager.plan.id).to.eql(plan_id);
+        expect(directorManager.getDeploymentName(used_guid, '90')).to.eql(`service-fabrik-90-${used_guid}`);
+        const manifest = yaml.safeLoad(directorManager.generateManifest(`service-fabrik-90-${used_guid}`, {
+          skip_addons: true
+        }));
+        expect(manifest.addons).to.equal(undefined);
+        expect(manifest.releases.length).to.equal(1);
       });
     });
   });
