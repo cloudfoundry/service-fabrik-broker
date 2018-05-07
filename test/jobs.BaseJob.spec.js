@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const BaseJob = require('../lib/jobs/BaseJob');
-const Repository = require('../lib/db').Repository;
-const CONST = require('../lib/constants');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const Repository = require('../common/db').Repository;
+const CONST = require('../broker/lib/constants');
 
 describe('Jobs', function () {
   describe('BaseJob', function () {

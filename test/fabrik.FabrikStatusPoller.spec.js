@@ -1,15 +1,15 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const logger = require('../lib/logger');
+const logger = require('../broker/lib/logger');
 const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = lib.bosh.BoshDirectorClient;
-const CONST = require('../lib/constants');
-const errors = require('../lib/errors');
-const ServiceFabrikClient = require('../lib/cf/ServiceFabrikClient');
-const ServiceFabrikOperation = require('../lib/fabrik/ServiceFabrikOperation');
+const CONST = require('../broker/lib/constants');
+const errors = require('../broker/lib/errors');
+const ServiceFabrikClient = require('../broker/lib/cf/ServiceFabrikClient');
+const ServiceFabrikOperation = require('../broker/lib/fabrik/ServiceFabrikOperation');
 
 describe('fabrik', function () {
   describe('FabrikStatusPoller', function () {
@@ -51,7 +51,7 @@ describe('fabrik', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const FabrikStatusPoller = proxyquire('../lib/fabrik/FabrikStatusPoller', {
+    const FabrikStatusPoller = proxyquire('../broker/lib/fabrik/FabrikStatusPoller', {
       '../config': config
     });
 

@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const ScriptExecutor = require('../lib/utils/ScriptExecutor');
+const ScriptExecutor = require('../broker/lib/utils/ScriptExecutor');
 
 describe('utils', function () {
   describe('#ScriptExecuter', function () {

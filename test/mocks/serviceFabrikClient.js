@@ -1,8 +1,8 @@
 'use strict';
 
 const nock = require('nock');
-const lib = require('../../lib');
-const CONST = require('../../lib/constants');
+const lib = require('../../broker/lib');
+const CONST = require('../../broker/lib/constants');
 
 const config = lib.config;
 const serviceFabrikUrl = `${config.external.protocol}://${config.external.host}`;

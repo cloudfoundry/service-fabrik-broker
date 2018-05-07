@@ -1,12 +1,12 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../lib/logger');
-const DirectorManager = require('../lib/fabrik/DirectorManager');
-const DockerManager = require('../lib/fabrik/DockerManager');
-const catalog = require('../lib/models/catalog');
-const utils = require('../lib/utils');
-const config = require('../lib/config');
+const logger = require('../common/logger');
+const DirectorManager = require('../broker/lib/fabrik/DirectorManager');
+const DockerManager = require('../broker/lib/fabrik/DockerManager');
+const catalog = require('../broker/lib/models/catalog');
+const utils = require('../common/utils');
+const config = require('../common/config');
 const path = require('path');
 const proxyquire = require('proxyquire');
 
@@ -14,7 +14,7 @@ const pubSubStub = {
   publish: () => undefined
 };
 
-const EventLogInterceptor = proxyquire('../lib/EventLogInterceptor', {
+const EventLogInterceptor = proxyquire('../common/EventLogInterceptor', {
   'pubsub-js': {
     /* jshint unused:false */
     publish: function (event, data) {

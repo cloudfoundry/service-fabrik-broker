@@ -2,15 +2,15 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const lib = require('../../lib');
+const lib = require('../../broker/lib');
 const logger = lib.logger;
 const app = require('../support/apps').internal;
 const config = lib.config;
 const backupStore = lib.iaas.backupStoreForOob;
 const filename = backupStore.filename;
-const CONST = require('../../lib/constants');
-const utils = require('../../lib/utils');
-const ScheduleManager = require('../../lib/jobs/ScheduleManager');
+const CONST = require('../../broker/lib/constants');
+const utils = require('../../broker/lib/utils');
+const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 
 describe('service-fabrik-admin', function () {
   describe('oob-deployment', function () {

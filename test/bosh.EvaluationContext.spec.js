@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const EvaluationContext = proxyquire('../lib/bosh/EvaluationContext', {
+const EvaluationContext = proxyquire('../broker/lib/bosh/EvaluationContext', {
   crypto: {
     randomBytes: function (n) {
       return _.fill(new Buffer(n), 120);

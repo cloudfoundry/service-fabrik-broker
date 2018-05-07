@@ -1,7 +1,7 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const DockerPortRegistry = proxyquire('../lib/docker/DockerPortRegistry', {
+const DockerPortRegistry = proxyquire('../broker/lib/docker/DockerPortRegistry', {
   lodash: {
     sample: function (collection) {
       return collection[2];

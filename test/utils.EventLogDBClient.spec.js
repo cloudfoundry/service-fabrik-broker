@@ -2,14 +2,14 @@
 
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
-const Repository = require('../lib/db').Repository;
-const CONST = require('../lib/constants');
-const jwt = require('../lib/jwt');
+const Repository = require('../common/db').Repository;
+const CONST = require('../broker/lib/constants');
+const jwt = require('../broker/lib/jwt');
 
 describe('utils', function () {
   /* jshint expr:true */
   describe('EventLogDBClient', function () {
-    const EventLogDBClient = proxyquire('../lib/utils/EventLogDBClient', {
+    const EventLogDBClient = proxyquire('../common/utils/EventLogDBClient', {
       '../config': {
         monitoring: {
           events_logged_in_db: 'get_backup_by_guid,update_instance'

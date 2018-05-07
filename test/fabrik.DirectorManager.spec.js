@@ -2,13 +2,13 @@
 
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const config = lib.config;
 const catalog = lib.models.catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const errors = require('../lib/errors');
-const CONST = require('../lib/constants');
+const errors = require('../broker/lib/errors');
+const CONST = require('../broker/lib/constants');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const fs = require('fs');
 const path = require('path');
@@ -34,7 +34,7 @@ var boshStub = {
   }
 };
 
-var DirectorManager = proxyquire('../lib/fabrik/DirectorManager', {
+var DirectorManager = proxyquire('../broker/lib/fabrik/DirectorManager', {
   '../bosh': boshStub,
 });
 
@@ -134,7 +134,7 @@ describe('fabrik', function () {
       });
       it('should return timeout error if action scripts exceeds time limit', function () {
         let actionScriptName = 'MyAction_PreCreate';
-        let actionFilePath = path.join(__dirname, '../lib/fabrik/actions/sh', `${actionScriptName}`);
+        let actionFilePath = path.join(__dirname, '../broker/lib/fabrik/actions/sh', `${actionScriptName}`);
         fs.writeFileSync(actionFilePath, 'sleep 0.1', {
           mode: CONST.FILE_PERMISSIONS.RWXR_XR_X
         });
@@ -153,7 +153,7 @@ describe('fabrik', function () {
       });
       it('should return error with error message if action scripts throws an error', function () {
         let actionScriptName = 'MyAction_PreCreate';
-        let actionFilePath = path.join(__dirname, '../lib/fabrik/actions/sh', `${actionScriptName}`);
+        let actionFilePath = path.join(__dirname, '../broker/lib/fabrik/actions/sh', `${actionScriptName}`);
         fs.writeFileSync(actionFilePath, 'echo "Error occured in action script";exit 1', {
           mode: CONST.FILE_PERMISSIONS.RWXR_XR_X
         });

@@ -3,10 +3,10 @@
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
-const CONST = require('../lib/constants');
-const errors = require('../lib/errors');
-const utils = require('../lib/utils');
-const Repo = require('../lib/db').Repository;
+const CONST = require('../broker/lib/constants');
+const errors = require('../broker/lib/errors');
+const utils = require('../broker/lib/utils');
+const Repo = require('../common/db').Repository;
 
 const instance_id = '9999-8888-7777-6666';
 let jobType = CONST.JOB.SCHEDULED_BACKUP;
@@ -175,9 +175,9 @@ class Repository {
 }
 
 describe('Jobs', function () {
-  const ScheduleManager = proxyquire('../lib/jobs/ScheduleManager', {
+  const ScheduleManager = proxyquire('../broker/lib/jobs/ScheduleManager', {
     './Scheduler': Scheduler,
-    '../db': {
+    '../../../common/db': {
       Repository: Repository
     }
   });
@@ -605,7 +605,7 @@ describe('Jobs', function () {
         sandbox = sinon.sandbox.create();
         subStub = sandbox.stub(pubsub, 'subscribe', (topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
-        ScheduleManager2 = proxyquire('../lib/jobs/ScheduleManager', {
+        ScheduleManager2 = proxyquire('../broker/lib/jobs/ScheduleManager', {
           '../config': systemJobConfig
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');

@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const Plan = lib.models.Plan;
 
 describe('models', function () {

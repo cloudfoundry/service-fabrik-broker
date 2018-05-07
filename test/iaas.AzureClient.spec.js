@@ -1,11 +1,11 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const azureStorage = require('azure-storage');
 const AzureClient = lib.iaas.AzureClient;
-const CONST = require('../lib/constants');
-const logger = require('../lib/logger');
-const errors = require('../lib/errors');
+const CONST = require('../broker/lib/constants');
+const logger = require('../broker/lib/logger');
+const errors = require('../broker/lib/errors');
 const moment = require('moment');
 const filename = lib.iaas.backupStore.filename;
 const NotFound = errors.NotFound;

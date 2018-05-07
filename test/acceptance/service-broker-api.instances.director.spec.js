@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../lib');
-const errors = require('../../lib/errors');
+const lib = require('../../broker/lib');
+const errors = require('../../broker/lib/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = lib.utils;
@@ -10,8 +10,8 @@ const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
 const backupStore = lib.iaas.backupStore;
-const ScheduleManager = require('../../lib/jobs');
-const CONST = require('../../lib/constants');
+const ScheduleManager = require('../../broker/lib/jobs');
+const CONST = require('../../broker/lib/constants');
 
 describe('service-broker-api', function () {
   describe('instances', function () {

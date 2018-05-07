@@ -8,11 +8,11 @@ const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
 const os = require('os');
 var EventEmitter = require('events').EventEmitter;
-const CONST = require('../lib/constants');
-const logger = require('../lib/logger');
-const errors = require('../lib/errors');
-const BaseJob = require('../lib/jobs/BaseJob');
-const maintenanceManager = require('../lib/maintenance').maintenanceManager;
+const CONST = require('../broker/lib/constants');
+const logger = require('../broker/lib/logger');
+const errors = require('../broker/lib/errors');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const maintenanceManager = require('../broker/lib/maintenance').maintenanceManager;
 
 const MONGO_INIT_SUCCEEDED = 2;
 const MONGO_INIT_FAILED = 1;
@@ -214,8 +214,8 @@ const proxyLibs = {
 
 const cloneProxyLibs = _.cloneDeep(proxyLibs);
 cloneProxyLibs['../config'].scheduler = schedulerConfig;
-const SchedulerPubSub = proxyquire('../lib/jobs/Scheduler', cloneProxyLibs);
-const Scheduler = proxyquire('../lib/jobs/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
+const SchedulerPubSub = proxyquire('../broker/lib/jobs/Scheduler', cloneProxyLibs);
+const Scheduler = proxyquire('../broker/lib/jobs/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 
 describe('Jobs', function () {
   let clock;
@@ -348,7 +348,7 @@ describe('Jobs', function () {
         expect(agendaSpy.init.firstCall.args[0].db.collection).to.eql('agendaJobDetails');
         expect(agendaSpy.init.firstCall.args[0].name).to.eql(`${os.hostname()}-${process.pid}`);
         expect(agendaSpy.processEvery).to.be.calledOnce;
-        expect(agendaSpy.processEvery.firstCall.args[0]).to.eql(`${cpuCount-1} minutes`);
+        expect(agendaSpy.processEvery.firstCall.args[0]).to.eql(`${cpuCount - 1} minutes`);
         expect(agendaSpy.maxConcurrency).to.be.calledOnce;
         expect(agendaSpy.maxConcurrency.firstCall.args[0]).to.eql(30);
         expect(agendaSpy.defaultConcurrency).to.be.calledOnce;

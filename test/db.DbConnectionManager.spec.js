@@ -4,8 +4,8 @@ const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
-const CONST = require('../lib/constants');
-const dbManager = require('../lib/fabrik').dbManager;
+const CONST = require('../broker/lib/constants');
+const dbManager = require('../broker/lib/fabrik').dbManager;
 
 const handlers = {};
 const CONNECTION_WAIT_SIMULATED_DELAY = 0;
@@ -45,7 +45,7 @@ class Mongoose {
   }
 }
 
-const dbInitializer = proxyquire('../lib/db/DbConnectionManager', {
+const dbInitializer = proxyquire('../broker/lib/db/DbConnectionManager', {
   'mongoose': new Mongoose()
 });
 

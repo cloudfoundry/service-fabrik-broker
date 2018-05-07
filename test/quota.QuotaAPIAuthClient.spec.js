@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const uuid = require('uuid');
 const proxyquire = require('proxyquire');
 
-const QuotaAPIAuthClient = proxyquire('../lib/quota/QuotaAPIAuthClient', {
+const QuotaAPIAuthClient = proxyquire('../broker/lib/quota/QuotaAPIAuthClient', {
   '../config': {
     quota: {
       enabled: false,

@@ -1,8 +1,8 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../lib').config;
-const logger = require('../lib').logger;
+const config = require('../broker/lib').config;
+const logger = require('../broker/lib').logger;
 var EventEmitter = require('events').EventEmitter;
 const _ = require('lodash');
 
@@ -36,7 +36,7 @@ class Connection extends EventEmitter {
     netConnectionStub.end();
   }
 }
-const DomainSocketClient = proxyquire('../lib/utils/EventLogDomainSocketClient', {
+const DomainSocketClient = proxyquire('../common/utils/EventLogDomainSocketClient', {
   net: {
     createConnection: (path, callback) => {
       return new Connection(path, callback);
@@ -69,6 +69,15 @@ describe('utils', function () {
     });
 
     describe('create', function () {
+      it('should throw an error if domain socket path is empty', function () {
+        const domainSockOpts = {};
+        try {
+          const domainSockClient = new DomainSocketClient(domainSockOpts);
+        } catch (err) {
+          expect(err.message).to.eql('Domain socket path cannot be empty');
+        }
+      });
+
       it('should create DomainSocketClient Successfully and subscribe to the input event type', function () {
         const domainSockOpts = _
           .chain({})

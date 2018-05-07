@@ -1,11 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const Repository = require('../lib/db').Repository;
-const CONST = require('../lib/constants');
-const config = require('../lib/config');
-const errors = require('../lib/errors');
-const maintenanceManager = require('../lib/maintenance').maintenanceManager;
+const Repository = require('../common/db').Repository;
+const CONST = require('../broker/lib/constants');
+const config = require('../broker/lib/config');
+const errors = require('../broker/lib/errors');
+const maintenanceManager = require('../broker/lib/maintenance').maintenanceManager;
 
 describe('maintenance', function () {
   /* jshint unused:false */

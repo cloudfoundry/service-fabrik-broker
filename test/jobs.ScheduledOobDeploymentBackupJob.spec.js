@@ -2,15 +2,15 @@
 
 const moment = require('moment');
 const _ = require('lodash');
-const CONST = require('../lib/constants');
-const config = require('../lib/config');
-const lib = require('../lib');
-const utils = require('../lib/utils');
-const BaseJob = require('../lib/jobs/BaseJob');
-const ScheduleManager = require('../lib/jobs/ScheduleManager');
+const CONST = require('../broker/lib/constants');
+const config = require('../broker/lib/config');
+const lib = require('../broker/lib');
+const utils = require('../broker/lib/utils');
+const BaseJob = require('../broker/lib/jobs/BaseJob');
+const ScheduleManager = require('../broker/lib/jobs/ScheduleManager');
 const backupStore = lib.iaas.backupStoreForOob;
 const filename = lib.iaas.backupStoreForOob.filename;
-const ScheduledOobDeploymentBackupJob = require('../lib/jobs/ScheduledOobDeploymentBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../broker/lib/jobs/ScheduledOobDeploymentBackupJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

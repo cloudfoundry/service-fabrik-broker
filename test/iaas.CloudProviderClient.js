@@ -1,6 +1,6 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const pkgcloud = require('pkgcloud');
 const CloudProviderClient = lib.iaas.CloudProviderClient;
 

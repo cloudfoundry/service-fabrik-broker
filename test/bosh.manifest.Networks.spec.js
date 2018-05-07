@@ -1,6 +1,6 @@
 'use strict';
 
-const Networks = require('../lib/bosh/manifest/Networks');
+const Networks = require('../broker/lib/bosh/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {

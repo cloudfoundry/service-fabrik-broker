@@ -6,7 +6,7 @@ const proxyquire = require('proxyquire');
 
 let authorizationEndpoint = 'https://login.bosh-lite.com';
 
-const UaaClient = proxyquire('../lib/cf/UaaClient', {
+const UaaClient = proxyquire('../broker/lib/cf/UaaClient', {
   '../config': {
     cf: {
       authorization_endpoint: authorizationEndpoint

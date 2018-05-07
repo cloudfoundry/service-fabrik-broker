@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const lib = require('../../lib');
+const lib = require('../../broker/lib');
 const config = lib.config;
 const provider = config.backup.provider;
 const cloudProviderUrl = provider.authUrl;

@@ -3,13 +3,13 @@
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const _ = require('lodash');
-const BoshDirectorClient = require('../lib/bosh/BoshDirectorClient');
-const errors = require('../lib/errors');
-const config = require('../lib/config');
-const utils = require('../lib/utils');
-const logger = require('../lib/logger');
-const CONST = require('../lib/constants');
-const DBManagerNoProxy = require('../lib/fabrik/DBManager');
+const BoshDirectorClient = require('../broker/lib/bosh/BoshDirectorClient');
+const errors = require('../broker/lib/errors');
+const config = require('../broker/lib/config');
+const utils = require('../broker/lib/utils');
+const logger = require('../broker/lib/logger');
+const CONST = require('../broker/lib/constants');
+const DBManagerNoProxy = require('../broker/lib/fabrik/DBManager');
 
 let bindPropertyFound = 0;
 let failCreateUpdate = false;
@@ -78,21 +78,21 @@ const proxyLibs = {
   }
 };
 
-const DBManager = proxyquire('../lib/fabrik/DBManager', proxyLibs);
+const DBManager = proxyquire('../broker/lib/fabrik/DBManager', proxyLibs);
 const proxyLib0 = _.cloneDeep(proxyLibs);
 delete proxyLib0['../config'].mongodb.deployment_name;
-const DBManagerWithUndefinedDeploymentName = proxyquire('../lib/fabrik/DBManager', proxyLib0);
+const DBManagerWithUndefinedDeploymentName = proxyquire('../broker/lib/fabrik/DBManager', proxyLib0);
 const proxyLib1 = _.cloneDeep(proxyLibs);
 delete proxyLib1['../config'].mongodb.provision.network_index;
-const DBManagerWithUndefinedNetworkSegmentIdx = proxyquire('../lib/fabrik/DBManager', proxyLib1);
+const DBManagerWithUndefinedNetworkSegmentIdx = proxyquire('../broker/lib/fabrik/DBManager', proxyLib1);
 const proxyLib2 = _.cloneDeep(proxyLibs);
 proxyLib2['../config'].mongodb.deployment_name = 'service-fabrik-mongodb';
-const DBManagerForUpdate = proxyquire('../lib/fabrik/DBManager', proxyLib2);
+const DBManagerForUpdate = proxyquire('../broker/lib/fabrik/DBManager', proxyLib2);
 const proxyLib3 = _.cloneDeep(proxyLibs);
 delete proxyLib3['../config'].mongodb.provision;
 delete proxyLib3['../config'].mongodb.deployment_name;
 proxyLib3['../config'].mongodb.url = 'mongodb://user:pass@localhost:27017/service-fabrik';
-const DBManagerByUrl = proxyquire('../lib/fabrik/DBManager', proxyLib3);
+const DBManagerByUrl = proxyquire('../broker/lib/fabrik/DBManager', proxyLib3);
 
 describe('fabrik', function () {
   /* jshint unused:false */

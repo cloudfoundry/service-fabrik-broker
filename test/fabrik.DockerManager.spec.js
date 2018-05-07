@@ -1,6 +1,6 @@
 'use strict';
 
-const lib = require('../lib');
+const lib = require('../broker/lib');
 const portRegistry = lib.docker.portRegistry;
 const catalog = lib.models.catalog;
 const DockerManager = lib.fabrik.DockerManager;

@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../lib');
-const Repository = require('../../lib/db').Repository;
+const lib = require('../../broker/lib');
+const Repository = require('../../common/db').Repository;
 const apps = require('../support/apps');
 const config = lib.config;
 

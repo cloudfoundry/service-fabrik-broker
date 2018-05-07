@@ -1,8 +1,9 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../lib').config;
+const config = require('../broker/lib').config;
 const _ = require('lodash');
+const Promise = require('bluebird');
 
 const pubSubStub = {
   publish: () => undefined,
@@ -14,20 +15,23 @@ const riemanJSStub = {
   /* jshint unused:false */
   Event: (event) => true
 };
-const RiemannClient = proxyquire('../lib/utils/EventLogRiemannClient', {
-  riemannjs: {
+const RiemannClient = proxyquire('../common/utils/EventLogRiemannClient', {
+  'riemannjs': {
     createClient: function () {
       return {
-        on() {
+        on: function (arg, callback) {
+          callback();
+        },
+        connect: function () {
           return;
         },
-        disconnect() {
+        disconnect: function () {
           return;
         },
-        Event(event) {
+        Event: function (event) {
           return riemanJSStub.Event(event);
         },
-        send() {
+        send: function () {
           return riemanJSStub.send();
         }
       };

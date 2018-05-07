@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const parseUrl = require('url').parse;
-const lib = require('../../lib');
+const lib = require('../../broker/lib');
 const app = require('../support/apps').external;
 const fabrik = lib.fabrik;
 const virtualHostStore = lib.iaas.virtualHostStore;

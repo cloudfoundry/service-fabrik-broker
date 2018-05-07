@@ -1,9 +1,9 @@
 'use strict';
 
-const TokenInfo = require('../lib/quota/TokenInfo');
+const TokenInfo = require('../broker/lib/quota/TokenInfo');
 
 const tokenType = 'bearer';
-const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9.msVIuUXhvFBvkf9A6JOkQndeuRZiGKuj0ojGdvR2dPI';
+const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 describe('quota', () => {
   describe('TokenInfo', () => {

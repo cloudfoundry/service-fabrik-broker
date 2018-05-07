@@ -4,8 +4,8 @@ const Mongoose = require('mongoose');
 const Promise = require('bluebird');
 Promise.promisifyAll([require('mongoose/lib/model')]);
 const mongoModel = require('mongoose/lib/model');
-const CONST = require('../lib/constants');
-const Repository = require('../lib/db').Repository;
+const CONST = require('../common/constants');
+const Repository = require('../common/db').Repository;
 
 const time = Date.now();
 const repeatInterval = '*/1 * * * *';
@@ -32,6 +32,7 @@ const getJob = (instanceId, dateTime) => {
 };
 const instance_id = '9999-8888-7777-6666';
 const instance_id2 = 'de99-8888-7777-66az';
+const populateOpts = {};
 const criteria = {
   name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
 };
@@ -131,8 +132,19 @@ describe('db', function () {
     it('Should return the requested object from DB successfully', function () {
       return Repository.findOne(CONST.DB_MODEL.JOB, {
         name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`
-      }).then(response => {
+      }, populateOpts).then(response => {
         expect(modelStub.findOne).to.be.calledOnce;
+        expect(modelStub.populateAsync).to.be.calledOnce;
+        expect(response).to.eql(getJob(instance_id, time).value());
+      });
+    });
+
+    it('Should return the object with requested id and populate opts from DB successfully', function () {
+      return Repository.findById(CONST.DB_MODEL.JOB, {
+        _id: instance_id,
+      }, populateOpts).then(response => {
+        expect(modelStub.findByIdAsync).to.be.calledOnce;
+        expect(modelStub.populateAsync).to.be.calledOnce;
         expect(response).to.eql(getJob(instance_id, time).value());
       });
     });
@@ -179,6 +191,22 @@ describe('db', function () {
       });
     });
 
+    it('Should throw error on save if user info is not provided', function () {
+      return Repository.saveOrUpdate(CONST.DB_MODEL.JOB, getJob(instance_id2, time).value(), {
+        name: `${instance_id2}_${CONST.JOB.SCHEDULED_BACKUP}`
+      }).catch(err => {
+        expect(err.message).to.eql('user.email or user.name is mandatory for save operation');
+      });
+    });
+
+    it('Should throw error on save if criteria is not provided', function () {
+      try {
+        return Repository.saveOrUpdate(CONST.DB_MODEL.JOB, getJob(instance_id2, time).value());
+      } catch (err) {
+        expect(err.message).to.eql('SaveOrUpdate must have a non empty criteria object');
+      }
+    });
+
     it('Should Update an existing object', function () {
       return Repository.saveOrUpdate(CONST.DB_MODEL.JOB, getJob(instance_id, time).value(), criteria, {
         'name': 'hugo'
@@ -207,6 +235,21 @@ describe('db', function () {
           list: listOfJobs,
           totalRecordCount: 20,
           nextOffset: 10
+        });
+      });
+    });
+
+    it('Should search a collection based if criteria and paginateOpts are not given', function () {
+      return Repository.search(CONST.DB_MODEL.JOB).then(response => {
+        expect(modelStub.find).to.be.calledTwice;
+        expect(modelStub.count).to.be.calledOnce;
+        expect(modelStub.skip).to.be.calledOnce;
+        expect(modelStub.limit).to.be.calledOnce;
+        expect(modelStub.execAsync).to.be.calledTwice;
+        expect(response).to.eql({
+          list: listOfJobs,
+          totalRecordCount: 20,
+          nextOffset: -1
         });
       });
     });
