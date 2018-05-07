@@ -134,7 +134,7 @@ class HttpClient {
       if (expectedStatusCode && res.statusCode !== expectedStatusCode) {
         let message = `Got HTTP Status Code ${res.statusCode} expected ${expectedStatusCode}`;
         if ((res.body && res.body.message) || res.statusMessage) {
-          message = res.body && res.body.message ? `${message}. ${res.body.message }` : `${message}. ${res.statusMessage }`;
+          message = res.body && res.body.message ? `${message}. ${res.body.message}` : `${message}. ${res.statusMessage}`;
         }
         let err;
         switch (res.statusCode) {

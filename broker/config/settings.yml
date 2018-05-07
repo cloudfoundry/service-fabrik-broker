@@ -24,6 +24,11 @@ const report = {
   ip: ip,
   port: 9294
 };
+const hook = {
+  protocol: 'https',
+  ip: ip,
+  port: 9295
+};
 const redirect_uri = `${external.protocol}://${external.host}/manage/auth/cf/callback`;
 
 const cloudProviders = {
@@ -205,6 +210,24 @@ defaults: &defaults
       ca: <%= certificate('etcd-ca.crt') %>
       crt: <%= certificate('etcd.crt') %>
       key: <%= certificate('etcd.key') %>
+
+  hook:
+    port: <%= hook.port %>
+    ip: <%= hook.ip %>
+    protocol: <%= hook.protocol%>
+    host: <%= `${hook.ip}:${hook.port}` %>
+  
+  #############################
+  # DEPLOYMENT HOOKS SETTINGS #
+  #############################
+  deployment_hooks:
+    username: 'hook'
+    password: 'hook-secret'
+    port: <%= hook.port %>
+    ip: <%= hook.ip %>
+    protocol: <%= hook.protocol%>
+    host: <%= `${hook.ip}:${hook.port}` %>
+  
   ####################
   # MONGODB SETTINGS #
   ####################
@@ -468,12 +491,6 @@ defaults: &defaults
       - lifecycle
       - credentials
       - multi_tenancy
-  ########################################
-  # DEPLOYMENT ACTIONS #
-  ########################################
-  actions:
-    "ReserveIps.js" : <%= base64_template('templates/actions/ReserveIps.js') %>
-    "Blueprint_PreCreate": <%= base64_template('templates/actions/Blueprint_PreCreate') %>
   ########################################
   # SERVICES CATALOG - BLUEPRINT SERVICE #
   ########################################

@@ -134,9 +134,16 @@ cd ~/workspace
 npm install
 ```
 * Optional: To locally run all unit test
+To run all the unit tests:
 ```shell
 npm run -s test
 ```
+To run only unit tests for specific processes like broker, deployment_hooks
+```shell
+# help
+npm run -s help
+```
+
 
 ### Uploading the cloud-config:
 Then, we need to upload the cloud-config required for service-fabrik on bosh.
@@ -157,19 +164,40 @@ bosh –e bosh upload-cloud-config --vars-store=cloud-config-aws-vars.yml cloud-
 ```
 The required files mentioned above can be found here: https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/tree/master/templates
 
+### Launch the Deployment Hooks Process
+This process executes action scripts provided by services in restricted environment.
+More information on how to configure action scripts is documented here: https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
+
+Before starting deployment hooks process SETTINGS_PATH env variable has to be set.
+```shell
+export SETTINGS_PATH=$(pwd)/deployment_hooks/config/settings.yml
+```
+If you need  to change the `settings.yml` configuration you should copy the file and point the deployment_hooks to your settings file via the environment variable `SETTINGS_PATH`.
+```shell
+# env vars you may like to set to different than these default values
+# export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
+# cp $(pwd)/deployment_hooks/config/settings.yml $(pwd)/deployment_hooks/config/my-settings.yml
+# export SETTINGS_PATH=$(pwd)/deployment_hooks/config/my-settings.yml
+node $(pwd)/deployment_hooks/HookServer.js
+```
 
 ### Launch the Broker
 
 Useful prerequisites: When working with the broker, install `curl` (`sudo apt-get install curl`), [`jq`](https://stedolan.github.io/jq/download), and [`yaml2json`](https://github.com/bronze1man/yaml2json).
 
-If you need to change the `settings.yml` configuration you should copy the file and point the broker to your settings file via the environment variable `SETTINGS_PATH`.
+Dependencies on other processes: broker process is dependent on deployment hooks process which has to be running for broker
+to run any lifecycle operation
+
+Before starting broker process SETTINGS_PATH env variable has to be set.
+```shell
+export SETTINGS_PATH=$(pwd)/broker/config/settings.yml
+```
+If you need  to change the `settings.yml` configuration you should copy the file and point the broker to your settings file via the environment variable `SETTINGS_PATH`.
 ```shell
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
-# cp $(pwd)/config/settings.yml $(pwd)/config/my-settings.yml
-# cp $(pwd)/eventmesh/settings.yml $(pwd)/eventmesh/my-settings.yml
-# export SETTINGS_PATH=$(pwd)/config/my-settings.yml
-# export SF_EVENTMESH_SETTINGS_PATH=$(pwd)/eventmesh/my-settings.yml
+# cp $(pwd)/broker/config/settings.yml $(pwd)/broker/config/my-settings.yml
+# export SETTINGS_PATH=$(pwd)/broker/config/my-settings.yml
 npm run -s start
 ```
 Check endpoint with curl
