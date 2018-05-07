@@ -1,0 +1,49 @@
+<%
+const path = require('path');
+const log_path = path.join(__dirname, '../..', 'logs', `${process.env.NODE_ENV}.log`)
+const ip = '10.0.2.2';
+const hook = {
+  protocol: 'https',
+  ip: ip,
+  port: 9295
+};
+%>
+---
+defaults: &defaults
+  ####################
+  # GENERAL SETTINGS #
+  ####################
+  username: 'hook'
+  password: 'hook-secret'
+  # skip_ssl_validation: true
+  # session_store:
+  #   path: /var/vcap/store/service-fabrik-broker/session
+  log_path: <%= log_path %>
+  log_level: debug
+  enable_circuit_breaker: false
+  http_timeout: 80000
+
+  ##############################
+  # HOOK ENDPOINT SETTINGS #
+  ##############################
+  hook: &hook
+    log_event: false
+    event_type: SF.HOOK
+    port: <%= hook.port %>
+    ip: <%= hook.ip %>
+    protocol: <%= hook.protocol%>
+    host: <%= `${hook.ip}:${hook.port}` %>
+    ssl:
+      key: <%= certificate('deployment_hooks.key') %>
+      cert: <%= certificate('deployment_hooks.crt') %>
+  ########################################
+  # DEPLOYMENT ACTIONS #
+  ########################################
+  actions:
+    "ReserveIps.js" : <%= base64_template('templates/actions/ReserveIps.js') %>
+    "Blueprint_PreCreate": <%= base64_template('templates/actions/Blueprint_PreCreate') %>
+
+test:
+  <<: *defaults
+development:
+  <<: *defaults

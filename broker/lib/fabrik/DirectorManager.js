@@ -14,7 +14,6 @@ const Agent = require('./Agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
-const ActionManager = require('./actions/ActionManager');
 const ScheduleManager = require('../jobs');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
@@ -198,45 +197,45 @@ class DirectorManager extends BaseManager {
     return Promise
       .try(() => {
         switch (action) {
-        case CONST.OPERATION_TYPE.UPDATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          if (_.get(params, 'parameters.bosh_director_name') ||
-            username || password) {
-            throw new BadRequest(`Update cannot be done on custom BOSH`);
-          }
-          return this
-            .getDeploymentManifest(deploymentName)
-            .then(manifest => {
-              _.assign(actionContext.params, {
-                'previous_manifest': manifest
+          case CONST.OPERATION_TYPE.UPDATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+            if (_.get(params, 'parameters.bosh_director_name') ||
+              username || password) {
+              throw new BadRequest(`Update cannot be done on custom BOSH`);
+            }
+            return this
+              .getDeploymentManifest(deploymentName)
+              .then(manifest => {
+                _.assign(actionContext.params, {
+                  'previous_manifest': manifest
+                });
+                _.assign(opts, {
+                  previous_manifest: manifest
+                }, opts.context);
+                return;
+              })
+              .then(() => {
+                let preUpdateContext = _.cloneDeep(actionContext);
+                return this.executePreUpdate(deploymentName, preUpdateContext);
+              })
+              .tap(response => {
+                logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
+                preUpdateAgentResponse = response;
               });
-              _.assign(opts, {
-                previous_manifest: manifest
-              }, opts.context);
-              return;
-            })
-            .then(() => {
-              let preUpdateContext = _.cloneDeep(actionContext);
-              return this.executePreUpdate(deploymentName, preUpdateContext);
-            })
-            .tap(response => {
-              logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
-              preUpdateAgentResponse = response;
-            });
-        case CONST.OPERATION_TYPE.CREATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
-          if (_.get(params, 'parameters.bosh_director_name')) {
-            return cf
-              .uaa
-              .getScope(username, password)
-              .then(scopes => {
-                const isAdmin = _.includes(scopes, 'cloud_controller.admin');
-                if (!isAdmin) {
-                  throw new errors.Forbidden('Token has insufficient scope');
-                }
-              });
-          }
-          return;
+          case CONST.OPERATION_TYPE.CREATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
+            if (_.get(params, 'parameters.bosh_director_name')) {
+              return cf
+                .uaa
+                .getScope(username, password)
+                .then(scopes => {
+                  const isAdmin = _.includes(scopes, 'cloud_controller.admin');
+                  if (!isAdmin) {
+                    throw new errors.Forbidden('Token has insufficient scope');
+                  }
+                });
+            }
+            return;
         }
       })
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
@@ -278,6 +277,10 @@ class DirectorManager extends BaseManager {
   }
 
   executeActions(phase, context) {
+    //Lazy create of deploymentHookClient
+    //Only Processes that require service lifecycle operations will need deployment_hooks properties.
+    //Can be loaded on top when we modularize scheduler and report process codebase
+    const deploymentHookClient = require('../utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
@@ -295,31 +298,20 @@ class DirectorManager extends BaseManager {
         }
         logger.info(`actionsToPerform - @service - ${serviceLevelActions} , @plan - ${planLevelActions}`);
         logger.info(`Cumulative actions to perform on ${context.deployment_name} - ${actionsToPerform}`);
-        const actionResponse = {};
-        let actionStartTime = Date.now();
-        let actionEndTime;
-        return Promise.map(actionsToPerform, (action) => {
-            logger.debug(`Looking up action ${action}`);
-            const actionHandler = ActionManager.getAction(phase, action);
-            _.assign(context, {
-              'instance_guid': this.getInstanceGuid(context.deployment_name)
-            });
-            _.chain(context.params)
-              .set('service_id', this.service.id)
-              .set('plan_id', this.plan.id)
-              .value();
-            return actionHandler(context)
-              .tap(resp => actionResponse[action] = resp);
-          })
-          .tap(() => logger.info(`${phase} response ...`, actionResponse))
-          .tap(() => {
-            actionEndTime = Date.now();
-            // TODO: Hook process should be kill if it exceeds timeout time 
-            if (actionEndTime - actionStartTime > config.deployment_action_timeout) {
-              throw new errors.InternalServerError(`Action scripts timed out`);
-            }
-          })
-          .return(actionResponse);
+        _.assign(context, {
+          'instance_guid': this.getInstanceGuid(context.deployment_name)
+        });
+        _.chain(context.params)
+          .set('service_id', this.service.id)
+          .set('plan_id', this.plan.id)
+          .value();
+        const options = _.chain({})
+          .set('phase', phase)
+          .set('actions', actionsToPerform)
+          .set('context', context)
+          .value();
+        return deploymentHookClient.executeDeploymentActions(options)
+          .tap((actionResponse) => logger.info(`${phase} response ...`, actionResponse));
       } else {
         logger.info(`No actions to perform for ${context.deployment_name}`);
         return {};
@@ -387,10 +379,10 @@ class DirectorManager extends BaseManager {
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
       .then(() =>
         Promise
-        .all([
-          this.getDeploymentIps(deploymentName),
-          this.getBindingProperty(deploymentName, id)
-        ]))
+          .all([
+            this.getDeploymentIps(deploymentName),
+            this.getBindingProperty(deploymentName, id)
+          ]))
       .spread((ips, binding) => this.agent.deleteCredentials(ips, binding.credentials))
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
@@ -543,12 +535,12 @@ class DirectorManager extends BaseManager {
   invokeServiceFabrikOperation(name, opts) {
     logger.info(`Invoking service fabrik operation '${name}' with:`, opts);
     switch (name) {
-    case CONST.OPERATION_TYPE.BACKUP:
-      return this.startBackup(opts);
-    case CONST.OPERATION_TYPE.RESTORE:
-      return this.startRestore(opts);
-    case CONST.OPERATION_TYPE.UNLOCK:
-      return this.unlock(opts);
+      case CONST.OPERATION_TYPE.BACKUP:
+        return this.startBackup(opts);
+      case CONST.OPERATION_TYPE.RESTORE:
+        return this.startRestore(opts);
+      case CONST.OPERATION_TYPE.UNLOCK:
+        return this.unlock(opts);
     }
     throw new BadRequest(`Invalid service fabrik operation '${name}'`);
   }
@@ -558,10 +550,10 @@ class DirectorManager extends BaseManager {
     return Promise
       .try(() => {
         switch (name) {
-        case 'backup':
-          return this.getBackupOperationState(opts);
-        case 'restore':
-          return this.getRestoreOperationState(opts);
+          case 'backup':
+            return this.getBackupOperationState(opts);
+          case 'restore':
+            return this.getRestoreOperationState(opts);
         }
         throw new BadRequest(`Invalid service fabrik operation '${name}'`);
       })
@@ -570,26 +562,26 @@ class DirectorManager extends BaseManager {
         const action = _.capitalize(name);
         const timestamp = result.updated_at;
         switch (result.state) {
-        case 'succeeded':
-          return {
-            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: 'succeeded'
-          };
-        case 'aborted':
-          return {
-            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: 'failed'
-          };
-        case 'failed':
-          return {
-            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: 'failed'
-          };
-        default:
-          return {
-            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: 'in progress'
-          };
+          case 'succeeded':
+            return {
+              description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
+              state: 'succeeded'
+            };
+          case 'aborted':
+            return {
+              description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
+              state: 'failed'
+            };
+          case 'failed':
+            return {
+              description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
+              state: 'failed'
+            };
+          default:
+            return {
+              description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
+              state: 'in progress'
+            };
         }
       });
   }
@@ -666,12 +658,12 @@ class DirectorManager extends BaseManager {
     };
     return ScheduleManager
       .schedule(
-        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
-        CONST.JOB.BNR_STATUS_POLLER,
-        repeatInterval,
-        data, {
-          name: config.cf.username
-        }
+      `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
+      CONST.JOB.BNR_STATUS_POLLER,
+      repeatInterval,
+      data, {
+        name: config.cf.username
+      }
       );
   }
 
@@ -791,7 +783,7 @@ class DirectorManager extends BaseManager {
               logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${instanceInfo.backup_guid}`);
               return ScheduleManager
                 .cancelSchedule(`${deploymentName}_backup_${instanceInfo.backup_guid}`,
-                  CONST.JOB.BNR_STATUS_POLLER)
+                CONST.JOB.BNR_STATUS_POLLER)
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
@@ -860,12 +852,12 @@ class DirectorManager extends BaseManager {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return noCache ? this.agent
-            .getBackupLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
-        default:
-          return metadata;
+          case 'processing':
+            return noCache ? this.agent
+              .getBackupLastOperation(metadata.agent_ip)
+              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
+          default:
+            return metadata;
         }
       });
   }
@@ -883,14 +875,14 @@ class DirectorManager extends BaseManager {
           throw new Forbidden('System scheduled backup runs cannot be aborted');
         }
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortBackup(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
+          case 'processing':
+            return this.agent
+              .abortBackup(metadata.agent_ip)
+              .return({
+                state: 'aborting'
+              });
+          default:
+            return _.pick(metadata, 'state');
         }
       });
   }
@@ -992,12 +984,12 @@ class DirectorManager extends BaseManager {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .getRestoreLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-        default:
-          return metadata;
+          case 'processing':
+            return this.agent
+              .getRestoreLastOperation(metadata.agent_ip)
+              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+          default:
+            return metadata;
         }
       });
   }
@@ -1012,14 +1004,14 @@ class DirectorManager extends BaseManager {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortRestore(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
+          case 'processing':
+            return this.agent
+              .abortRestore(metadata.agent_ip)
+              .return({
+                state: 'aborting'
+              });
+          default:
+            return _.pick(metadata, 'state');
         }
       });
   }
@@ -1050,8 +1042,8 @@ class DirectorManager extends BaseManager {
   static get prefix() {
     return _
       .reduce(config.directors,
-        (prefix, director) => director.primary === true ? director.prefix : prefix,
-        null) || super.prefix;
+      (prefix, director) => director.primary === true ? director.prefix : prefix,
+      null) || super.prefix;
   }
 
   static get instanceConstructor() {

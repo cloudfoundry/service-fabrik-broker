@@ -1,0 +1,5 @@
+--require test/test_broker/support
+--reporter spec
+--check-leaks
+--slow 100
+--growl
