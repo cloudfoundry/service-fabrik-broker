@@ -10,22 +10,25 @@ class EventMeshServer {
   /*
    * EventMeshServer
    * ===============
+   *
+   * Various key types are documented below.
+   *
    * top level keys
-   * - /services
-   * - /deployments
+   *    - /services
+   *    - /deployments
    *
    * Resources:
-   *  /deployments/<resourceType>/<resourceId>
+   *    - /deployments/<resourceType>/<resourceId>
    * Resource attributes:
-   *  /deployments/<resourceType>/<resourceId>/options
-   *  /deployments/<resourceType>/<resourceId>/state
-   *  /deployments/<resourceType>/<resourceId>/lastoperation
+   *    - /deployments/<resourceType>/<resourceId>/options
+   *    - /deployments/<resourceType>/<resourceId>/state
+   *    - /deployments/<resourceType>/<resourceId>/lastoperation
    *
    * Annotations:
-   *  /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>
+   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>
    * Annotations attributes:
-   *  /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/options
-   *  /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/state
+   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/options
+   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/state
    *
    */
 
