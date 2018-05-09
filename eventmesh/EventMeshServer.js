@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../lib/constants');
-const errors = require('../errors');
+const CONST = require('../broker/lib/constants');
+const errors = require('../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 class EventMeshServer {

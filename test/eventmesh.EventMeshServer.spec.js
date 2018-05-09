@@ -1,7 +1,7 @@
 'use strict';
-const EventMeshServer = require('../lib/eventmesh/EventMeshServer');
-const CONST = require('../lib/constants');
-const errors = require('../lib/errors');
+const EventMeshServer = require('../eventmesh/EventMeshServer');
+const CONST = require('../broker/lib/constants');
+const errors = require('../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 describe('eventmesh', () => {
