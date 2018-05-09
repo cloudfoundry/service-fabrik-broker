@@ -13,7 +13,7 @@ class EventMeshServer {
    *
    * Various key types are documented below.
    *
-   * top level keys
+   * Top level keys:
    *    - /services
    *    - /deployments
    *
