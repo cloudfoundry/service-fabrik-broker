@@ -1,8 +1,8 @@
 'use strict';
 
-const config = require('../broker/lib/config');
-const logger = require('../broker/lib/logger');
-const CONST = require('../broker/lib/constants');
+const config = require('./config');
+const logger = require('../common/logger');
+const CONST = require('../common/constants');
 const EventMeshServer = require('./EventMeshServer');
 const {
   Etcd3
