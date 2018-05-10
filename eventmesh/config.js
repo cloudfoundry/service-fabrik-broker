@@ -21,14 +21,6 @@ const context = {
   require: require,
   __filename: filename,
   __dirname: path.dirname(filename),
-  base64_template: function (filePath) {
-    const template = path.join(this.__dirname, filePath);
-    return fs.readFileSync(template).toString('base64');
-  },
-  certificate: function (name) {
-    const filename = path.join(this.__dirname, 'certs', name);
-    return JSON.stringify(fs.readFileSync(filename).toString('ascii'));
-  }
 };
 const config = yaml.safeLoad(_.template(buffer)(context))[ENV];
 
