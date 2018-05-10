@@ -2,7 +2,8 @@
 const path = require('path');
 
 process.env.NODE_ENV = 'test';
-process.env.SETTINGS_PATH = process.env.SETTINGS_PATH || path.join(__dirname, '../../broker', 'config', 'settings.yml');
+process.env.SETTINGS_PATH = process.env.SETTINGS_PATH ||
+  path.join(__dirname, '../..', 'broker', 'config', 'settings.yml');
 process.env.SF_EVENTMESH_SETTINGS_PATH = process.env.SF_EVENTMESH_SETTINGS_PATH ||
   path.join(__dirname, '../..', 'eventmesh', 'settings.yml');
 delete process.env.HTTP_PROXY;
