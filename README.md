@@ -167,7 +167,9 @@ If you need to change the `settings.yml` configuration you should copy the file 
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
 # cp $(pwd)/config/settings.yml $(pwd)/config/my-settings.yml
+# cp $(pwd)/eventmesh/settings.yml $(pwd)/eventmesh/my-settings.yml
 # export SETTINGS_PATH=$(pwd)/config/my-settings.yml
+# export SF_EVENTMESH_SETTINGS_PATH=$(pwd)/eventmesh/my-settings.yml
 npm run -s start
 ```
 Check endpoint with curl
