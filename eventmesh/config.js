@@ -1,11 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const Promise = require('bluebird');
 const path = require('path');
-const parseUrl = require('url').parse;
-const formatUrl = require('url').format;
-const child_process = require('child_process');
 const yaml = require('js-yaml');
 const _ = require('lodash');
 const filename = process.env.SF_EVENTMESH_SETTINGS_PATH;
