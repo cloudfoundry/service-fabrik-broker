@@ -34,7 +34,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
   getServiceAttributes(resourceType, serviceId) {
     const serviceFolderName = this.getServiceFolderName(resourceType, serviceId);
     const attrKey = `${serviceFolderName}/${CONST.SERVICE_KEYS.ATTRIBUTES}`;
-    logger.debug('Getting Service Attributes for serviceId:', serviceId);
+    logger.debug(`Getting Service Attributes for serviceId:${serviceId} for resourceType ${resourceType}`);
     return etcd.get(attrKey).json();
   }
 
@@ -102,15 +102,14 @@ class Etcd3EventMeshServer extends EventMeshServer {
   }
 
   annotateResource(opts) {
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to annotate resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to annotate resource`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to annotate resource`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to annotate resource`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to annotate resource`);
     assert.ok(opts.val, `Property 'val' is required to annotate resource`);
-    const annotationFolderName = this.getAnnotationFolderName(opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
+    const annotationFolderName = this.getAnnotationFolderName(opts);
     const optionKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.OPTIONS}`;
-    logger.debug(`Annotating Resource ${opts.resourceType}/${opts.resourceId} for annotation: ${opts.annotationName}`);
+    logger.debug(`Creating Annotation ${annotationFolderName}`);
     return etcd.put(optionKey).value(opts.val)
       .then(() => {
         const statusKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.STATE}`;
@@ -119,7 +118,6 @@ class Etcd3EventMeshServer extends EventMeshServer {
   }
 
   updateAnnotationState(opts) {
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to update annotation state`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
@@ -136,38 +134,59 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return this.updateAnnotationKey(opts);
   }
 
+  updateLastAnnotation(opts) {
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
+    assert.ok(opts.value, `Property 'value' is required to update annotation key`);
+    return etcd.put(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`).value(opts.value);
+  }
+  getLastAnnotation(opts) {
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
+    return etcd.get(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`).string();
+  }
   updateAnnotationKey(opts) {
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to update annotation key`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation key`);
     assert.ok(opts.key, `Property 'key' is required to update annotation key`);
     assert.ok(opts.value, `Property 'value' is required to update annotation key`);
-    logger.debug(`Updating annotation key: ${opts.key} of resource: ` +
-      `${opts.resourceType}/${opts.resourceId} for annotation ` +
-      `${opts.annotationName}/${opts.annotationType}/${opts.annotationId}`);
-    const annotationFolderName = this.getAnnotationFolderName(
-      opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
+    const annotationFolderName = this.getAnnotationFolderName(opts);
     const annotationKey = `${annotationFolderName}/${opts.key}`;
+    logger.debug(`Updating annotation key: ${annotationKey}`);
     return etcd.put(annotationKey).value(opts.value);
   }
 
   getAnnotationKeyValue(opts) {
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get annotation key`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation key`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation key`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation key`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation key`);
     assert.ok(opts.key, `Property 'key' is required to get annotation key`);
-    const annotationFolderName = this.getAnnotationFolderName(opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
-    logger.debug(`Getting annotation key: ${opts.key} for ${opts.annotationFolderName}`);
+    const annotationFolderName = this.getAnnotationFolderName(opts);
+    logger.debug(`Getting annotation key: ${opts.key} for ${annotationFolderName}`);
     const annotationKey = `${annotationFolderName}/${opts.key}`;
     return etcd.get(annotationKey).string();
   }
 
+  getAnnotationOptions(opts) {
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation state`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
+    opts = _
+      .chain(opts)
+      .assign({
+        key: 'options'
+      })
+      .value();
+    return this.getAnnotationKeyValue(opts);
+  }
+
   getAnnotationState(opts) {
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get annotation state`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation state`);
@@ -180,6 +199,31 @@ class Etcd3EventMeshServer extends EventMeshServer {
       .value();
     return this.getAnnotationKeyValue(opts);
   }
+
+  addToInProgress(tag, key) {
+    const inProgress = `progress/${tag}/${key}`;
+    logger.debug(`Add ${inProgress} to eventmesh`);
+    const value = {
+      'key': key
+    };
+    return etcd.put(inProgress).value(JSON.stringify(value));
+  }
+
+  removeFromInProgress(tag, key) {
+    const inProgress = `progress/${tag}/${key}`;
+    logger.debug(`Deleting ${key} from inProgress`);
+    return etcd.delete().key(inProgress);
+  }
+
+  getInProgress(tag) {
+    return etcd.getAll().prefix(`progress/${tag}`).json()
+  }
+
+  getKey(key) {
+    logger.info('getKey called')
+    return etcd.get(key).json();
+  }
+
 }
 
 module.exports = Etcd3EventMeshServer;

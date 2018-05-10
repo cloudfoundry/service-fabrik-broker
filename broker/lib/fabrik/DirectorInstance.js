@@ -169,14 +169,6 @@ class DirectorInstance extends BaseInstance {
       .initialize(operation)
       .then(() => token ? jwt.verify(token, config.password) : null)
       .then(serviceFabrikOperation => {
-        logger.info('SF Operation input:', serviceFabrikOperation);
-        this.operation = _.get(serviceFabrikOperation, 'name', 'update');
-        const deploymentLockPromise = (this.operation === CONST.OPERATION_TYPE.UNLOCK) ?
-          Promise.resolve({}) :
-          Promise.try(() => this.manager.verifyDeploymentLockStatus(this.deploymentName));
-        return deploymentLockPromise.return(serviceFabrikOperation);
-      })
-      .then(serviceFabrikOperation => {
         // normal update operation
         if (this.operation === 'update') {
           const args = _.get(serviceFabrikOperation, 'arguments');
@@ -219,7 +211,6 @@ class DirectorInstance extends BaseInstance {
     };
     return this
       .initialize(operation)
-      .then(() => this.manager.verifyDeploymentLockStatus(this.deploymentName))
       .then(() => this.manager.deleteDeployment(this.deploymentName, params))
       .then(taskId => _
         .chain(operation)

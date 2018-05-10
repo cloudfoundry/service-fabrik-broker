@@ -7,12 +7,14 @@ const jwt = require('../jwt');
 const logger = require('../logger');
 const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
+const eventmesh = require('../../../eventmesh');
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
+const Conflict = errors.Conflict;
 const UnprocessableEntity = errors.UnprocessableEntity;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
@@ -32,6 +34,73 @@ const CloudControllerError = {
     );
   }
 };
+
+
+function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
+  logger.info(`getResourceAnnotationStatus is called`);
+  return Promise.delay(10000)
+    .then(() => eventmesh.server.getAnnotationState({
+      resourceType: resourceType,
+      resourceId: resourceId,
+      annotationName: 'backup',
+      annotationType: 'default',
+      annotationId: guid
+    })).then(state => {
+      const duration = (new Date() - started_at) / 1000;
+      const backup_start_timeout = 15 //sec
+      logger.info(`Lock duration : ${duration} `);
+      if (duration > backup_start_timeout) {
+        throw new Error('backup start timeout');
+        // todo handle this in catch with abort backup
+      }
+      if (state === start_state) {
+        logger.info('Waiting to get the annotation state');
+        return getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, backup_started_at);
+      } else if (state === 'error') {
+        return eventmesh.server.getAnnotationKeyValue({
+            resourceType: resourceType,
+            resourceId: resourceId,
+            annotationName: 'backup',
+            annotationType: 'default',
+            annotationId: guid,
+            key: 'result'
+          })
+          .then(error => {
+            logger.info('Operation reported error', JSON.parse(error));
+            let json = JSON.parse(error)
+            let message = json.message;
+            if (json.error && json.error.description) {
+              message = `${message}. ${json.error.description}`
+            }
+            let err;
+            switch (json.status) {
+            case 400:
+              err = new BadRequest(message);
+              break;
+            case 404:
+              err = new NotFound(message);
+              break;
+            case 409:
+              err = new Conflict(message);
+              break;
+            default:
+              err = new InternalServerError(message);
+              break;
+            }
+            throw err;
+          })
+      } else {
+        return eventmesh.server.getAnnotationKeyValue({
+          resourceType: resourceType,
+          resourceId: resourceId,
+          annotationName: 'backup',
+          annotationType: 'default',
+          annotationId: guid,
+          key: 'result'
+        });
+      }
+    });
+}
 
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
@@ -224,34 +293,65 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+
   startBackup(req, res) {
+    let backup_started_at;
     req.manager.verifyFeatureSupport('backup');
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
+    let backup_guid, deploymentName;
     return Promise
       .try(() => this.checkQuota(req, trigger))
-      .then(() => {
+      .then(() => Promise.all([utils
+        .uuidV4(),
+        req.manager
+        .findNetworkSegmentIndex(req.params.instance_id)
+        .then(networkIndex => req.manager.getDeploymentName(req.params.instance_id, networkIndex))
+      ]))
+      .spread((guid, deployment) => {
         _.set(req.body, 'trigger', trigger);
-        const bearer = _
-          .chain(req.headers)
-          .get('authorization')
-          .split(' ')
-          .nth(1)
-          .value();
-        return this.fabrik
-          .createOperation('backup', {
-            instance_id: req.params.instance_id,
-            bearer: bearer,
-            arguments: req.body,
-            isOperationSync: true,
-            username: req.user.name,
-            useremail: req.user.email || ''
+        backup_guid = guid;
+        const value = {
+          guid: backup_guid,
+          deployment: deployment,
+          instance_guid: req.params.instance_id,
+          plan_id: req.body.plan_id,
+          service_id: req.body.service_id,
+          context: req.body.context
+        };
+        logger.info('annotate ', req.params.instance_id);
+        const opts = {
+          resourceType: req.manager.name,
+          resourceId: req.params.instance_id,
+          annotationName: 'backup',
+          annotationType: 'default',
+          annotationId: backup_guid,
+          val: JSON.stringify(value)
+        }
+        return eventmesh.server.annotateResource(opts);
+      })
+      .then(() => {
+        backup_started_at = new Date()
+        return eventmesh.server.updateLastAnnotation({
+          resourceId: req.params.instance_id,
+          annotationName: 'backup',
+          annotationType: 'default',
+          value: backup_guid
+        }).then(() => getResourceAnnotationStatus(req.manager.name, req.params.instance_id, backup_guid, CONST.RESOURCE_STATE.IN_QUEUE, backup_started_at));
+      })
+      .tap(response => {
+        logger.info('backup response ', response);
+        const directorManager = req.manager;
+        return directorManager
+          .findNetworkSegmentIndex(req.params.instance_id)
+          .then(networkIndex => {
+            logger.error('networkIndex is ', req.params, networkIndex);
+            return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
           })
-          .invoke()
-          .tap(response => logger.info('backup response ', response))
-          .then(body => res
-            .status(202)
-            .send(body)
-          );
+          .catch(err => logger.error('caught error ', err));
+      })
+      .then(bodyStr => {
+        const body = JSON.parse(bodyStr);
+        res.status(202).send(body);
       });
   }
 
@@ -273,8 +373,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
     req.manager.verifyFeatureSupport('backup');
     const instance_id = req.params.instance_id;
     const tenant_id = req.entity.tenant_id;
-    return req.manager
-      .abortLastBackup(tenant_id, instance_id)
+    return eventmesh.server.getLastAnnotation({
+        resourceId: req.params.instance_id,
+        annotationName: 'backup',
+        annotationType: 'default',
+      }).then(bkp_guid => eventmesh.server.updateAnnotationState({
+        resourceId: req.params.instance_id,
+        annotationName: 'backup',
+        annotationType: 'default',
+        annotationId: bkp_guid,
+        stateValue: 'abort'
+      }))
+      // wait for aborting and proceed
       .then(result => res
         .status(result.state === 'aborting' ? 202 : 200)
         .send({})

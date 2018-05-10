@@ -747,8 +747,6 @@ class DirectorManager extends BaseManager {
       return this.startBackup(opts);
     case CONST.OPERATION_TYPE.RESTORE:
       return this.startRestore(opts);
-    case CONST.OPERATION_TYPE.UNLOCK:
-      return this.unlock(opts);
     }
     throw new BadRequest(`Invalid service fabrik operation '${name}'`);
   }
@@ -806,37 +804,9 @@ class DirectorManager extends BaseManager {
     return this.director.getLockProperty(deploymentName);
   }
 
-  verifyDeploymentLockStatus(deploymentName) {
-    return this
-      .getLockProperty(deploymentName)
-      .then(lockInfo => {
-        if (!lockInfo) {
-          return;
-        }
-        throw new errors.DeploymentAlreadyLocked(deploymentName, lockInfo);
-      });
-  }
-
   releaseLock(deploymentName) {
     return this.director
       .deleteDeploymentProperty(deploymentName, CONST.DEPLOYMENT_LOCK_NAME);
-  }
-
-  acquireLock(deploymentName, lockMetaInfo) {
-    return Promise
-      .try(() => {
-        if (!_.get(lockMetaInfo, 'username') || !_.get(lockMetaInfo, 'lockForOperation')) {
-          const msg = `Lock cannot be acquired on deployment ${deploymentName} as (username | lockForOperation) is empty in lockMetaInfo`;
-          logger.error(msg, lockMetaInfo);
-          throw new errors.BadRequest(msg);
-        }
-        if (!_.get(lockMetaInfo, 'createdAt')) {
-          _.set(lockMetaInfo, 'createdAt', new Date());
-        }
-        logger.info(`Acquiring lock on deployment ${deploymentName} - lock meta : ${JSON.stringify(lockMetaInfo)}`);
-        return this.director
-          .updateOrCreateDeploymentProperty(deploymentName, CONST.DEPLOYMENT_LOCK_NAME, JSON.stringify(lockMetaInfo));
-      });
   }
 
   unlock(opts) {
@@ -974,12 +944,6 @@ class DirectorManager extends BaseManager {
           })
           .then(() => {
             metaUpdated = true;
-            return this
-              .acquireLock(deploymentName, lockInfo)
-              .then(() => lockAcquired = true);
-            //Since this execution flow is already in CF update acquiring the lock post successful start of backup.
-            //We are creating another lock (on the deployment) & releasing the CF Lock for update operation by making the response for backup as SYNCH.
-            //NOTE: This flow of code must be excplicitly invoked via CF update ONLY. (for ex. this cannot be invoked by OOB backup)
           });
       })
       .return(result)
