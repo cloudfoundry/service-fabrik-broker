@@ -13,6 +13,7 @@ const bosh = require('../bosh');
 const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
+const eventmesh = require('../../../eventmesh');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BaseJob {
@@ -67,6 +68,18 @@ class BnRStatusPollerJob extends BaseJob {
             .load(plan)
             .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
+      })
+      .tap(res => {
+        return eventmesh
+          .server
+          .updateAnnotationKey({
+            resourceId: instanceInfo.instance_guid,
+            annotationName: 'backup',
+            annotationType: 'default',
+            annotationId: instanceInfo.backup_guid,
+            key: 'progress',
+            value: JSON.stringify(res, null, 2)
+          });
       })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
@@ -143,30 +156,26 @@ class BnRStatusPollerJob extends BaseJob {
       });
   }
   static unlockDeployment(instanceInfo, operation, operationStatusResponse) {
-    const unlockOperation = new ServiceFabrikOperation('unlock', {
-      instance_id: instanceInfo.instance_guid,
-      isOperationSync: true,
-      arguments: {
-        description: _.get(operationStatusResponse, 'description')
-      }
-    });
-    return unlockOperation
-      .invoke()
+    // remo0ve me
+    return Promise
+      .try(() => eventmesh
+        .server
+        .removeFromInProgress('backup', eventmesh
+          .server
+          .getAnnotationFolderName({
+            resourceId: instanceInfo.instance_guid,
+            annotationName: 'backup',
+            annotationType: 'default',
+            annotationId: instanceInfo.backup_guid
+          })))
       .then(() => {
-        logger.info(`Unlocked deployment : ${instanceInfo.deployment} for backup_guid : ${instanceInfo.backup_guid} successfully. Poller stopped.`);
-        const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
-        const check_res_body = true;
-        const resp = {
-          statusCode: 200,
-          body: operationStatusResponse
-        };
-        if (CONST.URL[operation]) {
-          eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, instanceInfo, resp, check_res_body);
-        }
-      })
-      .catch(err => {
-        logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err);
-        throw err;
+        return eventmesh.server.updateAnnotationState({
+          resourceId: instanceInfo.instance_guid,
+          annotationName: 'backup',
+          annotationType: 'default',
+          annotationId: instanceInfo.backup_guid,
+          stateValue: CONST.RESOURCE_STATE.SUCCEEDED
+        })
       });
   }
 }
