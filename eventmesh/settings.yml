@@ -1,0 +1,20 @@
+# This file should not be used in deployed environments. Instead, set
+# the SETTINGS_PATH environment variable to point to a configuration
+# file that contains these settings.
+defaults: &defaults
+  ####################
+  # ETCD SETTINGS #
+  ####################
+  etcd:
+    url:
+      - 'localhost:2379'
+
+development: &development
+  etcd:
+    url:
+      - 'localhost:2379'
+
+test:
+  etcd:
+    url:
+      - 'localhost:2379'
