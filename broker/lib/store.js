@@ -8,7 +8,7 @@ const logger = require('./logger');
 
 // merge does not update properties if new value is undefined
 module.exports = new FileStore(_.merge({
-  path: '../store/sessions',
+  path: './store/sessions',
   logFn: logger.info,
   ttl: config.external.session_expiry
 }, config.session_store));
