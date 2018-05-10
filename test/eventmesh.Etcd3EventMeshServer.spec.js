@@ -10,24 +10,24 @@ const {
 
 describe('eventmesh', () => {
   describe('Etcd3EventMeshServer', () => {
-    let prefixWatcherStub, keyWatcherStub;
-    let sandbox = sinon.sandbox.create();
-    let valueStub = sandbox.stub();
-    let stringStub = sandbox.stub();
-    let jsonStub = sandbox.stub();
-    let putstub = sandbox.stub(Etcd3.prototype, 'put', () => {
-      return {
-        value: (val) => Promise.resolve(valueStub(val))
-      };
-    });
-    let getstub = sandbox.stub(Etcd3.prototype, 'get', () => {
-      return {
-        json: () => Promise.resolve(jsonStub()),
-        string: () => Promise.resolve(stringStub()),
-      };
-    });
+    let sandbox, valueStub, stringStub, jsonStub, putstub, getstub, prefixWatcherStub, keyWatcherStub;
+    before(() => {
+      sandbox = sinon.sandbox.create();
+      valueStub = sandbox.stub();
+      stringStub = sandbox.stub();
+      jsonStub = sandbox.stub();
+      putstub = sandbox.stub(Etcd3.prototype, 'put', () => {
+        return {
+          value: (val) => Promise.resolve(valueStub(val))
+        };
+      });
+      getstub = sandbox.stub(Etcd3.prototype, 'get', () => {
+        return {
+          json: () => Promise.resolve(jsonStub()),
+          string: () => Promise.resolve(stringStub()),
+        };
+      });
 
-    beforeEach(() => {
       prefixWatcherStub = sandbox.stub().returns({
         create: () => Promise.resolve({
           on: () => Promise.resolve('prefixWatcherStubResponse')
@@ -37,6 +37,12 @@ describe('eventmesh', () => {
         create: () => Promise.resolve({
           on: () => Promise.resolve('keyWatcherStubResponse')
         }),
+      });
+      sandbox.stub(Etcd3.prototype, 'watch', () => {
+        return {
+          prefix: prefixWatcherStub,
+          key: keyWatcherStub
+        };
       });
     });
 
@@ -50,11 +56,8 @@ describe('eventmesh', () => {
       stringStub.reset();
     });
 
-    sandbox.stub(Etcd3.prototype, 'watch', () => {
-      return {
-        prefix: prefixWatcherStub,
-        key: keyWatcherStub
-      };
+    after(function () {
+      sandbox.restore();
     });
 
     describe('#registerService', () => {
