@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const CONST = require('../broker/lib/constants');
+const CONST = require('../common/constants');
 const eventmesh = require('../eventmesh');
 const {
   Etcd3
