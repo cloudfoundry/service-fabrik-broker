@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../broker/lib/constants');
+const CONST = require('../common/constants');
 const errors = require('../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
