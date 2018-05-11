@@ -1,6 +1,6 @@
 'use strict';
 const EventMeshServer = require('../eventmesh/EventMeshServer');
-const CONST = require('../broker/lib/constants');
+const CONST = require('../common/constants');
 const errors = require('../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
