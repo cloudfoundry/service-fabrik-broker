@@ -202,14 +202,12 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'credentials/delete', body, 200));
   }
 
-  startBackup(ips, backup, vms) {
+  startBackup(ip, backup, vms) {
     const body = {
       backup: backup,
       vms: vms
     };
-    return this
-      .getHost(ips, 'backup')
-      .tap(ip => this.post(ip, 'backup/start', body, 202));
+    return this.post(ip, 'backup/start', body, 202);
   }
 
   abortBackup(ip) {

@@ -64,6 +64,7 @@ module.exports = Object.freeze({
     BACKUP_STATUS_POLLER: 'FabrikStatusPoller',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
     OPERATION_STATUS_POLLER: 'OperationStatusPoller',
+    BNR_STATUS_POLLER: 'BnRStatusPoller',
     BLUEPRINT_JOB: 'BluePrintJob',
     BACKUP_REAPER: 'BackupReaper',
     SERVICE_INSTANCE_UPDATE: 'ServiceInstanceAutoUpdate',

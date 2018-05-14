@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const CONST = require('../constants');
-let ScheduleBackupJob, ScheduledOobDeploymentBackupJob, OperationStatusPollerJob, BackupReaperJob, ServiceInstanceUpdateJob, DbCollectionReaperJob, BluePrintJob;
+let ScheduleBackupJob, ScheduledOobDeploymentBackupJob, OperationStatusPollerJob, BnRStatusPollerJob, BackupReaperJob, ServiceInstanceUpdateJob, DbCollectionReaperJob, BluePrintJob;
 
 class JobFabrik {
   static getJob(jobType) {
@@ -22,6 +22,11 @@ class JobFabrik {
         OperationStatusPollerJob = require('./OperationStatusPollerJob');
       }
       return OperationStatusPollerJob;
+    case CONST.JOB.BNR_STATUS_POLLER:
+      if (BnRStatusPollerJob === undefined) {
+        BnRStatusPollerJob = require('./BnRStatusPollerJob');
+      }
+      return BnRStatusPollerJob;  
     case CONST.JOB.BLUEPRINT_JOB:
       if (BluePrintJob === undefined) {
         BluePrintJob = require('./BluePrintJob');
