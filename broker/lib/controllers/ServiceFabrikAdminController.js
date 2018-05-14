@@ -789,3 +789,32 @@ function registerOperationCompletionStatusPoller(deploymentName, operationName,
       }
     );
 }
+
+function registerBnRCompletionStatusPoller(deploymentName, operationName,
+  operationResp, startedAt, boshDirectorName) {
+
+  const data = {
+    deployment_name: deploymentName,
+    type: CONST.BACKUP.TYPE.ONLINE,
+    operation_job_started_at: startedAt,
+    trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
+    operation: operationName,
+    operation_response: operationResp,
+    bosh_director: boshDirectorName
+  };
+
+  // Repeat interval inminute
+  const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
+  logger.debug(`Scheduling deployment ${deploymentName} ${operationName} for backup guid ${operationResp.backup_guid}
+          ${CONST.JOB.OPERATION_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
+  const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
+  return ScheduleManager
+    .schedule(
+      `${deploymentName}_${operationName}_${operationResp.backup_guid}`,
+      CONST.JOB.OPERATION_STATUS_POLLER,
+      repeatInterval,
+      data, {
+        name: config.cf.username
+      }
+    );
+}
