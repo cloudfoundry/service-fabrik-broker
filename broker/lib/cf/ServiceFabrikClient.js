@@ -39,7 +39,7 @@ class ServiceFabrikClient extends HttpClient {
       );
   }
 
-  getInstanceBackupStatus(name, options, token) {
+  getInstanceBackupStatus(options, token) {
     return this.tokenIssuer
       .getAccessToken()
       .then(accessToken => this
@@ -48,6 +48,10 @@ class ServiceFabrikClient extends HttpClient {
           url: `/api/v1/service_instances/${options.instance_id}/backup/status`,
           auth: {
             bearer: accessToken
+          },
+          qs: {
+            token: token,
+            options: options
           },
           json: true
         }, CONST.HTTP_STATUS_CODE.OK)

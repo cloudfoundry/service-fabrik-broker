@@ -292,12 +292,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getBackupState(req, res) {
 
-    //decode agent_ip here
+    const decodedToken = utils.decodeBase64(req.query.token);
+    agentIp = decodedToken.agent_ip;
 
     let instanceInfo = _.cloneDeep(req.query.options);
+    instanceInfo.agent_ip = decodedToken.agent_ip;
     //Since the object maintains the state of poll, cloning it to ensure it cannot be tampered from outside (i.e. caller)
     assert.ok(instanceInfo.instance_guid, `${operation} poll operation must have the property 'instance_guid'`);
-    //assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
+    assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
     assert.ok(instanceInfo.deployment, `${operation} poll operation must have the property 'deployment'`);
     assert.ok(instanceInfo.tenant_id, `${operation} poll operation must have the property 'tenant_id'`);
     assert.ok(instanceInfo.backup_guid, `${operation} poll operation must have the property 'backup_guid'`);
