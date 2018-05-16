@@ -94,8 +94,8 @@ class Etcd3EventMeshServer extends EventMeshServer {
     }
   }
 
-  annotateResource(resourceType, resourceId, annotationName, operationType, annotationId, val) {
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, operationType, annotationId);
+  annotateResource(resourceType, resourceId, annotationName, annotationType, annotationId, val) {
+    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
     const optionKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.OPTIONS}`;
     logger.debug(`Annotating Resource ${resourceType}/${resourceId} for annotation: ${annotationName}`);
     return etcd.put(optionKey).value(val)
@@ -105,26 +105,26 @@ class Etcd3EventMeshServer extends EventMeshServer {
       });
   }
 
-  updateAnnotationState(resourceType, resourceId, annotationName, operationType, annotationId, stateValue) {
-    return this.updateAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, CONST.ANNOTATION_KEYS.STATE, stateValue);
+  updateAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId, stateValue) {
+    return this.updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, CONST.ANNOTATION_KEYS.STATE, stateValue);
   }
 
-  updateAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, key, value) {
-    logger.debug(`Updating annotation key: ${key} of resource: ${resourceType}/${resourceId} for annotation ${annotationName}/${operationType}/${annotationId}`);
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, operationType, annotationId);
+  updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key, value) {
+    logger.debug(`Updating annotation key: ${key} of resource: ${resourceType}/${resourceId} for annotation ${annotationName}/${annotationType}/${annotationId}`);
+    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
     const annotationKey = `${annotationFolderName}/${key}`;
     return etcd.put(annotationKey).value(value);
   }
 
-  getAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, key) {
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, operationType, annotationId);
+  getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key) {
+    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
     logger.debug(`Getting annotation key: ${key} for ${annotationFolderName}`);
     const annotationKey = `${annotationFolderName}/${key}`;
     return etcd.get(annotationKey).string();
   }
 
-  getAnnotationState(resourceType, resourceId, annotationName, operationType, annotationId) {
-    return this.getAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, CONST.ANNOTATION_KEYS.STATE);
+  getAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId) {
+    return this.getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, CONST.ANNOTATION_KEYS.STATE);
   }
 }
 
