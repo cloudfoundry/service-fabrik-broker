@@ -50,9 +50,9 @@ class EventMeshServer {
     return `deployments/${resourceType}/${resourceId}`;
   }
 
-  getAnnotationFolderName(resourceType, resourceId, annotationName, operationType, annotationId) {
+  getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId) {
     const resourceFolderName = this.getResourceFolderName(resourceType, resourceId);
-    return `${resourceFolderName}/${annotationName}/${operationType}/${annotationId}`;
+    return `${resourceFolderName}/${annotationName}/${annotationType}/${annotationId}`;
   }
 
   registerService(resourceType, serviceId, serviceAttributesValue, servicePlansValue) {
@@ -100,27 +100,27 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('registerWatcher');
   }
 
-  annotateResource(resourceType, resourceId, annotationName, operationType, annotationId, val) {
+  annotateResource(resourceType, resourceId, annotationName, annotationType, annotationId, val) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('annotateResource');
   }
 
-  updateAnnotationState(resourceType, resourceId, annotationName, operationType, annotationId, stateValue) {
+  updateAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId, stateValue) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('updateAnnotationState');
   }
 
-  updateAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, key, value) {
+  updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key, value) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('updateAnnotationKey');
   }
 
-  getAnnotationKey(resourceType, resourceId, annotationName, operationType, annotationId, key) {
+  getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('getAnnotationKey');
   }
 
-  getAnnotationState(resourceType, resourceId, annotationName, operationType, annotationId) {
+  getAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('getAnnotationState');
   }
