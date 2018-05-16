@@ -41,7 +41,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
   createResource(resourceType, resourceId, val) {
     logger.debug(`Creating Resource ${resourceType}/${resourceId}`);
     const resourceFolderName = this.getResourceFolderName(resourceType, resourceId);
-    const optionKey = `${resourceFolderName}/${CONST.RESOURCE_KEYS.OPTONS}`;
+    const optionKey = `${resourceFolderName}/${CONST.RESOURCE_KEYS.OPTIONS}`;
     const statusKey = `${resourceFolderName}/${CONST.RESOURCE_KEYS.STATE}`;
     const lastOperationKey = `${resourceFolderName}/${CONST.RESOURCE_KEYS.LASTOPERATION}`;
     return etcd.put(optionKey).value(val)
@@ -96,7 +96,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
 
   annotateResource(resourceType, resourceId, annotationName, operationType, opId, val) {
     const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, operationType, opId);
-    const optionKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.OPTONS}`;
+    const optionKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.OPTIONS}`;
     logger.debug(`Annotating Resource ${resourceType}/${resourceId} for annotation: ${annotationName}`);
     return etcd.put(optionKey).value(val)
       .then(() => {

@@ -205,12 +205,12 @@ module.exports = Object.freeze({
   },
   RESOURCE_KEYS: {
     STATE: 'state',
-    OPTONS: 'options',
+    OPTIONS: 'options',
     LASTOPERATION: 'lastoperation'
   },
   ANNOTATION_KEYS: {
     STATE: 'state',
-    OPTONS: 'options',
+    OPTIONS: 'options',
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',
