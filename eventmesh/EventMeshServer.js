@@ -104,7 +104,7 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('registerWatcher');
   }
 
-  annotateResource(resourceType, resourceId, annotationName, annotationType, annotationId, val) {
+  annotateResource(opts) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('annotateResource');
   }

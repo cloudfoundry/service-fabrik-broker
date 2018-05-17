@@ -96,11 +96,17 @@ class Etcd3EventMeshServer extends EventMeshServer {
     }
   }
 
-  annotateResource(resourceType, resourceId, annotationName, annotationType, annotationId, val) {
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
+  annotateResource(opts) {
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to annotate resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to annotate resource`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to annotate resource`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to annotate resource`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to annotate resource`);
+    assert.ok(opts.val, `Property 'val' is required to annotate resource`);
+    const annotationFolderName = this.getAnnotationFolderName(opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
     const optionKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.OPTIONS}`;
-    logger.debug(`Annotating Resource ${resourceType}/${resourceId} for annotation: ${annotationName}`);
-    return etcd.put(optionKey).value(val)
+    logger.debug(`Annotating Resource ${opts.resourceType}/${opts.resourceId} for annotation: ${opts.annotationName}`);
+    return etcd.put(optionKey).value(opts.val)
       .then(() => {
         const statusKey = `${annotationFolderName}/${CONST.ANNOTATION_KEYS.STATE}`;
         return etcd.put(statusKey).value(CONST.RESOURCE_STATE.IN_QUEUE);
