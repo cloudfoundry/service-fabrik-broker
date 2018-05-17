@@ -99,7 +99,7 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('getResourceState');
   }
 
-  registerWatcher(key, callback, isRecursive) {
+  registerWatcher(key, callback, watchOnPrefix) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('registerWatcher');
   }
