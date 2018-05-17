@@ -358,8 +358,15 @@ describe('eventmesh', () => {
     });
 
     describe('#getAnnotationState', () => {
+      const opts = {
+        resourceType: 'fakeResourceType',
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeOperationType',
+        annotationId: 'fakeOperationId',
+      };
       it('should get the annotation state', () => {
-        return eventmesh.server.getAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId')
+        return eventmesh.server.getAnnotationState(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeAnnotationName/fakeOperationType/fakeOperationId/state')).to.be.true;
@@ -368,7 +375,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation state response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeAnnotationType', 'fakeAnnotationId')
+        return eventmesh.server.getAnnotationState(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });

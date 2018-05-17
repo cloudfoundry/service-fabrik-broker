@@ -155,15 +155,18 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return etcd.get(annotationKey).string();
   }
 
-  getAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId) {
-    const opts = {
-      resourceType: resourceType,
-      resourceId: resourceId,
-      annotationName: annotationName,
-      annotationType: annotationType,
-      annotationId: annotationId,
-      key: CONST.ANNOTATION_KEYS.STATE
-    };
+  getAnnotationState(opts) {
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get annotation state`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation state`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
+    opts = _
+      .chain(opts)
+      .assign({
+        key: CONST.ANNOTATION_KEYS.STATE
+      })
+      .value();
     return this.getAnnotationKey(opts);
   }
 }
