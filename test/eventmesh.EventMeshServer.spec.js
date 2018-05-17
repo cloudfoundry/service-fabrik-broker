@@ -81,10 +81,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('#getResourceKey', () => {
+    describe('#getResourceKeyValue', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.getResourceKey).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.getResourceKey).to.throw('getResourceKey');
+        expect(eventmesh.getResourceKeyValue).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.getResourceKeyValue).to.throw('getResourceKeyValue');
       });
     });
 

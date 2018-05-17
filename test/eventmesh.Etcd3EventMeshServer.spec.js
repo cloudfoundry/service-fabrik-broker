@@ -186,9 +186,9 @@ describe('eventmesh', () => {
 
     });
 
-    describe('#getResourceKey', () => {
+    describe('#getResourceKeyValue', () => {
       it('should get the resource key', () => {
-        return eventmesh.server.getResourceKey('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.server.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeKey')).to.be.true;
@@ -197,7 +197,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Resource key response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getResourceKey('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.server.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
