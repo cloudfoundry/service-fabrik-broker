@@ -119,9 +119,9 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('updateAnnotationKey');
   }
 
-  getAnnotationKey(opts) {
+  getAnnotationKeyValue(opts) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('getAnnotationKey');
+    throw new NotImplementedBySubclass('getAnnotationKeyValue');
   }
 
   getAnnotationState(opts) {

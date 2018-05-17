@@ -123,10 +123,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('#getAnnotationKey', () => {
+    describe('#getAnnotationKeyValue', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.getAnnotationKey).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.getAnnotationKey).to.throw('getAnnotationKey');
+        expect(eventmesh.getAnnotationKeyValue).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.getAnnotationKeyValue).to.throw('getAnnotationKeyValue');
       });
     });
 

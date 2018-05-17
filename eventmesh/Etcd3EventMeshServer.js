@@ -148,7 +148,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return etcd.put(annotationKey).value(opts.value);
   }
 
-  getAnnotationKey(opts) {
+  getAnnotationKeyValue(opts) {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get annotation key`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation key`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation key`);
@@ -173,7 +173,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
         key: CONST.ANNOTATION_KEYS.STATE
       })
       .value();
-    return this.getAnnotationKey(opts);
+    return this.getAnnotationKeyValue(opts);
   }
 }
 
