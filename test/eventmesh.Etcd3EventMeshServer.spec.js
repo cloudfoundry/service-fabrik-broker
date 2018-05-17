@@ -286,7 +286,7 @@ describe('eventmesh', () => {
         annotationType: 'fakeOperationType',
         annotationId: 'fakeOperationId',
         stateValue: 'fakeStateValue'
-      }
+      };
       it('should update the annotation state key', () => {
         return eventmesh.server.updateAnnotationState(opts)
           .then(() => {
@@ -313,7 +313,7 @@ describe('eventmesh', () => {
         annotationId: 'fakeOperationId',
         key: 'fakeKey',
         value: 'fakeValue'
-      }
+      };
       it('should update the annotation key specified', () => {
         return eventmesh.server.updateAnnotationKey(opts)
           .then(() => {
