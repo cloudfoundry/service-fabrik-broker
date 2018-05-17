@@ -332,8 +332,16 @@ describe('eventmesh', () => {
     });
 
     describe('#getAnnotationKey', () => {
+      const opts = {
+        resourceType: 'fakeResourceType',
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeOperationType',
+        annotationId: 'fakeOperationId',
+        key: 'fakeKey'
+      };
       it('should get the annotation key', () => {
-        return eventmesh.server.getAnnotationKey('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId', 'fakeKey')
+        return eventmesh.server.getAnnotationKey(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeAnnotationName/fakeOperationType/fakeOperationId/fakeKey')).to.be.true;
@@ -342,7 +350,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation key response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationKey('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.server.getAnnotationKey(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -360,7 +368,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation state response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.server.getAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeAnnotationType', 'fakeAnnotationId')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
