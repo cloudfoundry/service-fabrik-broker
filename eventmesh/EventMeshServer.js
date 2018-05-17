@@ -89,9 +89,9 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('updateResourceKey');
   }
 
-  getResourceKey(resourceType, resourceId, key) {
+  getResourceKeyValue(resourceType, resourceId, key) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('getResourceKey');
+    throw new NotImplementedBySubclass('getResourceKeyValue');
   }
 
   getResourceState(resourceType, resourceId) {

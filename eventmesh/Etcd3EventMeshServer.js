@@ -63,7 +63,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return etcd.put(resourceKey).value(value);
   }
 
-  getResourceKey(resourceType, resourceId, key) {
+  getResourceKeyValue(resourceType, resourceId, key) {
     logger.debug(`Getting resource key: ${key} for ${resourceType}/${resourceId}`);
     const resourceFolderName = this.getResourceFolderName(resourceType, resourceId);
     const resourceKey = `${resourceFolderName}/${key}`;
@@ -71,7 +71,7 @@ class Etcd3EventMeshServer extends EventMeshServer {
   }
 
   getResourceState(resourceType, resourceId) {
-    return this.getResourceKey(resourceType, resourceId, CONST.RESOURCE_KEYS.STATE);
+    return this.getResourceKeyValue(resourceType, resourceId, CONST.RESOURCE_KEYS.STATE);
   }
 
   registerWatcher(key, callback, watchOnPrefix) {
