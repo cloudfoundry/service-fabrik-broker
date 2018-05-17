@@ -74,8 +74,8 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return this.getResourceKey(resourceType, resourceId, CONST.RESOURCE_KEYS.STATE);
   }
 
-  registerWatcher(key, callback, isRecursive) {
-    if (isRecursive === true) {
+  registerWatcher(key, callback, watchOnPrefix) {
+    if (watchOnPrefix === true) {
       logger.debug(`Registering recursive watcher on prefix: ${key}`);
       return etcd.watch()
         .prefix(key)
