@@ -258,8 +258,16 @@ describe('eventmesh', () => {
     });
 
     describe('#annotateResource', () => {
+      const opts = {
+        resourceType: 'fakeResourceType',
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeOperationType',
+        annotationId: 'fakeOperationId',
+        val: 'fakeVal'
+      };
       it('should annotate the resourse with option and state keys', () => {
-        return eventmesh.server.annotateResource('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId', 'fakeVal')
+        return eventmesh.server.annotateResource(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeAnnotationName/fakeOperationType/fakeOperationId/options')).to.be.true;
@@ -271,7 +279,7 @@ describe('eventmesh', () => {
       it('should return put reponse for status key from the event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_optionKeyResponse');
         valueStub.onCall(1).returns('eventmesh_put_statusKeyResponse');
-        return eventmesh.server.annotateResource('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId', 'fakeVal')
+        return eventmesh.server.annotateResource(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_statusKeyResponse');
           });
