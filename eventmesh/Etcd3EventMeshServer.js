@@ -107,24 +107,16 @@ class Etcd3EventMeshServer extends EventMeshServer {
       });
   }
 
-  updateAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId, stateValue) {
-    let opts = {
-      resourceType: resourceType,
-      resourceId: resourceId,
-      annotationName: annotationName,
-      annotationType: annotationType,
-      annotationId: annotationId,
-      stateValue: stateValue
-    }
+  updateAnnotationState(opts) {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update annotation State`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
-    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
-    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation key`);
-    assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation key`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation state`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
+    assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation state`);
     opts = _.assign(opts, {
       key: CONST.ANNOTATION_KEYS.STATE,
-      value: stateValue
+      value: opts.stateValue
     })
     opts = _.omit(opts, 'stateValue')
     return this.updateAnnotationKey(opts);

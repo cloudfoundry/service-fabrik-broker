@@ -109,12 +109,12 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('annotateResource');
   }
 
-  updateAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId, stateValue) {
+  updateAnnotationState(opts) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('updateAnnotationState');
   }
 
-  updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key, value) {
+  updateAnnotationKey(opts) {
     /* jshint unused:false */
     throw new NotImplementedBySubclass('updateAnnotationKey');
   }

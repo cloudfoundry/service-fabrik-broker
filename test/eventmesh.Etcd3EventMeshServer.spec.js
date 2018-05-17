@@ -279,8 +279,16 @@ describe('eventmesh', () => {
     });
 
     describe('#updateAnnotationState', () => {
+      const opts = {
+        resourceType: 'fakeResourceType',
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeOperationType',
+        annotationId: 'fakeOperationId',
+        stateValue: 'fakeStateValue'
+      }
       it('should update the annotation state key', () => {
-        return eventmesh.server.updateAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId', 'fakeStateValue')
+        return eventmesh.server.updateAnnotationState(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeAnnotationName/fakeOperationType/fakeOperationId/state')).to.be.true;
@@ -289,7 +297,7 @@ describe('eventmesh', () => {
       });
       it('should return put annotation state response from event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_annotationStateKeyResponse');
-        return eventmesh.server.updateAnnotationState('fakeResourceType', 'fakeResourceId', 'fakeAnnotationName', 'fakeOperationType', 'fakeOperationId', 'fakeStateValue')
+        return eventmesh.server.updateAnnotationState(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_annotationStateKeyResponse');
           });
