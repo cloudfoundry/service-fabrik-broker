@@ -25,7 +25,11 @@ class EventMeshServer {
    *    - /deployments/<resourceType>/<resourceId>/lastoperation
    *
    * Annotations:
+   *    Annotations are operations that can be performed on the resource
    *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>
+   *    e.g:
+   *      /deployments/docker/<a guid>/backup/incremental/<a guid>
+   *      /deployments/docker/<a guid>/restore/default/<a guid>
    * Annotations attributes:
    *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/options
    *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/state
