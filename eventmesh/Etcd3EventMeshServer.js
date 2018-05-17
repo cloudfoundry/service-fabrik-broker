@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+const assert = require('assert');
 const config = require('./config');
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
@@ -106,14 +108,43 @@ class Etcd3EventMeshServer extends EventMeshServer {
   }
 
   updateAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId, stateValue) {
-    return this.updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, CONST.ANNOTATION_KEYS.STATE, stateValue);
+    let opts = {
+      resourceType: resourceType,
+      resourceId: resourceId,
+      annotationName: annotationName,
+      annotationType: annotationType,
+      annotationId: annotationId,
+      stateValue: stateValue
+    }
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to update annotation State`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation key`);
+    assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation key`);
+    opts = _.assign(opts, {
+      key: CONST.ANNOTATION_KEYS.STATE,
+      value: stateValue
+    })
+    opts = _.omit(opts, 'stateValue')
+    return this.updateAnnotationKey(opts);
   }
 
-  updateAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key, value) {
-    logger.debug(`Updating annotation key: ${key} of resource: ${resourceType}/${resourceId} for annotation ${annotationName}/${annotationType}/${annotationId}`);
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
-    const annotationKey = `${annotationFolderName}/${key}`;
-    return etcd.put(annotationKey).value(value);
+  updateAnnotationKey(opts) {
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to update annotation key`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation key`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation key`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation key`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation key`);
+    assert.ok(opts.key, `Property 'key' is required to update annotation key`);
+    assert.ok(opts.value, `Property 'value' is required to update annotation key`);
+    logger.debug(`Updating annotation key: ${opts.key} of resource: ` +
+      `${opts.resourceType}/${opts.resourceId} for annotation ` +
+      `${opts.annotationName}/${opts.annotationType}/${opts.annotationId}`);
+    const annotationFolderName = this.getAnnotationFolderName(
+      opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
+    const annotationKey = `${annotationFolderName}/${opts.key}`;
+    return etcd.put(annotationKey).value(opts.value);
   }
 
   getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key) {
