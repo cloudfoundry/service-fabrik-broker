@@ -142,15 +142,29 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return etcd.put(annotationKey).value(opts.value);
   }
 
-  getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, key) {
-    const annotationFolderName = this.getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId);
-    logger.debug(`Getting annotation key: ${key} for ${annotationFolderName}`);
-    const annotationKey = `${annotationFolderName}/${key}`;
+  getAnnotationKey(opts) {
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get annotation key`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation key`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation key`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation key`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation key`);
+    assert.ok(opts.key, `Property 'key' is required to get annotation key`);
+    const annotationFolderName = this.getAnnotationFolderName(opts.resourceType, opts.resourceId, opts.annotationName, opts.annotationType, opts.annotationId);
+    logger.debug(`Getting annotation key: ${opts.key} for ${opts.annotationFolderName}`);
+    const annotationKey = `${annotationFolderName}/${opts.key}`;
     return etcd.get(annotationKey).string();
   }
 
   getAnnotationState(resourceType, resourceId, annotationName, annotationType, annotationId) {
-    return this.getAnnotationKey(resourceType, resourceId, annotationName, annotationType, annotationId, CONST.ANNOTATION_KEYS.STATE);
+    const opts = {
+      resourceType: resourceType,
+      resourceId: resourceId,
+      annotationName: annotationName,
+      annotationType: annotationType,
+      annotationId: annotationId,
+      key: CONST.ANNOTATION_KEYS.STATE
+    };
+    return this.getAnnotationKey(opts);
   }
 }
 
