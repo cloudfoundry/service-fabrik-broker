@@ -2,14 +2,19 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('./config');
+const config = require('../common/config');
 const CONST = require('./constants');
 
 const {
   Etcd3
 } = require('etcd3');
 const client = new Etcd3({
-  hosts: config.etcd.url
+  hosts: config.etcd.url,
+  credentials: {
+    rootCertificate: config.etcd.ssl.ca,
+    privateKey: config.etcd.ssl.key,
+    certChain: config.etcd.ssl.crt
+  }
 });
 
 class LockManager {
