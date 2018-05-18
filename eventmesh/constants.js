@@ -4,7 +4,7 @@ module.exports = require('../common/constants');
 
 module.exports = Object.freeze({
   LOCK_TYPE: {
-    WRITE: "WRITE",
-    READ: "READ"
+    WRITE: 'WRITE',
+    READ: 'READ'
   }
 });

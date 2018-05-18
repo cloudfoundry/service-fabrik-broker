@@ -1,7 +1,6 @@
 'use strict';
 
 const Promise = require('bluebird');
-const sinon = require('sinon');
 const manager = require('../eventmesh').lockManager;
 const CONST = require('../eventmesh/constants');
 
@@ -37,7 +36,7 @@ describe('eventmesh', () => {
           release: () => Promise.resolve(stringStub())
         };
       });
-    })
+    });
 
     afterEach(function () {
       valueStub.reset();
@@ -79,6 +78,7 @@ describe('eventmesh', () => {
         jsonStub.onCall(0).returns(readLockResp);
         return manager.isWriteLocked('fakeResource')
           .then(result => {
+            /* jshint expr: true */
             expect(result).to.eql(false);
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
           });
@@ -91,6 +91,7 @@ describe('eventmesh', () => {
         jsonStub.onCall(0).returns(noLockResp);
         return manager.isWriteLocked('fakeResource')
           .then(result => {
+            /* jshint expr: true */
             expect(result).to.eql(false);
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
           });
@@ -105,6 +106,7 @@ describe('eventmesh', () => {
         };
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .then(() => {
+            /* jshint expr: true */
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
@@ -124,6 +126,7 @@ describe('eventmesh', () => {
         jsonStub.onCall(0).returns(noLockResp);
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .then(() => {
+            /* jshint expr: true */
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
@@ -139,6 +142,7 @@ describe('eventmesh', () => {
         jsonStub.onCall(0).returns(writeLockResp);
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .catch(e => {
+            /* jshint expr: true */
             expect(e.message).to.eql('Could not acquire lock');
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
@@ -154,6 +158,7 @@ describe('eventmesh', () => {
         };
         return manager.unlock('fakeResource')
           .then(() => {
+            /* jshint expr: true */
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(noLockResp))).to.be.true;
             expect(stringStub.called).to.be.false;

@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const Promise = require('bluebird');
 const config = require('../common/config');
 const CONST = require('./constants');
 
@@ -38,10 +37,10 @@ class LockManager {
       5. release the lock on "resource/lock"
   */
   lock(resource, operationType) {
-    const lock = client.lock(resource + "/lock");
+    const lock = client.lock(resource + '/lock');
     return lock.ttl(5).acquire()
       .then(() => {
-        return client.get(resource + "/lock/details").json();
+        return client.get(resource + '/lock/details').json();
       })
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') > 0) {
@@ -52,7 +51,7 @@ class LockManager {
           const newLockDetails = {};
           newLockDetails.count = 1;
           newLockDetails.operationType = operationType;
-          return client.put(resource + "/lock/details").value(JSON.stringify(newLockDetails));
+          return client.put(resource + '/lock/details').value(JSON.stringify(newLockDetails));
         }
       })
       .then(() => lock.release())
@@ -69,7 +68,7 @@ class LockManager {
     const newLockDetails = {};
     newLockDetails.count = 0;
     newLockDetails.operationType = '';
-    return client.put(resource + "/lock/details").value(JSON.stringify(newLockDetails));
+    return client.put(resource + '/lock/details').value(JSON.stringify(newLockDetails));
   }
 
   /*
@@ -78,16 +77,16 @@ class LockManager {
   Unless the count is 1 and operaitonType is "WRITE", they return false for all other cases.
   */
   isWriteLocked(resource) {
-    return client.get(resource + "/lock/details").json()
+    return client.get(resource + '/lock/details').json()
       .then(lockDetails => {
-        if (_.get(lockDetails, 'count') == 0) {
+        if (_.get(lockDetails, 'count') === 0) {
           return false;
-        } else if (_.get(lockDetails, 'operationType') == CONST.LOCK_TYPE.WRITE) {
+        } else if (_.get(lockDetails, 'operationType') === CONST.LOCK_TYPE.WRITE) {
           return true;
         } else {
           return false;
         }
-      })
+      });
   }
 
 }
