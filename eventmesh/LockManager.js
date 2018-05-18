@@ -10,9 +10,9 @@ const {
 const client = new Etcd3({
   hosts: config.etcd.url,
   credentials: {
-    rootCertificate: config.etcd.ssl.ca,
-    privateKey: config.etcd.ssl.key,
-    certChain: config.etcd.ssl.crt
+    rootCertificate: Buffer.from(config.etcd.ssl.ca, 'utf8'),
+    privateKey: Buffer.from(config.etcd.ssl.key, 'utf8'),
+    certChain: Buffer.from(config.etcd.ssl.crt, 'utf8')
   }
 });
 
