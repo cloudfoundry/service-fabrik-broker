@@ -10,11 +10,12 @@ const {
 
 describe('eventmesh', () => {
   describe('LockManager', () => {
-    let sandbox, valueStub, stringStub, jsonStub, putStub, getStub, lockStub;
+    let sandbox, valueStub, acquireStub, releaseStub, jsonStub, putStub, getStub, lockStub;
     before(() => {
       sandbox = sinon.sandbox.create();
       valueStub = sandbox.stub();
-      stringStub = sandbox.stub();
+      acquireStub = sandbox.stub();
+      releaseStub = sandbox.stub();
       jsonStub = sandbox.stub();
       putStub = sandbox.stub(Etcd3.prototype, 'put', () => {
         return {
@@ -30,10 +31,10 @@ describe('eventmesh', () => {
         return {
           ttl: () => {
             return {
-              acquire: () => Promise.resolve(stringStub())
+              acquire: () => Promise.resolve(acquireStub())
             };
           },
-          release: () => Promise.resolve(stringStub())
+          release: () => Promise.resolve(releaseStub())
         };
       });
     });
@@ -43,7 +44,8 @@ describe('eventmesh', () => {
       putStub.reset();
       getStub.reset();
       jsonStub.reset();
-      stringStub.reset();
+      acquireStub.reset();
+      releaseStub.reset();
     });
     after(function () {
       sandbox.restore();
@@ -52,8 +54,9 @@ describe('eventmesh', () => {
     describe('#isWriteLocked', () => {
       it('should return false in case the resource has no lock', () => {
         return manager.isWriteLocked('fakeResource')
-          .then(() => {
+          .then(result => {
             /* jshint expr: true */
+            expect(result).to.eql(false);
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
           });
       });
@@ -111,7 +114,8 @@ describe('eventmesh', () => {
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(stringStub.called).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.true;
           });
       });
       it('should succeed if no ongoing lock is there.', () => {
@@ -131,7 +135,8 @@ describe('eventmesh', () => {
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(stringStub.called).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.true;
           });
       });
       it('should fail if an ongoing lock is there.', () => {
@@ -143,10 +148,11 @@ describe('eventmesh', () => {
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .catch(e => {
             /* jshint expr: true */
-            expect(e.message).to.eql('Could not acquire lock');
+            expect(e.message).to.eql('Could not acquire lock for fakeResource');
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(stringStub.called).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.true;
           });
       });
     });
@@ -161,7 +167,8 @@ describe('eventmesh', () => {
             /* jshint expr: true */
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(noLockResp))).to.be.true;
-            expect(stringStub.called).to.be.false;
+            expect(acquireStub.called).to.be.false;
+            expect(releaseStub.called).to.be.false;
           });
       });
     });

@@ -36,25 +36,26 @@ class LockManager {
       5. release the lock on "resource/lock"
   */
   lock(resource, operationType) {
-    const lock = client.lock(resource + '/lock');
-    return lock.ttl(5).acquire()
+    const lock = client.lock(resource + CONST.LOCK_KEY_SUFFIX);
+    return lock.ttl(CONST.LOCK_TTL).acquire()
       .then(() => {
-        return client.get(resource + '/lock/details').json();
+        return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json();
       })
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') > 0) {
           return lock.release().then(() => {
-            throw Error('Could not acquire lock');
+            throw Error('Could not acquire lock for ' + resource);
           });
         } else {
           const newLockDetails = {};
           newLockDetails.count = 1;
           newLockDetails.operationType = operationType;
-          return client.put(resource + '/lock/details').value(JSON.stringify(newLockDetails));
+          return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
         }
       })
       .then(() => lock.release())
       .catch(e => {
+        this.unlock(resource);
         throw e;
       });
   }
@@ -62,12 +63,13 @@ class LockManager {
   /*
   Unlock operation needs to only reset the lock details value and make the count as 0. 
   As it is a single opetation, we do it directly, without having any external lock surrounding it.
+  Caller whould re-try if unlock fails.
   */
   unlock(resource) {
     const newLockDetails = {};
     newLockDetails.count = 0;
     newLockDetails.operationType = '';
-    return client.put(resource + '/lock/details').value(JSON.stringify(newLockDetails));
+    return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
   }
 
   /*
@@ -76,7 +78,7 @@ class LockManager {
   Unless the count is 1 and operaitonType is "WRITE", they return false for all other cases.
   */
   isWriteLocked(resource) {
-    return client.get(resource + '/lock/details').json()
+    return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json()
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') === 0) {
           return false;
