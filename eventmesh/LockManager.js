@@ -27,7 +27,6 @@ class LockManager {
   This value is read and updated to acquire lock. In order to make this two different operations synchronous, we do it taking a lock on the "resource/lock" key, which would ensure synchrounous execution of the read and update operation.
 
   Lock Algorithm looks like the following
-
       1. Lock "resource/lock"
       2. Check "resource/lock/details" value
       3. if lock value > 1 then lock is already acquired by someone, 
