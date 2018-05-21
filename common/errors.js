@@ -229,6 +229,13 @@ class ServiceBindingAlreadyExists extends BadRequest {
 }
 exports.ServiceBindingAlreadyExists = ServiceBindingAlreadyExists;
 
+class ETCDLockError extends BadRequest {
+  constructor(message) {
+    super(message);
+  }
+}
+exports.ETCDLockError = ETCDLockError;
+
 class SecurityGroupNotFound extends NotFound {
   constructor(name) {
     super(`Could not find Security Group with name ${name}`);
