@@ -26,7 +26,7 @@ class JobFabrik {
       if (BnRStatusPollerJob === undefined) {
         BnRStatusPollerJob = require('./BnRStatusPollerJob');
       }
-      return BnRStatusPollerJob;  
+      return BnRStatusPollerJob;
     case CONST.JOB.BLUEPRINT_JOB:
       if (BluePrintJob === undefined) {
         BluePrintJob = require('./BluePrintJob');

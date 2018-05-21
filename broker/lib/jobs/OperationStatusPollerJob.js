@@ -55,18 +55,18 @@ class OperationStatusPollerJob extends BaseJob {
     const boshDirectorName = job.attrs.data.bosh_director;
 
     return Promise.try(() => {
-      if (operationName === 'backup') {
-        return this
-          .getBrokerClient()
-          .getDeploymentBackupStatus(deploymentName, operationResp.token, boshDirectorName);
-      } else if (operationName === 'restore') {
-        return this
-          .getBrokerClient()
-          .getDeploymentRestoreStatus(deploymentName, operationResp.token, boshDirectorName);
-      } else {
-        throw new errors.BadRequest(`Operation ${operationName} not supported by status poller.`);
-      }
-    })
+        if (operationName === 'backup') {
+          return this
+            .getBrokerClient()
+            .getDeploymentBackupStatus(deploymentName, operationResp.token, boshDirectorName);
+        } else if (operationName === 'restore') {
+          return this
+            .getBrokerClient()
+            .getDeploymentRestoreStatus(deploymentName, operationResp.token, boshDirectorName);
+        } else {
+          throw new errors.BadRequest(`Operation ${operationName} not supported by status poller.`);
+        }
+      })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
         operationStatusResponse.operationTimedOut = false;
@@ -99,25 +99,25 @@ class OperationStatusPollerJob extends BaseJob {
       })
       .catch(errors.NotFound, (err) => {
         return Promise.try(() => {
-          if (operationName === 'backup') {
-            return backupStore
-              .patchBackupFile({
-                deployment_name: deploymentName,
-                root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME,
-                backup_guid: backupGuid
-              }, {
+            if (operationName === 'backup') {
+              return backupStore
+                .patchBackupFile({
+                  deployment_name: deploymentName,
+                  root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME,
+                  backup_guid: backupGuid
+                }, {
                   state: CONST.OPERATION.ABORTED
                 });
-          } else if (operationName === 'restore') {
-            return backupStore
-              .patchRestoreFile({
-                deployment_name: deploymentName,
-                root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
-              }, {
+            } else if (operationName === 'restore') {
+              return backupStore
+                .patchRestoreFile({
+                  deployment_name: deploymentName,
+                  root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
+                }, {
                   state: CONST.OPERATION.ABORTED
                 });
-          }
-        })
+            }
+          })
           .then(() => ScheduleManager.cancelSchedule(`${deploymentName}_${operationName}_${backupGuid}`, CONST.JOB.OPERATION_STATUS_POLLER))
           .then(() => {
             throw err;
