@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const assert = require('assert');
-const config = require('./config');
+const config = require('../common/config');
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
 const EventMeshServer = require('./EventMeshServer');
@@ -10,7 +10,12 @@ const {
   Etcd3
 } = require('etcd3');
 const etcd = new Etcd3({
-  hosts: config.etcd.url
+  hosts: config.etcd.url,
+  credentials: {
+    rootCertificate: Buffer.from(config.etcd.ssl.ca, 'utf8'),
+    privateKey: Buffer.from(config.etcd.ssl.key, 'utf8'),
+    certChain: Buffer.from(config.etcd.ssl.crt, 'utf8')
+  }
 });
 
 class Etcd3EventMeshServer extends EventMeshServer {
