@@ -652,23 +652,26 @@ class DirectorManager extends BaseManager {
         return response;
       });
   }
-  static registerBnRStatusPoller(data) {
-    // Repeat interval inminute
-    let operation = data.operation;
-    let body = _.pick(data, 'operation', 'backup_guid', 'instance_guid');
-    let tokenInput = _.pick(data, 'agent_ip', 'backup_guid');
-    let instanceGuid = _.get(data, 'instance_guid');
-    body.token = utils.encodeBase64(tokenInput);
+  static registerBnRStatusPoller(opts, instanceInfo) {
+    let instanceGuid = _.get(instanceInfo, 'instance_guid');
     const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
-    logger.debug(`Scheduling deployment ${instanceGuid} ${operation} for backup guid ${body.backup_guid}
+    logger.debug(`Scheduling deployment ${instanceGuid} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
           ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
     const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
+    const data = {
+      operation: opts.operation,
+      type: opts.type,
+      trigger: opts.trigger,
+      operation_details: instanceInfo
+    };
     return ScheduleManager
       .schedule(
-        `${instanceGuid}_${operation}_${body.backup_guid}`,
+        //TODO Need deployment_name instead of instanceGuid.
+        // For cross consumption scenario
+        `${instanceGuid}_${opts.operation}_${instanceInfo.backup_guid}`,
         CONST.JOB.BNR_STATUS_POLLER,
         repeatInterval,
-        body, {
+        data, {
           name: config.cf.username
         }
       );
@@ -704,7 +707,7 @@ class DirectorManager extends BaseManager {
         tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
       })
       .value();
-
+    let instanceInfo;
     const result = _
       .chain(opts)
       .pick('deployment')
@@ -749,23 +752,26 @@ class DirectorManager extends BaseManager {
         return this.agent
           .getHost(ips, 'backup')
           .tap(agent_ip => {
-            data.agent_ip = agent_ip;
-            return DirectorManager.registerBnRStatusPoller(data);
-          })
-          .tap(agent_ip => this.agent.startBackup(agent_ip, backup, vms))
-          .then(agent_ip => {
-            backupStarted = true;
             // set data and result agent ip
             data.agent_ip = result.agent_ip = agent_ip;
-            return this.backupStore.putFile(data);
-          })
-          .then(() => {
-            metaUpdated = true;
-            const instanceInfo = _.chain(data)
+            instanceInfo = _.chain(data)
               .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id')
               .set('deployment', deploymentName)
               .set('started_at', backupStartedAt)
               .value();
+            return DirectorManager.registerBnRStatusPoller({
+              operation: 'backup',
+              type: backup.type,
+              trigger: backup.trigger
+            }, instanceInfo);
+          })
+          .then(agent_ip => this.agent.startBackup(agent_ip, backup, vms))
+          .then(() => {
+            backupStarted = true;
+            return this.backupStore.putFile(data);
+          })
+          .then(() => {
+            metaUpdated = true;
             return this
               .acquireLock(deploymentName,
                 _.set(lockInfo, 'instanceInfo', instanceInfo))

@@ -45,13 +45,12 @@ class ServiceFabrikClient extends HttpClient {
       .then(accessToken => this
         .request({
           method: 'GET',
-          url: `/api/v1/service_instances/${options.instance_id}/backup/status`,
+          url: `/api/v1/service_instances/${options.instance_guid}/backup/status`,
           auth: {
             bearer: accessToken
           },
           qs: {
-            token: token,
-            options: options
+            token: token
           },
           json: true
         }, CONST.HTTP_STATUS_CODE.OK)

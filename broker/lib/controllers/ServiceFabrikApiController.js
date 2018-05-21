@@ -291,10 +291,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getBackupState(req, res) {
-    const decodedToken = utils.decodeBase64(req.query.token);
-    let instanceInfo = _.cloneDeep(req.query.options);
-    instanceInfo.agent_ip = decodedToken.agent_ip;
-    let operation = 'backup';
+    const instanceInfo = utils.decodeBase64(req.query.token);
+    const operation = 'backup';
     //Since the object maintains the state of poll, cloning it to ensure it cannot be tampered from outside (i.e. caller)
     assert.ok(instanceInfo.instance_guid, `${operation} poll operation must have the property 'instance_guid'`);
     assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
@@ -312,13 +310,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .then(directorManager => directorManager.getServiceFabrikOperationState(operation, instanceInfo));
       })
       .then(result => res
-        .status(result.state === 'aborting' ? 202 : 200)
-        .send({
-          state: result.state
-        })
+        .status(200)
+        .send(_.pick(result, 'state', 'description'))
       )
       .catch(error => {
         logger.error(`Error occurred while checking ${operation} status of :${instanceInfo.deployment} - for guid: ${instanceInfo.backup_guid}`, error);
+        throw error;
       });
   }
 

@@ -23,15 +23,19 @@ class BnRStatusPollerJob extends BasePollerJob {
   static run(job, done) {
     job.__started_At = new Date();
     const options = job.attrs.data;
-    logger.info(`-> Starting BnRStatusPollerJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]}
+    logger.info(`-> Starting BnRStatusPollerJob -  name: ${options[CONST.JOB_NAME_ATTRIB]}
           - operation: ${options.operation} - with options: ${JSON.stringify(options)} `);
-    if (!_.get(options, 'instance_guid') || !_.get(options, 'type') ||
-      !_.get(options, 'operation') || !_.get(options, 'backup_guid')) {
+    if (!_.get(options, 'operation_details.instance_guid') || !_.get(options, 'type') ||
+      !_.get(options, 'operation') || !_.get(options, 'operation_details.backup_guid') ||
+      !_.get(options, 'operation_details.tenant_id') || !_.get(options, 'operation_details.plan_id') ||
+      !_.get(options, 'operation_details.agent_ip') || !_.get(options, 'operation_details.started_at') ||
+      !_.get(options, 'operation_details.deployment') || !_.get(options, 'operation_details.service_id')) {
       const msg = `BnR status poller cannot be initiated as the required mandatory params 
-        (instance_guid | type | operation | backup_guid) is empty : ${JSON.stringify(options)}`;
+        (instance_guid | type | operation | backup_guid | tenant_id | plan_id | agent_ip | 
+          started_at | deployment | service_id) is empty : ${JSON.stringify(options)}`;
       logger.error(msg);
       return this.runFailed(new errors.BadRequest(msg), {}, job, done);
-    } else if (_.get(options, 'operation') !== 'backup' && _.get(options, 'operation') !== 'restore') {
+    } else if (_.get(options, 'operation') !== 'backup') {
       const msg = `Operation polling not supported for operation - ${options.operation}`;
       logger.error(msg);
       const err = {
@@ -41,7 +45,7 @@ class BnRStatusPollerJob extends BasePollerJob {
       return this.runFailed(err, {}, job, done);
     } else {
       //modify the first argument here based on implementation of the function
-      return this.checkOperationCompletionStatus(options.token, job)
+      return this.checkOperationCompletionStatus(job.attrs.data)
         .then(operationStatusResponse => this.runSucceeded(operationStatusResponse, job, done))
         .catch(err => {
           logger.error(`Error occurred while running operation ${options.operation} status poller for instance ${_.get(options, 'instance_guid')}.`, err);
@@ -50,22 +54,20 @@ class BnRStatusPollerJob extends BasePollerJob {
     }
   }
 
-  static checkOperationCompletionStatus(token, job) {
-
-    const operationStartedAt = moment(new Date(job.attrs.data.started_at));
-    const instanceGuid = job.attrs.data.instance_guid;
-    const operationName = job.attrs.data.operation;
-    const backup_guid = job.attrs.data.backup_guid;
-    //const planId = job.attrs.data.plan_id;
-    const deployment = job.attrs.data.deployment;
-    const instanceInfo = job.attrs.data;
-    //const boshDirectorName = job.attrs.data.bosh_director;
-
+  static checkOperationCompletionStatus(job_data) {
+    const operationName = job_data.operation;
+    const instanceInfo = job_data.operation_details;
+    const operationStartedAt = moment(new Date(instanceInfo.started_at));
+    const instance_guid = instanceInfo.instance_guid;
+    const backup_guid = instanceInfo.backup_guid;
+    //const planId = instanceInfo.plan_id;
+    const deployment = instanceInfo.deployment;
+    const token = utils.encodeBase64(instanceInfo);
     return Promise.try(() => {
         if (operationName === 'backup') {
           return this
             .getFabrikClient()
-            .getInstanceBackupStatus(job.attrs.data, token);
+            .getInstanceBackupStatus(instanceInfo, token);
         } else {
           throw new errors.BadRequest(`Operation ${operationName} not supported by BnR status poller.`);
         }
@@ -77,7 +79,8 @@ class BnRStatusPollerJob extends BasePollerJob {
         if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
           operationFinished = true;
         } else {
-          logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
+          //Operation didn't finish in expected time
+          logger.info(`Instance ${instance_guid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
           const currTime = moment();
           // 'backup_restore_status_poller_timeout' config data might need to put in job data: operation specific
           // operation can be other than backup/restore : thought just for future reference
@@ -108,15 +111,16 @@ class BnRStatusPollerJob extends BasePollerJob {
         }
 
         if (operationFinished) {
-          this.unlockDeployment(job.attrs.data, operationName, operationStatusResponse);
-          return ScheduleManager.cancelSchedule(`${instanceGuid}_${operationName}_${backup_guid}`, CONST.JOB.BNR_STATUS_POLLER)
+          return this
+            .unlockDeployment(instanceInfo, operationName, operationStatusResponse)
+            .then(() => ScheduleManager.cancelSchedule(`${instance_guid}_${operationName}_${backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
             .then(() => {
               if (operationStatusResponse.operationTimedOut) {
-                const msg = `Deployment ${instanceGuid} ${operationName} with backup guid ${backup_guid} exceeding timeout time 
+                const msg = `Deployment ${instance_guid} ${operationName} with backup guid ${backup_guid} exceeding timeout time
               ${config.backup.backup_restore_status_poller_timeout / 1000 / 60} (mins). Stopping status check`;
                 logger.error(msg);
               } else {
-                logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backup_guid} completed -`, operationStatusResponse);
+                logger.info(`Instance ${instance_guid} ${operationName} for backup guid ${backup_guid} completed -`, operationStatusResponse);
               }
               operationStatusResponse.jobCancelled = true;
               return operationStatusResponse;
@@ -129,7 +133,7 @@ class BnRStatusPollerJob extends BasePollerJob {
       instance_id: instanceInfo.instance_guid,
       isOperationSync: true,
       arguments: {
-        description: _.get(operationStatusResponse, 'description')
+        description: _.get(operationStatusResponse, 'description') || `${operation} completed`
       }
     });
     return unlockOperation
