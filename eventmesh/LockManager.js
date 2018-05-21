@@ -2,6 +2,9 @@
 
 const _ = require('lodash');
 const config = require('../common/config');
+const logger = require('../common/logger');
+const errors = require('../common/errors');
+const ETCDLockError = errors.ETCDLockError;
 const CONST = require('./constants');
 
 const {
@@ -20,7 +23,7 @@ class LockManager {
   /*
   Lock is tracked via the key value "resource/lock/details". 
   The value is a JSON type and the structure looks like the following.
-  {count: INT, operaitonType:STRING}
+  {count: INT, operationType:STRING}
   when a lock is taken, count value is set to 1.
   operationType value is either "READ or "WRITE", depending on if the ongoing operation will make sync operations like bind/unbind wait for it.
 
@@ -37,6 +40,7 @@ class LockManager {
   */
   lock(resource, operationType) {
     const lock = client.lock(resource + CONST.LOCK_KEY_SUFFIX);
+    let lockDetailsChanged = false;
     return lock.ttl(CONST.LOCK_TTL).acquire()
       .then(() => {
         return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json();
@@ -44,7 +48,7 @@ class LockManager {
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') > 0) {
           return lock.release().then(() => {
-            throw Error('Could not acquire lock for ' + resource);
+            throw new ETCDLockError(`Could not acquire lock for ${resource} as it is already locked.`);
           });
         } else {
           const newLockDetails = {};
@@ -53,10 +57,16 @@ class LockManager {
           return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
         }
       })
-      .then(() => lock.release())
+      .then(() => {
+        lockDetailsChanged = true;
+        return lock.release();
+      })
       .catch(e => {
-        this.unlock(resource);
-        throw e;
+        if (!lockDetailsChanged) {
+          throw new ETCDLockError(e.message);
+        } else {
+          logger.info('Resource unlock failed. However, now throwing error and letting lock successful as unlock happens automatically after 5 seconds');
+        }
       });
   }
 

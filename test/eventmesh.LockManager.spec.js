@@ -116,6 +116,7 @@ describe('eventmesh', () => {
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(acquireStub.called).to.be.true;
             expect(releaseStub.called).to.be.true;
+            sinon.assert.calledOnce(releaseStub);
           });
       });
       it('should succeed if no ongoing lock is there.', () => {
@@ -137,6 +138,7 @@ describe('eventmesh', () => {
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(acquireStub.called).to.be.true;
             expect(releaseStub.called).to.be.true;
+            sinon.assert.calledOnce(releaseStub);
           });
       });
       it('should fail if an ongoing lock is there.', () => {
@@ -148,11 +150,31 @@ describe('eventmesh', () => {
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .catch(e => {
             /* jshint expr: true */
-            expect(e.message).to.eql('Could not acquire lock for fakeResource');
+            expect(e.message).to.eql('Could not acquire lock for fakeResource as it is already locked.');
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
             expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
             expect(acquireStub.called).to.be.true;
             expect(releaseStub.called).to.be.true;
+            sinon.assert.calledOnce(releaseStub);
+          });
+      });
+
+      it('loc should not fail even if release of resource lock fails.', () => {
+        const noLockResp = {
+          'count': 0,
+          'operationType': ''
+        };
+        jsonStub.onCall(0).returns(noLockResp);
+        releaseStub.onCall(0).throws(new Error('Failed for acquire lock'));
+        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+          .then(() => {
+            /* jshint expr: true */
+            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
+            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.true;
+            sinon.assert.calledOnce(releaseStub);
+            expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
           });
       });
     });
