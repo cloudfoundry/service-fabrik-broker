@@ -11,7 +11,7 @@ const {
 describe('eventmesh', () => {
   describe('LockManager', () => {
     let sandbox, valueStub, acquireStub, releaseStub, jsonStub, putStub, getStub, lockStub;
-    before(() => {
+    beforeEach(() => {
       sandbox = sinon.sandbox.create();
       valueStub = sandbox.stub();
       acquireStub = sandbox.stub();
@@ -40,14 +40,6 @@ describe('eventmesh', () => {
     });
 
     afterEach(function () {
-      valueStub.reset();
-      putStub.reset();
-      getStub.reset();
-      jsonStub.reset();
-      acquireStub.reset();
-      releaseStub.reset();
-    });
-    after(function () {
       sandbox.restore();
     });
 
@@ -158,23 +150,6 @@ describe('eventmesh', () => {
             sinon.assert.calledOnce(releaseStub);
           });
       });
-      it('should fail if put fails.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        jsonStub.onCall(0).returns(noLockResp);
-        valueStub.throws(new Error('Failed for set lock details.'));
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
-          .catch(e => {
-            /* jshint expr: true */
-            expect(e.message).to.eql('Failed for set lock details.');
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.false; // we are not calling release explicitly here, after 5 seconds it will get released automatically.
-          });
-      });
       it('should not fail even if release of resource lock fails.', () => {
         const noLockResp = {
           'count': 0,
@@ -191,6 +166,23 @@ describe('eventmesh', () => {
             expect(releaseStub.called).to.be.true;
             sinon.assert.calledOnce(releaseStub);
             expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+          });
+      });
+      it('should fail if put fails.', () => {
+        const noLockResp = {
+          'count': 0,
+          'operationType': ''
+        };
+        jsonStub.onCall(0).returns(noLockResp);
+        valueStub.onCall(0).throws(new Error('Failed for set lock details.'));
+        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+          .catch(e => {
+            /* jshint expr: true */
+            expect(e.message).to.eql('Failed for set lock details.');
+            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
+            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.false; // we are not calling release explicitly here, after 5 seconds it will get released automatically.
           });
       });
     });
