@@ -158,14 +158,30 @@ describe('eventmesh', () => {
             sinon.assert.calledOnce(releaseStub);
           });
       });
-
-      it('loc should not fail even if release of resource lock fails.', () => {
+      it('should fail if put fails.', () => {
         const noLockResp = {
           'count': 0,
           'operationType': ''
         };
         jsonStub.onCall(0).returns(noLockResp);
-        releaseStub.onCall(0).throws(new Error('Failed for acquire lock'));
+        valueStub.throws(new Error('Failed for set lock details.'));
+        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+          .catch(e => {
+            /* jshint expr: true */
+            expect(e.message).to.eql('Failed for set lock details.');
+            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
+            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(acquireStub.called).to.be.true;
+            expect(releaseStub.called).to.be.false; // we are not calling release explicitly here, after 5 seconds it will get released automatically.
+          });
+      });
+      it('should not fail even if release of resource lock fails.', () => {
+        const noLockResp = {
+          'count': 0,
+          'operationType': ''
+        };
+        jsonStub.onCall(0).returns(noLockResp);
+        releaseStub.onCall(0).throws(new Error('Failed for release lock'));
         return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
           .then(() => {
             /* jshint expr: true */
