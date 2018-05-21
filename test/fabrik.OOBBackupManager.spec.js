@@ -17,7 +17,7 @@ describe('fabrik', function () {
   /* jshint expr:true */
   describe('OobBackupManager', function () {
     let oobBackupManager;
-    let sandbox, getDeploymentVMsStub, startBackupStub, putFileStub, getFileStub, startRestoreStub,
+    let sandbox, getDeploymentVMsStub, getHostStub, startBackupStub, putFileStub, getFileStub, startRestoreStub,
       listOobBackupFilesStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub,
       getRestoreLastOperationStub, getRestoreLogsStub, patchRestoreFileStub, getRestoreFileStub,
       getDeploymentManifestStub, getDeploymentInstancesStub;
@@ -125,6 +125,7 @@ describe('fabrik', function () {
       getDeploymentVMsStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentVms');
       getDeploymentInstancesStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentInstances');
       getDeploymentManifestStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentManifest');
+      getHostStub = sandbox.stub(Agent.prototype, 'getHost');
       startBackupStub = sandbox.stub(Agent.prototype, 'startBackup');
       startRestoreStub = sandbox.stub(Agent.prototype, 'startRestore');
       getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
@@ -140,6 +141,7 @@ describe('fabrik', function () {
       getDeploymentVMsStub.withArgs(deploymentName).returns(Promise.resolve(deploymentVms));
       getDeploymentInstancesStub.withArgs(deploymentName).returns(Promise.resolve(deploymentVms));
       getDeploymentManifestStub.withArgs(deploymentName).returns(new Promise.resolve(manifest));
+      getHostStub.withArgs().returns(Promise.resolve('10.11.0.2'));
       startBackupStub.withArgs().returns(Promise.resolve('10.11.0.2'));
       startRestoreStub.withArgs().returns(Promise.resolve('10.11.0.2'));
       getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
@@ -159,6 +161,7 @@ describe('fabrik', function () {
       getDeploymentManifestStub.reset();
       getDeploymentInstancesStub.reset();
       getDeploymentVMsStub.reset();
+      getHostStub.reset();
       startBackupStub.reset();
       startRestoreStub.reset();
       getBackupLastOperationStub.reset();
@@ -204,7 +207,9 @@ describe('fabrik', function () {
       return oobBackupManager.startBackup(opts).then(result => {
         expect(startBackupStub).to.be.calledOnce;
         expect(putFileStub).to.be.calledOnce;
-        expect(startBackupStub.firstCall.args[0]).to.eql(dbIps);
+        expect(getHostStub).to.be.calledOnce;
+        expect(getHostStub.firstCall.args[0]).to.eql(dbIps);
+        expect(startBackupStub.firstCall.args[0]).to.eql(expectedResult.agent_ip);
         expect(startBackupStub.firstCall.args[1].trigger).to.eql(CONST.BACKUP.TRIGGER.ON_DEMAND);
         expect(startBackupStub.firstCall.args[1].type).to.eql('online');
         expect(startBackupStub.firstCall.args[2]).to.eql(expectedVms);
@@ -230,7 +235,9 @@ describe('fabrik', function () {
       return oobBackupManager.startBackup(opts).then(result => {
         expect(startBackupStub).to.be.calledOnce;
         expect(putFileStub).to.be.calledOnce;
-        expect(startBackupStub.firstCall.args[0]).to.eql(dbIps);
+        expect(getHostStub).to.be.calledOnce;
+        expect(getHostStub.firstCall.args[0]).to.eql(dbIps);
+        expect(startBackupStub.firstCall.args[0]).to.eql(expectedResult.agent_ip);
         expect(startBackupStub.firstCall.args[1].trigger).to.eql(CONST.BACKUP.TRIGGER.ON_DEMAND);
         expect(startBackupStub.firstCall.args[1].type).to.eql('online');
         expect(startBackupStub.firstCall.args[2]).to.eql(expectedVms);

@@ -72,8 +72,10 @@ class OobBackupManager {
         backup.guid = data.backup_guid = result.backup_guid = backup_guid;
         data.secret = backup.secret = secret;
         data.container = _.get(args, 'container') || agentProperties.provider.container;
-        return new Agent(this.getAgentFromAgentProperties(agentProperties))
-          .startBackup(ips, backup, vms)
+        let agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+        return agent
+          .getHost(ips, 'backup')
+          .tap(ip => agent.startBackup(ip, backup, vms))
           .then(agent_ip => {
             // set data and result agent ip
             logger.info(`Service Fabrik Backup initiated by agent : ${agent_ip} - updating meta info `);

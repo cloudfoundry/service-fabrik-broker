@@ -358,10 +358,9 @@ describe('fabrik', function () {
 
       it('returns a JSON object', function () {
         return agent
-          .startBackup(ips, backup, vms)
-          .then(agentIp => {
-            expect(agentIp).to.equal(ip);
-            expect(requestStub).to.have.been.calledTwice;
+          .startBackup(ip, backup, vms)
+          .then(() => {
+            expect(requestStub).to.have.been.calledOnce;
           });
       });
     });

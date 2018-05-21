@@ -207,7 +207,8 @@ class Agent extends HttpClient {
       backup: backup,
       vms: vms
     };
-    return this.post(ip, 'backup/start', body, 202);
+    return this
+      .post(ip, 'backup/start', body, 202);
   }
 
   abortBackup(ip) {

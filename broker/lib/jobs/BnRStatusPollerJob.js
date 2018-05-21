@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const BasePollerJob = require('./BasePollerJob');
 const CONST = require('../constants');
 const ScheduleManager = require('./ScheduleManager');
@@ -8,9 +9,11 @@ const utils = require('../utils');
 const moment = require('moment');
 const logger = require('../logger');
 const errors = require('../errors');
-const Promise = require('bluebird');
 const config = require('../config');
+const bosh = require('../bosh');
 const DirectorManager = require('../fabrik/DirectorManager');
+const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
+const EventLogInterceptor = require('../../../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BasePollerJob {
   constructor() {
@@ -28,8 +31,7 @@ class BnRStatusPollerJob extends BasePollerJob {
         (instance_guid | type | operation | backup_guid) is empty : ${JSON.stringify(options)}`;
       logger.error(msg);
       return this.runFailed(new errors.BadRequest(msg), {}, job, done);
-    }
-    else if (_.get(options, 'operation') !== 'backup' && _.get(options, 'operation') !== 'restore') {
+    } else if (_.get(options, 'operation') !== 'backup' && _.get(options, 'operation') !== 'restore') {
       const msg = `Operation polling not supported for operation - ${options.operation}`;
       logger.error(msg);
       const err = {
@@ -53,21 +55,21 @@ class BnRStatusPollerJob extends BasePollerJob {
     const operationStartedAt = moment(new Date(job.attrs.data.started_at));
     const instanceGuid = job.attrs.data.instance_guid;
     const operationName = job.attrs.data.operation;
-    const backupGuid = job.attrs.data.backup_guid;
-    const planId = job.attrs.data.plan_id;
+    const backup_guid = job.attrs.data.backup_guid;
+    //const planId = job.attrs.data.plan_id;
     const deployment = job.attrs.data.deployment;
     const instanceInfo = job.attrs.data;
     //const boshDirectorName = job.attrs.data.bosh_director;
 
     return Promise.try(() => {
-      if (operationName === 'backup') {
-        return this
-          .getFabrikClient()
-          .getInstanceBackupStatus(job.attrs.data, token);
-      } else {
-        throw new errors.BadRequest(`Operation ${operationName} not supported by BnR status poller.`);
-      }
-    })
+        if (operationName === 'backup') {
+          return this
+            .getFabrikClient()
+            .getInstanceBackupStatus(job.attrs.data, token);
+        } else {
+          throw new errors.BadRequest(`Operation ${operationName} not supported by BnR status poller.`);
+        }
+      })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
         operationStatusResponse.operationTimedOut = false;
@@ -75,22 +77,22 @@ class BnRStatusPollerJob extends BasePollerJob {
         if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
           operationFinished = true;
         } else {
-          logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backupGuid} still in-progress - `, operationStatusResponse);
+          logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
           const currTime = moment();
           // 'backup_restore_status_poller_timeout' config data might need to put in job data: operation specific
           // operation can be other than backup/restore : thought just for future reference
           const lock_deployment_max_duration = bosh.director.getDirectorConfig(instanceInfo.deployment).lock_deployment_max_duration;
           if (currTime.diff(operationStartedAt) > lock_deployment_max_duration) {
             if (!instanceInfo.abortStartTime) {
-              abortStartTime = new Date();
+              let abortStartTime = new Date();
               instanceInfo.abortStartTime = abortStartTime;
-              DirectorManager.registerBnRStatusPoller(instanceInfo);
+              return DirectorManager.registerBnRStatusPoller(instanceInfo);
             } else {
               const currentTime = new Date();
               const abortDuration = (currentTime - instanceInfo.abortStartTime);
               if (abortDuration < config.backup.abort_time_out) {
-                logger.info(`backup abort is still in progress on : ${deployment} for guid : ${backupGuid}`);
-                operationStatusResponse.state = "aborting";//define in the constant
+                logger.info(`backup abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
+                operationStatusResponse.state = 'aborting'; //define in the constant
                 return operationStatusResponse;
               } else {
                 operationStatusResponse.state = CONST.OPERATION.ABORTED;
@@ -106,24 +108,23 @@ class BnRStatusPollerJob extends BasePollerJob {
         }
 
         if (operationFinished) {
-          this.unlockDeployment(job.attrs.data, operationStatusResponse);
-          return ScheduleManager.cancelSchedule(`${instanceGuid}_${operationName}_${backupGuid}`, CONST.JOB.BNR_STATUS_POLLER)
+          this.unlockDeployment(job.attrs.data, operationName, operationStatusResponse);
+          return ScheduleManager.cancelSchedule(`${instanceGuid}_${operationName}_${backup_guid}`, CONST.JOB.BNR_STATUS_POLLER)
             .then(() => {
               if (operationStatusResponse.operationTimedOut) {
-                const msg = `Deployment ${instanceGuid} ${operationName} with backup guid ${backupGuid} exceeding timeout time 
+                const msg = `Deployment ${instanceGuid} ${operationName} with backup guid ${backup_guid} exceeding timeout time 
               ${config.backup.backup_restore_status_poller_timeout / 1000 / 60} (mins). Stopping status check`;
                 logger.error(msg);
               } else {
-                logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backupGuid} completed -`, operationStatusResponse);
+                logger.info(`Instance ${instanceGuid} ${operationName} for backup guid ${backup_guid} completed -`, operationStatusResponse);
               }
               operationStatusResponse.jobCancelled = true;
               return operationStatusResponse;
             });
         }
-
-      })
+      });
   }
-  static unlockDeployment(instanceInfo, operationStatusResponse) {
+  static unlockDeployment(instanceInfo, operation, operationStatusResponse) {
     const unlockOperation = new ServiceFabrikOperation('unlock', {
       instance_id: instanceInfo.instance_guid,
       isOperationSync: true,

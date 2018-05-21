@@ -49,20 +49,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
     ];
     const requiresAdminScope = this.getConfigPropertyValue('external.api_requires_admin_scope', false);
     switch (_.toUpper(req.method)) {
-      case 'GET':
-        scopes.push('cloud_controller.admin_read_only');
-        if (!requiresAdminScope) {
-          scopes.push(
-            'cloud_controller.read',
-            'cloud_controller_service_permissions.read'
-          );
-        }
-        break;
-      default:
-        if (!requiresAdminScope) {
-          scopes.push('cloud_controller.write');
-        }
-        break;
+    case 'GET':
+      scopes.push('cloud_controller.admin_read_only');
+      if (!requiresAdminScope) {
+        scopes.push(
+          'cloud_controller.read',
+          'cloud_controller_service_permissions.read'
+        );
+      }
+      break;
+    default:
+      if (!requiresAdminScope) {
+        scopes.push('cloud_controller.write');
+      }
+      break;
     }
     const [scheme, bearer] = _
       .chain(req)
@@ -250,7 +250,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               .then(networkIndex => directorManager.getDeploymentName(req.params.instance_id, networkIndex))
               .tap(name => deploymentName = name)
               .then(deploymentName => directorManager.getLockProperty(deploymentName))
-              .then(lockInfo => FabrikStatusPoller.start(lockInfo.instanceInfo, 'backup', req.user))
+              // .then(lockInfo => FabrikStatusPoller.start(lockInfo.instanceInfo, 'backup', req.user))
               .catch(err => {
                 logger.error(`Error occurred while setting poller for backup on deployment : ${deploymentName}`, err);
                 directorManager.releaseLock(deploymentName)
@@ -291,12 +291,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getBackupState(req, res) {
-
     const decodedToken = utils.decodeBase64(req.query.token);
-    agentIp = decodedToken.agent_ip;
-
     let instanceInfo = _.cloneDeep(req.query.options);
     instanceInfo.agent_ip = decodedToken.agent_ip;
+    let operation = 'backup';
     //Since the object maintains the state of poll, cloning it to ensure it cannot be tampered from outside (i.e. caller)
     assert.ok(instanceInfo.instance_guid, `${operation} poll operation must have the property 'instance_guid'`);
     assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
@@ -306,15 +304,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
     assert.ok(instanceInfo.service_id, `${operation} poll operation must have the property 'service_id'`);
     assert.ok(instanceInfo.plan_id, `${operation} poll operation must have the property 'plan_id'`);
     assert.ok(instanceInfo.started_at, `${operation} poll operation must have the property 'started_at'`);
-
     const plan = catalog.getPlan(instanceInfo.plan_id);
-    let operationResponse;
-    return Promise.try(() => {
-      return DirectorManager
-        .load(plan)
-        .then(directorManager => directorManager.getServiceFabrikOperationState(operation, instanceInfo)) //could have used instanceInfo itself, but for UT setups need this to be passed
-        .tap(status => operationResponse = status);
-    })
+    return Promise
+      .try(() => {
+        return DirectorManager
+          .load(plan)
+          .then(directorManager => directorManager.getServiceFabrikOperationState(operation, instanceInfo));
+      })
+      .then(result => res
+        .status(result.state === 'aborting' ? 202 : 200)
+        .send({
+          state: result.state
+        })
+      )
       .catch(error => {
         logger.error(`Error occurred while checking ${operation} status of :${instanceInfo.deployment} - for guid: ${instanceInfo.backup_guid}`, error);
       });
@@ -350,9 +352,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
           instance_id: instance_id,
           service_id: service_id
         } : {
-            backup_guid: backup_guid,
-            tenant_id: tenant_id
-          })
+          backup_guid: backup_guid,
+          tenant_id: tenant_id
+        })
       )
       .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backup_guid}' found in this space`))
       .tap(metadata => {
@@ -370,8 +372,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           arguments: _.assign({
             backup: _.pick(metadata, 'type', 'secret')
           }, req.body, {
-              backup_guid: backup_guid || metadata.backup_guid
-            })
+            backup_guid: backup_guid || metadata.backup_guid
+          })
         })
         .handle(req, res)
       );
@@ -453,10 +455,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const options = _.pick(req.query, 'service_id', 'plan_id');
         options.tenant_id = req.entity.tenant_id;
         switch (req.params.operation) {
-          case 'backup':
-            return this.backupStore.listLastBackupFiles(options);
-          case 'restore':
-            return this.backupStore.listLastRestoreFiles(options);
+        case 'backup':
+          return this.backupStore.listLastBackupFiles(options);
+        case 'restore':
+          return this.backupStore.listLastRestoreFiles(options);
         }
         assert.ok(false, 'List result of last operation is only possible for \'backup\' or \'restore\'');
       })
