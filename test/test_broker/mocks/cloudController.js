@@ -118,7 +118,8 @@ function getServiceInstance(guid, entity, times) {
         guid: guid
       },
       entity: _.assign({
-        name: 'blueprint'
+        name: 'blueprint',
+        service_plan_guid: '466c5078-df6e-427d-8fb2-c76af50c0f56'
       }, entity)
     });
 }
