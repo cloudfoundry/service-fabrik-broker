@@ -534,6 +534,36 @@ describe('bosh', () => {
       });
     });
 
+    describe('#getTasksForDashboard', () => {
+      it('returns a JSON object', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/tasks',
+          qs: {
+            deployment: deployment_name,
+            limit: 1000
+          }
+        };
+
+        let response = {
+          body: JSON.stringify([{
+            id: 1234,
+            uuid: uuid.v4()
+          }]),
+          statusCode: 200 
+        };
+        
+        new MockBoshDirectorClient(request,response).getTasksForDashboard({
+          deployment: deployment_name
+        }).then(content => {
+          let body = JSON.parse(response.body)[0];
+          body.id = `${deployment_name}_${body.id}`;
+          expect(content).to.eql([body]);
+          done();
+        }).catch(done);
+      });
+    });
+
     describe('#getTasks', () => {
       it('returns a JSON object', (done) => {
         let request = {
