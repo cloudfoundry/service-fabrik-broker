@@ -483,7 +483,7 @@ class DirectorManager extends BaseManager {
 
   findDeploymentTask(deploymentName) {
     return this.director
-      .getTasks({
+      .getTasksForDashboard({
         deployment: deploymentName
       })
       .then(tasks => _
