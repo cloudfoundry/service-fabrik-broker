@@ -168,7 +168,7 @@ The required files mentioned above can be found here: https://github.com/cloudfo
 This process executes action scripts provided by services in restricted environment.
 More information on how to configure action scripts is documented here: https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
 
-Before starting deployment hooks process SETTINGS_PATH env variable has to be set.
+Before starting deployment hooks process, SETTINGS_PATH env variable has to be set.
 ```shell
 export SETTINGS_PATH=$(pwd)/deployment_hooks/config/settings.yml
 ```
