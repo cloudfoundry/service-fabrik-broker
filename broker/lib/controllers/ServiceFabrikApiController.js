@@ -231,7 +231,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .split(' ')
           .nth(1)
           .value();
-        let deploymentName;
         return this.fabrik
           .createOperation('backup', {
             instance_id: req.params.instance_id,
@@ -242,21 +241,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             useremail: req.user.email || ''
           })
           .invoke()
-          .tap(response => {
-            logger.info('backup response ', response);
-            const directorManager = req.manager;
-            directorManager
-              .findNetworkSegmentIndex(req.params.instance_id)
-              .then(networkIndex => directorManager.getDeploymentName(req.params.instance_id, networkIndex))
-              .tap(name => deploymentName = name)
-              .then(deploymentName => directorManager.getLockProperty(deploymentName))
-              // .then(lockInfo => FabrikStatusPoller.start(lockInfo.instanceInfo, 'backup', req.user))
-              .catch(err => {
-                logger.error(`Error occurred while setting poller for backup on deployment : ${deploymentName}`, err);
-                directorManager.releaseLock(deploymentName)
-                  .catch(err => logger.error(`Error occurred while releasing lock of backup on deployment : ${deploymentName}`, err));
-              });
-          })
+          .tap(response => logger.info('backup response ', response))
           .then(body => res
             .status(202)
             .send(body)
