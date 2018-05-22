@@ -66,8 +66,6 @@ class BnRStatusPollerJob extends BaseJob {
           return this
             .getFabrikClient()
             .getInstanceBackupStatus(instanceInfo, token);
-        } else {
-          throw new errors.BadRequest(`Operation ${operationName} not supported by BnR status poller.`);
         }
       })
       .then(operationStatusResponse => {
@@ -78,7 +76,6 @@ class BnRStatusPollerJob extends BaseJob {
           operationStatusResponse.operationFinished = true;
           return operationStatusResponse;
         } else {
-          //Operation didn't finish in expected time
           logger.info(`Instance ${instance_guid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
           const currentTime = new Date();
           const backup_triggered_duration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
@@ -96,13 +93,17 @@ class BnRStatusPollerJob extends BaseJob {
                   return serviceFabrikClient
                     .abortLastBackup(_.pick(instanceInfo, ['instance_guid', 'tenant_id']))
                     .then(() => DirectorManager.registerBnRStatusPoller(job_data, instanceInfo))
-                    .then(() => operationStatusResponse);
+                    .then(() => {
+                      operationStatusResponse.state = CONST.OPERATION.ABORTING;
+                      return operationStatusResponse;
+                    });
                 } else {
+                  // Operation aborted
                   const currentTime = new Date();
                   const abortDuration = (currentTime - new Date(instanceInfo.abortStartTime));
                   if (abortDuration < config.backup.abort_time_out) {
                     logger.info(`backup abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
-                    operationStatusResponse.state = 'aborting'; //define in the constant
+                    operationStatusResponse.state = CONST.OPERATION.ABORTING;
                   } else {
                     operationStatusResponse.state = CONST.OPERATION.ABORTED;
                     logger.info(`Abort Backup timed out on : ${deployment} for guid : ${backup_guid}. Flagging backup operation as complete`);
@@ -111,6 +112,9 @@ class BnRStatusPollerJob extends BaseJob {
                   }
                   return operationStatusResponse;
                 }
+              } else {
+                // Backup not timedout and still in-porogress
+                return operationStatusResponse;
               }
             });
         }
@@ -122,7 +126,7 @@ class BnRStatusPollerJob extends BaseJob {
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
     return this
       .unlockDeployment(instanceInfo, operationName, operationStatusResponse)
-      .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.instance_guid}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
+      .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
           const msg = `Deployment ${instanceInfo.instance_guid} ${operationName} with backup guid ${instanceInfo.backup_guid} exceeding timeout time
@@ -140,7 +144,7 @@ class BnRStatusPollerJob extends BaseJob {
       instance_id: instanceInfo.instance_guid,
       isOperationSync: true,
       arguments: {
-        description: _.get(operationStatusResponse, 'description') || `${operation} completed`
+        description: _.get(operationStatusResponse, 'description')
       }
     });
     return unlockOperation
@@ -157,10 +161,10 @@ class BnRStatusPollerJob extends BaseJob {
           eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, instanceInfo, resp, check_res_body);
         }
       })
-      .catch(err => logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err));
+      .catch(err => {
+        logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err);
+        throw err;
+      });
   }
 }
-
-
-
 module.exports = BnRStatusPollerJob;

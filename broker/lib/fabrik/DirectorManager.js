@@ -653,9 +653,9 @@ class DirectorManager extends BaseManager {
       });
   }
   static registerBnRStatusPoller(opts, instanceInfo) {
-    let instanceGuid = _.get(instanceInfo, 'instance_guid');
+    let deploymentName = _.get(instanceInfo, 'deployment');
     const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
-    logger.debug(`Scheduling deployment ${instanceGuid} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
+    logger.debug(`Scheduling deployment ${deploymentName} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
           ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
     const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
     const data = {
@@ -666,9 +666,7 @@ class DirectorManager extends BaseManager {
     };
     return ScheduleManager
       .schedule(
-        //TODO Need deployment_name instead of instanceGuid.
-        // For cross consumption scenario
-        `${instanceGuid}_${opts.operation}_${instanceInfo.backup_guid}`,
+        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
         CONST.JOB.BNR_STATUS_POLLER,
         repeatInterval,
         data, {

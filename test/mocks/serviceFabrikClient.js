@@ -12,6 +12,7 @@ exports.startBackup = startBackup;
 exports.deleteBackup = deleteBackup;
 exports.scheduleBackup = scheduleBackup;
 exports.scheduleUpdate = scheduleUpdate;
+exports.getBackupState = getBackupState;
 
 function startBackup(instance_id, payload, response) {
   return nock(serviceFabrikUrl)
@@ -23,6 +24,14 @@ function startBackup(instance_id, payload, response) {
     });
 }
 
+function getBackupState(instance_id, response, query) {
+  return nock(serviceFabrikUrl)
+    .replyContentLength()
+    .get(`/api/v1/service_instances/${instance_id}/backup/status`)
+    .query(query || true)
+    .reply(response.status, response.body || {});
+}
+
 function scheduleBackup(instance_id, payload) {
   const time = Date.now();
   const repeatTimezone = 'America/New_York';
@@ -31,110 +40,6 @@ function scheduleBackup(instance_id, payload) {
   return nock(serviceFabrikUrl)
     .replyContentLength()
     .put(`/api/v1/service_instances/${instance_id}/schedule_backup`, payload)
-    .reply(201, {
-      name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
-      repeatInterval: payload.repeatInterval,
-      data: {
-        instance_id: instance_id,
-        type: 'online'
-      },
-      nextRunAt: time,
-      lastRunAt: time,
-      lockedAt: null,
-      repeatTimezone: repeatTimezone,
-      createdAt: time,
-      updatedAt: time,
-      createdBy: username,
-      updatedBy: username
-    });
-}
-
-function scheduleUpdate(instance_id, payload) {
-  const time = Date.now();
-  const repeatTimezone = 'America/New_York';
-  const username = 'hugo';
-
-  return nock(serviceFabrikUrl)
-    .replyContentLength()
-    .put(`/api/v1/service_instances/${instance_id}/schedule_update`, payload)
-    .reply(201, {
-      name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
-      repeatInterval: payload.repeatInterval,
-      data: {
-        instance_id: instance_id,
-        type: 'online'
-      },
-      nextRunAt: time,
-      lastRunAt: time,
-      lockedAt: null,
-      repeatTimezone: repeatTimezone,
-      createdAt: time,
-      updatedAt: time,
-      createdBy: username,
-      updatedBy: username
-    });
-}
-
-function scheduleUpdate(instance_id, payload) {
-  const time = Date.now();
-  const repeatTimezone = 'America/New_York';
-  const username = 'hugo';
-
-  return nock(serviceFabrikUrl)
-    .replyContentLength()
-    .put(`/api/v1/service_instances/${instance_id}/schedule_update`, payload)
-    .reply(201, {
-      name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
-      repeatInterval: payload.repeatInterval,
-      data: {
-        instance_id: instance_id,
-        type: 'online'
-      },
-      nextRunAt: time,
-      lastRunAt: time,
-      lockedAt: null,
-      repeatTimezone: repeatTimezone,
-      createdAt: time,
-      updatedAt: time,
-      createdBy: username,
-      updatedBy: username
-    });
-}
-
-function scheduleUpdate(instance_id, payload) {
-  const time = Date.now();
-  const repeatTimezone = 'America/New_York';
-  const username = 'hugo';
-
-  return nock(serviceFabrikUrl)
-    .replyContentLength()
-    .put(`/api/v1/service_instances/${instance_id}/schedule_update`, payload)
-    .reply(201, {
-      name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
-      repeatInterval: payload.repeatInterval,
-      data: {
-        instance_id: instance_id,
-        type: 'online'
-      },
-      nextRunAt: time,
-      lastRunAt: time,
-      lockedAt: null,
-      repeatTimezone: repeatTimezone,
-      createdAt: time,
-      updatedAt: time,
-      createdBy: username,
-      updatedBy: username
-    });
-}
-
-function scheduleUpdate(instance_id, payload) {
-  const time = Date.now();
-  const repeatTimezone = 'America/New_York';
-  const username = 'hugo';
-
-  return nock(serviceFabrikUrl)
-    .replyContentLength()
-    .put(`/api/v1/service_instances/${instance_id}/schedule_update`, payload)
     .reply(201, {
       name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
       repeatInterval: payload.repeatInterval,
