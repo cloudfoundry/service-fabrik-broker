@@ -102,11 +102,11 @@ class BnRStatusPollerJob extends BaseJob {
                   const currentTime = new Date();
                   const abortDuration = (currentTime - new Date(instanceInfo.abortStartTime));
                   if (abortDuration < config.backup.abort_time_out) {
-                    logger.info(`backup abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
+                    logger.info(`${operationName} abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
                     operationStatusResponse.state = CONST.OPERATION.ABORTING;
                   } else {
                     operationStatusResponse.state = CONST.OPERATION.ABORTED;
-                    logger.info(`Abort Backup timed out on : ${deployment} for guid : ${backup_guid}. Flagging backup operation as complete`);
+                    logger.info(`Abort ${operationName} timed out on : ${deployment} for guid : ${backup_guid}. Flagging ${operationName} operation as complete`);
                     operationStatusResponse.operationTimedOut = true;
                     operationStatusResponse.operationFinished = true;
                   }

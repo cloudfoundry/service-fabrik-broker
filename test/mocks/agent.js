@@ -105,10 +105,10 @@ function abortBackup() {
     .reply(202, {});
 }
 
-function lastBackupOperation(body) {
+function lastBackupOperation(body, status) {
   return nock(agentUrl)
     .get('/v1/backup')
-    .reply(200, body);
+    .reply(status || 200, body);
 }
 
 function getBackupLogs(logs) {

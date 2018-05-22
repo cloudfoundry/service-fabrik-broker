@@ -10,7 +10,6 @@ const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
-//const FabrikStatusPoller = require('../fabrik/FabrikStatusPoller');
 const DirectorManager = require('../fabrik/DirectorManager');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;

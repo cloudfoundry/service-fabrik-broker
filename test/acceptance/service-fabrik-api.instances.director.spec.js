@@ -834,6 +834,99 @@ describe('service-fabrik-api', function () {
         });
       });
 
+      describe('#backup-status-polling', function () {
+        const backupState = {
+          state: 'processing',
+          stage: 'Creating snapshot...',
+          updated_at: new Date(Date.now())
+        };
+        const data = {
+          state: 'in progress',
+          description: `Backup deployment ${deployment_name} is still in progress: "${backupState.stage}"`,
+        };
+        const instanceInfo = {
+          tenant_id: space_guid,
+          instance_guid: instance_id,
+          agent_ip: mocks.agent.ip,
+          service_id: service_id,
+          plan_id: plan_id,
+          backup_guid: backup_guid,
+          deployment: deployment_name,
+          started_at: Date.now()
+        };
+
+        it('should return 200 Ok - backup state is retrieved from agent while in \'processing\' state', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.agent.lastBackupOperation(backupState);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup/status`)
+            .set('Authorization', authHeader)
+            .query({
+              token: utils.encodeBase64(instanceInfo)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              const result = _
+                .chain(data)
+                .value();
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(result);
+              mocks.verify();
+            });
+        });
+        it('should return 500 - mandatory parameter missing', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup/status`)
+            .set('Authorization', authHeader)
+            .query({
+              token: utils.encodeBase64(_.pick(instanceInfo, 'backup_guid'))
+            })
+            .catch(err => err.response)
+            .then(res => {
+              console.log(res);
+              expect(res.text.search(/backup poll operation must have the property 'instance_guid'/i) >= 0).to.be.eql(true);
+              expect(res).to.have.status(500);
+              mocks.verify();
+            });
+        });
+
+        it('should return 500 - Agent errored out', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.agent.lastBackupOperation(backupState, 500);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup/status`)
+            .set('Authorization', authHeader)
+            .query({
+              token: utils.encodeBase64(instanceInfo)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(500);
+              mocks.verify();
+            });
+        });
+
+      });
+
       describe('#backup-abort', function () {
         const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const filename = `${prefix}.${backup_guid}.${started_at}.json`;
