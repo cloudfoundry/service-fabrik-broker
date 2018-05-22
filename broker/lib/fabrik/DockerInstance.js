@@ -7,6 +7,7 @@ const errors = require('../errors');
 const utils = require('../utils');
 const docker = require('../docker');
 const BaseInstance = require('./BaseInstance');
+const catalog = require('../models').catalog;
 const Timeout = errors.Timeout;
 const ContainerStartError = errors.ContainerStartError;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
@@ -359,14 +360,16 @@ class DockerInstance extends BaseInstance {
           instance,
           this.getDetails(),
           this.getProcesses(),
-          this.getLogs()
+          this.getLogs(),
+          this.cloudController.getServicePlan(instance.entity.service_plan_guid,{})
         ]);
       })
-      .spread((instance, details, processes, logs) => {
+      .spread((instance, details, processes, logs, planInfo) => {
+        var currentPlan = catalog.getPlan(planInfo.entity.unique_id);
         return {
-          title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
-          plan: this.plan,
-          service: this.plan.service,
+          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: currentPlan,
+          service: currentPlan.service,
           instance: instance,
           details: details,
           processes: processes,
@@ -384,7 +387,6 @@ class DockerInstance extends BaseInstance {
         };
       });
   }
-
   getContainerStatus(state) {
     if (state.Running) {
       return `Up for ${utils.getTimeAgo(state.StartedAt, true)}${state.Paused ? ' (Paused)' : ''}`;
