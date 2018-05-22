@@ -1,0 +1,89 @@
+#!/bin/bash
+
+test_broker(){
+    rm -f ./logs/test.log
+    case $1 in 
+        "test")             _mocha test/test_broker test/test_broker/acceptance --opts test/test_broker/mocha_broker.opts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/test_broker/acceptance test/test_broker --opts test/test_broker/mocha_broker.opts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- test/test_broker/acceptance/ test/test_broker/ --opts test/test_broker/mocha_broker.opts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- test/test_broker test/test_broker/acceptance/ --opts test/test_broker/mocha_broker.opts;;
+    esac
+}
+
+test_deployment_hooks(){
+    rm -f ./logs/test.log
+    case $1 in 
+        "test")             _mocha test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+        "test-ci")          babel-node ./node_modules/.bin/isparta cover --report cobertura _mocha  -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+        "test-coverall")    babel-node ./node_modules/.bin/isparta cover --report lcovonly _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+        "test-cov")         babel-node ./node_modules/.bin/isparta cover _mocha -- test/test_deployment_hooks --opts test/test_deployment_hooks/mocha_deployment_hooks.opts;;
+    esac
+}
+
+help(){
+    echo "
+    Usage ./init $1 [ <broker> | <hooks>  | <help>]
+            broker      run $1 for broker
+            hooks       run $1 for deployment_hooks
+            help        show help
+    Note: Additionally you can run \"npm run $1 [broker | hooks | help]\" command
+    "
+}
+
+main(){
+    case $1 in
+        "test")
+            case $2 in
+                "")
+                    test_broker test
+                    test_deployment_hooks test
+                    ;;
+                "help")         help test; exit;;
+                "broker")       test_broker test;;
+                "hooks")        test_deployment_hooks test;;
+                *)              help test;exit;;
+            esac
+            ;;
+        "test-ci")
+            case $2 in
+                "")             help test-ci; exit;;
+                "help")         help test-ci; exit;;
+                "broker")       test_broker test-ci;exit;;
+                "hooks")        test_deployment_hooks test-ci;;
+                *)              help test-ci;exit;;
+            esac
+            ;;
+        "test-cov")
+            case $2 in
+                "")             help test-cov; exit;;
+                "help")         help test-cov; exit;;
+                "broker")       test_broker test-cov;;
+                "hooks")        test_deployment_hooks test-cov;;
+                *)              help test-cov;exit;;
+            esac
+            ;;
+        "test-coverall")
+            case $2 in
+                "")
+                    test_broker test-coverall
+                    mv ./coverage/lcov.info ./coverage/lcov_broker.info
+                    test_deployment_hooks test-coverall
+                    cat ./coverage/lcov_broker.info >> ./coverage/lcov.info
+                    cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+                    ;;
+                "help")         help test-coverall; exit;;
+                "broker")
+                    test_broker test-coverall
+                    cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+                    ;;
+                "hooks")
+                    test_deployment_hooks test-coverall
+                    cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+                    ;;
+                *)              help test-coverall;exit;;
+            esac
+            ;;
+        esac
+}
+
+main "${@:1}"

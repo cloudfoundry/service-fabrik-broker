@@ -1,0 +1,5 @@
+--require test/test_deployment_hooks/support
+--reporter spec
+--check-leaks
+--slow 100
+--growl

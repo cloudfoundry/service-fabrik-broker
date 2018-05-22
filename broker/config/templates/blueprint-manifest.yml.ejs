@@ -37,10 +37,16 @@ if (!spec.previous_manifest) {
   }
 }
 if(!spec.preUpdateAgentResponse && spec.previous_manifest){
-  properties.blueprint.preUpdateAgentResponse = spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateAgentResponse;
+  properties.blueprint.preUpdateAgentResponse = JSON.stringify(spec.previous_manifest.instance_groups[0].jobs[0].properties.preUpdateAgentResponse);
 }
 else if(spec.preUpdateAgentResponse){
   properties.blueprint.preUpdateAgentResponse = JSON.stringify(spec.preUpdateAgentResponse);
+}
+if(!spec.actions && spec.previous_manifest){
+  properties.blueprint.actionResponse = JSON.stringify(spec.previous_manifest.instance_groups[0].jobs[0].properties.actionResponse);
+}
+else{
+  properties.blueprint.actionResponse = JSON.stringify(spec.actions);
 }
 %>
 - name: blueprint
@@ -60,6 +66,7 @@ else if(spec.preUpdateAgentResponse){
     blueprint: &blueprint
     properties:
       port: 8080
+      actionResponse: <%= properties.blueprint.actionResponse %>
       preUpdateAgentResponse: <%= properties.blueprint.preUpdateAgentResponse %>
       admin:
         username: <%= properties.blueprint.admin.username %>
