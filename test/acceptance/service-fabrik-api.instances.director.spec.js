@@ -896,7 +896,6 @@ describe('service-fabrik-api', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              console.log(res);
               expect(res.text.search(/backup poll operation must have the property 'instance_guid'/i) >= 0).to.be.eql(true);
               expect(res).to.have.status(500);
               mocks.verify();
