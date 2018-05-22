@@ -560,7 +560,7 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it.only('should receive the update request from cloud controller and start the backup', function () {
+        it('should receive the update request from cloud controller and start the backup', function () {
           mocks.director.acquireLock();
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.getDeploymentVms(deployment_name);
