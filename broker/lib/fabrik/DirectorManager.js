@@ -15,6 +15,7 @@ const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
 const ActionManager = require('./actions/ActionManager');
+const ScheduleManager = require('../jobs');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
@@ -651,6 +652,28 @@ class DirectorManager extends BaseManager {
         return response;
       });
   }
+  static registerBnRStatusPoller(opts, instanceInfo) {
+    let deploymentName = _.get(instanceInfo, 'deployment');
+    const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
+    logger.debug(`Scheduling deployment ${deploymentName} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
+          ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
+    const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
+    const data = {
+      operation: opts.operation,
+      type: opts.type,
+      trigger: opts.trigger,
+      operation_details: instanceInfo
+    };
+    return ScheduleManager
+      .schedule(
+        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
+        CONST.JOB.BNR_STATUS_POLLER,
+        repeatInterval,
+        data, {
+          name: config.cf.username
+        }
+      );
+  }
 
   startBackup(opts) {
     const deploymentName = opts.deployment;
@@ -682,7 +705,7 @@ class DirectorManager extends BaseManager {
         tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
       })
       .value();
-
+    let instanceInfo;
     const result = _
       .chain(opts)
       .pick('deployment')
@@ -712,7 +735,8 @@ class DirectorManager extends BaseManager {
     };
     let lockAcquired = false,
       metaUpdated = false,
-      backupStarted = false;
+      backupStarted = false,
+      registeredStatusPoller = false;
 
     return Promise
       .all([
@@ -725,23 +749,33 @@ class DirectorManager extends BaseManager {
         logger.info(`Starting backup on - ${deploymentName}. Agent Ips for deployment - `, ips);
         data.secret = backup.secret = secret;
         return this.agent
-          .startBackup(ips, backup, vms)
-          .then(agent_ip => {
-            backupStarted = true;
+          .getHost(ips, 'backup')
+          .tap(agent_ip => {
             // set data and result agent ip
             data.agent_ip = result.agent_ip = agent_ip;
-            return this.backupStore.putFile(data);
-          })
-          .then(() => {
-            metaUpdated = true;
-            const instanceInfo = _.chain(data)
+            instanceInfo = _.chain(data)
               .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id')
               .set('deployment', deploymentName)
               .set('started_at', backupStartedAt)
               .value();
+            return DirectorManager.registerBnRStatusPoller({
+              operation: 'backup',
+              type: backup.type,
+              trigger: backup.trigger
+            }, instanceInfo);
+          })
+          .then(agent_ip => {
+            registeredStatusPoller = true;
+            return this.agent.startBackup(agent_ip, backup, vms);
+          })
+          .then(() => {
+            backupStarted = true;
+            return this.backupStore.putFile(data);
+          })
+          .then(() => {
+            metaUpdated = true;
             return this
-              .acquireLock(deploymentName,
-                _.set(lockInfo, 'instanceInfo', instanceInfo))
+              .acquireLock(deploymentName, lockInfo)
               .then(() => lockAcquired = true);
             //Since this execution flow is already in CF update acquiring the lock post successful start of backup.
             //We are creating another lock (on the deployment) & releasing the CF Lock for update operation by making the response for backup as SYNCH.
@@ -752,6 +786,15 @@ class DirectorManager extends BaseManager {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated}`, err))
+          .tap(() => {
+            if (registeredStatusPoller) {
+              logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${instanceInfo.backup_guid}`);
+              return ScheduleManager
+                .cancelSchedule(`${deploymentName}_backup_${instanceInfo.backup_guid}`,
+                  CONST.JOB.BNR_STATUS_POLLER)
+                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+            }
+          })
           .tap(() => {
             if (backupStarted) {
               logger.error(`Error occurred during backup process. Aborting backup on deployment : ${deploymentName}`);

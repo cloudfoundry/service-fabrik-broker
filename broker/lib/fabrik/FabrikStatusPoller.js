@@ -136,7 +136,10 @@ class FabrikStatusPoller {
   }
 
   static startIfNotLocked(lockInfo, operation) {
-    if (lockInfo) {
+    //checking of lockInfo.instanceInfo done to support
+    // ongoing-backup's status polling. After introduction of
+    // BnRStatusPoller lockinfo won't have 'instanceInfo'.
+    if (lockInfo && lockInfo.instanceInfo) {
       logger.info(`Poller found valid lock `, lockInfo);
       return this.start(lockInfo.instanceInfo, operation);
     }

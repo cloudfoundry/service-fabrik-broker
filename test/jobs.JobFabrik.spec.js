@@ -4,6 +4,7 @@ const JobFabrik = require('../broker/lib/jobs/JobFabrik');
 const ScheduledBackup = require('../broker/lib/jobs/ScheduleBackupJob');
 const ScheduledOobDeploymentBackupJob = require('../broker/lib/jobs/ScheduledOobDeploymentBackupJob');
 const OperationStatusPollerJob = require('../broker/lib/jobs/OperationStatusPollerJob');
+const BnRStatusPollerJob = require('../broker/lib/jobs/BnRStatusPollerJob');
 const BluePrintJob = require('../broker/lib/jobs/BluePrintJob');
 const BackupReaperJob = require('../broker/lib/jobs/BackupReaperJob');
 const ServiceInstanceUpdateJob = require('../broker/lib/jobs/ServiceInstanceUpdateJob');
@@ -21,6 +22,8 @@ describe('Jobs', function () {
         expect(reaperJob).to.eql(BackupReaperJob);
         const statusPollerJob = JobFabrik.getJob(CONST.JOB.OPERATION_STATUS_POLLER);
         expect(statusPollerJob).to.eql(OperationStatusPollerJob);
+        const bnrStatusPollerJob = JobFabrik.getJob(CONST.JOB.BNR_STATUS_POLLER);
+        expect(bnrStatusPollerJob).to.eql(BnRStatusPollerJob);
         const oobJob = JobFabrik.getJob(CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP);
         expect(oobJob).to.eql(ScheduledOobDeploymentBackupJob);
         const serviceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);

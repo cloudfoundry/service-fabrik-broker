@@ -10,7 +10,7 @@ const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
-const FabrikStatusPoller = require('../fabrik/FabrikStatusPoller');
+const DirectorManager = require('../fabrik/DirectorManager');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
@@ -230,7 +230,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .split(' ')
           .nth(1)
           .value();
-        let deploymentName;
         return this.fabrik
           .createOperation('backup', {
             instance_id: req.params.instance_id,
@@ -241,21 +240,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             useremail: req.user.email || ''
           })
           .invoke()
-          .tap(response => {
-            logger.info('backup response ', response);
-            const directorManager = req.manager;
-            directorManager
-              .findNetworkSegmentIndex(req.params.instance_id)
-              .then(networkIndex => directorManager.getDeploymentName(req.params.instance_id, networkIndex))
-              .tap(name => deploymentName = name)
-              .then(deploymentName => directorManager.getLockProperty(deploymentName))
-              .then(lockInfo => FabrikStatusPoller.start(lockInfo.instanceInfo, 'backup', req.user))
-              .catch(err => {
-                logger.error(`Error occurred while setting poller for backup on deployment : ${deploymentName}`, err);
-                directorManager.releaseLock(deploymentName)
-                  .catch(err => logger.error(`Error occurred while releasing lock of backup on deployment : ${deploymentName}`, err));
-              });
-          })
+          .tap(response => logger.info('backup response ', response))
           .then(body => res
             .status(202)
             .send(body)
@@ -287,6 +272,35 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .status(result.state === 'aborting' ? 202 : 200)
         .send({})
       );
+  }
+
+  getBackupState(req, res) {
+    const instanceInfo = utils.decodeBase64(req.query.token);
+    const operation = 'backup';
+    //Since the object maintains the state of poll, cloning it to ensure it cannot be tampered from outside (i.e. caller)
+    assert.ok(instanceInfo.instance_guid, `${operation} poll operation must have the property 'instance_guid'`);
+    assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
+    assert.ok(instanceInfo.deployment, `${operation} poll operation must have the property 'deployment'`);
+    assert.ok(instanceInfo.tenant_id, `${operation} poll operation must have the property 'tenant_id'`);
+    assert.ok(instanceInfo.backup_guid, `${operation} poll operation must have the property 'backup_guid'`);
+    assert.ok(instanceInfo.service_id, `${operation} poll operation must have the property 'service_id'`);
+    assert.ok(instanceInfo.plan_id, `${operation} poll operation must have the property 'plan_id'`);
+    assert.ok(instanceInfo.started_at, `${operation} poll operation must have the property 'started_at'`);
+    const plan = catalog.getPlan(instanceInfo.plan_id);
+    return Promise
+      .try(() => {
+        return DirectorManager
+          .load(plan)
+          .then(directorManager => directorManager.getServiceFabrikOperationState(operation, instanceInfo));
+      })
+      .then(result => res
+        .status(200)
+        .send(_.pick(result, 'state', 'description'))
+      )
+      .catch(error => {
+        logger.error(`Error occurred while checking ${operation} status of :${instanceInfo.deployment} - for guid: ${instanceInfo.backup_guid}`, error);
+        throw error;
+      });
   }
 
   startRestore(req, res) {
