@@ -22,7 +22,7 @@ class ScriptExecutor {
       if (config.enable_syscall_filters) {
         // call seccomp executable with supported command line args
         // <path-to-seccomp-executable> '<executable_command>' <syscall1> <syscall2> <syscall3> ...
-        executable_command = `${SECCOMP_CMD} "${this.command} '${JSON.stringify(args).replace(/"/g, '\\"')}'" `;
+        executable_command = `$SECCOMP_CMD "${this.command} '${JSON.stringify(args).replace(/"/g, '\\"')}'" ${config.whitelisted_syscalls}`;
       }
       logger.info(executable_command);
       child_process.exec(executable_command, (err, stdout, stderr) => {

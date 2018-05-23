@@ -24,9 +24,12 @@ defaults: &defaults
   http_timeout: 80000
   enable_syscall_filters: false
   # list of syscalls that are allowed by default
-  allowed_syscall_list: [
-    
-  ]
+  whitelisted_syscalls: >
+    access arch_prctl brk clone clock_getres clock_gettime clone close dup2
+    epoll_create1 epoll_ctl epoll_wait eventfd2 execve exit_group fcntl fstat
+    futex getcwd getegid geteuid getgid getpid getppid getrlimit getuid ioctl
+    lstat madvise mmap mprotect munmap open pipe2 poll prctl pread64 read readlink
+    rt_sigaction rt_sigprocmask rt_sigreturn setrlimit set_robust_list set_tid_address stat wait4 write
 
   ##############################
   # HOOK ENDPOINT SETTINGS #
