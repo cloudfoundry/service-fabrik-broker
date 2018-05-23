@@ -26,9 +26,6 @@ int main(int argc, char **argv)
         // (via setuid, capabilities, ...)
         // No need to set PR_SET_NO_NEW_PRIVS, it is enabled by default
         // prctl(PR_SET_NO_NEW_PRIVS, 1);
-
-        // ensure no escape is possible via ptrace
-        prctl(PR_SET_DUMPABLE, 0);
         // ensure no escape is possible via ptrace
         prctl(PR_SET_DUMPABLE, 0);
         // Init the filter
