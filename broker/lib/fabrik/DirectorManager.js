@@ -756,7 +756,7 @@ class DirectorManager extends BaseManager {
             if (backupStarted) {
               logger.error(`Error occurred during backup process. Aborting backup on deployment : ${deploymentName}`);
               return this
-                .abortLastBackup(this.getTenantGuid(data.context), data.instance_guid, true)
+                .abortLastBackup(data.tenant_id, data.instance_guid, true)
                 .finally(() => {
                   if (metaUpdated) {
                     const options = _
