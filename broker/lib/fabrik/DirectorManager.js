@@ -691,7 +691,7 @@ class DirectorManager extends BaseManager {
     const backupStartedAt = new Date().toISOString();
     const data = _
       .chain(opts)
-      .pick('deployment', 'service_id', 'plan_id', 'organization_guid', 'instance_guid', 'username')
+      .pick('service_id', 'plan_id', 'organization_guid', 'instance_guid', 'username')
       .assign({
         operation: 'backup',
         type: backup.type,
@@ -735,7 +735,8 @@ class DirectorManager extends BaseManager {
     };
     let lockAcquired = false,
       metaUpdated = false,
-      backupStarted = false;
+      backupStarted = false,
+      registeredStatusPoller = false;
 
     return Promise
       .all([
@@ -763,7 +764,10 @@ class DirectorManager extends BaseManager {
               trigger: backup.trigger
             }, instanceInfo);
           })
-          .then(agent_ip => this.agent.startBackup(agent_ip, backup, vms))
+          .then(agent_ip => {
+            registeredStatusPoller = true;
+            return this.agent.startBackup(agent_ip, backup, vms);
+          })
           .then(() => {
             backupStarted = true;
             return this.backupStore.putFile(data);
@@ -771,8 +775,7 @@ class DirectorManager extends BaseManager {
           .then(() => {
             metaUpdated = true;
             return this
-              .acquireLock(deploymentName,
-                _.set(lockInfo, 'instanceInfo', instanceInfo))
+              .acquireLock(deploymentName, lockInfo)
               .then(() => lockAcquired = true);
             //Since this execution flow is already in CF update acquiring the lock post successful start of backup.
             //We are creating another lock (on the deployment) & releasing the CF Lock for update operation by making the response for backup as SYNCH.
@@ -783,6 +786,15 @@ class DirectorManager extends BaseManager {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated}`, err))
+          .tap(() => {
+            if (registeredStatusPoller) {
+              logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${instanceInfo.backup_guid}`);
+              return ScheduleManager
+                .cancelSchedule(`${deploymentName}_backup_${instanceInfo.backup_guid}`,
+                  CONST.JOB.BNR_STATUS_POLLER)
+                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+            }
+          })
           .tap(() => {
             if (backupStarted) {
               logger.error(`Error occurred during backup process. Aborting backup on deployment : ${deploymentName}`);

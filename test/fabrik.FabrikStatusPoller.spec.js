@@ -204,7 +204,12 @@ describe('fabrik', function () {
       });
       describe('#startIfNotLocked', function () {
         it('It should call start() if deployment is  locked', function () {
-          FabrikStatusPoller.startIfNotLocked(true, {});
+          FabrikStatusPoller.startIfNotLocked({
+            username: 'admin',
+            lockedForOperation: 'backup',
+            createdAt: new Date(),
+            instanceInfo: instanceInfo
+          }, {});
           return expect(startStub).to.be.calledOnce;
         });
         it('It should not call start() if deployment is not locked', function () {
@@ -216,7 +221,12 @@ describe('fabrik', function () {
         it('should restart polling for deployments with lock', function () {
           _.each(
             deployments, name =>
-            mocks.director.getLockProperty(name, true));
+            mocks.director.getLockProperty(name, true, {
+              username: 'admin',
+              lockedForOperation: 'backup',
+              createdAt: new Date(),
+              instanceInfo: instanceInfo
+            }));
           return FabrikStatusPoller
             .restart('backup')
             .then(promises => Promise.all(promises)

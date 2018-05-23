@@ -60,8 +60,8 @@ class BnRStatusPollerJob extends BaseJob {
     const instance_guid = instanceInfo.instance_guid;
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
-    const token = utils.encodeBase64(instanceInfo);
     return Promise.try(() => {
+        const token = utils.encodeBase64(instanceInfo);
         if (operationName === 'backup') {
           return this
             .getFabrikClient()
@@ -121,7 +121,8 @@ class BnRStatusPollerJob extends BaseJob {
       })
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
         this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) :
-        Promise.resolve(operationStatusResponse));
+        Promise.resolve(operationStatusResponse)
+      );
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
     return this
