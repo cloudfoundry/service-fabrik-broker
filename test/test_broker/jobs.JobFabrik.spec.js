@@ -36,7 +36,7 @@ describe('Jobs', function () {
           attrs: {
             data: {}
           }
-        }, () => { });
+        }, () => {});
       });
       it('should throw Assertion error when requested non-existing job definition', function () {
         expect(JobFabrik.getJob.bind(JobFabrik, 'NON_EXISTING_JOB')).to.throw(AssertionError);
