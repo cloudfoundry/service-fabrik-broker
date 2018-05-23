@@ -361,7 +361,7 @@ class DockerInstance extends BaseInstance {
           this.getDetails(),
           this.getProcesses(),
           this.getLogs(),
-          this.cloudController.getServicePlan(instance.entity.service_plan_guid,{})
+          this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
         ]);
       })
       .spread((instance, details, processes, logs, planInfo) => {

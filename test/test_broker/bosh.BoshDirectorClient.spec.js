@@ -550,10 +550,10 @@ describe('bosh', () => {
             id: 1234,
             uuid: uuid.v4()
           }]),
-          statusCode: 200 
+          statusCode: 200
         };
-        
-        new MockBoshDirectorClient(request,response).getTasksForDashboard({
+
+        new MockBoshDirectorClient(request, response).getTasksForDashboard({
           deployment: deployment_name
         }).then(content => {
           let body = JSON.parse(response.body)[0];

@@ -322,28 +322,28 @@ class DirectorInstance extends BaseInstance {
         this.cloudController.getServiceInstance(this.guid),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
-      .spread((instance,deploymentInfo) => {
+      .spread((instance, deploymentInfo) => {
         return Promise.all([
           instance,
           deploymentInfo,
-          this.cloudController.getServicePlan(instance.entity.service_plan_guid,{})
+          this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
         ]);
       })
       .spread((instance, deploymentInfo, planInfo) => {
         var currentPlan = catalog.getPlan(planInfo.entity.unique_id);
         return {
-        title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-        plan: currentPlan,
-        service: currentPlan.service,
-        instance: _.set(instance, 'task', deploymentInfo),
-        files: [{
-          id: 'status',
-          title: 'Status',
-          language: 'yaml',
-          content: yaml.dump(deploymentInfo)
-        }]
-      };
-    });
+          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: currentPlan,
+          service: currentPlan.service,
+          instance: _.set(instance, 'task', deploymentInfo),
+          files: [{
+            id: 'status',
+            title: 'Status',
+            language: 'yaml',
+            content: yaml.dump(deploymentInfo)
+          }]
+        };
+      });
   }
 
   scheduleBackUp() {

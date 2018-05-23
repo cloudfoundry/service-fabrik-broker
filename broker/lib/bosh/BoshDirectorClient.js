@@ -628,21 +628,21 @@ class BoshDirectorClient extends HttpClient {
 
     //Get the corresponding directorConfig first and then request to that config directly.
     return this.getDirectorConfig(options.deployment)
-    .then(configForDeployment => {
-      return this.makeRequestWithConfig({
-        method: 'GET',
-        url: '/tasks',
-        qs: _.pick(query, ['limit', 'state', 'deployment'])
-      }, 200, configForDeployment);
-    })
-    .then(res => JSON.parse(res.body))
-    .map(task => {
-      task.id = `${options.deployment}_${task.id}`;
-      return task;
-    })
-    .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);    
+      .then(configForDeployment => {
+        return this.makeRequestWithConfig({
+          method: 'GET',
+          url: '/tasks',
+          qs: _.pick(query, ['limit', 'state', 'deployment'])
+        }, 200, configForDeployment);
+      })
+      .then(res => JSON.parse(res.body))
+      .map(task => {
+        task.id = `${options.deployment}_${task.id}`;
+        return task;
+      })
+      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
   }
-  
+
   getTasks(options) {
     const query = _.assign({
       limit: 1000
