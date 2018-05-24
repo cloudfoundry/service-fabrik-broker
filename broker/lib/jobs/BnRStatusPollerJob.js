@@ -10,6 +10,7 @@ const logger = require('../logger');
 const errors = require('../errors');
 const config = require('../config');
 const bosh = require('../bosh');
+const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
@@ -61,11 +62,11 @@ class BnRStatusPollerJob extends BaseJob {
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
     return Promise.try(() => {
-        const token = utils.encodeBase64(instanceInfo);
         if (operationName === 'backup') {
-          return this
-            .getFabrikClient()
-            .getInstanceBackupStatus(instanceInfo, token);
+          const plan = catalog.getPlan(instanceInfo.plan_id);
+          return DirectorManager
+            .load(plan)
+            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
       })
       .then(operationStatusResponse => {
