@@ -174,7 +174,7 @@ export SETTINGS_PATH=$(pwd)/deployment_hooks/config/settings.yml
 ```
 If you need  to change the `settings.yml` configuration you should copy the file and point the deployment_hooks to your settings file via the environment variable `SETTINGS_PATH`.
 ```shell
-# env vars you may like to set to different than these default values
+# env vars you may like to set to different than these default values:
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
 # cp $(pwd)/deployment_hooks/config/settings.yml $(pwd)/deployment_hooks/config/my-settings.yml
 # export SETTINGS_PATH=$(pwd)/deployment_hooks/config/my-settings.yml
