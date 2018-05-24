@@ -14,7 +14,6 @@ const Agent = require('./Agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
-const ActionManager = require('./actions/ActionManager');
 const ScheduleManager = require('../jobs');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
@@ -278,6 +277,10 @@ class DirectorManager extends BaseManager {
   }
 
   executeActions(phase, context) {
+    //Lazy create of deploymentHookClient
+    //Only Processes that require service lifecycle operations will need deployment_hooks properties.
+    //Can be loaded on top when we modularize scheduler and report process codebase
+    const deploymentHookClient = require('../utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
@@ -295,31 +298,20 @@ class DirectorManager extends BaseManager {
         }
         logger.info(`actionsToPerform - @service - ${serviceLevelActions} , @plan - ${planLevelActions}`);
         logger.info(`Cumulative actions to perform on ${context.deployment_name} - ${actionsToPerform}`);
-        const actionResponse = {};
-        let actionStartTime = Date.now();
-        let actionEndTime;
-        return Promise.map(actionsToPerform, (action) => {
-            logger.debug(`Looking up action ${action}`);
-            const actionHandler = ActionManager.getAction(phase, action);
-            _.assign(context, {
-              'instance_guid': this.getInstanceGuid(context.deployment_name)
-            });
-            _.chain(context.params)
-              .set('service_id', this.service.id)
-              .set('plan_id', this.plan.id)
-              .value();
-            return actionHandler(context)
-              .tap(resp => actionResponse[action] = resp);
-          })
-          .tap(() => logger.info(`${phase} response ...`, actionResponse))
-          .tap(() => {
-            actionEndTime = Date.now();
-            // TODO: Hook process should be kill if it exceeds timeout time 
-            if (actionEndTime - actionStartTime > config.deployment_action_timeout) {
-              throw new errors.InternalServerError(`Action scripts timed out`);
-            }
-          })
-          .return(actionResponse);
+        _.assign(context, {
+          'instance_guid': this.getInstanceGuid(context.deployment_name)
+        });
+        _.chain(context.params)
+          .set('service_id', this.service.id)
+          .set('plan_id', this.plan.id)
+          .value();
+        const options = _.chain({})
+          .set('phase', phase)
+          .set('actions', actionsToPerform)
+          .set('context', context)
+          .value();
+        return deploymentHookClient.executeDeploymentActions(options)
+          .tap((actionResponse) => logger.info(`${phase} response ...`, actionResponse));
       } else {
         logger.info(`No actions to perform for ${context.deployment_name}`);
         return {};
