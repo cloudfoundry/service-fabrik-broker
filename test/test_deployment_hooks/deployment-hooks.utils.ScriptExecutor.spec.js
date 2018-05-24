@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const proxyquire = require('proxyquire');
 const ScriptExecutor = require('../../deployment_hooks/lib/utils/ScriptExecutor');
 describe('deployment_hooks', function () {
   describe('utils', function () {
@@ -32,6 +33,26 @@ describe('deployment_hooks', function () {
             expect(response).to.deep.equal(expectedResponse);
           });
       });
+
+      it('should execute script successfully with seccomp enabled', function () {
+        const testScriptExecutor = proxyquire('../../deployment_hooks/lib/utils/ScriptExecutor', {
+          '../config': {
+            enable_syscall_filters: true,
+            whitelisted_syscalls: 'read'
+          },
+          'child_process': {
+            exec: function (command, callback) {
+              callback(null, 'result');
+            }
+          }
+        });
+        let executor = new testScriptExecutor();
+        return executor.execute()
+          .then(response => {
+            expect(response).to.deep.equal('result');
+          });
+      });
+
       it('should execute script successfully with non json formatted output', function () {
         const args = {
           foo: 'bar'
