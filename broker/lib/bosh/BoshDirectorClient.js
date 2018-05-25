@@ -621,46 +621,37 @@ class BoshDirectorClient extends HttpClient {
 
   /*  Task operations */
 
-  getTasksForDashboard(options) {
+  getTasks(options, fetchDirectorForDeployment) {
     const query = _.assign({
       limit: 1000
     }, options);
+    let shouldFetch = fetchDirectorForDeployment === true;
+    var configPromise = new Promise((resolve, reject) => {
+      if (shouldFetch) {
+        var fetchedConfigs = [];
+        this.getDirectorConfig(options.deployment)
+          .then(directorConfig => {
+            fetchedConfigs.push(directorConfig);
+            resolve(fetchedConfigs);
+          });
+      } else {
+        resolve(this.primaryConfigs);
+      }
+    });
 
-    //Get the corresponding directorConfig first and then request to that config directly.
-    return this.getDirectorConfig(options.deployment)
-      .then(configForDeployment => {
-        return this.makeRequestWithConfig({
-          method: 'GET',
-          url: '/tasks',
-          qs: _.pick(query, ['limit', 'state', 'deployment'])
-        }, 200, configForDeployment);
+    return configPromise.map(directorConfig => {
+        return this
+          .makeRequestWithConfig({
+            method: 'GET',
+            url: '/tasks',
+            qs: _.pick(query, ['limit', 'state', 'deployment'])
+          }, 200, directorConfig)
+          .then(res => JSON.parse(res.body))
+          .map(task => {
+            task.id = `${options.deployment}_${task.id}`;
+            return task;
+          });
       })
-      .then(res => JSON.parse(res.body))
-      .map(task => {
-        task.id = `${options.deployment}_${task.id}`;
-        return task;
-      })
-      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
-  }
-
-  getTasks(options) {
-    const query = _.assign({
-      limit: 1000
-    }, options);
-
-    return Promise
-      .map(this.primaryConfigs, directorConfig => this
-        .makeRequestWithConfig({
-          method: 'GET',
-          url: '/tasks',
-          qs: _.pick(query, ['limit', 'state', 'deployment'])
-        }, 200, directorConfig)
-        .then(res => JSON.parse(res.body))
-        .map(task => {
-          task.id = `${options.deployment}_${task.id}`;
-          return task;
-        })
-      )
       .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
   }
 

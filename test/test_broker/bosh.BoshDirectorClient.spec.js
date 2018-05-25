@@ -534,36 +534,6 @@ describe('bosh', () => {
       });
     });
 
-    describe('#getTasksForDashboard', () => {
-      it('returns a JSON object', (done) => {
-        let request = {
-          method: 'GET',
-          url: '/tasks',
-          qs: {
-            deployment: deployment_name,
-            limit: 1000
-          }
-        };
-
-        let response = {
-          body: JSON.stringify([{
-            id: 1234,
-            uuid: uuid.v4()
-          }]),
-          statusCode: 200
-        };
-
-        new MockBoshDirectorClient(request, response).getTasksForDashboard({
-          deployment: deployment_name
-        }).then(content => {
-          let body = JSON.parse(response.body)[0];
-          body.id = `${deployment_name}_${body.id}`;
-          expect(content).to.eql([body]);
-          done();
-        }).catch(done);
-      });
-    });
-
     describe('#getTasks', () => {
       it('returns a JSON object', (done) => {
         let request = {
@@ -588,6 +558,53 @@ describe('bosh', () => {
           let body = JSON.parse(response.body)[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
+          done();
+        }).catch(done);
+      });
+
+      let sandbox, getDirectorConfigStub, mockBoshDirectorClient, request, response;
+      before(function () {
+        request = {
+          method: 'GET',
+          url: '/tasks',
+          qs: {
+            deployment: deployment_name,
+            limit: 1000
+          }
+        };
+        response = {
+          body: JSON.stringify([{
+            id: 1234,
+            uuid: uuid.v4()
+          }]),
+          statusCode: 200
+        };
+
+        mockBoshDirectorClient = new MockBoshDirectorClient(request, response);
+
+        sandbox = sinon.sandbox.create();
+        getDirectorConfigStub = sandbox.stub(mockBoshDirectorClient, 'getDirectorConfig');
+        getDirectorConfigStub
+          .withArgs(deployment_name)
+          .returns(Promise.try(() => {
+            return {
+              key: 1234
+            };
+          }));
+      });
+
+      after(function () {
+        sandbox.restore();
+      });
+
+      it('should call getDirectorConfig when true passed for fetchDirectorForDeployment', function (done) {
+        mockBoshDirectorClient.getTasks({
+          deployment: deployment_name
+        }, true).then((content) => {
+          let body = JSON.parse(response.body)[0];
+          body.id = `${deployment_name}_${body.id}`;
+          expect(content).to.eql([body]);
+          expect(getDirectorConfigStub).to.be.calledOnce;
           done();
         }).catch(done);
       });
