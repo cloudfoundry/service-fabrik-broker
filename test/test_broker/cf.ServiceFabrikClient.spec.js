@@ -11,9 +11,10 @@ const tokenIssuerStub = {
 
 describe('cf', function () {
   describe('ServiceFabrikClient', function () {
-    describe('#initiateBackup', function () {
+    describe('#BackupOperations', function () {
       /* jshint expr:true */
       const instance_id = '9999-8888-7777-6666';
+      const tenant_id = '1111-2222-3333-4444';
       const bearer = 'bearer';
       let body = {
         name: 'backup',
@@ -26,7 +27,7 @@ describe('cf', function () {
       const sfClient = new ServiceFabrikClient(tokenIssuerStub);
       let requestSpy, getAccessTokenSpy;
 
-      function buildExpectedRequestArgs(method, path, statusCode, data) {
+      function buildExpectedRequestArgs(method, path, statusCode, data, inputBody) {
         const options = {
           method: method,
           url: path,
@@ -50,7 +51,7 @@ describe('cf', function () {
           }
         }
         _.set(response, 'statusCode', statusCode || 200);
-        _.set(response, 'body', body);
+        _.set(response, 'body', inputBody || body);
         return [options, response.statusCode];
       }
 
@@ -113,6 +114,38 @@ describe('cf', function () {
             expect(getAccessTokenSpy).to.be.calledOnce;
             expect(requestSpy).to.be.calledWithExactly(options, statusCode);
             expect(result).to.eql(body);
+          });
+      });
+      it('should abort last backup successfully', function () {
+        const backupAbortOpts = {
+          instance_guid: instance_id,
+          tenant_id: tenant_id
+        };
+        buildExpectedRequestArgs('DELETE',
+          `/api/v1/service_instances/${instance_id}/backup?space_guid%3F${tenant_id}`,
+          202, undefined, {});
+        return sfClient.abortLastBackup(backupAbortOpts)
+          .then(result => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledOnce;
+            expect(result).to.eql({});
+          });
+      });
+      it('should abort last backup with error', function () {
+        const backupAbortOpts = {
+          instance_guid: instance_id,
+          tenant_id: tenant_id
+        };
+        buildExpectedRequestArgs('DELETE',
+          `/api/v1/service_instances/${instance_id}/backup?space_guid%3F${tenant_id}`,
+          204);
+        return sfClient.abortLastBackup(backupAbortOpts)
+          .catch(err => err)
+          .then(res => {
+            expect(getAccessTokenSpy).to.be.calledOnce;
+            expect(requestSpy).to.be.calledOnce;
+            expect(res).to.have.status(500);
+            expect(res.name).to.be.eql('InternalServerError');
           });
       });
     });
