@@ -6,10 +6,10 @@ const proxyquire = require('proxyquire');
 const logger = require('../../broker/lib/logger');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-const ServiceFabrikClient = require('../../broker/lib/cf/ServiceFabrikClient');
 const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOperation');
 const errors = require('../../broker/lib/errors');
 const lib = require('../../broker/lib');
+const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = lib.bosh.BoshDirectorClient;
 
 describe('Jobs', function () {
@@ -46,6 +46,14 @@ describe('Jobs', function () {
     const BnRStatusPollerJob = proxyquire('../../broker/lib/jobs/BnRStatusPollerJob', {
       '../config': config
     });
+    const instanceInfo_InProgress = _.clone(instanceInfo);
+    _.set(instanceInfo_InProgress, 'backup_guid', IN_PROGRESS_BACKUP_GUID);
+    const instanceInfo_Succeeded = _.clone(instanceInfo);
+    _.set(instanceInfo_Succeeded, 'backup_guid', SUCCEEDED_BACKUP_GUID);
+    const instanceInfo_aborting = _.clone(instanceInfo);
+    _.set(instanceInfo_aborting, 'backup_guid', ABORTING_BACKUP_GUID);
+    const instanceInfo_unlock_failed = _.clone(instanceInfo);
+    _.set(instanceInfo_unlock_failed, 'backup_guid', UNLOCK_FAILED_BACKUP_GUID);
 
     function getJobBasedOnOperation(operationName, add_instanceInfo) {
       const job = {
@@ -71,26 +79,17 @@ describe('Jobs', function () {
       return job;
     }
 
-    function buildRespose(code, state) {
-      return {
-        status: code,
-        body: {
-          description: `${_.capitalize('backup')} deployment ${deploymentName} ${state} at ${new Date()}`,
-          state: state
-        }
-      };
-    }
-    let sandbox, abortLastBackupStub, serviceFabrikOperationStub,
+    let sandbox, abortLastBackupStub, serviceFabrikOperationStub, directorOperationStub,
       getDirectorConfigStub, failUnlock, baseJobLogRunHistoryStub, scheduleJobStub, cancelScheduleStub;
     before(function () {
-      mocks.reset();
       sandbox = sinon.sandbox.create();
       cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
       scheduleJobStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      abortLastBackupStub = sandbox.stub(ServiceFabrikClient.prototype, 'abortLastBackup');
+      abortLastBackupStub = sandbox.stub(DirectorManager.prototype, 'abortLastBackup');
       abortLastBackupStub.withArgs().returns(Promise.resolve({}));
+      directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
 
       serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke', () => Promise.try(() => {
         logger.warn('Unlock must fail:', failUnlock);
@@ -101,8 +100,6 @@ describe('Jobs', function () {
       }));
       getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
       getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
-
-      return mocks.setup([]);
     });
 
     beforeEach(function () {
@@ -111,13 +108,13 @@ describe('Jobs', function () {
     });
 
     afterEach(function () {
-      mocks.reset();
       cancelScheduleStub.reset();
       scheduleJobStub.reset();
       baseJobLogRunHistoryStub.reset();
       abortLastBackupStub.reset();
       serviceFabrikOperationStub.reset();
       getDirectorConfigStub.reset();
+      directorOperationStub.reset();
     });
 
     after(function () {
@@ -130,16 +127,19 @@ describe('Jobs', function () {
     describe('#CheckBackupStatus', function () {
 
       it('backup status check should be succesful and status is succeeded', function () {
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.SUCCEEDED));
+        directorOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
+          state: CONST.OPERATION.SUCCEEDED,
+          description: 'Backup operation successful'
+        }));
         const job = getJobBasedOnOperation('backup', {
           backup_guid: SUCCEEDED_BACKUP_GUID
         });
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
           expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.BNR_STATUS_POLLER);
           expect(serviceFabrikOperationStub).to.be.calledOnce;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.SUCCEEDED);
@@ -151,7 +151,10 @@ describe('Jobs', function () {
       });
 
       it('backup status check should be succesful and status is processing', function () {
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.IN_PROGRESS));
+        directorOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          description: 'Backup operation in-progress'
+        }));
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 30000
         });
@@ -159,9 +162,9 @@ describe('Jobs', function () {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
           expect(getDirectorConfigStub).to.be.calledOnce;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.IN_PROGRESS);
@@ -173,7 +176,10 @@ describe('Jobs', function () {
       });
 
       it('backup is processing - exceeded deployment lock timeout', function () {
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.IN_PROGRESS));
+        directorOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          description: 'Backup operation in-progress'
+        }));
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
         });
@@ -181,11 +187,11 @@ describe('Jobs', function () {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).to.be.calledOnce;
           expect(scheduleJobStub).to.be.calledOnce;
           expect(getDirectorConfigStub).to.be.calledOnce;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.ABORTING);
@@ -196,8 +202,7 @@ describe('Jobs', function () {
         });
       });
 
-      it('backup is aborting - withing abort timeout', function () {
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.IN_PROGRESS));
+      it('backup is aborting - within abort timeout', function () {
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
         });
@@ -205,12 +210,16 @@ describe('Jobs', function () {
           backup_guid: IN_PROGRESS_BACKUP_GUID,
           abortStartTime: new Date().toISOString()
         });
+        directorOperationStub.withArgs('backup', job.attrs.data.operation_details).returns(Promise.resolve({
+          state: CONST.OPERATION.IN_PROGRESS,
+          description: 'Backup operation in-progress'
+        }));
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).not.to.be.called;
           expect(scheduleJobStub).not.to.be.called;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.ABORTING);
@@ -223,7 +232,6 @@ describe('Jobs', function () {
 
       it('backup is aborting - abort timeout exceeded', function () {
         config.backup.abort_time_out = 0;
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.IN_PROGRESS));
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
         });
@@ -231,8 +239,11 @@ describe('Jobs', function () {
           backup_guid: ABORTING_BACKUP_GUID,
           abortStartTime: new Date().toISOString()
         });
+        directorOperationStub.withArgs('backup', job.attrs.data.operation_details).onCall(0).returns(Promise.resolve({
+          state: CONST.OPERATION.ABORTING,
+          description: 'Backup operation abort in-progress'
+        }));
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${ABORTING_BACKUP_GUID}`);
@@ -240,6 +251,7 @@ describe('Jobs', function () {
           expect(abortLastBackupStub).not.to.be.called;
           expect(serviceFabrikOperationStub).to.be.calledOnce;
           expect(scheduleJobStub).not.to.be.called;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.ABORTED);
@@ -253,7 +265,6 @@ describe('Jobs', function () {
       it('status check failed - error in unlocking deployment', function () {
         config.backup.abort_time_out = 0;
         failUnlock = true;
-        mocks.serviceFabrikClient.getBackupState(instanceInfo.instance_guid, buildRespose(200, CONST.OPERATION.IN_PROGRESS));
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
         });
@@ -261,13 +272,17 @@ describe('Jobs', function () {
           backup_guid: UNLOCK_FAILED_BACKUP_GUID,
           abortStartTime: new Date().toISOString()
         });
+        directorOperationStub.withArgs('backup', job.attrs.data.operation_details).returns(Promise.resolve({
+          state: CONST.OPERATION.SUCCEEDED,
+          description: 'Backup operation succeeded'
+        }));
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
-          expect(getDirectorConfigStub).to.be.calledOnce;
+          expect(getDirectorConfigStub).not.to.be.calledOnce;
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).not.to.be.called;
           expect(scheduleJobStub).not.to.be.called;
           expect(serviceFabrikOperationStub).to.be.calledOnce;
+          expect(directorOperationStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).not.to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].message).to.eql('Simulated expected test error...');
@@ -285,7 +300,6 @@ describe('Jobs', function () {
           backup_guid: undefined,
         });
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).not.to.be.called;
           expect(scheduleJobStub).not.to.be.called;
@@ -306,7 +320,6 @@ describe('Jobs', function () {
           backup_guid: SUCCEEDED_BACKUP_GUID,
         });
         return BnRStatusPollerJob.run(job, () => {
-          mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).not.to.be.called;
           expect(scheduleJobStub).not.to.be.called;
