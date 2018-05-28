@@ -97,14 +97,14 @@ class Agent extends HttpClient {
       });
   }
 
-  post(ip, pathname, body, expectedStatusCode) {
+  post(ip, pathname, body, expectedStatusCode, authObject) {
     return this
       .getUrl(ip, pathname)
       .then(url => this
         .request({
           method: 'POST',
           url: url,
-          auth: this.auth,
+          auth: (authObject ? authObject : this.auth),
           body: body
         }, expectedStatusCode || 200)
         .then(res => res.body));
@@ -178,10 +178,10 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'lifecycle/deprovision', body, 200));
   }
 
-  preUpdate(ips, context) {
+  preUpdate(ips, context, authObject) {
     return this
       .getHost(ips, 'lifecycle.preupdate')
-      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200));
+      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, authObject));
   }
 
   createCredentials(ips, parameters) {

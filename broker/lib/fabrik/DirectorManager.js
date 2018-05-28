@@ -260,9 +260,12 @@ class DirectorManager extends BaseManager {
       .set('plan_id', this.plan.id)
       .set('agent_properties', _.omit(agentProperties, 'auth', 'provider'))
       .value();
+    const agentCredBeforeUpdate = utils.getBrokerAgentPropertiesFromManifest(context.params.previous_manifest);
+    // Making preupdate request with agent credentials from previous manifest
+    // In case agent passwords are being updated as part of this update
     return this
       .getDeploymentIps(deploymentName)
-      .then(ips => this.agent.preUpdate(ips, context))
+      .then(ips => this.agent.preUpdate(ips, context, agentCredBeforeUpdate))
       .catch(FeatureNotSupportedByAnyAgent, ServiceInstanceNotOperational, err => {
         logger.debug('+-> Caught expected error of feature \'preUpdate\':', err);
         return {};
