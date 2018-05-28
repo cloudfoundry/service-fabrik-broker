@@ -319,18 +319,21 @@ class DirectorInstance extends BaseInstance {
     };
     return Promise
       .all([
-        this.cloudController.getServiceInstance(this.guid),
+        this.cloudController.getServiceInstance(this.guid)
+        .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
+          .then(plan => {
+            return {
+              'instance': instance,
+              'plan': plan
+            };
+          })
+        ),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
-      .spread((instance, deploymentInfo) => {
-        return Promise.all([
-          instance,
-          deploymentInfo,
-          this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
-        ]);
-      })
-      .spread((instance, deploymentInfo, planInfo) => {
-        var currentPlan = catalog.getPlan(planInfo.entity.unique_id);
+      .spread((consolidated, deploymentInfo) => {
+        let instance = consolidated.instance;
+        let planInfo = consolidated.plan;
+        let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
         return {
           title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
           plan: currentPlan,

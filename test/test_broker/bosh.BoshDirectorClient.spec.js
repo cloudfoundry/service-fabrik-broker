@@ -598,6 +598,7 @@ describe('bosh', () => {
       });
 
       it('should call getDirectorConfig when true passed for fetchDirectorForDeployment', function (done) {
+        /* jshint expr:true */
         mockBoshDirectorClient.getTasks({
           deployment: deployment_name
         }, true).then((content) => {

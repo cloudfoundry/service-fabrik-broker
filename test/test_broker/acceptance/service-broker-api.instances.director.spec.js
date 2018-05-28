@@ -1709,29 +1709,35 @@ describe('service-broker-api', function () {
           let entity = {};
           getServiceInstanceStub
             .withArgs(instance_id)
-            .returns({
-              metadata: {
-                guid: instance_id
-              },
-              entity: _.assign({
-                name: 'blueprint',
-                service_plan_guid: '466c5078-df6e-427d-8fb2-c76af50c0f56'
-              }, entity)
-            });
+            .returns(Promise.try(() => {
+              return {
+                metadata: {
+                  guid: instance_id
+                },
+                entity: _.assign({
+                  name: 'blueprint',
+                  service_plan_guid: '466c5078-df6e-427d-8fb2-c76af50c0f56'
+                }, entity)
+              };
+            }));
 
           getDeploymentInfoStub
             .withArgs(deployment_name)
-            .returns({});
+            .returns(Promise.try(() => {
+              return {};
+            }));
 
           entity = {};
           getServicePlanStub
             .withArgs(service_plan_guid, {})
-            .returns({
-              entity: _.assign({
-                unique_id: plan_id,
-                name: 'blueprint'
-              }, entity)
-            });
+            .returns(Promise.try(() => {
+              return {
+                entity: _.assign({
+                  unique_id: plan_id,
+                  name: 'blueprint'
+                }, entity)
+              };
+            }));
 
         });
 

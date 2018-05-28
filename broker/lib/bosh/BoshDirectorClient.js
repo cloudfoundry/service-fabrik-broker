@@ -625,21 +625,9 @@ class BoshDirectorClient extends HttpClient {
     const query = _.assign({
       limit: 1000
     }, options);
-    let shouldFetch = fetchDirectorForDeployment === true;
-    var configPromise = new Promise((resolve, reject) => {
-      if (shouldFetch) {
-        var fetchedConfigs = [];
-        this.getDirectorConfig(options.deployment)
-          .then(directorConfig => {
-            fetchedConfigs.push(directorConfig);
-            resolve(fetchedConfigs);
-          });
-      } else {
-        resolve(this.primaryConfigs);
-      }
-    });
-
-    return configPromise.map(directorConfig => {
+    return Promise.try(() => fetchDirectorForDeployment ? this.getDirectorConfig(options.deployment) : this.primaryConfigs)
+      .then(configs => Array.isArray(configs) ? configs : [configs])
+      .map(directorConfig => {
         return this
           .makeRequestWithConfig({
             method: 'GET',
