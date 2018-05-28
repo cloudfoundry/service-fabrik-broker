@@ -45,9 +45,6 @@ instanceRouter.route('/backup')
   .get(controller.handler('getLastBackup'))
   .delete(controller.handler('abortLastBackup'))
   .all(commonMiddleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
-instanceRouter.route('/backup/status')
-  .get(controller.handler('getBackupState'))
-  .all(commonMiddleware.methodNotAllowed(['GET']));
 instanceRouter.route('/schedule_backup')
   .all(middleware.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP))
   .put(controller.handler('scheduleBackup'))

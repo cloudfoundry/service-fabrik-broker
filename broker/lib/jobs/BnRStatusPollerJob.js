@@ -61,9 +61,9 @@ class BnRStatusPollerJob extends BaseJob {
     const instance_guid = instanceInfo.instance_guid;
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
+    const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
         if (operationName === 'backup') {
-          const plan = catalog.getPlan(instanceInfo.plan_id);
           return DirectorManager
             .load(plan)
             .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
@@ -91,8 +91,10 @@ class BnRStatusPollerJob extends BaseJob {
                   // re-registering statupoller job
                   let abortStartTime = new Date().toISOString();
                   instanceInfo.abortStartTime = abortStartTime;
-                  return serviceFabrikClient
-                    .abortLastBackup(_.pick(instanceInfo, ['instance_guid', 'tenant_id']))
+                  return DirectorManager
+                    .load(plan)
+                    .then(directorManager => directorManager.abortLastBackup(instanceInfo.tenant_id,
+                      instanceInfo.instance_guid, true))
                     .then(() => DirectorManager.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;
