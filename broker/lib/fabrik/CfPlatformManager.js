@@ -69,7 +69,7 @@ class CfPlatformManager extends BasePlatformManager {
       .tap(() => logger.info('+-> Security group exists'))
       .catch(SecurityGroupNotFound, () => {
         logger.warn('+-> Security group does not exist. Trying to create it again.');
-        return this.ensureTenantId(options.context.space_guid)
+        return this.ensureTenantId(options)
           .then(() => this.createSecurityGroup(options));
       });
   }
