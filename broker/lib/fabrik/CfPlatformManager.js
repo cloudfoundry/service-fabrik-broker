@@ -96,8 +96,7 @@ class CfPlatformManager extends BasePlatformManager {
 
   ensureTenantId(options) {
     return Promise
-      .try(() => options.context.space_guid ? options.context.space_guid : this.cloudController
-        .getServiceInstance(options.guid)
+      .try(() => _.get(options, 'context.space_guid') ? options.context.space_guid : this.cloudController.getServiceInstance(options.guid)
         .then(instance => instance.entity.space_guid)
       );
   }
