@@ -245,6 +245,7 @@ class DockerInstance extends BaseInstance {
           .startContainer()
           .catch(DockerError.ServerError, err => self
             .removeContainer()
+            .then(() => docker.updatePortRegistry())
             .throw(new ContainerStartError(err.message))
           )
         );
