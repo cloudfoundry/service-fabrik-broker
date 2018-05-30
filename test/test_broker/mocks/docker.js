@@ -89,7 +89,7 @@ function getAllContainers(ports) {
     .reply(200, body);
 }
 
-function createContainer(guid) {
+function createContainer(guid, times) {
   const name = getContainerName(guid);
   const body = {
     Id: containerId,
@@ -102,16 +102,17 @@ function createContainer(guid) {
         `${name}-data-oS100M:/data`
       ]);
     })
+    .times(times || 1)
     .query({
       name: name
     })
     .reply(201, body);
 }
 
-function startContainer() {
+function startContainer(statusCode) {
   return nock(dockerUrl)
     .post(`/containers/${containerId}/start`)
-    .reply(204);
+    .reply(statusCode || 204);
 }
 
 function deleteContainer(guid) {

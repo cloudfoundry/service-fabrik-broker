@@ -84,6 +84,39 @@ describe('service-broker-api', function () {
             });
         });
 
+        it('returns 201 Created - start fails once internally', function () {
+          mocks.cloudController.createSecurityGroup(instance_id);
+          mocks.docker.createContainer(instance_id, 2);
+          mocks.docker.startContainer(500);
+          mocks.docker.deleteContainer();
+          mocks.docker.getAllContainers(usedPorts);
+          mocks.docker.startContainer();
+          mocks.docker.inspectContainer();
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql({
+                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+              });
+              mocks.verify();
+            });
+        });
+
         it('returns 201 Created: For K8S', function () {
           mocks.docker.createContainer(instance_id);
           mocks.docker.startContainer();
