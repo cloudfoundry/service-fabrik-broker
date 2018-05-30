@@ -15,6 +15,7 @@ describe('dashboard', function () {
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
     const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
+    const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const plan = catalog.getPlan(plan_id);
 
     before(function () {
@@ -42,6 +43,7 @@ describe('dashboard', function () {
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
+        mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer();

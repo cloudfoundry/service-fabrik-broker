@@ -621,24 +621,25 @@ class BoshDirectorClient extends HttpClient {
 
   /*  Task operations */
 
-  getTasks(options) {
+  getTasks(options, fetchDirectorForDeployment) {
     const query = _.assign({
       limit: 1000
     }, options);
-
-    return Promise
-      .map(this.primaryConfigs, directorConfig => this
-        .makeRequestWithConfig({
-          method: 'GET',
-          url: '/tasks',
-          qs: _.pick(query, ['limit', 'state', 'deployment'])
-        }, 200, directorConfig)
-        .then(res => JSON.parse(res.body))
-        .map(task => {
-          task.id = `${options.deployment}_${task.id}`;
-          return task;
-        })
-      )
+    return Promise.try(() => fetchDirectorForDeployment ? this.getDirectorConfig(options.deployment) : this.primaryConfigs)
+      .then(configs => Array.isArray(configs) ? configs : [configs])
+      .map(directorConfig => {
+        return this
+          .makeRequestWithConfig({
+            method: 'GET',
+            url: '/tasks',
+            qs: _.pick(query, ['limit', 'state', 'deployment'])
+          }, 200, directorConfig)
+          .then(res => JSON.parse(res.body))
+          .map(task => {
+            task.id = `${options.deployment}_${task.id}`;
+            return task;
+          });
+      })
       .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
   }
 

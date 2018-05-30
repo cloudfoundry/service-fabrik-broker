@@ -485,7 +485,7 @@ class DirectorManager extends BaseManager {
     return this.director
       .getTasks({
         deployment: deploymentName
-      })
+      }, true)
       .then(tasks => _
         .chain(tasks)
         .sortBy('id')

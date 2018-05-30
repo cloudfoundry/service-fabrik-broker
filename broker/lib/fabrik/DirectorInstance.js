@@ -10,6 +10,7 @@ const logger = require('../logger');
 const errors = require('../errors');
 const jwt = require('../jwt');
 const utils = require('../utils');
+const catalog = require('../models').catalog;
 const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../jobs');
@@ -318,21 +319,34 @@ class DirectorInstance extends BaseInstance {
     };
     return Promise
       .all([
-        this.cloudController.getServiceInstance(this.guid),
+        this.cloudController.getServiceInstance(this.guid)
+        .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
+          .then(plan => {
+            return {
+              'instance': instance,
+              'plan': plan
+            };
+          })
+        ),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
-      .spread((instance, deploymentInfo) => ({
-        title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
-        plan: this.plan,
-        service: this.plan.service,
-        instance: _.set(instance, 'task', deploymentInfo),
-        files: [{
-          id: 'status',
-          title: 'Status',
-          language: 'yaml',
-          content: yaml.dump(deploymentInfo)
-        }]
-      }));
+      .spread((instanceInfo, deploymentInfo) => {
+        let instance = instanceInfo.instance;
+        let planInfo = instanceInfo.plan;
+        let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
+        return {
+          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: currentPlan,
+          service: currentPlan.service,
+          instance: _.set(instance, 'task', deploymentInfo),
+          files: [{
+            id: 'status',
+            title: 'Status',
+            language: 'yaml',
+            content: yaml.dump(deploymentInfo)
+          }]
+        };
+      });
   }
 
   scheduleBackUp() {

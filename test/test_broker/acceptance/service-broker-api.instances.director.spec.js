@@ -12,6 +12,8 @@ const fabrik = lib.fabrik;
 const backupStore = lib.iaas.backupStore;
 const ScheduleManager = require('../../../broker/lib/jobs');
 const CONST = require('../../../broker/lib/constants');
+const DirectorManager = lib.fabrik.DirectorManager;
+const cloudController = require('../../../broker/lib/cf').cloudController;
 
 describe('service-broker-api', function () {
   describe('instances', function () {
@@ -22,6 +24,7 @@ describe('service-broker-api', function () {
       const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+      const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
       const plan = catalog.getPlan(plan_id);
       const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
@@ -1689,6 +1692,72 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({});
               mocks.verify();
+            });
+        });
+      });
+
+      describe('#getInfo', function () {
+
+        let sandbox, getDeploymentInfoStub, getServiceInstanceStub, getServicePlanStub;
+
+        before(function () {
+          sandbox = sinon.sandbox.create();
+          getDeploymentInfoStub = sandbox.stub(DirectorManager.prototype, 'getDeploymentInfo');
+          getServiceInstanceStub = sandbox.stub(cloudController, 'getServiceInstance');
+          getServicePlanStub = sandbox.stub(cloudController, 'getServicePlan');
+
+          let entity = {};
+          getServiceInstanceStub
+            .withArgs(instance_id)
+            .returns(Promise.try(() => {
+              return {
+                metadata: {
+                  guid: instance_id
+                },
+                entity: _.assign({
+                  name: 'blueprint',
+                  service_plan_guid: '466c5078-df6e-427d-8fb2-c76af50c0f56'
+                }, entity)
+              };
+            }));
+
+          getDeploymentInfoStub
+            .withArgs(deployment_name)
+            .returns(Promise.try(() => {
+              return {};
+            }));
+
+          entity = {};
+          getServicePlanStub
+            .withArgs(service_plan_guid, {})
+            .returns(Promise.try(() => {
+              return {
+                entity: _.assign({
+                  unique_id: plan_id,
+                  name: 'blueprint'
+                }, entity)
+              };
+            }));
+
+        });
+
+        after(function () {
+          sandbox.restore();
+        });
+
+        it('should return object with correct plan and service information', function () {
+          let context = {
+            platform: 'cloudfoundry'
+          };
+          return fabrik
+            .createInstance(instance_id, service_id, plan_id, context)
+            .then(instance => instance.getInfo())
+            .catch(err => err.response)
+            .then(res => {
+              expect(res.title).to.equal('Blueprint Dashboard');
+              expect(res.plan.id).to.equal(plan_id);
+              expect(res.service.id).to.equal(service_id);
+              expect(res.instance.metadata.guid).to.equal(instance_id);
             });
         });
       });
