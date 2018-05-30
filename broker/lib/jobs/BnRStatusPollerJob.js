@@ -14,7 +14,6 @@ const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
-const serviceFabrikClient = require('../cf').serviceFabrikClient;
 
 class BnRStatusPollerJob extends BaseJob {
   constructor() {
