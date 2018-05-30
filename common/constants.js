@@ -8,6 +8,10 @@ module.exports = Object.freeze({
   PLATFORM_CONTEXT_KEY: 'platform-context',
   NOT_APPLICABLE: 'NA',
   FINISHED_JOBS_RETENTION_DURATION_DAYS: 14,
+  EVENT_LOG_RIEMANN_CLIENT: {
+    MAX_QUEUE_SIZE: 100,
+    MAX_SEND_RETRIES: 2
+  },
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
