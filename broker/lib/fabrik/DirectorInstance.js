@@ -330,9 +330,9 @@ class DirectorInstance extends BaseInstance {
         ),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
-      .spread((consolidated, deploymentInfo) => {
-        let instance = consolidated.instance;
-        let planInfo = consolidated.plan;
+      .spread((instanceInfo, deploymentInfo) => {
+        let instance = instanceInfo.instance;
+        let planInfo = instanceInfo.plan;
         let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
         return {
           title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
