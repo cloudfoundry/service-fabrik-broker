@@ -9,8 +9,7 @@ const CONST = require('../constants');
 
 class EventLogRiemannClient {
   constructor(options) {
-    this.isInitializing = false;
-    this.isInitialized = false;
+    this.status = CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED;
     this.QUEUED_REQUESTS = [];
     this.options = options;
     if (options.event_type) {
@@ -22,17 +21,16 @@ class EventLogRiemannClient {
 
   initialize() {
     try {
-      logger.debug('Connecting to Riemann');
-      this.isInitializing = true;
+      logger.info('Connecting to Riemann');
+      this.status = CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING;
       this.riemannClient = riemannClient.createClient({
         host: this.options.host,
         port: this.options.port,
         transport: this.options.protocol
       });
       this.riemannClient.on('connect', () => {
-        this.isInitializing = false;
-        this.isInitialized = true;
-        logger.debug('Connected to Riemann');
+        this.status = CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.CONNECTED;
+        logger.info('Connected to Riemann');
         // Process requests enqued while riemann client was getting initialized
         if(this._isRequestQueueNonEmpty()) {
           this._processOutStandingRequest();
@@ -45,13 +43,11 @@ class EventLogRiemannClient {
         this.disconnect();
       });
       this.riemannClient.on('disconnect', () => {
-        logger.debug('Disconnected from Riemann!');
-        this.isInitializing = false;
-        this.isInitialized = false;
+        logger.info('Disconnected from Riemann!');
+        this.status = CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED;
       });
     } catch (err) {
-      this.isInitializing = false;
-      this.isInitialized = false;
+      this.disconnect();
       if (this.options.show_errors) {
         logger.warn('Error initializing Riemann', err);
       }
@@ -62,17 +58,15 @@ class EventLogRiemannClient {
   }
 
   disconnect() {
-    logger.info('Disconnecting Riemann');
-    this.isInitializing = false;
-    if (this.isInitialized) {
-      this.isInitialized = false;
+    if (this.status === CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.CONNECTED) {
       this.riemannClient.disconnect();
     }
+    this.status = CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED;
+    logger.info('Disconnected from Riemann');
   }
 
   handleEvent(message, data) {
     try {
-
       if (data.event && !this.skipBasedOnHttpResponseCodes(_.get(data, 'event.response.status'), _.get(config, 'riemann.http_status_codes_to_be_skipped'))) {
         this.logEvent(data.event, data.options);
         //Added to log additional event with instance id or backup guid suffix to the name to provide more details to email alerts
@@ -137,51 +131,58 @@ class EventLogRiemannClient {
         }
       })
       .value();
-    this.sendEvent(info, 0);
+    this.sendEvent(info, 1);
   }
 
   sendEvent(info, attempt) {
-    let messageSent = false;
-    // Attempt to send event 2 times as enqueing request is also considered 1 attempt
-    while (!messageSent && attempt++ < CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_SEND_RETRIES) {
-      try {
-        logger.debug(`Trying to send event to riemann, attempt ${attempt} : `  , info);
-        let enqueRequest = false;
-        if (!this.isInitialized && !this.isInitializing) {
+    if (attempt <= CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_SEND_RETRIES) {
+      if (this.status === CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED) {
+        this._enqueRequest(info, attempt);
+        this.initialize();
+        // returning false as other events in queue will also end up queuing again
+        return false;
+      } else if(this.status === CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING) {
+        this._enqueRequest(info, attempt);
+        // returning false as other events in queue will also end up queuing again
+        return false;
+      } else {
+        try {
+          logger.debug(`Trying to send event to riemann, attempt ${attempt} : `  , info);
+          this.riemannClient.send(this.riemannClient.Event(info));
+          logger.debug('logging following to riemann : ', info);
+          // returning true as other events in queue can be processed successfully
+          return true;
+        } catch (err) {
+          this.disconnect();
+          this._enqueRequest(info, attempt + 1);
           this.initialize();
-          enqueRequest = true;
-        } else if(this.isInitializing) {
-          enqueRequest = true
-        }
-        if(enqueRequest) {
-          this._enqueRequest(info, attempt);
-          return;
-        }
-        this.riemannClient.send(this.riemannClient.Event(info));
-        logger.debug('logging following to riemann : ', info);
-        messageSent = true;
-      } catch (err) {
-        this.disconnect();
-        if (this.options.show_errors) {
-          logger.error(`Error occurred while sending event to Riemann, attempt ${attempt} `, err);
+          if (this.options.show_errors) {
+            logger.error(`Error occurred while sending event to Riemann, attempt ${attempt} `, err);
+          }
+          // returning false as other events in queue will also end up queuing again
+          return false;
         }
       }
     }
-    if(!messageSent && attempt >= CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_SEND_RETRIES) {
+    else {
       logger.error(`Event could not be sent to Riemann, max retries ${CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_SEND_RETRIES} exceeded : `, info);
+      // returning true as this event is discarded due to max attempts reached
+      // but other events in queue can be processed successfully
+      return true;
     }
   }
+
   _enqueRequest(info, attempt) {
     if(this.QUEUED_REQUESTS.length >= CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE) {
       logger.error(`Exceeded max queue size ${CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE} for outstanding riemann events, dequeue first event`);
-      let request = this._dequeRequest();
-      logger.error(`Request discarded - `, request.info);
+      const request = this._dequeRequest();
+      logger.error(`Request discarded : `, request.info);
     }
     this.QUEUED_REQUESTS.push({
       info: info,
       attempt: attempt
     });
-    logger.debug(`Request queued: `, info);
+    logger.debug(`Request queued : `, info);
   }
 
   _dequeRequest() {
@@ -193,12 +194,14 @@ class EventLogRiemannClient {
   }
 
   _processOutStandingRequest() {
-    logger.info(`Processing outstanding Riemann event send requests.. Queued Count: ${this.QUEUED_REQUESTS.length}`);
+    logger.debug(`Processing outstanding Riemann event send requests.. Queued Count: ${this.QUEUED_REQUESTS.length}`);
     while(this._isRequestQueueNonEmpty()) {
-      let request = this._dequeRequest();
+      const request = this._dequeRequest();
       if (request !== null) {
-        logger.info(`Processing queued up request: `, request.info);
-        this.sendEvent(request.info, request.attempt);
+        logger.debug(`Processing queued up request: `, request.info);
+        if(!this.sendEvent(request.info, request.attempt)) {
+          break; //Incase of an exception during retry. Stop processing queue items as all of them end up going back in queue.
+        }
       }
     }
   }

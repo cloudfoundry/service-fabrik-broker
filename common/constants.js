@@ -12,6 +12,11 @@ module.exports = Object.freeze({
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
   },
+  EVENT_LOG_RIEMANN_CLIENT_STATUS: {
+    INITIALIZING: 'initializing',
+    CONNECTED: 'connected',
+    DISCONNECTED: 'disconnected'
+  },
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
