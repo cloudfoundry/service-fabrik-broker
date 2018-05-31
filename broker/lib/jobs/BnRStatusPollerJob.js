@@ -10,10 +10,10 @@ const logger = require('../logger');
 const errors = require('../errors');
 const config = require('../config');
 const bosh = require('../bosh');
+const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
-const serviceFabrikClient = require('../cf').serviceFabrikClient;
 
 class BnRStatusPollerJob extends BaseJob {
   constructor() {
@@ -60,12 +60,12 @@ class BnRStatusPollerJob extends BaseJob {
     const instance_guid = instanceInfo.instance_guid;
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
+    const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-        const token = utils.encodeBase64(instanceInfo);
         if (operationName === 'backup') {
-          return this
-            .getFabrikClient()
-            .getInstanceBackupStatus(instanceInfo, token);
+          return DirectorManager
+            .load(plan)
+            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
       })
       .then(operationStatusResponse => {
@@ -90,8 +90,10 @@ class BnRStatusPollerJob extends BaseJob {
                   // re-registering statupoller job
                   let abortStartTime = new Date().toISOString();
                   instanceInfo.abortStartTime = abortStartTime;
-                  return serviceFabrikClient
-                    .abortLastBackup(_.pick(instanceInfo, ['instance_guid', 'tenant_id']))
+                  return DirectorManager
+                    .load(plan)
+                    .then(directorManager => directorManager.abortLastBackup(instanceInfo.tenant_id,
+                      instanceInfo.instance_guid, true))
                     .then(() => DirectorManager.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;

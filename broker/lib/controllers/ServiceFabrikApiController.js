@@ -10,7 +10,6 @@ const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
-const DirectorManager = require('../fabrik/DirectorManager');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
@@ -272,35 +271,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .status(result.state === 'aborting' ? 202 : 200)
         .send({})
       );
-  }
-
-  getBackupState(req, res) {
-    const instanceInfo = utils.decodeBase64(req.query.token);
-    const operation = 'backup';
-    //Since the object maintains the state of poll, cloning it to ensure it cannot be tampered from outside (i.e. caller)
-    assert.ok(instanceInfo.instance_guid, `${operation} poll operation must have the property 'instance_guid'`);
-    assert.ok(instanceInfo.agent_ip, `${operation} poll operation must have the property 'agent_ip'`);
-    assert.ok(instanceInfo.deployment, `${operation} poll operation must have the property 'deployment'`);
-    assert.ok(instanceInfo.tenant_id, `${operation} poll operation must have the property 'tenant_id'`);
-    assert.ok(instanceInfo.backup_guid, `${operation} poll operation must have the property 'backup_guid'`);
-    assert.ok(instanceInfo.service_id, `${operation} poll operation must have the property 'service_id'`);
-    assert.ok(instanceInfo.plan_id, `${operation} poll operation must have the property 'plan_id'`);
-    assert.ok(instanceInfo.started_at, `${operation} poll operation must have the property 'started_at'`);
-    const plan = catalog.getPlan(instanceInfo.plan_id);
-    return Promise
-      .try(() => {
-        return DirectorManager
-          .load(plan)
-          .then(directorManager => directorManager.getServiceFabrikOperationState(operation, instanceInfo));
-      })
-      .then(result => res
-        .status(200)
-        .send(_.pick(result, 'state', 'description'))
-      )
-      .catch(error => {
-        logger.error(`Error occurred while checking ${operation} status of :${instanceInfo.deployment} - for guid: ${instanceInfo.backup_guid}`, error);
-        throw error;
-      });
   }
 
   startRestore(req, res) {
