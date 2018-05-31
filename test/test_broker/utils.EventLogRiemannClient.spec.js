@@ -4,35 +4,37 @@ const proxyquire = require('proxyquire');
 const config = require('../../broker/lib').config;
 const _ = require('lodash');
 const Promise = require('bluebird');
+const CONST = require('../../common/constants');
 
 const pubSubStub = {
   publish: () => undefined,
   subscribe: () => undefined
 };
 
-const riemanJSStub = {
+const riemannJSStub = {
   send: () => true,
   /* jshint unused:false */
-  Event: (event) => true
+  Event: (event) => true,
+  disconnect: () => true
 };
+
+let riemannClientEventHandlers = {};
 const RiemannClient = proxyquire('../../common/utils/EventLogRiemannClient', {
   'riemannjs': {
     createClient: function () {
       return {
-        on: function (arg, callback) {
-          callback();
-        },
-        connect: function () {
-          return;
+        on: function (event, callback) {
+          _.set(riemannClientEventHandlers, event, callback);
+          return true;
         },
         disconnect: function () {
-          return;
+          return riemannJSStub.disconnect();
         },
         Event: function (event) {
-          return riemanJSStub.Event(event);
+          return riemannJSStub.Event(event);
         },
         send: function () {
-          return riemanJSStub.send();
+          return riemannJSStub.send();
         }
       };
     }
@@ -47,21 +49,25 @@ const RiemannClient = proxyquire('../../common/utils/EventLogRiemannClient', {
 describe('utils', function () {
   /* jshint expr:true */
   describe('EventLogRiemannClient', function () {
-    let pubSubSpy, riemanSendSpy, riemanEventSpy;
+    let pubSubSpy, riemannSendSpy, riemannEventSpy, riemannDisconnectSpy;
 
     beforeEach(function () {
       pubSubSpy = sinon.stub(pubSubStub, 'subscribe');
-      riemanSendSpy = sinon.stub(riemanJSStub, 'send');
-      riemanEventSpy = sinon.stub(riemanJSStub, 'Event');
+      riemannSendSpy = sinon.stub(riemannJSStub, 'send');
+      riemannEventSpy = sinon.stub(riemannJSStub, 'Event');
+      riemannDisconnectSpy = sinon.stub(riemannJSStub, 'disconnect');
       pubSubSpy.returns(true);
-      riemanSendSpy.returns(true);
-      riemanEventSpy.returns(true);
+      riemannSendSpy.returns(true);
+      riemannEventSpy.returns(true);
+      riemannDisconnectSpy.returns(true);
     });
 
     afterEach(function () {
       pubSubSpy.restore();
-      riemanSendSpy.restore();
-      riemanEventSpy.restore();
+      riemannSendSpy.restore();
+      riemannEventSpy.restore();
+      riemannDisconnectSpy.restore();
+      riemannClientEventHandlers = {};
     });
 
     describe('create', function () {
@@ -75,10 +81,29 @@ describe('utils', function () {
         expect(pubSubSpy).to.be.called;
         const eventType = pubSubSpy.firstCall.args[0];
         expect(riemannClient).to.be.an('object');
-        expect(riemannClient.isInitialized).to.eql(false);
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING);
+        expect(riemannClient.QUEUED_REQUESTS).to.eql([]);
         expect(eventType).to.eql(config.internal.event_type);
+        expect(riemannClientEventHandlers.connect).to.be.not.null;
+        expect(riemannClientEventHandlers.error).to.be.not.null;
+        expect(riemannClientEventHandlers.disconnect).to.be.not.null;
       });
     });
+
+    describe('disconnect', function () {
+      it('should disconnect from Riemann Client Successfully', function () {
+        const riemannOptions = _
+          .chain({})
+          .assign(config.riemann)
+          .set('event_type', config.internal.event_type)
+          .value();
+        const riemannClient = new RiemannClient(riemannOptions);
+        riemannClient.disconnect();
+        expect(riemannDisconnectSpy).to.be.calledOnce;
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED);
+      });
+    });
+
     describe('send', function () {
       const riemannOptions = _
         .chain({})
@@ -86,7 +111,11 @@ describe('utils', function () {
         .set('event_type', config.internal.event_type)
         .value();
       const riemannClient = new RiemannClient(riemannOptions);
-      riemannClient.isInitialized = true;
+      if (riemannClientEventHandlers.connect && _.isFunction(riemannClientEventHandlers.connect)) {
+        riemannClientEventHandlers.connect.call(riemannClientEventHandlers.connect);
+      } else {
+        expect.fail('Event Handlers not registered for riemann client');
+      }
 
       it('should log event successfully to Riemann with response details', function () {
         const event = {
@@ -123,9 +152,9 @@ describe('utils', function () {
             include_response_body: true
           }
         });
-        expect(riemanSendSpy).to.be.calledOnce;
-        expect(riemanEventSpy).to.be.calledOnce;
-        const firstResponse = riemanEventSpy.firstCall.args[0];
+        expect(riemannSendSpy).to.be.calledOnce;
+        expect(riemannEventSpy).to.be.calledOnce;
+        const firstResponse = riemannEventSpy.firstCall.args[0];
         expect(firstResponse).to.be.an('object');
         expect(firstResponse).to.eql(expectedFirstResultObject);
       });
@@ -180,12 +209,12 @@ describe('utils', function () {
             include_response_body: true
           }
         });
-        expect(riemanSendSpy).to.be.calledTwice;
-        expect(riemanEventSpy).to.be.calledTwice;
-        const firstResponse = riemanEventSpy.firstCall.args[0];
+        expect(riemannSendSpy).to.be.calledTwice;
+        expect(riemannEventSpy).to.be.calledTwice;
+        const firstResponse = riemannEventSpy.firstCall.args[0];
         expect(firstResponse).to.be.an('object');
         expect(firstResponse).to.eql(expectedFirstResultObject);
-        const secondResponse = riemanEventSpy.secondCall.args[0];
+        const secondResponse = riemannEventSpy.secondCall.args[0];
         expect(secondResponse).to.be.an('object');
         expect(secondResponse).to.eql(expectedSecondResultObject);
       });
@@ -230,10 +259,9 @@ describe('utils', function () {
             include_response_body: true
           }
         });
-        expect(riemanEventSpy).not.to.have.been.called;
-        expect(riemanSendSpy).not.to.have.been.called;
+        expect(riemannEventSpy).not.to.have.been.called;
+        expect(riemannSendSpy).not.to.have.been.called;
       });
-
     });
 
     describe('sendAfterConnectionReset', function () {
@@ -242,9 +270,9 @@ describe('utils', function () {
         .assign(config.riemann)
         .set('event_type', config.internal.event_type)
         .value();
-      let rc = new RiemannClient(riemannOptions);
+      let riemannClient = new RiemannClient(riemannOptions);
       beforeEach(function () {
-        rc.disconnect();
+        riemannClient.disconnect();
       });
 
       it('should log event successfully to Riemann even after connection reset (omit response details)', function () {
@@ -273,17 +301,314 @@ describe('utils', function () {
             value: (typeof event.request === 'object' ? JSON.stringify(event.request) : event.request)
           }])
           .value();
-        rc.handleEvent(config.internal.event_type, {
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.DISCONNECTED);
+        riemannClient.handleEvent(config.internal.event_type, {
           event: event,
           options: {
             include_response_body: false
           }
         });
-        expect(riemanSendSpy).to.be.calledOnce;
-        expect(riemanEventSpy).to.be.calledOnce;
-        const testResponse = riemanEventSpy.firstCall.args[0];
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING);
+        if (riemannClientEventHandlers.connect && _.isFunction(riemannClientEventHandlers.connect)) {
+          riemannClientEventHandlers.connect.call(riemannClientEventHandlers.connect);
+        } else {
+          expect.fail('Event Handlers not registered for riemann client');
+        }
+        expect(riemannSendSpy).to.be.calledOnce;
+        expect(riemannEventSpy).to.be.calledOnce;
+        const testResponse = riemannEventSpy.firstCall.args[0];
         expect(testResponse).to.be.an('object');
         expect(testResponse).to.eql(expectedResultObject);
+      });
+    });
+
+    describe('sendEvent', function () {
+      const riemannOptions = _
+        .chain({})
+        .assign(config.riemann)
+        .set('event_type', config.internal.event_type)
+        .value();
+      const riemannClient = new RiemannClient(riemannOptions);
+      const info = {
+        metric: 0,
+        state: 'ok'
+      };
+      const attempt = 1;
+
+      it('should return true when max attempts are exceeded', function () {
+        const response = riemannClient.sendEvent(info, CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_SEND_RETRIES + 1);
+        expect(response).to.be.true;
+        expect(riemannSendSpy).to.be.not.called;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql([]);
+      });
+      it('should return false when client is initializing', function () {
+        const expectedQueue = [{
+          info: info,
+          attempt: attempt
+        }];
+        const response = riemannClient.sendEvent(info, 1);
+        expect(response).to.be.false;
+        expect(riemannSendSpy).to.be.not.called;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+      });
+      it('should return false when client is disconnected', function () {
+        const riemannClient = new RiemannClient(riemannOptions);
+        const expectedQueue = [{
+          info: info,
+          attempt: attempt
+        }];
+        if (riemannClientEventHandlers.disconnect && _.isFunction(riemannClientEventHandlers.disconnect)) {
+          riemannClientEventHandlers.disconnect.call(riemannClientEventHandlers.disconnect);
+        } else {
+          expect.fail('Event Handlers not registered for riemann client');
+        }
+        const response = riemannClient.sendEvent(info, 1);
+        expect(response).to.be.false;
+        expect(riemannSendSpy).to.be.not.called;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING);
+      });
+      it('should return false when there is an error in sending event', function () {
+        const riemannClient = new RiemannClient(riemannOptions);
+        const expectedQueue = [{
+          info: info,
+          attempt: (attempt + 1)
+        }];
+        riemannSendSpy.throws(Error('Dummy error in sending event'));
+        if (riemannClientEventHandlers.connect && _.isFunction(riemannClientEventHandlers.connect)) {
+          riemannClientEventHandlers.connect.call(riemannClientEventHandlers.connect);
+        } else {
+          expect.fail('Event Handlers not registered for riemann client');
+        }
+        const response = riemannClient.sendEvent(info, 1);
+        expect(response).to.be.false;
+        expect(riemannSendSpy).to.be.calledOnce;
+        expect(riemannDisconnectSpy).to.be.calledOnce;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+        expect(riemannClient.status).to.eql(CONST.EVENT_LOG_RIEMANN_CLIENT_STATUS.INITIALIZING);
+        riemannSendSpy.restore();
+      });
+      it('should return true when event is successfully sent', function () {
+        const riemannClient = new RiemannClient(riemannOptions);
+        if (riemannClientEventHandlers.connect && _.isFunction(riemannClientEventHandlers.connect)) {
+          riemannClientEventHandlers.connect.call(riemannClientEventHandlers.connect);
+        } else {
+          expect.fail('Event Handlers not registered for riemann client');
+        }
+        const response = riemannClient.sendEvent(info, 1);
+        expect(response).to.be.true;
+        expect(riemannSendSpy).to.be.calledOnce;
+        expect(riemannDisconnectSpy).to.not.be.called;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql([]);
+      });
+    });
+
+    describe('enqueRequest', function () {
+      const riemannOptions = _
+        .chain({})
+        .assign(config.riemann)
+        .set('event_type', config.internal.event_type)
+        .value();
+      const riemannClient = new RiemannClient(riemannOptions);
+
+      it('should enque request when MAX_QUEUE_SIZE is not exceeded', function () {
+        const info = {
+          metric: 0,
+          state: 'ok',
+        };
+        riemannClient._enqueRequest(info, 1);
+        const expectedQueue = [{
+          info: info,
+          attempt: 1
+        }];
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+      });
+      it('should deque and then enque request when MAX_QUEUE_SIZE is exceeded', function () {
+        const prevQueueSize = CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE;
+        CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE = 2;
+        riemannClient.QUEUED_REQUESTS = [{
+            info: {
+              metric: 0,
+              state: 'ok'
+            },
+            attempt: 0
+          },
+          {
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          }
+        ];
+        const info = {
+          metric: 2,
+          state: 'ok',
+        };
+        riemannClient._enqueRequest(info, 2);
+        const expectedQueue = [{
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          },
+          {
+            info: {
+              metric: 2,
+              state: 'ok'
+            },
+            attempt: 2
+          }
+        ];
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+        CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE = prevQueueSize;
+      });
+    });
+
+    describe('dequeRequest', function () {
+      const riemannOptions = _
+        .chain({})
+        .assign(config.riemann)
+        .set('event_type', config.internal.event_type)
+        .value();
+      const riemannClient = new RiemannClient(riemannOptions);
+
+      it('should return null when queue is empty', function () {
+        expect(riemannClient._dequeRequest()).to.be.null;
+      });
+      it('should deque request from queue', function () {
+        riemannClient.QUEUED_REQUESTS = [{
+            info: {
+              metric: 0,
+              state: 'ok'
+            },
+            attempt: 0
+          },
+          {
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          }
+        ];
+        const expectedQueue = [{
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }];
+        const expectedRequest = {
+          info: {
+            metric: 0,
+            state: 'ok'
+          },
+          attempt: 0
+        };
+        const request = riemannClient._dequeRequest();
+        expect(request).to.be.eql(expectedRequest);
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+      });
+    });
+
+    describe('isRequestQueueNonEmpty', function () {
+      const riemannOptions = _
+        .chain({})
+        .assign(config.riemann)
+        .set('event_type', config.internal.event_type)
+        .value();
+      const riemannClient = new RiemannClient(riemannOptions);
+
+      it('should return false when queue is empty', function () {
+        expect(riemannClient._isRequestQueueNonEmpty()).to.be.false;
+      });
+      it('should return true when queue is not empty', function () {
+        riemannClient.QUEUED_REQUESTS = [{
+            info: {
+              metric: 0,
+              state: 'ok'
+            },
+            attempt: 0
+          },
+          {
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          }
+        ];
+        expect(riemannClient._isRequestQueueNonEmpty()).to.be.true;
+      });
+    });
+
+    describe('processOutStandingRequest', function () {
+      const riemannOptions = _
+        .chain({})
+        .assign(config.riemann)
+        .set('event_type', config.internal.event_type)
+        .value();
+
+      const riemannClient = new RiemannClient(riemannOptions);
+      it('should process all events when sendEvent is successful', function () {
+        const sendEventSpy = sinon.stub(riemannClient, 'sendEvent').returns(true);
+        riemannClient.QUEUED_REQUESTS = [{
+            info: {
+              metric: 0,
+              state: 'ok'
+            },
+            attempt: 0
+          },
+          {
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          }
+        ];
+        riemannClient._processOutStandingRequest();
+        expect(sendEventSpy).to.be.calledTwice;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql([]);
+        sendEventSpy.restore();
+      });
+      it('should process one event when sendEvent fails', function () {
+        const sentEventSpy = sinon.stub(riemannClient, 'sendEvent').returns(false);
+        riemannClient.QUEUED_REQUESTS = [{
+            info: {
+              metric: 0,
+              state: 'ok'
+            },
+            attempt: 0
+          },
+          {
+            info: {
+              metric: 1,
+              state: 'ok'
+            },
+            attempt: 1
+          }
+        ];
+        const expectedQueue = [{
+          info: {
+            metric: 1,
+            state: 'ok'
+          },
+          attempt: 1
+        }];
+        riemannClient._processOutStandingRequest();
+        expect(sentEventSpy).to.be.calledOnce;
+        expect(riemannClient.QUEUED_REQUESTS).to.be.eql(expectedQueue);
+        sentEventSpy.restore();
+      });
+      it('should not call sendEvent when queue is empty', function () {
+        const riemannClient = new RiemannClient(riemannOptions);
+        const sentEventSpy = sinon.stub(riemannClient, 'sendEvent').returns(false);
+        riemannClient._processOutStandingRequest();
+        expect(sentEventSpy).to.be.not.called;
+        sentEventSpy.restore();
       });
     });
   });
