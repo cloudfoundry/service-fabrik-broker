@@ -83,4 +83,193 @@ describe('utils', function () {
       expect(utils.isServiceFabrikOperation(queryParams)).to.be.true;
     });
   });
+  describe('#getBrokerAgentCredsFromManifest', function () {
+    const manifest1 = {
+      name: 'test-deployment-name',
+      instance_groups: [{
+        name: 'blueprint',
+        jobs: [{
+            name: 'blueprint',
+            properties: {
+              admin: {
+                username: 'admin',
+                password: 'admin'
+              },
+              mongodb: {
+                service_agent: {
+                  username: 'admin',
+                  password: 'admin'
+                }
+              }
+            }
+          },
+          {
+            name: 'broker-agent',
+            properties: {
+              username: 'admin1',
+              password: 'admin1',
+              provider: {
+                name: 'openstack'
+              }
+            }
+          }
+        ]
+      }],
+    };
+
+    const manifest2 = {
+      name: 'test-deployment-name',
+      instance_groups: [{
+          name: 'blueprint',
+          jobs: [{
+              name: 'blueprint',
+              properties: {
+                admin: {
+                  username: 'admin',
+                  password: 'admin'
+                },
+                mongodb: {
+                  service_agent: {
+                    username: 'admin',
+                    password: 'admin'
+                  }
+                }
+              }
+            },
+            {
+              name: 'broker-agent',
+              properties: {
+                username: 'admin2',
+                password: 'admin2',
+                provider: {
+                  name: 'openstack'
+                }
+              }
+            }
+          ]
+        },
+        {
+          name: 'blueprint2',
+          jobs: [{
+            name: 'blueprint',
+            properties: {
+              admin: {
+                username: 'admin',
+                password: 'admin'
+              },
+              mongodb: {
+                service_agent: {
+                  username: 'admin',
+                  password: 'admin'
+                }
+              }
+            }
+          }]
+        }
+      ]
+    };
+
+    const manifest3 = {
+      name: 'test-deployment-name',
+      instance_groups: [{
+          name: 'blueprint2',
+          jobs: [{
+            name: 'blueprint',
+            properties: {
+              admin: {
+                username: 'admin',
+                password: 'admin'
+              },
+              mongodb: {
+                service_agent: {
+                  username: 'admin',
+                  password: 'admin'
+                }
+              }
+            }
+          }]
+        },
+        {
+          name: 'blueprint',
+          jobs: [{
+              name: 'blueprint',
+              properties: {
+                admin: {
+                  username: 'admin',
+                  password: 'admin'
+                },
+                mongodb: {
+                  service_agent: {
+                    username: 'admin',
+                    password: 'admin'
+                  }
+                }
+              }
+            },
+            {
+              name: 'test-broker-agent',
+              properties: {
+                username: 'admin3',
+                password: 'admin3',
+                provider: {
+                  name: 'openstack'
+                }
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const manifest4 = {
+      name: 'test-deployment-name',
+      instance_groups: [{
+        name: 'blueprint',
+        jobs: [{
+            name: 'blueprint',
+            properties: {
+              admin: {
+                username: 'admin',
+                password: 'admin'
+              },
+              mongodb: {
+                service_agent: {
+                  username: 'admin',
+                  password: 'admin'
+                }
+              }
+            }
+          },
+          {
+            name: 'broker-agent-my',
+            properties: {
+              username: 'admin4',
+              password: 'admin4',
+              provider: {
+                name: 'openstack'
+              }
+            }
+          }
+        ]
+      }],
+    };
+    it('should return correct agent creds for all possible kind of manifest formats', function () {
+      expect(utils.getBrokerAgentCredsFromManifest(manifest1)).to.eql({
+        username: 'admin1',
+        password: 'admin1'
+      });
+      expect(utils.getBrokerAgentCredsFromManifest(manifest2)).to.eql({
+        username: 'admin2',
+        password: 'admin2'
+      });
+      expect(utils.getBrokerAgentCredsFromManifest(manifest3)).to.eql({
+        username: 'admin3',
+        password: 'admin3'
+      });
+      expect(utils.getBrokerAgentCredsFromManifest(manifest4)).to.eql({
+        username: 'admin4',
+        password: 'admin4'
+      });
+    });
+  });
 });

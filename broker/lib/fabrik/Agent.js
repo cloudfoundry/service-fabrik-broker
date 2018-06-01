@@ -97,14 +97,14 @@ class Agent extends HttpClient {
       });
   }
 
-  post(ip, pathname, body, expectedStatusCode) {
+  post(ip, pathname, body, expectedStatusCode, authObject) {
     return this
       .getUrl(ip, pathname)
       .then(url => this
         .request({
           method: 'POST',
           url: url,
-          auth: this.auth,
+          auth: (authObject ? authObject : this.auth),
           body: body
         }, expectedStatusCode || 200)
         .then(res => res.body));
@@ -179,9 +179,12 @@ class Agent extends HttpClient {
   }
 
   preUpdate(ips, context) {
+    const agentCredsBeforeUpdate = utils.getBrokerAgentCredsFromManifest(context.params.previous_manifest);
+    // Making agent request with agent credentials from previous manifest
+    // In case agent passwords are being updated as part of this update
     return this
       .getHost(ips, 'lifecycle.preupdate')
-      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200));
+      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, agentCredsBeforeUpdate));
   }
 
   createCredentials(ips, parameters) {

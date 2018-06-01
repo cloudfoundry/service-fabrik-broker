@@ -14,8 +14,8 @@ describe('fabrik', function () {
     const ips = [ip];
     const port = 2727;
     const auth = {
-      user: 'admin',
-      pass: 'secret'
+      username: 'admin',
+      password: 'admin'
     };
     const response = {
       body: {}
@@ -42,6 +42,23 @@ describe('fabrik', function () {
       level: 'critical',
       msg: 'bar'
     }];
+    let context = {
+      params: {
+        previous_manifest: {
+          name: 'test-deployment-name',
+          instance_groups: [{
+            name: 'bp',
+            jobs: [{
+              name: 'broker-agent',
+              properties: {
+                username: 'admin',
+                password: 'admin'
+              }
+            }]
+          }]
+        }
+      }
+    };
     const state = 'processing';
     const operational = true;
     let version = 1;
@@ -99,6 +116,14 @@ describe('fabrik', function () {
           url: createUrl(pathname),
           auth: auth,
           body: body
+        }, expectedStatus)
+        .returns(Promise.resolve(response));
+      requestStub
+        .withArgs({
+          method: 'POST',
+          url: createUrl(pathname),
+          auth: auth,
+          body: context
         }, expectedStatus)
         .returns(Promise.resolve(response));
       requestStub
@@ -283,11 +308,10 @@ describe('fabrik', function () {
     });
 
     describe('#preupdate', function () {
-      let context = {};
       before(function () {
         pathname = 'lifecycle/preupdate';
         expectedStatus = 200;
-        context = {};
+        context = context;
       });
 
       it('returns a JSON object', function () {
@@ -298,7 +322,6 @@ describe('fabrik', function () {
             expect(requestStub).to.have.been.calledTwice;
           });
       });
-
     });
 
     describe('#createCredentials', function () {

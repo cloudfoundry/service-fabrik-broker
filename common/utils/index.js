@@ -46,6 +46,7 @@ exports.isServiceFabrikOperationFinished = isServiceFabrikOperationFinished;
 exports.taskIdRegExp = taskIdRegExp;
 exports.hasChangesInForbiddenSections = hasChangesInForbiddenSections;
 exports.unifyDiffResult = unifyDiffResult;
+exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -397,4 +398,27 @@ function unifyDiffResult(result) {
     }
   }));
   return diff;
+}
+
+function getBrokerAgentCredsFromManifest(manifest) {
+  var brokerAgentNameRegex = RegExp('broker-agent');
+  let authObject;
+  _.forEach(manifest.instance_groups, (instanceGroup) => {
+    if (authObject) {
+      // break forEach
+      return false;
+    }
+    _.forEach(instanceGroup.jobs, (job) => {
+      if (brokerAgentNameRegex.test(job.name)) {
+        authObject =
+          _.chain({})
+          .set('username', job.properties.username)
+          .set('password', job.properties.password)
+          .value();
+        // break forEach
+        return false;
+      }
+    });
+  });
+  return authObject;
 }
