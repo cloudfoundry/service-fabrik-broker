@@ -16,24 +16,6 @@ class DefaultBackupManager extends BaseManager {
     eventmesh.server.registerWatcher('backup/default', this.worker, true);
   }
 
-  restart() {
-    return eventmesh.server.getInProgress('backup')
-      .then(jsonArr => _
-        .forEach(jsonArr, val => {
-          return eventmesh.server.getKey(`${val.key}/result`)
-            .then(ans => {
-              let instanceInfo = _.chain(ans)
-                .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment_name', 'started_at')
-                .value();
-              logger.info('Starting Poller for:', instanceInfo)
-              return Promise.try(() => {
-                const plan = catalog.getPlan(instanceInfo.plan_id);
-                return fabrik.createManager(plan);
-              }).then(manager => manager.pollAndUpdateResourceState(instanceInfo));
-            })
-        }))
-  }
-
   worker(change) {
     logger.info('Change key:', change.key.toString());
     logger.info('Change value:', change.value.toString());

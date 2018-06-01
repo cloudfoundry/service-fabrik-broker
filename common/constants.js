@@ -34,6 +34,7 @@ module.exports = Object.freeze({
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected'
   },
+  ETCD_POLLER_DELAY: 2000,
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',

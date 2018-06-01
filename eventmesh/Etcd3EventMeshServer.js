@@ -200,30 +200,6 @@ class Etcd3EventMeshServer extends EventMeshServer {
     return this.getAnnotationKeyValue(opts);
   }
 
-  addToInProgress(tag, key) {
-    const inProgress = `progress/${tag}/${key}`;
-    logger.debug(`Add ${inProgress} to eventmesh`);
-    const value = {
-      'key': key
-    };
-    return etcd.put(inProgress).value(JSON.stringify(value));
-  }
-
-  removeFromInProgress(tag, key) {
-    const inProgress = `progress/${tag}/${key}`;
-    logger.debug(`Deleting ${key} from inProgress`);
-    return etcd.delete().key(inProgress);
-  }
-
-  getInProgress(tag) {
-    return etcd.getAll().prefix(`progress/${tag}`).json()
-  }
-
-  getKey(key) {
-    logger.info('getKey called')
-    return etcd.get(key).json();
-  }
-
 }
 
 module.exports = Etcd3EventMeshServer;

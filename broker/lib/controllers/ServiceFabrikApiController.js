@@ -38,7 +38,7 @@ const CloudControllerError = {
 
 function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
   logger.info(`getResourceAnnotationStatus is called`);
-  return Promise.delay(10000)
+  return Promise.delay(CONST.ETCD_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
       resourceType: resourceType,
       resourceId: resourceId,
