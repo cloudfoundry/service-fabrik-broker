@@ -804,24 +804,6 @@ class DirectorManager extends BaseManager {
     return this.director.getLockProperty(deploymentName);
   }
 
-  releaseLock(deploymentName) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, CONST.DEPLOYMENT_LOCK_NAME);
-  }
-
-  unlock(opts) {
-    const responseMessage = _.get(opts, 'arguments.description') || `Unlocked deployment ${opts.deployment}`;
-    const response = {
-      description: responseMessage
-    };
-    return this
-      .releaseLock(opts.deployment)
-      .then(() => response)
-      .catch((errors.NotFound), () => {
-        logger.info(`Lock already released from deployment - ${opts.deployment}`);
-        return response;
-      });
-  }
   static registerBnRStatusPoller(opts, instanceInfo) {
     let deploymentName = _.get(instanceInfo, 'deployment');
     const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;

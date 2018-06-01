@@ -88,7 +88,6 @@ module.exports = Object.freeze({
     //Define names of scheduled JOBS
     SCHEDULED_BACKUP: 'ScheduledBackup',
     SERVICE_FABRIK_BACKUP: 'ServiceFabrikBackup',
-    BACKUP_STATUS_POLLER: 'FabrikStatusPoller',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
     OPERATION_STATUS_POLLER: 'OperationStatusPoller',
     BNR_STATUS_POLLER: 'BnRStatusPoller',

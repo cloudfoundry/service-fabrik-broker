@@ -72,7 +72,6 @@ Fabrik.VirtualHostAgent = VirtualHostAgent;
 Fabrik.DockerManager = DockerManager;
 Fabrik.DirectorManager = DirectorManager;
 Fabrik.ServiceFabrikOperation = ServiceFabrikOperation;
-Fabrik.FabrikStatusPoller = FabrikStatusPoller;
 Fabrik.dbManager = new DBManager();
 Fabrik.BoshTaskPoller = BoshTaskPoller;
 Fabrik.oobBackupManager = OobBackupManager;
