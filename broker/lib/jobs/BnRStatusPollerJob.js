@@ -69,7 +69,7 @@ class BnRStatusPollerJob extends BaseJob {
             .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
       })
-      .tap(res => {
+      .tap(operationStatusResponse => {
         return eventmesh
           .server
           .updateAnnotationKey({
@@ -78,7 +78,7 @@ class BnRStatusPollerJob extends BaseJob {
             annotationType: 'default',
             annotationId: instanceInfo.backup_guid,
             key: 'progress',
-            value: JSON.stringify(res, null, 2)
+            value: JSON.stringify(operationStatusResponse)
           });
       })
       .then(operationStatusResponse => {
@@ -141,7 +141,7 @@ class BnRStatusPollerJob extends BaseJob {
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
     return this
-      .unlockDeployment(instanceInfo, operationName, operationStatusResponse)
+      .updateEventMesh(instanceInfo, operationName, operationStatusResponse)
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
@@ -155,8 +155,7 @@ class BnRStatusPollerJob extends BaseJob {
         return operationStatusResponse;
       });
   }
-  static unlockDeployment(instanceInfo, operation, operationStatusResponse) {
-    // remo0ve me
+  static updateEventMesh(instanceInfo, operation, operationStatusResponse) {
     return Promise
       .try(() => eventmesh
         .server
