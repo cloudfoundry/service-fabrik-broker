@@ -157,17 +157,7 @@ class BnRStatusPollerJob extends BaseJob {
   }
   static updateEventMesh(instanceInfo, operation, operationStatusResponse) {
     return Promise
-      .try(() => eventmesh
-        .server
-        .removeFromInProgress('backup', eventmesh
-          .server
-          .getAnnotationFolderName({
-            resourceId: instanceInfo.instance_guid,
-            annotationName: 'backup',
-            annotationType: 'default',
-            annotationId: instanceInfo.backup_guid
-          })))
-      .then(() => {
+      .try(() => {
         return eventmesh.server.updateAnnotationState({
           resourceId: instanceInfo.instance_guid,
           annotationName: 'backup',

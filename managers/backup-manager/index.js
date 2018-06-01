@@ -1,2 +1,2 @@
 'use strict';
-module.exports = require('./BkpMgr');
+module.exports = require('./BackupManager');

@@ -27,7 +27,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const Forbidden = errors.Forbidden;
 const catalog = require('../../broker/lib/models/catalog');
 
-class BkpMgr {
+class BackupManager {
   constructor(plan) {
     this.plan = plan;
     this.director = bosh.director;
@@ -235,7 +235,7 @@ class BkpMgr {
               .set('deployment', deploymentName)
               .set('started_at', backupStartedAt)
               .value();
-            return BkpMgr.registerBnRStatusPoller({
+            return BackupManager.registerBnRStatusPoller({
               operation: 'backup',
               type: backup.type,
               trigger: backup.trigger
@@ -479,11 +479,11 @@ class Fabrik {
   static createManager(plan) {
     return Promise
       .try(() => {
-        return BkpMgr;
+        return BackupManager;
       })
       .then(managerConstructor => managerConstructor.load(plan));
   }
 
 }
-Fabrik.BkpMgr = BkpMgr;
+Fabrik.BackupManager = BackupManager;
 module.exports = Fabrik;
