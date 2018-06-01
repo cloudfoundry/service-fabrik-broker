@@ -12,6 +12,7 @@ const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
+const Timeout = errors.Timeout;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const Conflict = errors.Conflict;
@@ -50,8 +51,7 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
       const backup_start_timeout = 15 //sec
       logger.info(`Lock duration : ${duration} `);
       if (duration > backup_start_timeout) {
-        throw new Error('backup start timeout');
-        // todo handle this in catch with abort backup
+        throw new Timeout(`Backup not picked up from queue`);
       }
       if (state === start_state) {
         logger.info('Waiting to get the annotation state');
@@ -310,7 +310,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .spread((guid, deployment) => {
         _.set(req.body, 'trigger', trigger);
         backup_guid = guid;
-        const value = {
+        const backup_options = {
           guid: backup_guid,
           deployment: deployment,
           instance_guid: req.params.instance_id,
@@ -325,7 +325,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           annotationName: 'backup',
           annotationType: 'default',
           annotationId: backup_guid,
-          val: JSON.stringify(value)
+          val: JSON.stringify(backup_options)
         }
         return eventmesh.server.annotateResource(opts);
       })
@@ -352,6 +352,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(bodyStr => {
         const body = JSON.parse(bodyStr);
         res.status(202).send(body);
+      })
+      .catch(Timeout, (err) => {
+        return this.abortLastBackup(req, res);
       });
   }
 
