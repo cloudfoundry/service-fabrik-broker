@@ -50,8 +50,8 @@ class DirectorInstance extends BaseInstance {
   }
 
   get async() {
-    return this.operation !== CONST.OPERATION_TYPE.BACKUP && this.operation !== CONST.OPERATION_TYPE.UNLOCK;
-    //Backup/Unlock operation is being turned into SYNCH and behind scenese polling will happen to status check.
+    return this.operation !== CONST.OPERATION_TYPE.BACKUP;
+    //Backup operation is being turned into SYNCH and behind scenese polling will happen to status check.
     //Rationale : Bind operations can happen while backups are happening.
   }
 
