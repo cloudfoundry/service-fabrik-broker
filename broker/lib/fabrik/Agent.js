@@ -178,10 +178,13 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'lifecycle/deprovision', body, 200));
   }
 
-  preUpdate(ips, context, authObject) {
+  preUpdate(ips, context) {
+    const agentCredsBeforeUpdate = utils.getBrokerAgentCredsFromManifest(context.params.previous_manifest);
+    // Making agent request with agent credentials from previous manifest
+    // In case agent passwords are being updated as part of this update
     return this
       .getHost(ips, 'lifecycle.preupdate')
-      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, authObject));
+      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, agentCredsBeforeUpdate));
   }
 
   createCredentials(ips, parameters) {
