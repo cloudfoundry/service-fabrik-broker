@@ -38,7 +38,7 @@ const CloudControllerError = {
 
 function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
   logger.info(`getResourceAnnotationStatus is called`);
-  return Promise.delay(CONST.ETCD_POLLER_DELAY)
+  return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
       resourceType: resourceType,
       resourceId: resourceId,
@@ -55,7 +55,7 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
       }
       if (state === start_state) {
         logger.info('Waiting to get the annotation state');
-        return getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, backup_started_at);
+        return getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at);
       } else if (state === 'error') {
         return eventmesh.server.getAnnotationKeyValue({
             resourceType: resourceType,
