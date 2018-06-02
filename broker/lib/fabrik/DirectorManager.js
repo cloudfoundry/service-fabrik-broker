@@ -18,6 +18,7 @@ const ScheduleManager = require('../jobs');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
+const boshOperationCache = bosh.BoshOperationCache;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
@@ -31,6 +32,8 @@ const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const Forbidden = errors.Forbidden;
+const DeploymentDelayed = errors.DeploymentDelayed;
+const CacheUpdateError = errors.CacheUpdateError;
 const catalog = require('../models/catalog');
 
 class DirectorManager extends BaseManager {
@@ -110,7 +113,8 @@ class DirectorManager extends BaseManager {
 
   aquireNetworkSegmentIndex(guid) {
     logger.info(`Aquiring network segment index for a new deployment with instance id '${guid}'...`);
-    return this.getDeploymentNames(true)
+    return Promise.all([this.getDeploymentNames(true), this.getDeploymentNamesInCache()])
+      .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
         if (deploymentName) {
@@ -119,7 +123,7 @@ class DirectorManager extends BaseManager {
         }
         return NetworkSegmentIndex.findFreeIndex(deploymentNames, this.subnet);
       })
-      .tap(networkSegmentIndex => logger.info(`+-> Aquired network segment index '${networkSegmentIndex}'`));
+      .tap(networkSegmentIndex => logger.info(`+-> Acquired network segment index '${networkSegmentIndex}'`));
   }
 
   findDeploymentNameByInstanceId(guid) {
@@ -147,6 +151,10 @@ class DirectorManager extends BaseManager {
 
   getDeploymentNames(queued) {
     return this.director.getDeploymentNames(queued);
+  }
+
+  getDeploymentNamesInCache() {
+    return boshOperationCache.getDeploymentNames();
   }
 
   getTask(taskId) {
@@ -177,7 +185,135 @@ class DirectorManager extends BaseManager {
     return this.director.getDeploymentIps(deploymentName);
   }
 
+  executePolicy(scheduled, action, deploymentName, dbUpdate) {
+    if (dbUpdate) {
+      return Promise.resolve(true);
+    }
+    const targetDirectorConfig = this.director.getDirectorForOperation(action, deploymentName);
+    this.director.getCurrentTasks(action, targetDirectorConfig).then(out => {
+      let currentTasks, maxWorkers;
+      let allTasks = out.total;
+      let maxTasks = targetDirectorConfig.max_workers;
+      if (allTasks >= maxTasks) {
+        //no slots left anyway
+        return false;
+      }
+      if (scheduled) {
+        currentTasks = out.scheduled;
+        maxWorkers = targetDirectorConfig.policies.scheduled.max_workers;
+      } else {
+        currentTasks = out.user;
+        maxWorkers = targetDirectorConfig.policies.user.max_workers;
+      }
+      if (currentTasks < maxWorkers) {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  getCurrentOperationState(serviceInstanceId) {
+    let output = {
+      'cached': false,
+      'task_id': null
+    };
+
+    return Promise.all([boshOperationCache.containsServiceInstance(serviceInstanceId), boshOperationCache.getBoshTask(serviceInstanceId)])
+      .spread((cached, taskId) => {
+        output.cached = cached;
+        output.task_id = taskId;
+      })
+      .return(output);
+  }
+
   createOrUpdateDeployment(deploymentName, params, args) {
+    logger.info(`Checking rate limits against bosh for deployment `);
+    const previousValues = _.get(params, 'previous_values');
+    const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
+    const scheduled = _.get(params, 'scheduled') || false;
+    const dbUpdate = _.get(params, '_serviceFabrikDbUpdate') || false;
+    _.omit(params, 'scheduled');
+    _.omit(params, '_serviceFabrikDbUpdate');
+
+    const decisionMaker = {
+      'shouldRunNow': false,
+      'cached': false,
+      'dbUpdate': false
+    };
+
+    return this.executePolicy(scheduled, action, deploymentName, dbUpdate)
+      .then(shouldRunNow => {
+        if (dbUpdate) {
+          decisionMaker.shouldRunNow = true;
+          decisionMaker.dbUpdate = true;
+          return Promise.resolve();
+        }
+        if (shouldRunNow) {
+          decisionMaker.shouldRunNow = shouldRunNow;
+          return boshOperationCache.containsDeployment(deploymentName).then(inCache => {
+            if (inCache) {
+              decisionMaker.cached = true;
+            }
+            return Promise.resolve();
+          });
+        }
+        if (!scheduled) {
+          // stagger here by putting it into etcd cache and return promise
+          return boshOperationCache.store(this.plan.id, deploymentName, params, args)
+            .then(() => {
+              decisionMaker.cached = true;
+              return Promise.resolve();
+            })
+            .catch(err => {
+              logger.error('Error updating etcd cache', err);
+              throw new CacheUpdateError(deploymentName);
+            });
+        }
+        throw new DeploymentDelayed(deploymentName);
+      })
+      .then(() => {
+        if (decisionMaker.shouldRunNow && decisionMaker.cached) {
+          //the deployment was cached in etcd earlier; remove it from cache and proceed
+          return boshOperationCache.deleteDeploymentFromCache(deploymentName);
+        }
+      })
+      .then(() => {
+        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow) {
+          return;
+        } else {
+          throw new DeploymentDelayed(deploymentName);
+        }
+      })
+      .then(() => this._createOrUpdateDeployment(deploymentName, params, args, scheduled))
+      .then(taskId => {
+        let out = {
+          'cached': false
+        };
+        if (decisionMaker.cached) {
+          boshOperationCache.storeBoshTask(this.getInstanceGuid(deploymentName), taskId)
+            .then(() => {
+              out.cached = true;
+              out.task_id = taskId;
+              return Promise.resolve(out);
+            });
+        } else {
+          out.task_id = taskId;
+          return Promise.resolve(out);
+        }
+      })
+      .catch(DeploymentDelayed, e => {
+        logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
+        let out = {
+          'cached': true
+        };
+        return out;
+      })
+      .catch(err => {
+        throw err;
+      });
+  }
+
+  _createOrUpdateDeployment(deploymentName, params, args, scheduled) {
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
     const opts = _.omit(params, 'previous_values');
@@ -241,7 +377,7 @@ class DirectorManager extends BaseManager {
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
       .then((preDeployResponse) => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
       .tap(manifest => logger.info('+-> Deployment manifest:\n', manifest))
-      .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args))
+      .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
       .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
       .catch(err => {
         logger.error(`+-> Failed to ${action} deployment`);

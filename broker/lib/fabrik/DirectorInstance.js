@@ -146,10 +146,11 @@ class DirectorInstance extends BaseInstance {
         return this.manager
           .createOrUpdateDeployment(this.deploymentName, params);
       })
-      .then(taskId => _
+      .then(output => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
-        .set('task_id', taskId)
+        .set('task_id', output.task_id)
+        .set('cached', output.cached)
         .value()
       );
   }
@@ -162,6 +163,7 @@ class DirectorInstance extends BaseInstance {
     const token = _.get(params.parameters, 'service-fabrik-operation', null);
     if (token) {
       _.unset(params.parameters, 'service-fabrik-operation');
+      _.set(params, 'scheduled', true);
     }
     return this
       .initialize(operation)
@@ -180,10 +182,11 @@ class DirectorInstance extends BaseInstance {
           const args = _.get(serviceFabrikOperation, 'arguments');
           return this.manager
             .createOrUpdateDeployment(this.deploymentName, params, args)
-            .then(taskId => _
+            .then(output => _
               .chain(operation)
               .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', taskId)
+              .set('task_id', output.task_id)
+              .set('cached', output.cached)
               .value()
             );
         }
@@ -240,21 +243,43 @@ class DirectorInstance extends BaseInstance {
         );
     }
     logger.info('Fetching state of last operation', operation);
-    return Promise
-      .try(() => {
-        assert.ok(operation.task_id, 'Operation must have the property \'task_id\'');
-        return this.manager.getTask(operation.task_id);
-      })
-      .catchThrow(NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(task => {
-        assert.ok(_.endsWith(task.deployment, this.guid), `Deployment '${task.deployment}' must end with '${this.guid}'`);
-        this.networkSegmentIndex = this.manager.getNetworkSegmentIndex(task.deployment);
-        this.setOperationState(operation, task);
-        if (operation.state !== 'in progress') {
-          return this.finalize(operation);
+
+    function getBoshTaskOperation(operation, taskId) {
+      return Promise
+        .try(() => {
+          assert.ok(taskId, 'Task ID must be available');
+          return this.manager.getTask(taskId);
+        })
+        .catchThrow(NotFound, new ServiceInstanceNotFound(this.guid))
+        .then(task => {
+          assert.ok(_.endsWith(task.deployment, this.guid), `Deployment '${task.deployment}' must end with '${this.guid}'`);
+          this.networkSegmentIndex = this.manager.getNetworkSegmentIndex(task.deployment);
+          this.setOperationState(operation, task);
+          if (operation.state !== 'in progress') {
+            return this.finalize(operation);
+          }
+        })
+        .return(operation);
+    }
+
+    if (operation.task_id) {
+      return getBoshTaskOperation(operation, operation.task_id);
+    } else {
+      return Promise.try(() => {
+        return this.manager.getCurrentOperationState(this.guid)
+      }).then(state => {
+        let isCached = state.cached;
+        let taskId = state.task_id;
+        if (isCached) {
+          return _.assign(operation, {
+            description: `${_.capitalize(operation.type)} deployment ${task.deployment} is still in progress`,
+            state: 'in progress'
+          });
+        } else {
+          return getBoshTaskOperation(operation, taskId);
         }
-      })
-      .return(operation);
+      });
+    }
   }
 
   setOperationState(operation, task) {

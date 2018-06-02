@@ -344,7 +344,59 @@ class BoshDirectorClient extends HttpClient {
       );
   }
 
-  createOrUpdateDeployment(action, manifest, opts) {
+  /**
+   * Fetch the director config for the operation and deployment
+   * 
+   * @param {type of action [create, update, delete]} action 
+   * @param {name of BOSH deployment} deploymentName 
+   */
+  getDirectorForOperation(action, deploymentName) {
+    logger.debug(`Fetching director for operation ${action} and deployment ${deploymentName}`);
+    if (action === CONST.OPERATION_TYPE.CREATE) {
+      return _.sample(this.activePrimary);
+    } else {
+      return this.getDirectorConfig(deploymentName);
+    }
+  }
+
+  /** 
+   * get the current tasks in the director (in processing, cancelling state)
+   * task count should be retrieved for ALL types of operations
+   * 
+   */
+  getCurrentTasks(action, directorConfig) {
+    let query = {
+      state: 'processing,cancelling',
+      verbose: 2
+    };
+    return this.makeRequestWithConfig({
+      method: 'GET',
+      url: '/tasks',
+      qs: query
+    }, 200, directorConfig).then(out => {
+      // out is the array of currently running tasks
+      let currentTotal = out.length;
+      let taskGroup = _.groupBy(out, (entry) => {
+        if (entry.context_id === CONST.BOSH_FABRIK_SCHEDULED_OP) {
+          return 'scheduled';
+        } else if (entry.context_id === CONST.BOSH_FABRIK_USER_OP) {
+          return 'user';
+        } else {
+          //needed for landscape bosh
+          return 'uncategorized';
+        }
+      });
+      let taskCount = {
+        'user': taskGroup.user.length,
+        'scheduled': taskGroup.scheduled.length,
+        'uncategorized': taskGroup.uncategorized.length,
+        'total': currentTotal
+      };
+      return taskCount;
+    });
+  }
+
+  createOrUpdateDeployment(action, manifest, opts, scheduled) {
     const query = opts ? _.pick(opts, 'recreate', 'skip_drain', 'context') : undefined;
     const deploymentName = yaml.safeLoad(manifest).name;
     const boshDirectorName = _.get(opts, 'bosh_director_name');
@@ -365,13 +417,19 @@ class BoshDirectorClient extends HttpClient {
         if (config === undefined) {
           throw new errors.NotFound('Did not find any bosh director config which supports creation of deployment');
         }
+        let reqHeaders = {
+          'Content-Type': 'text/yaml'
+        };
+        if (scheduled) {
+          reqHeaders[CONST.BOSH_CONTEXT_ID] = CONST.BOSH_FABRIK_SCHEDULED_OP;
+        } else {
+          reqHeaders[CONST.BOSH_CONTEXT_ID] = CONST.BOSH_FABRIK_USER_OP;
+        }
         return this
           .makeRequestWithConfig({
             method: 'POST',
             url: '/deployments',
-            headers: {
-              'Content-Type': 'text/yaml'
-            },
+            headers: reqHeaders,
             qs: query,
             body: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
           }, 302, config)

@@ -430,6 +430,12 @@ defaults: &defaults
     skip_ssl_validation: true
     default_task_poll_interval: 10000
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
+    max_workers: 24
+    policies:
+      user:
+        max_workers: 50
+      scheduled:
+        max_workers: 50
     infrastructure: &director_infrastructure
       stemcell:
         alias: ubuntu-trusty

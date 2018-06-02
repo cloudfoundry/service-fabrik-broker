@@ -3,6 +3,9 @@
 module.exports = Object.freeze({
   NETWORK_SEGMENT_LENGTH: 4,
   BOSH_POLL_MAX_ATTEMPTS: 3,
+  BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
+  BOSH_FABRIK_SCHEDULED_OP: 'Fabrik::Scheduler',
+  BOSH_FABRIK_USER_OP: 'Fabrik::User',
   DEPLOYMENT_LOCK_NAME: '_LOCK_',
   SERVICE_FABRIK_PREFIX: 'service-fabrik',
   PLATFORM_CONTEXT_KEY: 'platform-context',
