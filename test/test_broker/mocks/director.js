@@ -66,6 +66,8 @@ exports.getDeployment = getDeployment;
 exports.getDeployments = getDeployments;
 exports.getDeploymentNames = getDeploymentNames;
 exports.createOrUpdateDeployment = createOrUpdateDeployment;
+exports.createOrUpdateDeploymentOp = createOrUpdateDeploymentOp;
+exports.getCurrentTasks = getCurrentTasks;
 exports.deleteDeployment = deleteDeployment;
 exports.getDeploymentTask = getDeploymentTask;
 exports.getDeploymentManifest = getDeploymentManifest;
@@ -158,6 +160,31 @@ function createOrUpdateDeployment(taskId) {
   return nock(directorUrl, {
       reqheaders: {
         'Content-Type': 'text/yaml'
+      }
+    })
+    .post('/deployments')
+    .reply(302, null, {
+      'location': `${directorUrl}/tasks/${taskId}`
+    });
+}
+
+function getCurrentTasks(taskResponse) {
+  return nock(directorUrl)
+    .replyContentLength()
+    .get(`/tasks`)
+    .query(() => true)
+    .reply(200, taskResponse);
+}
+
+function createOrUpdateDeploymentOp(taskId, operation) {
+  let boshContextId = 'Fabrik::Operation::Auto';
+  if (operation) {
+    boshContextId = `Fabrik::Operation::${operation}`;
+  }
+  return nock(directorUrl, {
+      reqheaders: {
+        'Content-Type': 'text/yaml',
+        'X-Bosh-Context-Id': boshContextId
       }
     })
     .post('/deployments')

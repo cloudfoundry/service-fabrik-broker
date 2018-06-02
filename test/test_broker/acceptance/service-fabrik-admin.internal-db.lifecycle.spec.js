@@ -33,6 +33,7 @@ describe('service-fabrik-admin', function () {
         actions: ['Blueprint', 'ReserveIps'],
         context: {
           params: {
+            '_runImmediately': true,
             context: {
               platform: 'service-fabrik',
               organization_guid: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
@@ -84,6 +85,10 @@ describe('service-fabrik-admin', function () {
         clock = sinon.useFakeTimers(new Date().getTime());
       });
 
+      afterEach(function () {
+        clock.restore();
+      });
+
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
         const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 50;
         const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
@@ -129,6 +134,9 @@ describe('service-fabrik-admin', function () {
       let clock;
       beforeEach(function () {
         clock = sinon.useFakeTimers(new Date().getTime());
+      });
+      afterEach(function () {
+        clock.restore();
       });
       it('should update service fabrik internal mongodb deployment ', function (done) {
         const WAIT_TIME_FOR_ASYNCH_CREATE_DEPLOYMENT_OPERATION = 5;

@@ -199,8 +199,11 @@ class DBManager {
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
+      // MongoDB update operations should go through to BOSH without any rate limits applied by broker
+      params._runImmediately = true;
       return this.directorManager.createOrUpdateDeployment(config.mongodb.deployment_name, params)
-        .tap(taskId => {
+        .tap(out => {
+          const taskId = out.task_id;
           logger.info(`MongoDB ${operation} request is complete. Check status for task id - ${taskId}`);
           this.director
             .pollTaskStatusTillComplete(taskId)

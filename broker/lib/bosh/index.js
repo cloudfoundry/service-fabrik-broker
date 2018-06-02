@@ -7,6 +7,7 @@ const Networks = require('./manifest/Networks');
 const Network = require('./manifest/Network');
 const Header = require('./manifest/Header');
 const Addons = require('./manifest/Addons');
+const BoshOperationQueue = require('./BoshOperationQueue');
 
 exports.director = new BoshDirectorClient();
 exports.NetworkSegmentIndex = NetworkSegmentIndex;
@@ -18,3 +19,4 @@ exports.manifest = {
   Header: Header,
   Addons: Addons
 };
+exports.BoshOperationQueue = BoshOperationQueue;

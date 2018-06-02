@@ -98,7 +98,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeployments({
             queued: true
           });
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -139,7 +139,7 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -180,7 +180,7 @@ describe('service-broker-api', function () {
             .omit('organization_guid')
             .omit('space_guid')
             .value();
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeployment(task_id, 'create');
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -532,6 +532,7 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters
@@ -587,7 +588,8 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: context,
+                cached: false
               });
               mocks.verify();
             });
@@ -640,7 +642,8 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: context,
+                cached: false
               });
               mocks.verify();
             });
@@ -775,7 +778,8 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters
+                parameters: parameters,
+                cached: false
               });
               mocks.verify();
             });
@@ -825,7 +829,8 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters
+                parameters: parameters,
+                cached: false
               });
               mocks.verify();
             });

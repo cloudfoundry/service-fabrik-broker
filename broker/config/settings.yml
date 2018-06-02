@@ -144,6 +144,7 @@ defaults: &defaults
   sys_log_level: info
   enable_circuit_breaker: true
   enable_swarm_manager: true
+  enable_bosh_rate_limit: false # Global switch to enable/disable rate limiting against BOSH directors
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
     EnableSecurityGroupsOps: true
@@ -431,6 +432,15 @@ defaults: &defaults
     skip_ssl_validation: true
     default_task_poll_interval: 10000
     lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
+    max_workers: 24
+    policies:
+      user:
+        create:
+          max_workers: 5
+        update:
+          max_workers: 7
+      scheduled:
+        max_workers: 12
     infrastructure: &director_infrastructure
       stemcell:
         alias: ubuntu-trusty

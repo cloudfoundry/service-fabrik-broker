@@ -18,6 +18,7 @@ const ScheduleManager = require('../jobs');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
+const boshOperationQueue = bosh.BoshOperationQueue;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
@@ -31,6 +32,7 @@ const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const Forbidden = errors.Forbidden;
+const DeploymentDelayed = errors.DeploymentDelayed;
 const catalog = require('../models/catalog');
 
 class DirectorManager extends BaseManager {
@@ -109,8 +111,13 @@ class DirectorManager extends BaseManager {
   }
 
   aquireNetworkSegmentIndex(guid) {
-    logger.info(`Aquiring network segment index for a new deployment with instance id '${guid}'...`);
-    return this.getDeploymentNames(true)
+    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
+    const promises = [this.getDeploymentNames(true)];
+    if (config.enable_bosh_rate_limit) {
+      promises.push(this.getDeploymentNamesInCache());
+    }
+    return Promise.all(promises)
+      .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
         if (deploymentName) {
@@ -119,7 +126,7 @@ class DirectorManager extends BaseManager {
         }
         return NetworkSegmentIndex.findFreeIndex(deploymentNames, this.subnet);
       })
-      .tap(networkSegmentIndex => logger.info(`+-> Aquired network segment index '${networkSegmentIndex}'`));
+      .tap(networkSegmentIndex => logger.info(`+-> Acquired network segment index '${networkSegmentIndex}'`));
   }
 
   findDeploymentNameByInstanceId(guid) {
@@ -147,6 +154,10 @@ class DirectorManager extends BaseManager {
 
   getDeploymentNames(queued) {
     return this.director.getDeploymentNames(queued);
+  }
+
+  getDeploymentNamesInCache() {
+    return boshOperationQueue.getDeploymentNames();
   }
 
   getTask(taskId) {
@@ -177,7 +188,204 @@ class DirectorManager extends BaseManager {
     return this.director.getDeploymentIps(deploymentName);
   }
 
+  executePolicy(scheduled, action, deploymentName) {
+    const runOutput = {
+      'shouldRunNow': false
+    };
+    let targetDirectorConfig;
+    return this.director.getDirectorForOperation(action, deploymentName)
+      .then(directorConfig => {
+        targetDirectorConfig = directorConfig;
+        return this.director.getCurrentTasks(action, targetDirectorConfig);
+      })
+      .then(tasksCount => {
+        let currentTasks, maxWorkers;
+        const allTasks = tasksCount.total;
+        const maxTasks = _.get(targetDirectorConfig, 'max_workers', 6);
+        if (allTasks >= maxTasks) {
+          //no slots left anyway
+          runOutput.shouldRunNow = false;
+          return runOutput;
+        }
+        if (scheduled) {
+          currentTasks = tasksCount.scheduled;
+          maxWorkers = _.get(targetDirectorConfig, 'policies.scheduled.max_workers', 3);
+        } else {
+          currentTasks = tasksCount[action];
+          maxWorkers = _.get(targetDirectorConfig, `policies.user.${action}.max_workers`, 3);
+        }
+        if (currentTasks < maxWorkers) {
+          //should run if the tasks count is lesser than the specified max workers for op type
+          runOutput.shouldRunNow = true;
+          return runOutput;
+        }
+        return runOutput;
+      }).catch(err => {
+        logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
+        //in case the director request returns an error, we queue it to avoid user experience issues
+        // return with shouldRunNow = false so that it is taken care of in processing
+        return runOutput;
+      });
+  }
+
+  _deleteEntity(action, opts) {
+    return utils.retry(tries => {
+        logger.info(`+-> Attempt ${tries+1}, action "${opts.actionName}"...`);
+        return action();
+      }, {
+        maxAttempts: opts.maxAttempts,
+        minDelay: opts.minDelay
+      })
+      .catch(err => {
+        logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
+        throw err;
+      });
+  }
+
+  cleanupOperation(deploymentName) {
+    return Promise.try(() => {
+      if (!config.enable_bosh_rate_limit) {
+        return;
+      }
+      const serviceInstanceId = this.getInstanceGuid(deploymentName);
+      let retryTaskDelete = this._deleteEntity(() => {
+        return boshOperationQueue.deleteBoshTask(serviceInstanceId);
+      }, {
+        actionName: `delete bosh task for instance ${serviceInstanceId}`,
+        maxAttempts: 5,
+        minDelay: 1000
+      });
+      let retryDeploymentDelete = this._deleteEntity(() => {
+        return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
+      }, {
+        actionName: `delete bosh deployment ${deploymentName}`,
+        maxAttempts: 5,
+        minDelay: 1000
+      });
+      return Promise.all([retryTaskDelete, retryDeploymentDelete]);
+    });
+  }
+
+  getCurrentOperationState(serviceInstanceId) {
+    let output = {
+      'cached': false,
+      'task_id': null
+    };
+
+    return Promise.all([boshOperationQueue.containsServiceInstance(serviceInstanceId), boshOperationQueue.getBoshTask(serviceInstanceId)])
+      .spread((cached, taskId) => {
+        output.cached = cached;
+        output.task_id = taskId;
+      })
+      .return(output);
+  }
+
+  enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
+    const results = {
+      cached: false,
+      shouldRunNow: false,
+      enqueue: false
+    };
+    results.shouldRunNow = shouldRunNow;
+    if (scheduled) {
+      if (shouldRunNow) {
+        //do not store in etcd for scheduled updates
+        results.shouldRunNow = shouldRunNow;
+        return results;
+      } else {
+        throw new DeploymentDelayed(deploymentName);
+      }
+    } else {
+      // user-triggered operations
+      if (shouldRunNow) {
+        //check if the deployment already exists in etcd (poller-run)
+        return boshOperationQueue.containsDeployment(deploymentName).then(enqueued => {
+          if (enqueued) {
+            results.cached = true;
+          }
+          return results;
+        });
+      } else {
+        results.enqueue = true;
+        return results;
+      }
+    }
+  }
+
   createOrUpdateDeployment(deploymentName, params, args) {
+    logger.info(`Checking rate limits against bosh for deployment `);
+    const previousValues = _.get(params, 'previous_values');
+    const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
+    const scheduled = _.get(params, 'scheduled') || false;
+    const runImmediately = _.get(params, '_runImmediately') || false;
+    _.omit(params, 'scheduled');
+    _.omit(params, '_runImmediately');
+
+    if (!config.enable_bosh_rate_limit || runImmediately) {
+      return this._createOrUpdateDeployment(deploymentName, params, args, scheduled)
+        .then(taskId => {
+          return {
+            cached: false,
+            task_id: taskId
+          };
+        });
+    }
+    const decisionMaker = {
+      'shouldRunNow': false,
+      'cached': false
+    };
+    return this.executePolicy(scheduled, action, deploymentName)
+      .then(checkResults => this.enqueueOrTrigger(checkResults.shouldRunNow, scheduled, deploymentName))
+      .tap(res => {
+        decisionMaker.shouldRunNow = res.shouldRunNow;
+        decisionMaker.cached = res.cached;
+      })
+      .then(res => {
+        if (res.enqueue) {
+          // stagger here by putting it into etcd cache and return promise
+          return boshOperationQueue.saveDeployment(this.plan.id, deploymentName, params, args)
+            .then(() => {
+              decisionMaker.cached = true;
+              throw new DeploymentDelayed(deploymentName);
+            });
+        }
+      })
+      .then(() => {
+        if (decisionMaker.shouldRunNow && decisionMaker.cached) {
+          //the deployment was cached in etcd earlier; remove it from cache and proceed
+          return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
+        }
+      })
+      .then(() => this._createOrUpdateDeployment(deploymentName, params, args, scheduled))
+      .then(taskId => {
+        const out = {
+          'cached': false
+        };
+        if (decisionMaker.cached) {
+          return boshOperationQueue.saveBoshTask(this.getInstanceGuid(deploymentName), taskId)
+            .then(() => {
+              out.cached = true;
+              out.task_id = taskId;
+              return out;
+            });
+        } else {
+          out.task_id = taskId;
+          return out;
+        }
+      })
+      .catch(DeploymentDelayed, e => {
+        logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
+        return {
+          'cached': true
+        };
+      })
+      .catch(err => {
+        logger.error(`Error in deployment for ${deploymentName}`, err);
+        throw err;
+      });
+  }
+
+  _createOrUpdateDeployment(deploymentName, params, args, scheduled) {
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
     const opts = _.omit(params, 'previous_values');
@@ -241,7 +449,7 @@ class DirectorManager extends BaseManager {
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
       .then((preDeployResponse) => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
       .tap(manifest => logger.info('+-> Deployment manifest:\n', manifest))
-      .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args))
+      .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
       .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
       .catch(err => {
         logger.error(`+-> Failed to ${action} deployment`);

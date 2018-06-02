@@ -344,7 +344,71 @@ class BoshDirectorClient extends HttpClient {
       );
   }
 
-  createOrUpdateDeployment(action, manifest, opts) {
+  /**
+   * Fetch the director config for the operation and deployment
+   * 
+   * @param {string} action - type of action [create, update, delete]
+   * @param {string} deploymentName - name of BOSH deployment 
+   */
+  getDirectorForOperation(action, deploymentName) {
+    logger.debug(`Fetching director for operation ${action} and deployment ${deploymentName}`);
+    return Promise.try(() => {
+      if (action === CONST.OPERATION_TYPE.CREATE) {
+        return _.sample(this.activePrimary);
+      } else {
+        return this.getDirectorConfig(deploymentName);
+      }
+    });
+  }
+
+  /** 
+   * get the current tasks in the director (in processing, cancelling state)
+   * task count should be retrieved for ALL types of operations
+   * 
+   */
+  getCurrentTasks(action, directorConfig, ...states) {
+    let stateQuery = `${CONST.BOSH_RATE_LIMITS.BOSH_PROCESSING},${CONST.BOSH_RATE_LIMITS.BOSH_CANCELLING}`;
+    if (states.length > 0) {
+      stateQuery = states.join(',');
+    }
+    const query = {
+      state: stateQuery,
+      verbose: 2
+    };
+    return this.makeRequestWithConfig({
+        method: 'GET',
+        url: '/tasks',
+        qs: query
+      }, 200, directorConfig)
+      .then(res => JSON.parse(res.body))
+      .then(out => {
+        // out is the array of currently running tasks
+        let taskGroup = _.groupBy(out, (entry) => {
+          switch (entry.context_id) {
+          case CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO:
+            return CONST.FABRIK_SCHEDULED_OPERATION;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.CREATE}`:
+            return CONST.OPERATION_TYPE.CREATE;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.UPDATE}`:
+            return CONST.OPERATION_TYPE.UPDATE;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.DELETE}`:
+            return CONST.OPERATION_TYPE.DELETE;
+          default:
+            return CONST.UNCATEGORIZED;
+          }
+        });
+        return {
+          'create': taskGroup[CONST.OPERATION_TYPE.CREATE] ? taskGroup[CONST.OPERATION_TYPE.CREATE].length : 0,
+          'delete': taskGroup[CONST.OPERATION_TYPE.DELETE] ? taskGroup[CONST.OPERATION_TYPE.DELETE].length : 0,
+          'update': taskGroup[CONST.OPERATION_TYPE.UPDATE] ? taskGroup[CONST.OPERATION_TYPE.UPDATE].length : 0,
+          'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION] ? taskGroup[CONST.FABRIK_SCHEDULED_OPERATION].length : 0,
+          'uncategorized': taskGroup[CONST.UNCATEGORIZED] ? taskGroup[CONST.UNCATEGORIZED].length : 0,
+          'total': out.length
+        };
+      });
+  }
+
+  createOrUpdateDeployment(action, manifest, opts, scheduled) {
     const query = opts ? _.pick(opts, 'recreate', 'skip_drain', 'context') : undefined;
     const deploymentName = yaml.safeLoad(manifest).name;
     const boshDirectorName = _.get(opts, 'bosh_director_name');
@@ -365,13 +429,19 @@ class BoshDirectorClient extends HttpClient {
         if (config === undefined) {
           throw new errors.NotFound('Did not find any bosh director config which supports creation of deployment');
         }
+        const reqHeaders = {
+          'Content-Type': 'text/yaml'
+        };
+        if (scheduled) {
+          reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO;
+        } else {
+          reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${action}`;
+        }
         return this
           .makeRequestWithConfig({
             method: 'POST',
             url: '/deployments',
-            headers: {
-              'Content-Type': 'text/yaml'
-            },
+            headers: reqHeaders,
             qs: query,
             body: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
           }, 302, config)
