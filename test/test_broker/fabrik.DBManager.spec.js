@@ -38,7 +38,9 @@ const DirectorManagerStub = {
   }),
   createOrUpdateDeployment: () => Promise.try(() => {
     if (!failCreateUpdate) {
-      return '1234';
+      return {
+        task_id: '1234'
+      };
     }
     throw new errors.ServiceUnavailable('Bosh is down... simulated failure. Expected error.!');
   })
@@ -328,7 +330,7 @@ describe('fabrik', function () {
           expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
           let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
-            .tap(id => taskId = id)
+            .tap(out => taskId = out.task_id)
             .then(() => Promise.delay(3))
             .then(() => {
               expect(getDeploymentStub).to.be.calledOnce;
@@ -350,7 +352,7 @@ describe('fabrik', function () {
           expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
           let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
-            .tap(id => taskId = id)
+            .tap(out => taskId = out.task_id)
             .then(() => Promise.delay(3))
             .then(() => {
               throw new Error('Create deployment should have errorred');
@@ -377,7 +379,7 @@ describe('fabrik', function () {
           let taskId;
           return dbManager
             .createOrUpdateDbDeployment(true)
-            .tap(id => taskId = id)
+            .tap(out => taskId = out.task_id)
             .then(() => Promise.delay(5))
             .then(() => {
               expect(getDeploymentStub).to.be.calledOnce;
@@ -413,8 +415,8 @@ describe('fabrik', function () {
           expect(dbManagerForUpdate.dbInitialized).to.eql(true);
           let taskId;
           return dbManagerForUpdate.createOrUpdateDbDeployment(false)
-            .then(id => {
-              taskId = id;
+            .then(out => {
+              taskId = out.task_id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
               const validStatesDuringCreation = [CONST.DB.STATE.TB_INIT];
               expect(validStatesDuringCreation).to.include(dbManagerForUpdate.dbState);
@@ -441,8 +443,8 @@ describe('fabrik', function () {
           let taskId;
           bindPropertyFound = 2;
           return dbManagerForUpdate.createOrUpdateDbDeployment(false)
-            .then(id => {
-              taskId = id;
+            .then(out => {
+              taskId = out.task_id;
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
               expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.BIND_IN_PROGRESS);
             })
@@ -465,7 +467,7 @@ describe('fabrik', function () {
           expect(dbManagerForUpdate.dbInitialized).to.eql(true);
           let taskId;
           return dbManagerForUpdate.createOrUpdateDbDeployment(false)
-            .then(id => {
+            .then(out => {
               expect(dbManagerForUpdate.dbState).to.include(CONST.DB.STATE.CREATE_UPDATE_FAILED);
               expect(dbManagerForUpdate.dbInitialized).to.eql(false);
             });

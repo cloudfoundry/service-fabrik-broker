@@ -283,7 +283,8 @@ describe('bosh', () => {
           method: 'POST',
           url: '/deployments',
           headers: {
-            'Content-Type': 'text/yaml'
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::User'
           },
           qs: undefined,
           body: manifest

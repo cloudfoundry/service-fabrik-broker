@@ -199,7 +199,7 @@ class DBManager {
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
-      params._serviceFabrikDbUpdate= true;
+      params._serviceFabrikDbUpdate = true;
       return this.directorManager.createOrUpdateDeployment(config.mongodb.deployment_name, params)
         .tap(out => {
           let taskId = out.task_id;

@@ -32,6 +32,7 @@ describe('service-fabrik-admin', function () {
         phase: 'PreCreate',
         actions: ['Blueprint', 'ReserveIps'],
         context: {
+          '_serviceFabrikDbUpdate': true,
           params: {
             context: {
               platform: 'service-fabrik',

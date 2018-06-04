@@ -587,7 +587,8 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: context,
+                cached: false
               });
               mocks.verify();
             });
@@ -640,7 +641,8 @@ describe('service-broker-api', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: context,
+                cached: false
               });
               mocks.verify();
             });
@@ -775,7 +777,8 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters
+                parameters: parameters,
+                cached: false
               });
               mocks.verify();
             });
@@ -825,7 +828,8 @@ describe('service-broker-api', function () {
               expect(utils.decodeBase64(res.body.operation)).to.eql({
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters
+                parameters: parameters,
+                cached: false
               });
               mocks.verify();
             });
