@@ -75,19 +75,22 @@ function completeDirectorConfig(director) {
       cpi: info.cpi
     });
   }
-  let maxWorkers = _.get(director, 'max_workers', 6);
-  let userWorkerShare = _.get(director, 'policies.user.max_workers', 50);
-  let autoWorkerShare = _.get(director, 'policies.scheduled.max_workers', 50);
+  let boshRateLimitEnabled = config.enable_bosh_rate_limit;
+  if (boshRateLimitEnabled) {
+    let maxWorkers = _.get(director, 'max_workers', 6);
+    let userWorkerShare = _.get(director, 'policies.user.max_workers', 50);
+    let autoWorkerShare = _.get(director, 'policies.scheduled.max_workers', 50);
 
-  if (_.add(userWorkerShare, autoWorkerShare) > 100) {
-    throw new Error(`Invalid director config: policy shares add up to more than 100%`);
+    if (_.add(userWorkerShare, autoWorkerShare) > 100) {
+      throw new Error(`Invalid director config: policy shares add up to more than 100%`);
+    }
+
+    let userWorkers = _.floor(_.multiply(_.divide(userWorkerShare, 100), maxWorkers));
+    let autoWorkers = _.floor(_.multiply(_.divide(autoWorkerShare, 100), maxWorkers));
+
+    _.set(director, 'policies.user.max_workers', userWorkers);
+    _.set(director, 'policies.scheduled.max_workers', autoWorkers);
   }
-
-  let userWorkers = _.floor(_.multiply(_.divide(userWorkerShare, 100), maxWorkers));
-  let autoWorkers = _.floor(_.multiply(_.divide(autoWorkerShare, 100), maxWorkers));
-
-  _.set(director, 'policies.user.max_workers', userWorkers);
-  _.set(director, 'policies.scheduled.max_workers', autoWorkers);
 }
 
 function completeDockerConfig(docker) {

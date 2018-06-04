@@ -144,6 +144,7 @@ defaults: &defaults
   sys_log_level: info
   enable_circuit_breaker: true
   enable_swarm_manager: true
+  enable_bosh_rate_limit: true # Global switch to enable/disable rate limiting against BOSH directors
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs

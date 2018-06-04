@@ -113,7 +113,11 @@ class DirectorManager extends BaseManager {
 
   aquireNetworkSegmentIndex(guid) {
     logger.info(`Aquiring network segment index for a new deployment with instance id '${guid}'...`);
-    return Promise.all([this.getDeploymentNames(true), this.getDeploymentNamesInCache()])
+    let promises = [this.getDeploymentNames(true)];
+    if (config.enable_bosh_rate_limit) {
+      promises.push(this.getDeploymentNamesInCache());
+    }
+    return Promise.all(promises)
       .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
@@ -185,7 +189,10 @@ class DirectorManager extends BaseManager {
     return this.director.getDeploymentIps(deploymentName);
   }
 
-  executePolicy(scheduled, action, deploymentName, dbUpdate) {
+  executePolicy(scheduled, action, deploymentName, dbUpdate, policyApplicable) {
+    if (!policyApplicable) {
+      return Promise.resolve(true);
+    }
     if (dbUpdate) {
       return Promise.resolve(true);
     }
@@ -238,11 +245,15 @@ class DirectorManager extends BaseManager {
     const decisionMaker = {
       'shouldRunNow': false,
       'cached': false,
-      'dbUpdate': false
+      'dbUpdate': false,
+      'policyApplicable': config.enable_bosh_rate_limit
     };
 
-    return this.executePolicy(scheduled, action, deploymentName, dbUpdate)
+    return this.executePolicy(scheduled, action, deploymentName, dbUpdate, policyApplicable)
       .then(shouldRunNow => {
+        if (!decisionMaker.policyApplicable) {
+          return Promise.resolve();
+        }
         if (dbUpdate) {
           decisionMaker.shouldRunNow = true;
           decisionMaker.dbUpdate = true;
@@ -278,7 +289,7 @@ class DirectorManager extends BaseManager {
         }
       })
       .then(() => {
-        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow) {
+        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow || decisionMaker.policyApplicable) {
           return;
         } else {
           throw new DeploymentDelayed(deploymentName);
@@ -289,7 +300,10 @@ class DirectorManager extends BaseManager {
         let out = {
           'cached': false
         };
-        if (decisionMaker.cached) {
+        if (decisionMaker.policyApplicable) {
+          out.task_id = taskId;
+          return Promise.resolve(out);
+        } else if (decisionMaker.cached) {
           boshOperationCache.storeBoshTask(this.getInstanceGuid(deploymentName), taskId)
             .then(() => {
               out.cached = true;

@@ -6,6 +6,7 @@ const logger = require('../logger');
 const catalog = require('../models/catalog');
 const pubsub = require('pubsub-js');
 const CONST = require('../constants');
+const config = require('../config');
 const boshCache = bosh.BoshOperationCache;
 const TIME_POLL = 1 * 60 * 1000;
 
@@ -42,7 +43,7 @@ DirectorTaskPoller.deploymentPoller = undefined;
 
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
-  if (eventInfo.type === 'external') {
+  if (eventInfo.type === 'external' && config.enable_bosh_rate_limit) {
     DirectorTaskPoller.start();
   }
 });
