@@ -296,5 +296,16 @@ module.exports = Object.freeze({
   },
   ADD_ON_JOBS: {
     IP_TABLES_MANAGER: 'iptables-manager'
+  },
+  ETCD: {
+    RETRY_DELAY: 2000,
+    MAX_RETRY_UNLOCK: 3,
+    LOCK_TYPE: {
+      WRITE: 'WRITE',
+      READ: 'READ'
+    },
+    LOCK_TTL: 5,
+    LOCK_KEY_SUFFIX: '/lock',
+    LOCK_DETAILS_SUFFIX: '/lock/details'
   }
 });

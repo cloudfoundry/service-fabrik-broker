@@ -99,7 +99,7 @@ describe('eventmesh', () => {
           'count': 1,
           'operationType': 'WRITE'
         };
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+        return manager.lock('fakeResource', CONST.ETCD.LOCK_TYPE.WRITE)
           .then(() => {
             /* jshint expr: true */
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
@@ -121,7 +121,7 @@ describe('eventmesh', () => {
           'operationType': 'WRITE'
         };
         jsonStub.onCall(0).returns(noLockResp);
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+        return manager.lock('fakeResource', CONST.ETCD.LOCK_TYPE.WRITE)
           .then(() => {
             /* jshint expr: true */
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
@@ -139,7 +139,7 @@ describe('eventmesh', () => {
           'operationType': 'WRITE'
         };
         jsonStub.onCall(0).returns(writeLockResp);
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+        return manager.lock('fakeResource', CONST.ETCD.LOCK_TYPE.WRITE)
           .catch(e => {
             /* jshint expr: true */
             expect(e.message).to.eql('Could not acquire lock for fakeResource as it is already locked.');
@@ -157,7 +157,7 @@ describe('eventmesh', () => {
         };
         jsonStub.onCall(0).returns(noLockResp);
         releaseStub.onCall(0).throws(new Error('Failed for release lock'));
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+        return manager.lock('fakeResource', CONST.ETCD.LOCK_TYPE.WRITE)
           .then(() => {
             /* jshint expr: true */
             expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
@@ -175,7 +175,7 @@ describe('eventmesh', () => {
         };
         jsonStub.onCall(0).returns(noLockResp);
         valueStub.onCall(0).throws(new Error('Failed for set lock details.'));
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+        return manager.lock('fakeResource', CONST.ETCD.LOCK_TYPE.WRITE)
           .catch(e => {
             /* jshint expr: true */
             expect(e.message).to.eql('Failed for set lock details.');

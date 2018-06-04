@@ -8,6 +8,7 @@ const logger = require('../logger');
 const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
 const eventmesh = require('../../../eventmesh');
+const lockManager = eventmesh.lockManager;
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
@@ -319,13 +320,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
           service_id: req.body.service_id,
           context: req.body.context
         };
-        return eventmesh.server.annotateResource({
-          resourceId: req.params.instance_id,
-          annotationName: CONST.OPERATION_TYPE.BACKUP,
-          annotationType: 'default',
-          annotationId: backup_guid,
-          val: JSON.stringify(backup_options)
-        });
+        // Acquire read lock for resource resourceId
+        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+        return lockManager.lock(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id), CONST.ETCD.LOCK_TYPE.READ)
+          .then(() => {
+            return eventmesh.server.annotateResource({
+              resourceId: req.params.instance_id,
+              annotationName: CONST.OPERATION_TYPE.BACKUP,
+              annotationType: 'default',
+              annotationId: backup_guid,
+              val: JSON.stringify(backup_options)
+            });
+          });
       })
       .then(() => {
         backup_started_at = new Date()

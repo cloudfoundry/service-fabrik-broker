@@ -39,11 +39,11 @@ class LockManager {
       5. release the lock on "resource/lock"
   */
   lock(resource, operationType) {
-    const lock = client.lock(resource + CONST.LOCK_KEY_SUFFIX);
+    const lock = client.lock(resource + CONST.ETCD.LOCK_KEY_SUFFIX);
     let lockDetailsChanged = false;
-    return lock.ttl(CONST.LOCK_TTL).acquire()
+    return lock.ttl(CONST.ETCD.LOCK_TTL).acquire()
       .then(() => {
-        return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json();
+        return client.get(resource + CONST.ETCD.LOCK_DETAILS_SUFFIX).json();
       })
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') > 0) {
@@ -54,7 +54,7 @@ class LockManager {
           const newLockDetails = {};
           newLockDetails.count = 1;
           newLockDetails.operationType = operationType;
-          return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
+          return client.put(resource + CONST.ETCD.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
         }
       })
       .then(() => {
@@ -79,7 +79,7 @@ class LockManager {
     const newLockDetails = {};
     newLockDetails.count = 0;
     newLockDetails.operationType = '';
-    return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
+    return client.put(resource + CONST.ETCD.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
   }
 
   /*
@@ -88,17 +88,25 @@ class LockManager {
   Unless the count is 1 and operaitonType is "WRITE", they return false for all other cases.
   */
   isWriteLocked(resource) {
-    return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json()
+    return client.get(resource + CONST.ETCD.LOCK_DETAILS_SUFFIX).json()
       .then(lockDetails => {
         if (_.get(lockDetails, 'count') === 0) {
           return false;
-        } else if (_.get(lockDetails, 'operationType') === CONST.LOCK_TYPE.WRITE) {
+        } else if (_.get(lockDetails, 'operationType') === CONST.ETCD.LOCK_TYPE.WRITE) {
           return true;
         } else {
           return false;
         }
       });
   }
+
+  // etcdLock(resource, ttl) {
+  //   const lock = client.lock(resource + CONST.ETCD.LOCK_KEY_SUFFIX);
+  //   return lock.ttl(ttl || CONST.ETCD.LOCK_TTL)
+  //     .catch(err => {
+  //       throw new ETCDLockError(e.message)
+  //     });
+  // }
 
 }
 
