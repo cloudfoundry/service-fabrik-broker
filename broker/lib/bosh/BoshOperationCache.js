@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const config = require('../config');
 const logger = require('../logger');
 const errors = require('../errors');
+const CONST = require('../constants');
 const CacheUpdateError = errors.CacheUpdateError;
 const CACHE_KEY = 'bosh/deployments/';
 const TASK_KEY = 'bosh/tasks/';
@@ -105,7 +106,7 @@ class BoshOperationCache {
   getNEntries(numEntries) {
     logger.debug(`Getting the first ${numEntries} entries in cache`);
     const wrapper = new Promise((resolve, reject) => {
-      etcdConnector().getAll().prefix(CACHE_KEY).sort("Create", "None").limit(numEntries).keys().then(out => {
+      etcdConnector().getAll().prefix(CACHE_KEY).sort(CONST.ETCD.SORT_BY_CREATE, CONST.ETCD.TARGET_NONE).limit(numEntries).keys().then(out => {
         if (Array.isArray(out)) {
           out = out.map(v => v.substring(CACHE_KEY.length));
         } else {
@@ -123,7 +124,7 @@ class BoshOperationCache {
   getDeploymentNames() {
     logger.debug('Getting the current deployment cache...');
     const wrapper = new Promise((resolve, reject) => {
-      etcdConnector().getAll().prefix(CACHE_KEY).sort('Create', 'None').keys().then(out => {
+      etcdConnector().getAll().prefix(CACHE_KEY).sort(CONST.ETCD.SORT_BY_CREATE, CONST.ETCD.TARGET_NONE).keys().then(out => {
         if (Array.isArray(out)) {
           out = out.map(v => v.substring(CACHE_KEY.length));
         } else {

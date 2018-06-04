@@ -4,7 +4,7 @@ module.exports = Object.freeze({
   NETWORK_SEGMENT_LENGTH: 4,
   BOSH_POLL_MAX_ATTEMPTS: 3,
   BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
-  BOSH_FABRIK_SCHEDULED_OP: 'Fabrik::Scheduler',
+  BOSH_FABRIK_OP: 'Fabrik::Operation',
   BOSH_FABRIK_USER_OP: 'Fabrik::User',
   DEPLOYMENT_LOCK_NAME: '_LOCK_',
   SERVICE_FABRIK_PREFIX: 'service-fabrik',
@@ -14,6 +14,10 @@ module.exports = Object.freeze({
   EVENT_LOG_RIEMANN_CLIENT: {
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
+  },
+  ETCD: {
+    SORT_BY_CREATE: 'Create',
+    TARGET_NONE: 'None'
   },
   EVENT_LOG_RIEMANN_CLIENT_STATUS: {
     INITIALIZING: 'initializing',

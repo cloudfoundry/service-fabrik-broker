@@ -45,6 +45,8 @@ pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'external' && config.enable_bosh_rate_limit) {
     DirectorTaskPoller.start();
+  } else {
+    logger.debug('Bosh Rate Limiting is not enabled');
   }
 });
 

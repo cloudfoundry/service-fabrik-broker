@@ -364,9 +364,13 @@ class BoshDirectorClient extends HttpClient {
    * task count should be retrieved for ALL types of operations
    * 
    */
-  getCurrentTasks(action, directorConfig) {
+  getCurrentTasks(action, directorConfig, ...states) {
+    let stateQuery = 'processing,cancelling';
+    if (states.length > 0) {
+      stateQuery = states.join(',');
+    }
     let query = {
-      state: 'processing,cancelling',
+      state: stateQuery,
       verbose: 2
     };
     return this.makeRequestWithConfig({
@@ -377,7 +381,7 @@ class BoshDirectorClient extends HttpClient {
       // out is the array of currently running tasks
       let currentTotal = out.length;
       let taskGroup = _.groupBy(out, (entry) => {
-        if (entry.context_id === CONST.BOSH_FABRIK_SCHEDULED_OP) {
+        if (entry.context_id === CONST.BOSH_FABRIK_OP) {
           return 'scheduled';
         } else if (entry.context_id === CONST.BOSH_FABRIK_USER_OP) {
           return 'user';

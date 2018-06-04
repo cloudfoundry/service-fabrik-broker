@@ -239,6 +239,7 @@ class DirectorManager extends BaseManager {
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
     const scheduled = _.get(params, 'scheduled') || false;
     const dbUpdate = _.get(params, '_serviceFabrikDbUpdate') || false;
+    const policyApplicable = config.enable_bosh_rate_limit;
     _.omit(params, 'scheduled');
     _.omit(params, '_serviceFabrikDbUpdate');
 
@@ -289,7 +290,7 @@ class DirectorManager extends BaseManager {
         }
       })
       .then(() => {
-        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow || decisionMaker.policyApplicable) {
+        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow || !decisionMaker.policyApplicable) {
           return;
         } else {
           throw new DeploymentDelayed(deploymentName);
