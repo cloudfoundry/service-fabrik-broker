@@ -14,7 +14,9 @@ const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
+const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
+const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
 class BnRStatusPollerJob extends BaseJob {
   constructor() {
@@ -140,7 +142,10 @@ class BnRStatusPollerJob extends BaseJob {
       );
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
-    return this
+    logger.info(`Attempting to release lock on deployment with instanceid: ${instanceInfo.instance_guid} `);
+    return
+    unlockEtcdResource(eventmesh.server.getResourceFolderName(catalog.getPlan(instanceInfo.plan_id).manager.name, instanceInfo.instance_guid))
+      .then(() => this.updateEventMesh(instanceInfo, operationName, operationStatusResponse))
       .updateEventMesh(instanceInfo, operationName, operationStatusResponse)
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
