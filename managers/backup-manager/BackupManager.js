@@ -35,14 +35,6 @@ class BackupManager {
     this.agent = new Agent(this.settings.agent);
   }
 
-  get service() {
-    return this.plan.service;
-  }
-
-  get subnet() {
-    return this.settings.subnet || this.service.subnet;
-  }
-
   get name() {
     return this.plan.manager.name;
   }
@@ -59,10 +51,6 @@ class BackupManager {
     }
   }
 
-  createInstance(guid, platformManager) {
-    return new this.constructor.instanceConstructor(guid, this, platformManager);
-  }
-
   static get prefix() {
     return CONST.SERVICE_FABRIK_PREFIX;
   }
@@ -76,10 +64,6 @@ class BackupManager {
       this[plan.id] = new this(plan);
     }
     return Promise.resolve(this[plan.id]);
-  }
-
-  get networkName() {
-    return this.subnet || BoshDirectorClient.getInfrastructure().segmentation.network_name || 'default';
   }
 
   getDeploymentNames(queued) {
@@ -286,13 +270,6 @@ class BackupManager {
         }
         return eventmesh.server.getAnnotationKeyValue(eventmesh_opts)
       })
-      // .then((etcdData) => JSON.parse(etcdData))
-      // .then(etcdjson => {
-      //   let instanceInfo = _.chain(etcdjson)
-      //     .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment_name', 'started_at')
-      //     .value();
-      //   return this.pollAndUpdateResourceState(instanceInfo);
-      // })
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
@@ -333,43 +310,6 @@ class BackupManager {
           }).then(() => {
             throw err;
           });
-      });
-  }
-
-  pollAndUpdateResourceState(instanceInfo) {
-    logger.info('Polling for backup every 10 sec');
-    return Promise.delay(3000)
-      .then(() => this.getServiceFabrikOperationState('backup', instanceInfo))
-      .then(res => {
-        return eventmesh
-          .server
-          .updateAnnotationKey({
-            resourceId: instanceInfo.instance_guid,
-            annotationName: 'backup',
-            annotationType: 'default',
-            annotationId: instanceInfo.backup_guid,
-            key: 'progress',
-            value: JSON.stringify(res, null, 2)
-          })
-          .then(() => res);
-      })
-      .then(res => {
-        logger.info('poller output', res);
-        if (res.state !== 'succeeded') {
-          return this.pollAndUpdateResourceState(instanceInfo);
-        } else {
-          logger.info('backup succeeded');
-          return Promise
-            .try(() => {
-              return eventmesh.server.updateAnnotationState({
-                resourceId: instanceInfo.instance_guid,
-                annotationName: 'backup',
-                annotationType: 'default',
-                annotationId: instanceInfo.backup_guid,
-                stateValue: CONST.RESOURCE_STATE.SUCCEEDED
-              })
-            });
-        }
       });
   }
 
@@ -466,13 +406,6 @@ class BackupManager {
         null) || super.prefix;
   }
 
-  static parseDeploymentName(deploymentName, subnet) {
-    return _
-      .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
-      .slice(1)
-      .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
-      .value();
-  }
 }
 
 class Fabrik {
