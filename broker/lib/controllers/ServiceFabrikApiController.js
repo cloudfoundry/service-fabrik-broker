@@ -4,7 +4,6 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const jwt = require('../jwt');
-const docker = require('../docker');
 const logger = require('../logger');
 const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
@@ -22,6 +21,7 @@ const config = require('../config');
 const CONST = require('../constants');
 const catalog = require('../models').catalog;
 const utils = require('../utils');
+const docker = config.enable_swarm_manager ? require('../docker') : undefined;
 
 const CloudControllerError = {
   NotAuthorized: err => {
@@ -167,6 +167,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getInfo(req, res) {
+    if (!config.enable_swarm_manager) {
+      return res.status(CONST.HTTP_STATUS_CODE.OK)
+        .json({
+          name: this.serviceBrokerName,
+          api_version: this.constructor.version,
+          ready: true,
+          db_status: this.fabrik.dbManager.getState().status
+        });
+    }
     let allDockerImagesRetrieved = false;
     return docker
       .getMissingImages()
