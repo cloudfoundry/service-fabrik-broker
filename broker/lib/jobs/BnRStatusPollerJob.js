@@ -163,7 +163,7 @@ class BnRStatusPollerJob extends BaseJob {
           annotationName: 'backup',
           annotationType: 'default',
           annotationId: instanceInfo.backup_guid,
-          stateValue: CONST.RESOURCE_STATE.SUCCEEDED
+          stateValue: operationStatusResponse.state
         })
       });
   }
