@@ -198,12 +198,11 @@ class BackupManager {
             return backup_options;
           });
       })
-      .then(backup_options => eventmesh.server.updateAnnotationKey({
+      .then(backup_options => eventmesh.server.updateAnnotationResult({
         resourceId: opts.instance_guid,
         annotationName: 'backup',
         annotationType: 'default',
         annotationId: result.backup_guid,
-        key: 'result',
         value: JSON.stringify(backup_options)
       }))
       .then(() => eventmesh.server.updateAnnotationState({
@@ -213,14 +212,12 @@ class BackupManager {
         annotationId: result.backup_guid,
         stateValue: CONST.RESOURCE_STATE.IN_PROGRESS
       })).then(() => {
-        const eventmesh_opts = {
+        return eventmesh.server.getAnnotationResult({
           resourceId: opts.instance_guid,
           annotationName: 'backup',
           annotationType: 'default',
           annotationId: result.backup_guid,
-          key: 'result'
-        }
-        return eventmesh.server.getAnnotationKeyValue(eventmesh_opts)
+        })
       })
       .catch(err => {
         return Promise

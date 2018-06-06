@@ -66,7 +66,7 @@ function getResourceAnnotationStatus(opts) {
             annotationName: CONST.OPERATION_TYPE.BACKUP,
             annotationType: 'default',
             annotationId: opts.annotationId,
-            key: CONST.RESOURCE_KEYS.RESULT
+            key: CONST.ANNOTATION_KEYS.RESULT
           })
           .then(error => {
             let json = JSON.parse(error)
@@ -98,7 +98,7 @@ function getResourceAnnotationStatus(opts) {
           annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
           annotationId: opts.annotationId,
-          key: CONST.RESOURCE_KEYS.RESULT
+          key: CONST.ANNOTATION_KEYS.RESULT
         });
       }
     });
