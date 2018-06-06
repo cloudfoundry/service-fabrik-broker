@@ -38,12 +38,12 @@ const CloudControllerError = {
 
 
 function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
-  logger.info(`getResourceAnnotationStatus is called`);
+  logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
   return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
       resourceType: resourceType,
       resourceId: resourceId,
-      annotationName: 'backup',
+      annotationName: CONST.OPERATION_TYPE.BACKUP,
       annotationType: 'default',
       annotationId: guid
     })).then(state => {
@@ -54,33 +54,32 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
         throw new Timeout(`Backup not picked up from queue`);
       }
       if (state === start_state) {
-        logger.info('Waiting to get the annotation state');
         return getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at);
-      } else if (state === 'error') {
+      } else if (state === CONST.RESOURCE_STATE.ERROR) {
         return eventmesh.server.getAnnotationKeyValue({
             resourceType: resourceType,
             resourceId: resourceId,
-            annotationName: 'backup',
+            annotationName: CONST.OPERATION_TYPE.BACKUP,
             annotationType: 'default',
             annotationId: guid,
             key: 'result'
           })
           .then(error => {
-            logger.info('Operation reported error', JSON.parse(error));
             let json = JSON.parse(error)
+            logger.info('Operation manager reported error', json);
             let message = json.message;
             if (json.error && json.error.description) {
               message = `${message}. ${json.error.description}`
             }
             let err;
             switch (json.status) {
-            case 400:
+            case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
               err = new BadRequest(message);
               break;
-            case 404:
+            case CONST.HTTP_STATUS_CODE.NOT_FOUND:
               err = new NotFound(message);
               break;
-            case 409:
+            case CONST.HTTP_STATUS_CODE.CONFLICT:
               err = new Conflict(message);
               break;
             default:
@@ -93,7 +92,7 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
         return eventmesh.server.getAnnotationKeyValue({
           resourceType: resourceType,
           resourceId: resourceId,
-          annotationName: 'backup',
+          annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
           annotationId: guid,
           key: 'result'
@@ -293,10 +292,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-
   startBackup(req, res) {
     let backup_started_at;
-    req.manager.verifyFeatureSupport('backup');
+    req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
     let backup_guid, deploymentName;
     return Promise
@@ -318,22 +316,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
           service_id: req.body.service_id,
           context: req.body.context
         };
-        logger.info('annotate ', req.params.instance_id);
-        const opts = {
+        return eventmesh.server.annotateResource({
           resourceType: req.manager.name,
           resourceId: req.params.instance_id,
-          annotationName: 'backup',
+          annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
           annotationId: backup_guid,
           val: JSON.stringify(backup_options)
-        }
-        return eventmesh.server.annotateResource(opts);
+        });
       })
       .then(() => {
         backup_started_at = new Date()
         return eventmesh.server.updateLastAnnotation({
           resourceId: req.params.instance_id,
-          annotationName: 'backup',
+          annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
           value: backup_guid
         }).then(() => getResourceAnnotationStatus(req.manager.name, req.params.instance_id, backup_guid, CONST.RESOURCE_STATE.IN_QUEUE, backup_started_at));
@@ -347,7 +343,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
             logger.error('networkIndex is ', req.params, networkIndex);
             return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
           })
-          .catch(err => logger.error('caught error ', err));
       })
       .then(bodyStr => {
         const body = JSON.parse(bodyStr);
@@ -359,7 +354,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastBackup(req, res) {
-    req.manager.verifyFeatureSupport('backup');
+    req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const instance_id = req.params.instance_id;
     const noCache = req.query.no_cache === 'true' ? true : false;
     const tenant_id = req.entity.tenant_id;
@@ -378,11 +373,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const tenant_id = req.entity.tenant_id;
     return eventmesh.server.getLastAnnotation({
         resourceId: req.params.instance_id,
-        annotationName: 'backup',
+        annotationName: CONST.OPERATION_TYPE.BACKUP,
         annotationType: 'default',
       }).then(bkp_guid => eventmesh.server.updateAnnotationState({
         resourceId: req.params.instance_id,
-        annotationName: 'backup',
+        annotationName: CONST.OPERATION_TYPE.BACKUP,
         annotationType: 'default',
         annotationId: bkp_guid,
         stateValue: 'abort'

@@ -228,7 +228,8 @@ module.exports = Object.freeze({
     IN_QUEUE: 'in queue',
     IN_PROGRESS: 'in progress',
     SUCCEEDED: 'succeeded',
-    ERROR: 'failed'
+    ERROR: 'error',
+    FAILED: 'failed'
   },
   RESOURCE_KEYS: {
     STATE: 'state',
