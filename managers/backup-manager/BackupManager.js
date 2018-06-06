@@ -298,41 +298,34 @@ class BackupManager {
       });
   }
 
-  abortLastBackup(tenant_id, instance_guid, force) {
-    logger.info('Aborting last backup', tenant_id, instance_guid);
-    return this.backupStore
+  abortLastBackup(abortOptions, force) {
+    logger.info('Starting abort with following options:', abortOptions);
+    return eventmesh.server.updateAnnotationState({
+      resourceId: abortOptions.instance_guid,
+      annotationName: 'backup',
+      annotationType: 'default',
+      annotationId: abortOptions.guid,
+      stateValue: 'aborting'
+    }).then(() => this.backupStore
       .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        // plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        logger.info('Backup metadata for abort:', metadata);
-        return eventmesh.server.updateAnnotationState({
-          resourceId: instance_guid,
-          annotationName: 'backup',
-          annotationType: 'default',
-          annotationId: metadata.backup_guid,
-          stateValue: 'aborting'
-        }).then(() => metadata)
-      })
-      .then(metadata => {
-        if (!force && metadata.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
-          throw new Forbidden('System scheduled backup runs cannot be aborted');
-        }
-        logger.info('metadata.state', metadata.state);
-        switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortBackup(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
-        }
-      });
+        tenant_id: this.getTenantGuid(abortOptions.context),
+        service_id: abortOptions.service_id,
+        instance_guid: abortOptions.instance_guid
+      })).then(metadata => {
+      if (!force && metadata.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
+        throw new Forbidden('System scheduled backup runs cannot be aborted');
+      }
+      switch (metadata.state) {
+      case 'processing':
+        return this.agent
+          .abortBackup(metadata.agent_ip)
+          .return({
+            state: 'aborting'
+          });
+      default:
+        return _.pick(metadata, 'state');
+      }
+    });
   }
 
   static get prefix() {
