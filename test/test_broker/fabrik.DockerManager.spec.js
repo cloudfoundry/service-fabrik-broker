@@ -40,7 +40,7 @@ describe('fabrik', function () {
         config.enable_swarm_manager = false;
         return fabrik.createManager(catalog.getPlan(plan_id))
           .catch(err => {
-            expect(err.code).to.eql('ERR_ASSERTION');
+            expect(err.message).to.eql('\'docker\' in [ \'director\', \'virtual_host\' ]');
             config.enable_swarm_manager = true;
           });
       });
