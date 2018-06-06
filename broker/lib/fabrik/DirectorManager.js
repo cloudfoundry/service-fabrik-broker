@@ -15,6 +15,7 @@ const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
 const ScheduleManager = require('../jobs');
+const eventmesh = require('../../../eventmesh');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
@@ -829,7 +830,15 @@ class DirectorManager extends BaseManager {
                 logs: logs,
                 snapshotId: lastOperation.snapshotId
               })
-            );
+            ).then(() => this.backupStore.getBackupFile(options))
+            .then(metadata => eventmesh.server.updateAnnotationKey({
+              resourceId: options.instance_guid,
+              annotationName: 'backup',
+              annotationType: 'default',
+              annotationId: metadata.backup_guid,
+              key: 'result',
+              value: JSON.stringify(metadata)
+            }));
         }
       });
   }

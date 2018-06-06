@@ -190,7 +190,7 @@ class BackupManager {
           .then(() => {
             backupStarted = true;
             let put_ret = this.backupStore.putFile(data);
-            const backup_options = _.chain(data)
+            const backup_options = _.chain(result)
               .set('deployment_name', deploymentName)
               .set('started_at', backupStartedAt)
               .value()
@@ -198,17 +198,14 @@ class BackupManager {
             return backup_options;
           });
       })
-      .then((res) => {
-        const eventmesh_opts = {
-          resourceId: opts.instance_guid,
-          annotationName: 'backup',
-          annotationType: 'default',
-          annotationId: result.backup_guid,
-          key: 'result',
-          value: JSON.stringify(res)
-        }
-        return eventmesh.server.updateAnnotationKey(eventmesh_opts)
-      })
+      .then(backup_options => eventmesh.server.updateAnnotationKey({
+        resourceId: opts.instance_guid,
+        annotationName: 'backup',
+        annotationType: 'default',
+        annotationId: result.backup_guid,
+        key: 'result',
+        value: JSON.stringify(backup_options)
+      }))
       .then(() => eventmesh.server.updateAnnotationState({
         resourceId: opts.instance_guid,
         annotationName: 'backup',
