@@ -804,29 +804,6 @@ class DirectorManager extends BaseManager {
     return this.director.getLockProperty(deploymentName);
   }
 
-  static registerBnRStatusPoller(opts, instanceInfo) {
-    let deploymentName = _.get(instanceInfo, 'deployment');
-    const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
-    logger.debug(`Scheduling deployment ${deploymentName} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
-          ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
-    const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
-    const data = {
-      operation: opts.operation,
-      type: opts.type,
-      trigger: opts.trigger,
-      operation_details: instanceInfo
-    };
-    return ScheduleManager
-      .schedule(
-        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
-        CONST.JOB.BNR_STATUS_POLLER,
-        repeatInterval,
-        data, {
-          name: config.cf.username
-        }
-      );
-  }
-
   getBackupOperationState(opts) {
     const agent_ip = opts.agent_ip;
     const options = _.assign({
@@ -873,31 +850,6 @@ class DirectorManager extends BaseManager {
             .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
         default:
           return metadata;
-        }
-      });
-  }
-
-  abortLastBackup(tenant_id, instance_guid, force) {
-    return this.backupStore
-      .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        if (!force && metadata.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
-          throw new Forbidden('System scheduled backup runs cannot be aborted');
-        }
-        switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortBackup(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
         }
       });
   }

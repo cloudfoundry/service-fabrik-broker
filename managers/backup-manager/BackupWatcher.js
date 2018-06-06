@@ -41,14 +41,13 @@ class DefaultBackupManager extends BaseManager {
       return eventmesh.server.getAnnotationOptions(opts)
         .then(options => {
           const changedValue = JSON.parse(options);
-          logger.info('Starting abort with following options:', changedValue);
           return Promise.try(() => {
             const plan = catalog.getPlan(changedValue.plan_id);
             return fabrik.createManager(plan);
           }).then(manager => {
-            return manager.abortLastBackup(manager.getTenantGuid(changedValue.context), changedValue.instance_guid, true)
+            return manager.abortLastBackup(changedValue)
           });
-        })
+        }).catch(err => logger.info('Caught error', err))
     }
   }
 }

@@ -40,7 +40,6 @@ function getResourceAnnotationStatus(opts) {
   logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
   return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
-      resourceType: opts.resourceType,
       resourceId: opts.resourceId,
       annotationName: CONST.OPERATION_TYPE.BACKUP,
       annotationType: 'default',
@@ -56,7 +55,6 @@ function getResourceAnnotationStatus(opts) {
         return getResourceAnnotationStatus(opts);
       } else if (state === CONST.RESOURCE_STATE.ERROR) {
         return eventmesh.server.getAnnotationKeyValue({
-            resourceType: opts.resourceType,
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
             annotationType: 'default',
@@ -89,7 +87,6 @@ function getResourceAnnotationStatus(opts) {
           })
       } else {
         return eventmesh.server.getAnnotationKeyValue({
-          resourceType: opts.resourceType,
           resourceId: opts.resourceId,
           annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
@@ -381,23 +378,35 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
         annotationType: 'default',
-      }).then(backup_guid => eventmesh.server.updateAnnotationState({
-        resourceId: req.params.instance_id,
-        annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: 'default',
-        annotationId: backup_guid,
-        stateValue: 'abort'
-      }).then(() => getResourceAnnotationStatus({
-        resourceType: req.manager.name,
-        resourceId: req.params.instance_id,
-        annotationId: backup_guid,
-        start_state: 'abort',
-        started_at: backup_started_at
-      })))
-      // wait for aborting and proceed
+      }).then(backup_guid => eventmesh.server.getAnnotationState({
+          resourceId: req.params.instance_id,
+          annotationName: CONST.OPERATION_TYPE.BACKUP,
+          annotationType: 'default',
+          annotationId: backup_guid,
+        })
+        // abort only if the state is in progress
+        .then(state => {
+          if (state === CONST.RESOURCE_STATE.IN_PROGRESS) {
+            return eventmesh.server.updateAnnotationState({
+              resourceId: req.params.instance_id,
+              annotationName: CONST.OPERATION_TYPE.BACKUP,
+              annotationType: 'default',
+              annotationId: backup_guid,
+              stateValue: 'abort'
+            })
+          } else {
+            logger.info(`Skipping abort as state is : ${state}`)
+          }
+        }).then(() => getResourceAnnotationStatus({
+          resourceType: req.manager.name,
+          resourceId: req.params.instance_id,
+          annotationId: backup_guid,
+          start_state: 'abort',
+          started_at: backup_started_at
+        })))
       .then(result => res
         .status(result.state === 'aborting' ? 202 : 200)
-        .send({})
+        .send(result)
       );
   }
 
