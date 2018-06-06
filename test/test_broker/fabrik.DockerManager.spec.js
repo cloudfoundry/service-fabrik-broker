@@ -1,6 +1,8 @@
 'use strict';
 
 const lib = require('../../broker/lib');
+const fabrik = require('../../broker/lib/fabrik/Fabrik');
+const config = lib.config;
 const portRegistry = lib.docker.portRegistry;
 const catalog = lib.models.catalog;
 const DockerManager = lib.fabrik.DockerManager;
@@ -32,6 +34,14 @@ describe('fabrik', function () {
     after(function () {
       portRegistry.willBeExhaustedSoon.restore();
       portRegistry.sample.restore();
+    });
+    it('Should return ', function () {
+      config.enable_swarm_manager = false;
+      return fabrik.createManager(catalog.getPlan(plan_id))
+        .catch(err => {
+          expect(err.code).to.eql('ERR_ASSERTION');
+          config.enable_swarm_manager = true;
+        });
     });
 
     describe('#createPortBindings', function () {

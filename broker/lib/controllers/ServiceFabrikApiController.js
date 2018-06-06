@@ -4,7 +4,6 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const jwt = require('../jwt');
-const docker = require('../docker');
 const logger = require('../logger');
 const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
@@ -22,6 +21,7 @@ const config = require('../config');
 const CONST = require('../constants');
 const catalog = require('../models').catalog;
 const utils = require('../utils');
+const docker = config.enable_swarm_manager ? require('../docker') : undefined;
 
 const CloudControllerError = {
   NotAuthorized: err => {
@@ -167,11 +167,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getInfo(req, res) {
-    let allDockerImagesRetrieved = false;
-    return docker
-      .getMissingImages()
-      .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages))
-      .catch(err => logger.info('error occurred while fetching docker images', err))
+    let allDockerImagesRetrieved = true;
+    return Promise.try(() => {
+        if (config.enable_swarm_manager) {
+          return docker
+            .getMissingImages()
+            .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
+        }
+      })
+      .catch(err => {
+        allDockerImagesRetrieved = false;
+        logger.info('error occurred while fetching docker images', err);
+      })
       .finally(() => {
         res.status(CONST.HTTP_STATUS_CODE.OK)
           .json({
