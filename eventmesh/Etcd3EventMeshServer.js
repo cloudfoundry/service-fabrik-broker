@@ -117,13 +117,22 @@ class Etcd3EventMeshServer extends EventMeshServer {
       });
   }
 
+  updateAnnotationResult(opts) {
+    opts = _
+      .chain(opts)
+      .assign({
+        key: CONST.ANNOTATION_KEYS.RESULT,
+      })
+      .value();
+    return this.updateAnnotationKey(opts);
+  }
+
   updateAnnotationState(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
     assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation state`);
-    logger.debug(`Updating annotation state: ${opts}`);
     opts = _
       .chain(opts)
       .assign({
@@ -196,6 +205,16 @@ class Etcd3EventMeshServer extends EventMeshServer {
       .chain(opts)
       .assign({
         key: CONST.ANNOTATION_KEYS.STATE
+      })
+      .value();
+    return this.getAnnotationKeyValue(opts);
+  }
+
+  getAnnotationResult(opts) {
+    opts = _
+      .chain(opts)
+      .assign({
+        key: CONST.ANNOTATION_KEYS.RESULT
       })
       .value();
     return this.getAnnotationKeyValue(opts);
