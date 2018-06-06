@@ -104,6 +104,7 @@ module.exports = Object.freeze({
     SHUTDOWN_WAIT_TIME: 5000
   },
   BACKUP: {
+    BACKUP_START_TIMEOUT: 15, //SECONDS
     TYPE: {
       ONLINE: 'online'
     },
@@ -234,7 +235,8 @@ module.exports = Object.freeze({
   RESOURCE_KEYS: {
     STATE: 'state',
     OPTIONS: 'options',
-    LASTOPERATION: 'lastoperation'
+    LASTOPERATION: 'lastoperation',
+    RESULT: 'result',
   },
   ANNOTATION_KEYS: {
     STATE: 'state',

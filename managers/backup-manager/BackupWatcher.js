@@ -19,13 +19,13 @@ class DefaultBackupManager extends BaseManager {
   }
 
   worker(change) {
-    const changedValue = JSON.parse(change.value.toString());
-    logger.info('Key changed', change.key.toString());
-    logger.info('Changed value:', changedValue );
     const changedKey = change.key.toString();
+    const value = change.value.toString();
+    logger.info('Key changed', changedKey );
+    logger.info('Changed value:', value);
     let keys = _.split(changedKey, '/');
     if (keys.length === 5 && keys[4] === 'options') {
-      logger.info('Values are : ', changedValue);
+      const changedValue = JSON.parse(value);
       return Promise.try(() => {
         const plan = catalog.getPlan(changedValue.plan_id);
         return fabrik.createManager(plan);

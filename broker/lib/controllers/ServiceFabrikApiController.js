@@ -37,31 +37,38 @@ const CloudControllerError = {
 };
 
 function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
+  const opts = {
+    resourceType: resourceType,
+    resourceId: resourceId,
+    annotationId: guid,
+    start_state: start_state,
+    started_at: started_at
+  }
   logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
   return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
-      resourceType: resourceType,
-      resourceId: resourceId,
+      resourceType: opts.resourceType,
+      resourceId: opts.resourceId,
       annotationName: CONST.OPERATION_TYPE.BACKUP,
       annotationType: 'default',
-      annotationId: guid
+      annotationId: opts.annotationId
     })).then(state => {
       const duration = (new Date() - started_at) / 1000;
-      const backup_start_timeout = 15 //sec
+      const backup_start_timeout = CONST.BACKUP.BACKUP_START_TIMEOUT; //sec
       logger.info(`Lock duration : ${duration} `);
       if (duration > backup_start_timeout) {
         throw new Timeout(`Backup not picked up from queue`);
       }
       if (state === start_state) {
-        return getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at);
+        return getResourceAnnotationStatus(opts.resourceType, opts.resourceId, opts.annotationId, opts.start_state, opts.started_at);
       } else if (state === CONST.RESOURCE_STATE.ERROR) {
         return eventmesh.server.getAnnotationKeyValue({
-            resourceType: resourceType,
-            resourceId: resourceId,
+            resourceType: opts.resourceType,
+            resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
             annotationType: 'default',
-            annotationId: guid,
-            key: 'result'
+            annotationId: opts.annotationId,
+            key: CONST.RESOURCE_KEYS.RESULT
           })
           .then(error => {
             let json = JSON.parse(error)
@@ -89,12 +96,12 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
           })
       } else {
         return eventmesh.server.getAnnotationKeyValue({
-          resourceType: resourceType,
-          resourceId: resourceId,
+          resourceType: opts.resourceType,
+          resourceId: opts.resourceId,
           annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
-          annotationId: guid,
-          key: 'result'
+          annotationId: opts.annotationId,
+          key: CONST.RESOURCE_KEYS.RESULT
         });
       }
     });
