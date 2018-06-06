@@ -35,8 +35,7 @@ main(){
         "test")
             case $2 in
                 "")
-                    test_broker test
-                    test_deployment_hooks test
+                    test_broker test && test_deployment_hooks test;
                     ;;
                 "help")         help test; exit;;
                 "broker")       test_broker test;;

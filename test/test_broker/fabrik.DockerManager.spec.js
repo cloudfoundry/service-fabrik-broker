@@ -35,13 +35,15 @@ describe('fabrik', function () {
       portRegistry.willBeExhaustedSoon.restore();
       portRegistry.sample.restore();
     });
-    it('Should return ', function () {
-      config.enable_swarm_manager = false;
-      return fabrik.createManager(catalog.getPlan(plan_id))
-        .catch(err => {
-          expect(err.code).to.eql('ERR_ASSERTION');
-          config.enable_swarm_manager = true;
-        });
+    describe('#createManager', function () {
+      it('Should return assertion error for docker plan', function () {
+        config.enable_swarm_manager = false;
+        return fabrik.createManager(catalog.getPlan(plan_id))
+          .catch(err => {
+            expect(err.message).to.eql('\'docker\' in [ \'director\', \'virtual_host\' ]');
+            config.enable_swarm_manager = true;
+          });
+      });
     });
 
     describe('#createPortBindings', function () {
