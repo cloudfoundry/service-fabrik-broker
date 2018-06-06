@@ -36,14 +36,7 @@ const CloudControllerError = {
   }
 };
 
-function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
-  const opts = {
-    resourceType: resourceType,
-    resourceId: resourceId,
-    annotationId: guid,
-    start_state: start_state,
-    started_at: started_at
-  }
+function getResourceAnnotationStatus(opts) {
   logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
   return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
     .then(() => eventmesh.server.getAnnotationState({
@@ -53,14 +46,14 @@ function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state
       annotationType: 'default',
       annotationId: opts.annotationId
     })).then(state => {
-      const duration = (new Date() - started_at) / 1000;
+      const duration = (new Date() - opts.started_at) / 1000;
       const backup_start_timeout = CONST.BACKUP.BACKUP_START_TIMEOUT; //sec
       logger.info(`Lock duration : ${duration} `);
       if (duration > backup_start_timeout) {
         throw new Timeout(`Backup not picked up from queue`);
       }
-      if (state === start_state) {
-        return getResourceAnnotationStatus(opts.resourceType, opts.resourceId, opts.annotationId, opts.start_state, opts.started_at);
+      if (state === opts.start_state) {
+        return getResourceAnnotationStatus(opts);
       } else if (state === CONST.RESOURCE_STATE.ERROR) {
         return eventmesh.server.getAnnotationKeyValue({
             resourceType: opts.resourceType,
@@ -338,15 +331,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
           annotationName: CONST.OPERATION_TYPE.BACKUP,
           annotationType: 'default',
           value: backup_guid
-        }).then(() => getResourceAnnotationStatus(req.manager.name, req.params.instance_id, backup_guid, CONST.RESOURCE_STATE.IN_QUEUE, backup_started_at));
+        }).then(() => getResourceAnnotationStatus({
+          resourceType: req.manager.name,
+          resourceId: req.params.instance_id,
+          annotationId: backup_guid,
+          start_state: CONST.RESOURCE_STATE.IN_QUEUE,
+          started_at: backup_started_at
+        }));
       })
       .tap(response => {
-        logger.info('backup response ', response);
+        logger.info(`Backup Response `, response);
         const directorManager = req.manager;
         return directorManager
           .findNetworkSegmentIndex(req.params.instance_id)
           .then(networkIndex => {
-            logger.error('networkIndex is ', req.params, networkIndex);
+            logger.error('NetworkIndex is ', req.params, networkIndex);
             return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
           })
       })
@@ -377,17 +376,24 @@ class ServiceFabrikApiController extends FabrikBaseController {
     req.manager.verifyFeatureSupport('backup');
     const instance_id = req.params.instance_id;
     const tenant_id = req.entity.tenant_id;
+    const backup_started_at = new Date();
     return eventmesh.server.getLastAnnotation({
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
         annotationType: 'default',
-      }).then(bkp_guid => eventmesh.server.updateAnnotationState({
+      }).then(backup_guid => eventmesh.server.updateAnnotationState({
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
         annotationType: 'default',
-        annotationId: bkp_guid,
+        annotationId: backup_guid,
         stateValue: 'abort'
-      }))
+      }).then(() => getResourceAnnotationStatus({
+        resourceType: req.manager.name,
+        resourceId: req.params.instance_id,
+        annotationId: backup_guid,
+        start_state: 'abort',
+        started_at: backup_started_at
+      })))
       // wait for aborting and proceed
       .then(result => res
         .status(result.state === 'aborting' ? 202 : 200)

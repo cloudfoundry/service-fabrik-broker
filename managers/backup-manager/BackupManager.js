@@ -74,47 +74,6 @@ class BackupManager {
     return this.director.getDeploymentIps(deploymentName);
   }
 
-  getServiceFabrikOperationState(name, opts) {
-    logger.info(`Retrieving state of last service fabrik operation '${name}' with:`, opts);
-    return Promise
-      .try(() => {
-        switch (name) {
-        case 'backup':
-          return this.getBackupOperationState(opts);
-        case 'restore':
-          return this.getRestoreOperationState(opts);
-        }
-        throw new BadRequest(`Invalid service fabrik operation '${name}'`);
-      })
-      .then(result => {
-        const deploymentName = opts.deployment;
-        const action = _.capitalize(name);
-        const timestamp = result.updated_at;
-        switch (result.state) {
-        case 'succeeded':
-          return {
-            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: 'succeeded'
-          };
-        case 'aborted':
-          return {
-            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: 'failed'
-          };
-        case 'failed':
-          return {
-            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: 'failed'
-          };
-        default:
-          return {
-            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: 'in progress'
-          };
-        }
-      });
-  }
-
   static registerBnRStatusPoller(opts, instanceInfo) {
     let deploymentName = _.get(instanceInfo, 'deployment');
     const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
@@ -231,12 +190,12 @@ class BackupManager {
           .then(() => {
             backupStarted = true;
             let put_ret = this.backupStore.putFile(data);
-            const val1 = _.chain(data)
+            const backup_options = _.chain(data)
               .set('deployment_name', deploymentName)
               .set('started_at', backupStartedAt)
               .value()
-            logger.info(`Backup is initiated with the options: `, val1);
-            return val1;
+            logger.info(`Backup is initiated with the options: `, backup_options);
+            return backup_options;
           });
       })
       .then((res) => {
@@ -246,21 +205,17 @@ class BackupManager {
           annotationType: 'default',
           annotationId: result.backup_guid,
           key: 'result',
-          value: JSON.stringify(res, null, 2)
+          value: JSON.stringify(res)
         }
         return eventmesh.server.updateAnnotationKey(eventmesh_opts)
       })
-      .then(() => {
-        const eventmesh_opts = {
-          resourceId: opts.instance_guid,
-          annotationName: 'backup',
-          annotationType: 'default',
-          annotationId: result.backup_guid,
-          stateValue: CONST.RESOURCE_STATE.IN_PROGRESS
-        }
-        return eventmesh.server.updateAnnotationState(eventmesh_opts)
-      })
-      .then(() => {
+      .then(() => eventmesh.server.updateAnnotationState({
+        resourceId: opts.instance_guid,
+        annotationName: 'backup',
+        annotationType: 'default',
+        annotationId: result.backup_guid,
+        stateValue: CONST.RESOURCE_STATE.IN_PROGRESS
+      })).then(() => {
         const eventmesh_opts = {
           resourceId: opts.instance_guid,
           annotationName: 'backup',
@@ -286,7 +241,7 @@ class BackupManager {
             annotationType: 'default',
             annotationId: result.backup_guid,
             key: 'result',
-            value: JSON.stringify(err, null, 2)
+            value: JSON.stringify(err)
           }))
           .tap(() => {
             if (backupStarted) {
@@ -343,26 +298,6 @@ class BackupManager {
       });
   }
 
-  getLastBackup(tenant_id, instance_guid, noCache) {
-    return this.backupStore
-      .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        // plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        switch (metadata.state) {
-        case 'processing':
-          return noCache ? this.agent
-            .getBackupLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
-        default:
-          return metadata;
-        }
-      });
-  }
-
   abortLastBackup(tenant_id, instance_guid, force) {
     logger.info('Aborting last backup', tenant_id, instance_guid);
     return this.backupStore
@@ -372,14 +307,15 @@ class BackupManager {
         // plan_id: this.plan.id,
         instance_guid: instance_guid
       })
-      .tap(metadata => {
+      .then(metadata => {
+        logger.info('Backup metadata for abort:', metadata);
         return eventmesh.server.updateAnnotationState({
           resourceId: instance_guid,
           annotationName: 'backup',
           annotationType: 'default',
           annotationId: metadata.backup_guid,
           stateValue: 'aborting'
-        })
+        }).then(() => metadata)
       })
       .then(metadata => {
         if (!force && metadata.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
