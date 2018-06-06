@@ -36,7 +36,6 @@ const CloudControllerError = {
   }
 };
 
-
 function getResourceAnnotationStatus(resourceType, resourceId, guid, start_state, started_at) {
   logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
   return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
