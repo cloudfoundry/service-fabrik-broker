@@ -167,20 +167,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getInfo(req, res) {
-    if (!config.enable_swarm_manager) {
-      return res.status(CONST.HTTP_STATUS_CODE.OK)
-        .json({
-          name: this.serviceBrokerName,
-          api_version: this.constructor.version,
-          ready: true,
-          db_status: this.fabrik.dbManager.getState().status
-        });
-    }
-    let allDockerImagesRetrieved = false;
-    return docker
-      .getMissingImages()
-      .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages))
-      .catch(err => logger.info('error occurred while fetching docker images', err))
+    let allDockerImagesRetrieved = true;
+    return Promise.try(() => {
+        if (config.enable_swarm_manager) {
+          return docker
+            .getMissingImages()
+            .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
+        }
+      })
+      .catch(err => {
+        allDockerImagesRetrieved = false;
+        logger.info('error occurred while fetching docker images', err);
+      })
       .finally(() => {
         res.status(CONST.HTTP_STATUS_CODE.OK)
           .json({

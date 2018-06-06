@@ -24,7 +24,12 @@ class Fabrik {
         case 'director':
           return DirectorManager;
         case 'docker':
-          return DockerManager;
+          if (config.enable_swarm_manager) {
+            return DockerManager;
+          } else {
+            assert.fail(plan.manager.name, ['director', 'virtual_host'], undefined, 'in');
+          }
+          break;
         case 'virtual_host':
           return VirtualHostManager;
         default:
