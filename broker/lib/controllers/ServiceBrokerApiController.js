@@ -179,7 +179,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       // Unlock resource if state is succeeded or failed
       if (result.state === 'succeeded' || result.state === 'failed') {
         logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
           .then(() => res.status(200).send(body));
       }
       res.status(200).send(body);
@@ -187,7 +187,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function failed(err) {
       logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(req.params.instance_id)
+      return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
         .then(() => res.status(200).send({
           state: 'failed',
           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
@@ -196,7 +196,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone() {
       logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(req.params.instance_id)
+      return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
         .then(() => res.status(410).send({}));
     }
 
