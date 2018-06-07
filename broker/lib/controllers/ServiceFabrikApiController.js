@@ -21,12 +21,15 @@ const UnprocessableEntity = errors.UnprocessableEntity;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
+const InternalServerError = errors.InternalServerError;
+const ETCDLockError = errors.ETCDLockError;
 const ScheduleManager = require('../jobs');
 const config = require('../config');
 const CONST = require('../constants');
 const catalog = require('../models').catalog;
 const utils = require('../utils');
 const docker = config.enable_swarm_manager ? require('../docker') : undefined;
+const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
 const CloudControllerError = {
   NotAuthorized: err => {
@@ -360,6 +363,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(bodyStr => {
         const body = JSON.parse(bodyStr);
         res.status(202).send(body);
+      })
+      .catch(err => {
+        if (err instanceof ETCDLockError) {
+          throw err;
+        }
+        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
+        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+          .throw(err);
       })
       .catch(Timeout, (err) => {
         return this.abortLastBackup(req, res);
