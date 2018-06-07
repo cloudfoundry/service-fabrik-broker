@@ -35,10 +35,6 @@ class BackupManager {
     this.agent = new Agent(this.settings.agent);
   }
 
-  get name() {
-    return this.plan.manager.name;
-  }
-
   get settings() {
     return this.plan.manager.settings;
   }
@@ -51,10 +47,6 @@ class BackupManager {
     }
   }
 
-  static get prefix() {
-    return CONST.SERVICE_FABRIK_PREFIX;
-  }
-
   static get instanceConstructor() {
     throw new NotImplementedBySubclass('instanceConstructor');
   }
@@ -64,10 +56,6 @@ class BackupManager {
       this[plan.id] = new this(plan);
     }
     return Promise.resolve(this[plan.id]);
-  }
-
-  getDeploymentNames(queued) {
-    return this.director.getDeploymentNames(queued);
   }
 
   getDeploymentIps(deploymentName) {
@@ -262,36 +250,6 @@ class BackupManager {
       });
   }
 
-  getBackupOperationState(opts) {
-    const agent_ip = opts.agent_ip;
-    const options = _.assign({
-      service_id: this.service.id,
-      // plan_id: this.plan.id,
-      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
-    }, opts);
-
-    function isFinished(state) {
-      return _.includes(['succeeded', 'failed', 'aborted'], state);
-    }
-
-    return this.agent
-      .getBackupLastOperation(agent_ip)
-      .tap(lastOperation => {
-        if (isFinished(lastOperation.state)) {
-          return this.agent
-            .getBackupLogs(agent_ip)
-            .tap(logs => _.each(logs, log => logger.info(`Backup log for: ${opts.instance_guid} - ${JSON.stringify(log)}`)))
-            .then(logs => this.backupStore
-              .patchBackupFile(options, {
-                state: lastOperation.state,
-                logs: logs,
-                snapshotId: lastOperation.snapshotId
-              })
-            );
-        }
-      });
-  }
-
   abortLastBackup(abortOptions, force) {
     logger.info('Starting abort with following options:', abortOptions);
     return eventmesh.server.updateAnnotationState({
@@ -320,13 +278,6 @@ class BackupManager {
         return _.pick(metadata, 'state');
       }
     });
-  }
-
-  static get prefix() {
-    return _
-      .reduce(config.directors,
-        (prefix, director) => director.primary === true ? director.prefix : prefix,
-        null) || super.prefix;
   }
 
 }
