@@ -14,6 +14,7 @@ const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const UnprocessableEntity = errors.UnprocessableEntity;
+const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const ScheduleManager = require('../jobs');
@@ -373,12 +374,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   listBackupFiles(options) {
-    function getPredicate(before, after) {
+    function getPredicate(before, after, instance_id) {
       return function predicate(filenameobject) {
         if (before && !_.lt(filenameobject.started_at, before)) {
           return false;
         }
         if (after && !_.gt(filenameobject.started_at, after)) {
+          return false;
+        }
+        if (instance_id && filenameobject.instance_guid !== instance_id) {
           return false;
         }
         return filenameobject.operation === 'backup';
@@ -392,7 +396,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
             .findServicePlanByInstanceId(options.instance_id)
             .then(resource => {
               options.plan_id = resource.entity.unique_id;
-            });
+            })
+            .catch(ServiceInstanceNotFound, () =>
+              logger.info(`+-> Instance ${options.instance_id} not found, continue listing backups for the deleted instance`));
         }
       })
       .then(() => {
@@ -401,7 +407,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         const before = options.before ? filename.isoDate(options.before) : undefined;
         const after = options.after ? filename.isoDate(options.after) : undefined;
-        const predicate = getPredicate(before, after);
+        const predicate = getPredicate(before, after, options.instance_id);
         return this.backupStore.listBackupFiles(options, predicate);
       })
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs'));
