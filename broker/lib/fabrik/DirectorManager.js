@@ -112,8 +112,8 @@ class DirectorManager extends BaseManager {
   }
 
   aquireNetworkSegmentIndex(guid) {
-    logger.info(`Aquiring network segment index for a new deployment with instance id '${guid}'...`);
-    let promises = [this.getDeploymentNames(true)];
+    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
+    const promises = [this.getDeploymentNames(true)];
     if (config.enable_bosh_rate_limit) {
       promises.push(this.getDeploymentNamesInCache());
     }
@@ -190,32 +190,46 @@ class DirectorManager extends BaseManager {
   }
 
   executePolicy(scheduled, action, deploymentName, dbUpdate, policyApplicable) {
-    if (!policyApplicable) {
-      return Promise.resolve(true);
-    }
-    if (dbUpdate) {
-      return Promise.resolve(true);
-    }
     const targetDirectorConfig = this.director.getDirectorForOperation(action, deploymentName);
-    this.director.getCurrentTasks(action, targetDirectorConfig).then(out => {
+    const runOutput = {
+      'directorError': false,
+      'shouldRunNow': false
+    };
+    return this.director.getCurrentTasks(action, targetDirectorConfig).then(tasksCount => {
+      if (!policyApplicable) {
+        runOutput.shouldRunNow = true;
+        return Promise.resolve(runOutput);
+      }
+      if (dbUpdate) {
+        runOutput.shouldRunNow = true;
+        return Promise.resolve(runOutput);
+      }
       let currentTasks, maxWorkers;
-      let allTasks = out.total;
-      let maxTasks = targetDirectorConfig.max_workers;
+      const allTasks = tasksCount.total;
+      const maxTasks = targetDirectorConfig.max_workers;
       if (allTasks >= maxTasks) {
         //no slots left anyway
-        return false;
+        runOutput.shouldRunNow = false;
+        return Promise.resolve(runOutput);
       }
       if (scheduled) {
-        currentTasks = out.scheduled;
+        currentTasks = tasksCount.scheduled;
         maxWorkers = targetDirectorConfig.policies.scheduled.max_workers;
       } else {
-        currentTasks = out.user;
-        maxWorkers = targetDirectorConfig.policies.user.max_workers;
+        currentTasks = tasksCount[action];
+        maxWorkers = targetDirectorConfig.policies.user[action].max_workers;
       }
       if (currentTasks < maxWorkers) {
-        return true;
+        runOutput.shouldRunNow = true;
+        return Promise.resolve(runOutput);
       }
-      return false;
+      runOutput.shouldRunNow = false;
+      return Promise.resolve(runOutput);
+    }).catch(err => {
+      logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
+      //in case the director request returns an error, we queue it to avoid user experience issues
+      runOutput.directorError = true;
+      return Promise.resolve(runOutput);
     });
   }
 
@@ -247,11 +261,18 @@ class DirectorManager extends BaseManager {
       'shouldRunNow': false,
       'cached': false,
       'dbUpdate': false,
-      'policyApplicable': config.enable_bosh_rate_limit
+      'policyApplicable': config.enable_bosh_rate_limit,
+      'directorError': false
     };
 
     return this.executePolicy(scheduled, action, deploymentName, dbUpdate, policyApplicable)
-      .then(shouldRunNow => {
+      .then(checkResults => {
+        if (checkResults.directorError) {
+          decisionMaker.directorError = true;
+          return Promise.resolve(true);
+        }
+        const shouldRunNow = checkResults.shouldRunNow;
+
         if (!decisionMaker.policyApplicable) {
           return Promise.resolve();
         }
@@ -270,6 +291,12 @@ class DirectorManager extends BaseManager {
           });
         }
         if (!scheduled) {
+          return Promise.resolve(true);
+        }
+        throw new DeploymentDelayed(deploymentName);
+      })
+      .then((storeInCache) => {
+        if (storeInCache) {
           // stagger here by putting it into etcd cache and return promise
           return boshOperationCache.store(this.plan.id, deploymentName, params, args)
             .then(() => {
@@ -281,7 +308,6 @@ class DirectorManager extends BaseManager {
               throw new CacheUpdateError(deploymentName);
             });
         }
-        throw new DeploymentDelayed(deploymentName);
       })
       .then(() => {
         if (decisionMaker.shouldRunNow && decisionMaker.cached) {
@@ -290,7 +316,9 @@ class DirectorManager extends BaseManager {
         }
       })
       .then(() => {
-        if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow || !decisionMaker.policyApplicable) {
+        if (decisionMaker.directorError) {
+          throw new DeploymentDelayed(deploymentName);
+        } else if (decisionMaker.dbUpdate || decisionMaker.shouldRunNow || !decisionMaker.policyApplicable) {
           return;
         } else {
           throw new DeploymentDelayed(deploymentName);
@@ -298,14 +326,14 @@ class DirectorManager extends BaseManager {
       })
       .then(() => this._createOrUpdateDeployment(deploymentName, params, args, scheduled))
       .then(taskId => {
-        let out = {
+        const out = {
           'cached': false
         };
         if (decisionMaker.policyApplicable) {
           out.task_id = taskId;
           return Promise.resolve(out);
         } else if (decisionMaker.cached) {
-          boshOperationCache.storeBoshTask(this.getInstanceGuid(deploymentName), taskId)
+          return boshOperationCache.storeBoshTask(this.getInstanceGuid(deploymentName), taskId)
             .then(() => {
               out.cached = true;
               out.task_id = taskId;
@@ -318,10 +346,9 @@ class DirectorManager extends BaseManager {
       })
       .catch(DeploymentDelayed, e => {
         logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
-        let out = {
+        return {
           'cached': true
         };
-        return out;
       })
       .catch(err => {
         throw err;

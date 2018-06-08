@@ -284,7 +284,7 @@ describe('bosh', () => {
           url: '/deployments',
           headers: {
             'Content-Type': 'text/yaml',
-            'X-Bosh-Context-Id': 'Fabrik::User'
+            'X-Bosh-Context-Id': 'Fabrik::Operation::create'
           },
           qs: undefined,
           body: manifest

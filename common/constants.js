@@ -3,9 +3,15 @@
 module.exports = Object.freeze({
   NETWORK_SEGMENT_LENGTH: 4,
   BOSH_POLL_MAX_ATTEMPTS: 3,
-  BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
-  BOSH_FABRIK_OP: 'Fabrik::Operation',
-  BOSH_FABRIK_USER_OP: 'Fabrik::User',
+  BOSH_RATE_LIMITS: {
+    BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
+    BOSH_FABRIK_OP: 'Fabrik::Operation::',
+    BOSH_FABRIK_OP_AUTO: 'Fabrik::Operation::Auto',
+    BOSH_PROCESSING: 'processing',
+    BOSH_CANCELLING: 'cancelling'
+  },
+  FABRIK_SCHEDULED_OPERATION: 'scheduled',
+  UNCATEGORIZED: 'uncategorized',
   DEPLOYMENT_LOCK_NAME: '_LOCK_',
   SERVICE_FABRIK_PREFIX: 'service-fabrik',
   PLATFORM_CONTEXT_KEY: 'platform-context',

@@ -77,18 +77,19 @@ function completeDirectorConfig(director) {
   }
   let boshRateLimitEnabled = config.enable_bosh_rate_limit;
   if (boshRateLimitEnabled) {
-    let maxWorkers = _.get(director, 'max_workers', 6);
-    let userWorkerShare = _.get(director, 'policies.user.max_workers', 50);
-    let autoWorkerShare = _.get(director, 'policies.scheduled.max_workers', 50);
+    const maxWorkers = _.get(director, 'max_workers', 6);
+    const userCreateWorkers = _.get(director, 'policies.user.create');
+    const userUpdateWorkers = _.get(director, 'policies.user.update');
+    const userDeleteWorkers = _.get(director, 'policies.user.delete');
+    const autoWorkers = _.get(director, 'policies.scheduled.max_workers', (maxWorkers / 2));
 
-    if (_.add(userWorkerShare, autoWorkerShare) > 100) {
-      throw new Error(`Invalid director config: policy shares add up to more than 100%`);
+    if (_.sum([userCreateWorkers, userUpdateWorkers, userDeleteWorkers, autoWorkers]) > maxWorkers) {
+      throw new Error('Invalid director config: policy shares add up to more than max_workers count');
     }
 
-    let userWorkers = _.floor(_.multiply(_.divide(userWorkerShare, 100), maxWorkers));
-    let autoWorkers = _.floor(_.multiply(_.divide(autoWorkerShare, 100), maxWorkers));
-
-    _.set(director, 'policies.user.max_workers', userWorkers);
+    _.set(director, 'policies.user.create.max_workers', userCreateWorkers);
+    _.set(director, 'policies.user.update.max_workers', userUpdateWorkers);
+    _.set(director, 'policies.user.delete.max_workers', userDeleteWorkers);
     _.set(director, 'policies.scheduled.max_workers', autoWorkers);
   }
 }

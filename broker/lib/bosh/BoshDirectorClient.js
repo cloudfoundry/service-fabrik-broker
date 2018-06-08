@@ -365,11 +365,11 @@ class BoshDirectorClient extends HttpClient {
    * 
    */
   getCurrentTasks(action, directorConfig, ...states) {
-    let stateQuery = 'processing,cancelling';
+    let stateQuery = `${CONST.BOSH_RATE_LIMITS.BOSH_PROCESSING},${CONST.BOSH_RATE_LIMITS.BOSH_CANCELLING}`;
     if (states.length > 0) {
       stateQuery = states.join(',');
     }
-    let query = {
+    const query = {
       state: stateQuery,
       verbose: 2
     };
@@ -379,24 +379,28 @@ class BoshDirectorClient extends HttpClient {
       qs: query
     }, 200, directorConfig).then(out => {
       // out is the array of currently running tasks
-      let currentTotal = out.length;
       let taskGroup = _.groupBy(out, (entry) => {
-        if (entry.context_id === CONST.BOSH_FABRIK_OP) {
-          return 'scheduled';
-        } else if (entry.context_id === CONST.BOSH_FABRIK_USER_OP) {
-          return 'user';
-        } else {
-          //needed for landscape bosh
-          return 'uncategorized';
+        switch (entry.context_id) {
+        case CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO:
+          return CONST.FABRIK_SCHEDULED_OPERATION;
+        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.CREATE}`:
+          return CONST.OPERATION_TYPE.CREATE;
+        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.UPDATE}`:
+          return CONST.OPERATION_TYPE.UPDATE;
+        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.DELETE}`:
+          return CONST.OPERATION_TYPE.DELETE;
+        default:
+          return CONST.UNCATEGORIZED;
         }
       });
-      let taskCount = {
-        'user': taskGroup.user.length,
-        'scheduled': taskGroup.scheduled.length,
-        'uncategorized': taskGroup.uncategorized.length,
-        'total': currentTotal
+      return {
+        'create': taskGroup[CONST.OPERATION_TYPE.CREATE],
+        'delete': taskGroup[CONST.OPERATION_TYPE.DELETE],
+        'update': taskGroup[CONST.OPERATION_TYPE.UPDATE],
+        'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION],
+        'uncategorized': taskGroup[CONST.UNCATEGORIZED],
+        'total': out.length
       };
-      return taskCount;
     });
   }
 
@@ -421,13 +425,13 @@ class BoshDirectorClient extends HttpClient {
         if (config === undefined) {
           throw new errors.NotFound('Did not find any bosh director config which supports creation of deployment');
         }
-        let reqHeaders = {
+        const reqHeaders = {
           'Content-Type': 'text/yaml'
         };
         if (scheduled) {
-          reqHeaders[CONST.BOSH_CONTEXT_ID] = CONST.BOSH_FABRIK_SCHEDULED_OP;
+          reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO;
         } else {
-          reqHeaders[CONST.BOSH_CONTEXT_ID] = CONST.BOSH_FABRIK_USER_OP;
+          reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${action}`;
         }
         return this
           .makeRequestWithConfig({

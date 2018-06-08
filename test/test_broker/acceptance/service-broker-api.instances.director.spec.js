@@ -532,6 +532,7 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters

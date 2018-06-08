@@ -146,11 +146,11 @@ class DirectorInstance extends BaseInstance {
         return this.manager
           .createOrUpdateDeployment(this.deploymentName, params);
       })
-      .then(output => _
+      .then(op => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
-        .set('task_id', output.task_id)
-        .set('cached', output.cached)
+        .set('task_id', op.task_id)
+        .set('cached', op.cached)
         .value()
       );
   }
@@ -182,11 +182,11 @@ class DirectorInstance extends BaseInstance {
           const args = _.get(serviceFabrikOperation, 'arguments');
           return this.manager
             .createOrUpdateDeployment(this.deploymentName, params, args)
-            .then(output => _
+            .then(op => _
               .chain(operation)
               .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', output.task_id)
-              .set('cached', output.cached)
+              .set('task_id', op.task_id)
+              .set('cached', op.cached)
               .value()
             );
         }
@@ -243,20 +243,21 @@ class DirectorInstance extends BaseInstance {
         );
     }
     logger.info('Fetching state of last operation', operation);
+    const instanceId = this.guid;
 
-    function getBoshTaskOperation(operation, taskId) {
+    const getBoshTaskOperation = (operation, taskId) => {
       return Promise
         .try(() => {
           assert.ok(taskId, 'Task ID must be available');
           return this.manager.getTask(taskId);
         })
-        .catchThrow(NotFound, new ServiceInstanceNotFound(this.guid))
+        .catchThrow(NotFound, new ServiceInstanceNotFound(instanceId))
         .then(task => {
           assert.ok(_.endsWith(task.deployment, this.guid), `Deployment '${task.deployment}' must end with '${this.guid}'`);
           this.networkSegmentIndex = this.manager.getNetworkSegmentIndex(task.deployment);
           this.setOperationState(operation, task);
           if (operation.state !== 'in progress') {
-            return this.finalize(operation);
+            return this.finalize(operation); // remove task id here
           }
         })
         .return(operation);
@@ -268,8 +269,8 @@ class DirectorInstance extends BaseInstance {
       return Promise.try(() => {
         return this.manager.getCurrentOperationState(this.guid)
       }).then(state => {
-        let isCached = state.cached;
-        let taskId = state.task_id;
+        const isCached = state.cached;
+        const taskId = state.task_id;
         if (isCached) {
           return _.assign(operation, {
             description: `${_.capitalize(operation.type)} deployment ${task.deployment} is still in progress`,
