@@ -20,6 +20,7 @@ const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
 const UnprocessableEntity = errors.UnprocessableEntity;
 const ETCDLockError = errors.ETCDLockError;
+const config = require('../config');
 const CONST = require('../constants');
 const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
@@ -49,6 +50,42 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putInstance(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.putInstanceV2(req, res);
+    }
+    return this.putInstanceV1(req, res);
+  }
+
+  putInstanceV1(req, res) {
+    const params = _.omit(req.body, 'plan_id', 'service_id');
+
+    function done(result) {
+      let statusCode = 201;
+      const body = {
+        dashboard_url: req.instance.dashboardUrl
+      };
+      if (req.instance.async) {
+        statusCode = 202;
+        body.operation = utils.encodeBase64(result);
+      }
+      res.status(statusCode).send(body);
+    }
+
+    function conflict(err) {
+      /* jshint unused:false */
+      res.status(409).send({});
+    }
+
+    req.operation_type = CONST.OPERATION_TYPE.CREATE;
+    this.validateRequest(req, res);
+
+    return Promise
+      .try(() => req.instance.create(params))
+      .then(done)
+      .catch(ServiceInstanceAlreadyExists, conflict);
+  }
+
+  putInstanceV2(req, res) {
     const params = _.omit(req.body, 'plan_id', 'service_id');
 
     function done(result) {
@@ -89,6 +126,46 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   patchInstance(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.patchInstanceV2(req, res);
+    }
+    return this.patchInstanceV1(req, res);
+  }
+
+  patchInstanceV1(req, res) {
+    const params = _
+      .chain(req.body)
+      .omit('plan_id', 'service_id')
+      .cloneDeep()
+      .value();
+    //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
+
+    function done(result) {
+      let statusCode = 200;
+      const body = {};
+      if (req.instance.async) {
+        statusCode = 202;
+        body.operation = utils.encodeBase64(result);
+      } else if (result && result.description) {
+        body.description = result.description;
+      }
+      res.status(statusCode).send(body);
+    }
+
+    req.operation_type = CONST.OPERATION_TYPE.UPDATE;
+    this.validateRequest(req, res);
+
+    return Promise
+      .try(() => {
+        if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
+          throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+        }
+        return req.instance.update(params);
+      })
+      .then(done);
+  }
+
+  patchInstanceV2(req, res) {
     const params = _
       .chain(req.body)
       .omit('plan_id', 'service_id')
@@ -133,6 +210,39 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   deleteInstance(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.deleteInstanceV2(req, res)
+    }
+    return this.deleteInstanceV1(req, res)
+  }
+
+  deleteInstanceV1(req, res) {
+    const params = _.omit(req.query, 'plan_id', 'service_id');
+
+    function done(result) {
+      let statusCode = 200;
+      const body = {};
+      if (req.instance.async) {
+        statusCode = 202;
+        body.operation = utils.encodeBase64(result);
+      }
+      res.status(statusCode).send(body);
+    }
+
+    function gone(err) {
+      /* jshint unused:false */
+      res.status(410).send({});
+    }
+    req.operation_type = CONST.OPERATION_TYPE.DELETE;
+    this.validateRequest(req, res);
+
+    return Promise
+      .try(() => req.instance.delete(params))
+      .then(done)
+      .catch(ServiceInstanceNotFound, gone);
+  }
+
+  deleteInstanceV2(req, res) {
     const params = _.omit(req.query, 'plan_id', 'service_id');
 
     function done(result) {
@@ -168,6 +278,49 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   getLastInstanceOperation(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.getLastInstanceOperationV2(req, res)
+    }
+    return this.getLastInstanceOperationV1(req, res)
+  }
+
+  getLastInstanceOperationV1(req, res) {
+    const encodedOp = _.get(req, 'query.operation', undefined);
+    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
+    const action = _.capitalize(operation.type);
+    const instanceType = req.instance.constructor.typeDescription;
+    const guid = req.instance.guid;
+
+    function done(result) {
+      const body = _.pick(result, 'state', 'description');
+      res.status(200).send(body);
+    }
+
+    function failed(err) {
+      res.status(200).send({
+        state: 'failed',
+        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+      });
+    }
+
+    function gone() {
+      res.status(410).send({});
+    }
+
+    function notFound(err) {
+      if (operation.type === 'delete') {
+        return gone();
+      }
+      failed(err);
+    }
+    return Promise
+      .try(() => req.instance.lastOperation(operation))
+      .then(done)
+      .catch(AssertionError, failed)
+      .catch(ServiceInstanceNotFound, notFound);
+  }
+
+  getLastInstanceOperationV2(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
     const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
     const action = _.capitalize(operation.type);
@@ -215,6 +368,36 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putBinding(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.putBindingV2(req, res)
+    }
+    return this.putBindingV1(req, res)
+  }
+
+  putBindingV1(req, res) {
+    const params = _(req.body)
+      .omit('plan_id', 'service_id')
+      .set('binding_id', req.params.binding_id)
+      .value();
+
+    function done(credentials) {
+      res.status(201).send({
+        credentials: credentials
+      });
+    }
+
+    function conflict(err) {
+      /* jshint unused:false */
+      res.status(409).send({});
+    }
+
+    return Promise
+      .try(() => req.instance.bind(params))
+      .then(done)
+      .catch(ServiceBindingAlreadyExists, conflict);
+  }
+
+  putBindingV2(req, res) {
     const params = _(req.body)
       .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
@@ -244,6 +427,34 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   deleteBinding(req, res) {
+    if (config.enableServiceFabrikV2) {
+      return this.deleteBindingV2(req, res)
+    }
+    return this.deleteBindingV1(req, res);
+  }
+
+  deleteBindingV1(req, res) {
+    const params = _(req.query)
+      .omit('plan_id', 'service_id')
+      .set('binding_id', req.params.binding_id)
+      .value();
+
+    function done() {
+      res.status(200).send({});
+    }
+
+    function gone(err) {
+      /* jshint unused:false */
+      res.status(410).send({});
+    }
+
+    return Promise
+      .try(() => req.instance.unbind(params))
+      .then(done)
+      .catch(ServiceBindingNotFound, gone);
+  }
+
+  deleteBindingV2(req, res) {
     const params = _(req.query)
       .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
