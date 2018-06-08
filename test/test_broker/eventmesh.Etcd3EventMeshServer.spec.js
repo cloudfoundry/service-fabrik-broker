@@ -310,6 +310,24 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('#updateAnnotationResult', () => {
+      const opts = {
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeAnnotationType',
+        annotationId: 'fakeAnnotationId',
+        value: 'fakeResultValue'
+      };
+      it('should update the annotation key specified', () => {
+        return eventmesh.server.updateAnnotationResult(opts)
+          .then(() => {
+            /* jshint expr: true */
+            expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/result`)).to.be.true;
+            expect(valueStub.getCall(0).calledWithExactly('fakeResultValue')).to.be.true;
+          });
+      });
+    })
+
     describe('#updateAnnotationKey', () => {
       const opts = {
         resourceId: 'fakeResourceId',
@@ -332,6 +350,21 @@ describe('eventmesh', () => {
         return eventmesh.server.updateAnnotationKey(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_annotationKeyResponse');
+          });
+      });
+    });
+
+    describe('#updateLastAnnotation', () => {
+      const opts = {
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeAnnotationType',
+        value: 'fakeValue'
+      };
+      it('should update the last key for annotation type', () => {
+        return eventmesh.server.updateLastAnnotation(opts)
+          .then(() => {
+            expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`)).to.be.true;
           });
       });
     });
@@ -361,6 +394,21 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('#getLastAnnotation', () => {
+      const opts = {
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeAnnotationType',
+      };
+      it('should get the annotation last key', () => {
+        return eventmesh.server.getLastAnnotation(opts)
+          .then(() => {
+            /* jshint expr: true */
+            expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`)).to.be.true;
+          });
+      });
+    });
+
     describe('#getAnnotationState', () => {
       const opts = {
         resourceId: 'fakeResourceId',
@@ -384,6 +432,55 @@ describe('eventmesh', () => {
           });
       });
     });
+
+    describe('#getAnnotationOptions', () => {
+      const opts = {
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeAnnotationType',
+        annotationId: 'fakeAnnotationId',
+      };
+      it('should get the annotation options', () => {
+        return eventmesh.server.getAnnotationOptions(opts)
+          .then(() => {
+            /* jshint expr: true */
+            expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/options`)).to.be.true;
+          });
+      });
+      it('should return string response form event mesh server', () => {
+        const expected_resp = 'Annotation options response';
+        stringStub.onCall(0).returns(expected_resp);
+        return eventmesh.server.getAnnotationOptions(opts)
+          .then((result) => {
+            expect(result).to.eql(expected_resp);
+          });
+      });
+    });
+
+    describe('#getAnnotationResult', () => {
+      const opts = {
+        resourceId: 'fakeResourceId',
+        annotationName: 'fakeAnnotationName',
+        annotationType: 'fakeAnnotationType',
+        annotationId: 'fakeAnnotationId',
+      };
+      it('should get the annotation result', () => {
+        return eventmesh.server.getAnnotationResult(opts)
+          .then(() => {
+            /* jshint expr: true */
+            expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/result`)).to.be.true;
+          });
+      });
+      it('should return string response form event mesh server', () => {
+        const expected_resp = 'Annotation result response';
+        stringStub.onCall(0).returns(expected_resp);
+        return eventmesh.server.getAnnotationResult(opts)
+          .then((result) => {
+            expect(result).to.eql(expected_resp);
+          });
+      });
+    });
+
 
   });
 });

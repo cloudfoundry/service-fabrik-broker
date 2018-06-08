@@ -242,6 +242,11 @@ module.exports = Object.freeze({
     OPTIONS: 'options',
     RESULT: 'result'
   },
+  APISERVER: {
+    STATE: {
+      IN_QUEUE: 'in_queue'
+    },
+  },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',
     PLANS: 'plans'

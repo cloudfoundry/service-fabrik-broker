@@ -50,9 +50,15 @@ class DirectorInstance extends BaseInstance {
   }
 
   get async() {
-    return this.operation !== CONST.OPERATION_TYPE.BACKUP;
-    //Backup operation is being turned into SYNCH and behind scenese polling will happen to status check.
-    //Rationale : Bind operations can happen while backups are happening.
+    if (config.servicefabrik20) {
+      return this.operation !== CONST.OPERATION_TYPE.BACKUP;
+      //Backup operation is being turned into SYNCH and behind scenese polling will happen to status check.
+      //Rationale : Bind operations can happen while backups are happening.
+    } else {
+      return this.operation !== CONST.OPERATION_TYPE.BACKUP && this.operation !== CONST.OPERATION_TYPE.UNLOCK;
+      //Backup/Unlock operation is being turned into SYNCH and behind scenese polling will happen to status check.
+      //Rationale : Bind operations can happen while backups are happening.
+    }
   }
 
   initialize(operation) {
@@ -156,6 +162,68 @@ class DirectorInstance extends BaseInstance {
   }
 
   update(params) {
+    if (config.servicefabrik20) {
+      return this.update20(params);
+    }
+    return this.update10(params);
+  }
+  update10(params) {
+    const operation = {
+      type: 'update'
+    };
+    // service fabrik operation token
+    const token = _.get(params.parameters, 'service-fabrik-operation', null);
+    if (token) {
+      _.unset(params.parameters, 'service-fabrik-operation');
+    }
+    return this
+      .initialize(operation)
+      .then(() => token ? jwt.verify(token, config.password) : null)
+      .then(serviceFabrikOperation => {
+        logger.info('SF Operation input:', serviceFabrikOperation);
+        this.operation = _.get(serviceFabrikOperation, 'name', 'update');
+        const deploymentLockPromise = (this.operation === CONST.OPERATION_TYPE.UNLOCK) ?
+          Promise.resolve({}) :
+          Promise.try(() => this.manager.verifyDeploymentLockStatus(this.deploymentName));
+        return deploymentLockPromise.return(serviceFabrikOperation);
+      })
+      .then(serviceFabrikOperation => {
+        // normal update operation
+        if (this.operation === 'update') {
+          const args = _.get(serviceFabrikOperation, 'arguments');
+          return this.manager
+            .createOrUpdateDeployment(this.deploymentName, params, args)
+            .then(taskId => _
+              .chain(operation)
+              .assign(_.pick(params, 'parameters', 'context'))
+              .set('task_id', taskId)
+              .value()
+            );
+        }
+        // service fabrik operation
+        const previousValues = params.previous_values;
+        const opts = _
+          .chain(previousValues)
+          .pick('plan_id', 'service_id')
+          .set('context', params.context)
+          .set('instance_guid', this.guid)
+          .set('deployment', this.deploymentName)
+          .assign(_.omit(serviceFabrikOperation, 'name'))
+          .value();
+        return this.manager
+          .invokeServiceFabrikOperation(this.operation, opts)
+          .then(result => _
+            .chain(operation)
+            .assign(result)
+            .set('username', serviceFabrikOperation.username)
+            .set('useremail', serviceFabrikOperation.useremail)
+            .set('context', params.context)
+            .value()
+          );
+      });
+  }
+
+  update20(params) {
     const operation = {
       type: 'update'
     };
@@ -206,6 +274,31 @@ class DirectorInstance extends BaseInstance {
   }
 
   delete(params) {
+    if (config.servicefabrik20) {
+      return this.delete20(params);
+    }
+    return this.delete10(params);
+  }
+
+  delete10(params) {
+    const operation = {
+      type: 'delete'
+    };
+    return this
+      .initialize(operation)
+      .then(() => this.manager.verifyDeploymentLockStatus(this.deploymentName))
+      .then(() => this.manager.deleteDeployment(this.deploymentName, params))
+      .then(taskId => _
+        .chain(operation)
+        .set('task_id', taskId)
+        .set('context', {
+          platform: this.platformManager.platform
+        })
+        .value()
+      );
+  }
+
+  delete20(params) {
     const operation = {
       type: 'delete'
     };
