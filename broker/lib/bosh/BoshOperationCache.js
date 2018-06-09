@@ -57,7 +57,7 @@ class BoshOperationCache {
   /**
    * Checks if the BOSH deployment corresponding to the service instance exists in the Etcd store
    * 
-   * @param {Service instance ID} serviceInstanceId 
+   * @param {string} serviceInstanceId - Service Instance ID
    */
   containsServiceInstance(serviceInstanceId) {
     logger.debug('Checking if service instance operation is in queue', serviceInstanceId);
@@ -69,7 +69,7 @@ class BoshOperationCache {
   /**
    * Checks if the BOSH deployment name is present in the Etcd store
    * 
-   * @param {Deployment name} deploymentName 
+   * @param {string} deploymentName - Deployment Name
    */
   containsDeployment(deploymentName) {
     logger.debug(`Checking if deployment is in queue ${deploymentName}`);
@@ -85,7 +85,7 @@ class BoshOperationCache {
   /**
    * Checks if the BOSH task ID is present in the Etcd store for the service instance
    * 
-   * @param {Service instance ID} serviceInstanceId 
+   * @param {string} serviceInstanceId - Service instance ID
    */
   containsBoshTask(serviceInstanceId) {
     logger.info(`Checking the task for service instance ${serviceInstanceId} in cache`);
@@ -101,7 +101,7 @@ class BoshOperationCache {
   /**
    * Fetches a limited number of BOSH deployment names from the Etcd Store
    * 
-   * @param {Number of entries to fetch} numEntries 
+   * @param {string} numEntries - Number of entries to fetch
    */
   getNEntries(numEntries) {
     logger.debug(`Getting the first ${numEntries} entries in cache`);
@@ -139,7 +139,7 @@ class BoshOperationCache {
   /**
    * Fetches BOSH task ID for a service instance from the Etcd store
    * 
-   * @param {Service instance ID} serviceInstanceId 
+   * @param {string} serviceInstanceId - Service instance ID
    */
   getBoshTask(serviceInstanceId) {
     logger.debug(`Getting bosh task ID for service instance id ${serviceInstanceId}`);
@@ -155,7 +155,7 @@ class BoshOperationCache {
   /**
    * Fetches parameters for a BOSH deployment operation from the Etcd store based on the name
    * 
-   * @param {Deployment Name} name 
+   * @param {string} name - Deployment Name
    */
   getDeploymentByName(name) {
     logger.debug('Getting deployment for ', name);
@@ -168,7 +168,7 @@ class BoshOperationCache {
   /**
    * Deletes a single BOSH deployment from the Etcd Store
    * 
-   * @param {Deployment Name} deploymentName 
+   * @param {string} deploymentName - Deployment Name
    */
   deleteDeploymentFromCache(deploymentName) {
     logger.info('Removing deployment from cache', deploymentName);
@@ -181,7 +181,7 @@ class BoshOperationCache {
   /**
    * Deletes multiple BOSH deployment names from the Etcd store
    * 
-   * @param {Deployment Names} deployments 
+   * @param {(string|string[])} deployments - List of Deployment Names
    */
   deleteDeploymentsFromCache(...deployments) {
     const deploymentIdentifiers = _.flattenDeep(deployments);
@@ -193,8 +193,8 @@ class BoshOperationCache {
   /**
    * Stores the BOSH task ID corresponding to the service instance ID when the task is submitted to the BOSH Director
    * 
-   * @param {Service Instance ID} serviceInstanceId 
-   * @param {BOSH Task ID corresponding to the operation} taskId 
+   * @param {string} serviceInstanceId  - Service Instance ID
+   * @param {string} taskId - BOSH Task ID corresponding to the operation
    */
   storeBoshTask(serviceInstanceId, taskId) {
     logger.info('Putting the current deployment task into the cache', serviceInstanceId, taskId);
@@ -214,10 +214,10 @@ class BoshOperationCache {
    * Stores the deployment operation (user-triggered) into the Etcd store as a JSON document
    * Key is prefixed with a specific format and the deployment name is used as the identifier
    * 
-   * @param {Service plan ID for the service instance} planId 
-   * @param {Calculated bosh deployment name} deploymentName 
-   * @param {Parameters used for the operation} params 
-   * @param {Arguments used for the operation} args 
+   * @param {string} planId - Service plan ID for the service instance
+   * @param {string} deploymentName - Calculated bosh deployment name
+   * @param {Object} params - Parameters used for the operation
+   * @param {Object} args - Arguments used for the operation
    */
   store(planId, deploymentName, params, args) {
     logger.info('Putting the current deployment operation into the cache', planId, deploymentName, params, args);

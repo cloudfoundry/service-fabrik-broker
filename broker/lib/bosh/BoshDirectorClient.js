@@ -347,8 +347,8 @@ class BoshDirectorClient extends HttpClient {
   /**
    * Fetch the director config for the operation and deployment
    * 
-   * @param {type of action [create, update, delete]} action 
-   * @param {name of BOSH deployment} deploymentName 
+   * @param {string} action - type of action [create, update, delete]
+   * @param {string} deploymentName - name of BOSH deployment 
    */
   getDirectorForOperation(action, deploymentName) {
     logger.debug(`Fetching director for operation ${action} and deployment ${deploymentName}`);
