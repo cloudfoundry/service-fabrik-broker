@@ -190,47 +190,52 @@ class DirectorManager extends BaseManager {
   }
 
   executePolicy(scheduled, action, deploymentName, dbUpdate, policyApplicable) {
-    const targetDirectorConfig = this.director.getDirectorForOperation(action, deploymentName);
     const runOutput = {
       'directorError': false,
       'shouldRunNow': false
     };
-    return this.director.getCurrentTasks(action, targetDirectorConfig).then(tasksCount => {
-      if (!policyApplicable) {
-        runOutput.shouldRunNow = true;
-        return Promise.resolve(runOutput);
-      }
-      if (dbUpdate) {
-        runOutput.shouldRunNow = true;
-        return Promise.resolve(runOutput);
-      }
-      let currentTasks, maxWorkers;
-      const allTasks = tasksCount.total;
-      const maxTasks = targetDirectorConfig.max_workers;
-      if (allTasks >= maxTasks) {
-        //no slots left anyway
+    let targetDirectorConfig;
+    return this.director.getDirectorForOperation(action, deploymentName)
+      .then(director => {
+        targetDirectorConfig = director;
+        return this.director.getCurrentTasks(action, targetDirectorConfig);
+      })
+      .then(tasksCount => {
+        if (!policyApplicable) {
+          runOutput.shouldRunNow = true;
+          return Promise.resolve(runOutput);
+        }
+        if (dbUpdate) {
+          runOutput.shouldRunNow = true;
+          return Promise.resolve(runOutput);
+        }
+        let currentTasks, maxWorkers;
+        const allTasks = tasksCount.total;
+        const maxTasks = targetDirectorConfig.max_workers;
+        if (allTasks >= maxTasks) {
+          //no slots left anyway
+          runOutput.shouldRunNow = false;
+          return Promise.resolve(runOutput);
+        }
+        if (scheduled) {
+          currentTasks = tasksCount.scheduled;
+          maxWorkers = targetDirectorConfig.policies.scheduled.max_workers;
+        } else {
+          currentTasks = tasksCount[action];
+          maxWorkers = targetDirectorConfig.policies.user[action].max_workers;
+        }
+        if (currentTasks < maxWorkers) {
+          runOutput.shouldRunNow = true;
+          return Promise.resolve(runOutput);
+        }
         runOutput.shouldRunNow = false;
         return Promise.resolve(runOutput);
-      }
-      if (scheduled) {
-        currentTasks = tasksCount.scheduled;
-        maxWorkers = targetDirectorConfig.policies.scheduled.max_workers;
-      } else {
-        currentTasks = tasksCount[action];
-        maxWorkers = targetDirectorConfig.policies.user[action].max_workers;
-      }
-      if (currentTasks < maxWorkers) {
-        runOutput.shouldRunNow = true;
+      }).catch(err => {
+        console.error('Error connecting to BOSH director > could not fetch current tasks', err);
+        //in case the director request returns an error, we queue it to avoid user experience issues
+        runOutput.directorError = true;
         return Promise.resolve(runOutput);
-      }
-      runOutput.shouldRunNow = false;
-      return Promise.resolve(runOutput);
-    }).catch(err => {
-      logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
-      //in case the director request returns an error, we queue it to avoid user experience issues
-      runOutput.directorError = true;
-      return Promise.resolve(runOutput);
-    });
+      });
   }
 
   getCurrentOperationState(serviceInstanceId) {

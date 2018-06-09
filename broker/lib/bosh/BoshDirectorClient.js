@@ -352,11 +352,13 @@ class BoshDirectorClient extends HttpClient {
    */
   getDirectorForOperation(action, deploymentName) {
     logger.debug(`Fetching director for operation ${action} and deployment ${deploymentName}`);
-    if (action === CONST.OPERATION_TYPE.CREATE) {
-      return _.sample(this.activePrimary);
-    } else {
-      return this.getDirectorConfig(deploymentName);
-    }
+    return Promise.try(() => {
+      if (action === CONST.OPERATION_TYPE.CREATE) {
+        return _.sample(this.activePrimary);
+      } else {
+        return this.getDirectorConfig(deploymentName);
+      }
+    });
   }
 
   /** 
@@ -374,34 +376,37 @@ class BoshDirectorClient extends HttpClient {
       verbose: 2
     };
     return this.makeRequestWithConfig({
-      method: 'GET',
-      url: '/tasks',
-      qs: query
-    }, 200, directorConfig).then(out => {
-      // out is the array of currently running tasks
-      let taskGroup = _.groupBy(out, (entry) => {
-        switch (entry.context_id) {
-        case CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO:
-          return CONST.FABRIK_SCHEDULED_OPERATION;
-        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.CREATE}`:
-          return CONST.OPERATION_TYPE.CREATE;
-        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.UPDATE}`:
-          return CONST.OPERATION_TYPE.UPDATE;
-        case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.DELETE}`:
-          return CONST.OPERATION_TYPE.DELETE;
-        default:
-          return CONST.UNCATEGORIZED;
-        }
+        method: 'GET',
+        url: '/tasks',
+        qs: query
+      }, 200, directorConfig)
+      .then(res => JSON.parse(res.body))
+      .then(out => {
+        // out is the array of currently running tasks
+        let taskGroup = _.groupBy(out, (entry) => {
+          console.log('Entry=', entry);
+          switch (entry.context_id) {
+          case CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO:
+            return CONST.FABRIK_SCHEDULED_OPERATION;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.CREATE}`:
+            return CONST.OPERATION_TYPE.CREATE;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.UPDATE}`:
+            return CONST.OPERATION_TYPE.UPDATE;
+          case `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${CONST.OPERATION_TYPE.DELETE}`:
+            return CONST.OPERATION_TYPE.DELETE;
+          default:
+            return CONST.UNCATEGORIZED;
+          }
+        });
+        return {
+          'create': taskGroup[CONST.OPERATION_TYPE.CREATE],
+          'delete': taskGroup[CONST.OPERATION_TYPE.DELETE],
+          'update': taskGroup[CONST.OPERATION_TYPE.UPDATE],
+          'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION],
+          'uncategorized': taskGroup[CONST.UNCATEGORIZED],
+          'total': out.length
+        };
       });
-      return {
-        'create': taskGroup[CONST.OPERATION_TYPE.CREATE],
-        'delete': taskGroup[CONST.OPERATION_TYPE.DELETE],
-        'update': taskGroup[CONST.OPERATION_TYPE.UPDATE],
-        'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION],
-        'uncategorized': taskGroup[CONST.UNCATEGORIZED],
-        'total': out.length
-      };
-    });
   }
 
   createOrUpdateDeployment(action, manifest, opts, scheduled) {

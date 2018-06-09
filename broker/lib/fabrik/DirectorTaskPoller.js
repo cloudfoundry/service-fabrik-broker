@@ -28,7 +28,7 @@ class DirectorTaskPoller {
           .catch(e => {
             logger.error(`Error in automated deployment for ${deploymentName}`, e);
           });
-      }).catch(e => logger.error("error in processing deployments", e));
+      }).catch(e => logger.error('error in processing deployments', e));
     }, TIME_POLL);
   }
 

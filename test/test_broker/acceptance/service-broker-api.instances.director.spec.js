@@ -98,7 +98,8 @@ describe('service-broker-api', function () {
           mocks.director.getDeployments({
             queued: true
           });
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
+          mocks.director.getCurrentTasks([]);
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -139,7 +140,8 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
+          mocks.director.getCurrentTasks([]);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -173,6 +175,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeployments({
             queued: true
           });
+          mocks.director.getCurrentTasks([]);
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
           expectedRequestBody.context.params.context = _.chain(expectedRequestBody.context.params.context)
             .set('namespace', 'default')
@@ -180,7 +183,7 @@ describe('service-broker-api', function () {
             .omit('organization_guid')
             .omit('space_guid')
             .value();
-          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.director.createOrUpdateDeployment(task_id, 'create');
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -241,6 +244,7 @@ describe('service-broker-api', function () {
           mocks.director.getDeployments({
             queued: true
           });
+          mocks.director.getCurrentTasks([]);
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.uaa.getAccessToken();
@@ -482,6 +486,7 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(400);
               expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
+              mocks.verify();
             });
         });
 
@@ -503,6 +508,7 @@ describe('service-broker-api', function () {
             .value();
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+          mocks.director.getCurrentTasks([]);
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry'
           });
@@ -560,6 +566,7 @@ describe('service-broker-api', function () {
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+          mocks.director.getCurrentTasks([]);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
@@ -613,6 +620,7 @@ describe('service-broker-api', function () {
             .value();
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+          mocks.director.getCurrentTasks([]);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
@@ -650,6 +658,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete not in query', function () {
+          mocks.director.getCurrentTasks([]);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -678,6 +687,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
+          mocks.director.getCurrentTasks([]);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=`)
             .send({
@@ -706,6 +716,7 @@ describe('service-broker-api', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
+          mocks.director.getCurrentTasks([]);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=false`)
             .send({
@@ -747,6 +758,7 @@ describe('service-broker-api', function () {
             .value();
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+          mocks.director.getCurrentTasks([]);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry'
@@ -802,6 +814,7 @@ describe('service-broker-api', function () {
             .value();
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+          mocks.director.getCurrentTasks([]);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.verifyDeploymentLockStatus();
@@ -838,6 +851,7 @@ describe('service-broker-api', function () {
 
         it('returns 500 when preupdate api throws error', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          mocks.director.getCurrentTasks([]);
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry'
           });

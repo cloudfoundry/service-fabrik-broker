@@ -32,8 +32,8 @@ describe('service-fabrik-admin', function () {
         phase: 'PreCreate',
         actions: ['Blueprint', 'ReserveIps'],
         context: {
-          '_serviceFabrikDbUpdate': true,
           params: {
+            '_serviceFabrikDbUpdate': true,
             context: {
               platform: 'service-fabrik',
               organization_guid: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
@@ -97,6 +97,7 @@ describe('service-fabrik-admin', function () {
         expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
         mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        mocks.director.getCurrentTasks([]);
         mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 2);
         mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
@@ -145,6 +146,7 @@ describe('service-fabrik-admin', function () {
           .value();
         expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
         expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+        mocks.director.getCurrentTasks([]);
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);

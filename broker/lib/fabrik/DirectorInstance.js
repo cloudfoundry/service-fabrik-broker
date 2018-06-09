@@ -261,19 +261,19 @@ class DirectorInstance extends BaseInstance {
           }
         })
         .return(operation);
-    }
+    };
 
     if (operation.task_id) {
       return getBoshTaskOperation(operation, operation.task_id);
     } else {
       return Promise.try(() => {
-        return this.manager.getCurrentOperationState(this.guid)
+        return this.manager.getCurrentOperationState(this.guid);
       }).then(state => {
         const isCached = state.cached;
         const taskId = state.task_id;
         if (isCached) {
           return _.assign(operation, {
-            description: `${_.capitalize(operation.type)} deployment ${task.deployment} is still in progress`,
+            description: `${_.capitalize(operation.type)} deployment is still in progress`,
             state: 'in progress'
           });
         } else {

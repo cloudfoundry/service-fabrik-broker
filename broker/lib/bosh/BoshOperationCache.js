@@ -72,7 +72,7 @@ class BoshOperationCache {
    * @param {Deployment name} deploymentName 
    */
   containsDeployment(deploymentName) {
-    logger.debug("Checking if deployment is in queue", deploymentName);
+    logger.debug(`Checking if deployment is in queue ${deploymentName}`);
     const wrapper = new Promise((resolve, reject) => {
       const key = getKey(deploymentName);
       etcdConnector().get(key).then(obj => {
@@ -110,7 +110,7 @@ class BoshOperationCache {
         if (Array.isArray(out)) {
           out = out.map(v => v.substring(CACHE_KEY.length));
         } else {
-          throw new Error("Unexpected output");
+          throw new Error('Unexpected output');
         }
         resolve(out);
       }).catch(err => reject(err));
@@ -128,7 +128,7 @@ class BoshOperationCache {
         if (Array.isArray(out)) {
           out = out.map(v => v.substring(CACHE_KEY.length));
         } else {
-          throw new Error("Unexpected output");
+          throw new Error('Unexpected output');
         }
         resolve(out);
       }).catch(err => reject(err));
@@ -197,7 +197,7 @@ class BoshOperationCache {
    * @param {BOSH Task ID corresponding to the operation} taskId 
    */
   storeBoshTask(serviceInstanceId, taskId) {
-    logger.info("Putting the current deployment task into the cache", serviceInstanceId, taskId);
+    logger.info('Putting the current deployment task into the cache', serviceInstanceId, taskId);
     const wrapper = new Promise((resolve, reject) => {
       const key = getTaskKey(serviceInstanceId);
       etcdConnector().put(key).value(taskId)
@@ -220,7 +220,7 @@ class BoshOperationCache {
    * @param {Arguments used for the operation} args 
    */
   store(planId, deploymentName, params, args) {
-    logger.info("Putting the current deployment operation into the cache", planId, deploymentName, params, args);
+    logger.info('Putting the current deployment operation into the cache', planId, deploymentName, params, args);
     const wrapper = new Promise((resolve, reject) => {
       const key = getKey(deploymentName);
       const operation = new DeploymentOperation(planId, deploymentName, params, args);
