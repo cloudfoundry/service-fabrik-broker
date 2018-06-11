@@ -238,6 +238,10 @@ class DirectorManager extends BaseManager {
       });
   }
 
+  removeCachedTask(serviceInstanceId) {
+    return boshOperationCache.deleteBoshTask(serviceInstanceId);
+  }
+
   getCurrentOperationState(serviceInstanceId) {
     let output = {
       'cached': false,

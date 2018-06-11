@@ -245,7 +245,7 @@ class DirectorInstance extends BaseInstance {
     logger.info('Fetching state of last operation', operation);
     const instanceId = this.guid;
 
-    const getBoshTaskOperation = (operation, taskId) => {
+    const getBoshTaskOperation = (operation, taskId, removeFromCache) => {
       return Promise
         .try(() => {
           assert.ok(taskId, 'Task ID must be available');
@@ -257,14 +257,20 @@ class DirectorInstance extends BaseInstance {
           this.networkSegmentIndex = this.manager.getNetworkSegmentIndex(task.deployment);
           this.setOperationState(operation, task);
           if (operation.state !== 'in progress') {
-            return this.finalize(operation); // remove task id here
+            return Promise.try(() => {
+                if (removeFromCache) {
+                  return this.manager.removeCachedTask(instanceId);
+                }
+              })
+              .catch(err => logger.error(`Error while removing task entry ${taskId} for service instance ${instanceId}`, err))
+              .then(() => this.finalize(operation));
           }
         })
         .return(operation);
     };
 
     if (operation.task_id) {
-      return getBoshTaskOperation(operation, operation.task_id);
+      return getBoshTaskOperation(operation, operation.task_id, false);
     } else {
       return Promise.try(() => {
         return this.manager.getCurrentOperationState(this.guid);
@@ -277,7 +283,7 @@ class DirectorInstance extends BaseInstance {
             state: 'in progress'
           });
         } else {
-          return getBoshTaskOperation(operation, taskId);
+          return getBoshTaskOperation(operation, taskId, true);
         }
       });
     }

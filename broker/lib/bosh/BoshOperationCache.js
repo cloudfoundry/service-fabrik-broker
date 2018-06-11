@@ -171,6 +171,17 @@ class BoshOperationCache {
     return wrapper;
   }
 
+  deleteBoshTask(serviceInstanceId) {
+    logger.info('Removing task from cache for service instance', serviceInstanceId);
+    const wrapper = new Promise((resolve, reject) => {
+      const key = getTaskKey(serviceInstanceId);
+      etcdConnector().delete().key(key).then(obj => {
+        resolve(obj);
+      }).catch(err => reject(err));
+    });
+    return wrapper;
+  }
+
   /**
    * Deletes a single BOSH deployment from the Etcd Store
    * 

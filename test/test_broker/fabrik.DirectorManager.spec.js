@@ -171,7 +171,7 @@ describe('fabrik', function () {
     let manager;
     let sandbox, directorOpSpy, currentTasksSpy, containsInstanceSpy;
     let deleteDeploymentSpy, getBoshTaskSpy, containsDeploymentSpy, deploymentSpy, storeSpy, storeBoshSpy;
-    let getCachedDeploymentsSpy, getDirectorDeploymentsSpy;
+    let getCachedDeploymentsSpy, getDirectorDeploymentsSpy, deleteTaskSpy;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -186,6 +186,7 @@ describe('fabrik', function () {
       storeBoshSpy = sandbox.stub();
       getCachedDeploymentsSpy = sandbox.stub();
       getDirectorDeploymentsSpy = sandbox.stub();
+      deleteTaskSpy = sandbox.stub();
       var boshStub = {
         BoshOperationCache: {
           containsServiceInstance: containsInstanceSpy,
@@ -194,7 +195,8 @@ describe('fabrik', function () {
           store: storeSpy,
           deleteDeploymentFromCache: deleteDeploymentSpy,
           storeBoshTask: storeBoshSpy,
-          getDeploymentNames: getCachedDeploymentsSpy
+          getDeploymentNames: getCachedDeploymentsSpy,
+          deleteBoshTask: deleteTaskSpy
         },
         NetworkSegmentIndex: {
           adjust: function (num) {
@@ -231,6 +233,20 @@ describe('fabrik', function () {
           .then(index => {
             expect(index).to.eql(2);
           });
+      });
+    });
+    describe('#removeCachedTask', () => {
+      it('should invoke bosh delete task from etcd', () => {
+        deleteTaskSpy.returns(Promise.resolve(true));
+        return manager.removeCachedTask().then((out) => {
+          expect(out).to.eql(true);
+        });
+      });
+      it('should throw if bosh delete task from etcd fails', () => {
+        deleteTaskSpy.returns(Promise.reject(new Error('etcd_error')));
+        return manager.removeCachedTask().catch(err => {
+          expect(err.message).to.eql('etcd_error');
+        });
       });
     });
 

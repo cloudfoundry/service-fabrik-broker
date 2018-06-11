@@ -406,6 +406,37 @@ describe('bosh operation cache in etcd', () => {
       });
     });
   });
+  describe('#deleteBoshTask', () => {
+    let sandbox, deleteStub;
+    let hash = {
+      'bosh/deployments/1': {
+        key: 'abcd'
+      },
+      'bosh/deployments/2': {
+        key: 'bcde'
+      },
+      'bosh/tasks/1': 'abcd',
+      'bosh/tasks/2': 'bcde'
+    };
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    it('should delete bosh task entry for service instance from cache', () => {
+      deleteStub = sandbox.stub(Etcd3.prototype, 'delete', () => new DeleteStubber(hash));
+      return subject.deleteBoshTask('1').then(o => {
+        expect(o.deleted).to.eql(1);
+      });
+    });
+    it('should not delete task entry from cache if instance id not found', () => {
+      deleteStub = sandbox.stub(Etcd3.prototype, 'delete', () => new DeleteStubber(hash));
+      return subject.deleteBoshTask('3').then(o => {
+        expect(o.deleted).to.eql(0);
+      });
+    });
+  });
   describe('#deleteDeploymentFromCache', () => {
     let sandbox, deleteStub;
     let hash = {
