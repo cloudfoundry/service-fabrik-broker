@@ -7,6 +7,7 @@ module.exports = Object.freeze({
     BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
     BOSH_FABRIK_OP: 'Fabrik::Operation::',
     BOSH_FABRIK_OP_AUTO: 'Fabrik::Operation::Auto',
+    BOSH_FABRIK_OP_MONGO: 'Fabrik::Operation::MongoDB',
     BOSH_PROCESSING: 'processing',
     BOSH_CANCELLING: 'cancelling'
   },

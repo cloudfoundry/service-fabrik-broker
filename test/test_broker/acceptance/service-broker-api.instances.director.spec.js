@@ -86,7 +86,6 @@ describe('service-broker-api', function () {
 
       afterEach(function () {
         mocks.reset();
-        getScheduleStub.reset();
       });
 
       after(function () {

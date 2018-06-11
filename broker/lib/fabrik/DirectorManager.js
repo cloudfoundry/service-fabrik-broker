@@ -196,8 +196,8 @@ class DirectorManager extends BaseManager {
     };
     let targetDirectorConfig;
     return this.director.getDirectorForOperation(action, deploymentName)
-      .then(director => {
-        targetDirectorConfig = director;
+      .then(directorConfig => {
+        targetDirectorConfig = directorConfig;
         return this.director.getCurrentTasks(action, targetDirectorConfig);
       })
       .then(tasksCount => {
@@ -231,7 +231,7 @@ class DirectorManager extends BaseManager {
         runOutput.shouldRunNow = false;
         return Promise.resolve(runOutput);
       }).catch(err => {
-        console.error('Error connecting to BOSH director > could not fetch current tasks', err);
+        logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
         //in case the director request returns an error, we queue it to avoid user experience issues
         runOutput.directorError = true;
         return Promise.resolve(runOutput);
@@ -334,10 +334,7 @@ class DirectorManager extends BaseManager {
         const out = {
           'cached': false
         };
-        if (decisionMaker.policyApplicable) {
-          out.task_id = taskId;
-          return Promise.resolve(out);
-        } else if (decisionMaker.cached) {
+        if (decisionMaker.cached) {
           return boshOperationCache.storeBoshTask(this.getInstanceGuid(deploymentName), taskId)
             .then(() => {
               out.cached = true;

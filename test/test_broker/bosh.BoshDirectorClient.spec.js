@@ -154,6 +154,63 @@ describe('bosh', () => {
       });
     });
 
+    describe('#getCurrentTasks', () => {
+      before(function () {
+
+      });
+      after(function () {});
+      it('returns a JSON object', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/tasks',
+          qs: {
+            state: 'processing,cancelling',
+            verbose: 2
+          }
+        };
+        let response = {
+          body: JSON.stringify([{
+              id: 1,
+              state: 'processing',
+              context_id: 'Fabrik::Operation::Auto'
+            },
+            {
+              id: 2,
+              state: 'cancelling',
+              context_id: 'Fabrik::Operation::Auto'
+            },
+            {
+              id: 3,
+              state: 'processing',
+              context_id: 'Fabrik::Operation::create'
+            },
+            {
+              id: 4,
+              state: 'cancelling',
+              context_id: 'Fabrik::Operation::update'
+            },
+            {
+              id: 5,
+              state: 'processing'
+            }
+          ]),
+          statusCode: 200
+        };
+        new MockBoshDirectorClient(request, response).getCurrentTasks().then((content) => {
+          expect(content).to.eql({
+            create: 1,
+            update: 1,
+            delete: 0,
+            scheduled: 2,
+            uncategorized: 1,
+            total: 5
+          });
+          done();
+        }).catch(done);
+      });
+
+    });
+
     describe('#getDeployments', () => {
       let clock;
       before(function () {

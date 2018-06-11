@@ -61,7 +61,7 @@ class BoshOperationCache {
    */
   containsServiceInstance(serviceInstanceId) {
     logger.debug('Checking if service instance operation is in queue', serviceInstanceId);
-    this.getDeploymentNames()
+    return this.getDeploymentNames()
       .then(deploymentNames => _.filter(deploymentNames, o => o.endsWith(serviceInstanceId)))
       .then(filtered => filtered.length === 1);
   }
@@ -160,7 +160,13 @@ class BoshOperationCache {
   getDeploymentByName(name) {
     logger.debug('Getting deployment for ', name);
     const wrapper = new Promise((resolve, reject) => {
-      etcdConnector().get(getKey(name)).json().then(out => resolve(out)).catch(err => reject(err));
+      let namespaceKey = getKey(name);
+      etcdConnector().get(namespaceKey).json().then(out => {
+        if (out) {
+          return resolve(out[namespaceKey]);
+        }
+        return resolve(out);
+      }).catch(err => reject(err));
     });
     return wrapper;
   }

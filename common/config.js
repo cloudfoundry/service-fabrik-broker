@@ -83,6 +83,10 @@ function completeDirectorConfig(director) {
     const userDeleteWorkers = _.get(director, 'policies.user.delete');
     const autoWorkers = _.get(director, 'policies.scheduled.max_workers', (maxWorkers / 2));
 
+    if (userCreateWorkers === undefined || userUpdateWorkers === undefined || userDeleteWorkers === undefined) {
+      throw new Error('Invalid director config: user policy share numbers not defined');
+    }
+
     if (_.sum([userCreateWorkers, userUpdateWorkers, userDeleteWorkers, autoWorkers]) > maxWorkers) {
       throw new Error('Invalid director config: policy shares add up to more than max_workers count');
     }

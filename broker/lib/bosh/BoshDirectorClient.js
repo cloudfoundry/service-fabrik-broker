@@ -384,7 +384,6 @@ class BoshDirectorClient extends HttpClient {
       .then(out => {
         // out is the array of currently running tasks
         let taskGroup = _.groupBy(out, (entry) => {
-          console.log('Entry=', entry);
           switch (entry.context_id) {
           case CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO:
             return CONST.FABRIK_SCHEDULED_OPERATION;
@@ -399,17 +398,17 @@ class BoshDirectorClient extends HttpClient {
           }
         });
         return {
-          'create': taskGroup[CONST.OPERATION_TYPE.CREATE],
-          'delete': taskGroup[CONST.OPERATION_TYPE.DELETE],
-          'update': taskGroup[CONST.OPERATION_TYPE.UPDATE],
-          'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION],
-          'uncategorized': taskGroup[CONST.UNCATEGORIZED],
+          'create': taskGroup[CONST.OPERATION_TYPE.CREATE] ? taskGroup[CONST.OPERATION_TYPE.CREATE].length : 0,
+          'delete': taskGroup[CONST.OPERATION_TYPE.DELETE] ? taskGroup[CONST.OPERATION_TYPE.DELETE].length : 0,
+          'update': taskGroup[CONST.OPERATION_TYPE.UPDATE] ? taskGroup[CONST.OPERATION_TYPE.UPDATE].length : 0,
+          'scheduled': taskGroup[CONST.FABRIK_SCHEDULED_OPERATION] ? taskGroup[CONST.FABRIK_SCHEDULED_OPERATION].length : 0,
+          'uncategorized': taskGroup[CONST.UNCATEGORIZED] ? taskGroup[CONST.UNCATEGORIZED].length : 0,
           'total': out.length
         };
       });
   }
 
-  createOrUpdateDeployment(action, manifest, opts, scheduled) {
+  createOrUpdateDeployment(action, manifest, opts, scheduled, dbUpdate) {
     const query = opts ? _.pick(opts, 'recreate', 'skip_drain', 'context') : undefined;
     const deploymentName = yaml.safeLoad(manifest).name;
     const boshDirectorName = _.get(opts, 'bosh_director_name');
@@ -433,7 +432,9 @@ class BoshDirectorClient extends HttpClient {
         const reqHeaders = {
           'Content-Type': 'text/yaml'
         };
-        if (scheduled) {
+        if (dbUpdate) {
+          reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_MONGO;
+        } else if (scheduled) {
           reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO;
         } else {
           reqHeaders[CONST.BOSH_RATE_LIMITS.BOSH_CONTEXT_ID] = `${CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP}${action}`;
