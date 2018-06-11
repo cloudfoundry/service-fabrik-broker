@@ -334,7 +334,65 @@ describe('bosh', () => {
     });
 
     describe('#createOrUpdateDeployment', () => {
-      it('returns an integer (task-id)', (done) => {
+      it('returns an integer (task-id): mongodb update', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_MONGO
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true, true)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): scheduled instance update', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): user-triggered create', (done) => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
@@ -357,6 +415,35 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.CREATE, manifest)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): user-triggered update', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::Operation::update'
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
           .then((content) => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();

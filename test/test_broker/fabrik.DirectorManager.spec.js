@@ -361,6 +361,41 @@ describe('fabrik', function () {
             });
         });
       });
+      describe('mongodb operation', () => {
+        let params = {
+          scheduled: true,
+          '_serviceFabrikDbUpdate': true
+        };
+        it('should proceed with mongo update without rate limiting', () => {
+          currentTasksSpy.returns(Promise.resolve({
+            total: 5,
+            scheduled: 2
+          }));
+          directorOpSpy.returns(Promise.resolve({
+            max_workers: 6,
+            policies: {
+              user: {
+                update: {
+                  max_workers: 3
+                }
+              },
+              scheduled: {
+                update: {
+                  max_workers: 3
+                }
+              }
+            }
+          }));
+          return manager.createOrUpdateDeployment(deploymentName, params)
+            .then(out => {
+              expect(out.cached).to.eql(false);
+              expect(out.task_id).to.eql(task_id);
+              expect(storeSpy.notCalled).to.eql(true);
+              expect(deleteDeploymentSpy.notCalled).to.eql(true);
+              expect(deploymentSpy.calledOnce).to.eql(true);
+            });
+        });
+      });
       describe('scheduled operations', () => {
         let params = {
           scheduled: true
