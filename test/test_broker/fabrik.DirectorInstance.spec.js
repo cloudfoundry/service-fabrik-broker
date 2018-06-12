@@ -23,7 +23,7 @@ const internal_params = {
 
 
 describe('fabrik', () => {
-  describe('DirectorInstance - with ratelimits', function() {
+  describe('DirectorInstance - with ratelimits', function () {
     let configStub = {
       'enable_bosh_rate_limit': true
     };
@@ -149,7 +149,7 @@ describe('fabrik', () => {
         expect(removeCachedTaskSpy.calledOnce).to.eql(true);
       });
     });
-    it('should invoke last operation: op done- task succeeded [remove from etcd failed]', function() {
+    it('should invoke last operation: op done- task succeeded [remove from etcd failed]', function () {
       this.timeout(20000);
       finalizeSpy.returns(Promise.resolve());
       removeCachedTaskSpy.returns(Promise.reject(new Error('etcd_error')));
