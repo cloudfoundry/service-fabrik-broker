@@ -7,12 +7,7 @@ const logger = require('./logger');
 const MethodNotAllowed = errors.MethodNotAllowed;
 const NotFound = errors.NotFound;
 const Unauthorized = errors.Unauthorized;
-const EventLogInterceptor = require('./EventLogInterceptor');
 const utils = require('./utils');
-const EventLogRiemannClient = utils.EventLogRiemannClient;
-const EventLogDBClient = utils.EventLogDBClient;
-const config = require('./config');
-const EventLogDomainSocketClient = utils.EventLogDomainSocketClient;
 const interceptor = require('express-interceptor');
 
 exports.basicAuth = function (username, password) {
@@ -116,28 +111,7 @@ exports.error = function (options) {
 };
 
 exports.requireEventLogging = function (appConfig, appType) {
-  const riemannOptions = _
-    .chain({})
-    .assign(config.riemann)
-    .set('event_type', appConfig.event_type)
-    .value();
-  const riemannClient = new EventLogRiemannClient(riemannOptions);
-  //if events are to be forwarded to monitoring agent via domain socket
-  if (appConfig.domain_socket && appConfig.domain_socket.fwd_events) {
-    /* jshint unused:false */
-    const domainSockOptions = _
-      .chain({})
-      .set('event_type', appConfig.event_type)
-      .set('path', appConfig.domain_socket.path)
-      .value();
-    const domainSockClient = new EventLogDomainSocketClient(domainSockOptions);
-  }
-  if (utils.isDBConfigured()) {
-    const domainSockClient = new EventLogDBClient({
-      event_type: appConfig.event_type
-    });
-  }
-  const eventsLogInterceptor = EventLogInterceptor.getInstance(appConfig.event_type, appType);
+  const eventsLogInterceptor = utils.initializeEventListener(appConfig, appType);
   return interceptor((req, res) => ({
     isInterceptable: () => true,
     //intercept all responses
