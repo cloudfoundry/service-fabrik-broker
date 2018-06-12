@@ -9,6 +9,7 @@ const cpus = require('os').cpus();
 const CONST = require('./lib/constants');
 const logger = require('./lib/logger');
 const config = require('./lib/config');
+const utils = require('./lib/utils');
 const errors = require('./lib/errors');
 const maintenanceManager = require('./lib/maintenance').maintenanceManager;
 const serviceFabrikClient = require('./lib/cf').serviceFabrikClient;
@@ -74,6 +75,7 @@ class JobScheduler {
     process.on('message', (msg) => this.handleMessage(msg));
     logger.info(`Starting Service Fabrik Batch Job worker: ${cluster.worker.id} - ${process.pid}  @${new Date()}`);
     require('./lib/jobs');
+    utils.initializeEventListener(config.external, 'external');
   }
 
   handleMessage(msg) {
