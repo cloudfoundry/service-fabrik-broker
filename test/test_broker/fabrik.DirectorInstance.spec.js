@@ -23,7 +23,7 @@ const internal_params = {
 
 
 describe('fabrik', () => {
-  describe('DirectorInstance - with ratelimits', () => {
+  describe('DirectorInstance - with ratelimits', function() {
     let configStub = {
       'enable_bosh_rate_limit': true
     };
@@ -149,7 +149,8 @@ describe('fabrik', () => {
         expect(removeCachedTaskSpy.calledOnce).to.eql(true);
       });
     });
-    it('should invoke last operation: op done- task succeeded [remove from etcd failed]', () => {
+    it('should invoke last operation: op done- task succeeded [remove from etcd failed]', function() {
+      this.timeout(20000);
       finalizeSpy.returns(Promise.resolve());
       removeCachedTaskSpy.returns(Promise.reject(new Error('etcd_error')));
       getOpStateSpy.returns({
@@ -161,12 +162,10 @@ describe('fabrik', () => {
         timestamp: (new Date().getTime()) / 1000,
         state: 'done'
       }));
-      return directorInstance.lastOperation(lastOpWithoutTaskId).then((out) => {
-        expect(out.state).to.eql('succeeded');
-        expect(out.cached).to.eql(undefined);
-        expect(out.task_id).to.eql(undefined);
-        expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
-        expect(removeCachedTaskSpy.calledOnce).to.eql(true);
+      return directorInstance.lastOperation(lastOpWithoutTaskId).catch(err => {
+        expect(err.code).to.eql('ETIMEDOUT');
+        expect(removeCachedTaskSpy.called).to.eql(true);
+        expect(removeCachedTaskSpy.callCount).to.eql(5);
       });
     });
   });

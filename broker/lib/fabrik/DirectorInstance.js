@@ -259,10 +259,20 @@ class DirectorInstance extends BaseInstance {
           if (operation.state !== 'in progress') {
             return Promise.try(() => {
                 if (removeFromCache) {
-                  return this.manager.removeCachedTask(instanceId);
+                  return utils
+                    .retry(tries => {
+                      logger.info(`+-> ${ordinals[tries]} attempt to delete cached bosh task for '${instanceId}'...`);
+                      return this.manager.removeCachedTask(instanceId);
+                    }, {
+                      maxAttempts: 5,
+                      minDelay: 1000
+                    })
+                    .catch(err => {
+                      logger.error('Error removing task from ETCD Cache after multiple attempts', err);
+                      throw err;
+                    });
                 }
               })
-              .catch(err => logger.error(`Error while removing task entry ${taskId} for service instance ${instanceId}`, err))
               .then(() => this.finalize(operation));
           }
         })
