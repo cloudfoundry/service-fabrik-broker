@@ -75,6 +75,7 @@ class JobScheduler {
     process.on('message', (msg) => this.handleMessage(msg));
     logger.info(`Starting Service Fabrik Batch Job worker: ${cluster.worker.id} - ${process.pid}  @${new Date()}`);
     require('./lib/jobs');
+    logger.info('Initializing event listeners..');
     utils.initializeEventListener(config.external, 'external');
   }
 
