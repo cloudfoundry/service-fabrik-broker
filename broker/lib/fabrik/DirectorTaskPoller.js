@@ -9,45 +9,41 @@ const CONST = require('../constants');
 const config = require('../config');
 const boshCache = bosh.BoshOperationCache;
 const TIME_POLL = 1 * 60 * 1000;
+const LockStatusPoller = require('./LockStatusPoller');
 
-class DirectorTaskPoller {
+class DirectorTaskPoller extends LockStatusPoller {
   constructor() {
-
+    super({
+      time_interval: TIME_POLL
+    });
   }
 
-  static start() {
-    logger.debug(`Starting the BOSH director task poller- runs every ${TIME_POLL} milliseconds`);
-    this.deploymentPoller = setInterval(() => {
-      boshCache.getDeploymentNames().mapSeries(deploymentName => {
+  action() {
+    return boshCache.getDeploymentNames().mapSeries(deploymentName => {
         return Promise.try(() => {
             return boshCache.getDeploymentByName(deploymentName);
-          }).then(cached => {
+          })
+          .then(cached => {
             let catalogPlan = catalog.getPlan(cached.plan_id);
             return DirectorManager.load(catalogPlan).createOrUpdateDeployment(deploymentName, cached.params, cached.args);
           })
           .catch(e => {
             logger.error(`Error in automated deployment for ${deploymentName}`, e);
           });
-      }).catch(e => logger.error('error in processing deployments', e));
-    }, TIME_POLL);
-  }
-
-  static stop() {
-    if (this.deploymentPoller) {
-      clearInterval(this.deploymentPoller);
-    }
+      })
+      .catch(e => logger.error('error in processing deployments', e));
   }
 }
 
-DirectorTaskPoller.deploymentPoller = undefined;
+const pollerInstance = new DirectorTaskPoller();
 
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'external' && config.enable_bosh_rate_limit) {
-    DirectorTaskPoller.start();
+    pollerInstance.start();
   } else {
     logger.debug('Bosh Rate Limiting is not enabled');
   }
 });
 
-module.exports = DirectorTaskPoller;
+module.exports = pollerInstance;
