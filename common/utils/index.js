@@ -15,6 +15,7 @@ const randomBytes = Promise.promisify(crypto.randomBytes);
 const EventLogRiemannClient = require('./EventLogRiemannClient');
 const EventLogDomainSocketClient = require('./EventLogDomainSocketClient');
 const EventLogDBClient = require('./EventLogDBClient');
+const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
@@ -47,6 +48,7 @@ exports.taskIdRegExp = taskIdRegExp;
 exports.hasChangesInForbiddenSections = hasChangesInForbiddenSections;
 exports.unifyDiffResult = unifyDiffResult;
 exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
+exports.initializeEventListener = initializeEventListener;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -70,6 +72,31 @@ function streamToPromise(stream, options) {
     });
     stream.on('error', reject);
   });
+}
+
+function initializeEventListener(appConfig, appType) {
+  const riemannOptions = _
+    .chain({})
+    .assign(config.riemann)
+    .set('event_type', appConfig.event_type)
+    .value();
+  const riemannClient = new EventLogRiemannClient(riemannOptions);
+  //if events are to be forwarded to monitoring agent via domain socket
+  if (appConfig.domain_socket && appConfig.domain_socket.fwd_events) {
+    /* jshint unused:false */
+    const domainSockOptions = _
+      .chain({})
+      .set('event_type', appConfig.event_type)
+      .set('path', appConfig.domain_socket.path)
+      .value();
+    const domainSockClient = new EventLogDomainSocketClient(domainSockOptions);
+  }
+  if (isDBConfigured()) {
+    const domainSockClient = new EventLogDBClient({
+      event_type: appConfig.event_type
+    });
+  }
+  return EventLogInterceptor.getInstance(appConfig.event_type, appType);
 }
 
 function demux(stream, options) {
