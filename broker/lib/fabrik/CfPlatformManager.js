@@ -9,6 +9,7 @@ const errors = require('../errors');
 const cloudController = require('../cf').cloudController;
 const logger = require('../logger');
 const CONST = require('../constants');
+const config = require('../config');
 const SecurityGroupNotCreated = errors.SecurityGroupNotCreated;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
@@ -24,15 +25,30 @@ class CfPlatformManager extends BasePlatformManager {
   }
 
   postInstanceProvisionOperations(options) {
-    return this.createSecurityGroup(options);
+    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+      return this.createSecurityGroup(options);
+    } else{
+      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
+      return;
+    }
   }
 
   preInstanceDeleteOperations(options) {
-    return this.deleteSecurityGroup(options);
+    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+      return this.deleteSecurityGroup(options);
+    }else {
+      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
+      return;
+    }
   }
 
   postInstanceUpdateOperations(options) {
-    return this.ensureSecurityGroupExists(options);
+    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+      return this.ensureSecurityGroupExists(options);
+    }else {
+      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
+      return;
+    }
   }
 
   createSecurityGroup(options) {
