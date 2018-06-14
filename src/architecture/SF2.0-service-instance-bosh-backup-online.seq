@@ -1,0 +1,81 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  User; UAA; FabrikApi; APIServer; BackupManager;   BoshDirector; Agent; Service; IaaS;
+
+  # get token
+  User => UAA [label = "get token", return = "token"]
+
+  # trigger backup
+  User -> FabrikApi [ label = "trigger backup"]
+    # controller starts update
+  
+    FabrikApi => APIServer [label = "create lock annotation on deployment", return = "true"];
+
+    FabrikApi -> APIServer [label = "Create a resource backup with state as in_queue"];
+
+    FabrikApi -> FabrikApi [ label = "Start Poller" ];
+
+    FabrikApi => FabrikApi [ label = "check status" ]{
+      FabrikApi => APIServer [label = "backup resource state?", return = "in_queue"];
+    }
+
+    APIServer -> BackupManager [label = "Trigger watcher for new backup request"];
+    
+    BackupManager => Agent [label = "backup supported?", return = "yes"];
+
+    BackupManager ->> Agent [label = "trigger backup"];
+    BackupManager => IaaS [label = "create backup record",return = "true"];
+    APIServer <-- BackupManager [ label = "Update backup status as in progress" ];
+
+    FabrikApi => FabrikApi [ label = "check status" ]{
+      FabrikApi => APIServer [label = "backup resource state?", return = "in_progress"];
+    }
+    User <-- FabrikApi [ label = "update triggered", leftnote = 
+              "response returned back to user" ];
+
+
+    FabrikApi -> FabrikApi [ label = "Unlock Poller" ];
+
+    FabrikApi => FabrikApi [ label = "check resource status" ]{
+      FabrikApi => APIServer [label = "check resource state?", return = "in_progress"];
+    }
+    
+    BackupManager -> BackupManager [ label = "Start Poller" ];
+    
+    # agent starts backup
+    Agent => IaaS [label = "create snapshot from volume"]
+    Agent => IaaS [label = "create, attach, and mount cloned volume"]
+    Agent => IaaS [label = "create, attach, and mount temporary volume"]
+    Agent => Agent [label = "create/encrypt tarball"]
+
+    # FabrikStatusPoller asks for last operation status
+    BackupManager => BackupManager [ label = "check status" ]{
+      BackupManager => Agent [label = "backup state?", return = "processing"];
+    }
+
+    # agent continues backup
+    Agent => IaaS [label = "upload tarball to blob store"]
+    Agent => IaaS [label = "unmount, detach, and delete temporary volume"]
+    Agent => IaaS [label = "unmount, detach, and delete cloned volume"]
+    BackupManager <<-- Agent [label = "backup completed\nno actual callback"]
+
+    # BrokerApi asks for last operation status
+    BackupManager => BackupManager [ label = "check status" ]{
+      BackupManager => Agent [label = "backup state?", return = "succeeded"]
+      BackupManager => Agent [label = "fetch logs", return = "logs"]
+      BackupManager => IaaS [label = "update backup record with logs"]
+      APIServer <-- BackupManager [ label = "Update backup status as succeeded" ];
+    }
+
+    FabrikApi => FabrikApi [ label = "check resource status" ]{
+      FabrikApi => APIServer [label = "check resource state?", return = "succeeded"];
+      FabrikApi => APIServer [label = "remove lock annotation on deployment", return = "true"];
+    }
+}
