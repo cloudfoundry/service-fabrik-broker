@@ -108,9 +108,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     this.validateRequest(req, res);
 
-    // Acquire lock for this instance
-    logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-    return lockManager.lock(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id), CONST.ETCD.LOCK_TYPE.WRITE)
+    return Promise.try(() => {
+      if (req.manager.name === 'director') {
+        const lockDeatails = {
+          lockType: 'WRITE',
+          lockedResourceDetails: {
+            resourceType: 'deployment',
+            resourceName: 'directors',
+            resourceId: req.params.instance_id
+          }
+        };
+        // Acquire lock for this instance
+        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+        return lockManager.lock(req.params.instance_id, lockDeatails);
+      }
+    })
       .then(() => req.instance.create(params))
       .then(done)
       // Release lock in case of error: catch and throw
@@ -119,7 +131,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           throw err;
         }
         logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+        return unlockEtcdResource(req.params.instance_id)
           .throw(err);
       })
       .catch(ServiceInstanceAlreadyExists, conflict);
@@ -193,9 +205,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
         if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
           throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
         }
-        // Locking resource
-        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-        return lockManager.lock(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id), CONST.ETCD.LOCK_TYPE.WRITE)
+        return Promise.try(() => {
+          if (req.manager.name === 'director') {
+            const lockDeatails = {
+              lockType: 'WRITE',
+              lockedResourceDetails: {
+                resourceType: 'deployment',
+                resourceName: 'directors',
+                resourceId: req.params.instance_id
+              }
+            };
+            // Acquire lock for this instance
+            logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+            return lockManager.lock(req.params.instance_id, lockDeatails);
+          }
+        })
           .then(() => req.instance.update(params));
       })
       .then(done)
@@ -204,7 +228,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           throw err;
         }
         logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+        return unlockEtcdResource(req.params.instance_id)
           .throw(err);
       });
   }
@@ -261,9 +285,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
     this.validateRequest(req, res);
-    // Acquire lock for this instance
-    logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-    return lockManager.lock(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id), CONST.ETCD.LOCK_TYPE.WRITE)
+    return Promise.try(() => {
+      if (req.manager.name === 'director') {
+        const lockDeatails = {
+          lockType: 'WRITE',
+          lockedResourceDetails: {
+            resourceType: 'deployment',
+            resourceName: 'directors',
+            resourceId: req.params.instance_id
+          }
+        };
+        // Acquire lock for this instance
+        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+        return lockManager.lock(req.params.instance_id, lockDeatails);
+      }
+    })
       .then(() => req.instance.delete(params))
       .then(done)
       .catch(err => {
@@ -271,7 +307,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           throw err;
         }
         logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+        return unlockEtcdResource(req.params.instance_id)
           .throw(err);
       })
       .catch(ServiceInstanceNotFound, gone);
@@ -332,7 +368,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       // Unlock resource if state is succeeded or failed
       if (result.state === 'succeeded' || result.state === 'failed') {
         logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+        return unlockEtcdResource(req.params.instance_id)
           .then(() => res.status(200).send(body));
       }
       res.status(200).send(body);
@@ -340,7 +376,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function failed(err) {
       logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+      return unlockEtcdResource(req.params.instance_id)
         .then(() => res.status(200).send({
           state: 'failed',
           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
@@ -349,7 +385,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone() {
       logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(eventmesh.server.getResourceFolderName(req.manager.name, req.params.instance_id))
+      return unlockEtcdResource(req.params.instance_id)
         .then(() => res.status(410).send({}));
     }
 

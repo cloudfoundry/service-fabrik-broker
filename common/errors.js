@@ -245,7 +245,7 @@ class ServiceBindingAlreadyExists extends BadRequest {
 }
 exports.ServiceBindingAlreadyExists = ServiceBindingAlreadyExists;
 
-class ETCDLockError extends BadRequest {
+class ETCDLockError extends UnprocessableEntity {
   constructor(message) {
     super(message);
   }

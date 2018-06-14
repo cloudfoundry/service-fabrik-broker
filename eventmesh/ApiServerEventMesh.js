@@ -19,6 +19,47 @@ const apiserver = new kc.Client({
 });
 
 class ApiServerEventMesh extends EventMeshServer {
+  registerWatcher(name, type, callback) {
+    return client.loadSpec()
+      .then(() => {
+        const stream = client.apis[`${name}.servicefabrik.io`].v1alpha1.watch.namespaces('default')[type].getStream();
+        const jsonStream = new JSONStream();
+        stream.pipe(jsonStream);
+        jsonStream.on('data', event => {
+          logger.info('Event: ', JSON.stringify(event, null, 2));
+          callback(event);
+          // start poller for each object
+          // Poll for locks acquired by backup operation
+          // const lockDetails = JSON.parse(event.object.spec.options);
+          // if (event.type === "ADDED" && lockDetails.lockedResourceDetails.resourceType === 'backup') {
+          //   startPoller(event.object);
+          // }
+        });
+      });
+  }
+  createLockResource(name, type, body) {
+    return client.loadSpec()
+      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type].post({ body: body }));
+  }
+  deleteLockResource(name, type, resourceName) {
+    return client.loadSpec()
+      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).delete());
+  }
+  updateLockResource(name, type, resourceName, delta) {
+    return client.loadSpec()
+      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).patch({ body: delta }));
+  }
+  getLockResourceOptions(name, type, resourceName) {
+    return client.loadSpec()
+      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get())
+      .then(resource => {
+        return resource.body.spec.options;
+      })
+  }
+  getResource(name, type, resourceName) {
+    return client.loadSpec()
+      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get());
+  }
 
   createResource(resourceType, resourceId, val) {
     logger.debug(`Creating Resource ${resourceType}/${resourceId}`);

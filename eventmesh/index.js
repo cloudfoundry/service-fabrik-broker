@@ -2,7 +2,7 @@
 
 const Etcd3EventMeshServer = require('./Etcd3EventMeshServer');
 const ApiServerEventMesh = require('./ApiServerEventMesh');
-const LockManager = require('./LockManager');
+const ApiServerLockManager = require('./ApiServerLockManager');
 
 exports.server = new ApiServerEventMesh();
-exports.lockManager = new LockManager();
+exports.lockManager = new ApiServerLockManager();
