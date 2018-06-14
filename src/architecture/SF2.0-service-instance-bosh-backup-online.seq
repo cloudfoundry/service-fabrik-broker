@@ -7,7 +7,7 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; UAA; FabrikApi; APIServer; BackupManager;   BoshDirector; Agent; Service; IaaS;
+  User; UAA; FabrikApi; APIServer; BackupManager; Agent; Service; IaaS;
 
   # get token
   User => UAA [label = "get token", return = "token"]
