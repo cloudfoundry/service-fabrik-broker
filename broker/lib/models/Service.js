@@ -13,7 +13,8 @@ class Service {
         plans: _.map(options.plans, plan => {
           if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.cred_provider) {
             //Inject credhub config into agent properties
-            _.assign(_.get(plan, 'manager.settings.context.agent.provider'), config.cred_provider);
+            _.assign(_.get(plan, 'manager.settings.context.agent.provider'),
+              _.omit(config.cred_provider, 'credhub_username', 'credhub_user_password'));
           }
           return new Plan(this, plan);
         })

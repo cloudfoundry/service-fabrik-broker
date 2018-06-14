@@ -491,6 +491,8 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
+        credhub_username: blueprint-admin
+        credhub_user_password: blueprint-secret
     rabbitmq: &agent_rabbitmq
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
