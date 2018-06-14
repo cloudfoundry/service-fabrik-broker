@@ -16,7 +16,6 @@ const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
 const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
-const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
 class BnRStatusPollerJob extends BaseJob {
   constructor() {
@@ -71,12 +70,12 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-        if (operationName === 'backup') {
-          return DirectorManager
-            .load(plan)
-            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-        }
-      })
+      if (operationName === 'backup') {
+        return DirectorManager
+          .load(plan)
+          .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+      }
+    })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
         operationStatusResponse.operationTimedOut = false;
@@ -144,12 +143,12 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-        if (operationName === 'backup') {
-          return DirectorManager
-            .load(plan)
-            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-        }
-      })
+      if (operationName === 'backup') {
+        return DirectorManager
+          .load(plan)
+          .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+      }
+    })
       .tap(operationStatusResponse => {
         return eventmesh
           .server
@@ -254,7 +253,6 @@ class BnRStatusPollerJob extends BaseJob {
     return Promise
       .try(() => this.updateEventMesh(instanceInfo, operationName, operationStatusResponse))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
-      .then(() => unlockEtcdResource(eventmesh.server.getResourceFolderName(catalog.getPlan(instanceInfo.plan_id).manager.name, instanceInfo.instance_guid)))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
           const msg = `Deployment ${instanceInfo.instance_guid} ${operationName} with backup guid ${instanceInfo.backup_guid} exceeding timeout time
