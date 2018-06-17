@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const manager = require('../../eventmesh').lockManager;
+const manager = require('../../eventmesh').etcdLockManager;
 const CONST = require('../../eventmesh/constants');
 
 const {
