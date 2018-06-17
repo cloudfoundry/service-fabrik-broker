@@ -62,7 +62,7 @@ describe('eventmesh', () => {
 
     describe('#registerService', () => {
       it('should register attributes and plans', () => {
-        return eventmesh.server.registerService('fakeresourceType', 'fakeserviceId', ['fakeserviceAttributesJsonValue'], ['fakeservicePlansJsonValue'])
+        return eventmesh.etcdServer.registerService('fakeresourceType', 'fakeserviceId', ['fakeserviceAttributesJsonValue'], ['fakeservicePlansJsonValue'])
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('services/fakeresourceType/fakeserviceId/attributes')).to.be.true;
@@ -75,7 +75,7 @@ describe('eventmesh', () => {
       it('should return put response for set plansKey from event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_attributeResponse');
         valueStub.onCall(1).returns('eventmesh_put_planResponse');
-        return eventmesh.server.registerService('fakeresourceType', 'fakeserviceId', ['fakeserviceAttributesJsonValue'], ['fakeservicePlansJsonValue'])
+        return eventmesh.etcdServer.registerService('fakeresourceType', 'fakeserviceId', ['fakeserviceAttributesJsonValue'], ['fakeservicePlansJsonValue'])
           .then((result) => {
             expect(result).to.eql('eventmesh_put_planResponse');
           });
@@ -84,7 +84,7 @@ describe('eventmesh', () => {
 
     describe('#getServiceAttributes', () => {
       it('should get service attributes for resource type and serviceid', () => {
-        return eventmesh.server.getServiceAttributes('fakeResourceType', 'fakeServiceId')
+        return eventmesh.etcdServer.getServiceAttributes('fakeResourceType', 'fakeServiceId')
           .then(() => {
             return expect(getstub.getCall(0).calledWithExactly('services/fakeResourceType/fakeServiceId/attributes')).to.be.true;
           });
@@ -95,7 +95,7 @@ describe('eventmesh', () => {
           'data': 'Service Attributes'
         };
         jsonStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getServiceAttributes('fakeResourceType', 'fakeServiceId')
+        return eventmesh.etcdServer.getServiceAttributes('fakeResourceType', 'fakeServiceId')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -104,7 +104,7 @@ describe('eventmesh', () => {
 
     describe('#getServicePlans', () => {
       it('should get plans for resource type and service id ', () => {
-        return eventmesh.server.getServicePlans('fakeResourceType', 'fakeServiceId')
+        return eventmesh.etcdServer.getServicePlans('fakeResourceType', 'fakeServiceId')
           .then(() => expect(getstub.getCall(0).calledWithExactly('services/fakeResourceType/fakeServiceId/plans')).to.be.true);
       });
       it('should return json response from the event mesh server', () => {
@@ -112,7 +112,7 @@ describe('eventmesh', () => {
           'data': 'Service Plans'
         };
         jsonStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getServicePlans('fakeResourceType', 'fakeServiceId')
+        return eventmesh.etcdServer.getServicePlans('fakeResourceType', 'fakeServiceId')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -121,7 +121,7 @@ describe('eventmesh', () => {
 
     describe('#createResource', () => {
       it('should set options, state and lastoperation keys for new resource', () => {
-        return eventmesh.server.createResource('fakeResourceType', 'fakeResourceId', 'fakeValue')
+        return eventmesh.etcdServer.createResource('fakeResourceType', 'fakeResourceId', 'fakeValue')
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/options')).to.be.true;
@@ -137,7 +137,7 @@ describe('eventmesh', () => {
         valueStub.onCall(0).returns('eventmesh_put_optionResponse');
         valueStub.onCall(1).returns('eventmesh_put_statusResponse');
         valueStub.onCall(2).returns('eventmesh_put_lastOperationResponse');
-        return eventmesh.server.createResource('fakeResourceType', 'fakeResourceId', 'fakeValue')
+        return eventmesh.etcdServer.createResource('fakeResourceType', 'fakeResourceId', 'fakeValue')
           .then((result) => {
             expect(result).to.eql('eventmesh_put_lastOperationResponse');
           });
@@ -146,7 +146,7 @@ describe('eventmesh', () => {
 
     describe('#updateResourceState', () => {
       it('should update resource state with state value', () => {
-        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', CONST.RESOURCE_STATE.IN_QUEUE)
+        return eventmesh.etcdServer.updateResourceState('fakeResourceType', 'fakeResourceId', CONST.RESOURCE_STATE.IN_QUEUE)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/state')).to.be.true;
@@ -154,12 +154,12 @@ describe('eventmesh', () => {
           });
       });
       it('should throw error if the state value is invalid', () => {
-        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', 'stateValue')
+        return eventmesh.etcdServer.updateResourceState('fakeResourceType', 'fakeResourceId', 'stateValue')
           .catch(e => expect(e.message).to.eql('Could not find state stateValue'));
       });
       it('should return put ResourceState response from the event mesh', () => {
         valueStub.onCall(0).returns('eventmesh_put_stateResponse');
-        return eventmesh.server.updateResourceState('fakeResourceType', 'fakeResourceId', CONST.RESOURCE_STATE.IN_QUEUE)
+        return eventmesh.etcdServer.updateResourceState('fakeResourceType', 'fakeResourceId', CONST.RESOURCE_STATE.IN_QUEUE)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_stateResponse');
           });
@@ -168,7 +168,7 @@ describe('eventmesh', () => {
 
     describe('#updateResourceKey', () => {
       it('should update the resouce key with given value', () => {
-        return eventmesh.server.updateResourceKey('fakeResourceType', 'fakeResourceId', 'fakekey', 'fakeValue')
+        return eventmesh.etcdServer.updateResourceKey('fakeResourceType', 'fakeResourceId', 'fakekey', 'fakeValue')
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakekey')).to.be.true;
@@ -178,7 +178,7 @@ describe('eventmesh', () => {
 
       it('should return put ResourceKey response from the event mesh', () => {
         valueStub.onCall(0).returns('eventmesh_put_keyResponse');
-        return eventmesh.server.updateResourceKey('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.etcdServer.updateResourceKey('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then((result) => {
             expect(result).to.eql('eventmesh_put_keyResponse');
           });
@@ -188,7 +188,7 @@ describe('eventmesh', () => {
 
     describe('#getResourceKeyValue', () => {
       it('should get the resource key', () => {
-        return eventmesh.server.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.etcdServer.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/fakeKey')).to.be.true;
@@ -197,7 +197,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Resource key response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.etcdServer.getResourceKeyValue('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -206,7 +206,7 @@ describe('eventmesh', () => {
 
     describe('#getResourceState', () => {
       it('should get the resource state', () => {
-        return eventmesh.server.getResourceState('fakeResourceType', 'fakeResourceId')
+        return eventmesh.etcdServer.getResourceState('fakeResourceType', 'fakeResourceId')
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly('deployments/fakeResourceType/fakeResourceId/state')).to.be.true;
@@ -215,7 +215,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Resource state response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getResourceState('fakeResourceType', 'fakeResourceId', 'fakeKey')
+        return eventmesh.etcdServer.getResourceState('fakeResourceType', 'fakeResourceId', 'fakeKey')
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -225,7 +225,7 @@ describe('eventmesh', () => {
     describe('#registerWatcher', () => {
       it('should register reccursively on key when isRecursive is true', () => {
         let isRecursive = true;
-        return eventmesh.server.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
+        return eventmesh.etcdServer.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
           .then(() => {
             /* jshint expr: true */
             expect(keyWatcherStub.notCalled).to.be.true;
@@ -234,7 +234,7 @@ describe('eventmesh', () => {
       });
       it('should register non-reccursively on key when isRecursive is false', () => {
         let isRecursive = false;
-        return eventmesh.server.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
+        return eventmesh.etcdServer.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
           .then(() => {
             /* jshint expr: true */
             expect(keyWatcherStub.getCall(0).calledWithExactly('fakeKey')).to.be.true;
@@ -243,14 +243,14 @@ describe('eventmesh', () => {
       });
       it('should return response of key watcher.on ', () => {
         let isRecursive = false;
-        return eventmesh.server.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
+        return eventmesh.etcdServer.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
           .then((result) => {
             expect(result).to.eql('keyWatcherStubResponse');
           });
       });
       it('should return response of prefix watcher.on ', () => {
         let isRecursive = true;
-        return eventmesh.server.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
+        return eventmesh.etcdServer.registerWatcher('fakeKey', 'fakeCallback', isRecursive)
           .then((result) => {
             expect(result).to.eql('prefixWatcherStubResponse');
           });
@@ -266,7 +266,7 @@ describe('eventmesh', () => {
         val: 'fakeVal'
       };
       it('should annotate the resourse with option and state keys', () => {
-        return eventmesh.server.annotateResource(opts)
+        return eventmesh.etcdServer.annotateResource(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly('fakeAnnotationName/fakeAnnotationType/fakeResourceId/fakeAnnotationId/options')).to.be.true;
@@ -278,7 +278,7 @@ describe('eventmesh', () => {
       it('should return put reponse for status key from the event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_optionKeyResponse');
         valueStub.onCall(1).returns('eventmesh_put_statusKeyResponse');
-        return eventmesh.server.annotateResource(opts)
+        return eventmesh.etcdServer.annotateResource(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_statusKeyResponse');
           });
@@ -294,7 +294,7 @@ describe('eventmesh', () => {
         stateValue: 'fakeStateValue'
       };
       it('should update the annotation state key', () => {
-        return eventmesh.server.updateAnnotationState(opts)
+        return eventmesh.etcdServer.updateAnnotationState(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/state`)).to.be.true;
@@ -303,7 +303,7 @@ describe('eventmesh', () => {
       });
       it('should return put annotation state response from event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_annotationStateKeyResponse');
-        return eventmesh.server.updateAnnotationState(opts)
+        return eventmesh.etcdServer.updateAnnotationState(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_annotationStateKeyResponse');
           });
@@ -319,7 +319,7 @@ describe('eventmesh', () => {
         value: 'fakeResultValue'
       };
       it('should update the annotation key specified', () => {
-        return eventmesh.server.updateAnnotationResult(opts)
+        return eventmesh.etcdServer.updateAnnotationResult(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/result`)).to.be.true;
@@ -338,7 +338,7 @@ describe('eventmesh', () => {
         value: 'fakeValue'
       };
       it('should update the annotation key specified', () => {
-        return eventmesh.server.updateAnnotationKey(opts)
+        return eventmesh.etcdServer.updateAnnotationKey(opts)
           .then(() => {
             /* jshint expr: true */
             expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/fakeKey`)).to.be.true;
@@ -347,7 +347,7 @@ describe('eventmesh', () => {
       });
       it('should return put annotation key response from event mesh server', () => {
         valueStub.onCall(0).returns('eventmesh_put_annotationKeyResponse');
-        return eventmesh.server.updateAnnotationKey(opts)
+        return eventmesh.etcdServer.updateAnnotationKey(opts)
           .then((result) => {
             expect(result).to.eql('eventmesh_put_annotationKeyResponse');
           });
@@ -362,7 +362,7 @@ describe('eventmesh', () => {
         value: 'fakeValue'
       };
       it('should update the last key for annotation type', () => {
-        return eventmesh.server.updateLastAnnotation(opts)
+        return eventmesh.etcdServer.updateLastAnnotation(opts)
           .then(() => {
             expect(putstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`)).to.be.true;
           });
@@ -378,7 +378,7 @@ describe('eventmesh', () => {
         key: 'fakeKey'
       };
       it('should get the annotation key', () => {
-        return eventmesh.server.getAnnotationKeyValue(opts)
+        return eventmesh.etcdServer.getAnnotationKeyValue(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/fakeKey`)).to.be.true;
@@ -387,7 +387,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation key response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationKeyValue(opts)
+        return eventmesh.etcdServer.getAnnotationKeyValue(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -401,7 +401,7 @@ describe('eventmesh', () => {
         annotationType: 'fakeAnnotationType',
       };
       it('should get the annotation last key', () => {
-        return eventmesh.server.getLastAnnotation(opts)
+        return eventmesh.etcdServer.getLastAnnotation(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/last`)).to.be.true;
@@ -417,7 +417,7 @@ describe('eventmesh', () => {
         annotationId: 'fakeAnnotationId',
       };
       it('should get the annotation state', () => {
-        return eventmesh.server.getAnnotationState(opts)
+        return eventmesh.etcdServer.getAnnotationState(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/state`)).to.be.true;
@@ -426,7 +426,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation state response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationState(opts)
+        return eventmesh.etcdServer.getAnnotationState(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -441,7 +441,7 @@ describe('eventmesh', () => {
         annotationId: 'fakeAnnotationId',
       };
       it('should get the annotation options', () => {
-        return eventmesh.server.getAnnotationOptions(opts)
+        return eventmesh.etcdServer.getAnnotationOptions(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/options`)).to.be.true;
@@ -450,7 +450,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation options response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationOptions(opts)
+        return eventmesh.etcdServer.getAnnotationOptions(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
@@ -465,7 +465,7 @@ describe('eventmesh', () => {
         annotationId: 'fakeAnnotationId',
       };
       it('should get the annotation result', () => {
-        return eventmesh.server.getAnnotationResult(opts)
+        return eventmesh.etcdServer.getAnnotationResult(opts)
           .then(() => {
             /* jshint expr: true */
             expect(getstub.getCall(0).calledWithExactly(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}/result`)).to.be.true;
@@ -474,7 +474,7 @@ describe('eventmesh', () => {
       it('should return string response form event mesh server', () => {
         const expected_resp = 'Annotation result response';
         stringStub.onCall(0).returns(expected_resp);
-        return eventmesh.server.getAnnotationResult(opts)
+        return eventmesh.etcdServer.getAnnotationResult(opts)
           .then((result) => {
             expect(result).to.eql(expected_resp);
           });
