@@ -28,8 +28,7 @@ class CfPlatformManager extends BasePlatformManager {
     if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
       return this.createSecurityGroup(options);
     } else{
-      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
-      return;
+      return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.'));
     }
   }
 
@@ -37,8 +36,7 @@ class CfPlatformManager extends BasePlatformManager {
     if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
       return this.deleteSecurityGroup(options);
     }else {
-      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
-      return;
+      return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not deleting security groups.'));
     }
   }
 
@@ -46,8 +44,7 @@ class CfPlatformManager extends BasePlatformManager {
     if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
       return this.ensureSecurityGroupExists(options);
     }else {
-      logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.');
-      return;
+      return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.'));
     }
   }
 
