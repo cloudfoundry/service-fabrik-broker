@@ -57,8 +57,8 @@ class ApiServerEventMesh extends EventMeshServer {
       })
   }
   getResource(name, type, resourceName) {
-    return client.loadSpec()
-      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get());
+    return apiserver.loadSpec()
+      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get());
   }
 
   createResource(resourceType, resourceId, val) {
