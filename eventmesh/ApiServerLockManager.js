@@ -6,23 +6,24 @@ const eventmesh = require('./');
 const errors = require('../common/errors');
 const ETCDLockError = errors.ETCDLockError;
 const logger = require('../common/logger');
+const CONST = require('../common/constants');
 
 class ApiServerLockManager {
 
     isWriteLocked(resourceName) {
-        return eventmesh.server.getLockResourceOptions('lock', 'deploymentlocks', resourceName)
+        return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
             .then(options => {
                 const currentTime = new Date();
                 const lockDetails = JSON.parse(options);
                 const lockTime = new Date(lockDetails.lockTime);
                 const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
-                if (lockDetails.lockType === "WRITE" && ((currentTime - lockTime) < lockTTL)) {
+                if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
                     return true;
                 }
                 return false;
             })
             .catch(err => {
-                if (err.code === 404) {
+                if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
                     return false;
                 }
                 throw err;
@@ -38,7 +39,7 @@ class ApiServerLockManager {
         opts.lockTime = new Date();
         opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
         _.extend(opts, { 'lockTime': currentTime });
-        return eventmesh.server.getLockResourceOptions('lock', 'deploymentlocks', resourceName)
+        return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
             .then(options => {
                 const currentlLockDetails = JSON.parse(options);
                 const currentLockTTL = currentlLockDetails.lockTTL ? currentlLockDetails.lockTTL : Infinity;
@@ -51,41 +52,40 @@ class ApiServerLockManager {
                     const patchBody = {
                         spec: { options: JSON.stringify(opts) }
                     };
-                    return eventmesh.server.updateLockResource('lock', 'deploymentlocks', resourceName, patchBody);
+                    return eventmesh.server.updateLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName, patchBody);
                 }
             })
             .catch(err => {
-                if (err.code === 404) {
+                if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
                     const spec = {
                         options: JSON.stringify(opts)
                     };
                     const status = {
-                        locked: "true"
+                        locked: 'true'
                     }
                     const body = {
                         apiVersion: "lock.servicefabrik.io/v1alpha1",
-                        kind: "DeploymentLock",
                         metadata: {
                             name: resourceName
                         },
                         spec: spec,
                         status: status
                     };
-                    return eventmesh.server.createLockResource('lock', 'deploymentlocks', body);
+                    return eventmesh.server.createLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body);
                 }
                 throw err;
             })
     }
 
     unlock(resourceName) {
-        return eventmesh.server.deleteLockResource('lock', 'deploymentlocks', resourceName)
+        return eventmesh.server.deleteLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
             .then(() => logger.info(`Successfully Unlocked resource ${resourceName}`))
             .catch(err => {
-                if (err.code === 404) {
+                if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
                     logger.info(`Successfully Unlocked resource ${resourceName}`);
                     return;
                 }
-                console.error('Error: ', err);
+                logger.error('Error: ', err);
                 throw err;
             })
     }

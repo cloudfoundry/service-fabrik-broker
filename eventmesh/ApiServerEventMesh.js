@@ -19,39 +19,32 @@ const apiserver = new kc.Client({
 });
 
 class ApiServerEventMesh extends EventMeshServer {
-  registerWatcher(name, type, callback) {
-    return client.loadSpec()
+  registerWatcher(resourceName, resourceType, callback) {
+    return apiserver.loadSpec()
       .then(() => {
-        const stream = client.apis[`${name}.servicefabrik.io`].v1alpha1.watch.namespaces('default')[type].getStream();
+        const stream = apiserver
+          .apis[`${resourceName}.servicefabrik.io`]
+          .v1alpha1.watch.namespaces('default')[resourceType].getStream();
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
-        jsonStream.on('data', event => {
-          logger.info('Event: ', JSON.stringify(event, null, 2));
-          callback(event);
-          // start poller for each object
-          // Poll for locks acquired by backup operation
-          // const lockDetails = JSON.parse(event.object.spec.options);
-          // if (event.type === "ADDED" && lockDetails.lockedResourceDetails.resourceType === 'backup') {
-          //   startPoller(event.object);
-          // }
-        });
-      });
+        jsonStream.on('data', callback);
+      })
   }
   createLockResource(name, type, body) {
-    return client.loadSpec()
-      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type].post({ body: body }));
+    return apiserver.loadSpec()
+      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type].post({ body: body }));
   }
   deleteLockResource(name, type, resourceName) {
-    return client.loadSpec()
-      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).delete());
+    return apiserver.loadSpec()
+      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).delete());
   }
   updateLockResource(name, type, resourceName, delta) {
-    return client.loadSpec()
-      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).patch({ body: delta }));
+    return apiserver.loadSpec()
+      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).patch({ body: delta }));
   }
   getLockResourceOptions(name, type, resourceName) {
-    return client.loadSpec()
-      .then(() => client.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get())
+    return apiserver.loadSpec()
+      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get())
       .then(resource => {
         return resource.body.spec.options;
       })
@@ -120,18 +113,6 @@ class ApiServerEventMesh extends EventMeshServer {
         .v1alpha1.namespaces('default')[resourceType](resourceId)
         .get())
       .then(json => json.body.status.state);
-  }
-
-  registerWatcher(resourceName, resourceType, callback) {
-    return apiserver.loadSpec()
-      .then(() => {
-        const stream = apiserver
-          .apis[`${resourceName}.servicefabrik.io`]
-          .v1alpha1.watch.namespaces('default')[resourceType].getStream();
-        const jsonStream = new JSONStream();
-        stream.pipe(jsonStream);
-        jsonStream.on('data', callback);
-      })
   }
 
   /**

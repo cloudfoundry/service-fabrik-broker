@@ -10,7 +10,6 @@ const DirectorManager = require('./DirectorManager');
 const VirtualHostManager = require('./VirtualHostManager');
 const ServiceFabrikOperation = require('./ServiceFabrikOperation');
 const FabrikStatusPoller = require('./FabrikStatusPoller');
-const UnlockResourcePoller = require('./UnlockResourcePoller');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
 const BasePlatformManager = require('./BasePlatformManager');
@@ -73,7 +72,9 @@ Fabrik.DockerManager = DockerManager;
 Fabrik.DirectorManager = DirectorManager;
 Fabrik.ServiceFabrikOperation = ServiceFabrikOperation;
 Fabrik.FabrikStatusPoller = FabrikStatusPoller;
-Fabrik.UnlockResourcePoller = UnlockResourcePoller;
 Fabrik.dbManager = new DBManager();
 Fabrik.oobBackupManager = OobBackupManager;
+if (config.enableServiceFabrikV2) {
+  Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
+}
 module.exports = Fabrik;
