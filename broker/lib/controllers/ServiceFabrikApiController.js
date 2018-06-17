@@ -365,10 +365,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         // Acquire read lock for resource resourceId
         logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
         const lockDeatails = {
-          lockType: 'READ',
+          lockType: CONST.ETCD.LOCK_TYPE.READ,
           lockedResourceDetails: {
-            resourceType: 'backup',
-            resourceName: 'defaultbackups',
+            resourceType: CONST.RESOURCE_TYPES.BACKUP,
+            resourceName: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
             resourceId: backup_guid
           }
         };

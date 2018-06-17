@@ -35,6 +35,7 @@ module.exports = Object.freeze({
     DISCONNECTED: 'disconnected'
   },
   EVENTMESH_POLLER_DELAY: 2000,
+  UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -225,6 +226,16 @@ module.exports = Object.freeze({
       DESC: -1
     }
   },
+  RESOURCE_TYPES: {
+    LOCK: 'lock',
+    DEPLOYMENT: 'deployment',
+    BACKUP: 'backup'
+  },
+  RESOURCE_NAMES: {
+    DEPLOYMENT_LOCKS: 'deploymentlocks',
+    DIRECTOR: 'directors',
+    DEFAULT_BACKUP: 'defaultbackups'
+  },
   RESOURCE_STATE: {
     IN_QUEUE: 'in queue',
     IN_PROGRESS: 'in progress',
@@ -312,5 +323,12 @@ module.exports = Object.freeze({
     LOCK_TTL: 5,
     LOCK_KEY_SUFFIX: '/lock',
     LOCK_DETAILS_SUFFIX: '/lock/details'
+  },
+  API_SERVER: {
+    WATCH_EVENT: {
+      ADDED: 'ADDED',
+      MODIFIED: 'MODIFIED',
+      DELETED: 'DELETED'
+    }
   }
 });

@@ -111,10 +111,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise.try(() => {
       if (req.manager.name === 'director') {
         const lockDeatails = {
-          lockType: 'WRITE',
+          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
           lockedResourceDetails: {
-            resourceType: 'deployment',
-            resourceName: 'directors',
+            resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+            resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
             resourceId: req.params.instance_id
           }
         };
@@ -208,10 +208,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
         return Promise.try(() => {
           if (req.manager.name === 'director') {
             const lockDeatails = {
-              lockType: 'WRITE',
+              lockType: CONST.ETCD.LOCK_TYPE.WRITE,
               lockedResourceDetails: {
-                resourceType: 'deployment',
-                resourceName: 'directors',
+                resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+                resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
                 resourceId: req.params.instance_id
               }
             };
@@ -288,10 +288,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise.try(() => {
       if (req.manager.name === 'director') {
         const lockDeatails = {
-          lockType: 'WRITE',
+          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
           lockedResourceDetails: {
-            resourceType: 'deployment',
-            resourceName: 'directors',
+            resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+            resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
             resourceId: req.params.instance_id
           }
         };
