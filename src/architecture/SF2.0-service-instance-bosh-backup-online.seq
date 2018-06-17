@@ -14,6 +14,9 @@ seqdiag {
 
   # trigger backup
   User -> FabrikApi [ label = "trigger backup"]
+
+  FabrikApi => UAA [label = "validate auth token", return = "true"]
+  
     # controller starts update
   
     FabrikApi => APIServer [label = "create lock annotation on deployment", return = "true"];
