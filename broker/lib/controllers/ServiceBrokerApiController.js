@@ -109,20 +109,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
     this.validateRequest(req, res);
 
     return Promise.try(() => {
-      if (req.manager.name === 'director') {
-        const lockDeatails = {
-          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-          lockedResourceDetails: {
-            resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-            resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-            resourceId: req.params.instance_id
-          }
-        };
-        // Acquire lock for this instance
-        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-        return lockManager.lock(req.params.instance_id, lockDeatails);
-      }
-    })
+        if (req.manager.name === 'director') {
+          const lockDeatails = {
+            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
+            lockedResourceDetails: {
+              resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+              resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+              resourceId: req.params.instance_id
+            }
+          };
+          // Acquire lock for this instance
+          logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+          return lockManager.lock(req.params.instance_id, lockDeatails);
+        }
+      })
       .then(() => req.instance.create(params))
       .then(done)
       // Release lock in case of error: catch and throw
@@ -206,20 +206,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
           throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
         }
         return Promise.try(() => {
-          if (req.manager.name === 'director') {
-            const lockDeatails = {
-              lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-              lockedResourceDetails: {
-                resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-                resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-                resourceId: req.params.instance_id
-              }
-            };
-            // Acquire lock for this instance
-            logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-            return lockManager.lock(req.params.instance_id, lockDeatails);
-          }
-        })
+            if (req.manager.name === 'director') {
+              const lockDeatails = {
+                lockType: CONST.ETCD.LOCK_TYPE.WRITE,
+                lockedResourceDetails: {
+                  resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+                  resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+                  resourceId: req.params.instance_id
+                }
+              };
+              // Acquire lock for this instance
+              logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+              return lockManager.lock(req.params.instance_id, lockDeatails);
+            }
+          })
           .then(() => req.instance.update(params));
       })
       .then(done)
@@ -286,20 +286,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
     this.validateRequest(req, res);
     return Promise.try(() => {
-      if (req.manager.name === 'director') {
-        const lockDeatails = {
-          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-          lockedResourceDetails: {
-            resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-            resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-            resourceId: req.params.instance_id
-          }
-        };
-        // Acquire lock for this instance
-        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-        return lockManager.lock(req.params.instance_id, lockDeatails);
-      }
-    })
+        if (req.manager.name === 'director') {
+          const lockDeatails = {
+            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
+            lockedResourceDetails: {
+              resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
+              resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+              resourceId: req.params.instance_id
+            }
+          };
+          // Acquire lock for this instance
+          logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
+          return lockManager.lock(req.params.instance_id, lockDeatails);
+        }
+      })
       .then(() => req.instance.delete(params))
       .then(done)
       .catch(err => {
