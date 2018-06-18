@@ -29,10 +29,12 @@ class UnlockResourcePoller {
                     throw err;
                 })
         }
+        /*
+        Starts poller whenever a lock resource is created.
+        Polling for only backup operations
+        */
 
         function startPoller(event) {
-            // logger.info('starting poller for ', object.metadata.name);
-            // const interval = setInterval(() => poller(object, interval), 3000);
             const lockDetails = JSON.parse(event.object.spec.options);
             if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceType === CONST.RESOURCE_TYPES.BACKUP) {
                 // startPoller(event.object);
