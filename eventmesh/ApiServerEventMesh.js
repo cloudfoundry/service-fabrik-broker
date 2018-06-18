@@ -12,7 +12,7 @@ const JSONStream = require('json-stream');
 
 const apiserver = new kc.Client({
   config: {
-    url: 'https://127.0.0.1:9443',
+    url: `https://${config.broker.ip}:9443`,
     insecureSkipTlsVerify: true
   },
   version: '1.9'
@@ -59,7 +59,6 @@ class ApiServerEventMesh extends EventMeshServer {
 
     const initialResource = {
       apiVersion: "deployment.servicefabrik.io/v1alpha1",
-      kind: "Director",
       metadata: {
         name: resourceId,
         "labels": {
@@ -139,8 +138,8 @@ class ApiServerEventMesh extends EventMeshServer {
     const statusJson = {
       status: {
         state: CONST.APISERVER.STATE.IN_QUEUE,
-        lastOperation: "abcd",
-        response: "abcd"
+        lastOperation: "",
+        response: ""
       }
     }
     return apiserver.loadSpec()

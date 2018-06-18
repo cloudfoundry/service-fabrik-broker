@@ -22,6 +22,7 @@ module.exports = Object.freeze({
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
+    ABORT: 'abort'
     ABORTED: 'aborted',
     IN_PROGRESS: 'in progress',
     ABORTING: 'aborting'
@@ -237,8 +238,15 @@ module.exports = Object.freeze({
     RESULT: 'result'
   },
   APISERVER: {
+    ANNOTATION_NAMES:{
+      BACKUP: 'backup'
+    },
+    ANNOTATION_TYPES:{
+      BACKUP: 'default'
+    },
     STATE: {
-      IN_QUEUE: 'in_queue'
+      IN_QUEUE: 'in_queue',
+      ERROR: 'error'
     },
   },
   SERVICE_KEYS: {

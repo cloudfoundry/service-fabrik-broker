@@ -23,17 +23,17 @@ class DefaultBackupManager extends BaseManager {
     logger.info('resource changed', change);
     logger.info('Changed value:', value);
     const changedValue = JSON.parse(value);
-    if (change.object.metadata.labels.status == 'in_queue') {
+    if (change.object.metadata.labels.status == CONST.APISERVER.STATE.IN_QUEUE) {
       return Promise.try(() => {
         const plan = catalog.getPlan(changedValue.plan_id);
         return fabrik.createManager(plan);
       }).then(manager => manager.startBackup(changedValue));
-    } else if (change.object.metadata.labels.status == 'abort') {
+    } else if (change.object.metadata.labels.status == CONST.OPERATION.ABORT) {
       logger.info(`State key is set to abort. Triggering abort`);
       const opts = {
         resourceId: changedValue.instance_guid,
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
         annotationId: changedValue.guid
       }
       return eventmesh.server.getAnnotationOptions(opts)
