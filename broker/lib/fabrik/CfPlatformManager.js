@@ -25,25 +25,25 @@ class CfPlatformManager extends BasePlatformManager {
   }
 
   postInstanceProvisionOperations(options) {
-    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+    if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
       return this.createSecurityGroup(options);
-    } else{
+    } else {
       return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.'));
     }
   }
 
   preInstanceDeleteOperations(options) {
-    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+    if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
       return this.deleteSecurityGroup(options);
-    }else {
+    } else {
       return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not deleting security groups.'));
     }
   }
 
   postInstanceUpdateOperations(options) {
-    if(_.get(config,'feature.EnableSecurityGroupsOps',true)){
+    if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
       return this.ensureSecurityGroupExists(options);
-    }else {
+    } else {
       return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.'));
     }
   }
