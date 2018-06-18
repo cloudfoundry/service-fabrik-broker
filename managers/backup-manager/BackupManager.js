@@ -188,22 +188,22 @@ class BackupManager {
       })
       .then(backup_options => eventmesh.server.updateAnnotationResult({
         resourceId: opts.instance_guid,
-        annotationName: 'backup',
-        annotationType: 'default',
+        annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
         annotationId: result.backup_guid,
         value: JSON.stringify(backup_options)
       }))
       .then(() => eventmesh.server.updateAnnotationState({
         resourceId: opts.instance_guid,
-        annotationName: 'backup',
-        annotationType: 'default',
+        annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
         annotationId: result.backup_guid,
         stateValue: CONST.RESOURCE_STATE.IN_PROGRESS
       })).then(() => {
         return eventmesh.server.getAnnotationResult({
           resourceId: opts.instance_guid,
-          annotationName: 'backup',
-          annotationType: 'default',
+          annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+          annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
           annotationId: result.backup_guid,
         })
       })
@@ -212,17 +212,17 @@ class BackupManager {
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
           .tap(() => eventmesh.server.updateAnnotationState({
             resourceId: opts.instance_guid,
-            annotationName: 'backup',
-            annotationType: 'default',
+            annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
-            stateValue: 'error'
+            stateValue: CONST.APISERVER.STATE.ERROR
           }))
           .tap((res) => eventmesh.server.updateAnnotationKey({
             resourceId: opts.instance_guid,
-            annotationName: 'backup',
-            annotationType: 'default',
+            annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
-            key: 'result',
+            key: CONST.ANNOTATION_KEYS.RESULT,
             value: JSON.stringify(err)
           }))
           .tap(() => {
@@ -254,10 +254,10 @@ class BackupManager {
     logger.info('Starting abort with following options:', abortOptions);
     return eventmesh.server.updateAnnotationState({
       resourceId: abortOptions.instance_guid,
-      annotationName: 'backup',
-      annotationType: 'default',
+      annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+      annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
       annotationId: abortOptions.guid,
-      stateValue: 'aborting'
+      stateValue: CONST.OPERATION.ABORTING
     }).then(() => this.backupStore
       .getBackupFile({
         tenant_id: this.getTenantGuid(abortOptions.context),
@@ -272,7 +272,7 @@ class BackupManager {
         return this.agent
           .abortBackup(metadata.agent_ip)
           .return({
-            state: 'aborting'
+            state: CONST.OPERATION.ABORTING
           });
       default:
         return _.pick(metadata, 'state');
@@ -284,11 +284,7 @@ class BackupManager {
 
 class Fabrik {
   static createManager(plan) {
-    return Promise
-      .try(() => {
-        return BackupManager;
-      })
-      .then(managerConstructor => managerConstructor.load(plan));
+    return Promise.try(() => managerConstructor.load(plan) )
   }
 
 }
