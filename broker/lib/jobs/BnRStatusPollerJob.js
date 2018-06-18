@@ -57,7 +57,7 @@ class BnRStatusPollerJob extends BaseJob {
   }
 
   static checkOperationCompletionStatus(job_data) {
-    if (config.servicefabrik20) {
+    if (config.enableServiceFabrikV2) {
       return this.checkOperationCompletionStatus20(job_data)
     }
     return this.checkOperationCompletionStatus10(job_data)
@@ -225,7 +225,7 @@ class BnRStatusPollerJob extends BaseJob {
       });
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
-    if (config.servicefabrik20) {
+    if (config.enableServiceFabrikV2) {
       return this.doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo)
     }
     return this.doPostFinishOperation10(operationStatusResponse, operationName, instanceInfo)

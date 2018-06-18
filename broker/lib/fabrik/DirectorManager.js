@@ -1022,7 +1022,7 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationState(opts) {
-    if (config.servicefabrik20) {
+    if (config.enableServiceFabrikV2) {
       return this.getBackupOperationState20(opts);
     }
     return this.getBackupOperationState10(opts);

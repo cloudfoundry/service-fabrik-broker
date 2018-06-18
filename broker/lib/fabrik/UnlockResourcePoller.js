@@ -17,13 +17,13 @@ class UnlockResourcePoller {
                 .then((resource) => {
                     const resourceState = resource.body.status.state;
                     if (resourceState === CONST.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.RESOURCE_STATE.FAILED || resourceState === CONST.RESOURCE_STATE.ERROR) {
-                        return lockManager.unlock(object.body.metadata.name)
+                        return lockManager.unlock(object.metadata.name)
                             .then(() => clearInterval(interval));
                     }
                 })
                 .catch(err => {
                     if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
-                        return lockManager.unlock(object.body.metadata.name)
+                        return lockManager.unlock(object.metadata.name)
                             .then(() => clearInterval(interval));
                     }
                     throw err;

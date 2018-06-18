@@ -6,6 +6,7 @@ const Promise = require('bluebird');
 const catalog = require('../../broker/lib/models/catalog');
 const eventmesh = require('../../eventmesh');
 const logger = require('../../common/logger');
+const CONST = require('../../common/constants');
 const fabrik = require('./');
 const BaseManager = require('../BaseManager');
 const DBManager = require('../../broker/lib/fabrik/DBManager');
@@ -15,7 +16,8 @@ class DefaultBackupManager extends BaseManager {
 
   registerWatcher() {
     logger.info(`Registering Backup watcher`)
-    eventmesh.server.registerWatcher('backup/default', this.worker, true);
+    return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker)
+	.catch( e => logger.error('Caucht errro', e));
   }
 
   worker(change) {
@@ -23,12 +25,15 @@ class DefaultBackupManager extends BaseManager {
     logger.info('resource changed', change);
     logger.info('Changed value:', value);
     const changedValue = JSON.parse(value);
-    if (change.object.metadata.labels.status == CONST.APISERVER.STATE.IN_QUEUE) {
+    logger.info('Parsed value:', changedValue);
+    if (change.object.status.state == CONST.APISERVER.STATE.IN_QUEUE) {
+      logger.info('Triggering backup:', changedValue);
       return Promise.try(() => {
         const plan = catalog.getPlan(changedValue.plan_id);
         return fabrik.createManager(plan);
-      }).then(manager => manager.startBackup(changedValue));
-    } else if (change.object.metadata.labels.status == CONST.OPERATION.ABORT) {
+      }).then(manager => manager.startBackup(changedValue))
+	.catch( e => logger.error('Cauch error while starting backup', e));
+    } else if (change.object.status.state == CONST.OPERATION.ABORT) {
       logger.info(`State key is set to abort. Triggering abort`);
       const opts = {
         resourceId: changedValue.instance_guid,

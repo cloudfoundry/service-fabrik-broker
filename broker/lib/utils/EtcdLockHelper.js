@@ -11,7 +11,7 @@ function unlockEtcdResource(resource, maxRetryCount) {
 
   function unlockResourceRetry(currentRetryCount) {
     return lockManager.unlock(resource)
-      .then(() => logger.info(`Successfully unlocked resource ${resource}`))
+      .tap(() => logger.info(`Successfully unlocked resource ${resource}`))
       .catch(err => {
         if (currentRetryCount >= maxRetryCount) {
           logger.error(`Could not unlock resource ${resource} even after ${maxRetryCount} retries`);

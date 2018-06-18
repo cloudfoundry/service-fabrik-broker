@@ -59,7 +59,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => eventmesh.server.getAnnotationState({
         resourceId: opts.resourceId,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: 'default',
+        annotationType: 'defaultbackups',
         annotationId: opts.annotationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
@@ -74,7 +74,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.getAnnotationKeyValue({
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: 'default',
+            annotationType: 'defaultbackups',
             annotationId: opts.annotationId,
             key: CONST.ANNOTATION_KEYS.RESULT
           })
@@ -103,12 +103,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
               throw err;
             })
         } else {
-          return eventmesh.server.getAnnotationKeyValue({
+          return eventmesh.server.getAnnotationResult({
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: 'default',
+            annotationType: 'defaultbackups',
             annotationId: opts.annotationId,
-            key: CONST.ANNOTATION_KEYS.RESULT
           });
         }
       });
@@ -301,9 +300,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startBackup(req, res) {
-    if (config.servicefabrik20) {
+    logger.info(`Service fabrik enabled: ${config.enableServiceFabrikV2}`)
+    if (config.enableServiceFabrikV2) {
       return this.startBackup_sf20(req, res);
     }
+    logger.info(`Calling service fabrik v1`)
     return this.startBackup_sf10(req, res);
   }
 
@@ -364,22 +365,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
         };
         // Acquire read lock for resource resourceId
         logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-        const lockDeatails = {
+        return lockManager.lock(req.params.instance_id, {
           lockType: CONST.ETCD.LOCK_TYPE.READ,
           lockedResourceDetails: {
             resourceType: CONST.RESOURCE_TYPES.BACKUP,
             resourceName: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
             resourceId: backup_guid
           }
-        };
-        // Acquire lock for this instance
-        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-        return lockManager.lock(req.params.instance_id, lockDeatails)
+        })
           .then(() => {
             return eventmesh.server.annotateResource({
               resourceId: req.params.instance_id,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: 'default',
+              annotationType: 'defaultbackups',
               annotationId: backup_guid,
               val: JSON.stringify(backup_options)
             });
@@ -387,12 +385,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(() => {
         backup_started_at = new Date()
-        return eventmesh.server.updateLastAnnotation({
+	//check if resource exist, else create and then update
+        return Promise.try( () => eventmesh.server.getResource('deployment','directors', req.params.instance_id))
+        .catch( () => eventmesh.server.createResource( null, req.params.instance_id, {}))
+        .then( () => eventmesh.server.updateLastAnnotation({
           resourceId: req.params.instance_id,
           annotationName: CONST.OPERATION_TYPE.BACKUP,
-          annotationType: 'default',
+          annotationType: 'defaultbackups',
           value: backup_guid
-        }).then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
+        }))
+	.then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
           resourceId: req.params.instance_id,
           annotationId: backup_guid,
           start_state: CONST.RESOURCE_STATE.IN_QUEUE,
@@ -410,10 +412,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
           })
       })
       .then(bodyStr => {
+        logger.info('Annotation response:', bodyStr );
         const body = JSON.parse(bodyStr);
         res.status(202).send(body);
       })
       .catch(err => {
+        logger.info( 'Handling error :', err);
         if (err instanceof ETCDLockError) {
           throw err;
         }
@@ -441,7 +445,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   abortLastBackup(req, res) {
-    if (config.servicefabrik20) {
+    if (config.enableServiceFabrikV2) {
       return this.abortLastBackup20(req, res)
     }
     return this.abortLastBackup10(req, res)
@@ -468,12 +472,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return eventmesh.server.getLastAnnotation({
       resourceId: req.params.instance_id,
       annotationName: CONST.OPERATION_TYPE.BACKUP,
-      annotationType: 'default',
+      annotationType: 'defaultbackups',
     }).then(backup_guid => {
       return eventmesh.server.getAnnotationState({
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: 'default',
+        annotationType: 'defaultbackups',
         annotationId: backup_guid,
       }).then(state => {
         // abort only if the state is in progress
@@ -481,7 +485,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.updateAnnotationState({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: 'default',
+            annotationType: 'defaultbackups',
             annotationId: backup_guid,
             stateValue: 'abort'
           })
