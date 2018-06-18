@@ -17,9 +17,12 @@ module.exports = Object.freeze({
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected'
   },
+  EVENTMESH_POLLER_DELAY: 2000,
+  UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
+    ABORT: 'abort',
     ABORTED: 'aborted',
     IN_PROGRESS: 'in progress',
     ABORTING: 'aborting'
@@ -70,7 +73,6 @@ module.exports = Object.freeze({
     //Define names of scheduled JOBS
     SCHEDULED_BACKUP: 'ScheduledBackup',
     SERVICE_FABRIK_BACKUP: 'ServiceFabrikBackup',
-    BACKUP_STATUS_POLLER: 'FabrikStatusPoller',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
     OPERATION_STATUS_POLLER: 'OperationStatusPoller',
     BNR_STATUS_POLLER: 'BnRStatusPoller',
@@ -87,6 +89,7 @@ module.exports = Object.freeze({
     SHUTDOWN_WAIT_TIME: 5000
   },
   BACKUP: {
+    BACKUP_START_TIMEOUT: 15, //SECONDS
     TYPE: {
       ONLINE: 'online'
     },
@@ -207,11 +210,22 @@ module.exports = Object.freeze({
       DESC: -1
     }
   },
+  RESOURCE_TYPES: {
+    LOCK: 'lock',
+    DEPLOYMENT: 'deployment',
+    BACKUP: 'backup'
+  },
+  RESOURCE_NAMES: {
+    DEPLOYMENT_LOCKS: 'deploymentlocks',
+    DIRECTOR: 'directors',
+    DEFAULT_BACKUP: 'defaultbackups'
+  },
   RESOURCE_STATE: {
     IN_QUEUE: 'in queue',
     IN_PROGRESS: 'in progress',
     SUCCEEDED: 'succeeded',
-    ERROR: 'failed'
+    ERROR: 'error',
+    FAILED: 'failed'
   },
   RESOURCE_KEYS: {
     STATE: 'state',
@@ -221,6 +235,19 @@ module.exports = Object.freeze({
   ANNOTATION_KEYS: {
     STATE: 'state',
     OPTIONS: 'options',
+    RESULT: 'result'
+  },
+  APISERVER: {
+    ANNOTATION_NAMES: {
+      BACKUP: 'backup'
+    },
+    ANNOTATION_TYPES: {
+      BACKUP: 'default'
+    },
+    STATE: {
+      IN_QUEUE: 'in_queue',
+      ERROR: 'error'
+    },
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',
@@ -276,5 +303,23 @@ module.exports = Object.freeze({
   },
   ADD_ON_JOBS: {
     IP_TABLES_MANAGER: 'iptables-manager'
+  },
+  ETCD: {
+    RETRY_DELAY: 2000,
+    MAX_RETRY_UNLOCK: 3,
+    LOCK_TYPE: {
+      WRITE: 'WRITE',
+      READ: 'READ'
+    },
+    LOCK_TTL: 5,
+    LOCK_KEY_SUFFIX: '/lock',
+    LOCK_DETAILS_SUFFIX: '/lock/details'
+  },
+  API_SERVER: {
+    WATCH_EVENT: {
+      ADDED: 'ADDED',
+      MODIFIED: 'MODIFIED',
+      DELETED: 'DELETED'
+    }
   }
 });

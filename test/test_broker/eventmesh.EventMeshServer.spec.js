@@ -35,7 +35,14 @@ describe('eventmesh', () => {
 
     describe('#getAnnotationFolderName', () => {
       it('should return the key name for annotation', () => {
-        expect(eventmesh.getAnnotationFolderName('Lorem', 'ipsum', 'dolor', 'sit', 'amet')).to.eql('deployments/Lorem/ipsum/dolor/sit/amet');
+        const opts = {
+          resourceId: 'fakeResourceId',
+          annotationName: 'fakeAnnotationName',
+          annotationType: 'fakeAnnotationType',
+          annotationId: 'fakeAnnotationId',
+        };
+        expect(eventmesh.getAnnotationFolderName(opts))
+          .to.eql(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}`);
       });
     });
 

@@ -1,7 +1,7 @@
 'use strict';
 
-const Etcd3EventMeshServer = require('./Etcd3EventMeshServer');
-const LockManager = require('./LockManager');
+const ApiServerEventMesh = require('./ApiServerEventMesh');
+const ApiServerLockManager = require('./ApiServerLockManager');
 
-exports.server = new Etcd3EventMeshServer();
-exports.lockManager = new LockManager();
+exports.server = new ApiServerEventMesh();
+exports.lockManager = new ApiServerLockManager();

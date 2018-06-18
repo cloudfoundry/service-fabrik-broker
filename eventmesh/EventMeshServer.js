@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const CONST = require('../common/constants');
 const errors = require('../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
@@ -26,14 +27,15 @@ class EventMeshServer {
    *
    * Annotations:
    *    Annotations are operations that can be performed on the resource
-   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>
+   *    - <annotationName>/<annotationType>/<resourceId>/<annotationId>
    *    e.g:
-   *      /deployments/docker/<a guid>/backup/default/<a guid>
-   *      /deployments/docker/<a guid>/backup/bbr/<a guid>
-   *      /deployments/docker/<a guid>/restore/default/<a guid>
+   *      /backup/default/<resource guid>/<a guid>
+   *      /backup/bbr/<resource guid>/<a guid>
+   *      /restore/default/<resource guid>/<a guid>
    * Annotations attributes:
-   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/options
-   *    - /deployments/<resourceType>/<resourceId>/<annotationName>/<annotationType>/<annotationId>/state
+   *    - /<annotationName>/<annotationType>/<resourceId>/<annotationId>/options
+   *    - /<annotationName>/<annotationType>/<resourceId>/<annotationId>/state
+   *    - /<annotationName>/<annotationType>/<resourceId>/last
    *
    */
 
@@ -55,9 +57,12 @@ class EventMeshServer {
     return `deployments/${resourceType}/${resourceId}`;
   }
 
-  getAnnotationFolderName(resourceType, resourceId, annotationName, annotationType, annotationId) {
-    const resourceFolderName = this.getResourceFolderName(resourceType, resourceId);
-    return `${resourceFolderName}/${annotationName}/${annotationType}/${annotationId}`;
+  getAnnotationFolderName(opts) {
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation folder name`);
+    assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation folder name`);
+    assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation folder name`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation folder name`);
+    return `${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}`;
   }
 
   registerService(resourceType, serviceId, serviceAttributesValue, servicePlansValue) {

@@ -15,6 +15,7 @@ const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
 const ScheduleManager = require('../jobs');
+const eventmesh = require('../../../eventmesh');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
@@ -813,6 +814,13 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationState(opts) {
+    if (config.enableServiceFabrikV2) {
+      return this.getBackupOperationState20(opts);
+    }
+    return this.getBackupOperationState10(opts);
+  }
+
+  getBackupOperationState10(opts) {
     const agent_ip = opts.agent_ip;
     const options = _.assign({
       service_id: this.service.id,
@@ -838,6 +846,44 @@ class DirectorManager extends BaseManager {
                 snapshotId: lastOperation.snapshotId
               })
             );
+        }
+      });
+  }
+
+  getBackupOperationState20(opts) {
+    const agent_ip = opts.agent_ip;
+    const options = _.assign({
+      service_id: this.service.id,
+      plan_id: this.plan.id,
+      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
+    }, opts);
+
+    function isFinished(state) {
+      return _.includes(['succeeded', 'failed', 'aborted'], state);
+    }
+
+    return this.agent
+      .getBackupLastOperation(agent_ip)
+      .tap(lastOperation => {
+        if (isFinished(lastOperation.state)) {
+          return this.agent
+            .getBackupLogs(agent_ip)
+            .tap(logs => _.each(logs, log => logger.info(`Backup log for: ${opts.instance_guid} - ${JSON.stringify(log)}`)))
+            .then(logs => this.backupStore
+              .patchBackupFile(options, {
+                state: lastOperation.state,
+                logs: logs,
+                snapshotId: lastOperation.snapshotId
+              })
+            ).then(() => this.backupStore.getBackupFile(options))
+            .then(metadata => eventmesh.server.updateAnnotationKey({
+              resourceId: options.instance_guid,
+              annotationName: 'backup',
+              annotationType: 'default',
+              annotationId: metadata.backup_guid,
+              key: 'result',
+              value: JSON.stringify(metadata)
+            }));
         }
       });
   }
