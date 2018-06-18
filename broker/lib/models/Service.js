@@ -11,8 +11,9 @@ class Service {
       .chain()
       .assign({
         plans: _.map(options.plans, plan => {
-          if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.cred_provider) {
-            //Inject credhub config into agent properties
+          if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.cred_provider &&
+            _.get(plan, 'manager.settings.context.agent.provider.credhub_key', undefined) !== undefined) {
+            //Inject credhub config into agent properties in case credhub is configured for the service
             _.assign(_.get(plan, 'manager.settings.context.agent.provider'),
               _.omit(config.cred_provider, 'credhub_username', 'credhub_user_password'));
           }

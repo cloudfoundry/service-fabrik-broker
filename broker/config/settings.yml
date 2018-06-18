@@ -491,6 +491,7 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
+        credhub_key: '/service-fabrik/iaas/blueprint'
         credhub_username: blueprint-admin
         credhub_user_password: blueprint-secret
     rabbitmq: &agent_rabbitmq
