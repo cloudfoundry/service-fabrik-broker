@@ -70,12 +70,12 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-      if (operationName === 'backup') {
-        return DirectorManager
-          .load(plan)
-          .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-      }
-    })
+        if (operationName === 'backup') {
+          return DirectorManager
+            .load(plan)
+            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+        }
+      })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
         operationStatusResponse.operationTimedOut = false;
@@ -143,12 +143,12 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-      if (operationName === 'backup') {
-        return DirectorManager
-          .load(plan)
-          .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-      }
-    })
+        if (operationName === 'backup') {
+          return DirectorManager
+            .load(plan)
+            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+        }
+      })
       .tap(operationStatusResponse => {
         return eventmesh
           .server

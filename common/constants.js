@@ -255,10 +255,10 @@ module.exports = Object.freeze({
     RESULT: 'result'
   },
   APISERVER: {
-    ANNOTATION_NAMES:{
+    ANNOTATION_NAMES: {
       BACKUP: 'backup'
     },
-    ANNOTATION_TYPES:{
+    ANNOTATION_TYPES: {
       BACKUP: 'default'
     },
     STATE: {
