@@ -3,7 +3,7 @@
 const nock = require('nock');
 const swagger = require('./apiserver-swagger.json');
 const apiserver = require('../../eventmesh').server;
-const apiServerHost = 'https://127.0.0.1:9443';
+const apiServerHost = 'https://10.0.2.2:9443';
 const lib = require('../../broker/lib');
 const logger = lib.logger;
 
@@ -40,7 +40,9 @@ const sampleDeploymentResource = {
   spec: {
     options: 'sample_options'
   },
-  status: {}
+  status: {
+    state: 'in_progress'
+  }
 }
 
 function verify() {
@@ -55,6 +57,12 @@ function verify() {
 function nockGetResource(resourceGroup, resourceType, id, response) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+    .reply(200, response);
+}
+
+function nockPatchResourceStatus(resourceGroup, resourceType, id, response) {
+  nock(apiServerHost)
+    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}/status`)
     .reply(200, response);
 }
 
@@ -184,11 +192,30 @@ describe('eventmesh', () => {
     });
 
     describe('updateResourceState', () => {
-
+      it.only('updates the specified resource state', done => {
+        nockPatchResourceStatus('deployment', 'director', 'd1', sampleDeploymentResource);
+        apiserver.updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql(sampleDeploymentResource);
+            done();
+            verify();
+          })
+          .catch(done);
+      });
     });
 
     describe('getResourceState', () => {
-
+      it('gets the specified resource state', done => {
+        nockGetResource('deployment', 'director', 'd1', sampleDeploymentResource);
+        apiserver.getResourceState('director', 'd1')
+          .then(res => {
+            expect(res).to.eql(sampleDeploymentResource.status.state);
+            done();
+            verify();
+          })
+          .catch(done);
+      });
     });
 
     describe('annotateResource', () => {
