@@ -55,7 +55,9 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 Created', function () {
-          mocks.cloudController.createSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.createSecurityGroup(instance_id);
+          }
           mocks.docker.createContainer(instance_id);
           mocks.docker.startContainer();
           mocks.docker.inspectContainer();
@@ -85,7 +87,9 @@ describe('service-broker-api', function () {
         });
 
         it('returns 201 Created - start fails once internally', function () {
-          mocks.cloudController.createSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.createSecurityGroup(instance_id);
+          }
           mocks.docker.createContainer(instance_id, 2);
           mocks.docker.startContainer(500);
           mocks.docker.deleteContainer();
@@ -219,8 +223,10 @@ describe('service-broker-api', function () {
               Env: ['context={"platform":"cloudfoundry"}']
             }
           });
-          mocks.cloudController.findSecurityGroupByName(instance_id);
-          mocks.cloudController.deleteSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.findSecurityGroupByName(instance_id);
+            mocks.cloudController.deleteSecurityGroup(instance_id);
+          }
           mocks.docker.deleteContainer();
           mocks.docker.deleteVolumes(instance_id);
           return chai.request(app)
@@ -258,8 +264,10 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.docker.inspectContainer(instance_id);
-          mocks.cloudController.findSecurityGroupByName(instance_id);
-          mocks.cloudController.deleteSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.findSecurityGroupByName(instance_id);
+            mocks.cloudController.deleteSecurityGroup(instance_id);
+          }
           mocks.docker.deleteContainer();
           mocks.docker.deleteVolumes(instance_id);
           return chai.request(app)

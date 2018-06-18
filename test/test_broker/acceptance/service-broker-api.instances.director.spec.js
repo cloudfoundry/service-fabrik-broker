@@ -883,11 +883,15 @@ describe('service-broker-api', function () {
           mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
-          mocks.cloudController.findSecurityGroupByName(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.findSecurityGroupByName(instance_id);
+          }
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid
           });
-          mocks.cloudController.deleteSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.deleteSecurityGroup(instance_id);
+          }
           mocks.director.deleteDeployment(task_id);
           mocks.cloudProvider.remove(restorePathname);
           return chai.request(app)
@@ -932,11 +936,15 @@ describe('service-broker-api', function () {
           mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.director.verifyDeploymentLockStatus();
-          mocks.cloudController.findSecurityGroupByName(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.findSecurityGroupByName(instance_id);
+          }
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid
           });
-          mocks.cloudController.deleteSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.deleteSecurityGroup(instance_id);
+          }
           mocks.director.deleteDeployment(task_id);
           mocks.cloudProvider.remove(restorePathname);
           return chai.request(app)
@@ -1114,7 +1122,9 @@ describe('service-broker-api', function () {
           };
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.director.createDeploymentProperty('platform-context', context);
-          mocks.cloudController.createSecurityGroup(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.createSecurityGroup(instance_id);
+          }
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
@@ -1259,7 +1269,9 @@ describe('service-broker-api', function () {
             space_guid: space_guid
           };
           mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.cloudController.findSecurityGroupByName(instance_id);
+          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
+            mocks.cloudController.findSecurityGroupByName(instance_id);
+          }
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
