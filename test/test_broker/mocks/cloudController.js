@@ -310,21 +310,22 @@ function getServiceInstancesInSpaceWithName(instance_name, space_guid, present) 
     });
 }
 
-function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id) {
+function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, resources) {
+  const defaultResources = [{
+    metadata: {
+      guid: plan_guid
+    },
+    entity: {
+      unique_id: plan_unique_id
+    }
+  }];
   return nock(cloudControllerUrl)
     .get('/v2/service_plans')
     .query({
       q: `service_instance_guid:${instance_id}`
     })
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: plan_guid
-        },
-        entity: {
-          unique_id: plan_unique_id
-        }
-      }]
+      resources: resources ? resources : defaultResources
     });
 }
 
