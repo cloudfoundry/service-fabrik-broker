@@ -22,7 +22,7 @@ module.exports = Object.freeze({
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
-    ABORT: 'abort'
+    ABORT: 'abort',
     ABORTED: 'aborted',
     IN_PROGRESS: 'in progress',
     ABORTING: 'aborting'
