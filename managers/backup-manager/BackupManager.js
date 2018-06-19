@@ -216,12 +216,11 @@ class BackupManager {
             annotationId: result.backup_guid,
             stateValue: CONST.APISERVER.STATE.ERROR
           }))
-          .tap(() => eventmesh.server.updateAnnotationKey({
+          .tap(() => eventmesh.server.updateAnnotationResult({
             resourceId: opts.instance_guid,
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
-            key: CONST.ANNOTATION_KEYS.RESULT,
             value: JSON.stringify(err)
           }))
           .tap(() => {
