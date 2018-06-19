@@ -177,11 +177,10 @@ class BackupManager {
           })
           .then(() => {
             backupStarted = true;
-            let put_ret = this.backupStore.putFile(data);
             const backup_options = _.chain(result)
               .set('deployment_name', deploymentName)
               .set('started_at', backupStartedAt)
-              .value()
+              .value();
             logger.info(`Backup is initiated with the options: `, backup_options);
             return backup_options;
           });
@@ -205,7 +204,7 @@ class BackupManager {
           annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
           annotationId: result.backup_guid,
-        })
+        });
       })
       .catch(err => {
         return Promise
@@ -217,7 +216,7 @@ class BackupManager {
             annotationId: result.backup_guid,
             stateValue: CONST.APISERVER.STATE.ERROR
           }))
-          .tap((res) => eventmesh.server.updateAnnotationKey({
+          .tap(() => eventmesh.server.updateAnnotationKey({
             resourceId: opts.instance_guid,
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -284,7 +283,7 @@ class BackupManager {
 
 class Fabrik {
   static createManager(plan) {
-    return Promise.try(() => managerConstructor.load(plan))
+    return Promise.try(() => managerConstructor.load(plan));
   }
 
 }

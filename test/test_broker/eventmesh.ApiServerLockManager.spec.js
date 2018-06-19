@@ -6,8 +6,8 @@ const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
 const errors = require('../../common/errors');
 const notFound = errors.NotFound;
-const resourceType = 'lock';
-const resourceName = 'deploymentlocks';
+// const resourceType = 'lock';
+// const resourceName = 'deploymentlocks';
 
 function buildLockResourceOptions(lockType, lockTime, lockTTL) {
   return JSON.stringify({
@@ -32,13 +32,13 @@ const apiServerLockManager = proxyquire('../../eventmesh/ApiServerLockManager', 
     'server': {
       'getLockResourceOptions': function (resourceType, resourceName, resourceId) {
         return Promise.try(() => {
-          if (lockoptions[resourceId])
+          if (lockoptions[resourceId]) {
             return lockoptions[resourceId];
-          else {
+          } else {
             // return Promise.throw(new notFound('Lock not found'));
             throw new notFound('Lock not found hahahha');
           }
-        })
+        });
       }
     }
   }

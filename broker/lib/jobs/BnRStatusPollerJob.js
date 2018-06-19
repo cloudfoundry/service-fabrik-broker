@@ -14,7 +14,6 @@ const catalog = require('../models').catalog;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
-const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BaseJob {
@@ -58,9 +57,9 @@ class BnRStatusPollerJob extends BaseJob {
 
   static checkOperationCompletionStatus(job_data) {
     if (config.enableServiceFabrikV2) {
-      return this.checkOperationCompletionStatus20(job_data)
+      return this.checkOperationCompletionStatus20(job_data);
     }
-    return this.checkOperationCompletionStatus10(job_data)
+    return this.checkOperationCompletionStatus10(job_data);
   }
   static checkOperationCompletionStatus10(job_data) {
     const operationName = job_data.operation;
@@ -217,18 +216,18 @@ class BnRStatusPollerJob extends BaseJob {
       .tap(operationStatusResponse => {
         return operationStatusResponse.operationFinished ?
           this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) :
-          Promise.resolve(operationStatusResponse)
+          Promise.resolve(operationStatusResponse);
       })
       .catch(err => {
-        logger.error(`Caught error while checking for operation completion status:`, err)
+        logger.error(`Caught error while checking for operation completion status:`, err);
         throw err;
       });
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
     if (config.enableServiceFabrikV2) {
-      return this.doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo)
+      return this.doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo);
     }
-    return this.doPostFinishOperation10(operationStatusResponse, operationName, instanceInfo)
+    return this.doPostFinishOperation10(operationStatusResponse, operationName, instanceInfo);
   }
 
   static doPostFinishOperation10(operationStatusResponse, operationName, instanceInfo) {
@@ -303,7 +302,7 @@ class BnRStatusPollerJob extends BaseJob {
           annotationType: 'default',
           annotationId: instanceInfo.backup_guid,
           stateValue: operationStatusResponse.state
-        })
+        });
       });
   }
 }

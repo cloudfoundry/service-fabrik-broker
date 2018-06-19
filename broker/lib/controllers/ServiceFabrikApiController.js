@@ -78,11 +78,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
               key: CONST.ANNOTATION_KEYS.RESULT
             })
             .then(error => {
-              let json = JSON.parse(error)
+              let json = JSON.parse(error);
               logger.info('Operation manager reported error', json);
               let message = json.message;
               if (json.error && json.error.description) {
-                message = `${message}. ${json.error.description}`
+                message = `${message}. ${json.error.description}`;
               }
               let err;
               switch (json.status) {
@@ -100,7 +100,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
                 break;
               }
               throw err;
-            })
+            });
         } else {
           return eventmesh.server.getAnnotationResult({
             resourceId: opts.resourceId,
@@ -299,11 +299,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startBackup(req, res) {
-    logger.info(`Service fabrik enabled: ${config.enableServiceFabrikV2}`)
+    logger.info(`Service fabrik enabled: ${config.enableServiceFabrikV2}`);
     if (config.enableServiceFabrikV2) {
       return this.startBackup_sf20(req, res);
     }
-    logger.info(`Calling service fabrik v1`)
+    logger.info(`Calling service fabrik v1`);
     return this.startBackup_sf10(req, res);
   }
 
@@ -342,7 +342,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let backup_started_at;
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
-    let backup_guid, deploymentName;
+    let backup_guid;
     return Promise
       .try(() => this.checkQuota(req, trigger))
       .then(() => Promise.all([utils
@@ -383,7 +383,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           });
       })
       .then(() => {
-        backup_started_at = new Date()
+        backup_started_at = new Date();
         //check if resource exist, else create and then update
         return Promise.try(() => eventmesh.server.getResource('deployment', 'directors', req.params.instance_id))
           .catch(() => eventmesh.server.createResource(null, req.params.instance_id, {}))
@@ -408,7 +408,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .then(networkIndex => {
             logger.error('NetworkIndex is ', req.params, networkIndex);
             return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
-          })
+          });
       })
       .then(bodyStr => {
         logger.info('Annotation response:', bodyStr);
@@ -423,7 +423,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
-      .catch(Timeout, (err) => {
+      .catch(Timeout, () => {
         return this.abortLastBackup(req, res);
       });
   }
@@ -444,9 +444,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   abortLastBackup(req, res) {
     if (config.enableServiceFabrikV2) {
-      return this.abortLastBackup20(req, res)
+      return this.abortLastBackup20(req, res);
     }
-    return this.abortLastBackup10(req, res)
+    return this.abortLastBackup10(req, res);
   }
 
   abortLastBackup10(req, res) {
@@ -464,8 +464,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   abortLastBackup20(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
     const backup_started_at = new Date();
     return eventmesh.server.getLastAnnotation({
       resourceId: req.params.instance_id,
@@ -486,16 +484,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
             annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: backup_guid,
             stateValue: 'abort'
-          })
+          });
         } else {
-          logger.info(`Skipping abort as state is : ${state}`)
+          logger.info(`Skipping abort as state is : ${state}`);
         }
       }).then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
         resourceId: req.params.instance_id,
         annotationId: backup_guid,
         start_state: 'abort',
         started_at: backup_started_at
-      }))
+      }));
     }).then(result => res.status(result.state === 'aborting' ? 202 : 200).send(result));
   }
 

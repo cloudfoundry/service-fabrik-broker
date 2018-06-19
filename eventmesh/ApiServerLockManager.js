@@ -1,5 +1,5 @@
-const Client = require('kubernetes-client').Client;
-const config = require('kubernetes-client').config;
+'use strict';
+
 const _ = require('lodash');
 const Promise = require('bluebird');
 const eventmesh = require('./');
@@ -107,7 +107,7 @@ class ApiServerLockManager {
           };
           const status = {
             locked: 'true'
-          }
+          };
           const body = {
             metadata: {
               name: resourceId
@@ -120,7 +120,7 @@ class ApiServerLockManager {
 
         }
         throw err;
-      })
+      });
   }
 
   /*
@@ -145,7 +145,7 @@ class ApiServerLockManager {
           logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
           return Promise.delay(CONST.ETCD.RETRY_DELAY)
             .then(() => unlockResourceRetry(resourceId, currentRetryCount + 1));
-        })
+        });
     }
     logger.info(`Attempting to unlock resource ${resourceId}`);
     return unlockResourceRetry(0);

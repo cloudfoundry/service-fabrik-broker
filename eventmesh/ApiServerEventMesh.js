@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
 const config = require('../common/config');
@@ -57,7 +56,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
       .then(resource => {
         return resource.body.spec.options;
-      })
+      });
   }
   getResource(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
@@ -86,7 +85,7 @@ class ApiServerEventMesh extends EventMeshServer {
         lastOperation: 'created',
         response: JSON.stringify({})
       }
-    }
+    };
 
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
@@ -97,7 +96,7 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
           body: statusJson
-        }))
+        }));
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
@@ -105,14 +104,14 @@ class ApiServerEventMesh extends EventMeshServer {
       'status': {
         'state': stateValue
       }
-    }
+    };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .status.patch({
           body: patchedResource
-        }))
+        }));
   }
 
   getResourceState(resourceType, resourceId) {
@@ -133,7 +132,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.val
    */
   annotateResource(opts) {
-    logger.info('Creating resource with options:', opts.val)
+    logger.info('Creating resource with options:', opts.val);
     const initialResource = {
       metadata: {
         'name': `${opts.annotationId}`,
@@ -151,7 +150,7 @@ class ApiServerEventMesh extends EventMeshServer {
         lastOperation: '',
         response: ''
       }
-    }
+    };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType].post({
@@ -160,7 +159,7 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId).status.patch({
           body: statusJson
-        }))
+        }));
   }
   /**
    * @params opts.resourceId
@@ -174,14 +173,14 @@ class ApiServerEventMesh extends EventMeshServer {
       'status': {
         'response': JSON.stringify(opts.value),
       }
-    }
+    };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
-        }))
+        }));
   }
 
   /**
@@ -201,14 +200,14 @@ class ApiServerEventMesh extends EventMeshServer {
       'status': {
         'state': opts.stateValue
       }
-    }
+    };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
-        }))
+        }));
   }
 
   /**
@@ -218,17 +217,17 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.value
    */
   updateLastAnnotation(opts) {
-    const patchedResource = {}
-    patchedResource['metadata'] = {}
-    patchedResource.metadata['labels'] = {}
-    patchedResource.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value
+    const patchedResource = {};
+    patchedResource.metadata = {};
+    patchedResource.metadata.labels = {};
+    patchedResource.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .patch({
           body: patchedResource
-        }))
+        }));
   }
 
   /**
@@ -262,7 +261,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.spec.options)
+      .then(json => json.body.spec.options);
   }
 
   /**
@@ -282,7 +281,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.status.state)
+      .then(json => json.body.status.state);
   }
 
   /**
@@ -298,7 +297,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.status.response)
+      .then(json => json.body.status.response);
   }
 
 }

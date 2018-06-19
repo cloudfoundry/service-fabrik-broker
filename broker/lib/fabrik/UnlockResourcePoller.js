@@ -1,9 +1,6 @@
-const Client = require('kubernetes-client').Client;
-const config = require('kubernetes-client').config;
-const _ = require('lodash');
+'use strict';
+
 const pubsub = require('pubsub-js');
-const Promise = require('bluebird');
-const JSONStream = require('json-stream');
 const eventmesh = require('../../../eventmesh');
 const CONST = require('../constants');
 const logger = require('../logger');
@@ -27,7 +24,7 @@ class UnlockResourcePoller {
               .then(() => clearInterval(interval));
           }
           throw err;
-        })
+        });
     }
     /*
     Starts poller whenever a lock resource is created.

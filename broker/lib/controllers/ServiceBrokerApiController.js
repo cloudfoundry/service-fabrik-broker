@@ -5,10 +5,8 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const errors = require('../errors');
 const utils = require('../utils');
-const logger = require('../logger');
 const catalog = require('../models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
-const eventmesh = require('../../../eventmesh');
 const lockManager = require('../../../eventmesh').lockManager;
 const AssertionError = assert.AssertionError;
 const BadRequest = errors.BadRequest;
@@ -230,9 +228,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   deleteInstance(req, res) {
     if (config.enableServiceFabrikV2) {
-      return this.deleteInstanceV2(req, res)
+      return this.deleteInstanceV2(req, res);
     }
-    return this.deleteInstanceV1(req, res)
+    return this.deleteInstanceV1(req, res);
   }
 
   deleteInstanceV1(req, res) {
@@ -308,9 +306,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getLastInstanceOperation(req, res) {
     if (config.enableServiceFabrikV2) {
-      return this.getLastInstanceOperationV2(req, res)
+      return this.getLastInstanceOperationV2(req, res);
     }
-    return this.getLastInstanceOperationV1(req, res)
+    return this.getLastInstanceOperationV1(req, res);
   }
 
   getLastInstanceOperationV1(req, res) {
@@ -395,9 +393,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   putBinding(req, res) {
     if (config.enableServiceFabrikV2) {
-      return this.putBindingV2(req, res)
+      return this.putBindingV2(req, res);
     }
-    return this.putBindingV1(req, res)
+    return this.putBindingV1(req, res);
   }
 
   putBindingV1(req, res) {
@@ -454,7 +452,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   deleteBinding(req, res) {
     if (config.enableServiceFabrikV2) {
-      return this.deleteBindingV2(req, res)
+      return this.deleteBindingV2(req, res);
     }
     return this.deleteBindingV1(req, res);
   }
