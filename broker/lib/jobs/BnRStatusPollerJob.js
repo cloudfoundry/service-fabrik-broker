@@ -154,7 +154,7 @@ class BnRStatusPollerJob extends BaseJob {
           .updateAnnotationKey({
             resourceId: instanceInfo.instance_guid,
             annotationName: 'backup',
-            annotationType: 'default',
+            annotationType: 'defaultbackups',
             annotationId: instanceInfo.backup_guid,
             key: 'progress',
             value: JSON.stringify(operationStatusResponse)
@@ -299,7 +299,7 @@ class BnRStatusPollerJob extends BaseJob {
         return eventmesh.server.updateAnnotationState({
           resourceId: instanceInfo.instance_guid,
           annotationName: 'backup',
-          annotationType: 'default',
+          annotationType: 'defaultbackups',
           annotationId: instanceInfo.backup_guid,
           stateValue: operationStatusResponse.state
         });

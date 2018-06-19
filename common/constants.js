@@ -262,7 +262,7 @@ module.exports = Object.freeze({
       BACKUP: 'backup'
     },
     ANNOTATION_TYPES: {
-      BACKUP: 'default'
+      BACKUP: 'defaultbackups'
     },
     STATE: {
       IN_QUEUE: 'in_queue',

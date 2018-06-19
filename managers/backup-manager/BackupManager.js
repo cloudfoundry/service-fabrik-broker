@@ -284,7 +284,7 @@ class BackupManager {
 class Fabrik {
   static createManager(plan) {
     return Promise.try(() => BackupManager.load(plan))
- }
+  }
 
 }
 Fabrik.BackupManager = BackupManager;

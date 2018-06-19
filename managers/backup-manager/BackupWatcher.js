@@ -25,7 +25,7 @@ class DefaultBackupManager extends BaseManager {
     const value = change.object.spec.options
     logger.info('Changed value:', value);
     const changedValue = JSON.parse(value);
-    logger.info('Parsed value:', changedValue );
+    logger.info('Parsed value:', changedValue);
     if (change.object.status.state == CONST.APISERVER.STATE.IN_QUEUE) {
       logger.info('Triggering backup:', changedValue);
       return Promise.try(() => {
