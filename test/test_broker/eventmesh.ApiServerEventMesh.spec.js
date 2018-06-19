@@ -203,12 +203,11 @@ describe('eventmesh', () => {
     describe('createResource', () => {
       it('Creates a resource', done => {
         const resourceId = 'd1';
-        const resourceType = 'director';
+        const resourceType = 'directors';
         const val = {
           key: 'value'
         };
         const input = {
-          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
           metadata: {
             name: `${resourceId}`,
             labels: {
@@ -279,14 +278,13 @@ describe('eventmesh', () => {
         const opts = {
           resourceId: 'd1',
           annotationName: 'backup',
-          annotationType: 'defaultbackup',
+          annotationType: 'defaultbackups',
           annotationId: 'b1',
           val: {
             key: 'value'
           }
         };
         const input = {
-          apiVersion: `${opts.annotationName}.servicefabrik.io/v1alpha1`,
           metadata: {
             name: `${opts.annotationId}`,
             labels: {

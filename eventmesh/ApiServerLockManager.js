@@ -22,6 +22,8 @@ class ApiServerLockManager {
         const lockTime = new Date(lockDetails.lockTime);
         const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
         if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
+          logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation} ` +
+            `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime}`);
           return true;
         }
         return false;
@@ -49,6 +51,7 @@ class ApiServerLockManager {
                   resourceType: <type of resource who is trying to acquire lock ex. backup>
                   resourceName: <name of resource who is trying to acquire lock ex. defaultbackup>
                   resourceId: <id of resource who is trying to acquire lock ex.  backup_guid>
+                  operation: <operation of locker ex. update/backup>
               }
           })    
           }
@@ -65,7 +68,7 @@ class ApiServerLockManager {
       4. else can't acquire lock
   */
 
-  lock(resourceName, lockDetails) {
+  lock(resourceId, lockDetails) {
     if (!lockDetails) {
       lockDetails = {};
     }
@@ -76,23 +79,27 @@ class ApiServerLockManager {
     _.extend(opts, {
       'lockTime': currentTime
     });
-    return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
+    logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`);
+    return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
       .then(options => {
         const currentlLockDetails = JSON.parse(options);
         const currentLockTTL = currentlLockDetails.lockTTL ? currentlLockDetails.lockTTL : Infinity;
         const currentLockTime = new Date(currentlLockDetails.lockTime);
         if ((currentTime - currentLockTime) < currentLockTTL) {
-          logger.info(`Resource ${resourceName} is locked`);
-          throw new ETCDLockError(`Error: resource ${resourceName} is locked`);
+          logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
+          throw new ETCDLockError(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
         } else {
           const patchBody = {
             spec: {
               options: JSON.stringify(opts)
             }
           };
-          return eventmesh.server.updateLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName, patchBody);
+          return eventmesh.server.updateLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
+      .tap(() => logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`))
       .catch(err => {
         if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
           const spec = {
@@ -102,14 +109,15 @@ class ApiServerLockManager {
             locked: 'true'
           }
           const body = {
-            apiVersion: "lock.servicefabrik.io/v1alpha1",
             metadata: {
-              name: resourceName
+              name: resourceId
             },
             spec: spec,
             status: status
           };
-          return eventmesh.server.createLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body);
+          return eventmesh.server.createLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
+            .tap(() => logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`));
+
         }
         throw err;
       })
@@ -119,17 +127,28 @@ class ApiServerLockManager {
   To unlock deployment, delete lock resource
   */
 
-  unlock(resourceName) {
-    return eventmesh.server.deleteLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
-      .tap(() => logger.info(`Successfully Unlocked resource ${resourceName}`))
-      .catch(err => {
-        if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
-          logger.info(`Successfully Unlocked resource ${resourceName}`);
-          return;
-        }
-        logger.error('Error: ', err);
-        throw err;
-      })
+  unlock(resourceId, maxRetryCount) {
+    maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
+
+    function unlockResourceRetry(currentRetryCount) {
+      return eventmesh.server.deleteLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
+        .tap(() => logger.info(`Successfully unlocked resource ${resourceId}`))
+        .catch(err => {
+          if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
+            logger.info(`Successfully Unlocked resource ${resourceId}`);
+            return;
+          }
+          if (currentRetryCount >= maxRetryCount) {
+            logger.error(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+            throw new ETCDLockError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+          }
+          logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
+          return Promise.delay(CONST.ETCD.RETRY_DELAY)
+            .then(() => unlockResourceRetry(resourceId, currentRetryCount + 1));
+        })
+    }
+    logger.info(`Attempting to unlock resource ${resourceId}`);
+    return unlockResourceRetry(0);
   }
 }
 

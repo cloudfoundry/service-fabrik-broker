@@ -13,7 +13,13 @@ function buildLockResourceOptions(lockType, lockTime, lockTTL) {
   return JSON.stringify({
     lockType: lockType,
     lockTime: lockTime ? lockTime : new Date(),
-    lockTTL: lockTTL ? lockTTL : Infinity
+    lockTTL: lockTTL ? lockTTL : Infinity,
+    lockedResourceDetails: {
+      resourceType: 'backup',
+      resourceName: 'defaultbackup',
+      resourceId: 'guid',
+      operation: 'backup'
+    }
   });
 }
 const lockoptions = {

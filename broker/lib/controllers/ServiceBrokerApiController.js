@@ -22,7 +22,6 @@ const UnprocessableEntity = errors.UnprocessableEntity;
 const ETCDLockError = errors.ETCDLockError;
 const config = require('../config');
 const CONST = require('../constants');
-const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -110,17 +109,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise.try(() => {
         if (req.manager.name === 'director') {
-          const lockDeatails = {
+          // Acquire lock for this instance
+          return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
             lockedResourceDetails: {
               resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
               resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-              resourceId: req.params.instance_id
+              resourceId: req.params.instance_id,
+              operation: CONST.OPERATION_TYPE.CREATE
             }
-          };
-          // Acquire lock for this instance
-          logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-          return lockManager.lock(req.params.instance_id, lockDeatails);
+          });
         }
       })
       .then(() => req.instance.create(params))
@@ -130,8 +128,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         if (err instanceof ETCDLockError) {
           throw err;
         }
-        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
       .catch(ServiceInstanceAlreadyExists, conflict);
@@ -207,17 +204,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
         return Promise.try(() => {
             if (req.manager.name === 'director') {
-              const lockDeatails = {
+              // Acquire lock for this instance
+              return lockManager.lock(req.params.instance_id, {
                 lockType: CONST.ETCD.LOCK_TYPE.WRITE,
                 lockedResourceDetails: {
                   resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
                   resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-                  resourceId: req.params.instance_id
+                  resourceId: req.params.instance_id,
+                  operation: CONST.OPERATION_TYPE.UPDATE
                 }
-              };
-              // Acquire lock for this instance
-              logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-              return lockManager.lock(req.params.instance_id, lockDeatails);
+              });
             }
           })
           .then(() => req.instance.update(params));
@@ -227,8 +223,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         if (err instanceof ETCDLockError) {
           throw err;
         }
-        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id)
           .throw(err);
       });
   }
@@ -287,17 +282,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
     this.validateRequest(req, res);
     return Promise.try(() => {
         if (req.manager.name === 'director') {
-          const lockDeatails = {
+          // Acquire lock for this instance
+          return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
             lockedResourceDetails: {
               resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
               resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
-              resourceId: req.params.instance_id
+              resourceId: req.params.instance_id,
+              operation: CONST.OPERATION_TYPE.DELETE
             }
-          };
-          // Acquire lock for this instance
-          logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
-          return lockManager.lock(req.params.instance_id, lockDeatails);
+          });
         }
       })
       .then(() => req.instance.delete(params))
@@ -306,8 +300,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         if (err instanceof ETCDLockError) {
           throw err;
         }
-        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
       .catch(ServiceInstanceNotFound, gone);
@@ -367,16 +360,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const body = _.pick(result, 'state', 'description');
       // Unlock resource if state is succeeded or failed
       if (result.state === 'succeeded' || result.state === 'failed') {
-        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id)
           .then(() => res.status(200).send(body));
       }
       res.status(200).send(body);
     }
 
     function failed(err) {
-      logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(req.params.instance_id)
+      return lockManager.unlock(req.params.instance_id)
         .then(() => res.status(200).send({
           state: 'failed',
           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
@@ -384,8 +375,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     function gone() {
-      logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-      return unlockEtcdResource(req.params.instance_id)
+      return lockManager.unlock(req.params.instance_id)
         .then(() => res.status(410).send({}));
     }
 

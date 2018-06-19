@@ -29,7 +29,6 @@ const CONST = require('../constants');
 const catalog = require('../models').catalog;
 const utils = require('../utils');
 const docker = config.enable_swarm_manager ? require('../docker') : undefined;
-const unlockEtcdResource = require('../utils/EtcdLockHelper').unlockEtcdResource;
 
 const CloudControllerError = {
   NotAuthorized: err => {
@@ -364,13 +363,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
           context: req.body.context
         };
         // Acquire read lock for resource resourceId
-        logger.info(`Attempting to acquire lock on deployment with instanceid: ${req.params.instance_id} `);
         return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.READ,
             lockedResourceDetails: {
               resourceType: CONST.RESOURCE_TYPES.BACKUP,
               resourceName: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
-              resourceId: backup_guid
+              resourceId: backup_guid,
+              operation: CONST.OPERATION_TYPE.BACKUP
             }
           })
           .then(() => {
@@ -421,8 +420,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (err instanceof ETCDLockError) {
           throw err;
         }
-        logger.info(`Attempting to release lock on deployment with instanceid: ${req.params.instance_id} `);
-        return unlockEtcdResource(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
       .catch(Timeout, (err) => {

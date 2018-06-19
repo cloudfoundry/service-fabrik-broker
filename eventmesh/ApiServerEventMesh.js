@@ -24,8 +24,8 @@ class ApiServerEventMesh extends EventMeshServer {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => {
         const stream = apiserver
-          .apis[`${resourceName}.servicefabrik.io`]
-          .v1alpha1.watch.namespaces('default')[resourceType].getStream();
+          .apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+          .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream();
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
@@ -34,78 +34,82 @@ class ApiServerEventMesh extends EventMeshServer {
   }
   createLockResource(name, type, body) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type].post({
-        body: body
-      }));
+      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[type].post({
+          body: body
+        }));
   }
   deleteLockResource(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).delete());
+      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).delete());
   }
   updateLockResource(name, type, resourceName, delta) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).patch({
-        body: delta
-      }));
+      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).patch({
+          body: delta
+        }));
   }
   getLockResourceOptions(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get())
+      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
       .then(resource => {
         return resource.body.spec.options;
       })
   }
   getResource(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.servicefabrik.io`].v1alpha1.namespaces('default')[type](resourceName).get());
+      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get());
   }
 
   createResource(resourceType, resourceId, val) {
     logger.debug(`Creating Resource ${resourceType}/${resourceId}`);
 
     const initialResource = {
-      apiVersion: "deployment.servicefabrik.io/v1alpha1",
       metadata: {
         name: resourceId,
-        "labels": {
+        'labels': {
           instance_guid: `${resourceId}`,
         },
       },
       spec: {
-        "options": JSON.stringify(val)
+        'options': JSON.stringify(val)
       },
     };
 
     const statusJson = {
       status: {
         state: CONST.APISERVER.STATE.IN_QUEUE,
-        lastOperation: "created",
+        lastOperation: 'created',
         response: JSON.stringify({})
       }
     }
 
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis['deployment.servicefabrik.io']
-        .v1alpha1.namespaces('default').directors.post({
+        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR].post({
           body: initialResource
         }))
-      .then(() => apiserver.apis['deployment.servicefabrik.io']
-        .v1alpha1.namespaces('default').directors(resourceId).status.patch({
+      .then(() => apiserver.apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
           body: statusJson
         }))
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
     const patchedResource = {
-      "status": {
-        "state": stateValue
+      'status': {
+        'state': stateValue
       }
     }
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`deployment.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[resourceType](resourceId)
+        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .status.patch({
           body: patchedResource
         }))
@@ -114,8 +118,8 @@ class ApiServerEventMesh extends EventMeshServer {
   getResourceState(resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`deployment.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[resourceType](resourceId)
+        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .get())
       .then(json => json.body.status.state);
   }
@@ -131,31 +135,30 @@ class ApiServerEventMesh extends EventMeshServer {
   annotateResource(opts) {
     logger.info('Creating resource with options:', opts.val)
     const initialResource = {
-      "apiVersion": `${opts.annotationName}.servicefabrik.io/v1alpha1`,
       metadata: {
-        "name": `${opts.annotationId}`,
-        "labels": {
+        'name': `${opts.annotationId}`,
+        'labels': {
           instance_guid: `${opts.resourceId}`,
         },
       },
       spec: {
-        "options": JSON.stringify(opts.val)
+        'options': JSON.stringify(opts.val)
       },
     };
     const statusJson = {
       status: {
         state: CONST.APISERVER.STATE.IN_QUEUE,
-        lastOperation: "",
-        response: ""
+        lastOperation: '',
+        response: ''
       }
     }
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType].post({
+      .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType].post({
           body: initialResource
         }))
-      .then(() => apiserver.apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId).status.patch({
+      .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId).status.patch({
           body: statusJson
         }))
   }
@@ -168,14 +171,14 @@ class ApiServerEventMesh extends EventMeshServer {
    */
   updateAnnotationResult(opts) {
     const patchedResource = {
-      "status": {
-        "response": JSON.stringify(opts.value),
+      'status': {
+        'response': JSON.stringify(opts.value),
       }
     }
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId)
+        .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
         }))
@@ -195,14 +198,14 @@ class ApiServerEventMesh extends EventMeshServer {
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
     assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation state`);
     const patchedResource = {
-      "status": {
-        "state": opts.stateValue
+      'status': {
+        'state': opts.stateValue
       }
     }
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId)
+        .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
         }))
@@ -216,13 +219,13 @@ class ApiServerEventMesh extends EventMeshServer {
    */
   updateLastAnnotation(opts) {
     const patchedResource = {}
-    patchedResource["metadata"] = {}
-    patchedResource.metadata["labels"] = {}
+    patchedResource['metadata'] = {}
+    patchedResource.metadata['labels'] = {}
     patchedResource.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis['deployment.servicefabrik.io']
-        .v1alpha1.namespaces('default')["directors"](opts.resourceId)
+        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .patch({
           body: patchedResource
         }))
@@ -236,8 +239,8 @@ class ApiServerEventMesh extends EventMeshServer {
   getLastAnnotation(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`deployment.servicefabrik.io`]
-        .v1alpha1.namespaces('default')["directors"](opts.resourceId)
+        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .get())
       .then(json => json.body.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`]);
   }
@@ -256,8 +259,8 @@ class ApiServerEventMesh extends EventMeshServer {
     assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId)
+        .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
       .then(json => json.body.spec.options)
   }
@@ -276,8 +279,8 @@ class ApiServerEventMesh extends EventMeshServer {
     assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId)
+        .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
       .then(json => json.body.status.state)
   }
@@ -292,8 +295,8 @@ class ApiServerEventMesh extends EventMeshServer {
   getAnnotationResult(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${opts.annotationName}.servicefabrik.io`]
-        .v1alpha1.namespaces('default')[opts.annotationType](opts.annotationId)
+        .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
       .then(json => json.body.status.response)
   }

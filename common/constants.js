@@ -255,6 +255,9 @@ module.exports = Object.freeze({
     RESULT: 'result'
   },
   APISERVER: {
+    HOSTNAME: 'servicefabrik.io',
+    NAMESPACE: 'default',
+    API_VERSION: 'v1alpha1',
     ANNOTATION_NAMES: {
       BACKUP: 'backup'
     },
