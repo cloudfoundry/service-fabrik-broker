@@ -8,7 +8,8 @@ const CONST = require('../common/constants');
 const EventMeshServer = require('./EventMeshServer');
 const kc = require('kubernetes-client');
 const JSONStream = require('json-stream');
-
+const errors = require('../common/errors');
+const HttpError = errors.HttpError;
 
 const apiserver = new kc.Client({
   config: {
@@ -29,26 +30,37 @@ class ApiServerEventMesh extends EventMeshServer {
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
       })
-      .catch(e => logger.error('Caucht error while registering', e));
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
   createLockResource(name, type, body) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type].post({
           body: body
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
   deleteLockResource(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).delete());
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).delete())
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
   updateLockResource(name, type, resourceName, delta) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).patch({
           body: delta
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
   getLockResourceOptions(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
@@ -56,12 +68,18 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
       .then(resource => {
         return resource.body.spec.options;
+      })
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
       });
   }
   getResource(name, type, resourceName) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get());
+        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   createResource(resourceType, resourceId, val) {
@@ -96,7 +114,10 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
           body: statusJson
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
@@ -111,7 +132,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .status.patch({
           body: patchedResource
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   getResourceState(resourceType, resourceId) {
@@ -120,7 +144,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .get())
-      .then(json => json.body.status.state);
+      .then(json => json.body.status.state)
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -159,7 +186,10 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId).status.patch({
           body: statusJson
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
   /**
    * @params opts.resourceId
@@ -180,7 +210,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -207,7 +240,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .status.patch({
           body: patchedResource
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -227,7 +263,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .patch({
           body: patchedResource
-        }));
+        }))
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -241,7 +280,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .get())
-      .then(json => json.body.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`]);
+      .then(json => json.body.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`])
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -261,7 +303,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.spec.options);
+      .then(json => json.body.spec.options)
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -281,7 +326,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.status.state);
+      .then(json => json.body.status.state)
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
   /**
@@ -297,7 +345,10 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId)
         .get())
-      .then(json => json.body.status.response);
+      .then(json => json.body.status.response)
+      .catch(err => {
+        throw new HttpError(err.code, err.message);
+      });
   }
 
 }

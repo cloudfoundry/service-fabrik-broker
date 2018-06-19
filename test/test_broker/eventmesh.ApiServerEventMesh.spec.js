@@ -67,40 +67,40 @@ const sampleBackupResource = {
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
-    console.log('pending mocks: %j', nock.pendingMocks());
+    // console.log('pending mocks: %j', nock.pendingMocks());
     logger.error('pending mocks: %j', nock.pendingMocks());
   }
   expect(nock.isDone()).to.be.true;
 }
 
-function nockGetResource(resourceGroup, resourceType, id, response) {
+function nockGetResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
-    .reply(200, response);
+    .reply(expectedExpectedCode || 200, response);
 }
 
-function nockPatchResourceStatus(resourceGroup, resourceType, id, response, payload) {
+function nockPatchResourceStatus(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
     .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}/status`, payload)
-    .reply(200, response);
+    .reply(expectedExpectedCode || 200, response);
 }
 
-function nockPatchResource(resourceGroup, resourceType, id, response, payload) {
+function nockPatchResource(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
     .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`, payload)
-    .reply(200, response);
+    .reply(expectedExpectedCode || 200, response);
 }
 
-function nockCreateResource(resourceGroup, resourceType, response, payload) {
+function nockCreateResource(resourceGroup, resourceType, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
     .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`, payload)
-    .reply(201, response);
+    .reply(expectedExpectedCode || 201, response);
 }
 
-function nockDeleteResource(resourceGroup, resourceType, id, response) {
+function nockDeleteResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
   nock(apiServerHost)
     .delete(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
-    .reply(200, response);
+    .reply(expectedExpectedCode || 200, response);
 }
 
 describe('eventmesh', () => {
@@ -127,22 +127,30 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
+        return apiserver.createLockResource('lock', 'deploymentlock', sampleLockResource)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('deleteLockResource', () => {
+      const deleteLockResponse = {
+        kind: 'Status',
+        apiVersion: 'v1',
+        metadata: {},
+        status: 'Success',
+        details: {
+          name: 'l1',
+          group: 'lock.servicefabrik.io',
+          kind: 'deploymentlocks',
+          uid: '3576eca0-72b7-11e8-80fe-9801a7b45ddd'
+        }
+      };
       it('calls the delete rest api to delete lock type resource', done => {
-        const deleteLockResponse = {
-          kind: 'Status',
-          apiVersion: 'v1',
-          metadata: {},
-          status: 'Success',
-          details: {
-            name: 'l1',
-            group: 'lock.servicefabrik.io',
-            kind: 'deploymentlocks',
-            uid: '3576eca0-72b7-11e8-80fe-9801a7b45ddd'
-          }
-        };
         nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse);
         apiserver.deleteLockResource('lock', 'deploymentlock', 'l1')
           .then(res => {
@@ -152,6 +160,14 @@ describe('eventmesh', () => {
             verify();
           })
           .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse, 409);
+        return apiserver.deleteLockResource('lock', 'deploymentlock', 'l1')
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
       });
     });
 
@@ -171,6 +187,19 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        const spec = {
+          spec: {
+            options: sampleLockResource.spec.options
+          }
+        };
+        nockPatchResource('lock', 'deploymentlock', 'l1', sampleLockResource, spec, 409);
+        return apiserver.updateLockResource('lock', 'deploymentlock', 'l1', spec)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('getLockResourceOptions', () => {
@@ -183,6 +212,14 @@ describe('eventmesh', () => {
             verify();
           })
           .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource, 409);
+        return apiserver.getLockResourceOptions('lock', 'deploymentlock', 'l1')
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
       });
     });
 
@@ -198,41 +235,50 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockGetResource('deployment', 'director', 'd1', sampleDeploymentResource, 409);
+        return apiserver.getResource('deployment', 'director', 'd1')
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('createResource', () => {
-      it('Creates a resource', done => {
-        const resourceId = 'd1';
-        const resourceType = 'directors';
-        const val = {
-          key: 'value'
-        };
-        const input = {
-          metadata: {
-            name: `${resourceId}`,
-            labels: {
-              instance_guid: `${resourceId}`,
-            }
-          },
-          spec: {
-            options: JSON.stringify(val)
-          },
-        };
+      const resourceId = 'd1';
+      const resourceType = 'directors';
+      const val = {
+        key: 'value'
+      };
+      const input = {
+        metadata: {
+          name: `${resourceId}`,
+          labels: {
+            instance_guid: `${resourceId}`,
+          }
+        },
+        spec: {
+          options: JSON.stringify(val)
+        },
+      };
 
-        const statusJson = {
-          status: {
-            state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: 'created',
-            response: JSON.stringify({})
-          }
-        };
-        const finalResource = _.assign({
-          status: {
-            state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: 'created',
-            response: JSON.stringify({})
-          }
-        }, sampleDeploymentResource);
+      const statusJson = {
+        status: {
+          state: CONST.APISERVER.STATE.IN_QUEUE,
+          lastOperation: 'created',
+          response: JSON.stringify({})
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          state: CONST.APISERVER.STATE.IN_QUEUE,
+          lastOperation: 'created',
+          response: JSON.stringify({})
+        }
+      }, sampleDeploymentResource);
+
+      it('Creates a resource', done => {
         nockCreateResource('deployment', 'director', sampleDeploymentResource, input);
         nockPatchResourceStatus('deployment', 'director', 'd1', finalResource, statusJson);
         apiserver.createResource(resourceType, resourceId, val)
@@ -243,6 +289,14 @@ describe('eventmesh', () => {
             verify();
           })
           .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockCreateResource('deployment', 'director', sampleDeploymentResource, input, 409);
+        return apiserver.createResource(resourceType, resourceId, val)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
       });
     });
 
@@ -258,6 +312,14 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockPatchResourceStatus('deployment', 'director', 'd1', sampleDeploymentResource, undefined, 409);
+        return apiserver.updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('getResourceState', () => {
@@ -271,45 +333,53 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockGetResource('deployment', 'director', 'd1', sampleDeploymentResource, 409);
+        return apiserver.getResourceState('director', 'd1')
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('annotateResource', () => {
-      it('Creates an annotation of a resource', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackups',
-          annotationId: 'b1',
-          val: {
-            key: 'value'
-          }
-        };
-        const input = {
-          metadata: {
-            name: `${opts.annotationId}`,
-            labels: {
-              instance_guid: `${opts.resourceId}`,
-            },
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackups',
+        annotationId: 'b1',
+        val: {
+          key: 'value'
+        }
+      };
+      const input = {
+        metadata: {
+          name: `${opts.annotationId}`,
+          labels: {
+            instance_guid: `${opts.resourceId}`,
           },
-          spec: {
-            options: JSON.stringify(opts.val)
-          },
-        };
+        },
+        spec: {
+          options: JSON.stringify(opts.val)
+        },
+      };
 
-        const statusJson = {
-          status: {
-            state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: '',
-            response: ''
-          }
-        };
-        const finalResource = _.assign({
-          status: {
-            state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: '',
-            response: ''
-          }
-        }, sampleBackupResource);
+      const statusJson = {
+        status: {
+          state: CONST.APISERVER.STATE.IN_QUEUE,
+          lastOperation: '',
+          response: ''
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          state: CONST.APISERVER.STATE.IN_QUEUE,
+          lastOperation: '',
+          response: ''
+        }
+      }, sampleBackupResource);
+      it('Creates an annotation of a resource', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, statusJson);
         apiserver.annotateResource(opts)
@@ -321,29 +391,37 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input, 409);
+        return apiserver.annotateResource(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('updateAnnotationResult', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        annotationId: 'b1',
+        value: {
+          key: 'value'
+        }
+      };
+      const input = {
+        status: {
+          response: JSON.stringify(opts.value),
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          response: JSON.stringify(opts.value)
+        }
+      }, sampleBackupResource);
       it('updates the annotation result', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          annotationId: 'b1',
-          value: {
-            key: 'value'
-          }
-        };
-        const input = {
-          status: {
-            response: JSON.stringify(opts.value),
-          }
-        };
-        const finalResource = _.assign({
-          status: {
-            response: JSON.stringify(opts.value)
-          }
-        }, sampleBackupResource);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateAnnotationResult(opts)
           .then(res => {
@@ -354,28 +432,36 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
+        return apiserver.updateAnnotationResult(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
 
     describe('updateAnnotationState', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        annotationId: 'b1',
+        stateValue: 'in_progress'
+      };
+      const input = {
+        status: {
+          state: opts.stateValue
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          state: opts.stateValue
+        }
+      }, sampleBackupResource);
       it('updates the annotation state', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          annotationId: 'b1',
-          stateValue: 'in_progress'
-        };
-        const input = {
-          status: {
-            state: opts.stateValue
-          }
-        };
-        const finalResource = _.assign({
-          status: {
-            state: opts.stateValue
-          }
-        }, sampleBackupResource);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateAnnotationState(opts)
           .then(res => {
@@ -386,22 +472,31 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
+        return apiserver.updateAnnotationState(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('updateLastAnnotation', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        value: 'b1'
+      };
+      const input = {};
+      input.metadata = {};
+      input.metadata.labels = {};
+      input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
+      const finalResource = _.cloneDeep(sampleDeploymentResource);
+      _.assign(finalResource, input);
+
       it('updates the last annotation value', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          value: 'b1'
-        };
-        const input = {};
-        input.metadata = {};
-        input.metadata.labels = {};
-        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
-        const finalResource = _.cloneDeep(sampleDeploymentResource);
-        _.assign(finalResource, input);
         nockPatchResource('deployment', 'director', 'd1', finalResource, input);
         apiserver.updateLastAnnotation(opts)
           .then(res => {
@@ -412,21 +507,30 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockPatchResource('deployment', 'director', 'd1', finalResource, input, 409);
+        return apiserver.updateLastAnnotation(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
+
     });
 
     describe('getLastAnnotation', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup'
+      };
+      const input = {};
+      input.metadata = {};
+      input.metadata.labels = {};
+      input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = 'b1';
+      const finalResource = _.cloneDeep(sampleDeploymentResource);
+      _.assign(finalResource, input);
       it('gets the last annotation value', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup'
-        };
-        const input = {};
-        input.metadata = {};
-        input.metadata.labels = {};
-        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = 'b1';
-        const finalResource = _.cloneDeep(sampleDeploymentResource);
-        _.assign(finalResource, input);
         nockGetResource('deployment', 'director', 'd1', finalResource);
         apiserver.getLastAnnotation(opts)
           .then(res => {
@@ -436,21 +540,29 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockGetResource('deployment', 'director', 'd1', finalResource, 409);
+        return apiserver.getLastAnnotation(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('getAnnotationOptions', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        annotationId: 'b1'
+      };
+      const input = {};
+      input.spec = {};
+      input.spec.options = 'some_value';
+      const finalResource = _.cloneDeep(sampleDeploymentResource);
+      _.assign(finalResource, input);
       it('gets the last annotation options', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          annotationId: 'b1'
-        };
-        const input = {};
-        input.spec = {};
-        input.spec.options = 'some_value';
-        const finalResource = _.cloneDeep(sampleDeploymentResource);
-        _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getAnnotationOptions(opts)
           .then(res => {
@@ -460,21 +572,29 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
+        return apiserver.getAnnotationOptions(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('getAnnotationState', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        annotationId: 'b1'
+      };
+      const input = {};
+      input.status = {};
+      input.status.state = 'in_progress';
+      const finalResource = _.cloneDeep(sampleDeploymentResource);
+      _.assign(finalResource, input);
       it('gets the last annotation state', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          annotationId: 'b1'
-        };
-        const input = {};
-        input.status = {};
-        input.status.state = 'in_progress';
-        const finalResource = _.cloneDeep(sampleDeploymentResource);
-        _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getAnnotationState(opts)
           .then(res => {
@@ -484,21 +604,29 @@ describe('eventmesh', () => {
           })
           .catch(done);
       });
+      it('throws error if api call is errored', done => {
+        nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
+        return apiserver.getAnnotationState(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
     });
 
     describe('getAnnotationResult', () => {
+      const opts = {
+        resourceId: 'd1',
+        annotationName: 'backup',
+        annotationType: 'defaultbackup',
+        annotationId: 'b1'
+      };
+      const input = {};
+      input.status = {};
+      input.status.response = 'some_response';
+      const finalResource = _.cloneDeep(sampleDeploymentResource);
+      _.assign(finalResource, input);
       it('gets the last annotation Result', done => {
-        const opts = {
-          resourceId: 'd1',
-          annotationName: 'backup',
-          annotationType: 'defaultbackup',
-          annotationId: 'b1'
-        };
-        const input = {};
-        input.status = {};
-        input.status.response = 'some_response';
-        const finalResource = _.cloneDeep(sampleDeploymentResource);
-        _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getAnnotationResult(opts)
           .then(res => {
@@ -507,6 +635,14 @@ describe('eventmesh', () => {
             verify();
           })
           .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
+        return apiserver.getAnnotationResult(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
       });
     });
 
