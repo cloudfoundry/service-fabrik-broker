@@ -58,7 +58,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => eventmesh.server.getAnnotationState({
         resourceId: opts.resourceId,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+        annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: opts.annotationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
@@ -73,7 +73,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.getAnnotationKeyValue({
               resourceId: opts.resourceId,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+              annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: opts.annotationId,
               key: CONST.ANNOTATION_KEYS.RESULT
             })
@@ -105,7 +105,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.getAnnotationResult({
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: opts.annotationId,
           });
         }
@@ -376,9 +376,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
             return eventmesh.server.annotateResource({
               resourceId: req.params.instance_id,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+              annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: backup_guid,
-              val: JSON.stringify(backup_options)
+              val: backup_options
             });
           });
       })
@@ -390,7 +390,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .then(() => eventmesh.server.updateLastAnnotation({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
             value: backup_guid
           }))
           .then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
@@ -468,12 +468,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return eventmesh.server.getLastAnnotation({
       resourceId: req.params.instance_id,
       annotationName: CONST.OPERATION_TYPE.BACKUP,
-      annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+      annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
     }).then(backup_guid => {
       return eventmesh.server.getAnnotationState({
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+        annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: backup_guid,
       }).then(state => {
         // abort only if the state is in progress
@@ -481,7 +481,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.updateAnnotationState({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: backup_guid,
             stateValue: 'abort'
           });
