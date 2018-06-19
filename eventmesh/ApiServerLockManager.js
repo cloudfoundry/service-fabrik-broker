@@ -14,8 +14,8 @@ class ApiServerLockManager {
   returns true if lock is present and not expired and it's of type WRITE
   */
 
-  isWriteLocked(resourceName) {
-    return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceName)
+  isWriteLocked(resourceId) {
+    return eventmesh.server.getLockResourceOptions(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
       .then(options => {
         const currentTime = new Date();
         const lockDetails = JSON.parse(options);
@@ -44,7 +44,7 @@ class ApiServerLockManager {
           JSON.stringify({
               lockType: <Read/Write>,
               lockTime: <time in UTC when lock was acquired, can be updated when one wants to refresh lock>,
-              lockTTL: <lock ttl=> set to Infinity if not provided>,
+              lockTTL: <lock ttl in miliseconds=> set to Infinity if not provided>,
               lockedResourceDetails: {
                   resourceType: <type of resource who is trying to acquire lock ex. backup>
                   resourceName: <name of resource who is trying to acquire lock ex. defaultbackup>
