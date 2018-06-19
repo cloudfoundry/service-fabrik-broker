@@ -25,7 +25,7 @@ const sampleLockResource = {
     options: 'sample_options'
   },
   status: {}
-}
+};
 
 const sampleDeploymentResource = {
   kind: 'Director',
@@ -45,7 +45,7 @@ const sampleDeploymentResource = {
   status: {
     state: 'in_progress'
   }
-}
+};
 
 const sampleBackupResource = {
   kind: 'DefaultBackup',
@@ -62,7 +62,7 @@ const sampleBackupResource = {
   spec: {
     options: 'sample_options'
   }
-}
+};
 
 function verify() {
   /* jshint expr:true */
@@ -113,12 +113,6 @@ describe('eventmesh', () => {
 
     afterEach(() => {
       nock.cleanAll();
-    })
-
-    describe('registerWatcher', () => {
-      it('returns the specified resource', () => {
-
-      });
     });
 
     describe('createLockResource', () => {
@@ -148,7 +142,7 @@ describe('eventmesh', () => {
             kind: 'deploymentlocks',
             uid: '3576eca0-72b7-11e8-80fe-9801a7b45ddd'
           }
-        }
+        };
         nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse);
         apiserver.deleteLockResource('lock', 'deploymentlock', 'l1')
           .then(res => {
@@ -207,7 +201,50 @@ describe('eventmesh', () => {
     });
 
     describe('createResource', () => {
+      it('Creates a resource', done => {
+        const resourceId = 'd1';
+        const resourceType = 'director';
+        const val = {
+          key: 'value'
+        };
+        const input = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          metadata: {
+            name: `${resourceId}`,
+            labels: {
+              instance_guid: `${resourceId}`,
+            }
+          },
+          spec: {
+            options: JSON.stringify(val)
+          },
+        };
 
+        const statusJson = {
+          status: {
+            state: CONST.APISERVER.STATE.IN_QUEUE,
+            lastOperation: 'created',
+            response: JSON.stringify({})
+          }
+        };
+        const finalResource = _.assign({
+          status: {
+            state: CONST.APISERVER.STATE.IN_QUEUE,
+            lastOperation: 'created',
+            response: JSON.stringify({})
+          }
+        }, sampleDeploymentResource);
+        nockCreateResource('deployment', 'director', sampleDeploymentResource, input);
+        nockPatchResourceStatus('deployment', 'director', 'd1', finalResource, statusJson);
+        apiserver.createResource(resourceType, resourceId, val)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql(finalResource);
+            done();
+            verify();
+          })
+          .catch(done);
+      });
     });
 
     describe('updateResourceState', () => {
@@ -238,7 +275,7 @@ describe('eventmesh', () => {
     });
 
     describe('annotateResource', () => {
-      it('gets the specified resource state', done => {
+      it('Creates an annotation of a resource', done => {
         const opts = {
           resourceId: 'd1',
           annotationName: 'backup',
@@ -247,34 +284,34 @@ describe('eventmesh', () => {
           val: {
             key: 'value'
           }
-        }
+        };
         const input = {
-          "apiVersion": `${opts.annotationName}.servicefabrik.io/v1alpha1`,
+          apiVersion: `${opts.annotationName}.servicefabrik.io/v1alpha1`,
           metadata: {
-            "name": `${opts.annotationId}`,
-            "labels": {
+            name: `${opts.annotationId}`,
+            labels: {
               instance_guid: `${opts.resourceId}`,
             },
           },
           spec: {
-            "options": JSON.stringify(opts.val)
+            options: JSON.stringify(opts.val)
           },
-        }
+        };
 
         const statusJson = {
           status: {
             state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: "",
-            response: ""
+            lastOperation: '',
+            response: ''
           }
-        }
+        };
         const finalResource = _.assign({
           status: {
             state: CONST.APISERVER.STATE.IN_QUEUE,
-            lastOperation: "",
-            response: ""
+            lastOperation: '',
+            response: ''
           }
-        }, sampleBackupResource)
+        }, sampleBackupResource);
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, statusJson);
         apiserver.annotateResource(opts)
@@ -298,17 +335,17 @@ describe('eventmesh', () => {
           value: {
             key: 'value'
           }
-        }
+        };
         const input = {
-          "status": {
-            "response": JSON.stringify(opts.value),
+          status: {
+            response: JSON.stringify(opts.value),
           }
-        }
+        };
         const finalResource = _.assign({
           status: {
             response: JSON.stringify(opts.value)
           }
-        }, sampleBackupResource)
+        }, sampleBackupResource);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateAnnotationResult(opts)
           .then(res => {
@@ -330,17 +367,17 @@ describe('eventmesh', () => {
           annotationType: 'defaultbackup',
           annotationId: 'b1',
           stateValue: 'in_progress'
-        }
+        };
         const input = {
-          "status": {
-            "state": opts.stateValue
+          status: {
+            state: opts.stateValue
           }
-        }
+        };
         const finalResource = _.assign({
           status: {
             state: opts.stateValue
           }
-        }, sampleBackupResource)
+        }, sampleBackupResource);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateAnnotationState(opts)
           .then(res => {
@@ -360,11 +397,11 @@ describe('eventmesh', () => {
           annotationName: 'backup',
           annotationType: 'defaultbackup',
           value: 'b1'
-        }
-        const input = {}
-        input["metadata"] = {}
-        input.metadata["labels"] = {}
-        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value
+        };
+        const input = {};
+        input.metadata = {};
+        input.metadata.labels = {};
+        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
         const finalResource = _.cloneDeep(sampleDeploymentResource);
         _.assign(finalResource, input);
         nockPatchResource('deployment', 'director', 'd1', finalResource, input);
@@ -385,11 +422,11 @@ describe('eventmesh', () => {
           resourceId: 'd1',
           annotationName: 'backup',
           annotationType: 'defaultbackup'
-        }
-        const input = {}
-        input["metadata"] = {}
-        input.metadata["labels"] = {}
-        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = 'b1'
+        };
+        const input = {};
+        input.metadata = {};
+        input.metadata.labels = {};
+        input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = 'b1';
         const finalResource = _.cloneDeep(sampleDeploymentResource);
         _.assign(finalResource, input);
         nockGetResource('deployment', 'director', 'd1', finalResource);
@@ -410,10 +447,10 @@ describe('eventmesh', () => {
           annotationName: 'backup',
           annotationType: 'defaultbackup',
           annotationId: 'b1'
-        }
-        const input = {}
-        input["spec"] = {}
-        input.spec["options"] = 'some_value'
+        };
+        const input = {};
+        input.spec = {};
+        input.spec.options = 'some_value';
         const finalResource = _.cloneDeep(sampleDeploymentResource);
         _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
@@ -434,10 +471,10 @@ describe('eventmesh', () => {
           annotationName: 'backup',
           annotationType: 'defaultbackup',
           annotationId: 'b1'
-        }
-        const input = {}
-        input["status"] = {}
-        input.status["state"] = 'in_progress'
+        };
+        const input = {};
+        input.status = {};
+        input.status.state = 'in_progress';
         const finalResource = _.cloneDeep(sampleDeploymentResource);
         _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
@@ -458,10 +495,10 @@ describe('eventmesh', () => {
           annotationName: 'backup',
           annotationType: 'defaultbackup',
           annotationId: 'b1'
-        }
-        const input = {}
-        input["status"] = {}
-        input.status["response"] = 'some_response'
+        };
+        const input = {};
+        input.status = {};
+        input.status.response = 'some_response';
         const finalResource = _.cloneDeep(sampleDeploymentResource);
         _.assign(finalResource, input);
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
