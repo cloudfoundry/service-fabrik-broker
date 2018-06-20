@@ -9,7 +9,10 @@ const EventMeshServer = require('./EventMeshServer');
 const kc = require('kubernetes-client');
 const JSONStream = require('json-stream');
 const errors = require('../common/errors');
-const HttpError = errors.HttpError;
+const BadRequest = errors.BadRequest;
+const NotFound = errors.NotFound;
+const Conflict = errors.Conflict;
+const InternalServerError = errors.InternalServerError;
 
 const apiserver = new kc.Client({
   config: {
@@ -18,6 +21,25 @@ const apiserver = new kc.Client({
   },
   version: '1.9'
 });
+
+function buildErrors(err) {
+  let throwErr;
+  switch (err.code) {
+  case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+    throwErr = new BadRequest(err.message);
+    break;
+  case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+    throwErr = new NotFound(err.message);
+    break;
+  case CONST.HTTP_STATUS_CODE.CONFLICT:
+    throwErr = new Conflict(err.message);
+    break;
+  default:
+    throwErr = new InternalServerError(err.message);
+    break;
+  }
+  throw throwErr;
+}
 
 class ApiServerEventMesh extends EventMeshServer {
   registerWatcher(resourceName, resourceType, callback) {
@@ -31,7 +53,7 @@ class ApiServerEventMesh extends EventMeshServer {
         jsonStream.on('data', callback);
       })
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   createLockResource(name, type, body) {
@@ -41,7 +63,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: body
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   deleteLockResource(name, type, resourceName) {
@@ -49,7 +71,7 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).delete())
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   updateLockResource(name, type, resourceName, delta) {
@@ -59,7 +81,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: delta
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   getLockResourceOptions(name, type, resourceName) {
@@ -70,7 +92,7 @@ class ApiServerEventMesh extends EventMeshServer {
         return resource.body.spec.options;
       })
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   getResource(name, type, resourceName) {
@@ -78,7 +100,7 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -116,7 +138,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: statusJson
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -134,7 +156,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: patchedResource
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -146,7 +168,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .get())
       .then(json => json.body.status.state)
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -188,7 +210,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: statusJson
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
   /**
@@ -213,7 +235,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: patchedResource
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -242,7 +264,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: patchedResource
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -265,7 +287,7 @@ class ApiServerEventMesh extends EventMeshServer {
           body: patchedResource
         }))
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -282,7 +304,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .get())
       .then(json => json.body.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`])
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -305,7 +327,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .get())
       .then(json => json.body.spec.options)
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -328,7 +350,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .get())
       .then(json => json.body.status.state)
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 
@@ -347,7 +369,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .get())
       .then(json => json.body.status.response)
       .catch(err => {
-        throw new HttpError(err.code, err.message);
+        return buildErrors(err);
       });
   }
 

@@ -8,6 +8,7 @@ const ETCDLockError = errors.ETCDLockError;
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
 const NotFound = errors.NotFound;
+const Conflict = errors.Conflict;
 
 class ApiServerLockManager {
   /*
@@ -82,9 +83,10 @@ class ApiServerLockManager {
       'lockTime': currentTime
     });
     logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`);
-    return eventmesh.server.getLockResourceOptions(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
-      .then(options => {
-        const currentlLockDetails = JSON.parse(options);
+    return eventmesh.server.getResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
+      .then(resource => {
+        const resourceBody = resource.body;
+        const currentlLockDetails = JSON.parse(resourceBody.spec.options);
         const currentLockTTL = currentlLockDetails.lockTTL ? currentlLockDetails.lockTTL : Infinity;
         const currentLockTime = new Date(currentlLockDetails.lockTime);
         if ((currentTime - currentLockTime) < currentLockTTL) {
@@ -93,11 +95,11 @@ class ApiServerLockManager {
           throw new ETCDLockError(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
             `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
         } else {
-          const patchBody = {
+          const patchBody = _.assign(resourceBody, {
             spec: {
               options: JSON.stringify(opts)
             }
-          };
+          });
           return eventmesh.server.updateLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
@@ -119,6 +121,8 @@ class ApiServerLockManager {
           };
           return eventmesh.server.createLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
             .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`));
+        } else if (err instanceof Conflict) {
+          throw new ETCDLockError(err.message);
         }
         throw err;
       });
