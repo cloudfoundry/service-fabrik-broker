@@ -5,6 +5,8 @@ const eventmesh = require('../../../eventmesh');
 const CONST = require('../constants');
 const logger = require('../logger');
 const lockManager = require('./../../../eventmesh').lockManager;
+const errors = require('../errors');
+const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {
   static start() {
@@ -19,7 +21,7 @@ class UnlockResourcePoller {
           }
         })
         .catch(err => {
-          if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
+          if (err instanceof NotFound) {
             return lockManager.unlock(object.metadata.name)
               .then(() => clearInterval(interval));
           }

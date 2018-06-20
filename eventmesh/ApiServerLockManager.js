@@ -135,7 +135,7 @@ class ApiServerLockManager {
       return eventmesh.server.deleteLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
         .tap(() => logger.info(`Successfully unlocked resource ${resourceId}`))
         .catch(err => {
-          if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
+          if (err instanceof NotFound) {
             logger.info(`Successfully Unlocked resource ${resourceId}`);
             return;
           }
