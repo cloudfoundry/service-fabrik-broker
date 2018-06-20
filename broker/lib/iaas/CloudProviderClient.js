@@ -152,6 +152,7 @@ class CloudProviderClient extends BaseCloudClient {
       file = container;
       container = this.containerName;
     }
+    logger.debug(`Downloading file: ${file} from container ${container}`);
     return this
       .download({
         container: this.containerName,
