@@ -7,7 +7,7 @@ const proxyquire = require('proxyquire');
 const errors = require('../../common/errors');
 const NotFound = errors.NotFound;
 const InternalServerError = errors.InternalServerError;
-const ETCDLockError = errors.ETCDLockError;
+const EtcdLockError = errors.EtcdLockError;
 // const resourceType = 'lock';
 // const resourceName = 'deploymentlocks';
 
@@ -180,7 +180,7 @@ describe('eventmesh', () => {
         const lockManager = new apiServerLockManager();
         return lockManager.lock('lockId1')
           .catch(err => {
-            expect(err instanceof ETCDLockError).to.eql(true);
+            expect(err instanceof EtcdLockError).to.eql(true);
             expect(err.description).to.eql(`Resource lockId1 was locked for backup operation with id guid at ${startTime}`);
             expect(getResourceSpy.callCount).to.equal(1);
             expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);

@@ -16,7 +16,7 @@ class DefaultBackupManager extends BaseManager {
 
   registerWatcher() {
     logger.info(`Registering Backup watcher`);
-    return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker)
+    return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker);
   }
 
   worker(change) {
@@ -32,7 +32,7 @@ class DefaultBackupManager extends BaseManager {
         }).then(manager => manager.startBackup(changedOptions))
         .catch(e => {
           logger.error(`Caught error while starting backup ${changedOptions.guid}`, e);
-          throw e
+          throw e;
         });
     } else if (change.object.status.state === CONST.OPERATION.ABORT) {
       logger.info(`State key is set to abort. Triggering abort`);

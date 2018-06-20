@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const eventmesh = require('./');
 const errors = require('../common/errors');
-const ETCDLockError = errors.ETCDLockError;
+const EtcdLockError = errors.EtcdLockError;
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
 const NotFound = errors.NotFound;
@@ -92,7 +92,7 @@ class ApiServerLockManager {
         if ((currentTime - currentLockTime) < currentLockTTL) {
           logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
             `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
-          throw new ETCDLockError(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
+          throw new EtcdLockError(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
             `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
         } else {
           const patchBody = _.assign(resourceBody, {
@@ -122,7 +122,7 @@ class ApiServerLockManager {
           return eventmesh.server.createLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
             .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`));
         } else if (err instanceof Conflict) {
-          throw new ETCDLockError(err.message);
+          throw new EtcdLockError(err.message);
         }
         throw err;
       });
@@ -145,7 +145,7 @@ class ApiServerLockManager {
           }
           if (currentRetryCount >= maxRetryCount) {
             logger.error(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
-            throw new ETCDLockError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+            throw new EtcdLockError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
           }
           logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
           return Promise.delay(CONST.ETCD.RETRY_DELAY)

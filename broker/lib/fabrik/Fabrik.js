@@ -23,19 +23,19 @@ class Fabrik {
     return Promise
       .try(() => {
         switch (plan.manager.name) {
-        case 'director':
+        case CONST.INSTANCE_TYPE.DIRECTOR:
           return DirectorManager;
-        case 'docker':
+        case CONST.INSTANCE_TYPE.DOCKER:
           if (config.enable_swarm_manager) {
             return DockerManager;
           } else {
-            assert.fail(plan.manager.name, ['director', 'virtual_host'], undefined, 'in');
+            assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
           }
           break;
-        case 'virtual_host':
+        case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
           return VirtualHostManager;
         default:
-          assert.fail(plan.manager.name, ['director', 'docker', 'virtual_host'], undefined, 'in');
+          assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.DOCKER, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
         }
       })
       .then(managerConstructor => managerConstructor.load(plan));

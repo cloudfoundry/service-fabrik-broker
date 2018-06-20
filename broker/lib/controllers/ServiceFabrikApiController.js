@@ -22,7 +22,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const InternalServerError = errors.InternalServerError;
-const ETCDLockError = errors.ETCDLockError;
+const EtcdLockError = errors.EtcdLockError;
 const ScheduleManager = require('../jobs');
 const config = require('../config');
 const CONST = require('../constants');
@@ -33,7 +33,7 @@ const docker = config.enable_swarm_manager ? require('../docker') : undefined;
 const CloudControllerError = {
   NotAuthorized: err => {
     const body = err.error;
-    return err.statusCode === 403 && (
+    return err.statusCode === CONST.HTTP_STATUS_CODE.FORBIDDEN && (
       body.code === 10003 || body.error_code === 'CF-NotAuthorized'
     );
   }
@@ -270,7 +270,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .getServiceInstanceState(req.params.instance_id)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.pick(body, 'operational', 'details'))
       );
   }
@@ -332,7 +332,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .invoke()
           .tap(response => logger.info('backup response ', response))
           .then(body => res
-            .status(202)
+            .status(CONST.HTTP_STATUS_CODE.ACCEPTED)
             .send(body)
           );
       });
@@ -413,11 +413,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(bodyStr => {
         logger.info('Annotation response:', bodyStr);
         const body = JSON.parse(bodyStr);
-        res.status(202).send(body);
+        res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send(body);
       })
       .catch(err => {
         logger.info('Handling error :', err);
-        if (err instanceof ETCDLockError) {
+        if (err instanceof EtcdLockError) {
           throw err;
         }
         return lockManager.unlock(req.params.instance_id)
@@ -436,7 +436,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .getLastBackup(tenant_id, instance_id, noCache)
       .then(result => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip'))
       )
       .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instance_id}'`));
@@ -456,7 +456,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .abortLastBackup(tenant_id, instance_id)
       .then(result => res
-        .status(result.state === 'aborting' ? 202 : 200)
+        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
@@ -494,7 +494,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         start_state: 'abort',
         started_at: backup_started_at
       }));
-    }).then(result => res.status(result.state === 'aborting' ? 202 : 200).send(result));
+    }).then(result => res.status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send(result));
   }
 
   startRestore(req, res) {
@@ -561,7 +561,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .getLastRestore(tenant_id, instance_id)
       .then(result => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)
       )
       .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instance_id}'`));
@@ -574,7 +574,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .abortLastRestore(tenant_id, instance_id)
       .then(result => res
-        .status(result.state === 'aborting' ? 202 : 200)
+        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
@@ -584,7 +584,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     options.tenant_id = req.entity.tenant_id;
     return this.listBackupFiles(options)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
@@ -644,7 +644,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs'))
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
@@ -660,7 +660,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .getBackupFile(options)
       .then(data => _.omit(data, 'secret', 'agent_ip'))
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
@@ -674,7 +674,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return this.backupStore
       .deleteBackupFile(options)
       .then(() => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
@@ -712,7 +712,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             data,
             req.user)
           .then(body => res
-            .status(201)
+            .status(CONST.HTTP_STATUS_CODE.CREATED)
             .send(body));
       });
   }
@@ -722,7 +722,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return ScheduleManager
       .getSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body));
   }
 
@@ -734,7 +734,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return ScheduleManager
       .cancelSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
       .then(() => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send({}));
   }
 
@@ -760,7 +760,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           jobData,
           req.user))
       .then(body => res
-        .status(201)
+        .status(CONST.HTTP_STATUS_CODE.CREATED)
         .send(body));
   }
 
@@ -796,7 +796,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body));
   }
 

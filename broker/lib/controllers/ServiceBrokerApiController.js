@@ -17,7 +17,7 @@ const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
 const UnprocessableEntity = errors.UnprocessableEntity;
-const ETCDLockError = errors.ETCDLockError;
+const EtcdLockError = errors.EtcdLockError;
 const config = require('../config');
 const CONST = require('../constants');
 
@@ -43,7 +43,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    res.status(200).json(this.fabrik.getPlatformManager(req.params.platform).getCatalog(catalog));
+    res.status(CONST.HTTP_STATUS_CODE.OK).json(this.fabrik.getPlatformManager(req.params.platform).getCatalog(catalog));
   }
 
   putInstance(req, res) {
@@ -57,12 +57,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const params = _.omit(req.body, 'plan_id', 'service_id');
 
     function done(result) {
-      let statusCode = 201;
+      let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
         dashboard_url: req.instance.dashboardUrl
       };
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
@@ -70,7 +70,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function conflict(err) {
       /* jshint unused:false */
-      res.status(409).send({});
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
@@ -86,12 +86,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const params = _.omit(req.body, 'plan_id', 'service_id');
 
     function done(result) {
-      let statusCode = 201;
+      let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
         dashboard_url: req.instance.dashboardUrl
       };
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
@@ -99,14 +99,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function conflict(err) {
       /* jshint unused:false */
-      res.status(409).send({});
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     this.validateRequest(req, res);
 
     return Promise.try(() => {
-        if (req.manager.name === 'director') {
+        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
           // Acquire lock for this instance
           return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
@@ -123,7 +123,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done)
       // Release lock in case of error: catch and throw
       .catch(err => {
-        if (err instanceof ETCDLockError) {
+        if (err instanceof EtcdLockError) {
           throw err;
         }
         return lockManager.unlock(req.params.instance_id)
@@ -148,10 +148,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
 
     function done(result) {
-      let statusCode = 200;
+      let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       } else if (result && result.description) {
         body.description = result.description;
@@ -181,10 +181,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
 
     function done(result) {
-      let statusCode = 200;
+      let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       } else if (result && result.description) {
         body.description = result.description;
@@ -201,7 +201,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
         }
         return Promise.try(() => {
-            if (req.manager.name === 'director') {
+            if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
               // Acquire lock for this instance
               return lockManager.lock(req.params.instance_id, {
                 lockType: CONST.ETCD.LOCK_TYPE.WRITE,
@@ -218,7 +218,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       })
       .then(done)
       .catch(err => {
-        if (err instanceof ETCDLockError) {
+        if (err instanceof EtcdLockError) {
           throw err;
         }
         return lockManager.unlock(req.params.instance_id)
@@ -237,10 +237,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const params = _.omit(req.query, 'plan_id', 'service_id');
 
     function done(result) {
-      let statusCode = 200;
+      let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
@@ -248,7 +248,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(410).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
     this.validateRequest(req, res);
@@ -263,10 +263,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const params = _.omit(req.query, 'plan_id', 'service_id');
 
     function done(result) {
-      let statusCode = 200;
+      let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (req.instance.async) {
-        statusCode = 202;
+        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
@@ -274,12 +274,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(410).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
     this.validateRequest(req, res);
     return Promise.try(() => {
-        if (req.manager.name === 'director') {
+        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
           // Acquire lock for this instance
           return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
@@ -295,7 +295,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => req.instance.delete(params))
       .then(done)
       .catch(err => {
-        if (err instanceof ETCDLockError) {
+        if (err instanceof EtcdLockError) {
           throw err;
         }
         return lockManager.unlock(req.params.instance_id)
@@ -320,18 +320,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
-      res.status(200).send(body);
+      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
     }
 
     function failed(err) {
-      res.status(200).send({
+      res.status(CONST.HTTP_STATUS_CODE.OK).send({
         state: 'failed',
         description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
       });
     }
 
     function gone() {
-      res.status(410).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
 
     function notFound(err) {
@@ -359,14 +359,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       // Unlock resource if state is succeeded or failed
       if (result.state === 'succeeded' || result.state === 'failed') {
         return lockManager.unlock(req.params.instance_id)
-          .then(() => res.status(200).send(body));
+          .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
       }
-      res.status(200).send(body);
+      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
     }
 
     function failed(err) {
       return lockManager.unlock(req.params.instance_id)
-        .then(() => res.status(200).send({
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({
           state: 'failed',
           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
         }));
@@ -374,7 +374,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone() {
       return lockManager.unlock(req.params.instance_id)
-        .then(() => res.status(410).send({}));
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.GONE).send({}));
     }
 
     function notFound(err) {
@@ -405,14 +405,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(credentials) {
-      res.status(201).send({
+      res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
         credentials: credentials
       });
     }
 
     function conflict(err) {
       /* jshint unused:false */
-      res.status(409).send({});
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
     return Promise
@@ -428,21 +428,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(credentials) {
-      res.status(201).send({
+      res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
         credentials: credentials
       });
     }
 
     function conflict(err) {
       /* jshint unused:false */
-      res.status(409).send({});
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
     // Check if write locked
     return lockManager.isWriteLocked(req.params.instance_id)
       .then(isWriteLocked => {
         if (isWriteLocked) {
-          throw new ETCDLockError(`Resource ${req.params.instance_id} is write locked`);
+          throw new EtcdLockError(`Resource ${req.params.instance_id} is write locked`);
         }
       })
       .then(() => req.instance.bind(params))
@@ -464,12 +464,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done() {
-      res.status(200).send({});
+      res.status(CONST.HTTP_STATUS_CODE.OK).send({});
     }
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(410).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
 
     return Promise
@@ -485,18 +485,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done() {
-      res.status(200).send({});
+      res.status(CONST.HTTP_STATUS_CODE.OK).send({});
     }
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(410).send({});
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     // Check if write locked
     return lockManager.isWriteLocked(req.params.instance_id)
       .then(isWriteLocked => {
         if (isWriteLocked) {
-          throw new ETCDLockError(`Resource ${req.params.instance_id} is write locked`);
+          throw new EtcdLockError(`Resource ${req.params.instance_id} is write locked`);
         }
       })
       .then(() => req.instance.unbind(params))

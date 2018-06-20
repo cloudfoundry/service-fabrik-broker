@@ -63,7 +63,8 @@ module.exports = Object.freeze({
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',
-    DOCKER: 'docker'
+    DOCKER: 'docker',
+    VIRTUAL_HOST: 'virtual_host'
   },
   HTTP_METHOD: {
     POST: 'POST',
@@ -74,6 +75,8 @@ module.exports = Object.freeze({
   },
   HTTP_STATUS_CODE: {
     OK: 200,
+    CREATED: 201,
+    ACCEPTED: 202,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,
