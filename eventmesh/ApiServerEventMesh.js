@@ -217,14 +217,12 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
    * @params opts.annotationName
    * @params opts.annotationType
    * @params opts.annotationId
    * @params opts.stateValue
    */
   updateAnnotationState(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to update annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
