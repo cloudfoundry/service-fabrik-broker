@@ -1087,7 +1087,7 @@ class DirectorManager extends BaseManager {
             .then(metadata => eventmesh.server.updateAnnotationResult({
               resourceId: options.instance_guid,
               annotationName: 'backup',
-              annotationType: 'default',
+              annotationType: 'defaultbackups',
               annotationId: metadata.backup_guid,
               value: metadata
             }));
