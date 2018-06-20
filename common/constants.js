@@ -34,7 +34,7 @@ module.exports = Object.freeze({
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected'
   },
-  EVENTMESH_POLLER_DELAY: 2000,
+  EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   OPERATION: {
     SUCCEEDED: 'succeeded',

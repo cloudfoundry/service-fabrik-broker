@@ -16,6 +16,13 @@ const NotFound = errors.NotFound;
 const backupStore = lib.iaas.backupStore;
 const filename = lib.iaas.backupStore.filename;
 
+function enableServiceFabrikV2() {
+  config.enableServiceFabrikV2 = true;
+}
+
+function disableServiceFabrikV2() {
+  config.enableServiceFabrikV2 = false;
+}
 
 describe('service-fabrik-api', function () {
 
@@ -300,6 +307,57 @@ describe('service-fabrik-api', function () {
         afterEach(function () {
           FabrikStatusPoller.stopPoller = true;
           FabrikStatusPoller.clearAllPollers();
+        });
+        it('should initiate a start-backup with SF2.0 not via cloud controller', function (done) {
+          enableServiceFabrikV2();
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudProvider.list(container, list_prefix, [
+            list_filename
+          ]);
+          mocks.cloudProvider.download(list_pathname, data);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.apiServerEventMesh.nockLoadSpec(7);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'in_progress'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              response: '{"guid": "some_guid"}'
+            }
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type
+            })
+            .catch(err => err.response)
+            .then(res => {
+              disableServiceFabrikV2();
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+              done();
+            });
         });
         it('should initiate a start-backup operation at cloud controller via a service instance update', function (done) {
           mocks.uaa.tokenKey();
