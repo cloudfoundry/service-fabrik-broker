@@ -185,20 +185,24 @@ class BackupManager {
             return backup_options;
           });
       })
-      .then(backup_options => eventmesh.server.updateAnnotationResult({
-        resourceId: opts.instance_guid,
-        annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        annotationId: result.backup_guid,
-        value: JSON.stringify(backup_options)
-      }))
-      .then(() => eventmesh.server.updateAnnotationState({
-        resourceId: opts.instance_guid,
-        annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        annotationId: result.backup_guid,
-        stateValue: CONST.RESOURCE_STATE.IN_PROGRESS
-      })).then(() => {
+      .then(backup_options =>
+        eventmesh.server.updateAnnotationState({
+          resourceId: opts.instance_guid,
+          annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+          annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+          annotationId: result.backup_guid,
+          stateValue: 'in_progress'
+        }).then(() =>
+          eventmesh.server.updateAnnotationResult({
+            resourceId: opts.instance_guid,
+            annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+            annotationId: result.backup_guid,
+            value: backup_options
+          })
+        )
+      )
+      .then(() => {
         return eventmesh.server.getAnnotationResult({
           resourceId: opts.instance_guid,
           annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
@@ -221,13 +225,13 @@ class BackupManager {
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
-            value: JSON.stringify(err)
+            value: err
           }))
           .tap(() => {
             if (backupStarted) {
               logger.error(`Error occurred during backup process. Aborting backup on deployment : ${deploymentName}`);
               return this
-                .abortLastBackup(this.getTenantGuid(opts.context), opts.instance_guid, true)
+                .abortLastBackup(opts, true)
                 .finally(() => {
                   if (metaUpdated) {
                     const options = _
