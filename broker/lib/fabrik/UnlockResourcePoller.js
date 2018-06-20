@@ -15,7 +15,7 @@ class UnlockResourcePoller {
       return eventmesh.server.getResource(lockDetails.lockedResourceDetails.resourceType, lockDetails.lockedResourceDetails.resourceName, lockDetails.lockedResourceDetails.resourceId)
         .then((resource) => {
           const resourceState = resource.body.status.state;
-          if (resourceState === CONST.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.RESOURCE_STATE.FAILED || resourceState === CONST.RESOURCE_STATE.ERROR) {
+          if (resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED || resourceState === CONST.APISERVER.RESOURCE_STATE.ERROR) {
             return lockManager.unlock(object.metadata.name)
               .then(() => clearInterval(interval));
           }
@@ -35,13 +35,13 @@ class UnlockResourcePoller {
 
     function startPoller(event) {
       const lockDetails = JSON.parse(event.object.spec.options);
-      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceType === CONST.RESOURCE_TYPES.BACKUP) {
+      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceType === CONST.APISERVER.RESOURCE_TYPES.BACKUP) {
         // startPoller(event.object);
         logger.info('starting poller for ', event.object.metadata.name);
         const interval = setInterval(() => poller(event.object, interval), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
       }
     }
-    return eventmesh.server.registerWatcher(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, startPoller);
+    return eventmesh.server.registerWatcher(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, startPoller);
   }
 }
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {

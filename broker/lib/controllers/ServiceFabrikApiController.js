@@ -58,7 +58,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => eventmesh.server.getAnnotationState({
         resourceId: opts.resourceId,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: opts.annotationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
@@ -69,13 +69,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         if (state === opts.start_state) {
           return ServiceFabrikApiController.getResourceAnnotationStatus(opts);
-        } else if (state === CONST.RESOURCE_STATE.ERROR) {
+        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
           return eventmesh.server.getAnnotationKeyValue({
               resourceId: opts.resourceId,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: opts.annotationId,
-              key: CONST.ANNOTATION_KEYS.RESULT
+              key: CONST.APISERVER.ANNOTATION_KEYS.RESULT
             })
             .then(error => {
               let json = JSON.parse(error);
@@ -105,7 +105,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return eventmesh.server.getAnnotationResult({
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: opts.annotationId,
           });
         }
@@ -366,8 +366,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.READ,
             lockedResourceDetails: {
-              resourceType: CONST.RESOURCE_TYPES.BACKUP,
-              resourceName: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
+              resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               resourceId: backup_guid,
               operation: CONST.OPERATION_TYPE.BACKUP
             }
@@ -376,7 +376,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             return eventmesh.server.annotateResource({
               resourceId: req.params.instance_id,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: backup_guid,
               val: backup_options
             });
@@ -390,13 +390,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .then(() => eventmesh.server.updateLastAnnotation({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             value: backup_guid
           }))
           .then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
             resourceId: req.params.instance_id,
             annotationId: backup_guid,
-            start_state: CONST.RESOURCE_STATE.IN_QUEUE,
+            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: backup_started_at
           }));
       })
@@ -468,20 +468,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return eventmesh.server.getLastAnnotation({
       resourceId: req.params.instance_id,
       annotationName: CONST.OPERATION_TYPE.BACKUP,
-      annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+      annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
     }).then(backup_guid => {
       return eventmesh.server.getAnnotationState({
         resourceId: req.params.instance_id,
         annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: backup_guid,
       }).then(state => {
         // abort only if the state is in progress
-        if (state === CONST.RESOURCE_STATE.IN_PROGRESS) {
+        if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
           return eventmesh.server.updateAnnotationState({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.RESOURCE_NAMES.DEFAULT_BACKUP,
+            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: backup_guid,
             stateValue: 'abort'
           });

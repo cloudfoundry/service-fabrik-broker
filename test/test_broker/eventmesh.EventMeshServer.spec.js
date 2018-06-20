@@ -14,7 +14,7 @@ describe('eventmesh', () => {
           .catch(e => expect(e.message).to.eql('Could not find state undefined'));
       });
       it('should return if state is valid', () => {
-        return eventmesh.checkValidState(CONST.RESOURCE_STATE.IN_QUEUE)
+        return eventmesh.checkValidState(CONST.APISERVER.RESOURCE_STATE.IN_QUEUE)
           .catch(() => {
             throw new Error('No exception expected');
           });

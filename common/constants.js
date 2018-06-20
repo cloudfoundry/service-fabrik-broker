@@ -227,47 +227,43 @@ module.exports = Object.freeze({
       DESC: -1
     }
   },
-  RESOURCE_TYPES: {
-    LOCK: 'lock',
-    DEPLOYMENT: 'deployment',
-    BACKUP: 'backup'
-  },
-  RESOURCE_NAMES: {
-    DEPLOYMENT_LOCKS: 'deploymentlocks',
-    DIRECTOR: 'directors',
-    DEFAULT_BACKUP: 'defaultbackups'
-  },
-  RESOURCE_STATE: {
-    IN_QUEUE: 'in queue',
-    IN_PROGRESS: 'in progress',
-    SUCCEEDED: 'succeeded',
-    ERROR: 'error',
-    FAILED: 'failed'
-  },
-  RESOURCE_KEYS: {
-    STATE: 'state',
-    OPTIONS: 'options',
-    LASTOPERATION: 'lastoperation'
-  },
-  ANNOTATION_KEYS: {
-    STATE: 'state',
-    OPTIONS: 'options',
-    RESULT: 'result'
-  },
   APISERVER: {
     HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
+    RESOURCE_TYPES: {
+      LOCK: 'lock',
+      DEPLOYMENT: 'deployment',
+      BACKUP: 'backup'
+    },
+    RESOURCE_NAMES: {
+      DEPLOYMENT_LOCKS: 'deploymentlocks',
+      DIRECTOR: 'directors',
+      DEFAULT_BACKUP: 'defaultbackups'
+    },
+    RESOURCE_STATE: {
+      IN_QUEUE: 'in_queue',
+      IN_PROGRESS: 'in_progress',
+      SUCCEEDED: 'succeeded',
+      ERROR: 'error',
+      FAILED: 'failed'
+    },
+    RESOURCE_KEYS: {
+      STATE: 'state',
+      OPTIONS: 'options',
+      LASTOPERATION: 'lastoperation'
+    },
+    ANNOTATION_KEYS: {
+      STATE: 'state',
+      OPTIONS: 'options',
+      RESULT: 'result'
+    },
     ANNOTATION_NAMES: {
       BACKUP: 'backup'
     },
     ANNOTATION_TYPES: {
       BACKUP: 'defaultbackups'
-    },
-    STATE: {
-      IN_QUEUE: 'in_queue',
-      ERROR: 'error'
-    },
+    }
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',

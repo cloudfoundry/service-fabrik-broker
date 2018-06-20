@@ -265,14 +265,14 @@ describe('eventmesh', () => {
 
       const statusJson = {
         status: {
-          state: CONST.APISERVER.STATE.IN_QUEUE,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
           lastOperation: 'created',
           response: JSON.stringify({})
         }
       };
       const finalResource = _.assign({
         status: {
-          state: CONST.APISERVER.STATE.IN_QUEUE,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
           lastOperation: 'created',
           response: JSON.stringify({})
         }
@@ -367,14 +367,14 @@ describe('eventmesh', () => {
 
       const statusJson = {
         status: {
-          state: CONST.APISERVER.STATE.IN_QUEUE,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
           lastOperation: '',
           response: ''
         }
       };
       const finalResource = _.assign({
         status: {
-          state: CONST.APISERVER.STATE.IN_QUEUE,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
           lastOperation: '',
           response: ''
         }

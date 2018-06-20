@@ -99,7 +99,7 @@ class ApiServerEventMesh extends EventMeshServer {
 
     const statusJson = {
       status: {
-        state: CONST.APISERVER.STATE.IN_QUEUE,
+        state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         lastOperation: 'created',
         response: JSON.stringify({})
       }
@@ -107,12 +107,12 @@ class ApiServerEventMesh extends EventMeshServer {
 
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR].post({
+        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR].post({
           body: initialResource
         }))
-      .then(() => apiserver.apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
+      .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
           body: statusJson
         }))
       .catch(err => {
@@ -128,7 +128,7 @@ class ApiServerEventMesh extends EventMeshServer {
     };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .status.patch({
           body: patchedResource
@@ -141,7 +141,7 @@ class ApiServerEventMesh extends EventMeshServer {
   getResourceState(resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .get())
       .then(json => json.body.status.state)
@@ -173,7 +173,7 @@ class ApiServerEventMesh extends EventMeshServer {
     };
     const statusJson = {
       status: {
-        state: CONST.APISERVER.STATE.IN_QUEUE,
+        state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         lastOperation: '',
         response: ''
       }
@@ -259,8 +259,8 @@ class ApiServerEventMesh extends EventMeshServer {
     patchedResource.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
+        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .patch({
           body: patchedResource
         }))
@@ -277,8 +277,8 @@ class ApiServerEventMesh extends EventMeshServer {
   getLastAnnotation(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
+        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
         .get())
       .then(json => json.body.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`])
       .catch(err => {

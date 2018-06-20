@@ -43,7 +43,7 @@ class EventMeshServer {
 
   checkValidState(state) {
     return Promise.try(() => {
-      if (_.indexOf(_.map(CONST.RESOURCE_STATE, (a) => a), state) < 0) {
+      if (_.indexOf(_.map(CONST.APISERVER.RESOURCE_STATE, (a) => a), state) < 0) {
         throw new errors.NotFound(`Could not find state ${state}`);
       }
     });

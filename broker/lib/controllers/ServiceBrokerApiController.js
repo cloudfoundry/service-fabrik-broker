@@ -111,8 +111,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
             lockedResourceDetails: {
-              resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-              resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
               resourceId: req.params.instance_id,
               operation: CONST.OPERATION_TYPE.CREATE
             }
@@ -206,8 +206,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
               return lockManager.lock(req.params.instance_id, {
                 lockType: CONST.ETCD.LOCK_TYPE.WRITE,
                 lockedResourceDetails: {
-                  resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-                  resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+                  resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
                   resourceId: req.params.instance_id,
                   operation: CONST.OPERATION_TYPE.UPDATE
                 }
@@ -284,8 +284,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           return lockManager.lock(req.params.instance_id, {
             lockType: CONST.ETCD.LOCK_TYPE.WRITE,
             lockedResourceDetails: {
-              resourceType: CONST.RESOURCE_TYPES.DEPLOYMENT,
-              resourceName: CONST.RESOURCE_NAMES.DIRECTOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
               resourceId: req.params.instance_id,
               operation: CONST.OPERATION_TYPE.DELETE
             }

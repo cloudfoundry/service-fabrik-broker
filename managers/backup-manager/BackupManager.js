@@ -206,7 +206,7 @@ class BackupManager {
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
-            stateValue: CONST.APISERVER.STATE.ERROR
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
           }))
           .tap(() => eventmesh.server.updateAnnotationResult({
             resourceId: opts.instance_guid,
