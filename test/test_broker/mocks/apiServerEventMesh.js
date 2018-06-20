@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const nock = require('nock');
 const apiServerHost = 'https://10.0.2.2:9443';
 const swagger = require('../apiserver-swagger.json');

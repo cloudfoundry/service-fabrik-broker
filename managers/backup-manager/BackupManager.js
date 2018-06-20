@@ -12,20 +12,8 @@ const eventmesh = require('../../eventmesh');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
-const BoshDirectorClient = bosh.BoshDirectorClient;
-const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
-const EvaluationContext = bosh.EvaluationContext;
-const Networks = bosh.manifest.Networks;
-const Header = bosh.manifest.Header;
-const NotFound = errors.NotFound;
-const BadRequest = errors.BadRequest;
-const NotImplemented = errors.NotImplemented;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
-const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
+const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Forbidden = errors.Forbidden;
-const catalog = require('../../broker/lib/models/catalog');
 
 class BackupManager {
   constructor(plan) {
@@ -286,7 +274,7 @@ class BackupManager {
 
 class Fabrik {
   static createManager(plan) {
-    return Promise.try(() => BackupManager.load(plan))
+    return Promise.try(() => BackupManager.load(plan));
   }
 
 }
