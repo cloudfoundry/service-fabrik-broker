@@ -199,6 +199,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.value
    */
   updateAnnotationResult(opts) {
+    logger.info('Updating Annotation Result with :', opts);
     const patchedResource = {
       'status': {
         'response': JSON.stringify(opts.value),
@@ -223,6 +224,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.stateValue
    */
   updateAnnotationState(opts) {
+    logger.info('Updating Annotation State with :', opts);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
