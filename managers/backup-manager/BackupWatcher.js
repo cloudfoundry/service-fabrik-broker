@@ -17,7 +17,7 @@ class DefaultBackupManager extends BaseManager {
   registerWatcher() {
     logger.info(`Registering Backup watcher`)
     return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker)
-      .catch(e => logger.error('Caucht errro', e));
+      .catch(e => logger.error('Caught errro', e));
   }
 
   worker(change) {
@@ -32,7 +32,7 @@ class DefaultBackupManager extends BaseManager {
           const plan = catalog.getPlan(changedValue.plan_id);
           return fabrik.createManager(plan);
         }).then(manager => manager.startBackup(changedValue))
-        .catch(e => logger.error('Cauch error while starting backup', e));
+        .catch(e => logger.error('Caught error while starting backup', e));
     } else if (change.object.status.state == CONST.OPERATION.ABORT) {
       logger.info(`State key is set to abort. Triggering abort`);
       const opts = {
