@@ -7,6 +7,7 @@ const errors = require('../common/errors');
 const ETCDLockError = errors.ETCDLockError;
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
+const NotFound = errors.NotFound;
 
 class ApiServerLockManager {
   /*
@@ -29,12 +30,13 @@ class ApiServerLockManager {
         return false;
       })
       .catch(err => {
-        if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
+        if (err instanceof NotFound) {
           return false;
         }
         throw err;
       });
   }
+
   /*
   Lock reosurce structure
   {
@@ -99,9 +101,9 @@ class ApiServerLockManager {
           return eventmesh.server.updateLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
-      .tap(() => logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`))
+      .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
       .catch(err => {
-        if (err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
+        if (err instanceof NotFound) {
           const spec = {
             options: JSON.stringify(opts)
           };
@@ -116,8 +118,7 @@ class ApiServerLockManager {
             status: status
           };
           return eventmesh.server.createLockResource(CONST.RESOURCE_TYPES.LOCK, CONST.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
-            .tap(() => logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`));
-
+            .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`));
         }
         throw err;
       });
