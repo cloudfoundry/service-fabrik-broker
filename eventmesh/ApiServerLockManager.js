@@ -15,6 +15,9 @@ class ApiServerLockManager {
   This method checks whether lock is of write type.
   returns true if lock is present and not expired and it's of type WRITE
   */
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   */
 
   isWriteLocked(resourceId) {
     return eventmesh.server.getLockResourceOptions(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
@@ -71,13 +74,24 @@ class ApiServerLockManager {
       4. else can't acquire lock
   */
 
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   * @param {object} lockDetails - Details of the lock that is to be acquired
+   * @param {number} [lockDetails.lockTTL=Infinity] - TTL in miliseconds for the lock that is to be acquired
+   * @param {string} lockDetails.lockType - Type of lock ('READ'/'WRITE')
+   * @param {object} [lockDetails.lockedResourceDetails] - Details of the operation who is trying to acquire the lock
+   * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Type of resource for which lock is being acquired. ex: backup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceName] - Name of resource for which lock is being acquired. ex: defaultbackup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
+   * @param {string} [lockDetails.lockedResourceDetails.operation=unknown] - Operation type who is acquiring the lock. ex: backup
+   */
+
   lock(resourceId, lockDetails) {
     if (!lockDetails) {
       lockDetails = {};
     }
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockTime = new Date();
     opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
     _.extend(opts, {
       'lockTime': currentTime
@@ -131,6 +145,10 @@ class ApiServerLockManager {
   /*
   To unlock deployment, delete lock resource
   */
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   * @param {number} [maxRetryCount=CONST.ETCD.MAX_RETRY_UNLOCK] - Max unlock attempts
+   */
 
   unlock(resourceId, maxRetryCount) {
     maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;

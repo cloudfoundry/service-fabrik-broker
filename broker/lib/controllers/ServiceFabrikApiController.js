@@ -483,7 +483,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             annotationName: CONST.OPERATION_TYPE.BACKUP,
             annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: backup_guid,
-            stateValue: 'abort'
+            stateValue: CONST.OPERATION.ABORT
           });
         } else {
           logger.info(`Skipping abort as state is : ${state}`);
@@ -491,7 +491,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       }).then(() => ServiceFabrikApiController.getResourceAnnotationStatus({
         resourceId: req.params.instance_id,
         annotationId: backup_guid,
-        start_state: 'abort',
+        start_state: CONST.OPERATION.ABORT,
         started_at: backup_started_at
       }));
     }).then(result => res.status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send(result));
