@@ -2,7 +2,7 @@
 
 const nock = require('nock');
 const apiServerHost = 'https://10.0.2.2:9443';
-const swagger = require('../apiserver-swagger.json');
+const swagger = require('../helper-files/apiserver-swagger.json');
 
 
 exports.nockLoadSpec = nockLoadSpec;

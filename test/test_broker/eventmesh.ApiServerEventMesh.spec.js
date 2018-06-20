@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const swagger = require('./apiserver-swagger.json');
+const swagger = require('./helper-files/apiserver-swagger.json');
 const apiserver = require('../../eventmesh').server;
 const apiServerHost = 'https://10.0.2.2:9443';
 const lib = require('../../broker/lib');
