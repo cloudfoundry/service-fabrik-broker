@@ -151,13 +151,12 @@ class BnRStatusPollerJob extends BaseJob {
       .tap(operationStatusResponse => {
         return eventmesh
           .server
-          .updateAnnotationKey({
+          .updateAnnotationResult({
             resourceId: instanceInfo.instance_guid,
             annotationName: 'backup',
             annotationType: 'defaultbackups',
             annotationId: instanceInfo.backup_guid,
-            key: 'progress',
-            value: JSON.stringify(operationStatusResponse)
+            value: operationStatusResponse
           });
       })
       .then(operationStatusResponse => {

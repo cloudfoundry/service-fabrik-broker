@@ -1084,13 +1084,12 @@ class DirectorManager extends BaseManager {
                 snapshotId: lastOperation.snapshotId
               })
             ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.server.updateAnnotationKey({
+            .then(metadata => eventmesh.server.updateAnnotationResult({
               resourceId: options.instance_guid,
               annotationName: 'backup',
               annotationType: 'default',
               annotationId: metadata.backup_guid,
-              key: 'result',
-              value: JSON.stringify(metadata)
+              value: metadata
             }));
         }
       });
