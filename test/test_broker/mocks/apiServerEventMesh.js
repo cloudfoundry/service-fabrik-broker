@@ -11,6 +11,7 @@ exports.nockPatchResourceStatus = nockPatchResourceStatus;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
 exports.nockGetResourceRegex = nockGetResourceRegex;
+exports.nockDeleteResource = nockDeleteResource;
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -44,6 +45,13 @@ function nockPatchResource(resourceGroup, resourceType, id, response, times) {
 function nockGetResourceRegex(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
     .get(new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`))
+    .times(times || 1)
+    .reply(200, response);
+}
+
+function nockDeleteResource(resourceGroup, resourceType, id, response, times) {
+  nock(apiServerHost)
+    .delete(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
     .times(times || 1)
     .reply(200, response);
 }
