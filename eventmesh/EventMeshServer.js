@@ -80,9 +80,9 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('getServicePlans');
   }
 
-  createResource(resourceType, resourceId, val) {
+  createDeploymentResource(resourceType, resourceId, val) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('createResource');
+    throw new NotImplementedBySubclass('createDeploymentResource');
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {

@@ -396,7 +396,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         backup_started_at = new Date();
         //check if resource exist, else create and then update
         return Promise.try(() => eventmesh.server.getResource('deployment', 'directors', req.params.instance_id))
-          .catch(() => eventmesh.server.createResource(null, req.params.instance_id, {}))
+          .catch(() => eventmesh.server.createDeploymentResource(null, req.params.instance_id, {}))
           .then(() => eventmesh.server.updateLastAnnotation({
             resourceId: req.params.instance_id,
             annotationName: CONST.OPERATION_TYPE.BACKUP,

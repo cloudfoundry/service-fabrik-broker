@@ -105,7 +105,7 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
 
-  createResource(resourceType, resourceId, val) {
+  createDeploymentResource(resourceType, resourceId, val) {
     const opts = {
       annotationId: resourceId,
       resourceId: resourceId,

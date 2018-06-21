@@ -245,7 +245,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('createResource', () => {
+    describe('createDeploymentResource', () => {
       const resourceId = 'd1';
       const resourceType = 'directors';
       const val = {
@@ -281,7 +281,7 @@ describe('eventmesh', () => {
       it('Creates a resource', done => {
         nockCreateResource('deployment', 'director', sampleDeploymentResource, input);
         nockPatchResourceStatus('deployment', 'director', 'd1', finalResource, statusJson);
-        apiserver.createResource(resourceType, resourceId, val)
+        apiserver.createDeploymentResource(resourceType, resourceId, val)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -292,7 +292,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockCreateResource('deployment', 'director', sampleDeploymentResource, input, 409);
-        return apiserver.createResource(resourceType, resourceId, val)
+        return apiserver.createDeploymentResource(resourceType, resourceId, val)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
