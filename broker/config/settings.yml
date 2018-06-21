@@ -404,6 +404,17 @@ defaults: &defaults
     url: https://api.bosh-lite.com
     username: admin
     password: admin
+  
+  #############################
+  # CREDHUB SETTINGS #
+  #############################
+  cred_provider:
+    credhub_url: https://10.0.3.11:8443/api/
+    credhub_uaa_url: https://10.0.3.11:8443
+    credhub_client_id:  credhub-admin
+    credhub_client_secret: 
+    credhub_username: admin
+    credhub_user_password: admin
 
   ###################
   # DOCKER SETTINGS #
@@ -491,6 +502,9 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
+        credhub_key: '/service-fabrik/iaas/blueprint'
+        credhub_username: blueprint-admin
+        credhub_user_password: blueprint-secret
     rabbitmq: &agent_rabbitmq
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
