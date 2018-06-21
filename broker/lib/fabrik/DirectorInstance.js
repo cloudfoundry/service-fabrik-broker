@@ -175,6 +175,7 @@ class DirectorInstance extends BaseInstance {
     const token = _.get(params.parameters, 'service-fabrik-operation', null);
     if (token) {
       _.unset(params.parameters, 'service-fabrik-operation');
+      _.set(params, 'scheduled', true);
     }
     return this
       .initialize(operation)
@@ -193,10 +194,11 @@ class DirectorInstance extends BaseInstance {
           const args = _.get(serviceFabrikOperation, 'arguments');
           return this.manager
             .createOrUpdateDeployment(this.deploymentName, params, args)
-            .then(taskId => _
+            .then(op => _
               .chain(operation)
               .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', taskId)
+              .set('task_id', op.task_id)
+              .set('cached', op.cached)
               .value()
             );
         }
