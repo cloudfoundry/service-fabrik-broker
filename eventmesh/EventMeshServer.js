@@ -8,37 +8,6 @@ const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 class EventMeshServer {
 
-  /*
-   * EventMeshServer
-   * ===============
-   *
-   * Various key types are documented below.
-   *
-   * Top level keys:
-   *    - /services
-   *    - /deployments
-   *
-   * Resources:
-   *    - /deployments/<resourceType>/<resourceId>
-   * Resource attributes:
-   *    - /deployments/<resourceType>/<resourceId>/options
-   *    - /deployments/<resourceType>/<resourceId>/state
-   *    - /deployments/<resourceType>/<resourceId>/lastoperation
-   *
-   * Annotations:
-   *    Annotations are operations that can be performed on the resource
-   *    - <annotationName>/<annotationType>/<resourceId>/<annotationId>
-   *    e.g:
-   *      /backup/default/<resource guid>/<a guid>
-   *      /backup/bbr/<resource guid>/<a guid>
-   *      /restore/default/<resource guid>/<a guid>
-   * Annotations attributes:
-   *    - /<annotationName>/<annotationType>/<resourceId>/<annotationId>/options
-   *    - /<annotationName>/<annotationType>/<resourceId>/<annotationId>/state
-   *    - /<annotationName>/<annotationType>/<resourceId>/last
-   *
-   */
-
   constructor() {}
 
   checkValidState(state) {
