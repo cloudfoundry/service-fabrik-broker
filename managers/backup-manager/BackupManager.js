@@ -179,14 +179,14 @@ class BackupManager {
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          annotationId: result.backup_guid,
+          operationId: result.backup_guid,
           stateValue: 'in_progress'
         }).then(() =>
           eventmesh.server.updateOperationResult({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            annotationId: result.backup_guid,
+            operationId: result.backup_guid,
             value: backup_options
           })
         )
@@ -196,7 +196,7 @@ class BackupManager {
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          annotationId: result.backup_guid,
+          operationId: result.backup_guid,
         });
       })
       .catch(err => {
@@ -206,14 +206,14 @@ class BackupManager {
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            annotationId: result.backup_guid,
+            operationId: result.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
           }))
           .tap(() => eventmesh.server.updateOperationResult({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            annotationId: result.backup_guid,
+            operationId: result.backup_guid,
             value: err
           }))
           .tap(() => {
@@ -247,7 +247,7 @@ class BackupManager {
       resourceId: abortOptions.instance_guid,
       operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
       operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-      annotationId: abortOptions.guid,
+      operationId: abortOptions.guid,
       stateValue: CONST.OPERATION.ABORTING
     }).then(() => this.backupStore
       .getBackupFile({

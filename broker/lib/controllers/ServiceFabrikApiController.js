@@ -48,7 +48,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   /**
    * @param opts
    * @param opts.resourceId
-   * @param opts.annotationId
+   * @param opts.operationId
    * @param opts.start_state
    * @param opts.started_at
    */
@@ -60,7 +60,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: opts.resourceId,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-        annotationId: opts.annotationId
+        operationId: opts.operationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
         const backup_start_timeout = CONST.BACKUP.BACKUP_START_TIMEOUT; //sec
@@ -76,7 +76,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               resourceId: opts.resourceId,
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-              annotationId: opts.annotationId,
+              operationId: opts.operationId,
             })
             .then(error => {
               let json = JSON.parse(error);
@@ -108,7 +108,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceId: opts.resourceId,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-            annotationId: opts.annotationId,
+            operationId: opts.operationId,
           });
         }
       })
@@ -387,7 +387,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               resourceId: req.params.instance_id,
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-              annotationId: backup_guid,
+              operationId: backup_guid,
               val: backup_options
             });
           });
@@ -405,7 +405,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           }))
           .then(() => ServiceFabrikApiController.getResourceOperationStatus({
             resourceId: req.params.instance_id,
-            annotationId: backup_guid,
+            operationId: backup_guid,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: backup_started_at
           }));
@@ -487,7 +487,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-        annotationId: backup_guid,
+        operationId: backup_guid,
       }).then(state => {
         // abort only if the state is in progress
         if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
@@ -495,7 +495,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceId: req.params.instance_id,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-            annotationId: backup_guid,
+            operationId: backup_guid,
             stateValue: CONST.OPERATION.ABORT
           });
         } else {
@@ -503,7 +503,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       }).then(() => ServiceFabrikApiController.getResourceOperationStatus({
         resourceId: req.params.instance_id,
-        annotationId: backup_guid,
+        operationId: backup_guid,
         start_state: CONST.OPERATION.ABORT,
         started_at: backup_started_at
       }));

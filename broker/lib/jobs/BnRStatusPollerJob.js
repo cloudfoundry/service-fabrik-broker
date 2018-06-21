@@ -154,7 +154,7 @@ class BnRStatusPollerJob extends BaseJob {
             resourceId: instanceInfo.instance_guid,
             operationName: 'backup',
             operationType: 'defaultbackups',
-            annotationId: instanceInfo.backup_guid,
+            operationId: instanceInfo.backup_guid,
             value: operationStatusResponse
           });
       })
@@ -298,7 +298,7 @@ class BnRStatusPollerJob extends BaseJob {
           resourceId: instanceInfo.instance_guid,
           operationName: 'backup',
           operationType: 'defaultbackups',
-          annotationId: instanceInfo.backup_guid,
+          operationId: instanceInfo.backup_guid,
           stateValue: operationStatusResponse.state
         });
       });

@@ -39,10 +39,10 @@ describe('eventmesh', () => {
           resourceId: 'fakeResourceId',
           operationName: 'fakeOperationName',
           operationType: 'fakeOperationType',
-          annotationId: 'fakeOperationId',
+          operationId: 'fakeOperationId',
         };
         expect(eventmesh.getOperationFolderName(opts))
-          .to.eql(`${opts.operationName}/${opts.operationType}/${opts.resourceId}/${opts.annotationId}`);
+          .to.eql(`${opts.operationName}/${opts.operationType}/${opts.resourceId}/${opts.operationId}`);
       });
     });
 

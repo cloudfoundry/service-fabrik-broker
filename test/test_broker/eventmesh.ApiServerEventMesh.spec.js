@@ -359,14 +359,14 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackups',
-        annotationId: 'b1',
+        operationId: 'b1',
         val: {
           key: 'value'
         }
       };
       const input = {
         metadata: {
-          name: `${opts.annotationId}`,
+          name: `${opts.operationId}`,
           labels: {
             instance_guid: `${opts.resourceId}`,
           },
@@ -417,7 +417,7 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackup',
-        annotationId: 'b1',
+        operationId: 'b1',
         value: {
           key: 'value'
         }
@@ -459,7 +459,7 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackup',
-        annotationId: 'b1',
+        operationId: 'b1',
         stateValue: 'in_progress'
       };
       const input = {
@@ -566,7 +566,7 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackup',
-        annotationId: 'b1'
+        operationId: 'b1'
       };
       const input = {};
       input.spec = {};
@@ -598,7 +598,7 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackup',
-        annotationId: 'b1'
+        operationId: 'b1'
       };
       const input = {};
       input.status = {};
@@ -630,7 +630,7 @@ describe('eventmesh', () => {
         resourceId: 'd1',
         operationName: 'backup',
         operationType: 'defaultbackup',
-        annotationId: 'b1'
+        operationId: 'b1'
       };
       const input = {};
       input.status = {};

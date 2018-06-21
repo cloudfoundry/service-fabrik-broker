@@ -112,7 +112,7 @@ class ApiServerEventMesh extends EventMeshServer {
 
   createDeploymentResource(resourceType, resourceId, val) {
     const opts = {
-      annotationId: resourceId,
+      operationId: resourceId,
       resourceId: resourceId,
       operationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
       operationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
@@ -123,7 +123,7 @@ class ApiServerEventMesh extends EventMeshServer {
 
   updateResourceState(resourceType, resourceId, stateValue) {
     const opts = {
-      annotationId: resourceId,
+      operationId: resourceId,
       resourceId: resourceId,
       operationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
       operationType: resourceType,
@@ -149,14 +149,14 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.resourceId
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * @params opts.val
    */
   createOperationResource(opts) {
     logger.info('Creating resource with options:', opts.val);
     const initialResource = {
       metadata: {
-        'name': `${opts.annotationId}`,
+        'name': `${opts.operationId}`,
         'labels': {
           instance_guid: `${opts.resourceId}`,
         },
@@ -174,7 +174,7 @@ class ApiServerEventMesh extends EventMeshServer {
     };
     return this.createResource(opts.operationName, opts.operationType, initialResource)
       .then(() => apiserver.apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId).status.patch({
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId).status.patch({
           body: statusJson
         }))
       .catch(err => {
@@ -185,7 +185,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.resourceId
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * @params opts.value
    */
   updateOperationResult(opts) {
@@ -198,7 +198,7 @@ class ApiServerEventMesh extends EventMeshServer {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId)
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .status.patch({
           body: patchedResource
         }))
@@ -210,14 +210,14 @@ class ApiServerEventMesh extends EventMeshServer {
   /**
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * @params opts.stateValue
    */
   updateOperationState(opts) {
     logger.info('Updating Operation State with :', opts);
     assert.ok(opts.operationName, `Property 'operationName' is required to update operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to update operation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to update operation state`);
+    assert.ok(opts.operationId, `Property 'operationId' is required to update operation state`);
     assert.ok(opts.stateValue, `Property 'stateValue' is required to update operation state`);
     const patchedResource = {
       'status': {
@@ -227,7 +227,7 @@ class ApiServerEventMesh extends EventMeshServer {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId)
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .status.patch({
           body: patchedResource
         }))
@@ -280,18 +280,18 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.resourceId
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * returns string
    */
   getOperationOptions(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to get operation state`);
+    assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId)
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
       .then(json => json.body.spec.options)
       .catch(err => {
@@ -303,18 +303,18 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.resourceId
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * returns string
    */
   getOperationState(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to get operation state`);
+    assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId)
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
       .then(json => json.body.status.state)
       .catch(err => {
@@ -326,14 +326,14 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.resourceId
    * @params opts.operationName
    * @params opts.operationType
-   * @params opts.annotationId
+   * @params opts.operationId
    * returns string
    */
   getOperationResult(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.annotationId)
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
       .then(json => json.body.status.response)
       .catch(err => {

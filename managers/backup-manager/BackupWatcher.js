@@ -58,7 +58,7 @@ class DefaultBackupManager extends BaseManager {
           resourceId: changedOptions.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          annotationId: changedOptions.guid
+          operationId: changedOptions.guid
         })
         .then(options => {
           const changedOptions = JSON.parse(options);

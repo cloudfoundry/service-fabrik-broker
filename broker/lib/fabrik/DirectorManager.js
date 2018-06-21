@@ -1088,7 +1088,7 @@ class DirectorManager extends BaseManager {
               resourceId: options.instance_guid,
               operationName: 'backup',
               operationType: 'defaultbackups',
-              annotationId: metadata.backup_guid,
+              operationId: metadata.backup_guid,
               value: metadata
             }));
         }
