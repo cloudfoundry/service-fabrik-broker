@@ -22,13 +22,6 @@ module.exports = Object.freeze({
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
   },
-  ETCD: {
-    SORT_BY_CREATE: 'Create',
-    TARGET_NONE: 'None',
-    JSON: 'json',
-    NUMBER: 'number',
-    STRING: 'string'
-  },
   EVENT_LOG_RIEMANN_CLIENT_STATUS: {
     INITIALIZING: 'initializing',
     CONNECTED: 'connected',
@@ -324,6 +317,11 @@ module.exports = Object.freeze({
     IP_TABLES_MANAGER: 'iptables-manager'
   },
   ETCD: {
+    SORT_BY_CREATE: 'Create',
+    TARGET_NONE: 'None',
+    JSON: 'json',
+    NUMBER: 'number',
+    STRING: 'string',
     RETRY_DELAY: 2000,
     MAX_RETRY_UNLOCK: 3,
     LOCK_TYPE: {
