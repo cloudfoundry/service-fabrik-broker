@@ -105,41 +105,14 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   createResource(resourceType, resourceId, val) {
-    logger.debug(`Creating Resource ${resourceType}/${resourceId}`);
-
-    const initialResource = {
-      metadata: {
-        name: resourceId,
-        'labels': {
-          instance_guid: `${resourceId}`,
-        },
-      },
-      spec: {
-        'options': JSON.stringify(val)
-      },
+    const opts = {
+      annotationId: resourceId,
+      resourceId: resourceId,
+      annotationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+      annotationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
+      val: val
     };
-
-    const statusJson = {
-      status: {
-        state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-        lastOperation: 'created',
-        response: JSON.stringify({})
-      }
-    };
-
-    return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver
-        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR].post({
-          body: initialResource
-        }))
-      .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](resourceId).status.patch({
-          body: statusJson
-        }))
-      .catch(err => {
-        return buildErrors(err);
-      });
+    return this.annotateResource(opts);
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
@@ -196,8 +169,8 @@ class ApiServerEventMesh extends EventMeshServer {
     const statusJson = {
       status: {
         state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-        lastOperation: '',
-        response: ''
+        lastOperation: 'created',
+        response: JSON.stringify({})
       }
     };
     return Promise.try(() => apiserver.loadSpec())

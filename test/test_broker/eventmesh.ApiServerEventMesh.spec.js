@@ -368,8 +368,8 @@ describe('eventmesh', () => {
       const statusJson = {
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-          lastOperation: '',
-          response: ''
+          lastOperation: 'created',
+          response: JSON.stringify({})
         }
       };
       const finalResource = _.assign({
