@@ -56,13 +56,18 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
-  createLockResource(name, type, body) {
+
+  createResource(name, type, body) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type].post({
           body: body
-        }))
+        }));
+  }
+
+  createLockResource(name, type, body) {
+    return this.createResource(name, type, body)
       .catch(err => {
         return buildErrors(err);
       });
@@ -167,11 +172,7 @@ class ApiServerEventMesh extends EventMeshServer {
         response: JSON.stringify({})
       }
     };
-    return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType].post({
-          body: initialResource
-        }))
+    return this.createResource(opts.annotationName, opts.annotationType, initialResource)
       .then(() => apiserver.apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.annotationType](opts.annotationId).status.patch({
           body: statusJson

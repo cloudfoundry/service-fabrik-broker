@@ -137,6 +137,17 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('createResource', () => {
+      it('throws error if api call is errored', done => {
+        nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
+        return apiserver.createResource('lock', 'deploymentlock', sampleLockResource)
+          .catch(err => {
+            expect(err.code).to.eql(409);
+            done();
+          });
+      });
+    });
+
     describe('deleteLockResource', () => {
       const deleteLockResponse = {
         kind: 'Status',
