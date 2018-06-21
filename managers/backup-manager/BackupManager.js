@@ -271,13 +271,10 @@ class BackupManager {
       }
     });
   }
-
-}
-
-class BM {
   static createManager(plan) {
     return Promise.try(() => BackupManager.load(plan));
   }
 
 }
-module.exports = BM;
+
+module.exports = BackupManager;
