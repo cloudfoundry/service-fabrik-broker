@@ -239,6 +239,8 @@ class DirectorInstance extends BaseInstance {
       .initialize(operation)
       .then(() => token ? jwt.verify(token, config.password) : null)
       .then(serviceFabrikOperation => {
+        logger.info('SF Operation input:', serviceFabrikOperation);
+        this.operation = _.get(serviceFabrikOperation, 'name', 'update');
         // normal update operation
         if (this.operation === 'update') {
           const args = _.get(serviceFabrikOperation, 'arguments');
@@ -265,12 +267,12 @@ class DirectorInstance extends BaseInstance {
         return this.manager
           .invokeServiceFabrikOperation(this.operation, opts)
           .then(result => _
-            .chain(operation)
-            .assign(result)
-            .set('username', serviceFabrikOperation.username)
-            .set('useremail', serviceFabrikOperation.useremail)
-            .set('context', params.context)
-            .value()
+              .chain(operation)
+              .assign(result)
+              .set('username', serviceFabrikOperation.username)
+              .set('useremail', serviceFabrikOperation.useremail)
+              .set('context', params.context)
+              .value()
           );
       });
   }

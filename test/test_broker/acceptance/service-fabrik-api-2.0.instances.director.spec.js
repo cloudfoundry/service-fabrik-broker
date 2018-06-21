@@ -54,18 +54,6 @@ describe('service-fabrik-api-sf2.0', function () {
       const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
-      const backupOperation = {
-        type: 'update',
-        subtype: 'backup',
-        deployment: deployment_name,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        },
-        backup_guid: backup_guid,
-        agent_ip: mocks.agent.ip
-      };
       const restoreOperation = {
         type: 'update',
         subtype: 'restore',
@@ -181,19 +169,7 @@ describe('service-fabrik-api-sf2.0', function () {
         });
       });
       describe('#backup-start', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
-        const filename = `${prefix}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
         const type = 'online';
-        const name = 'backup';
-        const args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND
-        };
-        const scheduled_args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
-        };
         const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time + 1)}.json`;
@@ -203,22 +179,6 @@ describe('service-fabrik-api-sf2.0', function () {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'succeeded',
           agent_ip: mocks.agent.ip
-        };
-        const instanceInfo = {
-          space_guid: space_guid,
-          backup_guid: backup_guid,
-          instance_guid: instance_id,
-          agent_ip: '10.0.1.10',
-          service_id: service_id,
-          plan_id: plan_id,
-          deployment: mocks.director.deploymentNameByIndex(index),
-          started_at: new Date()
-        };
-        const lockInfo = {
-          username: 'admin',
-          lockedForOperation: 'backup',
-          createdAt: new Date(),
-          instanceInfo: instanceInfo
         };
         const FabrikStatusPoller = require('../../../broker/lib/fabrik/FabrikStatusPoller');
         afterEach(function () {
@@ -433,7 +393,6 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          //mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.apiServerEventMesh.nockLoadSpec(7);
@@ -679,15 +638,6 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-abort', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-        const filename = `${prefix}.${backup_guid}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
-        const data = {
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
-          state: 'processing',
-          agent_ip: mocks.agent.ip
-        };
-
         it('should return 202 Accepted', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1003,34 +953,34 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        // it('should initiate a start-restore operation at cloud controller via a service instance update', function () {
-        //   mocks.uaa.tokenKey();
-        //   mocks.cloudController.getServiceInstance(instance_id, {
-        //     space_guid: space_guid,
-        //     service_plan_guid: plan_guid
-        //   });
-        //   mocks.cloudController.findServicePlan(instance_id, plan_id);
-        //   mocks.cloudController.getSpaceDevelopers(space_guid);
-        //   mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-        //   mocks.cloudProvider.download(backupPathname, backupMetadata);
-        //   mocks.cloudController.updateServiceInstance(instance_id, body => {
-        //     const token = _.get(body.parameters, 'service-fabrik-operation');
-        //     return support.jwt.verify(token, name, args);
-        //   });
-        //   return chai
-        //     .request(apps.external)
-        //     .post(`${base_url}/service_instances/${instance_id}/restore`)
-        //     .set('Authorization', authHeader)
-        //     .send({
-        //       backup_guid: backup_guid
-        //     })
-        //     .catch(err => err.response)
-        //     .then(res => {
-        //       expect(res).to.have.status(202);
-        //       expect(res.body).to.have.property('guid');
-        //       mocks.verify();
-        //     });
-        // });
+        it('should initiate a start-restore operation at cloud controller via a service instance update', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, backupMetadata);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              backup_guid: backup_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
 
         it('should initiate a start-restore operation at cloud controller via a service instance update:PITR', function () {
           mocks.uaa.tokenKey();
@@ -1061,59 +1011,66 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        // it('should receive the update request from cloud controller and start the restore', function () {
-        //   mocks.director.getDeploymentVms(deployment_name);
-        //   mocks.director.getDeploymentInstances(deployment_name);
-        //   mocks.director.verifyDeploymentLockStatus();
-        //   mocks.agent.getInfo();
-        //   mocks.agent.startRestore();
-        //   mocks.cloudProvider.upload(restorePathname, body => {
-        //     expect(body.instance_guid).to.equal(instance_id);
-        //     expect(body.username).to.equal(username);
-        //     expect(body.backup_guid).to.equal(backup_guid);
-        //     expect(body.state).to.equal('processing');
-        //     return true;
-        //   });
-        //   mocks.cloudProvider.headObject(restorePathname);
-        //   return support.jwt
-        //     .sign({
-        //       username: username
-        //     }, name, args)
-        //     .then(token => chai
-        //       .request(apps.internal)
-        //       .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-        //       .send({
-        //         plan_id: plan_id,
-        //         service_id: service_id,
-        //         context: {
-        //           platform: 'cloudfoundry',
-        //           organization_guid: organization_guid,
-        //           space_guid: space_guid
-        //         },
-        //         organization_guid: organization_guid,
-        //         space_guid: space_guid,
-        //         previous_values: {
-        //           plan_id: plan_id,
-        //           service_id: service_id
-        //         },
-        //         parameters: {
-        //           'service-fabrik-operation': token
-        //         }
-        //       })
-        //       .set('X-Broker-API-Version', broker_api_version)
-        //       .auth(config.username, config.password)
-        //       .catch(err => err.response)
-        //       .then(res => {
-        //         expect(res).to.have.status(202);
-        //         expect(res.body).to.have.property('operation');
-        //         const operation = utils.decodeBase64(res.body.operation);
-        //         expect(operation.type).to.equal('update');
-        //         expect(operation.subtype).to.equal('restore');
-        //         expect(operation).to.have.property('agent_ip');
-        //         mocks.verify();
-        //       })
-        //     );
-        // });
+        it('should receive the update request from cloud controller and start the restore', function () {
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.startRestore();
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.instance_guid).to.equal(instance_id);
+            expect(body.username).to.equal(username);
+            expect(body.backup_guid).to.equal(backup_guid);
+            expect(body.state).to.equal('processing');
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+
+          return support.jwt
+            .sign({
+              username: username
+            }, name, args)
+            .then(token => chai
+              .request(apps.internal)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+              .send({
+                plan_id: plan_id,
+                service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
+                previous_values: {
+                  plan_id: plan_id,
+                  service_id: service_id
+                },
+                parameters: {
+                  'service-fabrik-operation': token
+                }
+              })
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(202);
+                expect(res.body).to.have.property('operation');
+                const operation = utils.decodeBase64(res.body.operation);
+                expect(operation.type).to.equal('update');
+                expect(operation.subtype).to.equal('restore');
+                expect(operation).to.have.property('agent_ip');
+                mocks.verify();
+              })
+            );
+        });
 
         it('should receive last_operation call from cloud controller while restore is processing', function () {
           const restoreState = {
@@ -1141,55 +1098,57 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        // it('should download the restore logs and update the metadata', function () {
-        //   const state = 'succeeded';
-        //   const restoreState = {
-        //     state: state,
-        //     stage: 'Finished',
-        //     updated_at: new Date(Date.now())
-        //   };
-        //   const restoreLogs = [{
-        //     time: '2015-11-18T11:28:40+00:00',
-        //     level: 'info',
-        //     msg: 'Downloading tarball ...'
-        //   }, {
-        //     time: '2015-11-18T11:28:42+00:00',
-        //     level: 'info',
-        //     msg: 'Extracting tarball ...'
-        //   }];
-        //   const restoreLogsStream = _
-        //     .chain(restoreLogs)
-        //     .map(JSON.stringify)
-        //     .join('\n')
-        //     .value();
-        //   mocks.cloudProvider.download(restorePathname, {});
-        //   mocks.agent.lastRestoreOperation(restoreState);
-        //   mocks.agent.getRestoreLogs(restoreLogsStream);
-        //   mocks.cloudProvider.upload(restorePathname, body => {
-        //     expect(body.logs).to.eql(restoreLogs);
-        //     expect(body.state).to.equal(state);
-        //     expect(body.finished_at).to.not.be.undefined;
-        //     return true;
-        //   });
-        //   mocks.cloudProvider.headObject(restorePathname);
-        //   return chai
-        //     .request(apps.internal)
-        //     .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
-        //     .set('X-Broker-API-Version', broker_api_version)
-        //     .auth(config.username, config.password)
-        //     .query({
-        //       service_id: service_id,
-        //       plan_id: plan_id,
-        //       operation: utils.encodeBase64(restoreOperation)
-        //     })
-        //     .catch(err => err.response)
-        //     .then(res => {
-        //       expect(res).to.have.status(200);
-        //       expect(res.body.state).to.equal(state);
-        //       expect(res.body).to.have.property('description');
-        //       mocks.verify();
-        //     });
-        // });
+        it('should download the restore logs and update the metadata', function () {
+          const state = 'succeeded';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: new Date(Date.now())
+          };
+          const restoreLogs = [{
+            time: '2015-11-18T11:28:40+00:00',
+            level: 'info',
+            msg: 'Downloading tarball ...'
+          }, {
+            time: '2015-11-18T11:28:42+00:00',
+            level: 'info',
+            msg: 'Extracting tarball ...'
+          }];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          mocks.cloudProvider.download(restorePathname, {});
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined;
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          return chai
+            .request(apps.internal)
+            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', broker_api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64(restoreOperation)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.equal(state);
+              expect(res.body).to.have.property('description');
+              mocks.verify();
+            });
+        });
       });
 
       describe('#restore-state', function () {

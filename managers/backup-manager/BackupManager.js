@@ -166,6 +166,7 @@ class BackupManager {
           .then(() => {
             backupStarted = true;
             let put_ret = this.backupStore.putFile(data);
+            logger.info(put_ret);
             const backup_options = _.chain(result)
               .set('deployment_name', deploymentName)
               .set('started_at', backupStartedAt)
