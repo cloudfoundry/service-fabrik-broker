@@ -70,12 +70,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (state === opts.start_state) {
           return ServiceFabrikApiController.getResourceAnnotationStatus(opts);
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
-          return eventmesh.server.getAnnotationKeyValue({
+          return eventmesh.server.getAnnotationResult({
               resourceId: opts.resourceId,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
               annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: opts.annotationId,
-              key: CONST.APISERVER.ANNOTATION_KEYS.RESULT
             })
             .then(error => {
               let json = JSON.parse(error);
