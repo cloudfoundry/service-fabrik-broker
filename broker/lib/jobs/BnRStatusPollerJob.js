@@ -147,7 +147,7 @@ class BnRStatusPollerJob extends BaseJob {
             .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
       })
-      .tap(operationStatusResponse => {
+      .then(operationStatusResponse => {
         return eventmesh
           .server
           .updateOperationResult({
@@ -156,7 +156,8 @@ class BnRStatusPollerJob extends BaseJob {
             operationType: 'defaultbackups',
             operationId: instanceInfo.backup_guid,
             value: operationStatusResponse
-          });
+          })
+          .then(() => operationStatusResponse);
       })
       .then(operationStatusResponse => {
         operationStatusResponse.jobCancelled = false;
