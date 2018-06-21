@@ -354,7 +354,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('annotateResource', () => {
+    describe('createOperationResource', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -393,7 +393,7 @@ describe('eventmesh', () => {
       it('Creates an annotation of a resource', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, statusJson);
-        apiserver.annotateResource(opts)
+        apiserver.createOperationResource(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -404,7 +404,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input, 409);
-        return apiserver.annotateResource(opts)
+        return apiserver.createOperationResource(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();

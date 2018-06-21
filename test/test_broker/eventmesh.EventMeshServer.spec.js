@@ -109,10 +109,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('#annotateResource', () => {
+    describe('#createOperationResource', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.annotateResource).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.annotateResource).to.throw('annotateResource');
+        expect(eventmesh.createOperationResource).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.createOperationResource).to.throw('createOperationResource');
       });
     });
 

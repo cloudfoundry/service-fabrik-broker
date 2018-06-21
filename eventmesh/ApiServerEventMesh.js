@@ -118,7 +118,7 @@ class ApiServerEventMesh extends EventMeshServer {
       annotationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
       val: val
     };
-    return this.annotateResource(opts);
+    return this.createOperationResource(opts);
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
@@ -152,7 +152,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * @params opts.val
    */
-  annotateResource(opts) {
+  createOperationResource(opts) {
     logger.info('Creating resource with options:', opts.val);
     const initialResource = {
       metadata: {

@@ -383,7 +383,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           })
           .then(() => {
             lockedDeployment = true;
-            return eventmesh.server.annotateResource({
+            return eventmesh.server.createOperationResource({
               resourceId: req.params.instance_id,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
               annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
