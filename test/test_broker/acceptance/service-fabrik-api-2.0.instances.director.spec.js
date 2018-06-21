@@ -688,7 +688,6 @@ describe('service-fabrik-api-sf2.0', function () {
           agent_ip: mocks.agent.ip
         };
 
-        //TODO: check why its 200 and not 202
         it('should return 202 Accepted', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -710,13 +709,14 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'in_progress',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          });
           mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
             status: {
+              state: 'aborting',
               response: '{"guid": "some_guid"}'
             }
-          });
+          }, 2);
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/backup`)
@@ -724,36 +724,50 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               mocks.verify();
-              expect(res).to.have.status(200);
+              expect(res).to.have.status(202);
               expect(res.body).to.be.empty;
             });
         });
-          // it('should return 200 OK', function () {
-          //   mocks.uaa.tokenKey();
-          //   mocks.cloudController.getServiceInstance(instance_id, {
-          //     space_guid: space_guid,
-          //     service_plan_guid: plan_guid
-          //   });
-          //   mocks.cloudController.findServicePlan(instance_id, plan_id);
-          //   mocks.cloudController.getSpaceDevelopers(space_guid);
-          //   mocks.cloudProvider.list(container, prefix, [filename]);
-          //   mocks.cloudProvider.download(pathname, _
-          //     .chain(data)
-          //     .omit('state')
-          //     .set('state', 'succeeded')
-          //     .value()
-          //   );
-          //   return chai
-          //     .request(apps.external)
-          //     .delete(`${base_url}/service_instances/${instance_id}/backup`)
-          //     .set('Authorization', authHeader)
-          //     .catch(err => err.response)
-          //     .then(res => {
-          //       expect(res).to.have.status(200);
-          //       expect(res.body).to.be.empty;
-          //       mocks.verify();
-          //     });
-          // });
+        it('should return 200 OK', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'in_progress',
+              response: '{"guid": "some_guid"}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'aborted',
+              response: '{"guid": "some_guid"}'
+            }
+          }, 2);
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          return chai
+            .request(apps.external)
+            .delete(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.be.empty;
+              mocks.verify();
+            });
+        });
       });
 
       describe('#restore-start', function () {

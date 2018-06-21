@@ -54,6 +54,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
    */
   static getResourceAnnotationStatus(opts) {
     logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
+    let finalState = "";
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
       .then(() => eventmesh.server.getAnnotationState({
         resourceId: opts.resourceId,
@@ -70,6 +71,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (state === opts.start_state) {
           return ServiceFabrikApiController.getResourceAnnotationStatus(opts);
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+          finalState = state;
           return eventmesh.server.getAnnotationResult({
               resourceId: opts.resourceId,
               annotationName: CONST.OPERATION_TYPE.BACKUP,
@@ -101,6 +103,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               throw err;
             });
         } else {
+          finalState = state;
           return eventmesh.server.getAnnotationResult({
             resourceId: opts.resourceId,
             annotationName: CONST.OPERATION_TYPE.BACKUP,
@@ -108,6 +111,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
             annotationId: opts.annotationId,
           });
         }
+      })
+      .then(result => {
+        let status = {};
+        status.state = finalState;
+        status.response = result;
+        return status;
       });
   }
 
@@ -401,8 +410,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
             started_at: backup_started_at
           }));
       })
-      .tap(response => {
-        logger.info(`Backup Response `, response);
+      .tap(status => {
+        logger.info(`Backup Response `, status.response);
         const directorManager = req.manager;
         return directorManager
           .findNetworkSegmentIndex(req.params.instance_id)
@@ -411,9 +420,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
             return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
           });
       })
-      .then(bodyStr => {
-        logger.info('Annotation response:', bodyStr);
-        const body = JSON.parse(bodyStr);
+      .then(status => {
+        logger.info('Annotation response:', status.response);
+        const body = JSON.parse(status.response);
         res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send(body);
       })
       .catch(err => {
@@ -498,7 +507,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         start_state: CONST.OPERATION.ABORT,
         started_at: backup_started_at
       }));
-    }).then(result => res.status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send(result));
+    }).then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send(status.response));
   }
 
   startRestore(req, res) {
