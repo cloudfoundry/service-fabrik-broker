@@ -307,8 +307,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startBackup(req, res) {
-    logger.info(`Service fabrik enabled: ${config.enableServiceFabrikV2}`);
-    if (config.enableServiceFabrikV2) {
+    logger.info(`Service fabrik enabled: ${config.enable_service_fabrik_v2}`);
+    if (config.enable_service_fabrik_v2) {
       return this.startBackup_sf20(req, res);
     }
     logger.info(`Calling service fabrik v1`);
@@ -456,7 +456,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   abortLastBackup(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.abortLastBackup20(req, res);
     }
     return this.abortLastBackup10(req, res);

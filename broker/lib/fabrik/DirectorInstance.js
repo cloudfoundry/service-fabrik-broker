@@ -50,7 +50,7 @@ class DirectorInstance extends BaseInstance {
   }
 
   get async() {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.operation !== CONST.OPERATION_TYPE.BACKUP;
       //Backup operation is being turned into SYNCH and behind scenese polling will happen to status check.
       //Rationale : Bind operations can happen while backups are happening.
@@ -162,7 +162,7 @@ class DirectorInstance extends BaseInstance {
   }
 
   update(params) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.update20(params);
     }
     return this.update10(params);
@@ -267,18 +267,18 @@ class DirectorInstance extends BaseInstance {
         return this.manager
           .invokeServiceFabrikOperation(this.operation, opts)
           .then(result => _
-              .chain(operation)
-              .assign(result)
-              .set('username', serviceFabrikOperation.username)
-              .set('useremail', serviceFabrikOperation.useremail)
-              .set('context', params.context)
-              .value()
+            .chain(operation)
+            .assign(result)
+            .set('username', serviceFabrikOperation.username)
+            .set('useremail', serviceFabrikOperation.useremail)
+            .set('context', params.context)
+            .value()
           );
       });
   }
 
   delete(params) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.delete20(params);
     }
     return this.delete10(params);

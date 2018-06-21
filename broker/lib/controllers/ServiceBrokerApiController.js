@@ -47,7 +47,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putInstance(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.putInstanceV2(req, res);
     }
     return this.putInstanceV1(req, res);
@@ -133,7 +133,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   patchInstance(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.patchInstanceV2(req, res);
     }
     return this.patchInstanceV1(req, res);
@@ -227,7 +227,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   deleteInstance(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.deleteInstanceV2(req, res);
     }
     return this.deleteInstanceV1(req, res);
@@ -305,7 +305,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   getLastInstanceOperation(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.getLastInstanceOperationV2(req, res);
     }
     return this.getLastInstanceOperationV1(req, res);
@@ -392,7 +392,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putBinding(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.putBindingV2(req, res);
     }
     return this.putBindingV1(req, res);
@@ -451,7 +451,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   deleteBinding(req, res) {
-    if (config.enableServiceFabrikV2) {
+    if (config.enable_service_fabrik_v2) {
       return this.deleteBindingV2(req, res);
     }
     return this.deleteBindingV1(req, res);

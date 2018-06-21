@@ -77,6 +77,7 @@ class DefaultBackupManager extends BaseManager {
     let processingLockConflict = false;
 
     if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE || changeObjectBody.status.state === CONST.OPERATION.ABORT) {
+      // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
       return Promise.try(() => {
           if (!changeObjectBody.metadata.annotations || changeObjectBody.metadata.annotations === '') {
             logger.info('Trying to acquire processing lock for the backup request for backup guid: ', changedOptions.guid);

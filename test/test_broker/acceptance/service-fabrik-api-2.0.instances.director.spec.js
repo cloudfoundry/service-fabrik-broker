@@ -17,11 +17,11 @@ const backupStore = lib.iaas.backupStore;
 const filename = lib.iaas.backupStore.filename;
 
 function enableServiceFabrikV2() {
-  config.enableServiceFabrikV2 = true;
+  config.enable_service_fabrik_v2 = true;
 }
 
 function disableServiceFabrikV2() {
-  config.enableServiceFabrikV2 = false;
+  config.enable_service_fabrik_v2 = false;
 }
 
 describe('service-fabrik-api-sf2.0', function () {
