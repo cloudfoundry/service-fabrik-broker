@@ -53,7 +53,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
    * @param opts.started_at
    */
   static getResourceOperationStatus(opts) {
-    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the annotation state`);
+    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
     let finalState = "";
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
       .then(() => eventmesh.server.getOperationState({

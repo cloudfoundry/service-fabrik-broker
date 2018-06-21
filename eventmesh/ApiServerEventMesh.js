@@ -215,10 +215,10 @@ class ApiServerEventMesh extends EventMeshServer {
    */
   updateOperationState(opts) {
     logger.info('Updating Operation State with :', opts);
-    assert.ok(opts.operationName, `Property 'operationName' is required to update annotation state`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to update annotation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
-    assert.ok(opts.stateValue, `Property 'stateValue' is required to update annotation state`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to update operation state`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to update operation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to update operation state`);
+    assert.ok(opts.stateValue, `Property 'stateValue' is required to update operation state`);
     const patchedResource = {
       'status': {
         'state': opts.stateValue
@@ -284,10 +284,10 @@ class ApiServerEventMesh extends EventMeshServer {
    * returns string
    */
   getOperationOptions(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
-    assert.ok(opts.operationName, `Property 'operationName' is required to get annotation state`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to get annotation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get operation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -307,10 +307,10 @@ class ApiServerEventMesh extends EventMeshServer {
    * returns string
    */
   getOperationState(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
-    assert.ok(opts.operationName, `Property 'operationName' is required to get annotation state`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to get annotation state`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation state`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get operation state`);
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]

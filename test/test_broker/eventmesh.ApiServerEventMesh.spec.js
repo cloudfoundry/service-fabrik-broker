@@ -390,7 +390,7 @@ describe('eventmesh', () => {
           response: ''
         }
       }, sampleBackupResource);
-      it('Creates an annotation of a resource', done => {
+      it('Creates an operation of a resource', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, statusJson);
         apiserver.createOperationResource(opts)
@@ -432,7 +432,7 @@ describe('eventmesh', () => {
           response: JSON.stringify(opts.value)
         }
       }, sampleBackupResource);
-      it('updates the annotation result', done => {
+      it('updates the operation result', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateOperationResult(opts)
           .then(res => {
@@ -472,7 +472,7 @@ describe('eventmesh', () => {
           state: opts.stateValue
         }
       }, sampleBackupResource);
-      it('updates the annotation state', done => {
+      it('updates the operation state', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
         apiserver.updateOperationState(opts)
           .then(res => {
@@ -507,7 +507,7 @@ describe('eventmesh', () => {
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
 
-      it('updates the last annotation value', done => {
+      it('updates the last operation value', done => {
         nockPatchResource('deployment', 'director', 'd1', finalResource, input);
         apiserver.updateLastOperation(opts)
           .then(res => {
@@ -541,7 +541,7 @@ describe('eventmesh', () => {
       input.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = 'b1';
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
-      it('gets the last annotation value', done => {
+      it('gets the last operation value', done => {
         nockGetResource('deployment', 'director', 'd1', finalResource);
         apiserver.getLastOperation(opts)
           .then(res => {
@@ -573,7 +573,7 @@ describe('eventmesh', () => {
       input.spec.options = 'some_value';
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
-      it('gets the last annotation options', done => {
+      it('gets the last operation options', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getOperationOptions(opts)
           .then(res => {
@@ -605,7 +605,7 @@ describe('eventmesh', () => {
       input.status.state = 'in_progress';
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
-      it('gets the last annotation state', done => {
+      it('gets the last operation state', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getOperationState(opts)
           .then(res => {
@@ -637,7 +637,7 @@ describe('eventmesh', () => {
       input.status.response = 'some_response';
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
-      it('gets the last annotation Result', done => {
+      it('gets the last operation Result', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getOperationResult(opts)
           .then(res => {

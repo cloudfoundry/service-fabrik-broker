@@ -27,10 +27,10 @@ class EventMeshServer {
   }
 
   getOperationFolderName(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation folder name`);
-    assert.ok(opts.operationName, `Property 'operationName' is required to get annotation folder name`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to get annotation folder name`);
-    assert.ok(opts.annotationId, `Property 'annotationId' is required to get annotation folder name`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation folder name`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to get operation folder name`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to get operation folder name`);
+    assert.ok(opts.annotationId, `Property 'annotationId' is required to get operation folder name`);
     return `${opts.operationName}/${opts.operationType}/${opts.resourceId}/${opts.annotationId}`;
   }
 
