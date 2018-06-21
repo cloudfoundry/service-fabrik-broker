@@ -57,11 +57,11 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
 
-  createResource(name, type, body) {
+  createResource(resourceName, resourceType, body) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type].post({
+        .apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType].post({
           body: body
         }));
   }
@@ -72,28 +72,28 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
-  deleteLockResource(name, type, resourceName) {
+  deleteLockResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).delete())
+      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete())
       .catch(err => {
         return buildErrors(err);
       });
   }
-  updateLockResource(name, type, resourceName, delta) {
+  updateResource(resourceName, resourceType, resourceId, delta) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).patch({
+      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
           body: delta
         }))
       .catch(err => {
         return buildErrors(err);
       });
   }
-  getLockResourceOptions(name, type, resourceName) {
+  getLockResourceOptions(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
+      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .then(resource => {
         return resource.body.spec.options;
       })
@@ -101,10 +101,10 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
-  getResource(name, type, resourceName) {
+  getResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[type](resourceName).get())
+      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .catch(err => {
         return buildErrors(err);
       });

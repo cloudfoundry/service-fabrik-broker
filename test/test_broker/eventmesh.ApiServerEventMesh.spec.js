@@ -182,10 +182,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('updateLockResource', () => {
+    describe('updateResource', () => {
       it('calls the patch rest api to edit lock type resource', done => {
         nockPatchResource('lock', 'deploymentlock', 'l1', sampleLockResource);
-        apiserver.updateLockResource('lock', 'deploymentlock', 'l1', {
+        apiserver.updateResource('lock', 'deploymentlock', 'l1', {
             spec: {
               options: sampleLockResource.spec.options
             }
@@ -205,7 +205,7 @@ describe('eventmesh', () => {
           }
         };
         nockPatchResource('lock', 'deploymentlock', 'l1', sampleLockResource, spec, 409);
-        return apiserver.updateLockResource('lock', 'deploymentlock', 'l1', spec)
+        return apiserver.updateResource('lock', 'deploymentlock', 'l1', spec)
           .catch(err => {
             expect(err).to.have.status(409);
             done();

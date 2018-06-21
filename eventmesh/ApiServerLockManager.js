@@ -27,8 +27,9 @@ class ApiServerLockManager {
         const lockTime = new Date(lockDetails.lockTime);
         const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
         if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
-          logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime}`);
+          logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation ?
+            lockDetails.lockedResourceDetails.operation : 'unknown'} ` +
+            `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime} `);
           return true;
         }
         return false;
@@ -96,7 +97,7 @@ class ApiServerLockManager {
     _.extend(opts, {
       'lockTime': currentTime
     });
-    logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId}`);
+    logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
     return eventmesh.server.getResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
       .then(resource => {
         const resourceBody = resource.body;
@@ -105,19 +106,19 @@ class ApiServerLockManager {
         const currentLockTime = new Date(currentlLockDetails.lockTime);
         if ((currentTime - currentLockTime) < currentLockTTL) {
           logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
           throw new EtcdLockError(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
         } else {
           const patchBody = _.assign(resourceBody, {
             spec: {
               options: JSON.stringify(opts)
             }
           });
-          return eventmesh.server.updateLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
+          return eventmesh.server.updateResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
-      .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
+      .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
       .catch(err => {
         if (err instanceof NotFound) {
           const spec = {
@@ -134,7 +135,7 @@ class ApiServerLockManager {
             status: status
           };
           return eventmesh.server.createLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
-            .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`));
+            .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
         } else if (err instanceof Conflict) {
           throw new EtcdLockError(err.message);
         }
@@ -155,10 +156,10 @@ class ApiServerLockManager {
 
     function unlockResourceRetry(currentRetryCount) {
       return eventmesh.server.deleteLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
-        .tap(() => logger.info(`Successfully unlocked resource ${resourceId}`))
+        .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
         .catch(err => {
           if (err instanceof NotFound) {
-            logger.info(`Successfully Unlocked resource ${resourceId}`);
+            logger.info(`Successfully Unlocked resource ${resourceId} `);
             return;
           }
           if (currentRetryCount >= maxRetryCount) {

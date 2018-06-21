@@ -137,6 +137,7 @@ defaults: &defaults
   release_version: latest
   username: broker
   password: ~
+  broker_ip: <%= ip %>
   skip_ssl_validation: true
   log_path: <%= log_path %>
   log_level: info

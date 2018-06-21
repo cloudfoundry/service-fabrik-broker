@@ -56,7 +56,7 @@ const lock = {
 };
 const LockManagerDummy = {
   getLockResourceOptionsDummy: () => {},
-  updateLockResourceDummy: () => {},
+  updateResourceDummy: () => {},
   createLockResourceDummy: () => {},
   getResourceDummy: () => {},
 };
@@ -76,8 +76,8 @@ const apiServerLockManager = proxyquire('../../eventmesh/ApiServerLockManager', 
           }
         });
       },
-      'updateLockResource': function (resourceType, resourceName, resourceId, patchBody) {
-        LockManagerDummy.updateLockResourceDummy(resourceType, resourceName, resourceId, patchBody);
+      'updateResource': function (resourceType, resourceName, resourceId, patchBody) {
+        LockManagerDummy.updateResourceDummy(resourceType, resourceName, resourceId, patchBody);
         return Promise.resolve({});
       },
       'createLockResource': function (resourceType, resourceName, resourceId, body) {
@@ -103,17 +103,17 @@ const apiServerLockManager = proxyquire('../../eventmesh/ApiServerLockManager', 
 
 describe('eventmesh', () => {
   describe('ApiServerLockManager', () => {
-    let getLockResourceOptionsSpy, updateLockResourceSpy, createLockResourceSpy, getResourceSpy;
+    let getLockResourceOptionsSpy, updateResourceSpy, createLockResourceSpy, getResourceSpy;
     before(function () {
       getLockResourceOptionsSpy = sinon.spy(LockManagerDummy, 'getLockResourceOptionsDummy');
-      updateLockResourceSpy = sinon.spy(LockManagerDummy, 'updateLockResourceDummy');
+      updateResourceSpy = sinon.spy(LockManagerDummy, 'updateResourceDummy');
       createLockResourceSpy = sinon.spy(LockManagerDummy, 'createLockResourceDummy');
       getResourceSpy = sinon.spy(LockManagerDummy, 'getResourceDummy');
     });
 
     afterEach(function () {
       getLockResourceOptionsSpy.reset();
-      updateLockResourceSpy.reset();
+      updateResourceSpy.reset();
       createLockResourceSpy.reset();
       getResourceSpy.reset();
     });
@@ -196,10 +196,10 @@ describe('eventmesh', () => {
             expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
             expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId2');
-            expect(updateLockResourceSpy.callCount).to.equal(1);
-            expect(updateLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(updateLockResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(updateLockResourceSpy.firstCall.args[2]).to.eql('lockId2');
+            expect(updateResourceSpy.callCount).to.equal(1);
+            expect(updateResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
+            expect(updateResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(updateResourceSpy.firstCall.args[2]).to.eql('lockId2');
             // TODO Check for arg[3] as well
           });
       });
