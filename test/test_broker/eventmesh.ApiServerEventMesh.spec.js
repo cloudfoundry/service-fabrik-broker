@@ -412,7 +412,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('updateAnnotationResult', () => {
+    describe('updateOperationResult', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -434,7 +434,7 @@ describe('eventmesh', () => {
       }, sampleBackupResource);
       it('updates the annotation result', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
-        apiserver.updateAnnotationResult(opts)
+        apiserver.updateOperationResult(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -445,7 +445,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
-        return apiserver.updateAnnotationResult(opts)
+        return apiserver.updateOperationResult(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -454,7 +454,7 @@ describe('eventmesh', () => {
     });
 
 
-    describe('updateAnnotationState', () => {
+    describe('updateOperationState', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -474,7 +474,7 @@ describe('eventmesh', () => {
       }, sampleBackupResource);
       it('updates the annotation state', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
-        apiserver.updateAnnotationState(opts)
+        apiserver.updateOperationState(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -485,7 +485,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
-        return apiserver.updateAnnotationState(opts)
+        return apiserver.updateOperationState(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -493,7 +493,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('updateLastAnnotation', () => {
+    describe('updateLastOperation', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -509,7 +509,7 @@ describe('eventmesh', () => {
 
       it('updates the last annotation value', done => {
         nockPatchResource('deployment', 'director', 'd1', finalResource, input);
-        apiserver.updateLastAnnotation(opts)
+        apiserver.updateLastOperation(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -520,7 +520,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockPatchResource('deployment', 'director', 'd1', finalResource, input, 409);
-        return apiserver.updateLastAnnotation(opts)
+        return apiserver.updateLastOperation(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -529,7 +529,7 @@ describe('eventmesh', () => {
 
     });
 
-    describe('getLastAnnotation', () => {
+    describe('getLastOperation', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -543,7 +543,7 @@ describe('eventmesh', () => {
       _.assign(finalResource, input);
       it('gets the last annotation value', done => {
         nockGetResource('deployment', 'director', 'd1', finalResource);
-        apiserver.getLastAnnotation(opts)
+        apiserver.getLastOperation(opts)
           .then(res => {
             expect(res).to.eql('b1');
             done();
@@ -553,7 +553,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('deployment', 'director', 'd1', finalResource, 409);
-        return apiserver.getLastAnnotation(opts)
+        return apiserver.getLastOperation(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -561,7 +561,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('getAnnotationOptions', () => {
+    describe('getOperationOptions', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -575,7 +575,7 @@ describe('eventmesh', () => {
       _.assign(finalResource, input);
       it('gets the last annotation options', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
-        apiserver.getAnnotationOptions(opts)
+        apiserver.getOperationOptions(opts)
           .then(res => {
             expect(res).to.eql('some_value');
             done();
@@ -585,7 +585,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
-        return apiserver.getAnnotationOptions(opts)
+        return apiserver.getOperationOptions(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -593,7 +593,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('getAnnotationState', () => {
+    describe('getOperationState', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -607,7 +607,7 @@ describe('eventmesh', () => {
       _.assign(finalResource, input);
       it('gets the last annotation state', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
-        apiserver.getAnnotationState(opts)
+        apiserver.getOperationState(opts)
           .then(res => {
             expect(res).to.eql('in_progress');
             done();
@@ -617,7 +617,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
-        return apiserver.getAnnotationState(opts)
+        return apiserver.getOperationState(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -625,7 +625,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('getAnnotationResult', () => {
+    describe('getOperationResult', () => {
       const opts = {
         resourceId: 'd1',
         annotationName: 'backup',
@@ -639,7 +639,7 @@ describe('eventmesh', () => {
       _.assign(finalResource, input);
       it('gets the last annotation Result', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
-        apiserver.getAnnotationResult(opts)
+        apiserver.getOperationResult(opts)
           .then(res => {
             expect(res).to.eql('some_response');
             done();
@@ -649,7 +649,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
-        return apiserver.getAnnotationResult(opts)
+        return apiserver.getOperationResult(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();

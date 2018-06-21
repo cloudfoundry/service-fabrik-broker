@@ -26,7 +26,7 @@ class EventMeshServer {
     return `deployments/${resourceType}/${resourceId}`;
   }
 
-  getAnnotationFolderName(opts) {
+  getOperationFolderName(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation folder name`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation folder name`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation folder name`);
@@ -84,24 +84,24 @@ class EventMeshServer {
     throw new NotImplementedBySubclass('createOperationResource');
   }
 
-  updateAnnotationState(opts) {
+  updateOperationState(opts) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('updateAnnotationState');
+    throw new NotImplementedBySubclass('updateOperationState');
   }
 
-  updateAnnotationKey(opts) {
+  updateOperationKey(opts) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('updateAnnotationKey');
+    throw new NotImplementedBySubclass('updateOperationKey');
   }
 
-  getAnnotationKeyValue(opts) {
+  getOperationKeyValue(opts) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('getAnnotationKeyValue');
+    throw new NotImplementedBySubclass('getOperationKeyValue');
   }
 
-  getAnnotationState(opts) {
+  getOperationState(opts) {
     /* jshint unused:false */
-    throw new NotImplementedBySubclass('getAnnotationState');
+    throw new NotImplementedBySubclass('getOperationState');
   }
 }
 

@@ -54,7 +54,7 @@ class DefaultBackupManager extends BaseManager {
     }
 
     function processAbort() {
-      return eventmesh.server.getAnnotationOptions({
+      return eventmesh.server.getOperationOptions({
           resourceId: changedOptions.instance_guid,
           annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

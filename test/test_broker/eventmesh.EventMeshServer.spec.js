@@ -33,15 +33,15 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('#getAnnotationFolderName', () => {
+    describe('#getOperationFolderName', () => {
       it('should return the key name for annotation', () => {
         const opts = {
           resourceId: 'fakeResourceId',
-          annotationName: 'fakeAnnotationName',
-          annotationType: 'fakeAnnotationType',
-          annotationId: 'fakeAnnotationId',
+          annotationName: 'fakeOperationName',
+          annotationType: 'fakeOperationType',
+          annotationId: 'fakeOperationId',
         };
-        expect(eventmesh.getAnnotationFolderName(opts))
+        expect(eventmesh.getOperationFolderName(opts))
           .to.eql(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}`);
       });
     });
@@ -116,31 +116,31 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('#updateAnnotationState', () => {
+    describe('#updateOperationState', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.updateAnnotationState).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.updateAnnotationState).to.throw('updateAnnotationState');
+        expect(eventmesh.updateOperationState).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.updateOperationState).to.throw('updateOperationState');
       });
     });
 
-    describe('#updateAnnotationKey', () => {
+    describe('#updateOperationKey', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.updateAnnotationKey).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.updateAnnotationKey).to.throw('updateAnnotationKey');
+        expect(eventmesh.updateOperationKey).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.updateOperationKey).to.throw('updateOperationKey');
       });
     });
 
-    describe('#getAnnotationKeyValue', () => {
+    describe('#getOperationKeyValue', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.getAnnotationKeyValue).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.getAnnotationKeyValue).to.throw('getAnnotationKeyValue');
+        expect(eventmesh.getOperationKeyValue).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.getOperationKeyValue).to.throw('getOperationKeyValue');
       });
     });
 
-    describe('#getAnnotationState', () => {
+    describe('#getOperationState', () => {
       it('should thow error if not implemented by subclass', () => {
-        expect(eventmesh.getAnnotationState).to.throw(NotImplementedBySubclass);
-        expect(eventmesh.getAnnotationState).to.throw('getAnnotationState');
+        expect(eventmesh.getOperationState).to.throw(NotImplementedBySubclass);
+        expect(eventmesh.getOperationState).to.throw('getOperationState');
       });
     });
 

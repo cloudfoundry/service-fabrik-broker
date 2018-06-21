@@ -129,7 +129,7 @@ class ApiServerEventMesh extends EventMeshServer {
       annotationType: resourceType,
       stateValue: stateValue
     };
-    return this.updateAnnotationState(opts);
+    return this.updateOperationState(opts);
   }
 
   getResourceState(resourceType, resourceId) {
@@ -188,8 +188,8 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * @params opts.value
    */
-  updateAnnotationResult(opts) {
-    logger.info('Updating Annotation Result with :', opts);
+  updateOperationResult(opts) {
+    logger.info('Updating Operation Result with :', opts);
     const patchedResource = {
       'status': {
         'response': JSON.stringify(opts.value),
@@ -213,8 +213,8 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * @params opts.stateValue
    */
-  updateAnnotationState(opts) {
-    logger.info('Updating Annotation State with :', opts);
+  updateOperationState(opts) {
+    logger.info('Updating Operation State with :', opts);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to update annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to update annotation state`);
     assert.ok(opts.annotationId, `Property 'annotationId' is required to update annotation state`);
@@ -242,7 +242,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationType
    * @params opts.value
    */
-  updateLastAnnotation(opts) {
+  updateLastOperation(opts) {
     const patchedResource = {};
     patchedResource.metadata = {};
     patchedResource.metadata.labels = {};
@@ -264,7 +264,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationName
    * @params opts.annotationType
    */
-  getLastAnnotation(opts) {
+  getLastOperation(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -283,7 +283,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * returns string
    */
-  getAnnotationOptions(opts) {
+  getOperationOptions(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation state`);
@@ -306,7 +306,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * returns string
    */
-  getAnnotationState(opts) {
+  getOperationState(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get annotation state`);
     assert.ok(opts.annotationName, `Property 'annotationName' is required to get annotation state`);
     assert.ok(opts.annotationType, `Property 'annotationType' is required to get annotation state`);
@@ -329,7 +329,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @params opts.annotationId
    * returns string
    */
-  getAnnotationResult(opts) {
+  getOperationResult(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.annotationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]

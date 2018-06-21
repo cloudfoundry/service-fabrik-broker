@@ -1084,7 +1084,7 @@ class DirectorManager extends BaseManager {
                 snapshotId: lastOperation.snapshotId
               })
             ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.server.updateAnnotationResult({
+            .then(metadata => eventmesh.server.updateOperationResult({
               resourceId: options.instance_guid,
               annotationName: 'backup',
               annotationType: 'defaultbackups',

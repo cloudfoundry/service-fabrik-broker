@@ -175,14 +175,14 @@ class BackupManager {
           });
       })
       .then(backup_options =>
-        eventmesh.server.updateAnnotationState({
+        eventmesh.server.updateOperationState({
           resourceId: opts.instance_guid,
           annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
           annotationId: result.backup_guid,
           stateValue: 'in_progress'
         }).then(() =>
-          eventmesh.server.updateAnnotationResult({
+          eventmesh.server.updateOperationResult({
             resourceId: opts.instance_guid,
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -192,7 +192,7 @@ class BackupManager {
         )
       )
       .then(() => {
-        return eventmesh.server.getAnnotationResult({
+        return eventmesh.server.getOperationResult({
           resourceId: opts.instance_guid,
           annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -202,14 +202,14 @@ class BackupManager {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
-          .tap(() => eventmesh.server.updateAnnotationState({
+          .tap(() => eventmesh.server.updateOperationState({
             resourceId: opts.instance_guid,
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             annotationId: result.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
           }))
-          .tap(() => eventmesh.server.updateAnnotationResult({
+          .tap(() => eventmesh.server.updateOperationResult({
             resourceId: opts.instance_guid,
             annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -243,7 +243,7 @@ class BackupManager {
 
   abortLastBackup(abortOptions, force) {
     logger.info('Starting abort with following options:', abortOptions);
-    return eventmesh.server.updateAnnotationState({
+    return eventmesh.server.updateOperationState({
       resourceId: abortOptions.instance_guid,
       annotationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
       annotationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
