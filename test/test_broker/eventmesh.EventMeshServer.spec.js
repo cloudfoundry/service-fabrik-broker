@@ -34,7 +34,7 @@ describe('eventmesh', () => {
     });
 
     describe('#getOperationFolderName', () => {
-      it('should return the key name for annotation', () => {
+      it('should return the key name for operation', () => {
         const opts = {
           resourceId: 'fakeResourceId',
           operationName: 'fakeOperationName',
