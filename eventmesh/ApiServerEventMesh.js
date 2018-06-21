@@ -58,7 +58,8 @@ class ApiServerEventMesh extends EventMeshServer {
   }
   createLockResource(name, type, body) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver
+        .apis[`${name}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[type].post({
           body: body
         }))
@@ -116,21 +117,14 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   updateResourceState(resourceType, resourceId, stateValue) {
-    const patchedResource = {
-      'status': {
-        'state': stateValue
-      }
+    const opts = {
+      annotationId: resourceId,
+      resourceId: resourceId,
+      annotationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+      annotationType: resourceType,
+      stateValue: stateValue
     };
-    return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver
-        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
-        .status.patch({
-          body: patchedResource
-        }))
-      .catch(err => {
-        return buildErrors(err);
-      });
+    return this.updateAnnotationState(opts);
   }
 
   getResourceState(resourceType, resourceId) {
