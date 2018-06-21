@@ -58,8 +58,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
       .then(() => eventmesh.server.getOperationState({
         resourceId: opts.resourceId,
-        annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: opts.annotationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
@@ -74,8 +74,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           finalState = state;
           return eventmesh.server.getOperationResult({
               resourceId: opts.resourceId,
-              annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: opts.annotationId,
             })
             .then(error => {
@@ -106,8 +106,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           finalState = state;
           return eventmesh.server.getOperationResult({
             resourceId: opts.resourceId,
-            annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: opts.annotationId,
           });
         }
@@ -385,8 +385,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
             lockedDeployment = true;
             return eventmesh.server.createOperationResource({
               resourceId: req.params.instance_id,
-              annotationName: CONST.OPERATION_TYPE.BACKUP,
-              annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               annotationId: backup_guid,
               val: backup_options
             });
@@ -399,8 +399,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .catch(() => eventmesh.server.createDeploymentResource(null, req.params.instance_id, {}))
           .then(() => eventmesh.server.updateLastOperation({
             resourceId: req.params.instance_id,
-            annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             value: backup_guid
           }))
           .then(() => ServiceFabrikApiController.getResourceOperationStatus({
@@ -480,21 +480,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backup_started_at = new Date();
     return eventmesh.server.getLastOperation({
       resourceId: req.params.instance_id,
-      annotationName: CONST.OPERATION_TYPE.BACKUP,
-      annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+      operationName: CONST.OPERATION_TYPE.BACKUP,
+      operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
     }).then(backup_guid => {
       return eventmesh.server.getOperationState({
         resourceId: req.params.instance_id,
-        annotationName: CONST.OPERATION_TYPE.BACKUP,
-        annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         annotationId: backup_guid,
       }).then(state => {
         // abort only if the state is in progress
         if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
           return eventmesh.server.updateOperationState({
             resourceId: req.params.instance_id,
-            annotationName: CONST.OPERATION_TYPE.BACKUP,
-            annotationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             annotationId: backup_guid,
             stateValue: CONST.OPERATION.ABORT
           });

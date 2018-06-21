@@ -357,8 +357,8 @@ describe('eventmesh', () => {
     describe('createOperationResource', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackups',
+        operationName: 'backup',
+        operationType: 'defaultbackups',
         annotationId: 'b1',
         val: {
           key: 'value'
@@ -415,8 +415,8 @@ describe('eventmesh', () => {
     describe('updateOperationResult', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         annotationId: 'b1',
         value: {
           key: 'value'
@@ -457,8 +457,8 @@ describe('eventmesh', () => {
     describe('updateOperationState', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         annotationId: 'b1',
         stateValue: 'in_progress'
       };
@@ -496,14 +496,14 @@ describe('eventmesh', () => {
     describe('updateLastOperation', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         value: 'b1'
       };
       const input = {};
       input.metadata = {};
       input.metadata.labels = {};
-      input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = opts.value;
+      input.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
 
@@ -532,13 +532,13 @@ describe('eventmesh', () => {
     describe('getLastOperation', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup'
+        operationName: 'backup',
+        operationType: 'defaultbackup'
       };
       const input = {};
       input.metadata = {};
       input.metadata.labels = {};
-      input.metadata.labels[`last_${opts.annotationName}_${opts.annotationType}`] = 'b1';
+      input.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = 'b1';
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
       it('gets the last annotation value', done => {
@@ -564,8 +564,8 @@ describe('eventmesh', () => {
     describe('getOperationOptions', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         annotationId: 'b1'
       };
       const input = {};
@@ -596,8 +596,8 @@ describe('eventmesh', () => {
     describe('getOperationState', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         annotationId: 'b1'
       };
       const input = {};
@@ -628,8 +628,8 @@ describe('eventmesh', () => {
     describe('getOperationResult', () => {
       const opts = {
         resourceId: 'd1',
-        annotationName: 'backup',
-        annotationType: 'defaultbackup',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
         annotationId: 'b1'
       };
       const input = {};

@@ -152,8 +152,8 @@ class BnRStatusPollerJob extends BaseJob {
           .server
           .updateOperationResult({
             resourceId: instanceInfo.instance_guid,
-            annotationName: 'backup',
-            annotationType: 'defaultbackups',
+            operationName: 'backup',
+            operationType: 'defaultbackups',
             annotationId: instanceInfo.backup_guid,
             value: operationStatusResponse
           });
@@ -296,8 +296,8 @@ class BnRStatusPollerJob extends BaseJob {
       .try(() => {
         return eventmesh.server.updateOperationState({
           resourceId: instanceInfo.instance_guid,
-          annotationName: 'backup',
-          annotationType: 'defaultbackups',
+          operationName: 'backup',
+          operationType: 'defaultbackups',
           annotationId: instanceInfo.backup_guid,
           stateValue: operationStatusResponse.state
         });

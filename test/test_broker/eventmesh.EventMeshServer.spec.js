@@ -37,12 +37,12 @@ describe('eventmesh', () => {
       it('should return the key name for annotation', () => {
         const opts = {
           resourceId: 'fakeResourceId',
-          annotationName: 'fakeOperationName',
-          annotationType: 'fakeOperationType',
+          operationName: 'fakeOperationName',
+          operationType: 'fakeOperationType',
           annotationId: 'fakeOperationId',
         };
         expect(eventmesh.getOperationFolderName(opts))
-          .to.eql(`${opts.annotationName}/${opts.annotationType}/${opts.resourceId}/${opts.annotationId}`);
+          .to.eql(`${opts.operationName}/${opts.operationType}/${opts.resourceId}/${opts.annotationId}`);
       });
     });
 
