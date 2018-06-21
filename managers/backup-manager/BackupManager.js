@@ -274,11 +274,10 @@ class BackupManager {
 
 }
 
-class Fabrik {
+class BM {
   static createManager(plan) {
     return Promise.try(() => BackupManager.load(plan));
   }
 
 }
-Fabrik.BackupManager = BackupManager;
-module.exports = Fabrik;
+module.exports = BM;

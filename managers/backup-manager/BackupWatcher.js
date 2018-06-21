@@ -7,7 +7,7 @@ const eventmesh = require('../../eventmesh');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
-const fabrik = require('./');
+const bm = require('./');
 const BaseManager = require('../BaseManager');
 const DBManager = require('../../broker/lib/fabrik/DBManager');
 const errors = require('../../common/errors');
@@ -49,7 +49,7 @@ class DefaultBackupManager extends BaseManager {
     function processBackup() {
       logger.info('Triggering backup with the following options:', changedOptions);
       const plan = catalog.getPlan(changedOptions.plan_id);
-      return fabrik.createManager(plan)
+      return bm.createManager(plan)
         .then(manager => manager.startBackup(changedOptions));
     }
 
@@ -64,7 +64,7 @@ class DefaultBackupManager extends BaseManager {
           const changedOptions = JSON.parse(options);
           return Promise.try(() => {
             const plan = catalog.getPlan(changedOptions.plan_id);
-            return fabrik.createManager(plan);
+            return bm.createManager(plan);
           }).then(manager => manager.abortLastBackup(changedOptions));
         });
     }
