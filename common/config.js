@@ -75,6 +75,21 @@ function completeDirectorConfig(director) {
       cpi: info.cpi
     });
   }
+  let boshRateLimitEnabled = config.enable_bosh_rate_limit;
+  if (boshRateLimitEnabled) {
+    const maxWorkers = _.get(director, 'max_workers', 6);
+    const userCreateWorkers = _.get(director, 'policies.user.create.max_workers');
+    const userUpdateWorkers = _.get(director, 'policies.user.update.max_workers');
+    const autoWorkers = _.get(director, 'policies.scheduled.max_workers', (maxWorkers / 2));
+
+    if (userCreateWorkers === undefined || userUpdateWorkers === undefined) {
+      throw new Error('Invalid director config: user policy share numbers not defined');
+    }
+
+    if (_.sum([userCreateWorkers, userUpdateWorkers, autoWorkers]) > maxWorkers) {
+      throw new Error('Invalid director config: policy shares add up to more than max_workers count');
+    }
+  }
 }
 
 function completeDockerConfig(docker) {

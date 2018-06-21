@@ -93,6 +93,22 @@ describe('bosh', () => {
       });
     });
 
+    describe('#getDirectorForOperation', function () {
+      it('should return the active primary as the director for create operations', function () {
+        return new MockBoshDirectorClient({}, {}).getDirectorForOperation('create', deployment_name)
+          .then((out) => {
+            expect(out).to.eql(MockBoshDirectorClient.getActivePrimary()[0]);
+          });
+      });
+
+      it('should return the director for non-create operations', function () {
+        return new MockBoshDirectorClient({}, {}).getDirectorForOperation('update', deployment_name)
+          .then((out) => {
+            expect(out).to.not.eql(undefined);
+          });
+      });
+    });
+
     describe('#getInfrastructure', () => {
       it('return the object with infrastructure details', () => {
         expect(MockBoshDirectorClient.getInfrastructure()).to.be.instanceof(Object);
@@ -152,6 +168,63 @@ describe('bosh', () => {
           done();
         }).catch(done);
       });
+    });
+
+    describe('#getCurrentTasks', () => {
+      before(function () {
+
+      });
+      after(function () {});
+      it('returns a JSON object', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/tasks',
+          qs: {
+            state: 'processing,cancelling',
+            verbose: 2
+          }
+        };
+        let response = {
+          body: JSON.stringify([{
+              id: 1,
+              state: 'processing',
+              context_id: 'Fabrik::Operation::Auto'
+            },
+            {
+              id: 2,
+              state: 'cancelling',
+              context_id: 'Fabrik::Operation::Auto'
+            },
+            {
+              id: 3,
+              state: 'processing',
+              context_id: 'Fabrik::Operation::create'
+            },
+            {
+              id: 4,
+              state: 'cancelling',
+              context_id: 'Fabrik::Operation::update'
+            },
+            {
+              id: 5,
+              state: 'processing'
+            }
+          ]),
+          statusCode: 200
+        };
+        new MockBoshDirectorClient(request, response).getCurrentTasks().then((content) => {
+          expect(content).to.eql({
+            create: 1,
+            update: 1,
+            delete: 0,
+            scheduled: 2,
+            uncategorized: 1,
+            total: 5
+          });
+          done();
+        }).catch(done);
+      });
+
     });
 
     describe('#getDeployments', () => {
@@ -277,13 +350,72 @@ describe('bosh', () => {
     });
 
     describe('#createOrUpdateDeployment', () => {
-      it('returns an integer (task-id)', (done) => {
+      it('returns an integer (task-id): mongodb update', (done) => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
           method: 'POST',
           url: '/deployments',
           headers: {
-            'Content-Type': 'text/yaml'
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true, true)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): scheduled instance update', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': CONST.BOSH_RATE_LIMITS.BOSH_FABRIK_OP_AUTO
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest, null, true)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): user-triggered create', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::Operation::create'
           },
           qs: undefined,
           body: manifest
@@ -299,6 +431,35 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.CREATE, manifest)
+          .then((content) => {
+            expect(content).to.eql(`${deployment_name}_${taskId}`);
+            done();
+          })
+          .catch(done);
+      });
+      it('returns an integer (task-id): user-triggered update', (done) => {
+        let taskId = Math.floor(Math.random() * 123456789);
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::Operation::update'
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          body: JSON.stringify({
+            uuid: uuid.v4()
+          }),
+          statusCode: 302,
+          headers: {
+            location: `https://192.168.50.4:25555/a/link/to/the/task/resource/${taskId}`
+          }
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
           .then((content) => {
             expect(content).to.eql(`${deployment_name}_${taskId}`);
             done();

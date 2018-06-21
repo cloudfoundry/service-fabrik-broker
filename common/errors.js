@@ -26,6 +26,22 @@ class BaseError extends Error {
 }
 exports.BaseError = BaseError;
 
+class DeploymentDelayed extends BaseError {
+  constructor(deploymentName) {
+    super(deploymentName);
+    this.code = 'ECONTINUE';
+  }
+}
+exports.DeploymentDelayed = DeploymentDelayed;
+
+class CacheUpdateError extends BaseError {
+  constructor(keyName) {
+    super(keyName);
+    this.code = 'ETCDERROR';
+  }
+}
+exports.CacheUpdateError = CacheUpdateError;
+
 class ContinueWithNext extends BaseError {
   constructor() {
     super('Continue with next handler');
