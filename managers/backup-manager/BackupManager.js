@@ -39,13 +39,6 @@ class BackupManager {
     throw new NotImplementedBySubclass('instanceConstructor');
   }
 
-  static load(plan) {
-    if (!this[plan.id]) {
-      this[plan.id] = new this(plan);
-    }
-    return Promise.resolve(this[plan.id]);
-  }
-
   getDeploymentIps(deploymentName) {
     return this.director.getDeploymentIps(deploymentName);
   }
@@ -271,8 +264,12 @@ class BackupManager {
       }
     });
   }
+
   static createManager(plan) {
-    return Promise.try(() => BackupManager.load(plan));
+    if (!this[plan.id]) {
+      this[plan.id] = new this(plan);
+    }
+    return Promise.resolve(this[plan.id]);
   }
 
 }
