@@ -422,7 +422,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(status => {
         logger.info('Operation response:', status.response);
-        const body = JSON.parse(status.response);
+        const body = JSON.parse(status.response.response);
         res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send(body);
       })
       .catch(err => {
