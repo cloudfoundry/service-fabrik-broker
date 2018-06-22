@@ -42,6 +42,12 @@ function buildErrors(err) {
 }
 
 class ApiServerEventMesh extends EventMeshServer {
+  /**
+   *
+   * @param {string} resourceName
+   * @param {string} resourceType
+   * @param {string} callback
+   */
   registerWatcher(resourceName, resourceType, callback) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => {
@@ -72,6 +78,7 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
+
   deleteLockResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -80,6 +87,7 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
+
   updateResource(resourceName, resourceType, resourceId, delta) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -90,6 +98,7 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
+
   getLockResourceOptions(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -101,6 +110,7 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
+
   getResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -146,11 +156,11 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    *
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * @params opts.val
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
+   * @param {Object} opts.val
    */
   createOperationResource(opts) {
     logger.info('Creating resource with options:', opts.val);
@@ -182,11 +192,11 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * @params opts.value
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
+   * @param {Object} opts.value
    */
   updateOperationResult(opts) {
     logger.info('Updating Operation Result with :', opts);
@@ -208,10 +218,10 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * @params opts.stateValue
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
+   * @param {Object} opts.stateValue
    */
   updateOperationState(opts) {
     logger.info('Updating Operation State with :', opts);
@@ -237,10 +247,10 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.value
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {Object} opts.value
    */
   updateLastOperation(opts) {
     const patchedResource = {};
@@ -260,9 +270,9 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
    */
   getLastOperation(opts) {
     return Promise.try(() => apiserver.loadSpec())
@@ -277,11 +287,10 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * returns string
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
    */
   getOperationOptions(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
@@ -300,11 +309,10 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * returns string
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
    */
   getOperationState(opts) {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
@@ -323,11 +331,10 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @params opts.resourceId
-   * @params opts.operationName
-   * @params opts.operationType
-   * @params opts.operationId
-   * returns string
+   * @param {string} opts.resourceId
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
    */
   getOperationResult(opts) {
     return Promise.try(() => apiserver.loadSpec())
