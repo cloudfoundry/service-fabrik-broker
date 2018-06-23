@@ -79,21 +79,29 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
 
-  deleteLockResource(resourceName, resourceType, resourceId) {
+  deleteResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete())
+  }
+
+  patchResource(resourceName, resourceType, resourceId, delta) {
+    return Promise.try(() => apiserver.loadSpec())
+      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
+          body: delta
+        }))
+  }
+
+  deleteLockResource(resourceName, resourceType, resourceId) {
+    return this.deleteResource(resourceName, resourceType, resourceId)
       .catch(err => {
         return buildErrors(err);
       });
   }
 
   updateResource(resourceName, resourceType, resourceId, delta) {
-    return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
-          body: delta
-        }))
+    return this.patchResource(resourceName, resourceType, resourceId, delta)
       .catch(err => {
         return buildErrors(err);
       });
