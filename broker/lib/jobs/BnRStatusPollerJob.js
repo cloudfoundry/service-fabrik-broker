@@ -11,6 +11,7 @@ const errors = require('../errors');
 const config = require('../config');
 const bosh = require('../bosh');
 const catalog = require('../models').catalog;
+const backupStore = require('../iaas').backupStore;
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
@@ -250,6 +251,7 @@ class BnRStatusPollerJob extends BaseJob {
     logger.info(`Attempting to release lock on deployment with instanceid: ${instanceInfo.instance_guid} `);
     return Promise
       .try(() => this.updateEventMesh(instanceInfo, operationName, operationStatusResponse))
+      .then(() => this.getLastBackup20(instanceInfo.tenant_id, instanceInfo.instance_guid, true))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
@@ -263,6 +265,7 @@ class BnRStatusPollerJob extends BaseJob {
         return operationStatusResponse;
       });
   }
+
   static unlockDeployment(instanceInfo, operation, operationStatusResponse) {
     const unlockOperation = new ServiceFabrikOperation('unlock', {
       instance_id: instanceInfo.instance_guid,
@@ -288,6 +291,26 @@ class BnRStatusPollerJob extends BaseJob {
       .catch(err => {
         logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err);
         throw err;
+      });
+  }
+
+  getLastBackup20(tenant_id, instance_guid, noCache) {
+    return this.backupStore
+      .getBackupFile({
+        tenant_id: tenant_id,
+        service_id: this.service.id,
+        plan_id: this.plan.id,
+        instance_guid: instance_guid
+      })
+      .then(metadata => {
+        switch (metadata.state) {
+        case 'processing':
+          return noCache ? this.agent
+            .getBackupLastOperation(metadata.agent_ip)
+            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
+        default:
+          return metadata;
+        }
       });
   }
 
