@@ -96,7 +96,7 @@ class SingleRangeStubber {
   json() {
     return Promise.try(() => {
       if (this.value) {
-        return JSON.parse(this.value);
+        return JSON.parse(this.value)[this.key];
       }
       return null;
     });

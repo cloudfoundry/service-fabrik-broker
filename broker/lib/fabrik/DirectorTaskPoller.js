@@ -26,7 +26,10 @@ class DirectorTaskPoller extends LockStatusPoller {
           })
           .then(cached => {
             let catalogPlan = catalog.getPlan(cached.plan_id);
-            return DirectorManager.load(catalogPlan).createOrUpdateDeployment(deploymentName, cached.params, cached.args);
+            return Promise.try(() => {
+                return DirectorManager.load(catalogPlan);
+              })
+              .then(manager => manager.createOrUpdateDeployment(deploymentName, cached.params, cached.args));
           })
           .catch(e => {
             logger.error(`Error in scheduled deployment operation for ${deploymentName}`, e);
