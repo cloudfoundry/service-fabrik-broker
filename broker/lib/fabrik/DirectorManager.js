@@ -1022,9 +1022,6 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationState(opts) {
-    if (config.enable_service_fabrik_v2) {
-      return this.getBackupOperationState20(opts);
-    }
     return this.getBackupOperationState10(opts);
   }
 
@@ -1054,43 +1051,6 @@ class DirectorManager extends BaseManager {
                 snapshotId: lastOperation.snapshotId
               })
             );
-        }
-      });
-  }
-
-  getBackupOperationState20(opts) {
-    const agent_ip = opts.agent_ip;
-    const options = _.assign({
-      service_id: this.service.id,
-      plan_id: this.plan.id,
-      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
-    }, opts);
-
-    function isFinished(state) {
-      return _.includes(['succeeded', 'failed', 'aborted'], state);
-    }
-
-    return this.agent
-      .getBackupLastOperation(agent_ip)
-      .tap(lastOperation => {
-        if (isFinished(lastOperation.state)) {
-          return this.agent
-            .getBackupLogs(agent_ip)
-            .tap(logs => _.each(logs, log => logger.info(`Backup log for: ${opts.instance_guid} - ${JSON.stringify(log)}`)))
-            .then(logs => this.backupStore
-              .patchBackupFile(options, {
-                state: lastOperation.state,
-                logs: logs,
-                snapshotId: lastOperation.snapshotId
-              })
-            ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.server.updateOperationResult({
-              resourceId: options.instance_guid,
-              operationName: 'backup',
-              operationType: 'defaultbackups',
-              operationId: metadata.backup_guid,
-              value: metadata
-            }));
         }
       });
   }

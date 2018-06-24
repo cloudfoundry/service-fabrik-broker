@@ -235,6 +235,83 @@ class BackupManager {
       });
   }
 
+  getServiceFabrikOperationState(name, opts) {
+    logger.info(`Retrieving state of last Backup with:`, opts);
+    return Promise
+      .try(() => {
+        switch (name) {
+        case 'backup':
+          return this.getBackupOperationState(opts);
+        }
+        throw new BadRequest(`Invalid service fabrik operation '${name}'`);
+      })
+      .then(result => {
+        const deploymentName = opts.deployment;
+        const action = _.capitalize(name);
+        const timestamp = result.updated_at;
+        switch (result.state) {
+        case 'succeeded':
+          return {
+            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
+            state: 'succeeded'
+          };
+        case 'aborted':
+          return {
+            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
+            state: 'failed'
+          };
+        case 'failed':
+          return {
+            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
+            state: 'failed'
+          };
+        default:
+          return {
+            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
+            state: 'in progress'
+          };
+        }
+      });
+  }
+
+  getBackupOperationState(opts) {
+    logger.info('Getting Backup operation State for:', opts)
+    const agent_ip = opts.agent_ip;
+    const options = _.assign({
+      service_id: this.plan.service.id,
+      plan_id: this.plan.id,
+      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
+    }, opts);
+
+    function isFinished(state) {
+      return _.includes(['succeeded', 'failed', 'aborted'], state);
+    }
+
+    return this.agent
+      .getBackupLastOperation(agent_ip)
+      .tap(lastOperation => {
+        if (isFinished(lastOperation.state)) {
+          return this.agent
+            .getBackupLogs(agent_ip)
+            .tap(logs => _.each(logs, log => logger.info(`Backup log for: ${opts.instance_guid} - ${JSON.stringify(log)}`)))
+            .then(logs => this.backupStore
+              .patchBackupFile(options, {
+                state: lastOperation.state,
+                logs: logs,
+                snapshotId: lastOperation.snapshotId
+              })
+            ).then(() => this.backupStore.getBackupFile(options))
+            .then(metadata => eventmesh.server.updateOperationResult({
+              resourceId: options.instance_guid,
+              operationName: 'backup',
+              operationType: 'defaultbackups',
+              operationId: metadata.backup_guid,
+              value: metadata
+            }));
+        }
+      });
+  }
+
   abortLastBackup(abortOptions, force) {
     logger.info('Starting abort with following options:', abortOptions);
     return eventmesh.server.updateOperationState({
