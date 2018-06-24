@@ -10,6 +10,7 @@ const config = require('../config');
 const boshCache = bosh.BoshOperationQueue;
 const TIME_POLL = 1 * 60 * 1000;
 const LockStatusPoller = require('./LockStatusPoller');
+const Promise = require('bluebird');
 
 class DirectorTaskPoller extends LockStatusPoller {
   constructor() {
