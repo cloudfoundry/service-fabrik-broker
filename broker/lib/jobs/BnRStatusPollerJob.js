@@ -72,9 +72,15 @@ class BnRStatusPollerJob extends BaseJob {
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
         if (operationName === 'backup') {
-          return BackupManager
-            .createManager(plan)
-            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          if (config.enable_service_fabrik_v2) {
+            return BackupManager
+              .createManager(plan)
+              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          } else {
+            return DirectorManager
+              .load(plan)
+              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          }
         }
       })
       .then(operationStatusResponse => {
@@ -145,8 +151,14 @@ class BnRStatusPollerJob extends BaseJob {
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
         if (operationName === 'backup') {
-          return BackupManager.createManager(plan)
-            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          if (config.enable_service_fabrik_v2) {
+            return BackupManager.createManager(plan)
+              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          } else {
+            return DirectorManager
+              .load(plan)
+              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+          }
         }
       })
       .then(operationStatusResponse => {
