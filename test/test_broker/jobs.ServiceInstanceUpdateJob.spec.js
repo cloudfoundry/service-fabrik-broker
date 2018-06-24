@@ -532,7 +532,7 @@ describe('Jobs', function () {
       }, 502, {
         error_code: 'CF-ServiceBrokerRequestRejected',
         status: 502,
-        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.OPERATION_TYPE.LOCK} by`,
+        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.FABRIK_OPERATION_STAGGERED}: reason- ${CONST.FABRIK_OPERATION_COUNT_EXCEEDED}`,
         http: {
           status: 422
         }
