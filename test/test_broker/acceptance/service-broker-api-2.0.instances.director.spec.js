@@ -15,7 +15,16 @@ const CONST = require('../../../broker/lib/constants');
 const DirectorManager = lib.fabrik.DirectorManager;
 const cloudController = require('../../../broker/lib/cf').cloudController;
 
-describe('service-broker-api', function () {
+
+function enableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = true;
+}
+
+function disableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = false;
+}
+
+describe('service-broker-api-2.0', function () {
   describe('instances', function () {
     /* jshint expr:true */
     describe('director', function () {
@@ -71,6 +80,7 @@ describe('service-broker-api', function () {
       let getScheduleStub;
 
       before(function () {
+        enableServiceFabrikV2();
         backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
@@ -90,6 +100,7 @@ describe('service-broker-api', function () {
       });
 
       after(function () {
+        disableServiceFabrikV2();
         getScheduleStub.restore();
       });
 
@@ -98,8 +109,15 @@ describe('service-broker-api', function () {
           mocks.director.getDeployments({
             queued: true
           });
-          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
+          mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -139,7 +157,14 @@ describe('service-broker-api', function () {
             queued: true
           });
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
-          mocks.director.createOrUpdateDeploymentOp(task_id, 'create');
+          mocks.director.createOrUpdateDeployment(task_id);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -180,8 +205,15 @@ describe('service-broker-api', function () {
             .omit('organization_guid')
             .omit('space_guid')
             .value();
-          mocks.director.createOrUpdateDeployment(task_id, 'create');
+          mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -232,18 +264,19 @@ describe('service-broker-api', function () {
             .set('username', 'admin')
             .set('password', 'admin')
             .value();
-          // expectedRequestBody.context.params.context = _.chain(expectedRequestBody.context.params.context)
-          //   .set('namespace', 'default')
-          //   .set('platform', 'kubernetes')
-          //   .omit('organization_guid')
-          //   .omit('space_guid')
-          //   .value();
           mocks.director.getDeployments({
             queued: true
           });
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.uaa.getAccessToken();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)
@@ -487,6 +520,7 @@ describe('service-broker-api', function () {
 
       });
 
+
       describe('#update', function () {
         it('no context : returns 202 Accepted', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
@@ -507,12 +541,18 @@ describe('service-broker-api', function () {
             platform: 'cloudfoundry'
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
-          mocks.agent.getInfo();
+          mocks.agent.getInfo(2);
           mocks.agent.preUpdate();
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
@@ -561,11 +601,17 @@ describe('service-broker-api', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           mocks.agent.preUpdate();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
@@ -585,11 +631,11 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context,
-                cached: false
+                context: context
               });
               mocks.verify();
             });
@@ -615,7 +661,13 @@ describe('service-broker-api', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.preUpdate();
@@ -639,11 +691,11 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context,
-                cached: false
+                context: context
               });
               mocks.verify();
             });
@@ -752,18 +804,23 @@ describe('service-broker-api', function () {
             platform: 'cloudfoundry'
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
-          // mocks.agent.preUpdate();
+          //mocks.agent.preUpdate();
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .send({
               service_id: service_id,
               plan_id: plan_id_update,
               parameters: parameters,
-              // context: context,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -776,10 +833,10 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters,
-                cached: false
+                parameters: parameters
               });
               mocks.verify();
             });
@@ -804,7 +861,13 @@ describe('service-broker-api', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo(1, 'preupdate');
@@ -814,7 +877,6 @@ describe('service-broker-api', function () {
               service_id: service_id,
               plan_id: plan_id_update,
               parameters: parameters,
-              // context: context,
               previous_values: {
                 plan_id: plan_id,
                 service_id: service_id
@@ -827,10 +889,10 @@ describe('service-broker-api', function () {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('operation');
               expect(utils.decodeBase64(res.body.operation)).to.eql({
+                cached: false,
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
-                parameters: parameters,
-                cached: false
+                parameters: parameters
               });
               mocks.verify();
             });
@@ -842,7 +904,14 @@ describe('service-broker-api', function () {
             platform: 'cloudfoundry'
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.director.verifyDeploymentLockStatus();
+          mocks.apiServerEventMesh.nockLoadSpec(3);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           mocks.agent.preUpdate(500);
@@ -868,6 +937,8 @@ describe('service-broker-api', function () {
         });
       });
 
+
+
       describe('#deprovision', function () {
         it('returns 202 Accepted', function () {
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
@@ -887,16 +958,18 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
-          mocks.director.verifyDeploymentLockStatus();
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.findSecurityGroupByName(instance_id);
-          }
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.cloudController.findSecurityGroupByName(instance_id);
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid
           });
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.deleteSecurityGroup(instance_id);
-          }
+          mocks.cloudController.deleteSecurityGroup(instance_id);
           mocks.director.deleteDeployment(task_id);
           mocks.cloudProvider.remove(restorePathname);
           return chai.request(app)
@@ -940,16 +1013,18 @@ describe('service-broker-api', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
-          mocks.director.verifyDeploymentLockStatus();
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.findSecurityGroupByName(instance_id);
-          }
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.cloudController.findSecurityGroupByName(instance_id);
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid
           });
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.deleteSecurityGroup(instance_id);
-          }
+          mocks.cloudController.deleteSecurityGroup(instance_id);
           mocks.director.deleteDeployment(task_id);
           mocks.cloudProvider.remove(restorePathname);
           return chai.request(app)
@@ -988,7 +1063,13 @@ describe('service-broker-api', function () {
             namespace: 'default'
           });
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.verifyDeploymentLockStatus();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
 
           mocks.director.deleteDeployment(task_id);
           return chai.request(app)
@@ -1088,6 +1169,8 @@ describe('service-broker-api', function () {
 
       });
 
+
+
       describe('#lastOperation', function () {
         it('create: returns 200 OK (state = in progress)', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
@@ -1127,9 +1210,7 @@ describe('service-broker-api', function () {
           };
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.director.createDeploymentProperty('platform-context', context);
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.createSecurityGroup(instance_id);
-          }
+          mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
@@ -1139,6 +1220,8 @@ describe('service-broker-api', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1210,6 +1293,8 @@ describe('service-broker-api', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1274,12 +1359,12 @@ describe('service-broker-api', function () {
             space_guid: space_guid
           };
           mocks.director.getDeploymentTask(task_id, 'done');
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.findSecurityGroupByName(instance_id);
-          }
+          mocks.cloudController.findSecurityGroupByName(instance_id);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1344,6 +1429,8 @@ describe('service-broker-api', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1403,14 +1490,14 @@ describe('service-broker-api', function () {
           const context = {
             platform: 'cloudfoundry'
           };
-          /* Don't change second argument of following mock 'false'.
-           As in delete last operation in query platform won't be sent. 
-           It won't be found in deployment property.*/
+
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentTask(task_id, 'done');
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1437,6 +1524,8 @@ describe('service-broker-api', function () {
         });
       });
 
+
+
       describe('#bind', function () {
         it('no context : returns 201 Created', function (done) {
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
@@ -1461,6 +1550,12 @@ describe('service-broker-api', function () {
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
+          });
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
           });
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
@@ -1519,6 +1614,12 @@ describe('service-broker-api', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
           });
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -1576,6 +1677,12 @@ describe('service-broker-api', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
           });
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -1611,6 +1718,8 @@ describe('service-broker-api', function () {
 
       });
 
+
+
       describe('#unbind', function () {
         it('returns 200 OK', function () {
           const context = {
@@ -1632,6 +1741,12 @@ describe('service-broker-api', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -1662,6 +1777,12 @@ describe('service-broker-api', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -1696,6 +1817,12 @@ describe('service-broker-api', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -1712,6 +1839,8 @@ describe('service-broker-api', function () {
             });
         });
       });
+
+
 
       describe('#getInfo', function () {
 
@@ -1778,6 +1907,9 @@ describe('service-broker-api', function () {
             });
         });
       });
+
+
+
     });
   });
 });
