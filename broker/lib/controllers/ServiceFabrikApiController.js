@@ -113,6 +113,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       .then(result => {
+        if (result.state) {
+          return result;
+        }
         let status = {};
         status.state = finalState;
         status.response = result;
