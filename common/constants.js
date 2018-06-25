@@ -12,6 +12,8 @@ module.exports = Object.freeze({
     BOSH_CANCELLING: 'cancelling'
   },
   FABRIK_SCHEDULED_OPERATION: 'scheduled',
+  FABRIK_OPERATION_STAGGERED: 'staggered',
+  FABRIK_OPERATION_COUNT_EXCEEDED: 'operation count exceeded',
   UNCATEGORIZED: 'uncategorized',
   DEPLOYMENT_LOCK_NAME: '_LOCK_',
   SERVICE_FABRIK_PREFIX: 'service-fabrik',

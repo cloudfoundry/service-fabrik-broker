@@ -10,6 +10,7 @@ const errors = require('../../broker/lib/errors');
 const CONST = require('../../broker/lib/constants');
 const assert = require('assert');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
+const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
@@ -423,7 +424,7 @@ describe('fabrik', function () {
         let params = {
           scheduled: true
         };
-        it('should not store operation in etcd when bosh is down', () => {
+        it('should not store operation in etcd and throw error when bosh is down', () => {
           storeSpy.returns(Promise.resolve());
           deleteDeploymentSpy.returns(Promise.resolve());
           directorOpSpy.returns(Promise.resolve({
@@ -438,15 +439,14 @@ describe('fabrik', function () {
           }));
           currentTasksSpy.returns(Promise.reject(new Error('Bosh unavailable')));
           return manager.createOrUpdateDeployment(deploymentName, params)
-            .then(out => {
-              expect(out.cached).to.eql(true);
+            .catch(DeploymentAttemptRejected, () => {
               expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.notCalled).to.eql(true);
             });
         });
-        it('should return task id when policy is applied + slots available + not in etcd', () => {
-          containsDeploymentSpy.returns(Promise.resolve(false));
+        it('should run scheduled operation successfully', () => {
+          containsDeploymentSpy.returns(Promise.reject(new Error('etcd connect error')));
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -461,33 +461,15 @@ describe('fabrik', function () {
           }));
           return manager.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
-              expect(out.cached).to.eql(false);
               expect(out.task_id).to.eql(task_id);
+              expect(out.cached).to.eql(false);
+              expect(deploymentSpy.callCount).to.eql(1);
+              expect(containsDeploymentSpy.notCalled).to.eql(true);
               expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
-              expect(deploymentSpy.calledOnce).to.eql(true);
             });
         });
-        it('should return an error when cache store operation fails', () => {
-          containsDeploymentSpy.returns(Promise.reject(new Error('etcd connect error')));
-          directorOpSpy.returns(Promise.resolve({
-            max_workers: 6,
-            policies: {
-              scheduled: {
-                max_workers: 3
-              }
-            }
-          }));
-          currentTasksSpy.returns(Promise.resolve({
-            total: 5,
-            scheduled: 3
-          }));
-          return manager.createOrUpdateDeployment(deploymentName, params)
-            .catch(err => {
-              expect(err.message).to.eql('etcd connect error');
-            });
-        });
-        it('should return as cached when policy is applied + slots unavailable + in etcd', () => {
+        it('should reject deployment when policy is applied + slots unavailable', () => {
           containsDeploymentSpy.returns(Promise.resolve(false));
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
@@ -502,9 +484,7 @@ describe('fabrik', function () {
             scheduled: 3
           }));
           return manager.createOrUpdateDeployment(deploymentName, params)
-            .then(out => {
-              expect(out.cached).to.eql(true);
-              expect(out.task_id).to.eql(undefined);
+            .catch(DeploymentAttemptRejected, () => {
               expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.notCalled).to.eql(true);

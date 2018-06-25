@@ -510,6 +510,61 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
+    it(`if instance is outdated & if update initiation attempt fails due to bosh rate limits exceeded then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      }, 502, {
+        error_code: 'CF-ServiceBrokerRequestRejected',
+        status: 502,
+        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.FABRIK_OPERATION_STAGGERED}: reason- ${CONST.FABRIK_OPERATION_COUNT_EXCEEDED}`,
+        http: {
+          status: 422
+        }
+      });
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
+      };
+      const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
+      config.scheduler.jobs.service_instance_update.max_attempts = 0;
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.DeploymentAttemptRejected).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
   });
 
   describe('#LastRunStatus', function () {

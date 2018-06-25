@@ -10,6 +10,7 @@ const config = require('../config');
 const boshCache = bosh.BoshOperationQueue;
 const TIME_POLL = 1 * 60 * 1000;
 const LockStatusPoller = require('./LockStatusPoller');
+const Promise = require('bluebird');
 
 class DirectorTaskPoller extends LockStatusPoller {
   constructor() {
@@ -25,7 +26,8 @@ class DirectorTaskPoller extends LockStatusPoller {
           })
           .then(cached => {
             let catalogPlan = catalog.getPlan(cached.plan_id);
-            return DirectorManager.load(catalogPlan).createOrUpdateDeployment(deploymentName, cached.params, cached.args);
+            return DirectorManager.load(catalogPlan)
+              .then(manager => manager.createOrUpdateDeployment(deploymentName, cached.params, cached.args));
           })
           .catch(e => {
             logger.error(`Error in scheduled deployment operation for ${deploymentName}`, e);
