@@ -339,7 +339,6 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -350,6 +349,7 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
+      .tap(json => logger.info('Debug:', json))
       .then(json => json.body.status.response)
       .catch(err => {
         return buildErrors(err);

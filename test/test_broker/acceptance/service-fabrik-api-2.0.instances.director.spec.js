@@ -188,6 +188,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup with SF2.0 not via cloud controller', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -237,6 +244,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup operation with optional space_guid', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -284,6 +298,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup operation with context', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -334,6 +355,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup and poll for status recursively till backup manager picks it up', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -385,6 +413,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should throw a Bad Request error which is populated by the backup manager', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -433,6 +468,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should throw a Not Found error which is populated by the backup manager', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -482,6 +524,13 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
             list_filename
@@ -529,6 +578,13 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should throw an InternalServerError error which is populated by the backup manager', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -635,6 +691,13 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
@@ -763,9 +826,24 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.agent.lastBackupOperation(backupState);
+
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(_.chain(backupState)
+                .omit('updated_at')
+                .assign({
+                  trigger: "on-demand"
+                }))
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -793,8 +871,19 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -814,8 +903,19 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -838,8 +938,19 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -867,7 +978,14 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, []);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
