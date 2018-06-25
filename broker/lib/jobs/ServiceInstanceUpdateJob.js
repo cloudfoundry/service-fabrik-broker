@@ -101,6 +101,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
             if (err instanceof errors.DeploymentAttemptRejected) {
               //If deployment was staggered due to exhaustion of workers, reschedule update job
               //Retry attempts do not count when deployment is staggered
+              //TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
               trackAttempts = false;
               err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
             }
