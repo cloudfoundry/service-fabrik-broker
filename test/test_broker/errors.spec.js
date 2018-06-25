@@ -27,6 +27,7 @@ const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 const AsyncRequired = errors.AsyncRequired;
+const EtcdLockError = errors.EtcdLockError;
 const HttpServerError = errors.HttpServerError;
 const InternalServerError = errors.InternalServerError;
 const ContainerStartError = errors.ContainerStartError;
@@ -371,6 +372,17 @@ describe('errors', () => {
       expect(asyncRequired.status).to.eql(422);
       expect(asyncRequired.reason).to.eql('Unprocessable Entity');
       expect(asyncRequired.message).to.eql(`Service Plan requires support for asynchronous operations`);
+    });
+  });
+
+  describe('EtcdLockError', () => {
+    const message = 'Lock error';
+    let etcdLockError = new EtcdLockError(message);
+
+    it('sets the class properties correctly', () => {
+      expect(etcdLockError.status).to.eql(422);
+      expect(etcdLockError.reason).to.eql('Unprocessable Entity');
+      expect(etcdLockError.message).to.eql(message);
     });
   });
 

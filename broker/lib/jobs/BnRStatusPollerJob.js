@@ -277,7 +277,6 @@ class BnRStatusPollerJob extends BaseJob {
   }
 
   static doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo) {
-    logger.info(`Attempting to release lock on deployment with instanceid: ${instanceInfo.instance_guid} `);
     return Promise
       .try(() => this.updateEventMesh(instanceInfo, operationName, operationStatusResponse))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
