@@ -79,7 +79,8 @@ module.exports = Object.freeze({
     CONFLICT: 409,
     GONE: 410,
     PRECONDITION_FAILED: 412,
-    UNPROCESSABLE_ENTITY: 422
+    UNPROCESSABLE_ENTITY: 422,
+    INTERNAL_SERVER_ERROR: 500
   },
   JOB_NAME_ATTRIB: '_n_a_m_e_',
   JOB: {
