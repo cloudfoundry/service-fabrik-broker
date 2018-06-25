@@ -1173,6 +1173,16 @@ describe('service-broker-api-2.0', function () {
 
       describe('#lastOperation', function () {
         it('create: returns 200 OK (state = in progress)', function () {
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1215,6 +1225,16 @@ describe('service-broker-api-2.0', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
@@ -1251,6 +1271,16 @@ describe('service-broker-api-2.0', function () {
 
         it('create: returns 200 OK (state = in progress): In K8S platform', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
             .set('X-Broker-API-Version', api_version)
@@ -1288,6 +1318,16 @@ describe('service-broker-api-2.0', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.createDeploymentProperty('platform-context', context);
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
@@ -1327,6 +1367,16 @@ describe('service-broker-api-2.0', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1358,6 +1408,16 @@ describe('service-broker-api-2.0', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.findSecurityGroupByName(instance_id);
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
@@ -1395,6 +1455,16 @@ describe('service-broker-api-2.0', function () {
             platform: 'kubernetes',
             namespace: 'default'
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1425,6 +1495,16 @@ describe('service-broker-api-2.0', function () {
             platform: 'kubernetes',
             namespace: 'default'
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentTask(task_id, 'done');
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
@@ -1461,6 +1541,16 @@ describe('service-broker-api-2.0', function () {
           const context = {
             platform: 'cloudfoundry'
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentTask(task_id, 'processing');
           return chai.request(app)
@@ -1490,7 +1580,16 @@ describe('service-broker-api-2.0', function () {
           const context = {
             platform: 'cloudfoundry'
           };
-
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentTask(task_id, 'done');
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;

@@ -20,6 +20,7 @@ const UnprocessableEntity = errors.UnprocessableEntity;
 const EtcdLockError = errors.EtcdLockError;
 const config = require('../config');
 const CONST = require('../constants');
+const logger = require('../logger');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -384,8 +385,30 @@ class ServiceBrokerApiController extends FabrikBaseController {
       failed(err);
     }
 
-    return Promise
-      .try(() => req.instance.lastOperation(operation))
+    // Check if lock is present, if not then put a lock else proceed.
+    // Required for migrating from sf1.0 to sf2.0 to handle ongoing operations which don't have etcd lock
+    return Promise.try(() => {
+        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+          // Acquire lock for this instance
+          return lockManager.lock(req.params.instance_id, {
+            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
+            lockedResourceDetails: {
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
+              resourceId: req.params.instance_id,
+              operation: CONST.OPERATION_TYPE.CREATE
+            }
+          });
+        }
+      })
+      .catch(err => {
+        if (err instanceof EtcdLockError) {
+          logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
+        } else {
+          throw err;
+        }
+      })
+      .then(() => req.instance.lastOperation(operation))
       .then(done)
       .catch(AssertionError, failed)
       .catch(ServiceInstanceNotFound, notFound);

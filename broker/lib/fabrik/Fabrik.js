@@ -11,7 +11,6 @@ const VirtualHostManager = require('./VirtualHostManager');
 const ServiceFabrikOperation = require('./ServiceFabrikOperation');
 const FabrikStatusPoller = require('./FabrikStatusPoller');
 const BoshTaskPoller = require('./DirectorTaskPoller');
-const UnlockResourcePoller = require('./UnlockResourcePoller');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
 const BasePlatformManager = require('./BasePlatformManager');

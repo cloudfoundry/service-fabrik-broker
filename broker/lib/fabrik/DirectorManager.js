@@ -15,7 +15,6 @@ const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
 const ScheduleManager = require('../jobs');
-const eventmesh = require('../../../eventmesh');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
@@ -231,7 +230,7 @@ class DirectorManager extends BaseManager {
 
   _deleteEntity(action, opts) {
     return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries+1}, action "${opts.actionName}"...`);
+        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
         return action();
       }, {
         maxAttempts: opts.maxAttempts,

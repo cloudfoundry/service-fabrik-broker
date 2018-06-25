@@ -8,14 +8,15 @@ const ScheduleManager = require('./ScheduleManager');
 const utils = require('../utils');
 const logger = require('../logger');
 const errors = require('../errors');
+const EtcdLockError = errors.EtcdLockError;
 const config = require('../config');
 const bosh = require('../bosh');
 const catalog = require('../models').catalog;
-const backupStore = require('../iaas').backupStore;
 const BackupManager = require('../../../managers/backup-manager');
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
+const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BaseJob {
@@ -151,14 +152,32 @@ class BnRStatusPollerJob extends BaseJob {
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
         if (operationName === 'backup') {
-          if (config.enable_service_fabrik_v2) {
-            return BackupManager.createManager(plan)
-              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-          } else {
-            return DirectorManager
-              .load(plan)
-              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-          }
+          return lockManager.lock(instance_guid, {
+              lockType: CONST.ETCD.LOCK_TYPE.READ,
+              lockedResourceDetails: {
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
+                resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+                resourceId: backup_guid,
+                operation: CONST.OPERATION_TYPE.BACKUP
+              }
+            })
+            .catch(err => {
+              if (err instanceof EtcdLockError) {
+                logger.info(`Proceeding as lock is already acquired for the resource: ${instance_guid}`);
+              } else {
+                throw err;
+              }
+            })
+            .then(() => {
+              if (config.enable_service_fabrik_v2) {
+                return BackupManager.createManager(plan)
+                  .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+              } else {
+                return DirectorManager
+                  .load(plan)
+                  .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+              }
+            });
         }
       })
       .then(operationStatusResponse => {

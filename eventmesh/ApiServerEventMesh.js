@@ -82,7 +82,7 @@ class ApiServerEventMesh extends EventMeshServer {
   deleteResource(resourceName, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete())
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete());
   }
 
   patchResource(resourceName, resourceType, resourceId, delta) {
@@ -90,7 +90,7 @@ class ApiServerEventMesh extends EventMeshServer {
       .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
           body: delta
-        }))
+        }));
   }
 
   deleteLockResource(resourceName, resourceType, resourceId) {

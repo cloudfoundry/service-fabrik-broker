@@ -1177,6 +1177,16 @@ describe('service-fabrik-api-sf2.0', function () {
             stage: 'Attaching volume',
             updated_at: new Date(Date.now())
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.agent.lastRestoreOperation(restoreState);
           return chai
             .request(apps.internal)
@@ -1228,8 +1238,17 @@ describe('service-fabrik-api-sf2.0', function () {
             return true;
           });
           mocks.cloudProvider.headObject(restorePathname);
-          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           return chai
             .request(apps.internal)
             .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)

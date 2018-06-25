@@ -14,6 +14,7 @@ const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Forbidden = errors.Forbidden;
+const BadRequest = errors.BadRequest;
 
 class BackupManager {
   constructor(plan) {
@@ -275,7 +276,7 @@ class BackupManager {
   }
 
   getBackupOperationState(opts) {
-    logger.info('Getting Backup operation State for:', opts)
+    logger.info('Getting Backup operation State for:', opts);
     const agent_ip = opts.agent_ip;
     const options = _.assign({
       service_id: this.plan.service.id,

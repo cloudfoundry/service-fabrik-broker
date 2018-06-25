@@ -56,9 +56,9 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, times) {
     .reply(200, response);
 }
 
-function nockGetResource(resourceGroup, resourceType, id, response, times) {
+function nockGetResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
     .times(times || 1)
-    .reply(200, response);
+    .reply(expectedStatusCode || 200, response);
 }
