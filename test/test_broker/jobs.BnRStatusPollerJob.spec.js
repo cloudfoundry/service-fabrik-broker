@@ -36,6 +36,7 @@ describe('Jobs', function () {
       lock_deployment_max_duration: 30000
     };
     const config = {
+      enable_service_fabrik_v2: false,
       backup: {
         status_check_every: 10,
         abort_time_out: 180000,

@@ -95,6 +95,7 @@ describe('service-fabrik-api', function () {
       }
 
       before(function () {
+        config.enable_service_fabrik_v2 = false;
         config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
         backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
