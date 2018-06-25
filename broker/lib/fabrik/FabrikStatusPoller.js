@@ -196,7 +196,7 @@ class FabrikStatusPoller {
 FabrikStatusPoller.pollers = [];
 FabrikStatusPoller.stopPoller = false; //Used mainly from tests. Else, the poller keeps running and other mocks in test suite will suffer
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
-  logger.debug('-> Recieved event ->', eventName);
+  logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'external') {
     FabrikStatusPoller.restart('backup');
   }

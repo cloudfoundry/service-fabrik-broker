@@ -21,12 +21,9 @@ class UnlockResourcePoller {
               .then(() => clearInterval(interval));
           }
         })
-        .catch(err => {
-          if (err instanceof NotFound) {
-            return lockManager.unlock(object.metadata.name)
-              .then(() => clearInterval(interval));
-          }
-          throw err;
+        .catch(NotFound, err => {
+          return lockManager.unlock(object.metadata.name)
+            .then(() => clearInterval(interval));
         });
     }
     /*
@@ -46,7 +43,7 @@ class UnlockResourcePoller {
   }
 }
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
-  logger.debug('-> Recieved event ->', eventName);
+  logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'internal') {
     UnlockResourcePoller.start();
   }

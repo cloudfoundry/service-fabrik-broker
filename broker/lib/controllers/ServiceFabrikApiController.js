@@ -47,11 +47,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   /**
-   * @param opts
-   * @param opts.resourceId
-   * @param opts.operationId
-   * @param opts.start_state
-   * @param opts.started_at
+   * @param {object} opts - Object containing options
+   * @param {string} opts.resourceId - instance_guid
+   * @param {string} opts.operationId - Id of the operation ex. backupGuid
+   * @param {string} opts.start_state - start state of the operation ex. in_queue
+   * @param {object} opts.started_at - Date object specifying operation start time
    */
   static getResourceOperationStatus(opts) {
     logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
@@ -64,9 +64,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         operationId: opts.operationId
       })).then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
-        const backup_start_timeout = CONST.BACKUP.BACKUP_START_TIMEOUT; //sec
         logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > backup_start_timeout) {
+        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
           throw new Timeout(`Backup not picked up from queue`);
         }
         if (state === opts.start_state) {
@@ -74,11 +73,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
           finalState = state;
           return eventmesh.server.getOperationResult({
-              resourceId: opts.resourceId,
-              operationName: CONST.OPERATION_TYPE.BACKUP,
-              operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-              operationId: opts.operationId,
-            })
+            resourceId: opts.resourceId,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+            operationId: opts.operationId,
+          })
             .then(error => {
               let json = JSON.parse(error);
               logger.info('Operation manager reported error', json);
@@ -88,18 +87,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
               }
               let err;
               switch (json.status) {
-              case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-                err = new BadRequest(message);
-                break;
-              case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-                err = new NotFound(message);
-                break;
-              case CONST.HTTP_STATUS_CODE.CONFLICT:
-                err = new Conflict(message);
-                break;
-              default:
-                err = new InternalServerError(message);
-                break;
+                case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+                  err = new BadRequest(message);
+                  break;
+                case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+                  err = new NotFound(message);
+                  break;
+                case CONST.HTTP_STATUS_CODE.CONFLICT:
+                  err = new Conflict(message);
+                  break;
+                default:
+                  err = new InternalServerError(message);
+                  break;
               }
               throw err;
             });
@@ -134,20 +133,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
     ];
     const requiresAdminScope = this.getConfigPropertyValue('external.api_requires_admin_scope', false);
     switch (_.toUpper(req.method)) {
-    case 'GET':
-      scopes.push('cloud_controller.admin_read_only');
-      if (!requiresAdminScope) {
-        scopes.push(
-          'cloud_controller.read',
-          'cloud_controller_service_permissions.read'
-        );
-      }
-      break;
-    default:
-      if (!requiresAdminScope) {
-        scopes.push('cloud_controller.write');
-      }
-      break;
+      case 'GET':
+        scopes.push('cloud_controller.admin_read_only');
+        if (!requiresAdminScope) {
+          scopes.push(
+            'cloud_controller.read',
+            'cloud_controller_service_permissions.read'
+          );
+        }
+        break;
+      default:
+        if (!requiresAdminScope) {
+          scopes.push('cloud_controller.write');
+        }
+        break;
     }
     const [scheme, bearer] = _
       .chain(req)
@@ -202,15 +201,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
         _.set(req, 'entity.platform', platform);
 
         /*Following statement for backward compatibility*/
-        const tenant_id = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') ||
+        const tenantId = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') ||
           _.get(req, 'query.tenant_id') || _.get(req, 'body.context.space_guid') || _.get(req, 'body.context.namespace');
 
-        if (tenant_id) {
-          if ((platform === CONST.PLATFORM.CF && !FabrikBaseController.uuidPattern.test(tenant_id)) ||
-            (platform === CONST.PLATFORM.K8S && !FabrikBaseController.k8sNamespacePattern.test(tenant_id))) {
-            throw new BadRequest(`Invalid 'uuid' or 'name' '${tenant_id}'`);
+        if (tenantId) {
+          if ((platform === CONST.PLATFORM.CF && !FabrikBaseController.uuidPattern.test(tenantId)) ||
+            (platform === CONST.PLATFORM.K8S && !FabrikBaseController.k8sNamespacePattern.test(tenantId))) {
+            throw new BadRequest(`Invalid 'uuid' or 'name' '${tenantId}'`);
           }
-          return tenant_id;
+          return tenantId;
         }
         const instanceId = req.params.instance_id;
         this.validateUuid(instanceId, 'Service Instance ID');
@@ -256,12 +255,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getInfo(req, res) {
     let allDockerImagesRetrieved = true;
     return Promise.try(() => {
-        if (config.enable_swarm_manager) {
-          return docker
-            .getMissingImages()
-            .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
-        }
-      })
+      if (config.enable_swarm_manager) {
+        return docker
+          .getMissingImages()
+          .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
+      }
+    })
       .catch(err => {
         allDockerImagesRetrieved = false;
         logger.info('error occurred while fetching docker images', err);
@@ -361,7 +360,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           space_guid: res.space_guid,
           platform: 'cloudfoundry'
         };
-        const backup_options = {
+        const backupOptions = {
           guid: backup_guid,
           deployment: deployment,
           instance_guid: req.params.instance_id,
@@ -369,7 +368,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           service_id: req.body.service_id || this.getPlan(plan_details.entity.unique_id).service.id,
           context: context
         };
-        return backup_options
+        return backupOptions
       });
   }
 
@@ -378,39 +377,39 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
-    let backup_guid;
+    let backupGuid;
     return Promise
       .try(() => this.checkQuota(req, trigger))
       .then(() => Promise.all([utils
         .uuidV4(),
-        req.manager
+      req.manager
         .findNetworkSegmentIndex(req.params.instance_id)
         .then(networkIndex => req.manager.getDeploymentName(req.params.instance_id, networkIndex))
       ]))
       .spread((guid, deployment) => {
         _.set(req.body, 'trigger', trigger);
-        backup_guid = guid;
-        return this.getBackupOptions(backup_guid, deployment, req)
-          .then(backup_options => {
-            logger.info(`Triggering backup with options: ${backup_options}`);
+        backupGuid = guid;
+        return this.getBackupOptions(backupGuid, deployment, req)
+          .then(backupOptions => {
+            logger.info(`Triggering backup with options: ${backupOptions}`);
             // Acquire read lock for resource resourceId
             return lockManager.lock(req.params.instance_id, {
-                lockType: CONST.ETCD.LOCK_TYPE.READ,
-                lockedResourceDetails: {
-                  resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
-                  resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-                  resourceId: backup_guid,
-                  operation: CONST.OPERATION_TYPE.BACKUP
-                }
-              })
+              lockType: CONST.ETCD.LOCK_TYPE.READ,
+              lockedResourceDetails: {
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
+                resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+                resourceId: backupGuid,
+                operation: CONST.OPERATION_TYPE.BACKUP
+              }
+            })
               .then(() => {
                 lockedDeployment = true;
                 return eventmesh.server.createOperationResource({
                   resourceId: req.params.instance_id,
                   operationName: CONST.OPERATION_TYPE.BACKUP,
                   operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-                  operationId: backup_guid,
-                  val: backup_options
+                  operationId: backupGuid,
+                  val: backupOptions
                 });
               });
           });
@@ -424,23 +423,22 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceId: req.params.instance_id,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-            value: backup_guid
+            value: backupGuid
           }))
           .then(() => ServiceFabrikApiController.getResourceOperationStatus({
             resourceId: req.params.instance_id,
-            operationId: backup_guid,
+            operationId: backupGuid,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: backup_started_at
           }));
       })
       .tap(status => {
         logger.info(`Backup Response `, status.response);
-        const directorManager = req.manager;
-        return directorManager
+        return req.manager
           .findNetworkSegmentIndex(req.params.instance_id)
           .then(networkIndex => {
             logger.error('NetworkIndex is ', req.params, networkIndex);
-            return directorManager.getDeploymentName(req.params.instance_id, networkIndex);
+            return req.manager.getDeploymentName(req.params.instance_id, networkIndex);
           });
       })
       .then(status => {
@@ -473,10 +471,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastBackup20(req, res) {
     return eventmesh.server.getLastOperation({
-        resourceId: req.params.instance_id,
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP
-      })
+      resourceId: req.params.instance_id,
+      operationName: CONST.OPERATION_TYPE.BACKUP,
+      operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP
+    })
       .then(backup_guid =>
         eventmesh.server.getOperationResult({
           operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -494,16 +492,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastBackup10(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const instance_id = req.params.instance_id;
+    const instanceId = req.params.instance_id;
     const noCache = req.query.no_cache === 'true' ? true : false;
-    const tenant_id = req.entity.tenant_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .getLastBackup(tenant_id, instance_id, noCache)
+      .getLastBackup(tenantId, instanceId, noCache)
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip'))
       )
-      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instance_id}'`));
+      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instanceId}'`));
   }
 
   abortLastBackup(req, res) {
@@ -515,10 +513,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   abortLastBackup10(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .abortLastBackup(tenant_id, instance_id)
+      .abortLastBackup(tenantId, instanceId)
       .then(result => res
         .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
@@ -533,12 +531,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
       resourceId: req.params.instance_id,
       operationName: CONST.OPERATION_TYPE.BACKUP,
       operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-    }).then(backup_guid => {
+    }).then(backupGuid => {
       return eventmesh.server.getOperationState({
         resourceId: req.params.instance_id,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-        operationId: backup_guid,
+        operationId: backupGuid,
       }).then(state => {
         // abort only if the state is in progress
         if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
@@ -546,7 +544,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceId: req.params.instance_id,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-            operationId: backup_guid,
+            operationId: backupGuid,
             stateValue: CONST.OPERATION.ABORT
           });
         } else {
@@ -554,7 +552,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       }).then(() => ServiceFabrikApiController.getResourceOperationStatus({
         resourceId: req.params.instance_id,
-        operationId: backup_guid,
+        operationId: backupGuid,
         start_state: CONST.OPERATION.ABORT,
         started_at: backup_started_at
       }));
@@ -563,11 +561,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   startRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const backup_guid = req.body.backup_guid;
-    const time_stamp = req.body.time_stamp;
-    const tenant_id = req.entity.tenant_id;
-    const instance_id = req.params.instance_id;
-    const service_id = req.manager.service.id;
+    const backupGuid = req.body.backup_guid;
+    const timeStamp = req.body.time_stamp;
+    const tenantId = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const serviceId = req.manager.service.id;
     const bearer = _
       .chain(req.headers)
       .get('authorization')
@@ -576,32 +574,32 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .value();
     return Promise
       .try(() => {
-        if (!backup_guid && !time_stamp) {
-          throw new BadRequest('Invalid input as backup_guid or time_stamp not present');
-        } else if (backup_guid) {
-          return this.validateUuid(backup_guid, 'Backup GUID');
-        } else if (time_stamp) {
-          return this.validateDateString(time_stamp);
+        if (!backupGuid && !timeStamp) {
+          throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
+        } else if (backupGuid) {
+          return this.validateUuid(backupGuid, 'Backup GUID');
+        } else if (timeStamp) {
+          return this.validateDateString(timeStamp);
         }
       })
       .then(() => this.backupStore
-        .getBackupFile(time_stamp ? {
-          time_stamp: time_stamp,
-          tenant_id: tenant_id,
-          instance_id: instance_id,
-          service_id: service_id
+        .getBackupFile(timeStamp ? {
+          time_stamp: timeStamp,
+          tenant_id: tenantId,
+          instance_id: instanceId,
+          service_id: serviceId
         } : {
-          backup_guid: backup_guid,
-          tenant_id: tenant_id
-        })
+            backup_guid: backupGuid,
+            tenant_id: tenantId
+          })
       )
-      .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backup_guid}' found in this space`))
+      .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backupGuid}' found in this space`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {
-          throw new UnprocessableEntity(`Can not restore backup '${backup_guid}' due to state '${metadata.state}'`);
+          throw new UnprocessableEntity(`Can not restore backup '${backupGuid}' due to state '${metadata.state}'`);
         }
         if (!req.manager.isRestorePossible(metadata.plan_id)) {
-          throw new UnprocessableEntity(`Cannot restore backup: '${backup_guid}' to plan:'${metadata.plan_id}'`);
+          throw new UnprocessableEntity(`Cannot restore backup: '${backupGuid}' to plan:'${metadata.plan_id}'`);
         }
       })
       .then(metadata => this.fabrik
@@ -611,8 +609,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           arguments: _.assign({
             backup: _.pick(metadata, 'type', 'secret')
           }, req.body, {
-            backup_guid: backup_guid || metadata.backup_guid
-          })
+              backup_guid: backupGuid || metadata.backup_guid
+            })
         })
         .handle(req, res)
       );
@@ -620,23 +618,23 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .getLastRestore(tenant_id, instance_id)
+      .getLastRestore(tenantId, instanceId)
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)
       )
-      .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instance_id}'`));
+      .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
   }
 
   abortLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .abortLastRestore(tenant_id, instance_id)
+      .abortLastRestore(tenantId, instanceId)
       .then(result => res
         .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
@@ -654,7 +652,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   listBackupFiles(options) {
-    function getPredicate(before, after, instance_id) {
+    function getPredicate(before, after, instanceId) {
       return function predicate(filenameobject) {
         if (before && !_.lt(filenameobject.started_at, before)) {
           return false;
@@ -662,7 +660,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (after && !_.gt(filenameobject.started_at, after)) {
           return false;
         }
-        if (instance_id && filenameobject.instance_guid !== instance_id) {
+        if (instanceId && filenameobject.instance_guid !== instanceId) {
           return false;
         }
         return filenameobject.operation === 'backup';
@@ -699,10 +697,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const options = _.pick(req.query, 'service_id', 'plan_id');
         options.tenant_id = req.entity.tenant_id;
         switch (req.params.operation) {
-        case 'backup':
-          return this.backupStore.listLastBackupFiles(options);
-        case 'restore':
-          return this.backupStore.listLastRestoreFiles(options);
+          case 'backup':
+            return this.backupStore.listLastBackupFiles(options);
+          case 'restore':
+            return this.backupStore.listLastRestoreFiles(options);
         }
         assert.ok(false, 'List result of last operation is only possible for \'backup\' or \'restore\'');
       })
@@ -770,11 +768,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .value();
         return ScheduleManager
           .schedule(
-            req.params.instance_id,
-            CONST.JOB.SCHEDULED_BACKUP,
-            req.body.repeatInterval,
-            data,
-            req.user)
+          req.params.instance_id,
+          CONST.JOB.SCHEDULED_BACKUP,
+          req.body.repeatInterval,
+          data,
+          req.user)
           .then(body => res
             .status(CONST.HTTP_STATUS_CODE.CREATED)
             .send(body));
@@ -819,10 +817,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
       )
       .then((jobData) => ScheduleManager
         .schedule(req.params.instance_id,
-          CONST.JOB.SERVICE_INSTANCE_UPDATE,
-          req.body.repeatInterval,
-          jobData,
-          req.user))
+        CONST.JOB.SERVICE_INSTANCE_UPDATE,
+        req.body.repeatInterval,
+        jobData,
+        req.user))
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.CREATED)
         .send(body));
