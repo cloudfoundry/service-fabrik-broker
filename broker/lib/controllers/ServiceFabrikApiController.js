@@ -14,7 +14,7 @@ const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Timeout = errors.Timeout;
-const cf = require('../cf')
+const cf = require('../cf');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const Conflict = errors.Conflict;
@@ -368,7 +368,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           service_id: req.body.service_id || this.getPlan(plan_details.entity.unique_id).service.id,
           context: context
         };
-        return backupOptions
+        return backupOptions;
       });
   }
 
@@ -485,7 +485,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         logger.info('Remove mme', result);
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
-          .send(_.omit(JSON.parse(result), 'secret', 'agent_ip'))
+          .send(_.omit(JSON.parse(result), 'secret', 'agent_ip'));
       })
       .catchThrow(new NotFound(`No backup found for service instance '${req.params.instance_id}'`));
   }

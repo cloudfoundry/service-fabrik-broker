@@ -804,9 +804,6 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-state', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-        const filename = `${prefix}.${backup_guid}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'processing',
@@ -840,7 +837,7 @@ describe('service-fabrik-api-sf2.0', function () {
               response: JSON.stringify(_.chain(backupState)
                 .omit('updated_at')
                 .assign({
-                  trigger: "on-demand"
+                  trigger: 'on-demand'
                 }))
             }
           });

@@ -22,6 +22,7 @@ class UnlockResourcePoller {
           }
         })
         .catch(NotFound, err => {
+          logger.info('Resource not found : ', err);
           return lockManager.unlock(object.metadata.name)
             .then(() => clearInterval(interval));
         });
