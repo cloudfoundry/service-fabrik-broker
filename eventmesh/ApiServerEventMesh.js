@@ -44,7 +44,7 @@ function buildErrors(err) {
 
 class ApiServerEventMesh extends EventMeshServer {
   /**
-   *
+   * Register watcher for (resourceName , resourceType)
    * @param {string} resourceName
    * @param {string} resourceType
    * @param {string} callback
@@ -135,7 +135,7 @@ class ApiServerEventMesh extends EventMeshServer {
       resourceId: resourceId,
       operationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
       operationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
-      val: val
+      value: val
     };
     return this.createOperationResource(opts);
   }
@@ -164,15 +164,15 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   *
+   * Craete Resource in Apiserver with the opts
    * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
-   * @param {Object} opts.val
+   * @param {Object} opts.value
    */
   createOperationResource(opts) {
-    logger.info('Creating resource with options:', opts.val);
+    logger.info('Creating resource with options:', opts.value);
     const initialResource = {
       metadata: {
         'name': `${opts.operationId}`,
@@ -181,7 +181,7 @@ class ApiServerEventMesh extends EventMeshServer {
         },
       },
       spec: {
-        'options': JSON.stringify(opts.val)
+        'options': JSON.stringify(opts.value)
       },
     };
     const statusJson = {
@@ -202,6 +202,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * Function to patch the response filed with opts.value
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -217,7 +218,9 @@ class ApiServerEventMesh extends EventMeshServer {
         return this.updateOperationResult(opts);
       });
   }
+
   /**
+   * Function to update the response field
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -243,6 +246,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * Function to Update the state field
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -315,14 +319,14 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
-   * @param {Object} opts.val
+   * @param {Object} opts.value
    */
   patchOperationOptions(opts) {
     return this.getOperationOptions(opts)
       .then(res => {
         let resJson = JSON.parse(res);
-        logger.info(`Patching ${resJson} with ${opts.val}`);
-        opts.val = _.merge(resJson, opts.value);
+        logger.info(`Patching ${resJson} with ${opts.value}`);
+        opts.value = _.merge(resJson, opts.value);
         return this.updateOperationOptions(opts);
       });
   }
@@ -331,13 +335,13 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
-   * @param {Object} opts.val
+   * @param {Object} opts.value
    */
   updateOperationOptions(opts) {
-    logger.info('Updating resource with options:', opts.val);
+    logger.info('Updating resource with options:', opts.value);
     const change = {
       spec: {
-        'options': JSON.stringify(opts.val)
+        'options': JSON.stringify(opts.value)
       },
     };
     return this.patchResource(opts.operationName, opts.operationType, opts.operationId, change)

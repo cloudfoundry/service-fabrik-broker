@@ -360,7 +360,7 @@ describe('eventmesh', () => {
         operationName: 'backup',
         operationType: 'defaultbackups',
         operationId: 'b1',
-        val: {
+        value: {
           key: 'value'
         }
       };
@@ -372,7 +372,7 @@ describe('eventmesh', () => {
           },
         },
         spec: {
-          options: JSON.stringify(opts.val)
+          options: JSON.stringify(opts.value)
         },
       };
 

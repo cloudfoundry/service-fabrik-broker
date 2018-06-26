@@ -47,6 +47,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   /**
+   * Poll for Startus until opts.start_state changes
    * @param {object} opts - Object containing options
    * @param {string} opts.resourceId - instance_guid
    * @param {string} opts.operationId - Id of the operation ex. backupGuid
@@ -412,7 +413,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
                   operationName: CONST.OPERATION_TYPE.BACKUP,
                   operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
                   operationId: backupGuid,
-                  val: backupOptions
+                  value: backupOptions
                 });
               });
           });
@@ -762,7 +763,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         operationId: req.params.backup_guid,
-        val: options
+        value: options
       }).then(() =>
         eventmesh.server.updateOperationState({
           resourceId: req.params.instance_id,
