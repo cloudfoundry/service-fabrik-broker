@@ -73,11 +73,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
           finalState = state;
           return eventmesh.server.getOperationResult({
-            resourceId: opts.resourceId,
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-            operationId: opts.operationId,
-          })
+              resourceId: opts.resourceId,
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+              operationId: opts.operationId,
+            })
             .then(error => {
               let json = JSON.parse(error);
               logger.info('Operation manager reported error', json);
@@ -87,18 +87,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
               }
               let err;
               switch (json.status) {
-                case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-                  err = new BadRequest(message);
-                  break;
-                case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-                  err = new NotFound(message);
-                  break;
-                case CONST.HTTP_STATUS_CODE.CONFLICT:
-                  err = new Conflict(message);
-                  break;
-                default:
-                  err = new InternalServerError(message);
-                  break;
+              case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+                err = new BadRequest(message);
+                break;
+              case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+                err = new NotFound(message);
+                break;
+              case CONST.HTTP_STATUS_CODE.CONFLICT:
+                err = new Conflict(message);
+                break;
+              default:
+                err = new InternalServerError(message);
+                break;
               }
               throw err;
             });
@@ -133,20 +133,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
     ];
     const requiresAdminScope = this.getConfigPropertyValue('external.api_requires_admin_scope', false);
     switch (_.toUpper(req.method)) {
-      case 'GET':
-        scopes.push('cloud_controller.admin_read_only');
-        if (!requiresAdminScope) {
-          scopes.push(
-            'cloud_controller.read',
-            'cloud_controller_service_permissions.read'
-          );
-        }
-        break;
-      default:
-        if (!requiresAdminScope) {
-          scopes.push('cloud_controller.write');
-        }
-        break;
+    case 'GET':
+      scopes.push('cloud_controller.admin_read_only');
+      if (!requiresAdminScope) {
+        scopes.push(
+          'cloud_controller.read',
+          'cloud_controller_service_permissions.read'
+        );
+      }
+      break;
+    default:
+      if (!requiresAdminScope) {
+        scopes.push('cloud_controller.write');
+      }
+      break;
     }
     const [scheme, bearer] = _
       .chain(req)
@@ -255,12 +255,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getInfo(req, res) {
     let allDockerImagesRetrieved = true;
     return Promise.try(() => {
-      if (config.enable_swarm_manager) {
-        return docker
-          .getMissingImages()
-          .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
-      }
-    })
+        if (config.enable_swarm_manager) {
+          return docker
+            .getMissingImages()
+            .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
+        }
+      })
       .catch(err => {
         allDockerImagesRetrieved = false;
         logger.info('error occurred while fetching docker images', err);
@@ -382,7 +382,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => this.checkQuota(req, trigger))
       .then(() => Promise.all([utils
         .uuidV4(),
-      req.manager
+        req.manager
         .findNetworkSegmentIndex(req.params.instance_id)
         .then(networkIndex => req.manager.getDeploymentName(req.params.instance_id, networkIndex))
       ]))
@@ -394,14 +394,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
             logger.info(`Triggering backup with options: ${backupOptions}`);
             // Acquire read lock for resource resourceId
             return lockManager.lock(req.params.instance_id, {
-              lockType: CONST.ETCD.LOCK_TYPE.READ,
-              lockedResourceDetails: {
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
-                resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
-                resourceId: backupGuid,
-                operation: CONST.OPERATION_TYPE.BACKUP
-              }
-            })
+                lockType: CONST.ETCD.LOCK_TYPE.READ,
+                lockedResourceDetails: {
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
+                  resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+                  resourceId: backupGuid,
+                  operation: CONST.OPERATION_TYPE.BACKUP
+                }
+              })
               .then(() => {
                 lockedDeployment = true;
                 return eventmesh.server.createOperationResource({
@@ -471,10 +471,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastBackup20(req, res) {
     return eventmesh.server.getLastOperation({
-      resourceId: req.params.instance_id,
-      operationName: CONST.OPERATION_TYPE.BACKUP,
-      operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP
-    })
+        resourceId: req.params.instance_id,
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP
+      })
       .then(backup_guid =>
         eventmesh.server.getOperationResult({
           operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -589,9 +589,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
           instance_id: instanceId,
           service_id: serviceId
         } : {
-            backup_guid: backupGuid,
-            tenant_id: tenantId
-          })
+          backup_guid: backupGuid,
+          tenant_id: tenantId
+        })
       )
       .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backupGuid}' found in this space`))
       .tap(metadata => {
@@ -609,8 +609,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           arguments: _.assign({
             backup: _.pick(metadata, 'type', 'secret')
           }, req.body, {
-              backup_guid: backupGuid || metadata.backup_guid
-            })
+            backup_guid: backupGuid || metadata.backup_guid
+          })
         })
         .handle(req, res)
       );
@@ -697,10 +697,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const options = _.pick(req.query, 'service_id', 'plan_id');
         options.tenant_id = req.entity.tenant_id;
         switch (req.params.operation) {
-          case 'backup':
-            return this.backupStore.listLastBackupFiles(options);
-          case 'restore':
-            return this.backupStore.listLastRestoreFiles(options);
+        case 'backup':
+          return this.backupStore.listLastBackupFiles(options);
+        case 'restore':
+          return this.backupStore.listLastRestoreFiles(options);
         }
         assert.ok(false, 'List result of last operation is only possible for \'backup\' or \'restore\'');
       })
@@ -768,11 +768,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .value();
         return ScheduleManager
           .schedule(
-          req.params.instance_id,
-          CONST.JOB.SCHEDULED_BACKUP,
-          req.body.repeatInterval,
-          data,
-          req.user)
+            req.params.instance_id,
+            CONST.JOB.SCHEDULED_BACKUP,
+            req.body.repeatInterval,
+            data,
+            req.user)
           .then(body => res
             .status(CONST.HTTP_STATUS_CODE.CREATED)
             .send(body));
@@ -817,10 +817,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
       )
       .then((jobData) => ScheduleManager
         .schedule(req.params.instance_id,
-        CONST.JOB.SERVICE_INSTANCE_UPDATE,
-        req.body.repeatInterval,
-        jobData,
-        req.user))
+          CONST.JOB.SERVICE_INSTANCE_UPDATE,
+          req.body.repeatInterval,
+          jobData,
+          req.user))
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.CREATED)
         .send(body));
