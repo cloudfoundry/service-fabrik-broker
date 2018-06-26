@@ -184,7 +184,6 @@ class BnRStatusPollerJob extends BaseJob {
             .try(() => eventmesh
               .server
               .updateOperationResult({
-                resourceId: instanceInfo.instance_guid,
                 operationName: 'backup',
                 operationType: 'defaultbackups',
                 operationId: instanceInfo.backup_guid,
@@ -314,7 +313,6 @@ class BnRStatusPollerJob extends BaseJob {
     return Promise
       .try(() => {
         return eventmesh.server.updateOperationState({
-          resourceId: instanceInfo.instance_guid,
           operationName: 'backup',
           operationType: 'defaultbackups',
           operationId: instanceInfo.backup_guid,

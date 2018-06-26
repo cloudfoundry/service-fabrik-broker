@@ -49,7 +49,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   /**
    * Poll for Startus until opts.start_state changes
    * @param {object} opts - Object containing options
-   * @param {string} opts.resourceId - instance_guid
    * @param {string} opts.operationId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
@@ -393,7 +392,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         return this.getBackupOptions(backupGuid, deployment, req)
           .then(backupOptions => {
             logger.info(`Triggering backup with options: ${backupOptions}`);
-            // Acquire read lock for resource resourceId
+            // Acquire read lock
             return lockManager.lock(req.params.instance_id, {
                 lockType: CONST.ETCD.LOCK_TYPE.READ,
                 lockedResourceDetails: {
@@ -427,7 +426,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
             value: backupGuid
           }))
           .then(() => ServiceFabrikApiController.getResourceOperationStatus({
-            resourceId: req.params.instance_id,
             operationId: backupGuid,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: backup_started_at
@@ -550,7 +548,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           logger.info(`Skipping abort as state is : ${state}`);
         }
       }).then(() => ServiceFabrikApiController.getResourceOperationStatus({
-        resourceId: req.params.instance_id,
         operationId: backupGuid,
         start_state: CONST.OPERATION.ABORT,
         started_at: backup_started_at
@@ -768,7 +765,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         })
       )
       .then(() => ServiceFabrikApiController.getResourceOperationStatus({
-        resourceId: req.params.instance_id,
         operationId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
