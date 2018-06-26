@@ -481,7 +481,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationId: backup_guid,
         }))
       .then(result => {
-        logger.info('Remove mme', result);
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
           .send(_.omit(JSON.parse(result), 'secret', 'agent_ip'));
@@ -771,7 +770,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       }))
       //delete resource from apiserver here if state is delted 
       //or catch and rethrow the error
-      .then(status => res
+      .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );

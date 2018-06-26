@@ -195,7 +195,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     this.validateRequest(req, res);
-
+    let lockedDeployment = false;
     return Promise
       .try(() => {
         if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
@@ -215,15 +215,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
               });
             }
           })
-          .then(() => req.instance.update(params));
+          .then(() => {
+            lockedDeployment = true;
+            return req.instance.update(params);
+          });
       })
       .then(done)
       .catch(err => {
         if (err instanceof EtcdLockError) {
           throw err;
         }
-        return lockManager.unlock(req.params.instance_id)
-          .throw(err);
+        if (lockedDeployment) {
+          return lockManager.unlock(req.params.instance_id)
+            .throw(err);
+        }
+        throw err;
       });
   }
 
@@ -358,7 +364,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done(result) {
       const body = _.pick(result, 'state', 'description');
       // Unlock resource if state is succeeded or failed
-      if (result.state === 'succeeded' || result.state === 'failed') {
+      if (result.state === CONST.OPERATION.SUCCEEDED || result.state === CONST.OPERATION.FAILED) {
         return lockManager.unlock(req.params.instance_id)
           .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
       }

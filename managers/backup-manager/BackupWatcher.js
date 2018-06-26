@@ -18,12 +18,25 @@ new DBManager(); //to start the BnRStatusPoller
 
 class DefaultBackupManager extends BaseManager {
 
+  /**
+   * @description Registers backup watcher with worker callback
+   */
   registerWatcher() {
     logger.info(`Registering Backup watcher`);
     return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker);
   }
+  /**
+   * @description This method does following in order
+   * 1. Tries to acquire processing lock => In case of HA, Only one backup manager process will process the request
+   * 2. Processes the request based on the state of the changed resource
+   * 3. Release processing lock
+   * @param {object} change - Change object that comes as part of apiserver watch event
+   */
 
   worker(change) {
+    /**
+     * @description Patches resource with annotation key lockedByManager and value broker ip
+     */
     function acquireProcessingLock() {
       logger.info('Trying to acquire processing lock for the backup request for backup guid: ', changedOptions.guid);
       // Set lockedManager annotations to true
@@ -35,6 +48,10 @@ class DefaultBackupManager extends BaseManager {
         .tap((resource) => logger.info(`Successfully acquired processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
           `Updated resource with annotations is: `, resource));
     }
+
+    /**
+     * @description Sets lockedByManager annotation to empty string
+     */
 
     function releaseProcessingLock() {
       logger.info('Trying to release processing lock for the backup request for backup guid: ', changedOptions.guid);
@@ -88,19 +105,19 @@ class DefaultBackupManager extends BaseManager {
               return Promise
                 .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
                 .tap(() => eventmesh.server.updateOperationState({
-                  resourceId: opts.instance_guid,
+                  resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: changedOptions.guid
+                  operationId: changedOptions.guid,
                   stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
                 }))
                 .tap(() => eventmesh.server.updateOperationResult({
-                  resourceId: opts.instance_guid,
+                  resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: changedOptions.guid
+                  operationId: changedOptions.guid,
                   value: err
-                }))
+                }));
             });
         });
     }

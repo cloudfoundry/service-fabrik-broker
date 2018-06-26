@@ -51,7 +51,6 @@ describe('service-fabrik-api-sf2.0', function () {
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
-      const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
       const restoreOperation = {
@@ -1730,26 +1729,10 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-delete', function () {
-        const prefix = `${space_guid}/backup`;
-        const started14DaysPrior = filename.isoDate(moment()
-          .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-        const filenameObj = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename14DaysPrior = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
-        const pathname = `/${container}/${filenameObj}`;
-        const pathName14DaysPrior = `/${container}/${filename14DaysPrior}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'succeeded',
           backup_guid: backup_guid,
-          agent_ip: mocks.agent.ip,
-          service_id: service_id
-        };
-
-        const scheduled_data = {
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
-          state: 'succeeded',
-          backup_guid: backup_guid,
-          started_at: new Date().toISOString(),
           agent_ip: mocks.agent.ip,
           service_id: service_id
         };

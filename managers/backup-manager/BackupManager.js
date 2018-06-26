@@ -246,20 +246,20 @@ class BackupManager {
         const action = _.capitalize(name);
         const timestamp = result.updated_at;
         switch (result.state) {
-        case 'succeeded':
+        case CONST.APISERVER.RESOURCE_STATE.SUCCEEDED:
           return {
             description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: 'succeeded'
+            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
           };
-        case 'aborted':
+        case CONST.APISERVER.RESOURCE_STATE.ABORTED:
           return {
             description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: 'failed'
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED
           };
-        case 'failed':
+        case CONST.APISERVER.RESOURCE_STATE.FAILED:
           return {
             description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: 'failed'
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED
           };
         default:
           return {
