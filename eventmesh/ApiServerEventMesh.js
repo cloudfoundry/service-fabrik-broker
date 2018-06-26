@@ -200,7 +200,6 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
   /**
-   * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -295,13 +294,11 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
    */
   getOperationOptions(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
     assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
@@ -317,13 +314,11 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
    */
   getOperationState(opts) {
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get operation state`);
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
     assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
