@@ -355,9 +355,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
         cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
         cf.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
       ])
-      .spread((planDetails, res) => {
+      .spread((planDetails, orgAndSpaceDetails) => {
         const context = req.body.context || {
-          space_guid: res.space_guid,
+          space_guid: orgAndSpaceDetails.space_guid,
           platform: 'cloudfoundry'
         };
         const backupOptions = {
