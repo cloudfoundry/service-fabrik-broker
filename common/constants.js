@@ -225,6 +225,8 @@ module.exports = Object.freeze({
     }
   },
   APISERVER: {
+    PORT: 9443,
+    VERSION: '1.9',
     HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',

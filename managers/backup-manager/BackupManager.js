@@ -121,11 +121,6 @@ class BackupManager {
       return _.set(vmParams, 'iaas_vm_metadata.vm_id', config.backup.provider.name === CONST.IAAS.AZURE ? vmParams.agent_id : vmParams.cid);
     }
 
-    // const lockInfo = {
-    //   username: data.username,
-    //   lockForOperation: `${data.trigger}_${data.operation}`
-    // };
-    // let lockAcquired = false,
     let metaUpdated = false,
       backupStarted = false;
 
