@@ -59,7 +59,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let finalState;
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
       .then(() => eventmesh.server.getOperationState({
-        resourceId: opts.resourceId,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         operationId: opts.operationId
@@ -74,7 +73,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
           finalState = state;
           return eventmesh.server.getOperationResult({
-              resourceId: opts.resourceId,
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
               operationId: opts.operationId,
@@ -109,7 +107,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else {
           finalState = state;
           return eventmesh.server.getOperationResult({
-            resourceId: opts.resourceId,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             operationId: opts.operationId,
@@ -537,7 +534,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
     }).then(backupGuid => {
       return eventmesh.server.getOperationState({
-        resourceId: req.params.instance_id,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
         operationId: backupGuid,
@@ -545,7 +541,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         // abort only if the state is in progress
         if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
           return eventmesh.server.updateOperationState({
-            resourceId: req.params.instance_id,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
             operationId: backupGuid,
@@ -766,7 +761,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         value: options
       }).then(() =>
         eventmesh.server.updateOperationState({
-          resourceId: req.params.instance_id,
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
           operationId: req.params.backup_guid,
