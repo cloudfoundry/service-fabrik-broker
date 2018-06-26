@@ -265,7 +265,12 @@ class BnRStatusPollerJob extends BaseJob {
 
   static doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo) {
     return Promise
-      .try(() => this.updateEventMesh(instanceInfo, operationName, operationStatusResponse))
+      .try(() => eventmesh.server.updateOperationState({
+        operationName: 'backup',
+        operationType: 'defaultbackups',
+        operationId: instanceInfo.backup_guid,
+        stateValue: operationStatusResponse.state
+      }))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
@@ -308,17 +313,5 @@ class BnRStatusPollerJob extends BaseJob {
       });
   }
 
-  static updateEventMesh(instanceInfo, operation, operationStatusResponse) {
-    logger.info('Updating event mesh with operation state', operationStatusResponse.state);
-    return Promise
-      .try(() => {
-        return eventmesh.server.updateOperationState({
-          operationName: 'backup',
-          operationType: 'defaultbackups',
-          operationId: instanceInfo.backup_guid,
-          stateValue: operationStatusResponse.state
-        });
-      });
-  }
 }
 module.exports = BnRStatusPollerJob;
