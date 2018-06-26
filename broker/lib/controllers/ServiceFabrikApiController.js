@@ -355,7 +355,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
         cf.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
       ])
-      .spread((plan_details, res) => {
+      .spread((planDetails, res) => {
         const context = req.body.context || {
           space_guid: res.space_guid,
           platform: 'cloudfoundry'
@@ -364,8 +364,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           guid: backup_guid,
           deployment: deployment,
           instance_guid: req.params.instance_id,
-          plan_id: req.body.plan_id || plan_details.entity.unique_id,
-          service_id: req.body.service_id || this.getPlan(plan_details.entity.unique_id).service.id,
+          plan_id: req.body.plan_id || planDetails.entity.unique_id,
+          service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
           context: context
         };
         return backupOptions;
