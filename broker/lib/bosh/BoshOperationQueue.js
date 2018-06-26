@@ -174,12 +174,11 @@ class BoshOperationQueue {
   getDeploymentByName(name) {
     logger.debug('Getting deployment for ', name);
     const namespaceKey = getDeploymentKey(name);
-    return getKeyValue(getDeploymentKey(name), CONST.ETCD.JSON).then(val => {
-      if (val) {
-        return val[namespaceKey];
-      }
-      return val;
-    });
+    return getKeyValue(namespaceKey, CONST.ETCD.JSON)
+      .then(val => {
+        logger.debug(`found value for key ${namespaceKey}: ${val}`);
+        return val;
+      });
   }
 
   deleteBoshTask(serviceInstanceId) {

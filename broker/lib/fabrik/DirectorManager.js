@@ -283,17 +283,16 @@ class DirectorManager extends BaseManager {
   enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
     const results = {
       cached: false,
-      shouldRunNow: false,
+      shouldRunNow: shouldRunNow,
       enqueue: false
     };
-    results.shouldRunNow = shouldRunNow;
     if (scheduled) {
       if (shouldRunNow) {
         //do not store in etcd for scheduled updates
         results.shouldRunNow = shouldRunNow;
         return results;
       } else {
-        throw new DeploymentDelayed(deploymentName);
+        throw new errors.DeploymentAttemptRejected(deploymentName);
       }
     } else {
       // user-triggered operations

@@ -196,6 +196,14 @@ class DeploymentAlreadyLocked extends UnprocessableEntity {
 }
 exports.DeploymentAlreadyLocked = DeploymentAlreadyLocked;
 
+class DeploymentAttemptRejected extends UnprocessableEntity {
+  constructor(deploymentName) {
+    let message = `Deployment ${deploymentName} ${CONST.FABRIK_OPERATION_STAGGERED}, Reason: ${CONST.FABRIK_OPERATION_COUNT_EXCEEDED}`;
+    super(message);
+  }
+}
+exports.DeploymentAttemptRejected = DeploymentAttemptRejected;
+
 class ServiceNotFound extends NotFound {
   constructor(id) {
     super(`Could not find Service with ID ${id}`);

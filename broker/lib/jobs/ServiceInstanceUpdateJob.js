@@ -97,7 +97,14 @@ class ServiceInstanceUpdateJob extends BaseJob {
           })
           .catch(err => {
             operationResponse.update_init = CONST.OPERATION.FAILED;
-            logger.error('Error occurred while updating service insance job :', err);
+            logger.error('Error occurred while updating service instance job :', err);
+            if (err instanceof errors.DeploymentAttemptRejected) {
+              //If deployment was staggered due to exhaustion of workers, reschedule update job
+              //Retry attempts do not count when deployment is staggered
+              //TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
+              trackAttempts = false;
+              err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
+            }
             if (err instanceof errors.DeploymentAlreadyLocked) {
               //If deployment locked then backup is in progress. So reschedule update job,
               //Retry attempts dont count when deployment is locked for backup.

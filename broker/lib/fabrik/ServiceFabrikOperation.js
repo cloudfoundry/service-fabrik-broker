@@ -12,6 +12,7 @@ const DirectorManager = require('./DirectorManager');
 const cloudController = cf.cloudController;
 const Conflict = errors.Conflict;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
 
 function AsyncServiceInstanceOperationInProgress(err) {
   const response = _.get(err, 'error', {});
@@ -22,6 +23,12 @@ function DeploymentLocked(err) {
   const response = _.get(err, 'error', {});
   const description = _.get(response, 'description', '');
   return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0 && response.error_code === 'CF-ServiceBrokerRequestRejected';
+}
+
+function DeploymentStaggered(err) {
+  const response = _.get(err, 'error', {});
+  const description = _.get(response, 'description', '');
+  return description.indexOf(CONST.FABRIK_OPERATION_STAGGERED) > 0 && description.indexOf(CONST.FABRIK_OPERATION_COUNT_EXCEEDED) > 0 && response.error_code === 'CF-ServiceBrokerRequestRejected';
 }
 
 class ServiceFabrikOperation {
@@ -79,6 +86,10 @@ class ServiceFabrikOperation {
       .catch(AsyncServiceInstanceOperationInProgress, err => {
         const message = _.get(err.error, 'description', 'Async service instance operation in progress');
         throw new Conflict(message);
+      })
+      .catch(DeploymentStaggered, err => {
+        logger.info('Deployment operation not proceeding due to rate limit exceeded', err.message);
+        throw new DeploymentAttemptRejected(this.deployment || this.instanceId);
       })
       .catch(DeploymentLocked, err => {
         const description = _.get(err, 'error.description', '');
