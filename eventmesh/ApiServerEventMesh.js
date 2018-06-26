@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
 const config = require('../common/config');
@@ -199,6 +200,23 @@ class ApiServerEventMesh extends EventMeshServer {
         return buildErrors(err);
       });
   }
+
+  /**
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
+   * @param {Object} opts.value
+   */
+  patchOperationResult(opts) {
+    logger.info('Patching Operation with :', opts);
+    return this.getOperationResult(opts)
+      .then(res => {
+        let resJson = JSON.parse(res);
+        logger.info(`Patching ${resJson} with ${opts.value}`);
+        opts.value = _.merge(resJson, opts.value);
+        return this.updateOperationResult(opts);
+      });
+  }
   /**
    * @param {string} opts.operationName
    * @param {string} opts.operationType
@@ -297,6 +315,40 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
+   * @param {Object} opts.val
+   */
+  patchOperationOptions(opts) {
+    return this.getOperationOptions(opts)
+      .then(res => {
+        let resJson = JSON.parse(res);
+        logger.info(`Patching ${resJson} with ${opts.val}`);
+        opts.val = _.merge(resJson, opts.value);
+        return this.updateOperationOptions(opts);
+      });
+  }
+
+  /**
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
+   * @param {Object} opts.val
+   */
+  updateOperationOptions(opts) {
+    logger.info('Updating resource with options:', opts.val);
+    const change = {
+      spec: {
+        'options': JSON.stringify(opts.val)
+      },
+    };
+    return this.patchResource(opts.operationName, opts.operationType, opts.operationId, change)
+      .catch(err => {
+        return buildErrors(err);
+      });
+  }
+  /**
+   * @param {string} opts.operationName
+   * @param {string} opts.operationType
+   * @param {string} opts.operationId
    */
   getOperationOptions(opts) {
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
@@ -344,7 +396,6 @@ class ApiServerEventMesh extends EventMeshServer {
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
-      .tap(json => logger.info('Debug:', json))
       .then(json => json.body.status.response)
       .catch(err => {
         return buildErrors(err);

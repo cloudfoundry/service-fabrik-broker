@@ -96,6 +96,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
               case CONST.HTTP_STATUS_CODE.CONFLICT:
                 err = new Conflict(message);
                 break;
+              case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+                err = new errors.Forbidden(message);
+                break;
               default:
                 err = new InternalServerError(message);
                 break;
@@ -728,6 +731,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   deleteBackup(req, res) {
+    if (config.enable_service_fabrik_v2) {
+      return this.deleteBackup20(req, res);
+    }
+    return this.deleteBackup10(req, res);
+  }
+
+  deleteBackup10(req, res) {
     const options = {
       tenant_id: req.entity.tenant_id,
       backup_guid: req.params.backup_guid,
@@ -736,6 +746,41 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return this.backupStore
       .deleteBackupFile(options)
       .then(() => res
+        .status(CONST.HTTP_STATUS_CODE.OK)
+        .send({})
+      );
+  }
+
+  deleteBackup20(req, res) {
+    const options = {
+      tenant_id: req.entity.tenant_id,
+      backup_guid: req.params.backup_guid,
+      user: req.user
+    };
+    logger.info('Attempting delte with:', options);
+    return eventmesh.server.patchOperationOptions({
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+        operationId: req.params.backup_guid,
+        val: options
+      }).then(() =>
+        eventmesh.server.updateOperationState({
+          resourceId: req.params.instance_id,
+          operationName: CONST.OPERATION_TYPE.BACKUP,
+          operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+          operationId: req.params.backup_guid,
+          stateValue: 'delete'
+        })
+      )
+      .then(() => ServiceFabrikApiController.getResourceOperationStatus({
+        resourceId: req.params.instance_id,
+        operationId: req.params.backup_guid,
+        start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+        started_at: new Date()
+      }))
+      //delete resource from apiserver here if state is delted 
+      //or catch and rethrow the error
+      .then(status => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );

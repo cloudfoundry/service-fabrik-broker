@@ -73,6 +73,38 @@ class DefaultBackupManager extends BaseManager {
         });
     }
 
+    function processDelete() {
+      return eventmesh.server.getOperationOptions({
+          resourceId: changedOptions.instance_guid,
+          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+          operationId: changedOptions.guid
+        })
+        .then(options => {
+          const changedOptions = JSON.parse(options);
+          return this.backupStore
+            .deleteBackupFile(options)
+            .catch(err => {
+              return Promise
+                .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
+                .tap(() => eventmesh.server.updateOperationState({
+                  resourceId: opts.instance_guid,
+                  operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+                  operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+                  operationId: changedOptions.guid
+                  stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
+                }))
+                .tap(() => eventmesh.server.updateOperationResult({
+                  resourceId: opts.instance_guid,
+                  operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+                  operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+                  operationId: changedOptions.guid
+                  value: err
+                }))
+            });
+        });
+    }
+
     logger.info('Changed Resource:', change);
     logger.debug('Changed resource options:', change.object.spec.options);
     const changeObjectBody = change.object;
@@ -104,9 +136,10 @@ class DefaultBackupManager extends BaseManager {
           if (!processingLockConflict) {
             if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
               return processBackup();
-            }
-            if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
+            } else if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
               return processAbort();
+            } else if (changeObjectBody.status.state === 'delete') {
+              return processDelete();
             }
           }
         })

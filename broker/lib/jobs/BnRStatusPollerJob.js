@@ -64,6 +64,7 @@ class BnRStatusPollerJob extends BaseJob {
     }
     return this.checkOperationCompletionStatus10(job_data);
   }
+
   static checkOperationCompletionStatus10(job_data) {
     const operationName = job_data.operation;
     const instanceInfo = job_data.operation_details;
@@ -73,15 +74,9 @@ class BnRStatusPollerJob extends BaseJob {
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
         if (operationName === 'backup') {
-          if (config.enable_service_fabrik_v2) {
-            return BackupManager
-              .createManager(plan)
-              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-          } else {
-            return DirectorManager
-              .load(plan)
-              .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-          }
+          return DirectorManager
+            .load(plan)
+            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
         }
       })
       .then(operationStatusResponse => {
@@ -169,14 +164,8 @@ class BnRStatusPollerJob extends BaseJob {
               }
             })
             .then(() => {
-              if (config.enable_service_fabrik_v2) {
-                return BackupManager.createManager(plan)
-                  .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-              } else {
-                return DirectorManager
-                  .load(plan)
-                  .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
-              }
+              return BackupManager.createManager(plan)
+                .then(backupManager => backupManager.getServiceFabrikOperationState('backup', instanceInfo));
             });
         }
       })
@@ -213,8 +202,7 @@ class BnRStatusPollerJob extends BaseJob {
                   instanceInfo.abortStartTime = abortStartTime;
                   return DirectorManager
                     .load(plan)
-                    .then(directorManager => directorManager.abortLastBackup(instanceInfo.tenant_id,
-                      instanceInfo.instance_guid, true))
+                    .then(directorManager => directorManager.abortLastBackup(instanceInfo, true))
                     .then(() => DirectorManager.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;

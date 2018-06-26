@@ -609,7 +609,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
             status: {
               state: 'error',
-              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.FORBIDDEN}}`
+              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.METHOD_NOT_ALLOWED}}`
             }
           }, 2);
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
@@ -1757,15 +1757,18 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathname);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: ''
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)
@@ -1781,10 +1784,18 @@ describe('service-fabrik-api-sf2.0', function () {
         it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, scheduled_data);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'error',
+              response: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', authHeader)
@@ -1799,17 +1810,18 @@ describe('service-fabrik-api-sf2.0', function () {
 
         it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filename14DaysPrior
-          ]);
-          scheduled_data.started_at = started14DaysPrior;
-          mocks.cloudProvider.download(pathName14DaysPrior, scheduled_data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathName14DaysPrior);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: ''
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)
