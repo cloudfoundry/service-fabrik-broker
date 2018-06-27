@@ -243,6 +243,8 @@ module.exports = Object.freeze({
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
       IN_PROGRESS: 'in_progress',
+      DELETE: 'delete',
+      DELETED: 'deleted',
       SUCCEEDED: 'succeeded',
       ERROR: 'error',
       FAILED: 'failed',

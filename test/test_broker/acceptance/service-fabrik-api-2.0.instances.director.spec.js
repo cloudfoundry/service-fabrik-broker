@@ -1740,7 +1740,7 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockLoadSpec(6);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1752,6 +1752,7 @@ describe('service-fabrik-api-sf2.0', function () {
           }, 3);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)
@@ -1793,7 +1794,7 @@ describe('service-fabrik-api-sf2.0', function () {
 
         it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
-          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockLoadSpec(6);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1805,6 +1806,7 @@ describe('service-fabrik-api-sf2.0', function () {
           }, 3);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)

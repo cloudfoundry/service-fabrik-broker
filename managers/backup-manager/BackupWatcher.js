@@ -101,6 +101,13 @@ class DefaultBackupManager extends BaseManager {
           const changedOptions = JSON.parse(options);
           return this.backupStore
             .deleteBackupFile(options)
+            .then(() => eventmesh.server.updateOperationState({
+              resourceId: changedOptions.instance_guid,
+              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+              operationId: changedOptions.guid,
+              stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
+            }))
             .catch(err => {
               return Promise
                 .try(() => logger.error(`Error during delete of backup`, err))
@@ -128,7 +135,9 @@ class DefaultBackupManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.debug('Changed resource options(parsed):', changedOptions);
     let processingLockConflict = false;
-    if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE || changeObjectBody.status.state === CONST.OPERATION.ABORT) {
+    if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE ||
+      changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE ||
+      changeObjectBody.status.state === CONST.OPERATION.ABORT) {
       // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
       return Promise.try(() => {
           if (!changeObjectBody.metadata.annotations || changeObjectBody.metadata.annotations.lockedByManager === '') {
@@ -155,7 +164,7 @@ class DefaultBackupManager extends BaseManager {
               return processBackup();
             } else if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
               return processAbort();
-            } else if (changeObjectBody.status.state === 'delete') {
+            } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
               return processDelete();
             }
           }

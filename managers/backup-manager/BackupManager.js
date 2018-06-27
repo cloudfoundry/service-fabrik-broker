@@ -256,7 +256,7 @@ class BackupManager {
         default:
           return {
             description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: 'in progress'
+            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
           };
         }
       });

@@ -749,7 +749,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       backup_guid: req.params.backup_guid,
       user: req.user
     };
-    logger.info('Attempting delte with:', options);
+    logger.info('Attempting delete with:', options);
     return eventmesh.server.patchOperationOptions({
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
@@ -760,7 +760,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
           operationId: req.params.backup_guid,
-          stateValue: 'delete'
+          stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE
         })
       )
       .then(() => ServiceFabrikApiController.getResourceOperationStatus({
@@ -769,7 +769,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         started_at: new Date()
       }))
       //delete resource from apiserver here if state is delted 
-      //or catch and rethrow the error
+      .then(() => eventmesh.server.deleteResource(CONST.APISERVER.ANNOTATION_NAMES.BACKUP, CONST.APISERVER.ANNOTATION_TYPES.BACKUP, req.params.backup_guid))
       .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
