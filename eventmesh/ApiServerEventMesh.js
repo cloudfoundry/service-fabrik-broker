@@ -165,11 +165,11 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Create Resource in Apiserver with the opts
-   * @param {string} opts.resourceId
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
-   * @param {Object} opts.value
+   * @param {string} opts.resourceId - Unique id of resource
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.value - Value to set for spec.options field of resource
    */
   createOperationResource(opts) {
     const resourceBody = {
@@ -203,10 +203,10 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Function to patch the response filed with opts.value
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
-   * @param {Object} opts.value
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.value - Object to merge with the existing Result object
    */
   patchOperationResult(opts) {
     logger.info('Patching Operation with :', opts);
@@ -221,10 +221,10 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Function to update the response field
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
-   * @param {Object} opts.value
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.value - Object to be set as status.response
    */
   updateOperationResult(opts) {
     logger.info('Updating Operation Result with :', opts);
@@ -247,9 +247,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Function to Update the state field
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.stateValue
    */
   updateOperationState(opts) {
@@ -276,11 +276,11 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @description Update Last Operation to opts.value for resource resourceId
-   * @param {string} opts.resourceId
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {Object} opts.value
+   * @description Update Last Operation to opts.value for resource
+   * @param {string} opts.resourceId - Unique id of resource
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {Object} opts.value - Unique if of the last operation
    */
   updateLastOperation(opts) {
     const patchedResource = {};
@@ -301,9 +301,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Gets Last Operation
-   * @param {string} opts.resourceId
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
+   * @param {string} opts.resourceId - Unique id of resource
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
    */
   getLastOperation(opts) {
     return Promise.try(() => apiserver.loadSpec())
@@ -319,9 +319,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Patch Operation Options
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.value
    */
   patchOperationOptions(opts) {
@@ -336,9 +336,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Update Operation Options
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.value
    */
   updateOperationOptions(opts) {
@@ -355,9 +355,9 @@ class ApiServerEventMesh extends EventMeshServer {
   }
   /**
    * @description Get Operation Options
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    */
   getOperationOptions(opts) {
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
@@ -376,9 +376,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Get Operation State
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    */
   getOperationState(opts) {
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
@@ -397,9 +397,9 @@ class ApiServerEventMesh extends EventMeshServer {
 
   /**
    * @description Get Operation Result
-   * @param {string} opts.operationName
-   * @param {string} opts.operationType
-   * @param {string} opts.operationId
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
    */
   getOperationResult(opts) {
     return Promise.try(() => apiserver.loadSpec())
