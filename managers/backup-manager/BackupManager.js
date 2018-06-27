@@ -12,7 +12,6 @@ const eventmesh = require('../../eventmesh');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
-const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Forbidden = errors.Forbidden;
 
 class BackupManager {
@@ -33,10 +32,6 @@ class BackupManager {
     } else if (context.platform === CONST.PLATFORM.K8S) {
       return context.namespace;
     }
-  }
-
-  static get instanceConstructor() {
-    throw new NotImplementedBySubclass('instanceConstructor');
   }
 
   getDeploymentIps(deploymentName) {
@@ -83,7 +78,7 @@ class BackupManager {
       .chain(opts)
       .pick('service_id', 'plan_id', 'organization_guid', 'instance_guid', 'username')
       .assign({
-        operation: 'backup',
+        operation: CONST.OPERATION_TYPE.BACKUP,
         type: backup.type,
         backup_guid: backup.guid,
         trigger: backup.trigger,
@@ -101,7 +96,7 @@ class BackupManager {
       .chain(opts)
       .pick('deployment')
       .assign({
-        subtype: 'backup',
+        subtype: CONST.OPERATION_TYPE.BACKUP,
         backup_guid: backup.guid,
         agent_ip: undefined,
         tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid,
@@ -143,7 +138,7 @@ class BackupManager {
               .set('started_at', backupStartedAt)
               .value();
             return BackupManager.registerBnRStatusPoller({
-              operation: 'backup',
+              operation: CONST.OPERATION_TYPE.BACKUP,
               type: backup.type,
               trigger: backup.trigger
             }, instanceInfo);
@@ -169,7 +164,7 @@ class BackupManager {
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
           operationId: result.backup_guid,
-          stateValue: 'in_progress'
+          stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
         }).then(() =>
           eventmesh.server.updateOperationResult({
             resourceId: opts.instance_guid,
@@ -291,8 +286,8 @@ class BackupManager {
             ).then(() => this.backupStore.getBackupFile(options))
             .then(metadata => eventmesh.server.updateOperationResult({
               resourceId: options.instance_guid,
-              operationName: 'backup',
-              operationType: 'defaultbackups',
+              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
               operationId: metadata.backup_guid,
               value: metadata
             }));

@@ -184,8 +184,8 @@ class BnRStatusPollerJob extends BaseJob {
             .try(() => eventmesh
               .server
               .updateOperationResult({
-                operationName: 'backup',
-                operationType: 'defaultbackups',
+                operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+                operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
                 operationId: instanceInfo.backup_guid,
                 value: operationStatusResponse
               }))
@@ -202,7 +202,7 @@ class BnRStatusPollerJob extends BaseJob {
                   return DirectorManager
                     .load(plan)
                     .then(directorManager => directorManager.abortLastBackup(instanceInfo, true))
-                    .then(() => DirectorManager.registerBnRStatusPoller(job_data, instanceInfo))
+                    .then(() => BackupManager.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;
                       return operationStatusResponse;
@@ -266,7 +266,7 @@ class BnRStatusPollerJob extends BaseJob {
   static doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo) {
     return Promise
       .try(() => eventmesh.server.updateOperationState({
-        operationName: 'backup',
+        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
         operationType: 'defaultbackups',
         operationId: instanceInfo.backup_guid,
         stateValue: operationStatusResponse.state

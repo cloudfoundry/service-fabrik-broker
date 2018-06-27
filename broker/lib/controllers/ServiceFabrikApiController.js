@@ -65,6 +65,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const duration = (new Date() - opts.started_at) / 1000;
         logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
         if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
+          logger.error(`Backup not picked up from the queue ${opts.operationId}`);
           throw new Timeout(`Backup not picked up from queue`);
         }
         if (state === opts.start_state) {
