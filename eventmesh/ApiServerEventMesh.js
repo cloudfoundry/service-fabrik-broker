@@ -45,9 +45,9 @@ function buildErrors(err) {
 class ApiServerEventMesh extends EventMeshServer {
   /**
    * @description Register watcher for (resourceName , resourceType)
-   * @param {string} resourceName
-   * @param {string} resourceType
-   * @param {string} callback
+   * @param {string} resourceName - Name of the resource
+   * @param {string} resourceType - Type of the resource
+   * @param {string} callback - Fucntion to call when event is received
    */
   registerWatcher(resourceName, resourceType, callback) {
     return Promise.try(() => apiserver.loadSpec())
@@ -250,7 +250,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {string} opts.operationName - Name of operation
    * @param {string} opts.operationType - Type of operation
    * @param {string} opts.operationId - Unique id of operation
-   * @param {Object} opts.stateValue
+   * @param {Object} opts.stateValue - Value to set as state
    */
   updateOperationState(opts) {
     logger.info('Updating Operation State with :', opts);
