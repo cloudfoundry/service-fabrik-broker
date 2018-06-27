@@ -164,7 +164,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * @description Craete Resource in Apiserver with the opts
+   * @description Create Resource in Apiserver with the opts
    * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
@@ -328,7 +328,7 @@ class ApiServerEventMesh extends EventMeshServer {
     return this.getOperationOptions(opts)
       .then(res => {
         let resJson = JSON.parse(res);
-        logger.info(`Patching ${resJson} with ${opts.value}`);
+        logger.info(`Patching ${res} with ${opts.value}`);
         opts.value = _.merge(resJson, opts.value);
         return this.updateOperationOptions(opts);
       });
