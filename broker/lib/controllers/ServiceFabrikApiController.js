@@ -47,7 +47,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   /**
-   * Poll for Startus until opts.start_state changes
+   * Poll for Status until opts.start_state changes
    * @param {object} opts - Object containing options
    * @param {string} opts.operationId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
@@ -350,7 +350,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getBackupOptions(backup_guid, deployment, req) {
+  getBackupOptions(backupGuid, deployment, req) {
     return Promise
       .all([
         cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
@@ -359,10 +359,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .spread((planDetails, orgAndSpaceDetails) => {
         const context = req.body.context || {
           space_guid: orgAndSpaceDetails.space_guid,
-          platform: 'cloudfoundry'
+          platform: CONST.PLATFORM.CF
         };
         const backupOptions = {
-          guid: backup_guid,
+          guid: backupGuid,
           deployment: deployment,
           instance_guid: req.params.instance_id,
           plan_id: req.body.plan_id || planDetails.entity.unique_id,
@@ -392,7 +392,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         backupGuid = guid;
         return this.getBackupOptions(backupGuid, deployment, req)
           .then(backupOptions => {
-            logger.info(`Triggering backup with options: ${backupOptions}`);
+            logger.info(`Triggering backup with options: ${JSON.stringify( backupOptions )}`);
             // Acquire read lock
             return lockManager.lock(req.params.instance_id, {
                 lockType: CONST.ETCD.LOCK_TYPE.READ,
