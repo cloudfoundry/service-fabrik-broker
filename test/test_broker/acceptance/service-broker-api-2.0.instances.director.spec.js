@@ -543,7 +543,7 @@ describe('service-broker-api-2.0', function () {
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.director.getDeploymentInstances(deploymentName);
-          mocks.agent.getInfo();
+          mocks.agent.getInfo(2);
           mocks.agent.preUpdate();
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.apiServerEventMesh.nockLoadSpec(2);

@@ -62,7 +62,7 @@ describe('managers', function () {
       // const type = 'online';
       mocks.director.getDeploymentVms(deployment_name);
       mocks.director.getDeploymentInstances(deployment_name);
-      mocks.agent.getInfo(2);
+      mocks.agent.getInfo();
       mocks.agent.startBackup();
       // mocks.cloudProvider.upload(pathname, body => {
       //     expect(body.type).to.equal(type);
