@@ -237,10 +237,36 @@ class DockerManager extends BaseManager {
         .value()
       );
   }
-
+  
   getHostConfig(guid, portBindings) {
     const volumeBindings = this.getVolumeBindings(guid);
     const volumeDriver = config.docker.volume_driver || 'local';
+
+    var device_prefix = "/dev/mapper/"
+    var volumentGroup = "service-vg"
+    var volumeGuid = ""+this.getVolumeBinding(guid)
+    logger.info(`SRINIVAS '${volumeGuid}'...`);
+
+    volumentGroup = volumentGroup.replace(/-/g, '--');
+    volumeGuid = volumeGuid.replace(/-/g, '--');
+
+    var devicePath = device_prefix + volumentGroup + "-" + volumeGuid
+
+    var readIOPS = {};
+    readIOPS["Path"]=devicePath
+    readIOPS["Rate"]=5
+
+    var readDevicesList=[];
+    readDevicesList.push(readIOPS)
+
+    var writeIOPS = {};
+    writeIOPS["Path"]=devicePath
+    writeIOPS["Rate"]=5
+
+    var writeDevicesList=[];
+    writeDevicesList.push(writeIOPS)
+
+
     return {
       Binds: volumeBindings,
       Links: null,
@@ -252,6 +278,8 @@ class DockerManager extends BaseManager {
       Privileged: this.privileged,
       ReadonlyRootfs: false,
       VolumesFrom: [],
+      BlkioDeviceReadIOps : readDevicesList,
+      BlkioDeviceWriteIOps : writeDevicesList,
       CapAdd: this.cap.adds,
       CapDrop: this.cap.drops,
       RestartPolicy: this.restartPolicy,
@@ -259,6 +287,15 @@ class DockerManager extends BaseManager {
       Ulimits: [],
       VolumeDriver: _.size(volumeBindings) ? volumeDriver : ''
     };
+  }
+
+ getVolumeBinding(guid) {
+   return _(this.persistentVolumes)
+      .map(volume => {
+        assert.ok(_.has(volume, 'path'), 'Volume configuration must have a \'path\' property');
+        return `${this.getVolumeName(guid, volume)}`;
+      })
+      .value();
   }
 
   getVolumeBindings(guid) {
