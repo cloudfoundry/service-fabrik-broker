@@ -103,7 +103,7 @@ class DefaultBackupManager extends BaseManager {
             .deleteBackupFile(options)
             .catch(err => {
               return Promise
-                .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
+                .try(() => logger.error(`Error during delete of backup`, err))
                 .tap(() => eventmesh.server.updateOperationState({
                   resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
