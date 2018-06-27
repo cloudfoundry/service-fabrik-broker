@@ -33,6 +33,7 @@ class UnlockResourcePoller {
     */
 
     function startPoller(event) {
+      logger.debug('Received Lock Event: ', event);
       const lockDetails = JSON.parse(event.object.spec.options);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceType === CONST.APISERVER.RESOURCE_TYPES.BACKUP) {
         // startPoller(event.object);

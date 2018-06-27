@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const CONST = require('../constants');
+const config = require('../config');
 let ScheduleBackupJob, ScheduledOobDeploymentBackupJob, OperationStatusPollerJob, BnRStatusPollerJob, BackupReaperJob, ServiceInstanceUpdateJob, DbCollectionReaperJob, BluePrintJob;
 
 class JobFabrik {
@@ -23,7 +24,7 @@ class JobFabrik {
       }
       return OperationStatusPollerJob;
     case CONST.JOB.BNR_STATUS_POLLER:
-      if (BnRStatusPollerJob === undefined) {
+      if (BnRStatusPollerJob === undefined && !config.enable_service_fabrik_v2) {
         BnRStatusPollerJob = require('./BnRStatusPollerJob');
       }
       return BnRStatusPollerJob;
