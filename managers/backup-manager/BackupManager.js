@@ -14,7 +14,6 @@ const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Forbidden = errors.Forbidden;
-const BadRequest = errors.BadRequest;
 
 class BackupManager {
   constructor(plan) {
@@ -233,14 +232,7 @@ class BackupManager {
 
   getServiceFabrikOperationState(name, opts) {
     logger.info(`Retrieving state of last Backup with:`, opts);
-    return Promise
-      .try(() => {
-        switch (name) {
-        case 'backup':
-          return this.getBackupOperationState(opts);
-        }
-        throw new BadRequest(`Invalid service fabrik operation '${name}'`);
-      })
+    return this.getBackupOperationState(opts)
       .then(result => {
         const deploymentName = opts.deployment;
         const action = _.capitalize(name);

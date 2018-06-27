@@ -1021,10 +1021,6 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationState(opts) {
-    return this.getBackupOperationState10(opts);
-  }
-
-  getBackupOperationState10(opts) {
     const agent_ip = opts.agent_ip;
     const options = _.assign({
       service_id: this.service.id,
