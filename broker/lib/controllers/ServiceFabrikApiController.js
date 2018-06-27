@@ -432,15 +432,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
             started_at: backup_started_at
           }));
       })
-      .tap(status => {
-        logger.info(`Backup Response `, status.response);
-        return req.manager
-          .findNetworkSegmentIndex(req.params.instance_id)
-          .then(networkIndex => {
-            logger.error('NetworkIndex is ', req.params, networkIndex);
-            return req.manager.getDeploymentName(req.params.instance_id, networkIndex);
-          });
-      })
       .then(status => {
         logger.info('Operation response:', status.response);
         const body = JSON.parse(status.response);

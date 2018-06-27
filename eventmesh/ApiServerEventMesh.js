@@ -172,7 +172,6 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {Object} opts.value
    */
   createOperationResource(opts) {
-    logger.info('Creating resource with options:', opts.value);
     const initialResource = {
       metadata: {
         'name': `${opts.operationId}`,
@@ -184,6 +183,7 @@ class ApiServerEventMesh extends EventMeshServer {
         'options': JSON.stringify(opts.value)
       },
     };
+    logger.info(`Creating resource ${initialResource.metadata.name} with options:`, opts.value);
     const statusJson = {
       status: {
         state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,

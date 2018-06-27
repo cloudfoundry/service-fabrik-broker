@@ -6,7 +6,6 @@ const proxyquire = require('proxyquire');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const lib = require('../../broker/lib');
-const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = lib.bosh.BoshDirectorClient;
 const BackupManager = require('../../managers/backup-manager');
 
@@ -86,7 +85,7 @@ describe('Jobs', function () {
       scheduleJobStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      abortLastBackupStub = sandbox.stub(DirectorManager.prototype, 'abortLastBackup');
+      abortLastBackupStub = sandbox.stub(BackupManager.prototype, 'abortLastBackup');
       abortLastBackupStub.withArgs().returns(Promise.resolve({}));
       backupOperationStub = sandbox.stub(BackupManager.prototype, 'getServiceFabrikOperationState');
       getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');

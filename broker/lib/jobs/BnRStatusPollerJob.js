@@ -199,8 +199,7 @@ class BnRStatusPollerJob extends BaseJob {
                   // re-registering statupoller job
                   let abortStartTime = new Date().toISOString();
                   instanceInfo.abortStartTime = abortStartTime;
-                  return DirectorManager
-                    .load(plan)
+                  return BackupManager.createManager(plan)
                     .then(directorManager => directorManager.abortLastBackup(instanceInfo, true))
                     .then(() => BackupManager.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
