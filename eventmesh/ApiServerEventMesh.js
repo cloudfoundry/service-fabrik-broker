@@ -172,7 +172,7 @@ class ApiServerEventMesh extends EventMeshServer {
    * @param {Object} opts.value
    */
   createOperationResource(opts) {
-    const initialResource = {
+    const resourceBody = {
       metadata: {
         'name': `${opts.operationId}`,
         'labels': {
@@ -183,7 +183,7 @@ class ApiServerEventMesh extends EventMeshServer {
         'options': JSON.stringify(opts.value)
       },
     };
-    logger.info(`Creating resource ${initialResource.metadata.name} with options:`, opts.value);
+    logger.info(`Creating resource ${resourceBody.metadata.name} with options:`, opts.value);
     const statusJson = {
       status: {
         state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -191,7 +191,7 @@ class ApiServerEventMesh extends EventMeshServer {
         response: JSON.stringify({})
       }
     };
-    return this.createResource(opts.operationName, opts.operationType, initialResource)
+    return this.createResource(opts.operationName, opts.operationType, resourceBody)
       .then(() => apiserver.apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId).status.patch({
           body: statusJson
