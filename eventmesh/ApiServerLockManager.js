@@ -43,7 +43,7 @@ class ApiServerLockManager {
   }
 
   /*
-  Lock reosurce structure
+  Lock resource structure
   {
       metadata : {
           name : instance_id,

@@ -44,7 +44,7 @@ function buildErrors(err) {
 
 class ApiServerEventMesh extends EventMeshServer {
   /**
-   * Register watcher for (resourceName , resourceType)
+   * @description Register watcher for (resourceName , resourceType)
    * @param {string} resourceName
    * @param {string} resourceType
    * @param {string} callback
@@ -164,7 +164,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * Craete Resource in Apiserver with the opts
+   * @description Craete Resource in Apiserver with the opts
    * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
@@ -202,7 +202,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * Function to patch the response filed with opts.value
+   * @description Function to patch the response filed with opts.value
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -220,7 +220,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * Function to update the response field
+   * @description Function to update the response field
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -246,7 +246,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
-   * Function to Update the state field
+   * @description Function to Update the state field
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -276,6 +276,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Update Last Operation to opts.value for resource resourceId
    * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
@@ -299,6 +300,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Gets Last Operation
    * @param {string} opts.resourceId
    * @param {string} opts.operationName
    * @param {string} opts.operationType
@@ -316,6 +318,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Patch Operation Options
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -332,6 +335,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Update Operation Options
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -350,6 +354,7 @@ class ApiServerEventMesh extends EventMeshServer {
       });
   }
   /**
+   * @description Get Operation Options
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -370,6 +375,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Get Operation State
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId
@@ -390,6 +396,7 @@ class ApiServerEventMesh extends EventMeshServer {
   }
 
   /**
+   * @description Get Operation Result
    * @param {string} opts.operationName
    * @param {string} opts.operationType
    * @param {string} opts.operationId

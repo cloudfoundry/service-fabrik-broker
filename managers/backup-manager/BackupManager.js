@@ -159,19 +159,20 @@ class BackupManager {
           });
       })
       .then(backup_options =>
-        eventmesh.server.updateOperationState({
+        eventmesh.server.updateOperationResult({
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
           operationId: result.backup_guid,
-          stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
-        }).then(() =>
-          eventmesh.server.updateOperationResult({
+          value: backup_options
+        })
+        .then(() =>
+          eventmesh.server.updateOperationState({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            value: backup_options
+            stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
           })
         )
       )
