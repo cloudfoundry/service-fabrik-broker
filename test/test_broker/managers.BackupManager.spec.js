@@ -1,29 +1,51 @@
 'use strict';
 
-// const _ = require('lodash');
 const catalog = require('../../broker/lib/models/catalog');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-// const CONST = require('../../common/constants');
-// const backupStore = require('../../broker/lib/iaas').backupStore;
-// const filename = backupStore.filename;
+const Agent = require('../../broker/lib/fabrik/Agent');
+const BackupStore = require('../../broker/lib/iaas/BackupStore');
 
 describe('managers', function () {
   describe('BackupManager', function () {
-    let scheduleStub;
+    const finishDate = new Date().toISOString();
+    const backup_state = {
+      state: 'succeeded',
+      'stage': 'Backup complete',
+      updated_at: finishDate
+    };
+    const backup_logs = ['Starting Backup ... ', 'Backup Complete.'];
+    let sandbox, scheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
     before(function () {
+      sandbox = sinon.sandbox.create();
       scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
+      getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
+      getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
+      getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
+      getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
+      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
+      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
+      getFileStub = sandbox.stub(BackupStore.prototype, 'getBackupFile');
+      getFileStub.withArgs().returns(Promise.resolve({
+        backup_guid: backup_guid,
+        state: 'processing',
+        agent_ip: mocks.agent.ip
+      }));
     });
     afterEach(function () {
       mocks.reset();
       scheduleStub.reset();
+      getBackupLastOperationStub.reset();
+      getBackupLogsStub.reset();
+      patchBackupFileStub.reset();
+      getFileStub.reset();
     });
     after(function () {
       scheduleStub.restore();
+      getBackupLastOperationStub.restore();
+      getBackupLogsStub.restore();
+      patchBackupFileStub.restore();
+      getFileStub.restore();
     });
-
-    // function isoDate(time) {
-    //   return new Date(time).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
-    // }
 
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -34,15 +56,6 @@ describe('managers', function () {
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const BackupManager = require('../../managers/backup-manager/BackupManager');
     const plan = catalog.getPlan(plan_id);
-
-    // const time = Date.now();
-    // const started_at = isoDate(time);
-    // const operation_backup = 'backup';
-    // const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
-    // const filename = `${prefix}.${started_at}.json`;
-    // const container = backupStore.containerName;
-    // const pathname = `/${container}/${filename}`;
-
 
     const manager = new BackupManager(plan);
     it('Should start backup successfully', function () {
@@ -64,14 +77,6 @@ describe('managers', function () {
       mocks.director.getDeploymentInstances(deployment_name);
       mocks.agent.getInfo();
       mocks.agent.startBackup();
-      // mocks.cloudProvider.upload(pathname, body => {
-      //     expect(body.type).to.equal(type);
-      //     expect(body.instance_guid).to.equal(instance_id);
-      //     expect(body.backup_guid).to.equal(backup_guid);
-      //     expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.ON_DEMAND);
-      //     expect(body.state).to.equal('processing');
-      //     return true;
-      // });
       mocks.apiServerEventMesh.nockLoadSpec(3);
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
@@ -89,5 +94,79 @@ describe('managers', function () {
           mocks.verify();
         });
     });
+
+    it('Should get backup operation state successfully', function () {
+      const agent_ip = mocks.agent.ip;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
+      const opts = {
+        deployment: deployment_name,
+        instance_guid: instance_id,
+        agent_ip: agent_ip,
+        context: context
+      };
+      mocks.apiServerEventMesh.nockLoadSpec();
+      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+      return manager.getServiceFabrikOperationState('backup', opts)
+        .then((res) => {
+          expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
+          expect(res.state).to.eql('succeeded');
+          expect(getBackupLastOperationStub.callCount).to.eql(1);
+          expect(getBackupLastOperationStub.firstCall.args[0]).to.eql(opts.agent_ip);
+          expect(getBackupLogsStub.callCount).to.eql(1);
+          expect(getBackupLogsStub.firstCall.args[0]).to.eql(opts.agent_ip);
+          expect(patchBackupFileStub.callCount).to.eql(1);
+          expect(getFileStub.callCount).to.eql(1);
+          expect(getFileStub.firstCall.args[0]).to.eql({
+            service_id: service_id,
+            plan_id: plan_id,
+            tenant_id: space_guid,
+            deployment: deployment_name,
+            instance_guid: instance_id,
+            agent_ip: opts.agent_ip,
+            context: context
+          });
+          mocks.verify();
+        });
+    });
+
+    it('Should abort last backup successfully', function () {
+      const agent_ip = mocks.agent.ip;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
+      const opts = {
+        service_id: service_id,
+        deployment: deployment_name,
+        instance_guid: instance_id,
+        agent_ip: agent_ip,
+        context: context,
+        guid: backup_guid
+      };
+      mocks.apiServerEventMesh.nockLoadSpec();
+      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        status: {
+          state: 'aborting'
+        }
+      });
+      mocks.agent.abortBackup();
+      return manager.abortLastBackup(opts, true)
+        .then((res) => {
+          expect(res.state).to.eql('aborting');
+          expect(getFileStub.callCount).to.eql(1);
+          expect(getFileStub.firstCall.args[0]).to.eql({
+            service_id: service_id,
+            tenant_id: space_guid,
+            instance_guid: instance_id
+          });
+          mocks.verify();
+        });
+    });
+
   });
 });
