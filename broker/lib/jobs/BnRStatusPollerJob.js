@@ -39,7 +39,7 @@ class BnRStatusPollerJob extends BaseJob {
           started_at | deployment | service_id) is empty : ${JSON.stringify(options)}`;
       logger.error(msg);
       return this.runFailed(new errors.BadRequest(msg), {}, job, done);
-    } else if (_.get(options, 'operation') !== 'backup') {
+    } else if (_.get(options, 'operation') !== CONST.OPERATION_TYPE.BACKUP) {
       const msg = `Operation polling not supported for operation - ${options.operation}`;
       logger.error(msg);
       const err = {
@@ -73,10 +73,10 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-        if (operationName === 'backup') {
+        if (operationName === CONST.OPERATION_TYPE.BACKUP) {
           return DirectorManager
             .load(plan)
-            .then(directorManager => directorManager.getServiceFabrikOperationState('backup', instanceInfo));
+            .then(directorManager => directorManager.getServiceFabrikOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
         }
       })
       .then(operationStatusResponse => {
@@ -146,7 +146,7 @@ class BnRStatusPollerJob extends BaseJob {
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise.try(() => {
-        if (operationName === 'backup') {
+        if (operationName === CONST.OPERATION_TYPE.BACKUP) {
           return lockManager.lock(instance_guid, {
               lockType: CONST.ETCD.LOCK_TYPE.READ,
               lockedResourceDetails: {
@@ -165,7 +165,7 @@ class BnRStatusPollerJob extends BaseJob {
             })
             .then(() => {
               return BackupManager.createManager(plan)
-                .then(backupManager => backupManager.getServiceFabrikOperationState('backup', instanceInfo));
+                .then(backupManager => backupManager.getServiceFabrikOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
             });
         }
       })
@@ -266,7 +266,7 @@ class BnRStatusPollerJob extends BaseJob {
     return Promise
       .try(() => eventmesh.server.updateOperationState({
         operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        operationType: 'defaultbackups',
+        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
         operationId: instanceInfo.backup_guid,
         stateValue: operationStatusResponse.state
       }))
