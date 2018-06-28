@@ -124,9 +124,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done)
       // Release lock in case of error: catch and throw
       .catch(err => {
+        // Should not unlock if error is EtcdLockError
         if (err instanceof EtcdLockError) {
           throw err;
         }
+        // Unlock resource only if error occured after acquiring the lock
         return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
@@ -222,9 +224,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       })
       .then(done)
       .catch(err => {
+        // Should not unlock if error is EtcdLockError
         if (err instanceof EtcdLockError) {
           throw err;
         }
+        // Unlock resource only if error occured after acquiring the lock
         if (lockedDeployment) {
           return lockManager.unlock(req.params.instance_id)
             .throw(err);
@@ -302,9 +306,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => req.instance.delete(params))
       .then(done)
       .catch(err => {
+        // Should not unlock if error is EtcdLockError
         if (err instanceof EtcdLockError) {
           throw err;
         }
+        // Unlock resource only if error occured after acquiring the lock
         return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
@@ -374,7 +380,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function failed(err) {
       return lockManager.unlock(req.params.instance_id)
         .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({
-          state: 'failed',
+          state: CONST.OPERATION.FAILED,
           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
         }));
     }
@@ -402,7 +408,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
               resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
               resourceId: req.params.instance_id,
-              operation: CONST.OPERATION_TYPE.CREATE
+              operation: operation.type
             }
           });
         }

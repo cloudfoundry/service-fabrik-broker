@@ -138,6 +138,7 @@ defaults: &defaults
   username: broker
   password: ~
   broker_ip: <%= ip %>
+  enable_service_fabrik_v2: false
   skip_ssl_validation: true
   log_path: <%= log_path %>
   log_level: info

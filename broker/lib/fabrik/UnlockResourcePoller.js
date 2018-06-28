@@ -6,6 +6,7 @@ const CONST = require('../constants');
 const logger = require('../logger');
 const lockManager = require('./../../../eventmesh').lockManager;
 const errors = require('../errors');
+const config = require('../config');
 const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {
@@ -46,7 +47,7 @@ class UnlockResourcePoller {
 }
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
-  if (eventInfo.type === 'internal') {
+  if (eventInfo.type === 'internal' && config.enable_service_fabrik_v2) {
     UnlockResourcePoller.start();
   }
 });

@@ -76,7 +76,5 @@ Fabrik.FabrikStatusPoller = FabrikStatusPoller;
 Fabrik.dbManager = new DBManager();
 Fabrik.BoshTaskPoller = BoshTaskPoller;
 Fabrik.oobBackupManager = OobBackupManager;
-if (config.enable_service_fabrik_v2) {
-  Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
-}
+Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
 module.exports = Fabrik;
