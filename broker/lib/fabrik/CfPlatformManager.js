@@ -115,10 +115,18 @@ class CfPlatformManager extends BasePlatformManager {
   }
 
   buildSecurityGroupRules(options) {
+    let portRule = '1024-65535';
+    if (options.port.exposedPorts) {
+      if (options.port.range) {
+        portRule = `${_.first(options.port.exposedPorts)}-${_.last(options.port.exposedPorts)}`;
+      } else {
+        portRule = _.size(options.port.exposedPorts) === 1 ? `${_.first(options.port.exposedPorts)}` : `${_.join(options.port.exposedPorts,',')}`;
+      }
+    }
     return {
       protocol: options.protocol,
       destination: _.size(options.ips) === 1 ? `${_.first(options.ips)}` : `${_.first(options.ips)}-${_.last(options.ips)}`,
-      ports: _.size(options.ports) === 1 ? `${_.first(options.ports)}` : `${_.first(options.ports)}-${_.last(options.ports)}`
+      ports: portRule
     };
   }
 }
