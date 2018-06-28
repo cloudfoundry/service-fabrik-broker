@@ -405,7 +405,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               })
               .then(() => {
                 lockedDeployment = true;
-                return eventmesh.apiServerClient.createOperationResource({
+                return eventmesh.apiServerClient.createOperation({
                   resourceId: req.params.instance_id,
                   operationName: CONST.OPERATION_TYPE.BACKUP,
                   operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
@@ -419,7 +419,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         backupStartedAt = new Date();
         //check if resource exist, else create and then update
         return Promise.try(() => eventmesh.apiServerClient.getResource('deployment', 'directors', req.params.instance_id))
-          .catch(() => eventmesh.apiServerClient.createDeploymentResource(null, req.params.instance_id, {}))
+          .catch(() => eventmesh.apiServerClient.createDeployment(req.params.instance_id, {}))
           .then(() => eventmesh.apiServerClient.updateLastOperation({
             resourceId: req.params.instance_id,
             operationName: CONST.OPERATION_TYPE.BACKUP,

@@ -159,7 +159,7 @@ class BackupManager {
           });
       })
       .then(backup_options =>
-        eventmesh.apiServerClient.updateOperationResult({
+        eventmesh.apiServerClient.updateOperationResponse({
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -194,7 +194,7 @@ class BackupManager {
             operationId: result.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
           }))
-          .tap(() => eventmesh.apiServerClient.updateOperationResult({
+          .tap(() => eventmesh.apiServerClient.updateOperationResponse({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -285,7 +285,7 @@ class BackupManager {
                 snapshotId: lastOperation.snapshotId
               })
             ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.apiServerClient.updateOperationResult({
+            .then(metadata => eventmesh.apiServerClient.updateOperationResponse({
               resourceId: options.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

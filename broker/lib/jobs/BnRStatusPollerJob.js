@@ -183,7 +183,7 @@ class BnRStatusPollerJob extends BaseJob {
           return Promise
             .try(() => eventmesh
               .apiServerClient
-              .patchOperationResult({
+              .patchOperationResponse({
                 operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                 operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
                 operationId: instanceInfo.backup_guid,

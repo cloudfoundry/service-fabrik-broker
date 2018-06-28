@@ -119,7 +119,7 @@ class DefaultBackupManager extends BaseManager {
                   operationId: changedOptions.guid,
                   stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
                 }))
-                .tap(() => eventmesh.apiServerClient.updateOperationResult({
+                .tap(() => eventmesh.apiServerClient.updateOperationResponse({
                   resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

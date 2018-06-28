@@ -43,16 +43,16 @@ function buildErrors(err) {
 
 class ApiServerClient {
   /**
-   * @description Register watcher for (resourceName , resourceType)
-   * @param {string} resourceName - Name of the resource
+   * @description Register watcher for (resourceGroup , resourceType)
+   * @param {string} resourceGroup - Name of the resource
    * @param {string} resourceType - Type of the resource
    * @param {string} callback - Fucntion to call when event is received
    */
-  registerWatcher(resourceName, resourceType, callback) {
+  registerWatcher(resourceGroup, resourceType, callback) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => {
         const stream = apiserver
-          .apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+          .apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
           .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream();
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
@@ -63,53 +63,53 @@ class ApiServerClient {
       });
   }
 
-  createResource(resourceName, resourceType, body) {
+  _createResource(resourceGroup, resourceType, body) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType].post({
           body: body
         }));
   }
 
-  createLockResource(name, type, body) {
-    return this.createResource(name, type, body)
+  createLock(lockType, body) {
+    return this._createResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, lockType, body)
       .catch(err => {
         return buildErrors(err);
       });
   }
 
-  deleteResource(resourceName, resourceType, resourceId) {
+  deleteResource(resourceGroup, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete());
   }
 
-  patchResource(resourceName, resourceType, resourceId, delta) {
+  patchResource(resourceGroup, resourceType, resourceId, delta) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
           body: delta
         }));
   }
 
-  deleteLockResource(resourceName, resourceType, resourceId) {
-    return this.deleteResource(resourceName, resourceType, resourceId)
+  deleteLock(resourceType, resourceId) {
+    return this.deleteResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, resourceType, resourceId)
       .catch(err => {
         return buildErrors(err);
       });
   }
 
-  updateResource(resourceName, resourceType, resourceId, delta) {
-    return this.patchResource(resourceName, resourceType, resourceId, delta)
+  updateResource(resourceGroup, resourceType, resourceId, delta) {
+    return this.patchResource(resourceGroup, resourceType, resourceId, delta)
       .catch(err => {
         return buildErrors(err);
       });
   }
 
-  getLockResourceOptions(resourceName, resourceType, resourceId) {
+  getLockDetails(resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_TYPES.LOCK}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .then(resource => {
         return resource.body.spec.options;
@@ -119,16 +119,16 @@ class ApiServerClient {
       });
   }
 
-  getResource(resourceName, resourceType, resourceId) {
+  getResource(resourceGroup, resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${resourceName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .catch(err => {
         return buildErrors(err);
       });
   }
 
-  createDeploymentResource(resourceType, resourceId, val) {
+  createDeployment(resourceId, val) {
     const opts = {
       operationId: resourceId,
       resourceId: resourceId,
@@ -136,10 +136,10 @@ class ApiServerClient {
       operationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
       value: val
     };
-    return this.createOperationResource(opts);
+    return this.createOperation(opts);
   }
 
-  updateResourceState(resourceType, resourceId, stateValue) {
+  _updateResourceState(resourceType, resourceId, stateValue) {
     const opts = {
       operationId: resourceId,
       resourceId: resourceId,
@@ -170,7 +170,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.value - Value to set for spec.options field of resource
    */
-  createOperationResource(opts) {
+  createOperation(opts) {
     const resourceBody = {
       metadata: {
         'name': `${opts.operationId}`,
@@ -190,7 +190,7 @@ class ApiServerClient {
         response: JSON.stringify({})
       }
     };
-    return this.createResource(opts.operationName, opts.operationType, resourceBody)
+    return this._createResource(opts.operationName, opts.operationType, resourceBody)
       .then(() => apiserver.apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId).status.patch({
           body: statusJson
@@ -207,14 +207,14 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.value - Object to merge with the existing Result object
    */
-  patchOperationResult(opts) {
+  patchOperationResponse(opts) {
     logger.info('Patching Operation with :', opts);
     return this.getOperationResult(opts)
       .then(res => {
         let resJson = JSON.parse(res);
         logger.info(`Patching ${resJson} with ${opts.value}`);
         opts.value = _.merge(resJson, opts.value);
-        return this.updateOperationResult(opts);
+        return this.updateOperationResponse(opts);
       });
   }
 
@@ -225,7 +225,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.value - Object to be set as status.response
    */
-  updateOperationResult(opts) {
+  updateOperationResponse(opts) {
     logger.info('Updating Operation Result with :', opts);
     const patchedResource = {
       'status': {

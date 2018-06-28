@@ -20,7 +20,7 @@ class LockManager {
    */
 
   isWriteLocked(resourceId) {
-    return eventmesh.apiServerClient.getLockResourceOptions(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
+    return eventmesh.apiServerClient.getLockDetails(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
       .then(options => {
         const currentTime = new Date();
         const lockDetails = JSON.parse(options);
@@ -134,7 +134,7 @@ class LockManager {
             spec: spec,
             status: status
           };
-          return eventmesh.apiServerClient.createLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
+          return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
             .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
         } else if (err instanceof Conflict) {
           throw new EtcdLockError(err.message);
@@ -155,7 +155,7 @@ class LockManager {
     maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
 
     function unlockResourceRetry(currentRetryCount) {
-      return eventmesh.apiServerClient.deleteLockResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
+      return eventmesh.apiServerClient.deleteLock(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
         .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
         .catch(err => {
           if (err instanceof NotFound) {

@@ -104,7 +104,7 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, expectedE
 }
 
 describe('eventmesh', () => {
-  describe('ApiServerEventMesh', () => {
+  describe('ApiServerClient', () => {
     beforeEach(() => {
       nock(apiServerHost)
         .get('/swagger.json')
@@ -118,7 +118,7 @@ describe('eventmesh', () => {
     describe('createLockResource', () => {
       it('calls the post rest api to create lock type resource', done => {
         nockCreateResource('lock', 'deploymentlock', sampleLockResource);
-        apiserver.createLockResource('lock', 'deploymentlock', sampleLockResource)
+        apiserver.createLock('deploymentlock', sampleLockResource)
           .then(res => {
             expect(res.statusCode).to.eql(201);
             expect(res.body).to.eql(sampleLockResource);
@@ -129,7 +129,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
-        return apiserver.createLockResource('lock', 'deploymentlock', sampleLockResource)
+        return apiserver.createLock('deploymentlock', sampleLockResource)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -140,7 +140,7 @@ describe('eventmesh', () => {
     describe('createResource', () => {
       it('throws error if api call is errored', done => {
         nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
-        return apiserver.createResource('lock', 'deploymentlock', sampleLockResource)
+        return apiserver._createResource('lock', 'deploymentlock', sampleLockResource)
           .catch(err => {
             expect(err.code).to.eql(409);
             done();
@@ -148,7 +148,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('deleteLockResource', () => {
+    describe('deleteLock', () => {
       const deleteLockResponse = {
         kind: 'Status',
         apiVersion: 'v1',
@@ -163,7 +163,7 @@ describe('eventmesh', () => {
       };
       it('calls the delete rest api to delete lock type resource', done => {
         nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse);
-        apiserver.deleteLockResource('lock', 'deploymentlock', 'l1')
+        apiserver.deleteLock('deploymentlock', 'l1')
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(deleteLockResponse);
@@ -174,7 +174,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse, 409);
-        return apiserver.deleteLockResource('lock', 'deploymentlock', 'l1')
+        return apiserver.deleteLock('deploymentlock', 'l1')
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -213,10 +213,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('getLockResourceOptions', () => {
+    describe('getLockDetails', () => {
       it('returns options of the lock resource', done => {
         nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource);
-        apiserver.getLockResourceOptions('lock', 'deploymentlock', 'l1')
+        apiserver.getLockDetails('deploymentlock', 'l1')
           .then(res => {
             expect(res).to.eql(sampleLockResource.spec.options);
             done();
@@ -226,7 +226,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource, 409);
-        return apiserver.getLockResourceOptions('lock', 'deploymentlock', 'l1')
+        return apiserver.getLockDetails('deploymentlock', 'l1')
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -256,9 +256,8 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('createDeploymentResource', () => {
+    describe('createDeployment', () => {
       const resourceId = 'd1';
-      const resourceType = 'directors';
       const val = {
         key: 'value'
       };
@@ -292,7 +291,7 @@ describe('eventmesh', () => {
       it('Creates a resource', done => {
         nockCreateResource('deployment', 'director', sampleDeploymentResource, input);
         nockPatchResourceStatus('deployment', 'director', 'd1', finalResource, statusJson);
-        apiserver.createDeploymentResource(resourceType, resourceId, val)
+        apiserver.createDeployment(resourceId, val)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -303,7 +302,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockCreateResource('deployment', 'director', sampleDeploymentResource, input, 409);
-        return apiserver.createDeploymentResource(resourceType, resourceId, val)
+        return apiserver.createDeployment(resourceId, val)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -311,10 +310,10 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('updateResourceState', () => {
+    describe('_updateResourceState', () => {
       it('updates the specified resource state', done => {
         nockPatchResourceStatus('deployment', 'director', 'd1', sampleDeploymentResource);
-        apiserver.updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
+        apiserver._updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(sampleDeploymentResource);
@@ -325,7 +324,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockPatchResourceStatus('deployment', 'director', 'd1', sampleDeploymentResource, undefined, 409);
-        return apiserver.updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
+        return apiserver._updateResourceState('director', 'd1', sampleDeploymentResource.status.state)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -354,7 +353,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('createOperationResource', () => {
+    describe('createOperation', () => {
       const opts = {
         resourceId: 'd1',
         operationName: 'backup',
@@ -393,7 +392,7 @@ describe('eventmesh', () => {
       it('Creates an operation of a resource', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, statusJson);
-        apiserver.createOperationResource(opts)
+        apiserver.createOperation(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -404,7 +403,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input, 409);
-        return apiserver.createOperationResource(opts)
+        return apiserver.createOperation(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
@@ -412,7 +411,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('updateOperationResult', () => {
+    describe('updateOperationResponse', () => {
       const opts = {
         resourceId: 'd1',
         operationName: 'backup',
@@ -434,7 +433,7 @@ describe('eventmesh', () => {
       }, sampleBackupResource);
       it('updates the operation result', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input);
-        apiserver.updateOperationResult(opts)
+        apiserver.updateOperationResponse(opts)
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
@@ -445,7 +444,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
-        return apiserver.updateOperationResult(opts)
+        return apiserver.updateOperationResponse(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();

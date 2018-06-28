@@ -63,8 +63,8 @@ const LockManagerDummy = {
 const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
   './': {
     'apiServerClient': {
-      'getLockResourceOptions': function (resourceType, resourceName, resourceId) {
-        LockManagerDummy.getLockResourceOptionsDummy(resourceType, resourceName, resourceId);
+      'getLockDetails': function (resourceName, resourceId) {
+        LockManagerDummy.getLockResourceOptionsDummy(resourceName, resourceId);
         return Promise.try(() => {
           if (lockoptions[resourceId]) {
             return lockoptions[resourceId];
@@ -80,8 +80,8 @@ const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
         LockManagerDummy.updateResourceDummy(resourceType, resourceName, resourceId, patchBody);
         return Promise.resolve({});
       },
-      'createLockResource': function (resourceType, resourceName, resourceId, body) {
-        LockManagerDummy.createLockResourceDummy(resourceType, resourceName, resourceId, body);
+      'createLock': function (resourceName, body) {
+        LockManagerDummy.createLockResourceDummy(resourceName, body);
         return Promise.resolve({});
       },
       'getResource': function (resourceType, resourceName, resourceId) {
@@ -124,9 +124,8 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(true);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(getLockResourceOptionsSpy.firstCall.args[2]).to.eql('lockId1');
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId1');
           });
       });
       it('should return false if write lock is present and ttl has expired', () => {
@@ -135,9 +134,8 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(getLockResourceOptionsSpy.firstCall.args[2]).to.eql('lockId2');
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId2');
           });
       });
       it('should return false if non write lock is present', () => {
@@ -146,9 +144,8 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(getLockResourceOptionsSpy.firstCall.args[2]).to.eql('lockId3');
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId3');
           });
       });
       it('should return false if no lock is present', () => {
@@ -157,9 +154,8 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(getLockResourceOptionsSpy.firstCall.args[2]).to.eql('lockId4');
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId4');
           });
       });
       it('should throw an error if api server gives incorrect response', () => {
@@ -169,9 +165,8 @@ describe('eventmesh', () => {
             expect(err).to.have.status(500);
             expect(err.description).to.eql('Internal Server Error');
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
-            expect(getLockResourceOptionsSpy.firstCall.args[2]).to.eql('lockId5');
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId5');
           });
       });
     });
@@ -212,8 +207,7 @@ describe('eventmesh', () => {
             expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId4');
             expect(createLockResourceSpy.callCount).to.equal(1);
-            expect(createLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(createLockResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(createLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
             //TODO check for spy body/patch arguments
           });
       });
