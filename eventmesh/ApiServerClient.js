@@ -48,12 +48,16 @@ class ApiServerClient {
    * @param {string} resourceType - Type of the resource
    * @param {string} callback - Fucntion to call when event is received
    */
-  registerWatcher(resourceGroup, resourceType, callback) {
+  registerWatcher(resourceGroup, resourceType, callback, queryString) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => {
         const stream = apiserver
           .apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-          .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream();
+          .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream({
+            qs: {
+              labelSelector: queryString ? queryString : ''
+            }
+          });
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);

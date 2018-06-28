@@ -265,7 +265,9 @@ module.exports = Object.freeze({
     },
     ANNOTATION_TYPES: {
       BACKUP: 'defaultbackups'
-    }
+    },
+    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore'],
+    READ_OPERATIONS: ['backup'],
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',

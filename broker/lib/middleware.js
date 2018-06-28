@@ -44,7 +44,6 @@ exports.lock = function (operationType, lastOperationCall) {
     if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
       // Acquire lock for this instance
       return lockManager.lock(req.params.instance_id, {
-          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
           lockedResourceDetails: {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
             resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,

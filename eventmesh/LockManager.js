@@ -93,6 +93,8 @@ class LockManager {
     }
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
+    opts.lockedResourceDetails = opts.lockedResourceDetails ? opts.lockedResourceDetails : {};
+    opts.lockType = this._getLockType(opts.lockedResourceDetails.operation);
     opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
     _.extend(opts, {
       'lockTime': currentTime
@@ -173,6 +175,14 @@ class LockManager {
     }
     logger.info(`Attempting to unlock resource ${resourceId}`);
     return unlockResourceRetry(0);
+  }
+
+  _getLockType(operation) {
+    if (_.includes(CONST.WRITE_OPERATIONS, operation)) {
+      return CONST.ETCD.LOCK_TYPE.WRITE;
+    } else {
+      return CONST.ETCD.LOCK_TYPE.READ;
+    }
   }
 }
 
