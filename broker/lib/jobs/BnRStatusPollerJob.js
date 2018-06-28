@@ -182,7 +182,7 @@ class BnRStatusPollerJob extends BaseJob {
           const backup_triggered_duration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
           return Promise
             .try(() => eventmesh
-              .server
+              .apiServerClient
               .patchOperationResult({
                 operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                 operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -264,7 +264,7 @@ class BnRStatusPollerJob extends BaseJob {
 
   static doPostFinishOperation20(operationStatusResponse, operationName, instanceInfo) {
     return Promise
-      .try(() => eventmesh.server.updateOperationState({
+      .try(() => eventmesh.apiServerClient.updateOperationState({
         operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
         operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
         operationId: instanceInfo.backup_guid,

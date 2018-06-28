@@ -23,7 +23,7 @@ class DefaultBackupManager extends BaseManager {
    */
   registerWatcher() {
     logger.info(`Registering Backup watcher`);
-    return eventmesh.server.registerWatcher('backup', 'defaultbackup', this.worker);
+    return eventmesh.apiServerClient.registerWatcher('backup', 'defaultbackup', this.worker);
   }
   /**
    * @description This method does following in order
@@ -45,7 +45,7 @@ class DefaultBackupManager extends BaseManager {
       let patchAnnotations = currentAnnotations ? currentAnnotations : {};
       patchAnnotations.lockedByManager = config.broker_ip;
       patchBody.metadata.annotations = patchAnnotations;
-      return eventmesh.server.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
+      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
         .tap((resource) => logger.info(`Successfully acquired processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
           `Updated resource with annotations is: `, resource));
     }
@@ -63,7 +63,7 @@ class DefaultBackupManager extends BaseManager {
           }
         }
       };
-      return eventmesh.server.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
+      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
         .tap((resource) => logger.info(`Successfully released processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
           `Updated resource with annotations is: `, resource));
     }
@@ -76,7 +76,7 @@ class DefaultBackupManager extends BaseManager {
     }
 
     function processAbort() {
-      return eventmesh.server.getOperationOptions({
+      return eventmesh.apiServerClient.getOperationOptions({
           resourceId: changedOptions.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -92,7 +92,7 @@ class DefaultBackupManager extends BaseManager {
     }
 
     function processDelete() {
-      return eventmesh.server.getOperationOptions({
+      return eventmesh.apiServerClient.getOperationOptions({
           resourceId: changedOptions.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -102,7 +102,7 @@ class DefaultBackupManager extends BaseManager {
           const changedOptions = JSON.parse(options);
           return this.backupStore
             .deleteBackupFile(options)
-            .then(() => eventmesh.server.updateOperationState({
+            .then(() => eventmesh.apiServerClient.updateOperationState({
               resourceId: changedOptions.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -112,14 +112,14 @@ class DefaultBackupManager extends BaseManager {
             .catch(err => {
               return Promise
                 .try(() => logger.error(`Error during delete of backup`, err))
-                .tap(() => eventmesh.server.updateOperationState({
+                .tap(() => eventmesh.apiServerClient.updateOperationState({
                   resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
                   operationId: changedOptions.guid,
                   stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
                 }))
-                .tap(() => eventmesh.server.updateOperationResult({
+                .tap(() => eventmesh.apiServerClient.updateOperationResult({
                   resourceId: changedOptions.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

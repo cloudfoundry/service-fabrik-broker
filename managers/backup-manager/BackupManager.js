@@ -159,7 +159,7 @@ class BackupManager {
           });
       })
       .then(backup_options =>
-        eventmesh.server.updateOperationResult({
+        eventmesh.apiServerClient.updateOperationResult({
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -167,7 +167,7 @@ class BackupManager {
           value: backup_options
         })
         .then(() =>
-          eventmesh.server.updateOperationState({
+          eventmesh.apiServerClient.updateOperationState({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -177,7 +177,7 @@ class BackupManager {
         )
       )
       .then(() => {
-        return eventmesh.server.getOperationResult({
+        return eventmesh.apiServerClient.getOperationResult({
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -187,14 +187,14 @@ class BackupManager {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
-          .tap(() => eventmesh.server.updateOperationState({
+          .tap(() => eventmesh.apiServerClient.updateOperationState({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
           }))
-          .tap(() => eventmesh.server.updateOperationResult({
+          .tap(() => eventmesh.apiServerClient.updateOperationResult({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -285,7 +285,7 @@ class BackupManager {
                 snapshotId: lastOperation.snapshotId
               })
             ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.server.updateOperationResult({
+            .then(metadata => eventmesh.apiServerClient.updateOperationResult({
               resourceId: options.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
@@ -298,7 +298,7 @@ class BackupManager {
 
   abortLastBackup(abortOptions, force) {
     logger.info('Starting abort with following options:', abortOptions);
-    return eventmesh.server.updateOperationState({
+    return eventmesh.apiServerClient.updateOperationState({
       resourceId: abortOptions.instance_guid,
       operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
       operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

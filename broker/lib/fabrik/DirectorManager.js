@@ -1029,13 +1029,13 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationStateV2(opts) {
-    return eventmesh.server.getLastOperation({
+    return eventmesh.apiServerClient.getLastOperation({
         resourceId: opts.instance_guid,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP
       })
       .then(backup_guid =>
-        eventmesh.server.getOperationResult({
+        eventmesh.apiServerClient.getOperationResult({
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
           operationId: backup_guid,

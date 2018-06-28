@@ -6,7 +6,6 @@ const assert = require('assert');
 const config = require('../common/config');
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
-const EventMeshServer = require('./EventMeshServer');
 const kc = require('kubernetes-client');
 const JSONStream = require('json-stream');
 const errors = require('../common/errors');
@@ -42,7 +41,7 @@ function buildErrors(err) {
   throw throwErr;
 }
 
-class ApiServerEventMesh extends EventMeshServer {
+class ApiServerClient {
   /**
    * @description Register watcher for (resourceName , resourceType)
    * @param {string} resourceName - Name of the resource
@@ -415,4 +414,4 @@ class ApiServerEventMesh extends EventMeshServer {
 
 }
 
-module.exports = ApiServerEventMesh;
+module.exports = ApiServerClient;

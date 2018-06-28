@@ -1,7 +1,7 @@
 'use strict';
 
-const ApiServerEventMesh = require('./ApiServerEventMesh');
-const ApiServerLockManager = require('./ApiServerLockManager');
+const ApiServerClient = require('./ApiServerClient');
+const LockManager = require('./LockManager');
 
-exports.server = new ApiServerEventMesh();
-exports.lockManager = new ApiServerLockManager();
+exports.apiServerClient = new ApiServerClient();
+exports.lockManager = new LockManager();

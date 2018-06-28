@@ -60,9 +60,9 @@ const LockManagerDummy = {
   createLockResourceDummy: () => {},
   getResourceDummy: () => {},
 };
-const apiServerLockManager = proxyquire('../../eventmesh/ApiServerLockManager', {
+const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
   './': {
-    'server': {
+    'apiServerClient': {
       'getLockResourceOptions': function (resourceType, resourceName, resourceId) {
         LockManagerDummy.getLockResourceOptionsDummy(resourceType, resourceName, resourceId);
         return Promise.try(() => {
@@ -102,7 +102,7 @@ const apiServerLockManager = proxyquire('../../eventmesh/ApiServerLockManager', 
 });
 
 describe('eventmesh', () => {
-  describe('ApiServerLockManager', () => {
+  describe('LockManager', () => {
     let getLockResourceOptionsSpy, updateResourceSpy, createLockResourceSpy, getResourceSpy;
     before(function () {
       getLockResourceOptionsSpy = sinon.spy(LockManagerDummy, 'getLockResourceOptionsDummy');
