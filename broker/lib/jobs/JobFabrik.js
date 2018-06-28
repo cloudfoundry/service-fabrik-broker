@@ -24,7 +24,7 @@ class JobFabrik {
       }
       return OperationStatusPollerJob;
     case CONST.JOB.BNR_STATUS_POLLER:
-      if (BnRStatusPollerJob === undefined && !config.enable_service_fabrik_v2) {
+      if (BnRStatusPollerJob === undefined) {
         BnRStatusPollerJob = require('./BnRStatusPollerJob');
       }
       return BnRStatusPollerJob;
