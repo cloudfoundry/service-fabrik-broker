@@ -16,11 +16,8 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
-const UnprocessableEntity = errors.UnprocessableEntity;
-const EtcdLockError = errors.EtcdLockError;
 const config = require('../config');
 const CONST = require('../constants');
-const logger = require('../logger');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -75,7 +72,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
-    this.validateRequest(req, res);
 
     return Promise
       .try(() => req.instance.create(params))
@@ -104,31 +100,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
-    this.validateRequest(req, res);
 
-    return Promise.try(() => {
-        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-          // Acquire lock for this instance
-          return lockManager.lock(req.params.instance_id, {
-            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-            lockedResourceDetails: {
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
-              resourceId: req.params.instance_id,
-              operation: CONST.OPERATION_TYPE.CREATE
-            }
-          });
-        }
-      })
-      .then(() => req.instance.create(params))
+    return req.instance.create(params)
       .then(done)
       // Release lock in case of error: catch and throw
       .catch(err => {
-        // Should not unlock if error is EtcdLockError
-        if (err instanceof EtcdLockError) {
-          throw err;
-        }
-        // Unlock resource only if error occured after acquiring the lock
         return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
@@ -163,7 +139,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
-    this.validateRequest(req, res);
 
     return Promise
       .try(() => {
@@ -196,44 +171,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
-    this.validateRequest(req, res);
-    let lockedDeployment = false;
     return Promise
       .try(() => {
         if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
           throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
         }
-        return Promise.try(() => {
-            if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-              // Acquire lock for this instance
-              return lockManager.lock(req.params.instance_id, {
-                lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-                lockedResourceDetails: {
-                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-                  resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
-                  resourceId: req.params.instance_id,
-                  operation: CONST.OPERATION_TYPE.UPDATE
-                }
-              });
-            }
-          })
-          .then(() => {
-            lockedDeployment = true;
-            return req.instance.update(params);
-          });
+        return req.instance.update(params);
       })
       .then(done)
       .catch(err => {
-        // Should not unlock if error is EtcdLockError
-        if (err instanceof EtcdLockError) {
-          throw err;
-        }
-        // Unlock resource only if error occured after acquiring the lock
-        if (lockedDeployment) {
-          return lockManager.unlock(req.params.instance_id)
-            .throw(err);
-        }
-        throw err;
+        return lockManager.unlock(req.params.instance_id)
+          .throw(err);
       });
   }
 
@@ -262,7 +210,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
-    this.validateRequest(req, res);
 
     return Promise
       .try(() => req.instance.delete(params))
@@ -288,29 +235,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
-    this.validateRequest(req, res);
-    return Promise.try(() => {
-        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-          // Acquire lock for this instance
-          return lockManager.lock(req.params.instance_id, {
-            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-            lockedResourceDetails: {
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
-              resourceId: req.params.instance_id,
-              operation: CONST.OPERATION_TYPE.DELETE
-            }
-          });
-        }
-      })
-      .then(() => req.instance.delete(params))
+    return req.instance.delete(params)
       .then(done)
       .catch(err => {
-        // Should not unlock if error is EtcdLockError
-        if (err instanceof EtcdLockError) {
-          throw err;
-        }
-        // Unlock resource only if error occured after acquiring the lock
         return lockManager.unlock(req.params.instance_id)
           .throw(err);
       })
@@ -399,28 +326,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     // Check if lock is present, if not then put a lock else proceed.
     // Required for migrating from sf1.0 to sf2.0 to handle ongoing operations which don't have etcd lock
-    return Promise.try(() => {
-        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-          // Acquire lock for this instance
-          return lockManager.lock(req.params.instance_id, {
-            lockType: CONST.ETCD.LOCK_TYPE.WRITE,
-            lockedResourceDetails: {
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-              resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
-              resourceId: req.params.instance_id,
-              operation: operation.type
-            }
-          });
-        }
-      })
-      .catch(err => {
-        if (err instanceof EtcdLockError) {
-          logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
-        } else {
-          throw err;
-        }
-      })
-      .then(() => req.instance.lastOperation(operation))
+    return req.instance.lastOperation(operation)
       .then(done)
       .catch(AssertionError, failed)
       .catch(ServiceInstanceNotFound, notFound);
@@ -474,13 +380,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     // Check if write locked
-    return lockManager.isWriteLocked(req.params.instance_id)
-      .then(isWriteLocked => {
-        if (isWriteLocked) {
-          throw new EtcdLockError(`Resource ${req.params.instance_id} is write locked`);
-        }
-      })
-      .then(() => req.instance.bind(params))
+    return req.instance.bind(params)
       .then(done)
       .catch(ServiceBindingAlreadyExists, conflict);
   }
@@ -528,27 +428,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     // Check if write locked
-    return lockManager.isWriteLocked(req.params.instance_id)
-      .then(isWriteLocked => {
-        if (isWriteLocked) {
-          throw new EtcdLockError(`Resource ${req.params.instance_id} is write locked`);
-        }
-      })
-      .then(() => req.instance.unbind(params))
+    return req.instance.unbind(params)
       .then(done)
       .catch(ServiceBindingNotFound, gone);
-  }
-
-  validateRequest(req, res) {
-    /* jshint unused:false */
-    if (req.instance.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
-      throw new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired');
-    }
-    const operationType = _.get(req, 'operation_type');
-    if (_.includes([CONST.OPERATION_TYPE.CREATE], operationType) &&
-      (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid'))) {
-      throw new BadRequest('This request is missing mandatory organization guid and/or space guid.');
-    }
   }
 
 }

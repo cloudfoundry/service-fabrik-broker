@@ -5,17 +5,85 @@ const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const quota = require('../lib/quota');
 const quotaManager = quota.quotaManager;
-const CONST = require('../../common/constants');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('./models/catalog');
+const config = require('./config');
+const lockManager = require('../../eventmesh').lockManager;
+const CONST = require('./constants');
+const EtcdLockError = errors.EtcdLockError;
+const UnprocessableEntity = errors.UnprocessableEntity;
 
 
 exports.isFeatureEnabled = function (featureName) {
   return function (req, res, next) {
     if (!utils.isFeatureEnabled(featureName)) {
       throw new errors.ServiceUnavailable(`${featureName} feature not enabled`);
+    }
+    next();
+  };
+};
+
+exports.validateRequest = function (operationType) {
+  return function (req, res, next) {
+    /* jshint unused:false */
+    if (req.instance.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
+      next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
+    }
+    if (_.includes([CONST.OPERATION_TYPE.CREATE], operationType) &&
+      (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid'))) {
+      next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
+    }
+    next();
+  };
+};
+
+exports.lock = function (operationType, lastOperationCall) {
+  return function (req, res, next) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+      // Acquire lock for this instance
+      return lockManager.lock(req.params.instance_id, {
+          lockType: CONST.ETCD.LOCK_TYPE.WRITE,
+          lockedResourceDetails: {
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+            resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
+            resourceId: req.params.instance_id,
+            operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
+          }
+        })
+        .then(() => next())
+        .catch((err) => {
+          logger.error('[LOCK]: exception occurred --', err);
+          //For last operation call, we ensure migration of locks through this
+          if (lastOperationCall && err instanceof EtcdLockError) {
+            logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
+            next();
+          } else {
+            next(err);
+          }
+        });
+    }
+    next();
+  };
+};
+
+exports.isWriteLocked = function () {
+  return function (req, res, next) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+      // Acquire lock for this instance
+      return lockManager.isWriteLocked(req.params.instance_id)
+        .then(isWriteLocked => {
+          if (isWriteLocked) {
+            next(new EtcdLockError(`Resource ${req.params.instance_id} is write locked`));
+          } else {
+            next();
+          }
+        })
+        .catch((err) => {
+          logger.error('[LOCK]: exception occurred --', err);
+          next(err);
+        });
     }
     next();
   };
