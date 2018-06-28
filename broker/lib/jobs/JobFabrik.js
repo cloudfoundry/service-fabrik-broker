@@ -2,7 +2,6 @@
 
 const assert = require('assert');
 const CONST = require('../constants');
-const config = require('../config');
 let ScheduleBackupJob, ScheduledOobDeploymentBackupJob, OperationStatusPollerJob, BnRStatusPollerJob, BackupReaperJob, ServiceInstanceUpdateJob, DbCollectionReaperJob, BluePrintJob;
 
 class JobFabrik {
