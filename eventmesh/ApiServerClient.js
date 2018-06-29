@@ -213,7 +213,7 @@ class ApiServerClient {
    */
   patchOperationResponse(opts) {
     logger.info('Patching Operation with :', opts);
-    return this.getOperationResult(opts)
+    return this.getOperationResponse(opts)
       .then(res => {
         logger.info(`Patching ${res} with ${opts.value}`);
         opts.value = _.merge(res, opts.value);
@@ -397,12 +397,12 @@ class ApiServerClient {
   }
 
   /**
-   * @description Get Operation Result
+   * @description Get Operation Response
    * @param {string} opts.operationName - Name of operation
    * @param {string} opts.operationType - Type of operation
    * @param {string} opts.operationId - Unique id of operation
    */
-  getOperationResult(opts) {
+  getOperationResponse(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]

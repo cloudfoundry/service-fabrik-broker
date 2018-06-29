@@ -98,7 +98,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return ServiceFabrikApiController.getResourceOperationStatus(opts);
         } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
           finalState = state;
-          return eventmesh.apiServerClient.getOperationResult({
+          return eventmesh.apiServerClient.getOperationResponse({
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               operationId: opts.operationId,
@@ -109,7 +109,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             });
         } else {
           finalState = state;
-          return eventmesh.apiServerClient.getOperationResult({
+          return eventmesh.apiServerClient.getOperationResponse({
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             operationId: opts.operationId,
@@ -464,11 +464,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
       })
-      .then(backup_guid =>
-        eventmesh.apiServerClient.getOperationResult({
+      .then(backupGuid =>
+        eventmesh.apiServerClient.getOperationResponse({
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          operationId: backup_guid,
+          operationId: backupGuid,
         }))
       .then(result => {
         return res

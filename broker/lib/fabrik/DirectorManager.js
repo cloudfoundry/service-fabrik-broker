@@ -1034,11 +1034,11 @@ class DirectorManager extends BaseManager {
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
       })
-      .then(backup_guid =>
-        eventmesh.apiServerClient.getOperationResult({
+      .then(backupGuid =>
+        eventmesh.apiServerClient.getOperationResponse({
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          operationId: backup_guid,
+          operationId: backupGuid,
         }));
   }
 

@@ -179,7 +179,7 @@ class BackupManager {
         )
       )
       .then(() => {
-        return eventmesh.apiServerClient.getOperationResult({
+        return eventmesh.apiServerClient.getOperationResponse({
           resourceId: opts.instance_guid,
           operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
           operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,

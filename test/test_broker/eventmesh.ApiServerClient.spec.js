@@ -629,7 +629,7 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('getOperationResult', () => {
+    describe('getOperationResponse', () => {
       const opts = {
         resourceId: 'd1',
         operationName: 'backup',
@@ -646,7 +646,7 @@ describe('eventmesh', () => {
       _.assign(finalResource, input);
       it('gets the last operation Result', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
-        apiserver.getOperationResult(opts)
+        apiserver.getOperationResponse(opts)
           .then(res => {
             expect(res).to.eql(response);
             done();
@@ -656,7 +656,7 @@ describe('eventmesh', () => {
       });
       it('throws error if api call is errored', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource, 409);
-        return apiserver.getOperationResult(opts)
+        return apiserver.getOperationResponse(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
