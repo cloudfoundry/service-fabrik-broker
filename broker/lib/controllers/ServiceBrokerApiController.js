@@ -45,13 +45,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putInstance(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.putInstanceV2(req, res);
-    }
-    return this.putInstanceV1(req, res);
-  }
-
-  putInstanceV1(req, res) {
     const params = _.omit(req.body, 'plan_id', 'service_id');
 
     function done(result) {
@@ -79,46 +72,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(ServiceInstanceAlreadyExists, conflict);
   }
 
-  putInstanceV2(req, res) {
-    const params = _.omit(req.body, 'plan_id', 'service_id');
-
-    function done(result) {
-      let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
-      const body = {
-        dashboard_url: req.instance.dashboardUrl
-      };
-      if (req.instance.async) {
-        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64(result);
-      }
-      res.status(statusCode).send(body);
-    }
-
-    function conflict(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
-    }
-
-    req.operation_type = CONST.OPERATION_TYPE.CREATE;
-
-    return req.instance.create(params)
-      .then(done)
-      // Release lock in case of error: catch and throw
-      .catch(err => {
-        return lockManager.unlock(req.params.instance_id)
-          .throw(err);
-      })
-      .catch(ServiceInstanceAlreadyExists, conflict);
-  }
-
   patchInstance(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.patchInstanceV2(req, res);
-    }
-    return this.patchInstanceV1(req, res);
-  }
-
-  patchInstanceV1(req, res) {
     const params = _
       .chain(req.body)
       .omit('plan_id', 'service_id')
@@ -150,49 +104,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done);
   }
 
-  patchInstanceV2(req, res) {
-    const params = _
-      .chain(req.body)
-      .omit('plan_id', 'service_id')
-      .cloneDeep()
-      .value();
-    //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
-
-    function done(result) {
-      let statusCode = CONST.HTTP_STATUS_CODE.OK;
-      const body = {};
-      if (req.instance.async) {
-        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64(result);
-      } else if (result && result.description) {
-        body.description = result.description;
-      }
-      res.status(statusCode).send(body);
-    }
-
-    req.operation_type = CONST.OPERATION_TYPE.UPDATE;
-    return Promise
-      .try(() => {
-        if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
-          throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
-        }
-        return req.instance.update(params);
-      })
-      .then(done)
-      .catch(err => {
-        return lockManager.unlock(req.params.instance_id)
-          .throw(err);
-      });
-  }
-
   deleteInstance(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.deleteInstanceV2(req, res);
-    }
-    return this.deleteInstanceV1(req, res);
-  }
-
-  deleteInstanceV1(req, res) {
     const params = _.omit(req.query, 'plan_id', 'service_id');
 
     function done(result) {
@@ -216,34 +128,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done)
       .catch(ServiceInstanceNotFound, gone);
   }
-
-  deleteInstanceV2(req, res) {
-    const params = _.omit(req.query, 'plan_id', 'service_id');
-
-    function done(result) {
-      let statusCode = CONST.HTTP_STATUS_CODE.OK;
-      const body = {};
-      if (req.instance.async) {
-        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64(result);
-      }
-      res.status(statusCode).send(body);
-    }
-
-    function gone(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
-    }
-    req.operation_type = CONST.OPERATION_TYPE.DELETE;
-    return req.instance.delete(params)
-      .then(done)
-      .catch(err => {
-        return lockManager.unlock(req.params.instance_id)
-          .throw(err);
-      })
-      .catch(ServiceInstanceNotFound, gone);
-  }
-
   getLastInstanceOperation(req, res) {
     if (config.enable_service_fabrik_v2) {
       return this.getLastInstanceOperationV2(req, res);

@@ -152,6 +152,40 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+        it('does unlock when an error happens', function () {
+          mocks.director.getDeployments({
+            queued: true
+          }, 404);
+          mocks.apiServerEventMesh.nockLoadSpec(3);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(404);
+              mocks.verify();
+            });
+        });
         it('no context returns 202 Accepted', function () {
           mocks.director.getDeployments({
             queued: true

@@ -15,6 +15,9 @@ const catalog = require('../models/catalog');
 const ContinueWithNext = errors.ContinueWithNext;
 const BadRequest = errors.BadRequest;
 const CONST = require('../constants');
+const lockManager = require('../../../eventmesh').lockManager;
+const logger = require('../logger');
+const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
 
 class FabrikBaseController extends BaseController {
   constructor() {
@@ -28,6 +31,71 @@ class FabrikBaseController extends BaseController {
 
   get serviceBrokerName() {
     return _.get(config, 'broker_name', 'service-fabrik-broker');
+  }
+
+  handleByLockingResource(func, operationType, lastOperationCall) {
+    return (req, res, next) => {
+      return Promise.try(() => {
+          if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+            // Acquire lock for this instance
+            return lockManager.lock(req.params.instance_id, {
+                lockedResourceDetails: {
+                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                  resourceId: req.params.instance_id,
+                  operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
+                }
+              })
+              .catch(err => {
+                if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
+                  logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
+                } else {
+                  return next(err);
+                }
+              });
+          }
+        })
+        .then(() => this._handleWithUnlock(func, operationType, lastOperationCall, req, res, next));
+    };
+  }
+
+  _handleWithUnlock(func, operationType, lastOperationCall, req, res, next) {
+    const fn = _.isString(func) ? this[func] : func;
+    return Promise
+      .try(() => fn.call(this, req, res))
+      .catch(ContinueWithNext, () => {
+        _.set(req, 'params_copy', req.params);
+        return process.nextTick(next);
+      })
+      .then(() => {
+        _.set(req, 'params_copy', req.params);
+        // if sf20 is enabled Check res status and unlock based on the request and status        
+        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+          if (
+            operationType === CONST.OPERATION_TYPE.CREATE && res.statusCode === CONST.HTTP_STATUS_CODE.CONFLICT || // PutInstance => unlock in case of 409
+            operationType === CONST.OPERATION_TYPE.DELETE && res.statusCode === CONST.HTTP_STATUS_CODE.GONE || // DeleteInstance => unlock in case of 410
+            // lastoperation => unlock in case of status == 200 && state == 'succeeded' || state == 'failed'
+            lastOperationCall && res.statusCode === 200 && (res.body.state === CONST.OPERATION.SUCCEEDED || res.body.state === CONST.OPERATION.FAILED) ||
+            lastOperationCall && res.statusCode === 410 // lastoperation => unlock in case of status == 410
+          ) {
+            return lockManager.unlock(req.params.instance_id)
+              .catch(unlockErr => next(unlockErr));
+          }
+        }
+      })
+      .catch((err) => {
+        _.set(req, 'params_copy', req.params);
+        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+          // lastoperation Dont unlock
+          if (lastOperationCall) {
+            next(err);
+          }
+          return lockManager.unlock(req.params.instance_id)
+            .catch(unlockErr => next(unlockErr))
+            .then(() => next(err));
+        }
+        return next(err);
+      });
   }
 
   getConfigPropertyValue(name, defaultValue) {
