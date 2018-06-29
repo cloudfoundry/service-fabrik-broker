@@ -46,7 +46,7 @@ class DefaultBackupManager extends BaseManager {
       let patchAnnotations = currentAnnotations ? currentAnnotations : {};
       patchAnnotations.lockedByManager = config.broker_ip;
       patchBody.metadata.annotations = patchAnnotations;
-      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
+      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
         .tap((resource) => logger.info(`Successfully acquired processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
           `Updated resource with annotations is: `, resource));
     }
@@ -64,7 +64,7 @@ class DefaultBackupManager extends BaseManager {
           }
         }
       };
-      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_TYPES.BACKUP, CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
+      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
         .tap((resource) => logger.info(`Successfully released processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
           `Updated resource with annotations is: `, resource));
     }
@@ -84,11 +84,10 @@ class DefaultBackupManager extends BaseManager {
           operationId: changedOptions.guid
         })
         .then(options => {
-          const changedOptions = JSON.parse(options);
           return Promise.try(() => {
-            const plan = catalog.getPlan(changedOptions.plan_id);
+            const plan = catalog.getPlan(options.plan_id);
             return bm.createManager(plan);
-          }).then(manager => manager.abortLastBackup(changedOptions));
+          }).then(manager => manager.abortLastBackup(options));
         });
     }
 
@@ -100,31 +99,30 @@ class DefaultBackupManager extends BaseManager {
           operationId: changedOptions.guid
         })
         .then(options => {
-          const changedOptions = JSON.parse(options);
           return this.backupStore
             .deleteBackupFile(options)
             .then(() => eventmesh.apiServerClient.updateOperationState({
-              resourceId: changedOptions.instance_guid,
+              resourceId: options.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: changedOptions.guid,
+              operationId: options.guid,
               stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
             }))
             .catch(err => {
               return Promise
                 .try(() => logger.error(`Error during delete of backup`, err))
                 .tap(() => eventmesh.apiServerClient.updateOperationState({
-                  resourceId: changedOptions.instance_guid,
+                  resourceId: options.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: changedOptions.guid,
+                  operationId: options.guid,
                   stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
                 }))
                 .tap(() => eventmesh.apiServerClient.updateOperationResponse({
-                  resourceId: changedOptions.instance_guid,
+                  resourceId: options.instance_guid,
                   operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                   operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: changedOptions.guid,
+                  operationId: options.guid,
                   value: err
                 }));
             });

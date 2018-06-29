@@ -150,8 +150,8 @@ class BnRStatusPollerJob extends BaseJob {
           return lockManager.lock(instance_guid, {
               lockType: CONST.ETCD.LOCK_TYPE.READ,
               lockedResourceDetails: {
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.BACKUP,
-                resourceName: CONST.APISERVER.RESOURCE_NAMES.DEFAULT_BACKUP,
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
                 resourceId: backup_guid,
                 operation: CONST.OPERATION_TYPE.BACKUP
               }

@@ -20,10 +20,9 @@ class LockManager {
    */
 
   isWriteLocked(resourceId) {
-    return eventmesh.apiServerClient.getLockDetails(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
-      .then(options => {
+    return eventmesh.apiServerClient.getLockDetails(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
+      .then(lockDetails => {
         const currentTime = new Date();
-        const lockDetails = JSON.parse(options);
         const lockTime = new Date(lockDetails.lockTime);
         const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
         if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
@@ -49,19 +48,17 @@ class LockManager {
           name : instance_id,
       },
       spec: {
-          options: {
-          JSON.stringify({
-              lockType: <Read/Write>,
-              lockTime: <time in UTC when lock was acquired, can be updated when one wants to refresh lock>,
-              lockTTL: <lock ttl in miliseconds=> set to Infinity if not provided>,
-              lockedResourceDetails: {
-                  resourceType: <type of resource who is trying to acquire lock ex. backup>
-                  resourceName: <name of resource who is trying to acquire lock ex. defaultbackup>
-                  resourceId: <id of resource who is trying to acquire lock ex.  backup_guid>
-                  operation: <operation of locker ex. update/backup>
+          options: JSON.stringify({
+                lockType: <Read/Write>,
+                lockTime: <time in UTC when lock was acquired, can be updated when one wants to refresh lock>,
+                lockTTL: <lock ttl in miliseconds=> set to Infinity if not provided>,
+                lockedResourceDetails: {
+                    resourceGroup: <type of resource who is trying to acquire lock ex. backup>
+                    resourceType: <name of resource who is trying to acquire lock ex. defaultbackup>
+                    resourceId: <id of resource who is trying to acquire lock ex.  backup_guid>
+                    operation: <operation of locker ex. update/backup>
               }
-          })    
-          }
+          })
       }
   }
   Lock is tracked via resource of resource group lock and resource type deploymentlock.
@@ -81,8 +78,8 @@ class LockManager {
    * @param {number} [lockDetails.lockTTL=Infinity] - TTL in miliseconds for the lock that is to be acquired
    * @param {string} lockDetails.lockType - Type of lock ('READ'/'WRITE')
    * @param {object} [lockDetails.lockedResourceDetails] - Details of the operation who is trying to acquire the lock
-   * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Type of resource for which lock is being acquired. ex: backup
-   * @param {string} [lockDetails.lockedResourceDetails.resourceName] - Name of resource for which lock is being acquired. ex: defaultbackup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceGroup] - Type of resource for which lock is being acquired. ex: backup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Name of resource for which lock is being acquired. ex: defaultbackup
    * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
    * @param {string} [lockDetails.lockedResourceDetails.operation=unknown] - Operation type who is acquiring the lock. ex: backup
    */
@@ -99,8 +96,8 @@ class LockManager {
     _.extend(opts, {
       'lockTime': currentTime
     });
-    logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
-    return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
+    logger.debug(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
+    return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
       .then(resource => {
         const resourceBody = resource.body;
         const currentlLockDetails = JSON.parse(resourceBody.spec.options);
@@ -117,10 +114,10 @@ class LockManager {
               options: JSON.stringify(opts)
             }
           });
-          return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId, patchBody);
+          return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
-      .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
+      .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
       .catch(err => {
         if (err instanceof NotFound) {
           const spec = {
@@ -136,8 +133,8 @@ class LockManager {
             spec: spec,
             status: status
           };
-          return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, body)
-            .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
+          return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
+            .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
         } else if (err instanceof Conflict) {
           throw new EtcdLockError(err.message);
         }
@@ -157,11 +154,11 @@ class LockManager {
     maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
 
     function unlockResourceRetry(currentRetryCount) {
-      return eventmesh.apiServerClient.deleteLock(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, resourceId)
-        .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
+      return eventmesh.apiServerClient.deleteLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
+        .tap(() => logger.debug(`Successfully unlocked resource ${resourceId} `))
         .catch(err => {
           if (err instanceof NotFound) {
-            logger.info(`Successfully Unlocked resource ${resourceId} `);
+            logger.debug(`Successfully Unlocked resource ${resourceId} `);
             return;
           }
           if (currentRetryCount >= maxRetryCount) {
@@ -173,7 +170,7 @@ class LockManager {
             .then(() => unlockResourceRetry(resourceId, currentRetryCount + 1));
         });
     }
-    logger.info(`Attempting to unlock resource ${resourceId}`);
+    logger.debug(`Attempting to unlock resource ${resourceId}`);
     return unlockResourceRetry(0);
   }
 

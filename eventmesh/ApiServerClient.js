@@ -77,7 +77,7 @@ class ApiServerClient {
   }
 
   createLock(lockType, body) {
-    return this._createResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, lockType, body)
+    return this._createResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, lockType, body)
       .catch(err => {
         return buildErrors(err);
       });
@@ -98,7 +98,7 @@ class ApiServerClient {
   }
 
   deleteLock(resourceType, resourceId) {
-    return this.deleteResource(CONST.APISERVER.RESOURCE_TYPES.LOCK, resourceType, resourceId)
+    return this.deleteResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, resourceType, resourceId)
       .catch(err => {
         return buildErrors(err);
       });
@@ -113,10 +113,10 @@ class ApiServerClient {
 
   getLockDetails(resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
-      .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_TYPES.LOCK}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+      .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_GROUPS.LOCK}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .then(resource => {
-        return resource.body.spec.options;
+        return JSON.parse(resource.body.spec.options);
       })
       .catch(err => {
         return buildErrors(err);
@@ -136,8 +136,8 @@ class ApiServerClient {
     const opts = {
       operationId: resourceId,
       resourceId: resourceId,
-      operationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-      operationType: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
+      operationName: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      operationType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
       value: val
     };
     return this.createOperation(opts);
@@ -147,7 +147,7 @@ class ApiServerClient {
     const opts = {
       operationId: resourceId,
       resourceId: resourceId,
-      operationName: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
+      operationName: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       operationType: resourceType,
       stateValue: stateValue
     };
@@ -157,7 +157,7 @@ class ApiServerClient {
   getResourceState(resourceType, resourceId) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
         .get())
       .then(json => json.body.status.state)
@@ -215,9 +215,8 @@ class ApiServerClient {
     logger.info('Patching Operation with :', opts);
     return this.getOperationResult(opts)
       .then(res => {
-        let resJson = JSON.parse(res);
-        logger.info(`Patching ${resJson} with ${opts.value}`);
-        opts.value = _.merge(resJson, opts.value);
+        logger.info(`Patching ${res} with ${opts.value}`);
+        opts.value = _.merge(res, opts.value);
         return this.updateOperationResponse(opts);
       });
   }
@@ -292,8 +291,8 @@ class ApiServerClient {
     patchedResource.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
+        .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.DIRECTOR](opts.resourceId)
         .patch({
           body: patchedResource
         }))
@@ -311,8 +310,8 @@ class ApiServerClient {
   getLastOperation(opts) {
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
-        .apis[`${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_NAMES.DIRECTOR](opts.resourceId)
+        .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.DIRECTOR](opts.resourceId)
         .get())
       .then(json => json.body.metadata.labels[`last_${opts.operationName}_${opts.operationType}`])
       .catch(err => {
@@ -330,9 +329,8 @@ class ApiServerClient {
   patchOperationOptions(opts) {
     return this.getOperationOptions(opts)
       .then(res => {
-        let resJson = JSON.parse(res);
         logger.info(`Patching ${res} with ${opts.value}`);
-        opts.value = _.merge(resJson, opts.value);
+        opts.value = _.merge(res, opts.value);
         return this.updateOperationOptions(opts);
       });
   }
@@ -371,7 +369,7 @@ class ApiServerClient {
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
-      .then(json => json.body.spec.options)
+      .then(json => JSON.parse(json.body.spec.options))
       .catch(err => {
         return buildErrors(err);
       });
@@ -410,7 +408,7 @@ class ApiServerClient {
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
-      .then(json => json.body.status.response)
+      .then(json => JSON.parse(json.body.status.response))
       .catch(err => {
         return buildErrors(err);
       });

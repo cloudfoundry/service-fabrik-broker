@@ -45,8 +45,8 @@ exports.lock = function (operationType, lastOperationCall) {
       // Acquire lock for this instance
       return lockManager.lock(req.params.instance_id, {
           lockedResourceDetails: {
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT,
-            resourceName: CONST.APISERVER.RESOURCE_NAMES.DIRECTOR,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: req.params.instance_id,
             operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
           }

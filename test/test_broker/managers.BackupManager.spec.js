@@ -85,7 +85,8 @@ describe('managers', function () {
       }, 2);
       mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
         status: {
-          state: 'in_progress'
+          state: 'in_progress',
+          response: '{}'
         }
       });
       return manager.startBackup(opts)

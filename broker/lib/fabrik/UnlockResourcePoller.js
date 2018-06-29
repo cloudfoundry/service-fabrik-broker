@@ -13,7 +13,7 @@ class UnlockResourcePoller {
   static start() {
     function poller(object, interval) {
       const lockDetails = JSON.parse(object.spec.options);
-      return eventmesh.apiServerClient.getResource(lockDetails.lockedResourceDetails.resourceType, lockDetails.lockedResourceDetails.resourceName, lockDetails.lockedResourceDetails.resourceId)
+      return eventmesh.apiServerClient.getResource(lockDetails.lockedResourceDetails.resourceGroup, lockDetails.lockedResourceDetails.resourceType, lockDetails.lockedResourceDetails.resourceId)
         .then((resource) => {
           const resourceState = resource.body.status.state;
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
@@ -36,13 +36,13 @@ class UnlockResourcePoller {
     function startPoller(event) {
       logger.debug('Received Lock Event: ', event);
       const lockDetails = JSON.parse(event.object.spec.options);
-      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceType === CONST.APISERVER.RESOURCE_TYPES.BACKUP) {
+      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
         // startPoller(event.object);
         logger.info('starting unlock resource poller for deployment ', event.object.metadata.name);
         const interval = setInterval(() => poller(event.object, interval), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
       }
     }
-    return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_TYPES.LOCK, CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS, startPoller);
+    return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller);
   }
 }
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {

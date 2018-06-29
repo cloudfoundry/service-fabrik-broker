@@ -22,7 +22,9 @@ const sampleLockResource = {
     creationTimestamp: '2018-06-18T05:13:26Z'
   },
   spec: {
-    options: 'sample_options'
+    options: JSON.stringify({
+      'lockDetails': 'lockdetails'
+    })
   },
   status: {}
 };
@@ -218,7 +220,7 @@ describe('eventmesh', () => {
         nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource);
         apiserver.getLockDetails('deploymentlock', 'l1')
           .then(res => {
-            expect(res).to.eql(sampleLockResource.spec.options);
+            expect(res).to.eql(JSON.parse(sampleLockResource.spec.options));
             done();
             verify();
           })
@@ -569,14 +571,17 @@ describe('eventmesh', () => {
       };
       const input = {};
       input.spec = {};
-      input.spec.options = 'some_value';
+      const options = {
+        'options': 'opt'
+      };
+      input.spec.options = JSON.stringify(options);
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
       it('gets the last operation options', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getOperationOptions(opts)
           .then(res => {
-            expect(res).to.eql('some_value');
+            expect(res).to.eql(options);
             done();
             verify();
           })
@@ -633,14 +638,17 @@ describe('eventmesh', () => {
       };
       const input = {};
       input.status = {};
-      input.status.response = 'some_response';
+      const response = {
+        'response': 'res'
+      };
+      input.status.response = JSON.stringify(response);
       const finalResource = _.cloneDeep(sampleDeploymentResource);
       _.assign(finalResource, input);
       it('gets the last operation Result', done => {
         nockGetResource('backup', 'defaultbackup', 'b1', finalResource);
         apiserver.getOperationResult(opts)
           .then(res => {
-            expect(res).to.eql('some_response');
+            expect(res).to.eql(response);
             done();
             verify();
           })

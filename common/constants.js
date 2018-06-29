@@ -230,12 +230,12 @@ module.exports = Object.freeze({
     HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
-    RESOURCE_TYPES: {
+    RESOURCE_GROUPS: {
       LOCK: 'lock',
       DEPLOYMENT: 'deployment',
       BACKUP: 'backup'
     },
-    RESOURCE_NAMES: {
+    RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
       DEFAULT_BACKUP: 'defaultbackups'

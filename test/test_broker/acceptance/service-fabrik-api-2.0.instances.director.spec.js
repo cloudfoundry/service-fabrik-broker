@@ -1747,7 +1747,7 @@ describe('service-fabrik-api-sf2.0', function () {
             },
             status: {
               state: 'deleted',
-              response: ''
+              response: '{}'
             }
           }, 3);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
@@ -1801,7 +1801,7 @@ describe('service-fabrik-api-sf2.0', function () {
             },
             status: {
               state: 'deleted',
-              response: ''
+              response: '{}'
             }
           }, 3);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});

@@ -19,8 +19,8 @@ function buildLockResourceOptions(lockType, lockTime, lockTTL) {
     lockTime: lockTime ? lockTime : startTime,
     lockTTL: lockTTL ? lockTTL : Infinity,
     lockedResourceDetails: {
-      resourceType: 'backup',
-      resourceName: 'defaultbackup',
+      resourceGroup: 'backup',
+      resourceType: 'defaultbackup',
       resourceId: 'guid',
       operation: 'backup'
     }
@@ -67,7 +67,7 @@ const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
         LockManagerDummy.getLockResourceOptionsDummy(resourceName, resourceId);
         return Promise.try(() => {
           if (lockoptions[resourceId]) {
-            return lockoptions[resourceId];
+            return JSON.parse(lockoptions[resourceId]);
           }
           if (resourceId === 'lockId4') {
             throw new NotFound('Lock not found');
@@ -124,7 +124,7 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(true);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId1');
           });
       });
@@ -134,7 +134,7 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId2');
           });
       });
@@ -144,7 +144,7 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId3');
           });
       });
@@ -154,7 +154,7 @@ describe('eventmesh', () => {
           .then(result => {
             expect(result).to.eql(false);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId4');
           });
       });
@@ -165,7 +165,7 @@ describe('eventmesh', () => {
             expect(err).to.have.status(500);
             expect(err.description).to.eql('Internal Server Error');
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
-            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId5');
           });
       });
@@ -178,8 +178,8 @@ describe('eventmesh', () => {
             expect(err instanceof EtcdLockError).to.eql(true);
             expect(err.description).to.eql(`Resource lockId1 was locked for backup operation with id guid at ${startTime}`);
             expect(getResourceSpy.callCount).to.equal(1);
-            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId1');
           });
       });
@@ -188,12 +188,12 @@ describe('eventmesh', () => {
         return lockManager.lock('lockId2')
           .then(() => {
             expect(getResourceSpy.callCount).to.equal(1);
-            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId2');
             expect(updateResourceSpy.callCount).to.equal(1);
-            expect(updateResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(updateResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(updateResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(updateResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(updateResourceSpy.firstCall.args[2]).to.eql('lockId2');
             // TODO Check for arg[3] as well
           });
@@ -203,11 +203,11 @@ describe('eventmesh', () => {
         return lockManager.lock('lockId4')
           .then(() => {
             expect(getResourceSpy.callCount).to.equal(1);
-            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId4');
             expect(createLockResourceSpy.callCount).to.equal(1);
-            expect(createLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(createLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             //TODO check for spy body/patch arguments
           });
       });
@@ -218,8 +218,8 @@ describe('eventmesh', () => {
             expect(err).to.have.status(500);
             expect(err.description).to.eql('Internal Server Error');
             expect(getResourceSpy.callCount).to.equal(1);
-            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.LOCK);
-            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_NAMES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId5');
           });
       });
