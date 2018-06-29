@@ -367,6 +367,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           instance_guid: req.params.instance_id,
           plan_id: req.body.plan_id || planDetails.entity.unique_id,
           service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
+          username: req.user.name,
+          useremail: req.user.email || '',
           context: context
         };
         return backupOptions;
