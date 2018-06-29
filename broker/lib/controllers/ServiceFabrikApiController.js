@@ -426,7 +426,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             value: backupGuid
-          }))
+          }));
       })
       .then(() => {
         res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
@@ -444,7 +444,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             .throw(err);
         }
         throw err;
-      })
+      });
   }
 
   getLastBackup(req, res) {
