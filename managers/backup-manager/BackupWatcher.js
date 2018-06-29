@@ -23,7 +23,7 @@ class DefaultBackupManager extends BaseManager {
    */
   registerWatcher() {
     logger.info(`Registering Backup watcher`);
-    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE}, ${CONST.OPERATION.ABORT}, ${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
+    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
     return eventmesh.apiServerClient.registerWatcher('backup', 'defaultbackup', this.worker, queryString);
   }
   /**
