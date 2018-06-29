@@ -353,6 +353,37 @@ class BackupManager {
       });
   }
 
+  deleteBackup(options) {
+    logger.info('Attempting delete with:', options);
+    return this.backupStore
+      .deleteBackupFile(options)
+      .then(() => eventmesh.apiServerClient.updateOperationState({
+        resourceId: options.instance_guid,
+        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+        operationId: options.backup_guid,
+        stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
+      }))
+      .catch(err => {
+        return Promise
+          .try(() => logger.error(`Error during delete of backup`, err))
+          .tap(() => eventmesh.apiServerClient.updateOperationState({
+            resourceId: options.instance_guid,
+            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+            operationId: options.backup_guid,
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
+          }))
+          .tap(() => eventmesh.apiServerClient.updateOperationResponse({
+            resourceId: options.instance_guid,
+            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+            operationId: options.guid,
+            value: err
+          }));
+      });
+  }
+
   abortLastBackup(abortOptions, force) {
     logger.info('Starting abort with following options:', abortOptions);
     return eventmesh.apiServerClient.updateOperationState({
