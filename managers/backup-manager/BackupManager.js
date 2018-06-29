@@ -116,7 +116,8 @@ class BackupManager {
     }
 
     let metaUpdated = false,
-      backupStarted = false;
+      backupStarted = false,
+      registeredStatusPoller = false;
 
     return Promise
       .all([
@@ -144,6 +145,7 @@ class BackupManager {
             }, instanceInfo);
           })
           .then(agent_ip => {
+            registeredStatusPoller = true;
             return this.agent.startBackup(agent_ip, backup, vms);
           })
           .then(() => {
@@ -187,6 +189,15 @@ class BackupManager {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
+          .tap(() => {
+            if (registeredStatusPoller) {
+              logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${backup.guid}`);
+              return ScheduleManager
+                .cancelSchedule(`${deploymentName}_backup_${backup.guid}`,
+                  CONST.JOB.BNR_STATUS_POLLER)
+                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+            }
+          })
           .tap(() => eventmesh.apiServerClient.updateOperationState({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,

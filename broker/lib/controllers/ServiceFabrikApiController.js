@@ -46,6 +46,32 @@ class ServiceFabrikApiController extends FabrikBaseController {
     super();
   }
 
+  static _processError(errorResponse) {
+    let message = errorResponse.message;
+    if (errorResponse.error && errorResponse.error.description) {
+      message = `${message}. ${errorResponse.error.description}`;
+    }
+    let err;
+    switch (errorResponse.status) {
+    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+      err = new BadRequest(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+      err = new NotFound(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.CONFLICT:
+      err = new Conflict(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+      err = new errors.Forbidden(message);
+      break;
+    default:
+      err = new InternalServerError(message);
+      break;
+    }
+    throw err;
+  }
+
   /**
    * Poll for Status until opts.start_state changes
    * @param {object} opts - Object containing options
@@ -65,8 +91,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const duration = (new Date() - opts.started_at) / 1000;
         logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
         if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
-          logger.error(`Backup not picked up from the queue ${opts.operationId}`);
-          throw new Timeout(`Backup not picked up from queue`);
+          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
+          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
         }
         if (state === opts.start_state) {
           return ServiceFabrikApiController.getResourceOperationStatus(opts);
@@ -77,31 +103,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
               operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               operationId: opts.operationId,
             })
-            .then(json => {
-              logger.info('Operation manager reported error', json);
-              let message = json.message;
-              if (json.error && json.error.description) {
-                message = `${message}. ${json.error.description}`;
-              }
-              let err;
-              switch (json.status) {
-              case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-                err = new BadRequest(message);
-                break;
-              case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-                err = new NotFound(message);
-                break;
-              case CONST.HTTP_STATUS_CODE.CONFLICT:
-                err = new Conflict(message);
-                break;
-              case CONST.HTTP_STATUS_CODE.FORBIDDEN:
-                err = new errors.Forbidden(message);
-                break;
-              default:
-                err = new InternalServerError(message);
-                break;
-              }
-              throw err;
+            .then(errorResponse => {
+              logger.info('Operation manager reported error', errorResponse);
+              return this._processError(errorResponse);
             });
         } else {
           finalState = state;
@@ -116,10 +120,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (result.state) {
           return result;
         }
-        let status = {};
-        status.state = finalState;
-        status.response = result;
-        return status;
+        return {
+          state: finalState,
+          response: result
+        };
       });
   }
 

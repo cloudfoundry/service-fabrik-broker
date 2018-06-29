@@ -324,8 +324,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       failed(err);
     }
 
-    // Check if lock is present, if not then put a lock else proceed.
-    // Required for migrating from sf1.0 to sf2.0 to handle ongoing operations which don't have etcd lock
     return req.instance.lastOperation(operation)
       .then(done)
       .catch(AssertionError, failed)
@@ -333,13 +331,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
   }
 
   putBinding(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.putBindingV2(req, res);
-    }
-    return this.putBindingV1(req, res);
-  }
-
-  putBindingV1(req, res) {
     const params = _(req.body)
       .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
@@ -362,37 +353,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(ServiceBindingAlreadyExists, conflict);
   }
 
-  putBindingV2(req, res) {
-    const params = _(req.body)
-      .omit('plan_id', 'service_id')
-      .set('binding_id', req.params.binding_id)
-      .value();
-
-    function done(credentials) {
-      res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
-        credentials: credentials
-      });
-    }
-
-    function conflict(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
-    }
-
-    // Check if write locked
-    return req.instance.bind(params)
-      .then(done)
-      .catch(ServiceBindingAlreadyExists, conflict);
-  }
-
   deleteBinding(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.deleteBindingV2(req, res);
-    }
-    return this.deleteBindingV1(req, res);
-  }
-
-  deleteBindingV1(req, res) {
     const params = _(req.query)
       .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
@@ -409,26 +370,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => req.instance.unbind(params))
-      .then(done)
-      .catch(ServiceBindingNotFound, gone);
-  }
-
-  deleteBindingV2(req, res) {
-    const params = _(req.query)
-      .omit('plan_id', 'service_id')
-      .set('binding_id', req.params.binding_id)
-      .value();
-
-    function done() {
-      res.status(CONST.HTTP_STATUS_CODE.OK).send({});
-    }
-
-    function gone(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
-    }
-    // Check if write locked
-    return req.instance.unbind(params)
       .then(done)
       .catch(ServiceBindingNotFound, gone);
   }

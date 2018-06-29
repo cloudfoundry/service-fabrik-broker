@@ -51,7 +51,7 @@ class DirectorInstance extends BaseInstance {
 
   get async() {
     if (config.enable_service_fabrik_v2) {
-      return this.operation !== CONST.OPERATION_TYPE.BACKUP;
+      return true;
       //Backup operation is being turned into SYNCH and behind scenese polling will happen to status check.
       //Rationale : Bind operations can happen while backups are happening.
     } else {

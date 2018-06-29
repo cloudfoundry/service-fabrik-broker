@@ -89,12 +89,12 @@ class BnRStatusPollerJob extends BaseJob {
         } else {
           logger.info(`Instance ${instance_guid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
           const currentTime = new Date();
-          const backup_triggered_duration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
+          const backupTriggeredDuration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
           return Promise
             .try(() => bosh.director.getDirectorConfig(instanceInfo.deployment))
             .then(directorConfig => {
-              const lock_deployment_max_duration = directorConfig.lock_deployment_max_duration;
-              if (backup_triggered_duration > lock_deployment_max_duration) {
+              const lockDeploymentMaxDuration = directorConfig.lock_deployment_max_duration;
+              if (backupTriggeredDuration > lockDeploymentMaxDuration) {
                 //Operation timed out
                 if (!instanceInfo.abortStartTime) {
                   //Operation not aborted. Aborting operation and with abort start time
@@ -179,7 +179,7 @@ class BnRStatusPollerJob extends BaseJob {
         } else {
           logger.info(`Instance ${instance_guid} ${operationName} for backup guid ${backup_guid} still in-progress - `, operationStatusResponse);
           const currentTime = new Date();
-          const backup_triggered_duration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
+          const backupTriggeredDuration = (currentTime - new Date(instanceInfo.started_at)) / 1000;
           return Promise
             .try(() => eventmesh
               .apiServerClient
@@ -191,8 +191,8 @@ class BnRStatusPollerJob extends BaseJob {
               }))
             .then(() => bosh.director.getDirectorConfig(instanceInfo.deployment))
             .then(directorConfig => {
-              const lock_deployment_max_duration = directorConfig.lock_deployment_max_duration;
-              if (backup_triggered_duration > lock_deployment_max_duration) {
+              const lockDeploymentMaxDuration = directorConfig.lock_deployment_max_duration;
+              if (backupTriggeredDuration > lockDeploymentMaxDuration) {
                 //Operation timed out
                 if (!instanceInfo.abortStartTime) {
                   //Operation not aborted. Aborting operation and with abort start time
