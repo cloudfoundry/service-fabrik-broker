@@ -27,7 +27,8 @@ class Service {
         metadata: null,
         requires: [],
         plan_updateable: true,
-        dashboard_client: {}
+        dashboard_client: {},
+        security_group_params: null
       })
       .value();
   }
@@ -51,7 +52,8 @@ class Service {
       'metadata',
       'requires',
       'plan_updateable',
-      'dashboard_client'
+      'dashboard_client',
+      'security_group_params'
     ];
   }
 }

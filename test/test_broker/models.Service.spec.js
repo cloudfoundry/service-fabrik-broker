@@ -79,7 +79,8 @@ describe('models', () => {
           requires: [],
           plan_updateable: true,
           dashboard_client: {},
-          plans: []
+          plans: [],
+          security_group_params: null
         });
       });
     });
