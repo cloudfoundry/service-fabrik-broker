@@ -17,7 +17,7 @@ new DBManager(); //to start the BnRStatusPoller
 
 class DefaultBackupManager extends BaseManager {
 
-  _processBackup(changeObjectBody) {
+  static _processBackup(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering backup with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
@@ -25,7 +25,7 @@ class DefaultBackupManager extends BaseManager {
       .then(manager => manager.startBackup(changedOptions));
   }
 
-  _processAbort(changeObjectBody) {
+  static _processAbort(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     return eventmesh.apiServerClient.getOperationOptions({
         resourceId: changedOptions.instance_guid,
@@ -41,7 +41,7 @@ class DefaultBackupManager extends BaseManager {
       });
   }
 
-  _processDelete(changeObjectBody) {
+  static _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     return eventmesh.apiServerClient.getOperationOptions({
         resourceId: changedOptions.instance_guid,
@@ -116,7 +116,7 @@ class DefaultBackupManager extends BaseManager {
       // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
       return Promise.try(() => {
           if (!changeObjectBody.metadata.annotations || changeObjectBody.metadata.annotations.lockedByManager === '') {
-            return this.acquireProcessingLock(changeObjectBody)
+            return BaseManager.acquireProcessingLock(changeObjectBody)
               .catch(err => {
                 if (err instanceof Conflict) {
                   processingLockConflict = true;
@@ -134,11 +134,11 @@ class DefaultBackupManager extends BaseManager {
         .then(() => {
           if (!processingLockConflict) {
             if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-              return this._processBackup(changeObjectBody);
+              return DefaultBackupManager._processBackup(changeObjectBody);
             } else if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
-              return this._processAbort(changeObjectBody);
+              return DefaultBackupManager._processAbort(changeObjectBody);
             } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-              return this._processDelete(changeObjectBody);
+              return DefaultBackupManager._processDelete(changeObjectBody);
             }
           }
         })
@@ -150,7 +150,7 @@ class DefaultBackupManager extends BaseManager {
         })
         .then(() => {
           if (!processingLockConflict) {
-            return this.releaseProcessingLock(changeObjectBody)
+            return BaseManager.releaseProcessingLock(changeObjectBody)
               .catch(e => logger.error(`Caught error while releasing processing lock ${changedOptions}:`, e));
           }
         });

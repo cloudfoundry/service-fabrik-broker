@@ -22,7 +22,7 @@ class BaseManager {
   /**
    * @description Patches resource with annotation key lockedByManager and value broker ip
    */
-  acquireProcessingLock(changeObjectBody) {
+  static acquireProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Trying to acquire processing lock for the backup request for backup guid: ', changedOptions.guid);
     // Set lockedManager annotations to true
@@ -40,7 +40,7 @@ class BaseManager {
    * @description Sets lockedByManager annotation to empty string
    */
 
-  releaseProcessingLock(changeObjectBody) {
+  static releaseProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Trying to release processing lock for the backup request for backup guid: ', changedOptions.guid);
     const patchBody = {
