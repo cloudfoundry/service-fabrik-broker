@@ -176,7 +176,12 @@ class DefaultBackupManager extends BaseManager {
             logger.error(`Caught error while starting backup ${changedOptions.guid}`, e);
           }
         })
-        .then(() => releaseProcessingLock());
+        .then(() => {
+          if (!processingLockConflict) {
+            return releaseProcessingLock()
+              .catch(e => logger.error(`Caught error while releasing processing lock ${changedOptions}:`, e));
+          }
+        });
     }
   }
 }
