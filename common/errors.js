@@ -245,12 +245,12 @@ class ServiceBindingAlreadyExists extends BadRequest {
 }
 exports.ServiceBindingAlreadyExists = ServiceBindingAlreadyExists;
 
-class EtcdLockError extends UnprocessableEntity {
+class ResourceAlreadyLocked extends UnprocessableEntity {
   constructor(message) {
     super(message);
   }
 }
-exports.EtcdLockError = EtcdLockError;
+exports.ResourceAlreadyLocked = ResourceAlreadyLocked;
 
 class SecurityGroupNotFound extends NotFound {
   constructor(name) {

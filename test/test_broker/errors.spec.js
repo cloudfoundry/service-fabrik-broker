@@ -27,7 +27,7 @@ const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 const AsyncRequired = errors.AsyncRequired;
-const EtcdLockError = errors.EtcdLockError;
+const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
 const HttpServerError = errors.HttpServerError;
 const InternalServerError = errors.InternalServerError;
 const ContainerStartError = errors.ContainerStartError;
@@ -375,9 +375,9 @@ describe('errors', () => {
     });
   });
 
-  describe('EtcdLockError', () => {
+  describe('ResourceAlreadyLocked', () => {
     const message = 'Lock error';
-    let etcdLockError = new EtcdLockError(message);
+    let etcdLockError = new ResourceAlreadyLocked(message);
 
     it('sets the class properties correctly', () => {
       expect(etcdLockError.status).to.eql(422);

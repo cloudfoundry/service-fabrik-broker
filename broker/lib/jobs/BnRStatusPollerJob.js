@@ -8,7 +8,7 @@ const ScheduleManager = require('./ScheduleManager');
 const utils = require('../utils');
 const logger = require('../logger');
 const errors = require('../errors');
-const EtcdLockError = errors.EtcdLockError;
+const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
 const config = require('../config');
 const bosh = require('../bosh');
 const catalog = require('../models').catalog;
@@ -157,7 +157,7 @@ class BnRStatusPollerJob extends BaseJob {
               }
             })
             .catch(err => {
-              if (err instanceof EtcdLockError) {
+              if (err instanceof ResourceAlreadyLocked) {
                 logger.info(`Proceeding as lock is already acquired for the resource: ${instance_guid}`);
               } else {
                 throw err;

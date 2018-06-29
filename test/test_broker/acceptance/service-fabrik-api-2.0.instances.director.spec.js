@@ -204,7 +204,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.apiServerEventMesh.nockLoadSpec(7);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -215,16 +215,6 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_progress'
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              response: '{"guid": "some_guid"}'
-            }
-          });
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -256,7 +246,7 @@ describe('service-fabrik-api-sf2.0', function () {
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.apiServerEventMesh.nockLoadSpec(7);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -267,16 +257,6 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_progress'
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              response: '{"guid": "some_guid"}'
-            }
-          });
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -310,7 +290,7 @@ describe('service-fabrik-api-sf2.0', function () {
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.apiServerEventMesh.nockLoadSpec(7);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -321,16 +301,6 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_progress'
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              response: '{"guid": "some_guid"}'
-            }
-          });
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -346,284 +316,6 @@ describe('service-fabrik-api-sf2.0', function () {
             .then(res => {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('guid');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should initiate a start-backup and poll for status recursively till backup manager picks it up', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.apiServerEventMesh.nockLoadSpec(8);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_queue'
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_progress',
-              response: '{"guid": "some_guid"}'
-            }
-          }, 2);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .send({
-              type: type
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should throw a Bad Request error which is populated by the backup manager', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.apiServerEventMesh.nockLoadSpec(8);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'error',
-              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.BAD_REQUEST}}`
-            }
-          }, 2);
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .set('Accept', 'application/json')
-            .send({
-              type: type
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(CONST.HTTP_STATUS_CODE.BAD_REQUEST);
-              expect(res.body.description).to.eql('some error');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should throw a Not Found error which is populated by the backup manager', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.apiServerEventMesh.nockLoadSpec(8);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'error',
-              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.NOT_FOUND}}`
-            }
-          }, 2);
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .set('Accept', 'application/json')
-            .send({
-              type: type
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(CONST.HTTP_STATUS_CODE.NOT_FOUND);
-              expect(res.body.description).to.eql('some error');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should throw a Conflict error which is populated by the backup manager', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.apiServerEventMesh.nockLoadSpec(8);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'error',
-              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.CONFLICT}}`
-            }
-          }, 2);
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .set('Accept', 'application/json')
-            .send({
-              type: type
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(CONST.HTTP_STATUS_CODE.CONFLICT);
-              expect(res.body.description).to.eql('some error');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should throw an InternalServerError error which is populated by the backup manager', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.apiServerEventMesh.nockLoadSpec(8);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'error',
-              response: `{"message": "some error", "status": ${CONST.HTTP_STATUS_CODE.METHOD_NOT_ALLOWED}}`
-            }
-          }, 2);
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .set('Accept', 'application/json')
-            .send({
-              type: type
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR);
-              expect(res.body.description).to.eql('some error');
               mocks.verify();
               done();
             });
@@ -700,7 +392,7 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.apiServerEventMesh.nockLoadSpec(7);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -711,16 +403,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              state: 'in_progress'
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-            status: {
-              response: '{"guid": "some_guid"}'
-            }
-          });
+
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)

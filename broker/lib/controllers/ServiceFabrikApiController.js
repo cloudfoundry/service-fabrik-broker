@@ -23,7 +23,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const InternalServerError = errors.InternalServerError;
-const EtcdLockError = errors.EtcdLockError;
+const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
 const ScheduleManager = require('../jobs');
 const config = require('../config');
 const CONST = require('../constants');
@@ -427,19 +427,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             value: backupGuid
           }))
-          .then(() => ServiceFabrikApiController.getResourceOperationStatus({
-            operationId: backupGuid,
-            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            started_at: backupStartedAt
-          }));
       })
-      .then(status => {
-        logger.info('Operation response:', status.response);
-        res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send(status.response);
+      .then(() => {
+        res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
+          name: CONST.OPERATION_TYPE.BACKUP,
+          guid: backupGuid
+        });
       })
       .catch(err => {
         logger.info('Handling error :', err);
-        if (err instanceof EtcdLockError) {
+        if (err instanceof ResourceAlreadyLocked) {
           throw err;
         }
         if (lockedDeployment) {
@@ -448,9 +445,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         throw err;
       })
-      .catch(Timeout, () => {
-        return this.abortLastBackup(req, res);
-      });
   }
 
   getLastBackup(req, res) {
