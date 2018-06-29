@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const catalog = require('../../broker/lib/models/catalog');
 const eventmesh = require('../../eventmesh');
@@ -17,6 +16,69 @@ const Conflict = errors.Conflict;
 new DBManager(); //to start the BnRStatusPoller
 
 class DefaultBackupManager extends BaseManager {
+
+  _processBackup(changeObjectBody) {
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    logger.info('Triggering backup with the following options:', changedOptions);
+    const plan = catalog.getPlan(changedOptions.plan_id);
+    return bm.createManager(plan)
+      .then(manager => manager.startBackup(changedOptions));
+  }
+
+  _processAbort(changeObjectBody) {
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    return eventmesh.apiServerClient.getOperationOptions({
+        resourceId: changedOptions.instance_guid,
+        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+        operationId: changedOptions.guid
+      })
+      .then(options => {
+        return Promise.try(() => {
+          const plan = catalog.getPlan(options.plan_id);
+          return bm.createManager(plan);
+        }).then(manager => manager.abortLastBackup(options));
+      });
+  }
+
+  _processDelete(changeObjectBody) {
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    return eventmesh.apiServerClient.getOperationOptions({
+        resourceId: changedOptions.instance_guid,
+        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+        operationId: changedOptions.guid
+      })
+      .then(options => {
+        return this.backupStore
+          .deleteBackupFile(options)
+          .then(() => eventmesh.apiServerClient.updateOperationState({
+            resourceId: options.instance_guid,
+            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+            operationId: options.guid,
+            stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
+          }))
+          .catch(err => {
+            return Promise
+              .try(() => logger.error(`Error during delete of backup`, err))
+              .tap(() => eventmesh.apiServerClient.updateOperationState({
+                resourceId: options.instance_guid,
+                operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+                operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+                operationId: options.guid,
+                stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
+              }))
+              .tap(() => eventmesh.apiServerClient.updateOperationResponse({
+                resourceId: options.instance_guid,
+                operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+                operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+                operationId: options.guid,
+                value: err
+              }));
+          });
+      });
+  }
 
   /**
    * @description Registers backup watcher with worker callback
@@ -35,99 +97,6 @@ class DefaultBackupManager extends BaseManager {
    */
 
   worker(change) {
-    /**
-     * @description Patches resource with annotation key lockedByManager and value broker ip
-     */
-    function acquireProcessingLock() {
-      logger.info('Trying to acquire processing lock for the backup request for backup guid: ', changedOptions.guid);
-      // Set lockedManager annotations to true
-      const patchBody = _.cloneDeep(changeObjectBody);
-      let currentAnnotations = patchBody.metadata.annotations;
-      let patchAnnotations = currentAnnotations ? currentAnnotations : {};
-      patchAnnotations.lockedByManager = config.broker_ip;
-      patchBody.metadata.annotations = patchAnnotations;
-      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
-        .tap((resource) => logger.info(`Successfully acquired processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
-          `Updated resource with annotations is: `, resource));
-    }
-
-    /**
-     * @description Sets lockedByManager annotation to empty string
-     */
-
-    function releaseProcessingLock() {
-      logger.info('Trying to release processing lock for the backup request for backup guid: ', changedOptions.guid);
-      const patchBody = {
-        metadata: {
-          annotations: {
-            lockedByManager: ''
-          }
-        }
-      };
-      return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, changedOptions.guid, patchBody)
-        .tap((resource) => logger.info(`Successfully released processing lock for the backup request for backup guid: ${changedOptions.guid}\n` +
-          `Updated resource with annotations is: `, resource));
-    }
-
-    function processBackup() {
-      logger.info('Triggering backup with the following options:', changedOptions);
-      const plan = catalog.getPlan(changedOptions.plan_id);
-      return bm.createManager(plan)
-        .then(manager => manager.startBackup(changedOptions));
-    }
-
-    function processAbort() {
-      return eventmesh.apiServerClient.getOperationOptions({
-          resourceId: changedOptions.instance_guid,
-          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          operationId: changedOptions.guid
-        })
-        .then(options => {
-          return Promise.try(() => {
-            const plan = catalog.getPlan(options.plan_id);
-            return bm.createManager(plan);
-          }).then(manager => manager.abortLastBackup(options));
-        });
-    }
-
-    function processDelete() {
-      return eventmesh.apiServerClient.getOperationOptions({
-          resourceId: changedOptions.instance_guid,
-          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          operationId: changedOptions.guid
-        })
-        .then(options => {
-          return this.backupStore
-            .deleteBackupFile(options)
-            .then(() => eventmesh.apiServerClient.updateOperationState({
-              resourceId: options.instance_guid,
-              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: options.guid,
-              stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
-            }))
-            .catch(err => {
-              return Promise
-                .try(() => logger.error(`Error during delete of backup`, err))
-                .tap(() => eventmesh.apiServerClient.updateOperationState({
-                  resourceId: options.instance_guid,
-                  operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-                  operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: options.guid,
-                  stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
-                }))
-                .tap(() => eventmesh.apiServerClient.updateOperationResponse({
-                  resourceId: options.instance_guid,
-                  operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-                  operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                  operationId: options.guid,
-                  value: err
-                }));
-            });
-        });
-    }
 
     logger.info('Changed Resource:', change);
     logger.debug('Changed resource options:', change.object.spec.options);
@@ -142,7 +111,7 @@ class DefaultBackupManager extends BaseManager {
       // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
       return Promise.try(() => {
           if (!changeObjectBody.metadata.annotations || changeObjectBody.metadata.annotations.lockedByManager === '') {
-            return acquireProcessingLock()
+            return this.acquireProcessingLock(changeObjectBody)
               .catch(err => {
                 if (err instanceof Conflict) {
                   processingLockConflict = true;
@@ -160,11 +129,11 @@ class DefaultBackupManager extends BaseManager {
         .then(() => {
           if (!processingLockConflict) {
             if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-              return processBackup();
+              return this._processBackup(changeObjectBody);
             } else if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
-              return processAbort();
+              return this._processAbort(changeObjectBody);
             } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-              return processDelete();
+              return this._processDelete(changeObjectBody);
             }
           }
         })
@@ -176,7 +145,7 @@ class DefaultBackupManager extends BaseManager {
         })
         .then(() => {
           if (!processingLockConflict) {
-            return releaseProcessingLock()
+            return this.releaseProcessingLock(changeObjectBody)
               .catch(e => logger.error(`Caught error while releasing processing lock ${changedOptions}:`, e));
           }
         });
