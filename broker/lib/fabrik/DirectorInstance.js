@@ -420,23 +420,18 @@ class DirectorInstance extends BaseInstance {
       .then(() => this.manager.deleteBinding(this.deploymentName, params.binding_id));
   }
 
-  getExposedPortsOfService() {
+  getSecurityGroupParamsOfService() {
     let service = this.manager.service.toJSON();
-    let range = _.get(service, 'security_group_params.range', false);
-    let exposedPorts = _.get(service, 'security_group_params.exposed_ports');
-    return {
-      range: range,
-      ports: exposedPorts
-    };
+    return _.get(service, 'security_group_params');
   }
 
   buildIpRules() {
-    let exposedPorts = this.getExposedPortsOfService();
+    let securityGroupParams = this.getSecurityGroupParamsOfService();
     return _.map(this.manager.getNetwork(this.networkSegmentIndex), net => {
       return {
         protocol: 'tcp',
         ips: net.static,
-        ports: exposedPorts
+        securityGroupParams: securityGroupParams
       };
     });
   }
