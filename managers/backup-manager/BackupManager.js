@@ -6,6 +6,7 @@ const config = require('../../broker/lib/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const bosh = require('../../broker/lib/bosh');
+const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../broker/lib/iaas').backupStore;
 const utils = require('../../broker/lib/utils');
 const eventmesh = require('../../eventmesh');
@@ -24,6 +25,43 @@ class BackupManager {
 
   get settings() {
     return this.plan.manager.settings;
+  }
+
+  get subnet() {
+    return this.settings.subnet || this.service.subnet;
+  }
+
+  static get prefix() {
+    return _
+      .reduce(config.directors,
+        (prefix, director) => director.primary === true ? director.prefix : prefix,
+        null) || CONST.SERVICE_FABRIK_PREFIX;
+  }
+
+  static getDeploymentName(guid, networkSegmentIndex) {
+    let subnet = this.subnet ? `_${this.subnet}` : '';
+    return `${BackupManager.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+  }
+
+  static parseDeploymentName(deploymentName, subnet) {
+    return _
+      .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
+      .slice(1)
+      .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
+      .value();
+  }
+
+  static getNetworkSegmentIndex(deploymentName) {
+    return _.nth(BackupManager.parseDeploymentName(deploymentName, this.subnet), 1);
+  }
+
+  static findNetworkSegmentIndex(guid) {
+    logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
+    return bosh
+      .director
+      .getDeploymentNameForInstanceId(guid)
+      .then(deploymentName => BackupManager.getNetworkSegmentIndex(deploymentName))
+      .tap(networkSegmentIndex => logger.info(`+-> Found network segment index '${networkSegmentIndex}'`));
   }
 
   getTenantGuid(context) {
@@ -62,7 +100,6 @@ class BackupManager {
   }
 
   startBackup(opts) {
-    const deploymentName = opts.deployment;
     const args = opts.arguments;
     const backup = _
       .chain(opts)
@@ -119,12 +156,21 @@ class BackupManager {
       backupStarted = false,
       registeredStatusPoller = false;
 
-    return Promise
-      .all([
+    let deploymentName;
+    return Promise.try(() => {
+        return BackupManager
+          .findNetworkSegmentIndex(opts.instance_guid)
+          .then(networkIndex => BackupManager.getDeploymentName(opts.instance_guid, networkIndex))
+          .then(res => {
+            deploymentName = res;
+            logger.info('Obtained the deployment name for instance :', deploymentName);
+          });
+      })
+      .then(() => Promise.all([
         createSecret(),
         this.getDeploymentIps(deploymentName),
         this.director.getDeploymentVms(deploymentName).map(normalizeVm)
-      ])
+      ]))
       .spread((secret, ips, vms) => {
         // set data and backup secret
         logger.info(`Starting backup on - ${deploymentName}. Agent Ips for deployment - `, ips);

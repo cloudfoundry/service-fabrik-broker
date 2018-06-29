@@ -353,7 +353,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getBackupOptions(backupGuid, deployment, req) {
+  getBackupOptions(backupGuid, req) {
     return Promise
       .all([
         cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
@@ -366,7 +366,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         };
         const backupOptions = {
           guid: backupGuid,
-          deployment: deployment,
           instance_guid: req.params.instance_id,
           plan_id: req.body.plan_id || planDetails.entity.unique_id,
           service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
@@ -386,16 +385,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let backupGuid;
     return Promise
       .try(() => this.checkQuota(req, trigger))
-      .then(() => Promise.all([utils
-        .uuidV4(),
-        req.manager
-        .findNetworkSegmentIndex(req.params.instance_id)
-        .then(networkIndex => req.manager.getDeploymentName(req.params.instance_id, networkIndex))
-      ]))
-      .spread((guid, deployment) => {
+      .then(() => utils.uuidV4())
+      .then(guid => {
         _.set(req.body, 'trigger', trigger);
         backupGuid = guid;
-        return this.getBackupOptions(backupGuid, deployment, req)
+        return this.getBackupOptions(backupGuid, req)
           .then(backupOptions => {
             logger.info(`Triggering backup with options: ${JSON.stringify(backupOptions)}`);
             // Acquire read lock
