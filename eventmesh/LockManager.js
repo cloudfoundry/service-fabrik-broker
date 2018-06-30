@@ -107,7 +107,7 @@ class LockManager {
           logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
             `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
           throw new ResourceAlreadyLocked(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
         } else {
           const patchBody = _.assign(resourceBody, {
             spec: {
@@ -117,7 +117,7 @@ class LockManager {
           return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
-      .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
+      .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
       .catch(err => {
         if (err instanceof NotFound) {
           const spec = {

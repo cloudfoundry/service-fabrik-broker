@@ -35,21 +35,21 @@ const lock = {
   lockId1: {
     body: {
       spec: {
-        options: JSON.stringify(lockoptions.lockId1)
+        options: lockoptions.lockId1
       }
     }
   },
   lockId2: {
     body: {
       spec: {
-        options: JSON.stringify(lockoptions.lockId2)
+        options: lockoptions.lockId2
       }
     }
   },
   lockId3: {
     body: {
       spec: {
-        options: JSON.stringify(lockoptions.lockId3)
+        options: lockoptions.lockId3
       }
     }
   }
