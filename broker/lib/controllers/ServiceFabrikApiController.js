@@ -23,7 +23,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const InternalServerError = errors.InternalServerError;
-const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const ScheduleManager = require('../jobs');
 const config = require('../config');
 const CONST = require('../constants');
@@ -435,7 +435,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .catch(err => {
         logger.info('Handling error :', err);
-        if (err instanceof ResourceAlreadyLocked) {
+        if (err instanceof DeploymentAlreadyLocked) {
           throw err;
         }
         if (lockedDeployment) {

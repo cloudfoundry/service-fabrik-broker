@@ -27,7 +27,6 @@ const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 const AsyncRequired = errors.AsyncRequired;
-const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
 const HttpServerError = errors.HttpServerError;
 const InternalServerError = errors.InternalServerError;
 const ContainerStartError = errors.ContainerStartError;
@@ -260,14 +259,14 @@ describe('errors', () => {
       let deploymentAlreadyLocked = new DeploymentAlreadyLocked(deploymentName);
       expect(deploymentAlreadyLocked.status).to.eql(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
       expect(deploymentAlreadyLocked.reason).to.eql('Unprocessable Entity');
-      expect(deploymentAlreadyLocked.message).to.eql(`Deployment ${deploymentName} ${CONST.OPERATION_TYPE.LOCK}`);
+      expect(deploymentAlreadyLocked.message).to.eql(`Service Instance ${deploymentName} ${CONST.OPERATION_TYPE.LOCK}`);
     });
 
     it('sets the class properties correctly with lockinfo', () => {
       let deploymentAlreadyLocked = new DeploymentAlreadyLocked(deploymentName, lockInfo);
       expect(deploymentAlreadyLocked.status).to.eql(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
       expect(deploymentAlreadyLocked.reason).to.eql('Unprocessable Entity');
-      expect(deploymentAlreadyLocked.message).to.eql(`Deployment ${deploymentName} ${CONST.OPERATION_TYPE.LOCK} by ${lockInfo.username} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`);
+      expect(deploymentAlreadyLocked.message).to.eql(`Service Instance ${deploymentName} ${CONST.OPERATION_TYPE.LOCK} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`);
     });
 
     it('sets the class properties correctly with lock message', () => {
@@ -372,17 +371,6 @@ describe('errors', () => {
       expect(asyncRequired.status).to.eql(422);
       expect(asyncRequired.reason).to.eql('Unprocessable Entity');
       expect(asyncRequired.message).to.eql(`Service Plan requires support for asynchronous operations`);
-    });
-  });
-
-  describe('ResourceAlreadyLocked', () => {
-    const message = 'Lock error';
-    let etcdLockError = new ResourceAlreadyLocked(message);
-
-    it('sets the class properties correctly', () => {
-      expect(etcdLockError.status).to.eql(422);
-      expect(etcdLockError.reason).to.eql('Unprocessable Entity');
-      expect(etcdLockError.message).to.eql(message);
     });
   });
 

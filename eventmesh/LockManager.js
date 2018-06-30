@@ -4,11 +4,12 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const eventmesh = require('./');
 const errors = require('../common/errors');
-const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const logger = require('../common/logger');
 const CONST = require('../common/constants');
 const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
+const InternalServerError = errors.InternalServerError;
 
 class LockManager {
   /*
@@ -106,8 +107,10 @@ class LockManager {
         if ((currentTime - currentLockTime) < currentLockTTL) {
           logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
             `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
-          throw new ResourceAlreadyLocked(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime}`);
+          throw new DeploymentAlreadyLocked(resourceId, {
+            createdAt: currentLockTime,
+            lockForOperation: currentlLockDetails.lockedResourceDetails.operation
+          });
         } else {
           const patchBody = _.assign(resourceBody, {
             spec: {
@@ -136,7 +139,7 @@ class LockManager {
           return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
             .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
         } else if (err instanceof Conflict) {
-          throw new ResourceAlreadyLocked(err.message);
+          throw new DeploymentAlreadyLocked(resourceId);
         }
         throw err;
       });
@@ -163,7 +166,7 @@ class LockManager {
           }
           if (currentRetryCount >= maxRetryCount) {
             logger.error(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
-            throw new ResourceAlreadyLocked(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+            throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
           }
           logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
           return Promise.delay(CONST.ETCD.RETRY_DELAY)

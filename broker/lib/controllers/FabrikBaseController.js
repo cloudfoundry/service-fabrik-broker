@@ -17,7 +17,7 @@ const BadRequest = errors.BadRequest;
 const CONST = require('../constants');
 const lockManager = require('../../../eventmesh').lockManager;
 const logger = require('../logger');
-const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 
 class FabrikBaseController extends BaseController {
   constructor() {
@@ -50,7 +50,7 @@ class FabrikBaseController extends BaseController {
         })
         .then(() => this._handleWithUnlock(func, operationType, lastOperationCall, req, res, next))
         .catch(err => {
-          if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
+          if (lastOperationCall && err instanceof DeploymentAlreadyLocked) {
             logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
           } else {
             return next(err);

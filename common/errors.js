@@ -184,10 +184,10 @@ class UnprocessableEntity extends HttpClientError {
 exports.UnprocessableEntity = UnprocessableEntity;
 
 class DeploymentAlreadyLocked extends UnprocessableEntity {
-  constructor(deploymentName, lockInfo, lockMessage) {
-    let message = `Deployment ${deploymentName} ${CONST.OPERATION_TYPE.LOCK}`;
+  constructor(instanceId, lockInfo, lockMessage) {
+    let message = `Service Instance ${instanceId} ${CONST.OPERATION_TYPE.LOCK}`;
     if (lockInfo) {
-      message = `${message} by ${lockInfo.username} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`;
+      message = `${message} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`;
     } else if (lockMessage !== undefined) {
       message = lockMessage;
     }
@@ -244,13 +244,6 @@ class ServiceBindingAlreadyExists extends BadRequest {
   }
 }
 exports.ServiceBindingAlreadyExists = ServiceBindingAlreadyExists;
-
-class ResourceAlreadyLocked extends UnprocessableEntity {
-  constructor(message) {
-    super(message);
-  }
-}
-exports.ResourceAlreadyLocked = ResourceAlreadyLocked;
 
 class SecurityGroupNotFound extends NotFound {
   constructor(name) {

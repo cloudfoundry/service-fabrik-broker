@@ -12,7 +12,7 @@ const catalog = require('./models/catalog');
 const config = require('./config');
 const lockManager = require('../../eventmesh').lockManager;
 const CONST = require('./constants');
-const ResourceAlreadyLocked = errors.ResourceAlreadyLocked;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const UnprocessableEntity = errors.UnprocessableEntity;
 
 
@@ -55,7 +55,7 @@ exports.lock = function (operationType, lastOperationCall) {
         .catch((err) => {
           logger.error('[LOCK]: exception occurred --', err);
           //For last operation call, we ensure migration of locks through this
-          if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
+          if (lastOperationCall && err instanceof DeploymentAlreadyLocked) {
             logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
             next();
           } else {
@@ -74,7 +74,7 @@ exports.isWriteLocked = function () {
       return lockManager.isWriteLocked(req.params.instance_id)
         .then(isWriteLocked => {
           if (isWriteLocked) {
-            next(new ResourceAlreadyLocked(`Resource ${req.params.instance_id} is write locked`));
+            next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked`));
           } else {
             next();
           }

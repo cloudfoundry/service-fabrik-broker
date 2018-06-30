@@ -11,7 +11,6 @@ const cf = require('../cf');
 const backupStore = require('../iaas').backupStore;
 const utils = require('../utils');
 const Agent = require('./Agent');
-const eventmesh = require('../../../eventmesh');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
 const CONST = require('../constants');
@@ -814,7 +813,7 @@ class DirectorManager extends BaseManager {
         if (!lockInfo) {
           return;
         }
-        throw new errors.DeploymentAlreadyLocked(deploymentName, lockInfo);
+        throw new errors.DeploymentAlreadyLocked(this.getInstanceGuid(deploymentName), lockInfo);
       });
   }
 
@@ -1022,27 +1021,6 @@ class DirectorManager extends BaseManager {
   }
 
   getBackupOperationState(opts) {
-    if (config.enable_service_fabrik_v2) {
-      return this.getBackupOperationStateV2(opts);
-    }
-    return this.getBackupOperationStateV1(opts);
-  }
-
-  getBackupOperationStateV2(opts) {
-    return eventmesh.apiServerClient.getLastOperation({
-        resourceId: opts.instance_guid,
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
-      })
-      .then(backupGuid =>
-        eventmesh.apiServerClient.getOperationResponse({
-          operationName: CONST.OPERATION_TYPE.BACKUP,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          operationId: backupGuid,
-        }));
-  }
-
-  getBackupOperationStateV1(opts) {
     const agent_ip = opts.agent_ip;
     const options = _.assign({
       service_id: this.service.id,
