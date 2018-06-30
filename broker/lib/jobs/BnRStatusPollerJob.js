@@ -132,8 +132,7 @@ class BnRStatusPollerJob extends BaseJob {
         }
       })
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
-        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) :
-        Promise.resolve(operationStatusResponse)
+        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) : operationStatusResponse
       );
   }
 
@@ -228,11 +227,9 @@ class BnRStatusPollerJob extends BaseJob {
             });
         }
       })
-      .tap(operationStatusResponse => {
-        return operationStatusResponse.operationFinished ?
-          this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) :
-          Promise.resolve(operationStatusResponse);
-      })
+      .then(operationStatusResponse => operationStatusResponse.operationFinished ?
+        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) : operationStatusResponse
+      )
       .catch(err => {
         logger.error(`Caught error while checking for operation completion status:`, err);
         throw err;

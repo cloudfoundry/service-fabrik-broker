@@ -33,7 +33,7 @@ class FabrikBaseController extends BaseController {
     return _.get(config, 'broker_name', 'service-fabrik-broker');
   }
 
-  handleByLockingResource(func, operationType, lastOperationCall) {
+  handleWithResourceLocking(func, operationType, lastOperationCall) {
     return (req, res, next) => {
       return Promise.try(() => {
           if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
@@ -55,11 +55,11 @@ class FabrikBaseController extends BaseController {
             return next(err);
           }
         })
-        .then(() => this._handleWithUnlock(func, operationType, lastOperationCall, req, res, next));
+        .then(() => this._handleWithResourceUnlock(func, operationType, lastOperationCall, req, res, next));
     };
   }
 
-  _handleWithUnlock(func, operationType, lastOperationCall, req, res, next) {
+  _handleWithResourceUnlock(func, operationType, lastOperationCall, req, res, next) {
     const fn = _.isString(func) ? this[func] : func;
     return Promise
       .try(() => fn.call(this, req, res))

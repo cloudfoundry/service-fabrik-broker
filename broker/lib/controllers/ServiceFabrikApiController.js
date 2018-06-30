@@ -561,8 +561,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.validateDateString(timeStamp);
         }
       })
-      .then(() => this.backupStore
-        .getBackupFile(timeStamp ? {
+      .then(() => {
+        const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
           tenant_id: tenantId,
           instance_id: instanceId,
@@ -570,8 +570,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } : {
           backup_guid: backupGuid,
           tenant_id: tenantId
-        })
-      )
+        };
+        return this.backupStore
+          .getBackupFile(backupFileOptions);
+      })
       .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backupGuid}' found in this space`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {

@@ -33,9 +33,9 @@ router.use(commonMiddleware.error({
 instanceRouter.use(controller.handler('ensurePlatformContext'));
 instanceRouter.use(controller.handler('assignInstance'));
 instanceRouter.route('/')
-  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.CREATE), controller.handleByLockingResource('putInstance', CONST.OPERATION_TYPE.CREATE)])
-  .patch([middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.UPDATE), controller.handleByLockingResource('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
-  .delete([middleware.validateRequest(CONST.OPERATION_TYPE.DELETE), controller.handleByLockingResource('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
+  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.CREATE), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
+  .patch([middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.UPDATE), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
+  .delete([middleware.validateRequest(CONST.OPERATION_TYPE.DELETE), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .all(commonMiddleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE']));
 instanceRouter.route('/last_operation')
   .get([middleware.lock(undefined, true), controller.handler('getLastInstanceOperation')]) //passing undefined as last operation operationType is part of the req
