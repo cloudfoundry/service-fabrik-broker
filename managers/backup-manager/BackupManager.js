@@ -283,7 +283,7 @@ class BackupManager {
       });
   }
 
-  getServiceFabrikOperationState(name, opts) {
+  getOperationState(name, opts) {
     logger.info(`Retrieving state of last Backup with:`, opts);
     return this.getBackupOperationState(opts)
       .then(result => {

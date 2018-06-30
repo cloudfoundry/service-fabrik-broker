@@ -87,7 +87,7 @@ describe('Jobs', function () {
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
       abortLastBackupStub = sandbox.stub(BackupManager.prototype, 'abortLastBackup');
       abortLastBackupStub.withArgs().returns(Promise.resolve({}));
-      backupOperationStub = sandbox.stub(BackupManager.prototype, 'getServiceFabrikOperationState');
+      backupOperationStub = sandbox.stub(BackupManager.prototype, 'getOperationState');
       getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
       getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
     });

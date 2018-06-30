@@ -164,7 +164,7 @@ class BnRStatusPollerJob extends BaseJob {
             })
             .then(() => {
               return BackupManager.createManager(plan)
-                .then(backupManager => backupManager.getServiceFabrikOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
+                .then(backupManager => backupManager.getOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
             });
         }
       })

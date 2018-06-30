@@ -111,7 +111,7 @@ describe('managers', function () {
       };
       mocks.apiServerEventMesh.nockLoadSpec();
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
-      return manager.getServiceFabrikOperationState('backup', opts)
+      return manager.getOperationState('backup', opts)
         .then((res) => {
           expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
           expect(res.state).to.eql('succeeded');
