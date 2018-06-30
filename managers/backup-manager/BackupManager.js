@@ -198,12 +198,7 @@ class BackupManager {
             backupStarted = true;
             let put_ret = this.backupStore.putFile(data);
             logger.info(put_ret);
-            const backup_options = _.chain(result)
-              .set('deployment_name', deploymentName)
-              .set('started_at', backupStartedAt)
-              .value();
-            logger.info(`Backup is initiated with the options: `, backup_options);
-            return backup_options;
+            return data;
           });
       })
       .then(backup_options =>
