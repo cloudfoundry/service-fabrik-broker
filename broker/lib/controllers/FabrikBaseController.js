@@ -48,25 +48,21 @@ class FabrikBaseController extends BaseController {
             });
           }
         })
+        .then(() => this._handleWithUnlock(func, operationType, lastOperationCall, req, res, next))
         .catch(err => {
           if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
             logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
           } else {
             return next(err);
           }
-        })
-        .then(() => this._handleWithResourceUnlock(func, operationType, lastOperationCall, req, res, next));
+        });
     };
   }
 
-  _handleWithResourceUnlock(func, operationType, lastOperationCall, req, res, next) {
+  _handleWithUnlock(func, operationType, lastOperationCall, req, res, next) {
     const fn = _.isString(func) ? this[func] : func;
     return Promise
       .try(() => fn.call(this, req, res))
-      .catch(ContinueWithNext, () => {
-        _.set(req, 'params_copy', req.params);
-        return process.nextTick(next);
-      })
       .then(() => {
         _.set(req, 'params_copy', req.params);
         // if sf20 is enabled Check res status and unlock based on the request and status        
