@@ -39,20 +39,20 @@ class FabrikBaseController extends BaseController {
           if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
             // Acquire lock for this instance
             return lockManager.lock(req.params.instance_id, {
-                lockedResourceDetails: {
-                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                  resourceId: req.params.instance_id,
-                  operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
-                }
-              })
-              .catch(err => {
-                if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
-                  logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
-                } else {
-                  return next(err);
-                }
-              });
+              lockedResourceDetails: {
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                resourceId: req.params.instance_id,
+                operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
+              }
+            });
+          }
+        })
+        .catch(err => {
+          if (lastOperationCall && err instanceof ResourceAlreadyLocked) {
+            logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
+          } else {
+            return next(err);
           }
         })
         .then(() => this._handleWithUnlock(func, operationType, lastOperationCall, req, res, next));
