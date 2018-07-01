@@ -53,7 +53,7 @@ exports.lock = function (operationType, lastOperationCall) {
         })
         .then(() => next())
         .catch((err) => {
-          logger.error('[LOCK]: exception occurred --', err);
+          logger.debug('[LOCK]: exception occurred; Need not worry as lock is probably set --', err);
           //For last operation call, we ensure migration of locks through this
           if (lastOperationCall && err instanceof DeploymentAlreadyLocked) {
             logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
