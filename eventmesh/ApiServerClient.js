@@ -61,6 +61,11 @@ class ApiServerClient {
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
+        jsonStream.on('error', err => {
+          logger.error('Error occured during watching', err);
+          this.getResourceOperationStatus(resourceGroup, resourceType, callback, queryString);
+          //throw err;
+        });
       })
       .catch(err => {
         return buildErrors(err);
