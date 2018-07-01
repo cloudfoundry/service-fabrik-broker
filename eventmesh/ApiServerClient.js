@@ -66,6 +66,7 @@ class ApiServerClient {
           this.getResourceOperationStatus(resourceGroup, resourceType, callback, queryString);
           //throw err;
         });
+        return stream;
       })
       .catch(err => {
         return buildErrors(err);
