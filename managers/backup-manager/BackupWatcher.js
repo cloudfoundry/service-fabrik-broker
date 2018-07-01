@@ -67,9 +67,14 @@ class DefaultBackupManager extends BaseManager {
       .then(stream => {
         logger.info(`Successfully set watcher with query string:`, queryString);
         return setTimeout(() => {
-          logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
-          stream.abort();
-          return this.registerWatcher();
+          try {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            stream.abort();
+            return this.registerWatcher();
+          } catch (err) {
+            logger.error('Error caught in the set timout callback');
+            throw err;
+          }
         }, CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
       })
       .catch(e => {
