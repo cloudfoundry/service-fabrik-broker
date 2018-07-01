@@ -34,12 +34,7 @@ class LockManager {
         }
         return false;
       })
-      .catch(err => {
-        if (err instanceof NotFound) {
-          return false;
-        }
-        throw err;
-      });
+      .catch(NotFound, () => false);
   }
 
   /*
@@ -178,7 +173,7 @@ class LockManager {
   }
 
   _getLockType(operation) {
-    if (_.includes(CONST.WRITE_OPERATIONS, operation)) {
+    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, operation)) {
       return CONST.ETCD.LOCK_TYPE.WRITE;
     } else {
       return CONST.ETCD.LOCK_TYPE.READ;
