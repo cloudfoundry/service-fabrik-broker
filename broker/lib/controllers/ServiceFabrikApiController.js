@@ -470,7 +470,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .status(CONST.HTTP_STATUS_CODE.OK)
           .send(_.omit(result, 'secret', 'agent_ip'));
       })
-      .catchThrow(new NotFound(`No backup found for service instance '${req.params.instance_id}'`));
+      .catch((err) => {
+        logger.error('Error occured during getLastBackup ', err);
+        throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
+      });
   }
 
   getLastBackupV1(req, res) {
