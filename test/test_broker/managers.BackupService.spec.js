@@ -6,7 +6,7 @@ const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../broker/lib/iaas/BackupStore');
 
 describe('managers', function () {
-  describe('BackupManager', function () {
+  describe('BackupService', function () {
     const finishDate = new Date().toISOString();
     const backup_state = {
       state: 'succeeded',
@@ -54,10 +54,10 @@ describe('managers', function () {
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-    const BackupManager = require('../../managers/backup-manager/BackupManager');
+    const BackupService = require('../../managers/backup-manager/BackupService');
     const plan = catalog.getPlan(plan_id);
 
-    const manager = new BackupManager(plan);
+    const manager = new BackupService(plan);
     it('Should start backup successfully', function () {
       const context = {
         platform: 'cloudfoundry',

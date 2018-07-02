@@ -7,7 +7,7 @@ const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const lib = require('../../broker/lib');
 const BoshDirectorClient = lib.bosh.BoshDirectorClient;
-const BackupManager = require('../../managers/backup-manager');
+const BackupService = require('../../managers/backup-manager');
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -85,9 +85,9 @@ describe('Jobs', function () {
       scheduleJobStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      abortLastBackupStub = sandbox.stub(BackupManager.prototype, 'abortLastBackup');
+      abortLastBackupStub = sandbox.stub(BackupService.prototype, 'abortLastBackup');
       abortLastBackupStub.withArgs().returns(Promise.resolve({}));
-      backupOperationStub = sandbox.stub(BackupManager.prototype, 'getOperationState');
+      backupOperationStub = sandbox.stub(BackupService.prototype, 'getOperationState');
       getDirectorConfigStub = sandbox.stub(BoshDirectorClient.prototype, 'getDirectorConfig');
       getDirectorConfigStub.withArgs(instanceInfo.deployment).returns(directorConfigStub);
     });

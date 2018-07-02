@@ -60,6 +60,8 @@ class DefaultBackupManager extends BaseManager {
   /**
    * @description Registers backup watcher with worker callback
    */
+  // Register watcher is refreshed every 20 mins as API Server has a min time out of 30 mins after which it closes the watch.
+  //TODO-PR - Extract it in a different function
   registerWatcher() {
     logger.debug(`Registering Backup watcher`);
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
@@ -90,9 +92,30 @@ class DefaultBackupManager extends BaseManager {
    * @param {object} change - Change object that comes as part of apiserver watch event
    */
 
+
+  //TODO-PR - Move the locking part of the code as part of the Base Manager, 
+  //Use something like this.
+  // handleResource(change){
+  // return this._preProcessResource(change)
+  //             .then(()=> this.processResource(change))
+  //             .then(()=> this.postProcessResource(change))
+  //              .catch((err)=> logger.error(`Error occurred ....`)); //Dont need to care what type of error just log. 
+  //                //see if this can be put in finally.
+  // } 
+
+  // _preProcessResource(){
+  // //Code about acquiring processing lock goes here.
+  // }
+
+  // processResource(change){
+  //   throw 'Must be implemented by subclass'; // Individual base manage managers just implement this.
+  // }
+  // _postProcessResource(){
+  //  //code to handle release processing lock  goes here. 
+  // }
   worker(change) {
 
-    logger.info('Changed Resource:', change);
+    logger.debug('Changed Resource:', change);
     logger.debug('Changed resource options:', change.object.spec.options);
     const changeObjectBody = change.object;
     const changedOptions = JSON.parse(changeObjectBody.spec.options);

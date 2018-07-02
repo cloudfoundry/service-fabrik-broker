@@ -12,7 +12,7 @@ const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../config');
 const bosh = require('../bosh');
 const catalog = require('../models').catalog;
-const BackupManager = require('../../../managers/backup-manager');
+const BackupService = require('../../../managers/backup-manager');
 const DirectorManager = require('../fabrik/DirectorManager');
 const ServiceFabrikOperation = require('../fabrik/ServiceFabrikOperation');
 const eventmesh = require('../../../eventmesh');
@@ -162,8 +162,8 @@ class BnRStatusPollerJob extends BaseJob {
               }
             })
             .then(() => {
-              return BackupManager.createManager(plan)
-                .then(backupManager => backupManager.getOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
+              return BackupService.createService(plan)
+                .then(backupService => backupService.getOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
             });
         }
       })
@@ -197,9 +197,9 @@ class BnRStatusPollerJob extends BaseJob {
                   // re-registering statupoller job
                   let abortStartTime = new Date().toISOString();
                   instanceInfo.abortStartTime = abortStartTime;
-                  return BackupManager.createManager(plan)
-                    .then(backupManager => backupManager.abortLastBackup(instanceInfo, true))
-                    .then(() => BackupManager.registerBnRStatusPoller(job_data, instanceInfo))
+                  return BackupService.createService(plan)
+                    .then(backupService => backupService.abortLastBackup(instanceInfo, true))
+                    .then(() => BackupService.registerBnRStatusPoller(job_data, instanceInfo))
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;
                       return operationStatusResponse;
