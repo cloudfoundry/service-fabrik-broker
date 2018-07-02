@@ -24,23 +24,19 @@ module.exports = Object.freeze({
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
   },
-  ETCD: {
-    SORT_BY_CREATE: 'Create',
-    TARGET_NONE: 'None',
-    JSON: 'json',
-    NUMBER: 'number',
-    STRING: 'string'
-  },
   EVENT_LOG_RIEMANN_CLIENT_STATUS: {
     INITIALIZING: 'initializing',
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected'
   },
+  EVENTMESH_POLLER_DELAY: 200,
+  UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
+    ABORT: 'abort',
     ABORTED: 'aborted',
-    IN_PROGRESS: 'in progress',
+    IN_PROGRESS: 'in_progress',
     ABORTING: 'aborting'
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
@@ -62,7 +58,8 @@ module.exports = Object.freeze({
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',
-    DOCKER: 'docker'
+    DOCKER: 'docker',
+    VIRTUAL_HOST: 'virtual_host'
   },
   HTTP_METHOD: {
     POST: 'POST',
@@ -73,6 +70,8 @@ module.exports = Object.freeze({
   },
   HTTP_STATUS_CODE: {
     OK: 200,
+    CREATED: 201,
+    ACCEPTED: 202,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,
@@ -82,14 +81,14 @@ module.exports = Object.freeze({
     CONFLICT: 409,
     GONE: 410,
     PRECONDITION_FAILED: 412,
-    UNPROCESSABLE_ENTITY: 422
+    UNPROCESSABLE_ENTITY: 422,
+    INTERNAL_SERVER_ERROR: 500
   },
   JOB_NAME_ATTRIB: '_n_a_m_e_',
   JOB: {
     //Define names of scheduled JOBS
     SCHEDULED_BACKUP: 'ScheduledBackup',
     SERVICE_FABRIK_BACKUP: 'ServiceFabrikBackup',
-    BACKUP_STATUS_POLLER: 'FabrikStatusPoller',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
     OPERATION_STATUS_POLLER: 'OperationStatusPoller',
     BNR_STATUS_POLLER: 'BnRStatusPoller',
@@ -106,6 +105,7 @@ module.exports = Object.freeze({
     SHUTDOWN_WAIT_TIME: 5000
   },
   BACKUP: {
+    BACKUP_START_TIMEOUT: 15, //SECONDS
     TYPE: {
       ONLINE: 'online'
     },
@@ -226,20 +226,51 @@ module.exports = Object.freeze({
       DESC: -1
     }
   },
-  RESOURCE_STATE: {
-    IN_QUEUE: 'in queue',
-    IN_PROGRESS: 'in progress',
-    SUCCEEDED: 'succeeded',
-    ERROR: 'failed'
-  },
-  RESOURCE_KEYS: {
-    STATE: 'state',
-    OPTIONS: 'options',
-    LASTOPERATION: 'lastoperation'
-  },
-  ANNOTATION_KEYS: {
-    STATE: 'state',
-    OPTIONS: 'options',
+  APISERVER: {
+    WATCHER_REFRESH_INTERVAL: 1200000, // in ms ( 20 minutes )
+    PORT: 9443,
+    VERSION: '1.9',
+    HOSTNAME: 'servicefabrik.io',
+    NAMESPACE: 'default',
+    API_VERSION: 'v1alpha1',
+    RESOURCE_GROUPS: {
+      LOCK: 'lock',
+      DEPLOYMENT: 'deployment',
+      BACKUP: 'backup'
+    },
+    RESOURCE_TYPES: {
+      DEPLOYMENT_LOCKS: 'deploymentlocks',
+      DIRECTOR: 'directors',
+      DEFAULT_BACKUP: 'defaultbackups'
+    },
+    RESOURCE_STATE: {
+      IN_QUEUE: 'in_queue',
+      IN_PROGRESS: 'in_progress',
+      DELETE: 'delete',
+      DELETED: 'deleted',
+      SUCCEEDED: 'succeeded',
+      ERROR: 'error',
+      FAILED: 'failed',
+      ABORTED: 'aborted',
+    },
+    RESOURCE_KEYS: {
+      STATE: 'state',
+      OPTIONS: 'options',
+      LASTOPERATION: 'lastoperation'
+    },
+    ANNOTATION_KEYS: {
+      STATE: 'state',
+      OPTIONS: 'options',
+      RESULT: 'result'
+    },
+    ANNOTATION_NAMES: {
+      BACKUP: 'backup'
+    },
+    ANNOTATION_TYPES: {
+      BACKUP: 'defaultbackups'
+    },
+    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore'],
+    READ_OPERATIONS: ['backup'],
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',
@@ -295,5 +326,28 @@ module.exports = Object.freeze({
   },
   ADD_ON_JOBS: {
     IP_TABLES_MANAGER: 'iptables-manager'
+  },
+  ETCD: {
+    SORT_BY_CREATE: 'Create',
+    TARGET_NONE: 'None',
+    JSON: 'json',
+    NUMBER: 'number',
+    STRING: 'string',
+    RETRY_DELAY: 2000,
+    MAX_RETRY_UNLOCK: 3,
+    LOCK_TYPE: {
+      WRITE: 'WRITE',
+      READ: 'READ'
+    },
+    LOCK_TTL: 5,
+    LOCK_KEY_SUFFIX: '/lock',
+    LOCK_DETAILS_SUFFIX: '/lock/details'
+  },
+  API_SERVER: {
+    WATCH_EVENT: {
+      ADDED: 'ADDED',
+      MODIFIED: 'MODIFIED',
+      DELETED: 'DELETED'
+    }
   }
 });

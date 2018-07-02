@@ -1,206 +1,229 @@
 'use strict';
 
 const Promise = require('bluebird');
-const manager = require('../../eventmesh').lockManager;
-const CONST = require('../../eventmesh/constants');
+// const lockManager = require('../../eventmesh').lockManager;
+const CONST = require('../../common/constants');
+const proxyquire = require('proxyquire');
+const errors = require('../../common/errors');
+const NotFound = errors.NotFound;
+const InternalServerError = errors.InternalServerError;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+// const resourceType = 'lock';
+// const resourceName = 'deploymentlocks';
 
-const {
-  Etcd3
-} = require('etcd3');
+const startTime = new Date();
+
+function buildLockResourceOptions(lockType, lockTime, lockTTL) {
+  return JSON.stringify({
+    lockType: lockType,
+    lockTime: lockTime ? lockTime : startTime,
+    lockTTL: lockTTL ? lockTTL : Infinity,
+    lockedResourceDetails: {
+      resourceGroup: 'backup',
+      resourceType: 'defaultbackup',
+      resourceId: 'guid',
+      operation: 'backup'
+    }
+  });
+}
+const lockoptions = {
+  lockId1: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE),
+  lockId2: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE, undefined, 1),
+  lockId3: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.READ)
+};
+const lock = {
+  lockId1: {
+    body: {
+      spec: {
+        options: lockoptions.lockId1
+      }
+    }
+  },
+  lockId2: {
+    body: {
+      spec: {
+        options: lockoptions.lockId2
+      }
+    }
+  },
+  lockId3: {
+    body: {
+      spec: {
+        options: lockoptions.lockId3
+      }
+    }
+  }
+};
+const LockManagerDummy = {
+  getLockResourceOptionsDummy: () => {},
+  updateResourceDummy: () => {},
+  createLockResourceDummy: () => {},
+  getResourceDummy: () => {},
+};
+const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
+  './': {
+    'apiServerClient': {
+      'getLockDetails': function (resourceName, resourceId) {
+        LockManagerDummy.getLockResourceOptionsDummy(resourceName, resourceId);
+        return Promise.try(() => {
+          if (lockoptions[resourceId]) {
+            return JSON.parse(lockoptions[resourceId]);
+          }
+          if (resourceId === 'lockId4') {
+            throw new NotFound('Lock not found');
+          } else {
+            throw new InternalServerError('Internal Server Error');
+          }
+        });
+      },
+      'updateResource': function (resourceType, resourceName, resourceId, patchBody) {
+        LockManagerDummy.updateResourceDummy(resourceType, resourceName, resourceId, patchBody);
+        return Promise.resolve({});
+      },
+      'createLock': function (resourceName, body) {
+        LockManagerDummy.createLockResourceDummy(resourceName, body);
+        return Promise.resolve({});
+      },
+      'getResource': function (resourceType, resourceName, resourceId) {
+        LockManagerDummy.getResourceDummy(resourceType, resourceName, resourceId);
+        return Promise.try(() => {
+          if (lock[resourceId]) {
+            return lock[resourceId];
+          }
+          if (resourceId === 'lockId4') {
+            throw new NotFound('Lock not found');
+          } else {
+            throw new InternalServerError('Internal Server Error');
+          }
+        });
+      },
+    }
+  }
+});
 
 describe('eventmesh', () => {
   describe('LockManager', () => {
-    let sandbox, valueStub, acquireStub, releaseStub, jsonStub, putStub, getStub, lockStub;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-      valueStub = sandbox.stub();
-      acquireStub = sandbox.stub();
-      releaseStub = sandbox.stub();
-      jsonStub = sandbox.stub();
-      putStub = sandbox.stub(Etcd3.prototype, 'put', () => {
-        return {
-          value: (val) => Promise.resolve(valueStub(val))
-        };
-      });
-      getStub = sandbox.stub(Etcd3.prototype, 'get', () => {
-        return {
-          json: () => Promise.resolve(jsonStub())
-        };
-      });
-      lockStub = sandbox.stub(Etcd3.prototype, 'lock', () => {
-        return {
-          ttl: () => {
-            return {
-              acquire: () => Promise.resolve(acquireStub())
-            };
-          },
-          release: () => Promise.resolve(releaseStub())
-        };
-      });
+    let getLockResourceOptionsSpy, updateResourceSpy, createLockResourceSpy, getResourceSpy;
+    before(function () {
+      getLockResourceOptionsSpy = sinon.spy(LockManagerDummy, 'getLockResourceOptionsDummy');
+      updateResourceSpy = sinon.spy(LockManagerDummy, 'updateResourceDummy');
+      createLockResourceSpy = sinon.spy(LockManagerDummy, 'createLockResourceDummy');
+      getResourceSpy = sinon.spy(LockManagerDummy, 'getResourceDummy');
     });
 
     afterEach(function () {
-      sandbox.restore();
+      getLockResourceOptionsSpy.reset();
+      updateResourceSpy.reset();
+      createLockResourceSpy.reset();
+      getResourceSpy.reset();
     });
-
     describe('#isWriteLocked', () => {
-      it('should return false in case the resource has no lock', () => {
-        return manager.isWriteLocked('fakeResource')
+      it('should return true if write lock is present and ttl has not expired', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.isWriteLocked('lockId1')
           .then(result => {
-            /* jshint expr: true */
-            expect(result).to.eql(false);
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-          });
-      });
-      it('should return true for a write lock.', () => {
-        const writeLockResp = {
-          'count': 1,
-          'operationType': 'WRITE'
-        };
-        jsonStub.onCall(0).returns(writeLockResp);
-        return manager.isWriteLocked('fakeResource')
-          .then(result => {
-            /* jshint expr: true */
             expect(result).to.eql(true);
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(getLockResourceOptionsSpy.callCount).to.equal(1);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId1');
           });
       });
-      it('should return false for a read lock.', () => {
-        const readLockResp = {
-          'count': 1,
-          'operationType': 'READ'
-        };
-        jsonStub.onCall(0).returns(readLockResp);
-        return manager.isWriteLocked('fakeResource')
+      it('should return false if write lock is present and ttl has expired', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.isWriteLocked('lockId2')
           .then(result => {
-            /* jshint expr: true */
             expect(result).to.eql(false);
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(getLockResourceOptionsSpy.callCount).to.equal(1);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId2');
           });
       });
-      it('should return false for a no lock.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        jsonStub.onCall(0).returns(noLockResp);
-        return manager.isWriteLocked('fakeResource')
+      it('should return false if non write lock is present', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.isWriteLocked('lockId3')
           .then(result => {
-            /* jshint expr: true */
             expect(result).to.eql(false);
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
+            expect(getLockResourceOptionsSpy.callCount).to.equal(1);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId3');
+          });
+      });
+      it('should return false if no lock is present', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.isWriteLocked('lockId4')
+          .then(result => {
+            expect(result).to.eql(false);
+            expect(getLockResourceOptionsSpy.callCount).to.equal(1);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId4');
+          });
+      });
+      it('should throw an error if api server gives incorrect response', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.isWriteLocked('lockId5')
+          .catch(err => {
+            expect(err).to.have.status(500);
+            expect(err.description).to.eql('Internal Server Error');
+            expect(getLockResourceOptionsSpy.callCount).to.equal(1);
+            expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getLockResourceOptionsSpy.firstCall.args[1]).to.eql('lockId5');
           });
       });
     });
-
     describe('#lock', () => {
-      it('should succeed when lock details is undefined.', () => {
-        const writeLockResp = {
-          'count': 1,
-          'operationType': 'WRITE'
-        };
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+      it('should return error if lock is present and not expired', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.lock('lockId1')
+          .catch(err => {
+            expect(err instanceof DeploymentAlreadyLocked).to.eql(true);
+            expect(err.description).to.eql(`Service Instance lockId1 __Locked__ at ${startTime} for backup`);
+            expect(getResourceSpy.callCount).to.equal(1);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[2]).to.eql('lockId1');
+          });
+      });
+      it('should update lock deatails if an expired lock is present', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.lock('lockId2')
           .then(() => {
-            /* jshint expr: true */
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.true;
-            sinon.assert.calledOnce(releaseStub);
+            expect(getResourceSpy.callCount).to.equal(1);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[2]).to.eql('lockId2');
+            expect(updateResourceSpy.callCount).to.equal(1);
+            expect(updateResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(updateResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(updateResourceSpy.firstCall.args[2]).to.eql('lockId2');
+            // TODO Check for arg[3] as well
           });
       });
-      it('should succeed if no ongoing lock is there.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        const writeLockResp = {
-          'count': 1,
-          'operationType': 'WRITE'
-        };
-        jsonStub.onCall(0).returns(noLockResp);
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
+      it('should create lock if lock is not present', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.lock('lockId4')
           .then(() => {
-            /* jshint expr: true */
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(writeLockResp))).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.true;
-            sinon.assert.calledOnce(releaseStub);
+            expect(getResourceSpy.callCount).to.equal(1);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[2]).to.eql('lockId4');
+            expect(createLockResourceSpy.callCount).to.equal(1);
+            expect(createLockResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            //TODO check for spy body/patch arguments
           });
       });
-      it('should fail if an ongoing lock is there.', () => {
-        const writeLockResp = {
-          'count': 1,
-          'operationType': 'WRITE'
-        };
-        jsonStub.onCall(0).returns(writeLockResp);
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
-          .catch(e => {
-            /* jshint expr: true */
-            expect(e.message).to.eql('Could not acquire lock for fakeResource as it is already locked.');
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.true;
-            sinon.assert.calledOnce(releaseStub);
-          });
-      });
-      it('should not fail even if release of resource lock fails.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        jsonStub.onCall(0).returns(noLockResp);
-        releaseStub.onCall(0).throws(new Error('Failed for release lock'));
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
-          .then(() => {
-            /* jshint expr: true */
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.true;
-            sinon.assert.calledOnce(releaseStub);
-            expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-          });
-      });
-      it('should fail if put fails.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        jsonStub.onCall(0).returns(noLockResp);
-        valueStub.onCall(0).throws(new Error('Failed for set lock details.'));
-        return manager.lock('fakeResource', CONST.LOCK_TYPE.WRITE)
-          .catch(e => {
-            /* jshint expr: true */
-            expect(e.message).to.eql('Failed for set lock details.');
-            expect(lockStub.getCall(0).calledWithExactly('fakeResource/lock')).to.be.true;
-            expect(getStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(acquireStub.called).to.be.true;
-            expect(releaseStub.called).to.be.false; // we are not calling release explicitly here, after 5 seconds it will get released automatically.
+      it('should throw an error if api server gives incorrect response', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.lock('lockId5')
+          .catch((err) => {
+            expect(err).to.have.status(500);
+            expect(err.description).to.eql('Internal Server Error');
+            expect(getResourceSpy.callCount).to.equal(1);
+            expect(getResourceSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+            expect(getResourceSpy.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+            expect(getResourceSpy.firstCall.args[2]).to.eql('lockId5');
           });
       });
     });
-    describe('#unlock', () => {
-      it('should succeed.', () => {
-        const noLockResp = {
-          'count': 0,
-          'operationType': ''
-        };
-        return manager.unlock('fakeResource')
-          .then(() => {
-            /* jshint expr: true */
-            expect(putStub.getCall(0).calledWithExactly('fakeResource/lock/details')).to.be.true;
-            expect(valueStub.getCall(0).calledWithExactly(JSON.stringify(noLockResp))).to.be.true;
-            expect(acquireStub.called).to.be.false;
-            expect(releaseStub.called).to.be.false;
-          });
-      });
-    });
+    describe('#unlock', () => {});
   });
 });

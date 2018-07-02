@@ -396,7 +396,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(plans => {
         const guids = _
           .chain(plans)
-          .filter(plan => catalog.getPlan(plan.entity.unique_id).manager.name === 'director')
+          .filter(plan => catalog.getPlan(plan.entity.unique_id).manager.name === CONST.INSTANCE_TYPE.DIRECTOR)
           .map(plan => plan.metadata.guid)
           .join(',')
           .value();

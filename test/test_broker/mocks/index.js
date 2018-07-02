@@ -14,6 +14,7 @@ const virtualHostAgent = require('./virtualHostAgent');
 const serviceFabrikClient = require('./serviceFabrikClient');
 const serviceBrokerClient = require('./serviceBrokerClient');
 const deploymentHookClient = require('./deploymentHookClient');
+const apiServerEventMesh = require('./apiServerEventMesh');
 const lib = require('../../../broker/lib');
 const logger = lib.logger;
 
@@ -29,6 +30,7 @@ exports.virtualHostAgent = virtualHostAgent;
 exports.serviceFabrikClient = serviceFabrikClient;
 exports.serviceBrokerClient = serviceBrokerClient;
 exports.deploymentHookClient = deploymentHookClient;
+exports.apiServerEventMesh = apiServerEventMesh;
 exports.verify = verify;
 exports.setup = setup;
 exports.reset = reset;
@@ -42,7 +44,6 @@ function init() {
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
-    console.log('pending mocks: %j', nock.pendingMocks());
     logger.error('pending mocks: %j', nock.pendingMocks());
   }
   expect(nock.isDone()).to.be.true;

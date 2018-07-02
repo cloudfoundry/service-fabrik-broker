@@ -64,9 +64,9 @@ main(){
         "test-coverall")
             case $2 in
                 "")
-                    test_broker test-coverall
+                    test_broker test-coverall || exit 1;
                     mv ./coverage/lcov.info ./coverage/lcov_broker.info
-                    test_deployment_hooks test-coverall
+                    test_deployment_hooks test-coverall || exit 1;
                     cat ./coverage/lcov_broker.info >> ./coverage/lcov.info
                     cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
                     ;;

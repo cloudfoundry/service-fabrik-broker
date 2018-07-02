@@ -16,7 +16,15 @@ const NotFound = errors.NotFound;
 const backupStore = lib.iaas.backupStore;
 const filename = lib.iaas.backupStore.filename;
 
-describe('service-fabrik-api', function () {
+function enableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = true;
+}
+
+function disableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = false;
+}
+
+describe('service-fabrik-api-sf2.0', function () {
 
   describe('instances', function () {
     /* jshint expr:true */
@@ -43,21 +51,8 @@ describe('service-fabrik-api', function () {
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
-      const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
-      const backupOperation = {
-        type: 'update',
-        subtype: 'backup',
-        deployment: deployment_name,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        },
-        backup_guid: backup_guid,
-        agent_ip: mocks.agent.ip
-      };
       const restoreOperation = {
         type: 'update',
         subtype: 'restore',
@@ -95,7 +90,7 @@ describe('service-fabrik-api', function () {
       }
 
       before(function () {
-        config.enable_service_fabrik_v2 = false;
+        enableServiceFabrikV2();
         config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
         backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
@@ -121,6 +116,7 @@ describe('service-fabrik-api', function () {
       });
 
       after(function () {
+        disableServiceFabrikV2();
         timestampStub.restore();
         backupStore.cloudProvider = lib.iaas.cloudProvider;
         cancelScheduleStub.restore();
@@ -171,105 +167,8 @@ describe('service-fabrik-api', function () {
             });
         });
       });
-      describe('#unlock-start', function () {
-        const name = 'unlock';
-        const deploymentName = mocks.director.deploymentNameByIndex(mocks.director.networkSegmentIndex);
-        const args = {
-          description: `Backup operation for ${deploymentName} finished with status ${CONST.OPERATION.SUCCEEDED}`
-        };
-
-        it('should receive the update request from cloud controller and unlock deployment', function () {
-          mocks.director.releaseLock();
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                const expectedDescription = `Unlocked deployment ${deploymentName}`;
-                expect(res.body.description).to.be.eql(expectedDescription);
-                mocks.verify();
-              })
-            );
-        });
-        it('should receive the update request from cloud controller and if deployment is already unlocked, should return back successfully', function () {
-          mocks.director.releaseLock(deploymentName, 404);
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                expect(res.body.description).to.be.eql(args.description);
-                mocks.verify();
-              })
-            );
-        });
-      });
       describe('#backup-start', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
-        const filename = `${prefix}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
         const type = 'online';
-        const name = 'backup';
-        const args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND
-        };
-        const scheduled_args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
-        };
         const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time + 1)}.json`;
@@ -280,30 +179,21 @@ describe('service-fabrik-api', function () {
           state: 'succeeded',
           agent_ip: mocks.agent.ip
         };
-        const instanceInfo = {
-          space_guid: space_guid,
-          backup_guid: backup_guid,
-          instance_guid: instance_id,
-          agent_ip: '10.0.1.10',
-          service_id: service_id,
-          plan_id: plan_id,
-          deployment: mocks.director.deploymentNameByIndex(index),
-          started_at: new Date()
-        };
-        const lockInfo = {
-          username: 'admin',
-          lockedForOperation: 'backup',
-          createdAt: new Date(),
-          instanceInfo: instanceInfo
-        };
         const FabrikStatusPoller = require('../../../broker/lib/fabrik/FabrikStatusPoller');
         afterEach(function () {
           FabrikStatusPoller.stopPoller = true;
           FabrikStatusPoller.clearAllPollers();
         });
-        it('should initiate a start-backup operation at cloud controller via a service instance update', function (done) {
+        it('should initiate a start-backup with SF2.0 not via cloud controller', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -314,10 +204,17 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          }, 201);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -333,20 +230,33 @@ describe('service-fabrik-api', function () {
               done();
             });
         });
-
         it('should initiate a start-backup operation with optional space_guid', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          }, 201);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -367,49 +277,30 @@ describe('service-fabrik-api', function () {
         it('should initiate a start-backup operation with context', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          }, 201);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .send({
-              type: type,
-              context: {
-                platform: 'cloudfoundry',
-                space_guid: space_guid
-              }
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
-              done();
-            });
-        });
-
-        it('should initiate a start-backup operation with context', function (done) {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudProvider.list(container, list_prefix, [
-            list_filename
-          ]);
-          mocks.cloudProvider.download(list_pathname, data);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          }, 201);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -486,19 +377,33 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it('should initiate a scheduled backup operation at cloud controller when initiated by cf admin user', function () {
+        it('should initiate a scheduled backup operation when initiated by cf admin user', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          //mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid
+          });
+          mocks.cloudController.getSpace(space_guid, {
+            organization_guid: organization_guid
+          });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, scheduled_args);
-          }, 201);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
+
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -516,188 +421,71 @@ describe('service-fabrik-api', function () {
             }));
         });
 
-        it('should initiate a  backup operation at cloud controller & if a backup is already in progress then it must result in DeploymentAlready locked message', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.director.getLockProperty(mocks.director.deploymentNameByIndex(index), true, lockInfo);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          const SERVER_ERROR_CODE = 502;
-          const LOCK_MESSAGE = 'Deployment service-fabrik-0315-b9bf180e-1a67-48b6-9cad-32bd2e936849 __Locked__ by admin at Wed Oct 11 2017 04:09:38 GMT+0000 (UTC) for on-demand_backup';
-          const error_response_body = {
-            description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true.
-            Status Code: 422 Unprocessable Entity, Body: {"status":422,"message":"${LOCK_MESSAGE}"}`,
-            error_code: 'CF-ServiceBrokerRequestRejected',
-            code: 10001,
-            http: {
-              uri: `${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true`,
-              method: 'PATCH',
-              status: 422
-            }
-          };
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, scheduled_args);
-          }, SERVER_ERROR_CODE, error_response_body);
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', adminAuthHeader)
-            .set('Accept', 'application/json')
-            .send({
-              type: type,
-              trigger: CONST.BACKUP.TRIGGER.SCHEDULED
-            })
-            .then(() => {
-              throw new Error('Should throw error');
-            })
-            .catch(err => {
-              expect(_.get(err, 'response.body.status')).to.equal(error_response_body.http.status);
-              expect(_.get(err, 'response.body.description')).to.equal(LOCK_MESSAGE);
-            });
-        });
+        // it.only('should initiate a  backup operation & if a backup is already in progress then it must result in DeploymentAlready locked message', function () {
+        //   mocks.uaa.tokenKey();
+        //   mocks.cloudController.getServiceInstance(instance_id, {
+        //     space_guid: space_guid,
+        //     service_plan_guid: plan_guid
+        //   });
+        //   mocks.cloudController.findServicePlan(instance_id, plan_id);
+        //   //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
+        //   const SERVER_ERROR_CODE = 502;
+        //   const LOCK_MESSAGE = 'Deployment service-fabrik-0315-b9bf180e-1a67-48b6-9cad-32bd2e936849 __Locked__ by admin at Wed Oct 11 2017 04:09:38 GMT+0000 (UTC) for on-demand_backup';
+        //   const error_response_body = {
+        //     description: `The service broker rejected the request to ${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true.
+        //     Status Code: 422 Unprocessable Entity, Body: {"status":422,"message":"${LOCK_MESSAGE}"}`,
+        //     error_code: 'CF-ServiceBrokerRequestRejected',
+        //     code: 10001,
+        //     http: {
+        //       uri: `${base_url}/service_instances/b9bf180e-1a67-48b6-9cad-32bd2e936849?accepts_incomplete=true`,
+        //       method: 'PATCH',
+        //       status: 422
+        //     }
+        //   };
 
-        it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.acquireLock();
-          mocks.director.verifyDeploymentLockStatus();
-          mocks.director.getDeploymentVms(deployment_name);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.startBackup();
-          mocks.cloudProvider.upload(pathname, body => {
-            expect(body.type).to.equal(type);
-            expect(body.instance_guid).to.equal(instance_id);
-            expect(body.username).to.equal(username);
-            expect(body.backup_guid).to.equal(backup_guid);
-            expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.ON_DEMAND);
-            expect(body.state).to.equal('processing');
-            return true;
-          });
-          mocks.cloudProvider.headObject(pathname);
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                expect(res.body.description).to.be.defined;
-                mocks.verify();
-              })
-            );
-        });
+        //   mocks.apiServerEventMesh.nockLoadSpec(7);
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+        //   mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+        //   mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        //   mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+        //   mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
+        //   mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+        //     status: {
+        //       state: 'in_progress'
+        //     }
+        //   });
+        //   mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+        //     status: {
+        //       response: '{"guid": "some_guid"}'
+        //     }
+        //   });
 
-        it('should receive last_operation call from cloud controller while backup is processing', function () {
-          const backupState = {
-            state: 'processing',
-            stage: 'Creating volume',
-            updated_at: new Date(Date.now())
-          };
-          mocks.agent.lastBackupOperation(backupState);
-          return chai
-            .request(apps.internal)
-            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', broker_api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64(backupOperation)
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body.state).to.equal('in progress');
-              expect(res.body).to.have.property('description');
-              mocks.verify();
-            });
-        });
-
-        it('should download the backup logs and update the metadata', function () {
-          const state = 'succeeded';
-          const backupState = {
-            state: state,
-            stage: 'Finished',
-            updated_at: new Date(Date.now()),
-            snapshotId: 'snap-12345678'
-          };
-          const backupLogs = [{
-            time: '2015-11-18T11:28:40+00:00',
-            level: 'info',
-            msg: 'Creating snapshot ...'
-          }, {
-            time: '2015-11-18T11:28:42+00:00',
-            level: 'info',
-            msg: 'Creating volume ...'
-          }];
-          const backupLogsStream = _
-            .chain(backupLogs)
-            .map(JSON.stringify)
-            .join('\n')
-            .value();
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, {});
-          mocks.agent.lastBackupOperation(backupState);
-          mocks.agent.getBackupLogs(backupLogsStream);
-          mocks.cloudProvider.upload(pathname, body => {
-            expect(body.logs).to.eql(backupLogs);
-            expect(body.state).to.equal(state);
-            expect(body.snapshotId).to.equal(backupState.snapshotId);
-            expect(body.finished_at).to.not.be.undefined;
-            return true;
-          });
-          mocks.cloudProvider.headObject(pathname);
-          return chai
-            .request(apps.internal)
-            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', broker_api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64(backupOperation)
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body.state).to.equal(state);
-              expect(res.body).to.have.property('description');
-              mocks.verify();
-            });
-        });
+        //   return chai
+        //     .request(apps.external)
+        //     .post(`${base_url}/service_instances/${instance_id}/backup`)
+        //     .set('Authorization', adminAuthHeader)
+        //     .set('Accept', 'application/json')
+        //     .send({
+        //       type: type,
+        //       trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        //     })
+        //     .then(() => {
+        //       throw new Error('Should throw error');
+        //     })
+        //     .catch(err => {
+        //       mocks.verify();
+        //       expect(_.get(err, 'response.body.status')).to.equal(error_response_body.http.status);
+        //       expect(_.get(err, 'response.body.description')).to.equal(LOCK_MESSAGE);
+        //     });
+        // });
       });
 
       describe('#backup-state', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-        const filename = `${prefix}.${backup_guid}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'processing',
@@ -717,9 +505,24 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.agent.lastBackupOperation(backupState);
+
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(_.chain(backupState)
+                .omit('updated_at')
+                .assign({
+                  trigger: 'on-demand'
+                }))
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -747,8 +550,19 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -768,8 +582,19 @@ describe('service-fabrik-api', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -792,8 +617,19 @@ describe('service-fabrik-api', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -821,7 +657,14 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, []);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -835,15 +678,6 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-abort', function () {
-        const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-        const filename = `${prefix}.${backup_guid}.${started_at}.json`;
-        const pathname = `/${container}/${filename}`;
-        const data = {
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
-          state: 'processing',
-          agent_ip: mocks.agent.ip
-        };
-
         it('should return 202 Accepted', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -852,23 +686,36 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, _
-            .chain(data)
-            .omit('state')
-            .set('state', 'processing')
-            .value()
-          );
-          mocks.agent.abortBackup();
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'in_progress',
+              response: '{"guid": "some_guid"}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'aborting',
+              response: '{"guid": "some_guid"}'
+            }
+          }, 2);
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
+              mocks.verify();
               expect(res).to.have.status(202);
               expect(res.body).to.be.empty;
-              mocks.verify();
             });
         });
         it('should return 200 OK', function () {
@@ -879,13 +726,27 @@ describe('service-fabrik-api', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [filename]);
-          mocks.cloudProvider.download(pathname, _
-            .chain(data)
-            .omit('state')
-            .set('state', 'succeeded')
-            .value()
-          );
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'in_progress',
+              response: '{"guid": "some_guid"}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'aborted',
+              response: '{"guid": "some_guid"}'
+            }
+          }, 2);
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/backup`)
@@ -1193,7 +1054,6 @@ describe('service-fabrik-api', function () {
         it('should receive the update request from cloud controller and start the restore', function () {
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.verifyDeploymentLockStatus();
           mocks.agent.getInfo();
           mocks.agent.startRestore();
           mocks.cloudProvider.upload(restorePathname, body => {
@@ -1204,6 +1064,14 @@ describe('service-fabrik-api', function () {
             return true;
           });
           mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+
           return support.jwt
             .sign({
               username: username
@@ -1250,6 +1118,16 @@ describe('service-fabrik-api', function () {
             stage: 'Attaching volume',
             updated_at: new Date(Date.now())
           };
+          mocks.apiServerEventMesh.nockLoadSpec();
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           mocks.agent.lastRestoreOperation(restoreState);
           return chai
             .request(apps.internal)
@@ -1301,6 +1179,17 @@ describe('service-fabrik-api', function () {
             return true;
           });
           mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
           return chai
             .request(apps.internal)
             .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
@@ -1523,13 +1412,6 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#backup-delete', function () {
-        const prefix = `${space_guid}/backup`;
-        const started14DaysPrior = filename.isoDate(moment()
-          .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-        const filenameObj = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename14DaysPrior = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
-        const pathname = `/${container}/${filenameObj}`;
-        const pathName14DaysPrior = `/${container}/${filename14DaysPrior}`;
         const data = {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'succeeded',
@@ -1538,27 +1420,22 @@ describe('service-fabrik-api', function () {
           service_id: service_id
         };
 
-        const scheduled_data = {
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
-          state: 'succeeded',
-          backup_guid: backup_guid,
-          started_at: new Date().toISOString(),
-          agent_ip: mocks.agent.ip,
-          service_id: service_id
-        };
-
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathname);
+          mocks.apiServerEventMesh.nockLoadSpec(6);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: '{}'
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)
@@ -1574,10 +1451,18 @@ describe('service-fabrik-api', function () {
         it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, scheduled_data);
+          mocks.apiServerEventMesh.nockLoadSpec(5);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'error',
+              response: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', authHeader)
@@ -1592,17 +1477,19 @@ describe('service-fabrik-api', function () {
 
         it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filename14DaysPrior
-          ]);
-          scheduled_data.started_at = started14DaysPrior;
-          mocks.cloudProvider.download(pathName14DaysPrior, scheduled_data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathName14DaysPrior);
+          mocks.apiServerEventMesh.nockLoadSpec(6);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: '{}'
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
             .set('Authorization', adminAuthHeader)

@@ -32,7 +32,7 @@ class Scheduler {
     this.time = new Date();
     this.config = config.scheduler;
     this.runWithWebProcess = this.config.run_with_web_process === undefined || this.config.run_with_web_process === true;
-    logger.info(`Scheduler running in : ${process.env.job === undefined ? 'Web Mode': 'Batch Job Mode'} - ${process.pid} - can scheduler run with web process : ${this.runWithWebProcess}`);
+    logger.info(`Scheduler running in : ${process.env.job === undefined ? 'Web Mode' : 'Batch Job Mode'} - ${process.pid} - can scheduler run with web process : ${this.runWithWebProcess}`);
     const jobTypes = _.get(this.config, 'job_types', '').replace(/\s*/g, '');
     this.jobTypeList = jobTypes !== '' ? jobTypes.split(',') : [];
     logger.info('list of configured jobs:', jobTypes);
@@ -50,7 +50,7 @@ class Scheduler {
 
   initialize(eventName, eventInfo) {
     try {
-      logger.debug('+-> Recieved event :', eventName);
+      logger.debug('+-> Received event :', eventName);
       logger.info(`Agenda is configured to work with collection - ${this.config.agenda_collection}`);
       const processId = BaseJob.getProcessId();
       this.agenda = new Agenda({

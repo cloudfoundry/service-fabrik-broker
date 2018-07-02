@@ -3,3 +3,4 @@
 --check-leaks
 --slow 100
 --growl
+-S

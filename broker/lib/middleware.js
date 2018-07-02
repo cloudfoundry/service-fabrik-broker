@@ -5,17 +5,87 @@ const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const quota = require('../lib/quota');
 const quotaManager = quota.quotaManager;
-const CONST = require('../../common/constants');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('./models/catalog');
+const config = require('./config');
+const lockManager = require('../../eventmesh').lockManager;
+const CONST = require('./constants');
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const UnprocessableEntity = errors.UnprocessableEntity;
 
 
 exports.isFeatureEnabled = function (featureName) {
   return function (req, res, next) {
     if (!utils.isFeatureEnabled(featureName)) {
       throw new errors.ServiceUnavailable(`${featureName} feature not enabled`);
+    }
+    next();
+  };
+};
+
+exports.validateRequest = function (operationType) {
+  return function (req, res, next) {
+    /* jshint unused:false */
+    if (req.instance.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
+      next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
+    }
+    if (_.includes([CONST.OPERATION_TYPE.CREATE], operationType) &&
+      // TODO -PR -Move this to validateCreateRequest and have ValidateRequest for all HTTP Operations and not for each operation type in the route setup code.
+      (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid'))) {
+      next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
+    }
+    next();
+  };
+};
+
+exports.lock = function (operationType, lastOperationCall) {
+  return function (req, res, next) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+      // Acquire lock for this instance
+      return lockManager.lock(req.params.instance_id, {
+          lockedResourceDetails: {
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: req.params.instance_id,
+            operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
+          }
+        })
+        .then(() => next())
+        .catch((err) => {
+          logger.debug('[LOCK]: exception occurred; Need not worry as lock is probably set --', err);
+          //For last operation call, we ensure migration of locks through this
+          if (lastOperationCall && err instanceof DeploymentAlreadyLocked) {
+            logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
+            next();
+          } else {
+            next(err);
+          }
+        });
+    }
+    next();
+  };
+};
+
+exports.isWriteLocked = function () {
+  // TODO - PR can name this method to checkBlockingOperationInProgress or checkWriteLocked -- as this is really not returning a boolean.
+  return function (req, res, next) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+      // Acquire lock for this instance
+      return lockManager.isWriteLocked(req.params.instance_id)
+        .then(isWriteLocked => {
+          if (isWriteLocked) {
+            // TODO PR Its better to fetchLock here instead of a boolean as you can better construct the error with the operaiton and the time the lock has been acquired.
+            next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked`));
+          } else {
+            next();
+          }
+        })
+        .catch((err) => {
+          logger.error('[LOCK]: exception occurred --', err);
+          next(err);
+        });
     }
     next();
   };

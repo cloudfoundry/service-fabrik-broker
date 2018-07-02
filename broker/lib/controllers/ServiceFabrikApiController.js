@@ -7,16 +7,23 @@ const jwt = require('../jwt');
 const logger = require('../logger');
 const backupStore = require('../iaas').backupStore;
 const filename = backupStore.filename;
+const eventmesh = require('../../../eventmesh');
+const lockManager = eventmesh.lockManager;
 const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
+const Timeout = errors.Timeout;
+const cf = require('../cf');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
+const Conflict = errors.Conflict;
 const UnprocessableEntity = errors.UnprocessableEntity;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
+const InternalServerError = errors.InternalServerError;
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const ScheduleManager = require('../jobs');
 const config = require('../config');
 const CONST = require('../constants');
@@ -27,15 +34,97 @@ const docker = config.enable_swarm_manager ? require('../docker') : undefined;
 const CloudControllerError = {
   NotAuthorized: err => {
     const body = err.error;
-    return err.statusCode === 403 && (
+    return err.statusCode === CONST.HTTP_STATUS_CODE.FORBIDDEN && (
       body.code === 10003 || body.error_code === 'CF-NotAuthorized'
     );
   }
 };
 
+
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
     super();
+  }
+
+  static _processError(errorResponse) {
+    let message = errorResponse.message;
+    if (errorResponse.error && errorResponse.error.description) {
+      message = `${message}. ${errorResponse.error.description}`;
+    }
+    let err;
+    switch (errorResponse.status) {
+    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+      err = new BadRequest(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+      err = new NotFound(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.CONFLICT:
+      err = new Conflict(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+      err = new errors.Forbidden(message);
+      break;
+    default:
+      err = new InternalServerError(message);
+      break;
+    }
+    throw err;
+  }
+
+  /**
+   * Poll for Status until opts.start_state changes
+   * @param {object} opts - Object containing options
+   * @param {string} opts.operationId - Id of the operation ex. backupGuid
+   * @param {string} opts.start_state - start state of the operation ex. in_queue
+   * @param {object} opts.started_at - Date object specifying operation start time
+   */
+  static getResourceOperationStatus(opts) {
+    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
+    let finalState;
+    return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
+      .then(() => eventmesh.apiServerClient.getOperationState({
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        operationId: opts.operationId
+      })).then(state => {
+        const duration = (new Date() - opts.started_at) / 1000;
+        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
+          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
+          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
+        }
+        if (state === opts.start_state) {
+          return ServiceFabrikApiController.getResourceOperationStatus(opts);
+        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+          finalState = state;
+          return eventmesh.apiServerClient.getOperationResponse({
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              operationId: opts.operationId,
+            })
+            .then(errorResponse => {
+              logger.info('Operation manager reported error', errorResponse);
+              return this._processError(errorResponse);
+            });
+        } else {
+          finalState = state;
+          return eventmesh.apiServerClient.getOperationResponse({
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            operationId: opts.operationId,
+          });
+        }
+      })
+      .then(result => {
+        if (result.state) {
+          return result;
+        }
+        return {
+          state: finalState,
+          response: result
+        };
+      });
   }
 
   verifyAccessToken(req, res) {
@@ -116,15 +205,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
         _.set(req, 'entity.platform', platform);
 
         /*Following statement for backward compatibility*/
-        const tenant_id = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') ||
+        const tenantId = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') ||
           _.get(req, 'query.tenant_id') || _.get(req, 'body.context.space_guid') || _.get(req, 'body.context.namespace');
 
-        if (tenant_id) {
-          if ((platform === CONST.PLATFORM.CF && !FabrikBaseController.uuidPattern.test(tenant_id)) ||
-            (platform === CONST.PLATFORM.K8S && !FabrikBaseController.k8sNamespacePattern.test(tenant_id))) {
-            throw new BadRequest(`Invalid 'uuid' or 'name' '${tenant_id}'`);
+        if (tenantId) {
+          if ((platform === CONST.PLATFORM.CF && !FabrikBaseController.uuidPattern.test(tenantId)) ||
+            (platform === CONST.PLATFORM.K8S && !FabrikBaseController.k8sNamespacePattern.test(tenantId))) {
+            throw new BadRequest(`Invalid 'uuid' or 'name' '${tenantId}'`);
           }
-          return tenant_id;
+          return tenantId;
         }
         const instanceId = req.params.instance_id;
         this.validateUuid(instanceId, 'Service Instance ID');
@@ -196,7 +285,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return req.manager
       .getServiceInstanceState(req.params.instance_id)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.pick(body, 'operational', 'details'))
       );
   }
@@ -225,6 +314,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startBackup(req, res) {
+    logger.info(`Service fabrik enabled: ${config.enable_service_fabrik_v2}`);
+    if (config.enable_service_fabrik_v2) {
+      return this.startBackupV2(req, res);
+    }
+    logger.info(`Calling service fabrik v1`);
+    return this.startBackupV1(req, res);
+  }
+
+  startBackupV1(req, res) {
     req.manager.verifyFeatureSupport('backup');
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
     return Promise
@@ -249,45 +347,207 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .invoke()
           .tap(response => logger.info('backup response ', response))
           .then(body => res
-            .status(202)
+            .status(CONST.HTTP_STATUS_CODE.ACCEPTED)
             .send(body)
           );
       });
   }
 
+  getBackupOptions(backupGuid, req) {
+    return Promise
+      .all([
+        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
+        cf.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
+      ])
+      .spread((planDetails, orgAndSpaceDetails) => {
+        const context = req.body.context || {
+          space_guid: orgAndSpaceDetails.space_guid,
+          platform: CONST.PLATFORM.CF
+        };
+        const backupOptions = {
+          guid: backupGuid,
+          instance_guid: req.params.instance_id,
+          plan_id: req.body.plan_id || planDetails.entity.unique_id,
+          service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
+          arguments: req.body,
+          username: req.user.name,
+          useremail: req.user.email || '',
+          context: context
+        };
+        return backupOptions;
+      });
+  }
+
+  startBackupV2(req, res) {
+    let backupStartedAt;
+    let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
+    req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
+    const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
+    let backupGuid;
+    return Promise
+      .try(() => this.checkQuota(req, trigger))
+      .then(() => utils.uuidV4())
+      .then(guid => {
+        _.set(req.body, 'trigger', trigger);
+        backupGuid = guid;
+        return this.getBackupOptions(backupGuid, req)
+          .then(backupOptions => {
+            logger.info(`Triggering backup with options: ${JSON.stringify(backupOptions)}`);
+            // Acquire read lock
+            return lockManager.lock(req.params.instance_id, {
+                lockedResourceDetails: {
+                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                  resourceId: backupGuid,
+                  operation: CONST.OPERATION_TYPE.BACKUP
+                }
+              })
+              .then(() => {
+                lockedDeployment = true;
+                return eventmesh.apiServerClient.createOperation({
+                  resourceId: req.params.instance_id,
+                  operationName: CONST.OPERATION_TYPE.BACKUP,
+                  operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                  operationId: backupGuid,
+                  value: backupOptions
+                });
+              });
+          });
+      })
+      .then(() => {
+        backupStartedAt = new Date();
+        //check if resource exist, else create and then update
+        return eventmesh.apiServerClient.getResource('deployment', 'directors', req.params.instance_id)
+          .catch(() => eventmesh.apiServerClient.createDeployment(req.params.instance_id, {}))
+          .then(() => eventmesh.apiServerClient.updateLastOperation({
+            resourceId: req.params.instance_id,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            value: backupGuid
+          }));
+      })
+      .then(() => {
+        res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
+          name: CONST.OPERATION_TYPE.BACKUP,
+          guid: backupGuid
+        });
+      })
+      .catch(err => {
+        logger.info('Handling error :', err);
+        if (err instanceof DeploymentAlreadyLocked) {
+          throw err;
+        }
+        if (lockedDeployment) {
+          return lockManager.unlock(req.params.instance_id)
+            .throw(err);
+        }
+        throw err;
+      });
+  }
+
   getLastBackup(req, res) {
+    if (config.enable_service_fabrik_v2) {
+      return this.getLastBackupV2(req, res);
+    }
+    return this.getLastBackupV1(req, res);
+  }
+
+  getLastBackupV2(req, res) {
+    return eventmesh.apiServerClient.getLastOperation({
+        resourceId: req.params.instance_id,
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
+      })
+      .then(backupGuid =>
+        eventmesh.apiServerClient.getOperationResponse({
+          operationName: CONST.OPERATION_TYPE.BACKUP,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          operationId: backupGuid,
+        }))
+      .then(result => {
+        return res
+          .status(CONST.HTTP_STATUS_CODE.OK)
+          .send(_.omit(result, 'secret', 'agent_ip'));
+      })
+      .catch((err) => {
+        logger.error('Error occured during getLastBackup ', err);
+        throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
+      });
+  }
+
+  getLastBackupV1(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const instance_id = req.params.instance_id;
+    const instanceId = req.params.instance_id;
     const noCache = req.query.no_cache === 'true' ? true : false;
-    const tenant_id = req.entity.tenant_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .getLastBackup(tenant_id, instance_id, noCache)
+      .getLastBackup(tenantId, instanceId, noCache)
       .then(result => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip'))
       )
-      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instance_id}'`));
+      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instanceId}'`));
   }
 
   abortLastBackup(req, res) {
+    if (config.enable_service_fabrik_v2) {
+      return this.abortLastBackupV2(req, res);
+    }
+    return this.abortLastBackupV1(req, res);
+  }
+
+  abortLastBackupV1(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .abortLastBackup(tenant_id, instance_id)
+      .abortLastBackup(tenantId, instanceId)
       .then(result => res
-        .status(result.state === 'aborting' ? 202 : 200)
+        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
 
+
+  abortLastBackupV2(req, res) {
+    req.manager.verifyFeatureSupport('backup');
+    const backupStartedAt = new Date();
+    return eventmesh.apiServerClient.getLastOperation({
+      resourceId: req.params.instance_id,
+      operationName: CONST.OPERATION_TYPE.BACKUP,
+      operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+    }).then(backupGuid => {
+      return eventmesh.apiServerClient.getOperationState({
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        operationId: backupGuid,
+      }).then(state => {
+        // abort only if the state is in progress
+        if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+          return eventmesh.apiServerClient.updateOperationState({
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            operationId: backupGuid,
+            stateValue: CONST.OPERATION.ABORT
+          });
+        } else {
+          logger.info(`Skipping abort as state is : ${state}`);
+        }
+      }).then(() => ServiceFabrikApiController.getResourceOperationStatus({
+        operationId: backupGuid,
+        start_state: CONST.OPERATION.ABORT,
+        started_at: backupStartedAt
+      }));
+    }).then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send({}));
+  }
+
   startRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const backup_guid = req.body.backup_guid;
-    const time_stamp = req.body.time_stamp;
-    const tenant_id = req.entity.tenant_id;
-    const instance_id = req.params.instance_id;
-    const service_id = req.manager.service.id;
+    const backupGuid = req.body.backup_guid;
+    const timeStamp = req.body.time_stamp;
+    const tenantId = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const serviceId = req.manager.service.id;
     const bearer = _
       .chain(req.headers)
       .get('authorization')
@@ -296,32 +556,34 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .value();
     return Promise
       .try(() => {
-        if (!backup_guid && !time_stamp) {
-          throw new BadRequest('Invalid input as backup_guid or time_stamp not present');
-        } else if (backup_guid) {
-          return this.validateUuid(backup_guid, 'Backup GUID');
-        } else if (time_stamp) {
-          return this.validateDateString(time_stamp);
+        if (!backupGuid && !timeStamp) {
+          throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
+        } else if (backupGuid) {
+          return this.validateUuid(backupGuid, 'Backup GUID');
+        } else if (timeStamp) {
+          return this.validateDateString(timeStamp);
         }
       })
-      .then(() => this.backupStore
-        .getBackupFile(time_stamp ? {
-          time_stamp: time_stamp,
-          tenant_id: tenant_id,
-          instance_id: instance_id,
-          service_id: service_id
+      .then(() => {
+        const backupFileOptions = timeStamp ? {
+          time_stamp: timeStamp,
+          tenant_id: tenantId,
+          instance_id: instanceId,
+          service_id: serviceId
         } : {
-          backup_guid: backup_guid,
-          tenant_id: tenant_id
-        })
-      )
-      .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backup_guid}' found in this space`))
+          backup_guid: backupGuid,
+          tenant_id: tenantId
+        };
+        return this.backupStore
+          .getBackupFile(backupFileOptions);
+      })
+      .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backupGuid}' found in this space`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {
-          throw new UnprocessableEntity(`Can not restore backup '${backup_guid}' due to state '${metadata.state}'`);
+          throw new UnprocessableEntity(`Can not restore backup '${backupGuid}' due to state '${metadata.state}'`);
         }
         if (!req.manager.isRestorePossible(metadata.plan_id)) {
-          throw new UnprocessableEntity(`Cannot restore backup: '${backup_guid}' to plan:'${metadata.plan_id}'`);
+          throw new UnprocessableEntity(`Cannot restore backup: '${backupGuid}' to plan:'${metadata.plan_id}'`);
         }
       })
       .then(metadata => this.fabrik
@@ -331,7 +593,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           arguments: _.assign({
             backup: _.pick(metadata, 'type', 'secret')
           }, req.body, {
-            backup_guid: backup_guid || metadata.backup_guid
+            backup_guid: backupGuid || metadata.backup_guid
           })
         })
         .handle(req, res)
@@ -340,25 +602,25 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .getLastRestore(tenant_id, instance_id)
+      .getLastRestore(tenantId, instanceId)
       .then(result => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)
       )
-      .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instance_id}'`));
+      .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
   }
 
   abortLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const instance_id = req.params.instance_id;
-    const tenant_id = req.entity.tenant_id;
+    const instanceId = req.params.instance_id;
+    const tenantId = req.entity.tenant_id;
     return req.manager
-      .abortLastRestore(tenant_id, instance_id)
+      .abortLastRestore(tenantId, instanceId)
       .then(result => res
-        .status(result.state === 'aborting' ? 202 : 200)
+        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
@@ -368,13 +630,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
     options.tenant_id = req.entity.tenant_id;
     return this.listBackupFiles(options)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
 
   listBackupFiles(options) {
-    function getPredicate(before, after, instance_id) {
+    function getPredicate(before, after, instanceId) {
       return function predicate(filenameobject) {
         if (before && !_.lt(filenameobject.started_at, before)) {
           return false;
@@ -382,7 +644,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (after && !_.gt(filenameobject.started_at, after)) {
           return false;
         }
-        if (instance_id && filenameobject.instance_guid !== instance_id) {
+        if (instanceId && filenameobject.instance_guid !== instanceId) {
           return false;
         }
         return filenameobject.operation === 'backup';
@@ -428,7 +690,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs'))
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
@@ -444,12 +706,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .getBackupFile(options)
       .then(data => _.omit(data, 'secret', 'agent_ip'))
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body)
       );
   }
 
   deleteBackup(req, res) {
+    if (config.enable_service_fabrik_v2) {
+      return this.deleteBackupV2(req, res);
+    }
+    return this.deleteBackupV1(req, res);
+  }
+
+  deleteBackupV1(req, res) {
     const options = {
       tenant_id: req.entity.tenant_id,
       backup_guid: req.params.backup_guid,
@@ -458,7 +727,40 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return this.backupStore
       .deleteBackupFile(options)
       .then(() => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
+        .send({})
+      );
+  }
+
+  deleteBackupV2(req, res) {
+    const options = {
+      tenant_id: req.entity.tenant_id,
+      backup_guid: req.params.backup_guid,
+      user: req.user
+    };
+    logger.info('Attempting delete with:', options);
+    return eventmesh.apiServerClient.patchOperationOptions({
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        operationId: req.params.backup_guid,
+        value: options
+      }).then(() =>
+        eventmesh.apiServerClient.updateOperationState({
+          operationName: CONST.OPERATION_TYPE.BACKUP,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          operationId: req.params.backup_guid,
+          stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE
+        })
+      )
+      .then(() => ServiceFabrikApiController.getResourceOperationStatus({
+        operationId: req.params.backup_guid,
+        start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+        started_at: new Date()
+      }))
+      //delete resource from apiserver here if state is delted 
+      .then(() => eventmesh.apiServerClient.deleteResource(CONST.APISERVER.ANNOTATION_NAMES.BACKUP, CONST.APISERVER.ANNOTATION_TYPES.BACKUP, req.params.backup_guid))
+      .then(() => res
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }
@@ -496,7 +798,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             data,
             req.user)
           .then(body => res
-            .status(201)
+            .status(CONST.HTTP_STATUS_CODE.CREATED)
             .send(body));
       });
   }
@@ -506,7 +808,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return ScheduleManager
       .getSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body));
   }
 
@@ -518,7 +820,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return ScheduleManager
       .cancelSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
       .then(() => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send({}));
   }
 
@@ -544,7 +846,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           jobData,
           req.user))
       .then(body => res
-        .status(201)
+        .status(CONST.HTTP_STATUS_CODE.CREATED)
         .send(body));
   }
 
@@ -580,7 +882,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       .then(body => res
-        .status(200)
+        .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body));
   }
 

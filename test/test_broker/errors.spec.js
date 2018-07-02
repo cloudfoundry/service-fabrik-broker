@@ -259,14 +259,14 @@ describe('errors', () => {
       let deploymentAlreadyLocked = new DeploymentAlreadyLocked(deploymentName);
       expect(deploymentAlreadyLocked.status).to.eql(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
       expect(deploymentAlreadyLocked.reason).to.eql('Unprocessable Entity');
-      expect(deploymentAlreadyLocked.message).to.eql(`Deployment ${deploymentName} ${CONST.OPERATION_TYPE.LOCK}`);
+      expect(deploymentAlreadyLocked.message).to.eql(`Service Instance ${deploymentName} ${CONST.OPERATION_TYPE.LOCK}`);
     });
 
     it('sets the class properties correctly with lockinfo', () => {
       let deploymentAlreadyLocked = new DeploymentAlreadyLocked(deploymentName, lockInfo);
       expect(deploymentAlreadyLocked.status).to.eql(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
       expect(deploymentAlreadyLocked.reason).to.eql('Unprocessable Entity');
-      expect(deploymentAlreadyLocked.message).to.eql(`Deployment ${deploymentName} ${CONST.OPERATION_TYPE.LOCK} by ${lockInfo.username} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`);
+      expect(deploymentAlreadyLocked.message).to.eql(`Service Instance ${deploymentName} ${CONST.OPERATION_TYPE.LOCK} at ${lockInfo.createdAt} for ${lockInfo.lockForOperation}`);
     });
 
     it('sets the class properties correctly with lock message', () => {

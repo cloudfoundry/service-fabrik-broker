@@ -32,13 +32,13 @@ script:
   - "npm run -s jsdoc"
   - |
      git secrets --scan-history || exit 1
-  - |
-     echo "Full repo scan of truffleHog"
-     # truffleHog only scans git endpoints which have a ref.
-     # truffleHog check fails to detect changed because travis merge creates a detached HEAD
-     # Creating a branch to fix this issue
-     git checkout -b travis-merge
-     INITIAL_COMMIT="8419f9209cd6efaa11d62c535781f0f4b029d017"
-     high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
-     echo "Truffle hog output : $high_entropy"
-     if [[ "$high_entropy" != "" ]] ; then exit 1; fi
+  # - |
+  #    echo "Full repo scan of truffleHog"
+  #    # truffleHog only scans git endpoints which have a ref.
+  #    # truffleHog check fails to detect changed because travis merge creates a detached HEAD
+  #    # Creating a branch to fix this issue
+  #    git checkout -b travis-merge
+  #    INITIAL_COMMIT="26697a04e6890c0fc2226cf8c4e228c95586254c"
+  #    high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
+  #    echo "Truffle hog output : $high_entropy"
+  #    if [[ "$high_entropy" != "" ]] ; then exit 1; fi

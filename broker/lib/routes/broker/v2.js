@@ -3,6 +3,7 @@
 const express = require('express');
 const _ = require('lodash');
 const config = require('../../config');
+const CONST = require('../../constants');
 const middleware = require('../../middleware');
 const commonMiddleware = require('../../../../common/middleware');
 const controller = require('../../controllers').serviceBrokerApi;
@@ -32,14 +33,14 @@ router.use(commonMiddleware.error({
 instanceRouter.use(controller.handler('ensurePlatformContext'));
 instanceRouter.use(controller.handler('assignInstance'));
 instanceRouter.route('/')
-  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), controller.handler('putInstance')])
-  .patch([middleware.checkQuota(), controller.handler('patchInstance')])
-  .delete(controller.handler('deleteInstance'))
+  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.CREATE), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
+  .patch([middleware.checkQuota(), middleware.validateRequest(CONST.OPERATION_TYPE.UPDATE), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
+  .delete([middleware.validateRequest(CONST.OPERATION_TYPE.DELETE), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .all(commonMiddleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE']));
 instanceRouter.route('/last_operation')
-  .get(controller.handler('getLastInstanceOperation'))
+  .get([middleware.lock(undefined, true), controller.handler('getLastInstanceOperation')]) //passing undefined as last operation operationType is part of the req
   .all(commonMiddleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
-  .put(controller.handler('putBinding'))
-  .delete(controller.handler('deleteBinding'))
+  .put([middleware.isWriteLocked(), controller.handler('putBinding')])
+  .delete(middleware.isWriteLocked(), controller.handler('deleteBinding'))
   .all(commonMiddleware.methodNotAllowed(['PUT', 'DELETE']));

@@ -1,105 +1,188 @@
 'use strict';
 
 const _ = require('lodash');
-const config = require('../common/config');
-const logger = require('../common/logger');
+const Promise = require('bluebird');
+const eventmesh = require('./');
 const errors = require('../common/errors');
-const ETCDLockError = errors.ETCDLockError;
-const CONST = require('./constants');
-
-const {
-  Etcd3
-} = require('etcd3');
-const client = new Etcd3({
-  hosts: config.etcd.url,
-  credentials: {
-    rootCertificate: Buffer.from(config.etcd.ssl.ca, 'utf8'),
-    privateKey: Buffer.from(config.etcd.ssl.key, 'utf8'),
-    certChain: Buffer.from(config.etcd.ssl.crt, 'utf8')
-  }
-});
+const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const logger = require('../common/logger');
+const CONST = require('../common/constants');
+const NotFound = errors.NotFound;
+const Conflict = errors.Conflict;
+const InternalServerError = errors.InternalServerError;
 
 class LockManager {
   /*
-  Lock is tracked via the key value "resource/lock/details". 
-  The value is a JSON type and the structure looks like the following.
-  {count: INT, operationType:STRING}
-  when a lock is taken, count value is set to 1.
-  operationType value is either "READ or "WRITE", depending on if the ongoing operation will make sync operations like bind/unbind wait for it.
-
-  This value is read and updated to acquire lock. In order to make this two different operations synchronous, we do it taking a lock on the "resource/lock" key, which would ensure synchrounous execution of the read and update operation.
-
-  Lock Algorithm looks like the following
-      1. Lock "resource/lock"
-      2. Check "resource/lock/details" value
-      3. if lock value > 1 then lock is already acquired by someone, 
-         unlock "resource/lock" and throw exception.
-      4. else, set the lock details as 
-         {count: 1, operationType: "READ"} 
-      5. release the lock on "resource/lock"
+  This method checks whether lock is of write type.
+  returns true if lock is present and not expired and it's of type WRITE
   */
-  lock(resource, operationType) {
-    const lock = client.lock(resource + CONST.LOCK_KEY_SUFFIX);
-    let lockDetailsChanged = false;
-    return lock.ttl(CONST.LOCK_TTL).acquire()
-      .then(() => {
-        return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json();
-      })
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   */
+
+  isWriteLocked(resourceId) {
+    return eventmesh.apiServerClient.getLockDetails(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
       .then(lockDetails => {
-        if (_.get(lockDetails, 'count') > 0) {
-          return lock.release().then(() => {
-            throw new ETCDLockError(`Could not acquire lock for ${resource} as it is already locked.`);
+        const currentTime = new Date();
+        const lockTime = new Date(lockDetails.lockTime);
+        const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
+        if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
+          logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation ?
+            lockDetails.lockedResourceDetails.operation : 'unknown'} ` +
+            `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime} `);
+          return true;
+        }
+        return false;
+      })
+      //TODO -PR- return the lock details in case of locked
+      .catch(NotFound, () => false);
+  }
+
+  /*
+  Lock resource structure
+  {
+      metadata : {
+          name : instance_id,
+      },
+      spec: {
+          options: JSON.stringify({
+                lockType: <Read/Write>,
+                lockTime: <time in UTC when lock was acquired, can be updated when one wants to refresh lock>,
+                lockTTL: <lock ttl in miliseconds=> set to Infinity if not provided>,
+                lockedResourceDetails: {
+                    resourceGroup: <type of resource who is trying to acquire lock ex. backup>
+                    resourceType: <name of resource who is trying to acquire lock ex. defaultbackup>
+                    resourceId: <id of resource who is trying to acquire lock ex.  backup_guid>
+                    operation: <operation of locker ex. update/backup>
+              }
+          })
+      }
+  }
+  Lock is tracked via resource of resource group lock and resource type deploymentlock.
+  id of the resource is instance_id.
+  To lock the deployment we create a new resource of resourceType deploymentlock.
+  If the resource is already present then deployment can't be locked.
+  Lock Algorithm looks like the following
+      1. Create resource lock/deploymentlock/instance_id
+      2. If resource is already present than can't acquire lock
+      3. Check lockdetails from spec.options, if TTL is expired than update the lockdetails
+      4. else can't acquire lock
+  */
+
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   * @param {object} lockDetails - Details of the lock that is to be acquired
+   * @param {number} [lockDetails.lockTTL=Infinity] - TTL in miliseconds for the lock that is to be acquired
+   * @param {string} lockDetails.lockType - Type of lock ('READ'/'WRITE')
+   * @param {object} [lockDetails.lockedResourceDetails] - Details of the operation who is trying to acquire the lock
+   * @param {string} [lockDetails.lockedResourceDetails.resourceGroup] - Type of resource for which lock is being acquired. ex: backup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Name of resource for which lock is being acquired. ex: defaultbackup
+   * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
+   * @param {string} [lockDetails.lockedResourceDetails.operation=unknown] - Operation type who is acquiring the lock. ex: backup
+   */
+
+  lock(resourceId, lockDetails) {
+    //TODO PR - throw error if lock deatils is empty
+    if (!lockDetails) {
+      lockDetails = {};
+    }
+    const currentTime = new Date();
+    const opts = _.cloneDeep(lockDetails);
+    opts.lockedResourceDetails = opts.lockedResourceDetails ? opts.lockedResourceDetails : {};
+    opts.lockType = this._getLockType(opts.lockedResourceDetails.operation);
+    opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
+    _.extend(opts, {
+      'lockTime': currentTime
+    });
+    logger.debug(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
+    return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
+      .then(resource => {
+        const resourceBody = resource.body;
+        const currentlLockDetails = JSON.parse(resourceBody.spec.options);
+        const currentLockTTL = currentlLockDetails.lockTTL ? currentlLockDetails.lockTTL : Infinity;
+        const currentLockTime = new Date(currentlLockDetails.lockTime);
+        if ((currentTime - currentLockTime) < currentLockTTL) {
+          logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
+            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
+          throw new DeploymentAlreadyLocked(resourceId, {
+            createdAt: currentLockTime,
+            lockForOperation: currentlLockDetails.lockedResourceDetails.operation
           });
         } else {
-          const newLockDetails = {};
-          newLockDetails.count = 1;
-          newLockDetails.operationType = operationType;
-          return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
+          const patchBody = _.assign(resourceBody, {
+            spec: {
+              options: JSON.stringify(opts)
+            }
+          });
+          return eventmesh.apiServerClient.updateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId, patchBody);
         }
       })
-      .then(() => {
-        lockDetailsChanged = true;
-        return lock.release();
-      })
-      .catch(e => {
-        if (!lockDetailsChanged) {
-          throw new ETCDLockError(e.message);
-        } else {
-          logger.info('Resource unlock failed. However, now throwing error and letting lock successful as unlock happens automatically after 5 seconds');
+      .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
+      .catch(err => {
+        //TODO -PR - use catch filter
+        if (err instanceof NotFound) {
+          const spec = {
+            options: JSON.stringify(opts)
+          };
+          const status = {
+            locked: 'true'
+          };
+          const body = {
+            metadata: {
+              name: resourceId
+            },
+            spec: spec,
+            status: status
+          };
+          return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
+            .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
+        } else if (err instanceof Conflict) {
+          // TODO - PR - add details in DeploymentAlreadyLocked
+          throw new DeploymentAlreadyLocked(resourceId);
         }
+        throw err;
       });
   }
 
   /*
-  Unlock operation needs to only reset the lock details value and make the count as 0. 
-  As it is a single opetation, we do it directly, without having any external lock surrounding it.
-  Caller whould re-try if unlock fails.
+  To unlock deployment, delete lock resource
   */
-  unlock(resource) {
-    const newLockDetails = {};
-    newLockDetails.count = 0;
-    newLockDetails.operationType = '';
-    return client.put(resource + CONST.LOCK_DETAILS_SUFFIX).value(JSON.stringify(newLockDetails));
+  /**
+   * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
+   * @param {number} [maxRetryCount=CONST.ETCD.MAX_RETRY_UNLOCK] - Max unlock attempts
+   */
+
+  unlock(resourceId, maxRetryCount) {
+    maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
+
+    function unlockResourceRetry(currentRetryCount) {
+      return eventmesh.apiServerClient.deleteLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
+        .tap(() => logger.debug(`Successfully unlocked resource ${resourceId} `))
+        .catch(err => {
+          if (err instanceof NotFound) {
+            logger.debug(`Successfully Unlocked resource ${resourceId} `);
+            return;
+          }
+          if (currentRetryCount >= maxRetryCount) {
+            logger.error(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+            throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
+          }
+          logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
+          return Promise.delay(CONST.ETCD.RETRY_DELAY)
+            .then(() => unlockResourceRetry(resourceId, currentRetryCount + 1));
+        });
+    }
+    logger.debug(`Attempting to unlock resource ${resourceId}`);
+    return unlockResourceRetry(0);
   }
 
-  /*
-  Synchronous operations like Bind and Unbind do not have to lock while execution, but they need to ensure if a resource is going through WRITE operations like restore or update. 
-  Hence, this isWriteLocked function only checks the lock details count.
-  Unless the count is 1 and operaitonType is "WRITE", they return false for all other cases.
-  */
-  isWriteLocked(resource) {
-    return client.get(resource + CONST.LOCK_DETAILS_SUFFIX).json()
-      .then(lockDetails => {
-        if (_.get(lockDetails, 'count') === 0) {
-          return false;
-        } else if (_.get(lockDetails, 'operationType') === CONST.LOCK_TYPE.WRITE) {
-          return true;
-        } else {
-          return false;
-        }
-      });
+  _getLockType(operation) {
+    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, operation)) {
+      return CONST.ETCD.LOCK_TYPE.WRITE;
+    } else {
+      return CONST.ETCD.LOCK_TYPE.READ;
+    }
   }
-
 }
 
 module.exports = LockManager;

@@ -230,7 +230,7 @@ class DirectorManager extends BaseManager {
 
   _deleteEntity(action, opts) {
     return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries+1}, action "${opts.actionName}"...`);
+        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
         return action();
       }, {
         maxAttempts: opts.maxAttempts,
@@ -812,7 +812,7 @@ class DirectorManager extends BaseManager {
         if (!lockInfo) {
           return;
         }
-        throw new errors.DeploymentAlreadyLocked(deploymentName, lockInfo);
+        throw new errors.DeploymentAlreadyLocked(this.getInstanceGuid(deploymentName), lockInfo);
       });
   }
 
