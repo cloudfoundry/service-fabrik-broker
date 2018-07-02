@@ -395,7 +395,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
             logger.info(`Triggering backup with options: ${JSON.stringify(backupOptions)}`);
             // Acquire read lock
             return lockManager.lock(req.params.instance_id, {
-                lockType: CONST.ETCD.LOCK_TYPE.READ,
                 lockedResourceDetails: {
                   resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                   resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,

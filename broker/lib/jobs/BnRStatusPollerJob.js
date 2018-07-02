@@ -147,7 +147,6 @@ class BnRStatusPollerJob extends BaseJob {
     return Promise.try(() => {
         if (operationName === CONST.OPERATION_TYPE.BACKUP) {
           return lockManager.lock(instance_guid, {
-              lockType: CONST.ETCD.LOCK_TYPE.READ,
               lockedResourceDetails: {
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
