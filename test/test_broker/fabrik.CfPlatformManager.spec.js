@@ -95,10 +95,7 @@ describe('fabrik', function () {
         let options = {
           protocol: 'tcp',
           ips: ['10.11.20.248', '10.11.20.255'],
-          securityGroupParams: {
-            range: false,
-            exposed_ports: ['8080']
-          }
+          applicationAccessPorts: ['8080']
         };
 
         let rules = cfPlatformManager.buildSecurityGroupRules(options);
@@ -111,47 +108,27 @@ describe('fabrik', function () {
         let options = {
           protocol: 'tcp',
           ips: ['10.11.20.248', '10.11.20.255'],
-          securityGroupParams: {
-            range: false,
-            exposed_ports: ['8080', '8081', '8082']
-          }
+          applicationAccessPorts: ['8080', '8081', '8082']
         };
-
         let rules = cfPlatformManager.buildSecurityGroupRules(options);
         assert(rules.protocol === 'tcp');
         assert(rules.destination === '10.11.20.248-10.11.20.255');
         assert(rules.ports === '8080,8081,8082');
       });
 
-      it('should handle empty security_groups_params', function () {
+      it('should handle empty applicationAccessPorts', function () {
         let options = {
           protocol: 'tcp',
           ips: ['10.11.20.248', '10.11.20.255'],
-          securityGroupParams: {}
+          applicationAccessPorts: undefined
         };
 
         let rules = cfPlatformManager.buildSecurityGroupRules(options);
+        console.log(rules);
         assert(rules.protocol === 'tcp');
         assert(rules.destination === '10.11.20.248-10.11.20.255');
         assert(rules.ports === '1024-65535');
       });
-
-      it('should handle range of ports', function () {
-        let options = {
-          protocol: 'tcp',
-          ips: ['10.11.20.248', '10.11.20.255'],
-          securityGroupParams: {
-            range: true,
-            exposed_ports: ['8080', '8085']
-          }
-        };
-
-        let rules = cfPlatformManager.buildSecurityGroupRules(options);
-        assert(rules.protocol === 'tcp');
-        assert(rules.destination === '10.11.20.248-10.11.20.255');
-        assert(rules.ports === '8080-8085');
-      });
-
     });
   });
 });

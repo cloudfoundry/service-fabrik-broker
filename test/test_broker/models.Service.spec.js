@@ -80,7 +80,7 @@ describe('models', () => {
           plan_updateable: true,
           dashboard_client: {},
           plans: [],
-          security_group_params: null
+          application_access_ports: null
         });
       });
     });

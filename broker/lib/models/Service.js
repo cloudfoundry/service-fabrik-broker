@@ -28,7 +28,7 @@ class Service {
         requires: [],
         plan_updateable: true,
         dashboard_client: {},
-        security_group_params: null
+        application_access_ports: null
       })
       .value();
   }
@@ -53,7 +53,7 @@ class Service {
       'requires',
       'plan_updateable',
       'dashboard_client',
-      'security_group_params'
+      'application_access_ports'
     ];
   }
 }
