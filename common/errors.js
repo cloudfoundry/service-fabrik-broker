@@ -184,6 +184,8 @@ class UnprocessableEntity extends HttpClientError {
 exports.UnprocessableEntity = UnprocessableEntity;
 
 class DeploymentAlreadyLocked extends UnprocessableEntity {
+  // TOOD - PR - 
+  // This error is used for showing deployment being locked, so at some other place in code it would be still sending in deployment Name, so please check that code as well.
   constructor(instanceId, lockInfo, lockMessage) {
     let message = `Service Instance ${instanceId} ${CONST.OPERATION_TYPE.LOCK}`;
     if (lockInfo) {

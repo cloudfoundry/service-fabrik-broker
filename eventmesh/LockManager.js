@@ -34,6 +34,7 @@ class LockManager {
         }
         return false;
       })
+      //TODO -PR- return the lock details in case of locked
       .catch(NotFound, () => false);
   }
 
@@ -81,6 +82,7 @@ class LockManager {
    */
 
   lock(resourceId, lockDetails) {
+    //TODO PR - throw error if lock deatils is empty
     if (!lockDetails) {
       lockDetails = {};
     }
@@ -117,6 +119,7 @@ class LockManager {
       })
       .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
       .catch(err => {
+        //TODO -PR - use catch filter
         if (err instanceof NotFound) {
           const spec = {
             options: JSON.stringify(opts)
@@ -134,6 +137,7 @@ class LockManager {
           return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
             .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
         } else if (err instanceof Conflict) {
+          // TODO - PR - add details in DeploymentAlreadyLocked
           throw new DeploymentAlreadyLocked(resourceId);
         }
         throw err;

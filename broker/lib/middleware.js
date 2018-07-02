@@ -32,6 +32,7 @@ exports.validateRequest = function (operationType) {
       next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
     }
     if (_.includes([CONST.OPERATION_TYPE.CREATE], operationType) &&
+      // TODO -PR -Move this to validateCreateRequest and have ValidateRequest for all HTTP Operations and not for each operation type in the route setup code.
       (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid'))) {
       next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
     }
@@ -68,12 +69,14 @@ exports.lock = function (operationType, lastOperationCall) {
 };
 
 exports.isWriteLocked = function () {
+  // TODO - PR can name this method to checkBlockingOperationInProgress or checkWriteLocked -- as this is really not returning a boolean.
   return function (req, res, next) {
     if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
       // Acquire lock for this instance
       return lockManager.isWriteLocked(req.params.instance_id)
         .then(isWriteLocked => {
           if (isWriteLocked) {
+            // TODO PR Its better to fetchLock here instead of a boolean as you can better construct the error with the operaiton and the time the lock has been acquired.
             next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked`));
           } else {
             next();

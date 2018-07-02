@@ -12,11 +12,13 @@ const NotFound = errors.NotFound;
 class UnlockResourcePoller {
   static start() {
     function poller(object, interval) {
+      // TODO - PR - instead of a poller, its better to convert this to a watcher.
       const lockDetails = JSON.parse(object.spec.options);
       return eventmesh.apiServerClient.getResource(lockDetails.lockedResourceDetails.resourceGroup, lockDetails.lockedResourceDetails.resourceType, lockDetails.lockedResourceDetails.resourceId)
         .then((resource) => {
           const resourceState = resource.body.status.state;
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
+          // TODO PR - reuse util method is operationCompleted.
           if (resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED || resourceState === CONST.APISERVER.RESOURCE_STATE.ERROR) {
             return lockManager.unlock(object.metadata.name)
               .then(() => clearInterval(interval));
@@ -39,6 +41,8 @@ class UnlockResourcePoller {
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
         // startPoller(event.object);
         logger.info('starting unlock resource poller for deployment ', event.object.metadata.name);
+        // TODO - PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
+        // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
         const interval = setInterval(() => poller(event.object, interval), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
       }
     }
