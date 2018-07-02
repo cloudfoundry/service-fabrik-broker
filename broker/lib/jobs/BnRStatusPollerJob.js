@@ -266,6 +266,7 @@ class BnRStatusPollerJob extends BaseJob {
         operationId: instanceInfo.backup_guid,
         stateValue: operationStatusResponse.state
       }))
+      .then(() => this._logEvent(instanceInfo, operationName, operationStatusResponse))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
@@ -292,20 +293,24 @@ class BnRStatusPollerJob extends BaseJob {
       .invoke()
       .then(() => {
         logger.info(`Unlocked deployment : ${instanceInfo.deployment} for backup_guid : ${instanceInfo.backup_guid} successfully. Poller stopped.`);
-        const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
-        const check_res_body = true;
-        const resp = {
-          statusCode: 200,
-          body: operationStatusResponse
-        };
-        if (CONST.URL[operation]) {
-          eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, instanceInfo, resp, check_res_body);
-        }
+        return this._logEvent(instanceInfo, operation, operationStatusResponse);
       })
       .catch(err => {
         logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err);
         throw err;
       });
+  }
+
+  static _logEvent(instanceInfo, operation, operationStatusResponse) {
+    const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
+    const check_res_body = true;
+    const resp = {
+      statusCode: 200,
+      body: operationStatusResponse
+    };
+    if (CONST.URL[operation]) {
+      return eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, instanceInfo, resp, check_res_body);
+    }
   }
 
 }
