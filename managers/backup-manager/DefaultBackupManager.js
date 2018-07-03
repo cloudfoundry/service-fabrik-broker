@@ -21,7 +21,7 @@ class DefaultBackupManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering backup with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
-    return bm.createManager(plan)
+    return bm.createService(plan)
       .then(manager => manager.startBackup(changedOptions));
   }
 
@@ -36,7 +36,7 @@ class DefaultBackupManager extends BaseManager {
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);
-          return bm.createManager(plan);
+          return bm.createService(plan);
         }).then(manager => manager.abortLastBackup(options));
       });
   }
@@ -52,7 +52,7 @@ class DefaultBackupManager extends BaseManager {
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);
-          return bm.createManager(plan);
+          return bm.createService(plan);
         }).then(manager => manager.deleteBackup(options));
       });
   }
