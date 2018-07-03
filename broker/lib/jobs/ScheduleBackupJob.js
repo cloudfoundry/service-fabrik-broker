@@ -47,7 +47,7 @@ class ScheduleBackupJob extends BaseJob {
             return this
               .getFabrikClient()
               .startBackup(_.pick(jobData, 'instance_id', 'type', 'trigger'))
-              .catch(errors.Conflict, (err) => {
+              .catch(errors.Conflict, errors.UnprocessableEntity, (err) => {
                 logger.error('Some other operation already in progress on this instance:', err);
                 return retry(() => this.reScheduleBackup(job.attrs.data), {
                   maxAttempts: 3,
