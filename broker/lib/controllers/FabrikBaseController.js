@@ -81,18 +81,22 @@ class FabrikBaseController extends BaseController {
           } else {
             return lockManager.unlock(req.params.instance_id)
               .then(() => {
-                if (err instanceof ContinueWithNext) {
-                  return process.nextTick(next);
+                if (err) {
+                  if (err instanceof ContinueWithNext) {
+                    return process.nextTick(next);
+                  }
+                  return next(err);
                 }
-                return next(err);
               })
               .catch(unlockErr => next(unlockErr));
           }
         } else {
-          if (err instanceof ContinueWithNext) {
-            return process.nextTick(next);
+          if (err) {
+            if (err instanceof ContinueWithNext) {
+              return process.nextTick(next);
+            }
+            return next(err);
           }
-          return next(err);
         }
       });
   }
