@@ -453,6 +453,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastBackupV2(req, res) {
+    req.manager.verifyFeatureSupport('backup');
     return eventmesh.apiServerClient.getLastOperation({
         resourceId: req.params.instance_id,
         operationName: CONST.OPERATION_TYPE.BACKUP,
