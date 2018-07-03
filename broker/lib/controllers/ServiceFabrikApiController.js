@@ -754,7 +754,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       )
       .then(() => ServiceFabrikApiController.getResourceOperationStatus({
         operationId: req.params.backup_guid,
-        start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+        start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
       //delete resource from apiserver here if state is delted 
