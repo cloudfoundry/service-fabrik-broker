@@ -9,6 +9,7 @@ const logger = require('../common/logger');
 const CONST = require('../common/constants');
 const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
+const assert = require('assert');
 const InternalServerError = errors.InternalServerError;
 
 class LockManager {
@@ -20,7 +21,7 @@ class LockManager {
    * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
    */
 
-  isWriteLocked(resourceId) {
+  checkWriteLockStatus(resourceId) {
     return eventmesh.apiServerClient.getLockDetails(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
       .then(lockDetails => {
         const currentTime = new Date();
@@ -30,12 +31,22 @@ class LockManager {
           logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation ?
             lockDetails.lockedResourceDetails.operation : 'unknown'} ` +
             `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime} `);
-          return true;
+          return {
+            isWriteLocked: true,
+            lockDetails: lockDetails
+          };
         }
-        return false;
+        return {
+          isWriteLocked: false,
+          lockDetails: undefined
+        };
       })
-      //TODO-PR - return the lock details in case of locked
-      .catch(NotFound, () => false);
+      .catch(NotFound, () => {
+        return {
+          isWriteLocked: false,
+          lockDetails: undefined
+        }
+      });
   }
 
   /*
@@ -82,13 +93,12 @@ class LockManager {
    */
 
   lock(resourceId, lockDetails) {
-    //TODO-PR - throw error if lock deatils is empty
-    if (!lockDetails) {
-      lockDetails = {};
-    }
+    assert.ok(lockDetails, `Parameter 'lockDetails' is required to acquire lock`);
+    assert.ok(lockDetails.lockedResourceDetails, `'lockedResourceDetails' is required to acquire lock`);
+    assert.ok(lockDetails.lockedResourceDetails.operation, `'operation' is required to acquire lock`);
+
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockedResourceDetails = opts.lockedResourceDetails ? opts.lockedResourceDetails : {};
     opts.lockType = this._getLockType(opts.lockedResourceDetails.operation);
     opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
     _.extend(opts, {
@@ -118,29 +128,35 @@ class LockManager {
         }
       })
       .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
-      .catch(err => {
-        //TODO-PR - use catch filter
-        if (err instanceof NotFound) {
-          const spec = {
-            options: JSON.stringify(opts)
-          };
-          const status = {
-            locked: 'true'
-          };
-          const body = {
-            metadata: {
-              name: resourceId
-            },
-            spec: spec,
-            status: status
-          };
-          return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
-            .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
-        } else if (err instanceof Conflict) {
-          //TODO-PR - add details in DeploymentAlreadyLocked
-          throw new DeploymentAlreadyLocked(resourceId);
-        }
-        throw err;
+      .catch(NotFound, err => {
+        const spec = {
+          options: JSON.stringify(opts)
+        };
+        const status = {
+          locked: 'true'
+        };
+        const body = {
+          metadata: {
+            name: resourceId
+          },
+          spec: spec,
+          status: status
+        };
+        return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
+          .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
+      })
+      .catch(Conflict, err => {
+        return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
+          .then(resource => {
+            console.log('Hi');
+            const resourceBody = resource.body;
+            const currentlLockDetails = JSON.parse(resourceBody.spec.options);
+            const currentLockTime = new Date(currentlLockDetails.lockTime);
+            throw new DeploymentAlreadyLocked(resourceId, {
+              createdAt: currentLockTime,
+              lockForOperation: currentlLockDetails.lockedResourceDetails.operation
+            });
+          });
       });
   }
 
