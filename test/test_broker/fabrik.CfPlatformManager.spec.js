@@ -124,7 +124,6 @@ describe('fabrik', function () {
         };
 
         let rules = cfPlatformManager.buildSecurityGroupRules(options);
-        console.log(rules);
         assert(rules.protocol === 'tcp');
         assert(rules.destination === '10.11.20.248-10.11.20.255');
         assert(rules.ports === '1024-65535');

@@ -114,17 +114,10 @@ class CfPlatformManager extends BasePlatformManager {
       );
   }
 
-  /*
-  {
-    protocol: 'tcp',
-    ips: ['10.11.20.248', '10.11.20.255'],
-    applicationAccessPorts: ['8080']
-  }
-  */
   buildSecurityGroupRules(options) {
     let portRule = '1024-65535';
-    if (options.applicationAccessPorts && _.size(options.applicationAccessPorts) > 0) {
-      portRule = _.size(options.applicationAccessPorts) === 1 ? `${_.first(options.applicationAccessPorts)}` : `${_.join(options.applicationAccessPorts,',')}`;
+    if (Array.isArray(options.applicationAccessPorts) && _.size(options.applicationAccessPorts) > 0) {
+      portRule = `${_.join(options.applicationAccessPorts,',')}`;
     }
     return {
       protocol: options.protocol,
