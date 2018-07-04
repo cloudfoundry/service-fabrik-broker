@@ -83,6 +83,19 @@ describe('managers', function () {
           state: 'in_progress',
           response: {}
         }
+      }, 1, body => {
+        expect(body.status.state).to.eql('in_progress');
+        const resp = JSON.parse(body.status.response);
+        expect(resp.service_id).to.eql(service_id);
+        expect(resp.plan_id).to.eql(plan_id);
+        expect(resp.instance_guid).to.eql(instance_id);
+        expect(resp.operation).to.eql('backup');
+        expect(resp.type).to.eql('online');
+        expect(resp.backup_guid).to.eql(backup_guid);
+        expect(resp.trigger).to.eql('on-demand');
+        expect(resp.state).to.eql('processing');
+        expect(resp.tenant_id).to.eql(space_guid);
+        return true;
       });
       return manager.startBackup(opts)
         .then(() => {
@@ -104,6 +117,14 @@ describe('managers', function () {
         agent_ip: agent_ip,
         context: context
       };
+      mocks.apiServerEventMesh.nockLoadSpec();
+      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {}, 1, body => {
+        expect(body.status.state).to.eql(undefined);
+        expect(body.status.response).to.be.an('string');
+        const resp = JSON.parse(body.status.response);
+        expect(resp.backup_guid).to.eql(backup_guid);
+        return true;
+      });
       return manager.getOperationState('backup', opts)
         .then((res) => {
           expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
@@ -136,6 +157,10 @@ describe('managers', function () {
         status: {
           state: 'aborting'
         }
+      }, 1, body => {
+        expect(body.status.state).to.eql('aborting');
+        expect(body.status.response).to.be.an('undefined');
+        return true;
       });
       mocks.agent.abortBackup();
       return manager.abortLastBackup(opts, true)

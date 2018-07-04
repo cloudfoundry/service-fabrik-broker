@@ -224,19 +224,13 @@ class BackupService {
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
-          .then(() => eventmesh.apiServerClient.updateOperationState({
+          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
-          }))
-          .then(() => eventmesh.apiServerClient.updateOperationResponse({
-            resourceId: opts.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: result.backup_guid,
-            value: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
+            response: err
           }))
           .then(() => {
             if (backupStarted) {
@@ -341,20 +335,13 @@ class BackupService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during delete of backup`, err))
-          //TODO-PR - Do it in one call
-          .then(() => eventmesh.apiServerClient.updateOperationState({
+          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
             resourceId: options.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
-          }))
-          .then(() => eventmesh.apiServerClient.updateOperationResponse({
-            resourceId: options.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: options.guid,
-            value: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
+            response: err
           }));
       });
   }
