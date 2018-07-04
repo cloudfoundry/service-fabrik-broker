@@ -37,3 +37,9 @@ global.expect = global.chai.expect;
  */
 global.chai.use(require('sinon-chai'));
 global.chai.use(require('chai-http'));
+
+/**
+ * Loading it from the first time before the test starts and mocking it here so that the tests need not do it.
+ */
+mocks.apiServerEventMesh.nockLoadSpec();
+require('../../../eventmesh').apiServerClient.init();

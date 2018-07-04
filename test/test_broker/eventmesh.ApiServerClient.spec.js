@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const swagger = require('./helper-files/apiserver-swagger.json');
 const apiserver = require('../../eventmesh').apiServerClient;
 const apiServerHost = 'https://10.0.2.2:9443';
 const lib = require('../../broker/lib');
@@ -107,11 +106,6 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, expectedE
 
 describe('eventmesh', () => {
   describe('ApiServerClient', () => {
-    beforeEach(() => {
-      nock(apiServerHost)
-        .get('/swagger.json')
-        .reply(200, swagger);
-    });
 
     afterEach(() => {
       nock.cleanAll();
