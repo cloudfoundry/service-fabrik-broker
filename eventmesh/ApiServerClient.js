@@ -301,6 +301,34 @@ class ApiServerClient {
   }
 
   /**
+   * @description Function to Update the state field
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.response - Object to be set as response
+   * @param {string} opts.stateValue - Value to set as state
+   */
+  updateOperationStateAndResponse(opts) {
+    logger.info('Updating Operation status with :', opts);
+    const patchedResource = {
+      'status' : {
+        'state': opts.stateValue,
+        'response': JSON.stringify(opts.response)
+      }
+    }
+    return Promise.try(() => apiserver.loadSpec())
+      .then(() => apiserver
+        .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
+        .status.patch({
+          body: patchedResource
+        }))
+      .catch(err => {
+        return buildErrors(err);
+      });
+  }
+
+  /**
    * @description Update Last Operation to opts.value for resource
    * @param {string} opts.resourceId - Unique id of resource
    * @param {string} opts.operationName - Name of operation
