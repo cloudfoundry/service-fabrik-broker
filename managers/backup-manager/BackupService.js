@@ -158,11 +158,9 @@ class BackupService {
       registeredStatusPoller = false;
 
     let deploymentName;
-    //TODO-PR - Use getDeploymentNameForInstanceId from BoshDirectorClient
-    return BackupService
-      .findNetworkSegmentIndex(opts.instance_guid)
-      .then(networkIndex => BackupService.getDeploymentName(opts.instance_guid, networkIndex))
-      .then(res => {
+    return bosh
+      .director
+      .getDeploymentNameForInstanceId(opts.instance_guid).then(res => {
         deploymentName = res;
         logger.info('Obtained the deployment name for instance :', deploymentName);
       })
