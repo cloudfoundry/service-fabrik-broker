@@ -16,47 +16,13 @@ const CONST = require('../../broker/lib/constants');
 const BaseDirectorService = require('../BaseDirectorService');
 const Forbidden = errors.Forbidden;
 
-class BackupService {
+class BackupService extends BaseDirectorService {
   constructor(plan) {
+    super(plan);
     this.plan = plan;
     this.director = bosh.director;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
-  }
-
-  get settings() {
-    return this.plan.manager.settings;
-  }
-
-  get subnet() {
-    return this.settings.subnet || this.service.subnet;
-  }
-
-  static get prefix() {
-    return _
-      .reduce(config.directors,
-        (prefix, director) => director.primary === true ? director.prefix : prefix,
-        null) || CONST.SERVICE_FABRIK_PREFIX;
-  }
-
-  static getDeploymentName(guid, networkSegmentIndex) {
-    let subnet = this.subnet ? `_${this.subnet}` : '';
-    return `${BackupService.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
-  }
-
-  //TODO-PR - Move the common piece of codes in BaseService which can be leveraged by other Service classes
-
-  static getNetworkSegmentIndex(deploymentName) {
-    return _.nth(BaseDirectorService.parseDeploymentName(deploymentName, this.subnet), 1);
-  }
-
-  static findNetworkSegmentIndex(guid) {
-    logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
-    return bosh
-      .director
-      .getDeploymentNameForInstanceId(guid)
-      .then(deploymentName => BackupService.getNetworkSegmentIndex(deploymentName))
-      .tap(networkSegmentIndex => logger.info(`+-> Found network segment index '${networkSegmentIndex}'`));
   }
 
   getTenantGuid(context) {

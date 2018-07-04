@@ -4,6 +4,14 @@ const _ = require('lodash');
 const utils = require('../broker/lib/utils');
 
 class BaseDirectorService {
+  constructor(plan) {
+    this.plan = plan;
+  }
+
+  get settings() {
+    return this.plan.manager.settings;
+  }
+
   static parseDeploymentName(deploymentName, subnet) {
     return _
       .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
