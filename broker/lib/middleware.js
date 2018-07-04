@@ -80,7 +80,7 @@ exports.checkBlockingOperationInProgress = function () {
       return lockManager.checkWriteLockStatus(req.params.instance_id)
         .then(writeLockStatus => {
           if (writeLockStatus.isWriteLocked) {
-            next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked for ${writeLockStatus.lockDetails.lockedResourceDetails.operation} at ${lockTime}`));
+            next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked for ${writeLockStatus.lockDetails.lockedResourceDetails.operation} at ${writeLockStatus.lockDetails.lockTime}`));
           } else {
             next();
           }

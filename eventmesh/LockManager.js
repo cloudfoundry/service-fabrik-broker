@@ -45,7 +45,7 @@ class LockManager {
         return {
           isWriteLocked: false,
           lockDetails: undefined
-        }
+        };
       });
   }
 
@@ -128,7 +128,7 @@ class LockManager {
         }
       })
       .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
-      .catch(NotFound, err => {
+      .catch(NotFound, () => {
         const spec = {
           options: JSON.stringify(opts)
         };
@@ -145,7 +145,7 @@ class LockManager {
         return eventmesh.apiServerClient.createLock(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, body)
           .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
       })
-      .catch(Conflict, err => {
+      .catch(Conflict, () => {
         return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
           .then(resource => {
             console.log('Hi');

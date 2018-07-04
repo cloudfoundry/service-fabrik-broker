@@ -135,7 +135,7 @@ describe('eventmesh', () => {
         return lockManager.checkWriteLockStatus('lockId1')
           .then(result => {
             expect(result.isWriteLocked).to.eql(true);
-            expect(result.lockDetails.lockType).to.eql("WRITE");
+            expect(result.lockDetails.lockType).to.eql('WRITE');
             expect(result.lockDetails.lockedResourceDetails).to.eql(lockoptions.lockId1.lockedResourceDetails);
             expect(getLockResourceOptionsSpy.callCount).to.equal(1);
             expect(getLockResourceOptionsSpy.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
