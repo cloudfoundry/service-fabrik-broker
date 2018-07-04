@@ -117,7 +117,7 @@ class CfPlatformManager extends BasePlatformManager {
   buildSecurityGroupRules(options) {
     let portRule = '1024-65535';
     if (Array.isArray(options.applicationAccessPorts) && _.size(options.applicationAccessPorts) > 0) {
-      portRule = `${_.join(options.applicationAccessPorts,',')}`;
+      portRule = _.join(options.applicationAccessPorts, ',');
     }
     return {
       protocol: options.protocol,
