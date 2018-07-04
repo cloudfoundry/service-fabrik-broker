@@ -311,11 +311,11 @@ class ApiServerClient {
   updateOperationStateAndResponse(opts) {
     logger.info('Updating Operation status with :', opts);
     const patchedResource = {
-      'status' : {
+      'status': {
         'state': opts.stateValue,
         'response': JSON.stringify(opts.response)
       }
-    }
+    };
     return Promise.try(() => apiserver.loadSpec())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
