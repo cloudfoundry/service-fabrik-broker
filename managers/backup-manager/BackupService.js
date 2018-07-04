@@ -202,24 +202,14 @@ class BackupService {
       })
       //TODO-PR - Break it into multiple methods
       //TODO-PR - Update state and response as part of single comment
-      .then(backupInfo =>
-        eventmesh.apiServerClient.updateOperationResponse({
-          resourceId: opts.instance_guid,
-          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          operationId: result.backup_guid,
-          value: backupInfo
-        })
-        .then(() =>
-          eventmesh.apiServerClient.updateOperationState({
-            resourceId: opts.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
-          })
-        )
-      )
+      .then(backupInfo => eventmesh.apiServerClient.updateOperationStateAndResponse({
+        resourceId: opts.instance_guid,
+        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
+        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
+        operationId: result.backup_guid,
+        stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+        response: backupInfo
+      }))
       //TODO-PR - Dowe need to fetch it from APIServer??
       .then(() => {
         return eventmesh.apiServerClient.getOperationResponse({

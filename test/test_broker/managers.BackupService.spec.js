@@ -77,11 +77,13 @@ describe('managers', function () {
       mocks.director.getDeploymentInstances(deployment_name);
       mocks.agent.getInfo();
       mocks.agent.startBackup();
+      mocks.apiServerEventMesh.nockLoadSpec(2);
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
-          state: 'in_progress'
+          state: 'in_progress',
+          response: {}
         }
-      }, 2);
+      });
       mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
         status: {
           state: 'in_progress',
