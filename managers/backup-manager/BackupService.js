@@ -341,14 +341,7 @@ class BackupService {
                 logs: logs,
                 snapshotId: lastOperation.snapshotId
               })
-            ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.apiServerClient.updateOperationResponse({
-              resourceId: options.instance_guid,
-              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: metadata.backup_guid,
-              value: metadata
-            }));
+            );
         }
       });
   }

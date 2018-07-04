@@ -481,13 +481,31 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-state', function () {
+        const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
+        const instance_id = mocks.director.uuidByIndex(index);
+        const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
+        const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+        const container = backupStore.containerName;
+        const prefix = `${space_guid}/backup`;
+        const backupFilename = `${prefix}/${service_id}.${instance_id}.${backup_guid}`;
+        const pathname = `/${container}/${backupFilename}`;
         const data = {
+          instance_guid: instance_id,
+          tenant_id: space_guid,
+          service_id: service_id,
+          backup_guid: backup_guid,
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'processing',
           agent_ip: mocks.agent.ip
         };
         const backupState = {
-          state: 'aborting',
+          instance_guid: instance_id,
+          tenant_id: space_guid,
+          service_id: service_id,
+          backup_guid: backup_guid,
+          state: 'processing',
           stage: 'Deleting volume',
           updated_at: new Date(Date.now())
         };
@@ -500,6 +518,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
 
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
@@ -528,7 +548,7 @@ describe('service-fabrik-api-sf2.0', function () {
               const result = _
                 .chain(data)
                 .omit('agent_ip')
-                .merge(_.pick(backupState, 'state', 'stage'))
+                .merge(_.pick(backupState, 'state', 'stage', 'backup_guid', 'instance_guid', 'service_id', 'tenant_id'))
                 .value();
               expect(res).to.have.status(200);
               expect(res.body).to.eql(result);
@@ -544,6 +564,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -575,6 +597,8 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -609,6 +633,8 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
