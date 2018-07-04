@@ -13,6 +13,7 @@ const eventmesh = require('../../eventmesh');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
+const BaseDirectorService = require('../BaseDirectorService');
 const Forbidden = errors.Forbidden;
 
 class BackupService {
@@ -44,16 +45,9 @@ class BackupService {
   }
 
   //TODO-PR - Move the common piece of codes in BaseService which can be leveraged by other Service classes
-  static parseDeploymentName(deploymentName, subnet) {
-    return _
-      .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
-      .slice(1)
-      .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
-      .value();
-  }
 
   static getNetworkSegmentIndex(deploymentName) {
-    return _.nth(BackupService.parseDeploymentName(deploymentName, this.subnet), 1);
+    return _.nth(BaseDirectorService.parseDeploymentName(deploymentName, this.subnet), 1);
   }
 
   static findNetworkSegmentIndex(guid) {
