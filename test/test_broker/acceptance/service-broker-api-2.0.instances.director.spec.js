@@ -111,7 +111,6 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -156,7 +155,6 @@ describe('service-broker-api-2.0', function () {
           mocks.director.getDeployments({
             queued: true
           }, 404);
-          mocks.apiServerEventMesh.nockLoadSpec(3);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -192,7 +190,6 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -241,7 +238,6 @@ describe('service-broker-api-2.0', function () {
             .value();
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -304,7 +300,6 @@ describe('service-broker-api-2.0', function () {
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.uaa.getAccessToken();
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -580,7 +575,6 @@ describe('service-broker-api-2.0', function () {
           mocks.agent.getInfo(2);
           mocks.agent.preUpdate();
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -639,7 +633,6 @@ describe('service-broker-api-2.0', function () {
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           mocks.agent.preUpdate();
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -695,7 +688,6 @@ describe('service-broker-api-2.0', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -838,7 +830,6 @@ describe('service-broker-api-2.0', function () {
             platform: 'cloudfoundry'
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -895,7 +886,6 @@ describe('service-broker-api-2.0', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -938,7 +928,6 @@ describe('service-broker-api-2.0', function () {
             platform: 'cloudfoundry'
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
-          mocks.apiServerEventMesh.nockLoadSpec(3);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -992,7 +981,6 @@ describe('service-broker-api-2.0', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1047,7 +1035,6 @@ describe('service-broker-api-2.0', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1097,7 +1084,6 @@ describe('service-broker-api-2.0', function () {
             namespace: 'default'
           });
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1207,7 +1193,6 @@ describe('service-broker-api-2.0', function () {
 
       describe('#lastOperation', function () {
         it('create: returns 200 OK (state = in progress)', function () {
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1259,7 +1244,6 @@ describe('service-broker-api-2.0', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1274,7 +1258,6 @@ describe('service-broker-api-2.0', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1305,7 +1288,6 @@ describe('service-broker-api-2.0', function () {
 
         it('create: returns 200 OK (state = in progress): In K8S platform', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1352,7 +1334,6 @@ describe('service-broker-api-2.0', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1367,7 +1348,6 @@ describe('service-broker-api-2.0', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1401,7 +1381,6 @@ describe('service-broker-api-2.0', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1442,7 +1421,6 @@ describe('service-broker-api-2.0', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1457,7 +1435,6 @@ describe('service-broker-api-2.0', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1489,7 +1466,6 @@ describe('service-broker-api-2.0', function () {
             platform: 'kubernetes',
             namespace: 'default'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1529,7 +1505,6 @@ describe('service-broker-api-2.0', function () {
             platform: 'kubernetes',
             namespace: 'default'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1543,7 +1518,6 @@ describe('service-broker-api-2.0', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1575,7 +1549,6 @@ describe('service-broker-api-2.0', function () {
           const context = {
             platform: 'cloudfoundry'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1614,7 +1587,6 @@ describe('service-broker-api-2.0', function () {
           const context = {
             platform: 'cloudfoundry'
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1629,7 +1601,6 @@ describe('service-broker-api-2.0', function () {
           const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           return chai.request(app)
             .get(`${base_url}/service_instances/${instance_id}/last_operation`)
@@ -1684,7 +1655,6 @@ describe('service-broker-api-2.0', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
           });
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1747,7 +1717,6 @@ describe('service-broker-api-2.0', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
           });
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1810,7 +1779,6 @@ describe('service-broker-api-2.0', function () {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: 'daily'
           });
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1874,7 +1842,6 @@ describe('service-broker-api-2.0', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1910,7 +1877,6 @@ describe('service-broker-api-2.0', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1950,7 +1916,6 @@ describe('service-broker-api-2.0', function () {
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
           mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'

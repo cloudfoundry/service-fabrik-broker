@@ -42,6 +42,23 @@ function buildErrors(err) {
 }
 
 class ApiServerClient {
+
+  constructor() {
+    this.ready = false;
+  }
+
+  init() {
+    return Promise.try(() => {
+      if (!this.ready) {
+        return apiserver.loadSpec()
+          .then(() => {
+            this.ready = true;
+            logger.info('Loaded Successfully');
+          });
+      }
+    });
+  }
+
   /**
    * @description Register watcher for (resourceGroup , resourceType)
    * @param {string} resourceGroup - Name of the resource
@@ -49,7 +66,7 @@ class ApiServerClient {
    * @param {string} callback - Fucntion to call when event is received
    */
   registerWatcher(resourceGroup, resourceType, callback, queryString) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => {
         const stream = apiserver
           .apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -74,7 +91,7 @@ class ApiServerClient {
   }
 
   _createResource(resourceGroup, resourceType, body) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType].post({
@@ -90,13 +107,13 @@ class ApiServerClient {
   }
 
   deleteResource(resourceGroup, resourceType, resourceId) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).delete());
   }
 
   patchResource(resourceGroup, resourceType, resourceId, delta) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).patch({
           body: delta
@@ -118,7 +135,7 @@ class ApiServerClient {
   }
 
   getLockDetails(resourceType, resourceId) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${CONST.APISERVER.RESOURCE_GROUPS.LOCK}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .then(resource => {
@@ -130,7 +147,7 @@ class ApiServerClient {
   }
 
   getResource(resourceGroup, resourceType, resourceId) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .catch(err => {
@@ -161,7 +178,7 @@ class ApiServerClient {
   }
 
   getResourceState(resourceType, resourceId) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
@@ -241,7 +258,7 @@ class ApiServerClient {
         'response': JSON.stringify(opts.value),
       }
     };
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
@@ -271,7 +288,7 @@ class ApiServerClient {
         'state': opts.stateValue
       }
     };
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
@@ -295,7 +312,7 @@ class ApiServerClient {
     patchedResource.metadata = {};
     patchedResource.metadata.labels = {};
     patchedResource.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.DIRECTOR](opts.resourceId)
@@ -314,7 +331,7 @@ class ApiServerClient {
    * @param {string} opts.operationType - Type of operation
    */
   getLastOperation(opts) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.DIRECTOR](opts.resourceId)
@@ -370,7 +387,7 @@ class ApiServerClient {
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
     assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
@@ -391,7 +408,7 @@ class ApiServerClient {
     assert.ok(opts.operationName, `Property 'operationName' is required to get operation state`);
     assert.ok(opts.operationType, `Property 'operationType' is required to get operation state`);
     assert.ok(opts.operationId, `Property 'operationId' is required to get operation state`);
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
@@ -409,7 +426,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    */
   getOperationResponse(opts) {
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)

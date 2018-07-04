@@ -77,7 +77,6 @@ describe('managers', function () {
       mocks.director.getDeploymentInstances(deployment_name);
       mocks.agent.getInfo();
       mocks.agent.startBackup();
-      mocks.apiServerEventMesh.nockLoadSpec(3);
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
           state: 'in_progress'
@@ -109,7 +108,6 @@ describe('managers', function () {
         agent_ip: agent_ip,
         context: context
       };
-      mocks.apiServerEventMesh.nockLoadSpec();
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
       return manager.getOperationState('backup', opts)
         .then((res) => {
@@ -149,7 +147,6 @@ describe('managers', function () {
         context: context,
         guid: backup_guid
       };
-      mocks.apiServerEventMesh.nockLoadSpec();
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
           state: 'aborting'

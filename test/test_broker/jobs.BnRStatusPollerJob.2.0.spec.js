@@ -122,7 +122,6 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: SUCCEEDED_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockLoadSpec(2);
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
@@ -160,7 +159,6 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockLoadSpec(3);
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
@@ -204,7 +202,6 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockLoadSpec(3);
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
@@ -251,7 +248,6 @@ describe('Jobs', function () {
           state: CONST.OPERATION.IN_PROGRESS,
           description: 'Backup operation in-progress'
         }));
-        mocks.apiServerEventMesh.nockLoadSpec(3);
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
@@ -299,7 +295,6 @@ describe('Jobs', function () {
           state: CONST.OPERATION.ABORTING,
           description: 'Backup operation abort in-progress'
         }));
-        mocks.apiServerEventMesh.nockLoadSpec(4);
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
