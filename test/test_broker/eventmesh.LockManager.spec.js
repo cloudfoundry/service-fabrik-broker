@@ -31,7 +31,7 @@ const lockoptions = {
   lockId1: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE),
   lockId2: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE, undefined, 1),
   lockId3: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.READ),
-  conflictresource: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE, undefined, 1)
+  conflictresource: buildLockResourceOptions(CONST.ETCD.LOCK_TYPE.WRITE)
 };
 const lock = {
   lockId1: {
@@ -239,7 +239,7 @@ describe('eventmesh', () => {
             expect(getResourceSpy.firstCall.args[2]).to.eql('lockId5');
           });
       });
-      it.only('should throw a conflict error if api server gives incorrect response', () => {
+      it('should throw a conflict error if api server gives incorrect response', () => {
         const lockManager = new apiServerLockManager();
         return lockManager.lock('conflictresource', lockoptions.conflictresource)
           .catch((err) => {

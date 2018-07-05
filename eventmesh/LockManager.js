@@ -102,7 +102,7 @@ class LockManager {
     opts.lockType = this._getLockType(opts.lockedResourceDetails.operation);
     opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
     _.extend(opts, {
-      'lockTime': currentTime
+      'lockTime': opts.lockTime ? opts.lockTime : currentTime
     });
     logger.debug(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
     return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)

@@ -29,7 +29,7 @@ exports.validateRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
     if (req.instance.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
-      next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
+      return next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
     }
     next();
   };
@@ -39,7 +39,7 @@ exports.validateCreateRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
     if (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid')) {
-      next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
+      return next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
     }
     next();
   };
