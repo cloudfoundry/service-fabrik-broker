@@ -2,7 +2,8 @@
 
 const {
   Etcd3,
-  EtcdLockFailedError
+  EtcdLockFailedError,
+  EtcdLeaseInvalidError
 } = require('etcd3');
 
 const config = require('../config');
@@ -69,8 +70,15 @@ class LockStatusPoller {
           this.lock = lock;
           return this.action();
         })
-        .catch(EtcdLockFailedError, err => logger.error(`Locking on resource ${this.lockName} failed. Retry should be triggered on next run`, err))
-        .catch(err => logger.error('Error in processing action', err));
+        .catch(err => {
+          if (err instanceof EtcdLeaseInvalidError) {
+            logger.error('Could not attain lock since lease is invalid/revoked/already in-use', err);
+          } else if (err instanceof EtcdLockFailedError) {
+            logger.error('Could not acquire lock resource', err);
+          } else {
+            logger.error('Error in processing action', err);
+          }
+        });
     }, this.timeInterval);
   }
 
