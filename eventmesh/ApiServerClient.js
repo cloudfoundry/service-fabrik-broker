@@ -316,7 +316,7 @@ class ApiServerClient {
         'response': JSON.stringify(opts.response)
       }
     };
-    return Promise.try(() => apiserver.loadSpec())
+    return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)

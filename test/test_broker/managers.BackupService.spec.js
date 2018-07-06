@@ -91,7 +91,6 @@ describe('managers', function () {
       mocks.director.getDeploymentInstances(deployment_name);
       mocks.agent.getInfo();
       mocks.agent.startBackup();
-      mocks.apiServerEventMesh.nockLoadSpec();
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
           state: 'in_progress',
@@ -131,14 +130,6 @@ describe('managers', function () {
         agent_ip: agent_ip,
         context: context
       };
-      mocks.apiServerEventMesh.nockLoadSpec();
-      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {}, 1, body => {
-        expect(body.status.state).to.eql(undefined);
-        expect(body.status.response).to.be.an('string');
-        const resp = JSON.parse(body.status.response);
-        expect(resp.backup_guid).to.eql(backup_guid);
-        return true;
-      });
       return manager.getOperationState('backup', opts)
         .then((res) => {
           expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
