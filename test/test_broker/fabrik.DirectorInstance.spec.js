@@ -2,10 +2,12 @@
 
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
+const _ = require('lodash');
 
 const guid = 'guid';
 const task_id = 'task_id';
 const params = {
+  _runImmediately: false,
   parameters: {
     key: 'v1'
   },
@@ -86,15 +88,33 @@ describe('fabrik', () => {
         expect(out.context).to.eql(params.context);
       });
     });
-    it('should update with rate limits - internal operation', () => {
-      return directorInstance.update(internal_params).then(out => {
-        let expectedParams = params;
+    it('should update with rate limits - internal operation [runs immediately]', () => {
+      let iparams = _.cloneDeep(internal_params);
+      iparams.parameters._runImmediately = true;
+      return directorInstance.update(iparams).then(out => {
+        let expectedParams = iparams;
         expectedParams.scheduled = true;
+        expectedParams._runImmediately = true;
 
         expect(out.cached).to.eql(true);
         expect(out.task_id).to.eql(undefined);
-        expect(out.parameters).to.eql(params.parameters);
-        expect(out.context).to.eql(params.context);
+        expect(out.parameters).to.eql(iparams.parameters);
+        expect(out.context).to.eql(iparams.context);
+        expect(codSpy.args[0]).to.eql([`deployment-${guid}`, expectedParams, undefined]);
+      });
+    });
+    it('should update with rate limits - internal operation [staggers]', () => {
+      let iparams = _.cloneDeep(internal_params);
+      iparams.parameters._runImmediately = false;
+      return directorInstance.update(iparams).then(out => {
+        let expectedParams = iparams;
+        expectedParams.scheduled = true;
+        expectedParams._runImmediately = false;
+
+        expect(out.cached).to.eql(true);
+        expect(out.task_id).to.eql(undefined);
+        expect(out.parameters).to.eql(iparams.parameters);
+        expect(out.context).to.eql(iparams.context);
         expect(codSpy.args[0]).to.eql([`deployment-${guid}`, expectedParams, undefined]);
       });
     });

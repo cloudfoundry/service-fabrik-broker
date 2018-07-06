@@ -175,6 +175,15 @@ class DirectorInstance extends BaseInstance {
     const token = _.get(params.parameters, 'service-fabrik-operation', null);
     if (token) {
       _.unset(params.parameters, 'service-fabrik-operation');
+      /**
+       * The _runImmediately parameter can be set via Cloud Foundry parameters (OSB API) or via the Fabrik framework internally
+       * to control the update of components like SF-MongoDB. The CF parameter model will be set by the integration tests to
+       * ensure that no staggering is done for the test instances
+       */
+      const queueNow = _.get(params.parameters, '_runImmediately', false);
+      const queueNowInternal = _.get(params, '_runImmediately', false);
+      _.unset(params.parameters, '_runImmediately');
+      _.set(params, '_runImmediately', queueNow || queueNowInternal);
       _.set(params, 'scheduled', true);
     }
     return this
@@ -233,6 +242,15 @@ class DirectorInstance extends BaseInstance {
     const token = _.get(params.parameters, 'service-fabrik-operation', null);
     if (token) {
       _.unset(params.parameters, 'service-fabrik-operation');
+      /**
+       * The _runImmediately parameter can be set via Cloud Foundry parameters (OSB API) or via the Fabrik framework internally
+       * to control the update of components like SF-MongoDB. The CF parameter model will be set by the integration tests to
+       * ensure that no staggering is done for the test instances
+       */
+      const queueNow = _.get(params.parameters, '_runImmediately', false);
+      const queueNowInternal = _.get(params, '_runImmediately', false);
+      _.unset(params.parameters, '_runImmediately');
+      _.set(params, '_runImmediately', queueNow || queueNowInternal);
       _.set(params, 'scheduled', true);
     }
     return this

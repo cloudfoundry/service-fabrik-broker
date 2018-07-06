@@ -198,8 +198,58 @@ describe('Jobs', function () {
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const isRunNow = _.get(body.parameters, '_runImmediately');
         const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+        return isRunNow === undefined && support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      });
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.SUCCEEDED,
+        update_operation_guid: backup_guid,
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
+
+    it(`if instance is outdated and job was created with run_immediately flag set, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
+      job.attrs.data.run_immediately = true;
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const isRunNow = _.get(body.parameters, '_runImmediately');
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return isRunNow === true && support.jwt.verify(token, sf_operation_name, sf_operation_args);
       });
       const expectedResponse = {
         instance_deleted: false,
@@ -318,7 +368,7 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
-    it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
+    it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must be initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id_forced_update);
       mocks.cloudController.getServiceInstance(instance_id, {
         space_guid: space_guid
@@ -335,8 +385,9 @@ describe('Jobs', function () {
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const isRunNow = _.get(body.parameters, '_runImmediately');
         const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+        return isRunNow === undefined && support.jwt.verify(token, sf_operation_name, sf_operation_args);
       });
       const expectedResponse = {
         instance_deleted: false,
