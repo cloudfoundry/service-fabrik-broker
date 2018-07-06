@@ -36,7 +36,7 @@ module.exports = Object.freeze({
     FAILED: 'failed',
     ABORT: 'abort',
     ABORTED: 'aborted',
-    IN_PROGRESS: 'in_progress',
+    IN_PROGRESS: 'in progress',
     ABORTING: 'aborting'
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
