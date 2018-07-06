@@ -6,7 +6,6 @@ const config = require('../../broker/lib/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const bosh = require('../../broker/lib/bosh');
-const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../broker/lib/iaas').backupStore;
 const utils = require('../../broker/lib/utils');
 const eventmesh = require('../../eventmesh');
@@ -281,6 +280,14 @@ class BackupService extends BaseDirectorService {
       });
   }
 
+  /**
+   * @description Delete backup from backup store and Apiserver
+   * @param {string} options.tenant_id
+   * @param {string} options.service_id
+   * @param {string} options.instance_guid
+   * @param {string} options.backup_guid
+   * @param {string} options.time_stamp
+   */
   deleteBackup(options) {
     logger.info('Attempting delete with:', options);
     return this.backupStore
