@@ -316,9 +316,9 @@ class DirectorManager extends BaseManager {
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
     const scheduled = _.get(params, 'scheduled') || false;
-    const runImmediately = _.get(params, '_runImmediately') || false;
+    const runImmediately = _.get(params, 'parameters._runImmediately') || false;
     _.omit(params, 'scheduled');
-    _.omit(params, '_runImmediately');
+    _.omit(params, 'parameters._runImmediately');
 
     if (!config.enable_bosh_rate_limit || runImmediately) {
       return this._createOrUpdateDeployment(deploymentName, params, args, scheduled)

@@ -1757,6 +1757,31 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+
+        it('should return 201 OK - when rate limiting against bosh is explicitly not required', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.director.getDeployments();
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *',
+              runImmediately: 'true'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
       });
       describe('#GetUpdateSchedule', function () {
         it('should return 200 OK', function () {

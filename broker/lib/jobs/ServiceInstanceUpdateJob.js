@@ -89,7 +89,9 @@ class ServiceInstanceUpdateJob extends BaseJob {
           .updateDeployment(
             instanceDetails.deployment_name,
             diffResults.diff,
-            plan.service.force_update)
+            plan.service.force_update,
+            instanceDetails.run_immediately
+          )
           .then(result => {
             operationResponse.update_init = CONST.OPERATION.SUCCEEDED;
             operationResponse.update_operation_guid = result.guid;
@@ -142,7 +144,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
       );
   }
 
-  static updateDeployment(deploymentName, diff, skipForbiddenCheck) {
+  static updateDeployment(deploymentName, diff, skipForbiddenCheck, runImmediately) {
     return Promise
       .try(() => {
         if (!skipForbiddenCheck) {
@@ -153,7 +155,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
         .createOperation('update', {
           deployment: deploymentName,
           username: 'Auto_Update_Job',
-          arguments: {}
+          arguments: {},
+          runImmediately: runImmediately || false
         })
         .invoke())
       .then(result => ({
