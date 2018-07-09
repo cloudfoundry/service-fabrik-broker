@@ -80,7 +80,7 @@ class ApiServerClient {
         jsonStream.on('data', callback);
         jsonStream.on('error', err => {
           logger.error('Error occured during watching', err);
-          this.getResourceOperationStatus(resourceGroup, resourceType, callback, queryString);
+          this.registerWatcher(resourceGroup, resourceType, callback, queryString);
           //throw err;
         });
         return stream;
@@ -88,6 +88,16 @@ class ApiServerClient {
       .catch(err => {
         return buildErrors(err);
       });
+  }
+
+  parseResourceDetailsFromSelfLink(selfLink) {
+    // self links are typically: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/d-7
+    const resourceType = _.split(selfLink, '/')[6];
+    const resourceGroup = _.split(_.split(selfLink, '/')[2], '.')[0];
+    return {
+      resourceGroup: resourceGroup,
+      resourceType: resourceType
+    };
   }
 
   _createResource(resourceGroup, resourceType, body) {
