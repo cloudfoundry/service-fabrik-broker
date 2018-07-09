@@ -185,7 +185,7 @@ class BnRStatusPollerJob extends BaseJob {
                 operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
                 operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
                 operationId: instanceInfo.backup_guid,
-                value: operationStatusResponse
+                value: _.omit(operationStatusResponse, 'jobCancelled', 'operationTimedOut', 'operationFinished')
               }))
             .then(() => bosh.director.getDirectorConfig(instanceInfo.deployment))
             .then(directorConfig => {
