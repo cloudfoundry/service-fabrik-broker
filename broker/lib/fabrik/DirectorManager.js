@@ -559,8 +559,12 @@ class DirectorManager extends BaseManager {
     };
     _.assign(actionContext, binding);
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext)
-      .then(() => this.getDeploymentIps(deploymentName))
-      .then(ips => this.agent.createCredentials(ips, binding.parameters))
+      .then((preBindResponse) =>
+        Promise.all([
+          this.getDeploymentIps(deploymentName),
+          Promise.resolve(preBindResponse)
+      ]))
+      .spread((ips, preBindResponse) => this.agent.createCredentials(ips, binding.parameters, preBindResponse))
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
