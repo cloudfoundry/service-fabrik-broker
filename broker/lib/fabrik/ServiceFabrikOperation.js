@@ -41,6 +41,7 @@ class ServiceFabrikOperation {
     this.useremail = opts.useremail;
     this.arguments = opts.arguments || {};
     this.isOperationSync = opts.isOperationSync ? true : false;
+    this.runImmediately = opts.runImmediately;
     if (opts.instance_id) {
       this.instanceId = opts.instance_id;
     } else if (opts.deployment) {
@@ -69,6 +70,9 @@ class ServiceFabrikOperation {
         'service-fabrik-operation': token
       }
     };
+    if (this.runImmediately) {
+      options.parameters._runImmediately = this.runImmediately;
+    }
     options.isOperationSync = this.isOperationSync;
     if (this.bearer) {
       options.auth = {
