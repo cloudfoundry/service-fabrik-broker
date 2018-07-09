@@ -7,7 +7,6 @@ const _ = require('lodash');
 const guid = 'guid';
 const task_id = 'task_id';
 const params = {
-  _runImmediately: false,
   parameters: {
     key: 'v1'
   },

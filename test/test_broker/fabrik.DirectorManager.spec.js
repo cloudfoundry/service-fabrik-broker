@@ -388,7 +388,9 @@ describe('fabrik', function () {
       describe('mongodb operation', () => {
         let params = {
           scheduled: true,
-          '_runImmediately': true
+          parameters: {
+            '_runImmediately': true
+          }
         };
         it('should proceed with mongo update without rate limiting', () => {
           currentTasksSpy.returns(Promise.resolve({
