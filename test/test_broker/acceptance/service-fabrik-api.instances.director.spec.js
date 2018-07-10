@@ -43,7 +43,6 @@ describe('service-fabrik-api', function () {
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
-      const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
       const backupOperation = {
@@ -1517,100 +1516,6 @@ describe('service-fabrik-api', function () {
                 body,
                 body
               ]);
-              mocks.verify();
-            });
-        });
-      });
-
-      describe('#backup-delete', function () {
-        const prefix = `${space_guid}/backup`;
-        const started14DaysPrior = filename.isoDate(moment()
-          .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
-        const filenameObj = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const filename14DaysPrior = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started14DaysPrior}.json`;
-        const pathname = `/${container}/${filenameObj}`;
-        const pathName14DaysPrior = `/${container}/${filename14DaysPrior}`;
-        const data = {
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
-          state: 'succeeded',
-          backup_guid: backup_guid,
-          agent_ip: mocks.agent.ip,
-          service_id: service_id
-        };
-
-        const scheduled_data = {
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
-          state: 'succeeded',
-          backup_guid: backup_guid,
-          started_at: new Date().toISOString(),
-          agent_ip: mocks.agent.ip,
-          service_id: service_id
-        };
-
-        it('should return 200 for an on-demand backup', function () {
-          mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathname);
-          return chai.request(apps.external)
-            .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
-            .set('Authorization', adminAuthHeader)
-            .set('Accept', 'application/json')
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-
-        it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, prefix, [
-            filenameObj
-          ]);
-          mocks.cloudProvider.download(pathname, scheduled_data);
-          return chai.request(apps.external)
-            .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
-            .set('Authorization', authHeader)
-            .set('Accept', 'application/json')
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(403);
-              expect(res.body.description).to.eql(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
-              mocks.verify();
-            });
-        });
-
-        it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
-          mocks.uaa.tokenKey();
-          //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.cloudProvider.list(container, prefix, [
-            filename14DaysPrior
-          ]);
-          scheduled_data.started_at = started14DaysPrior;
-          mocks.cloudProvider.download(pathName14DaysPrior, scheduled_data);
-          mocks.cloudProvider.list(blueprintContainer, backup_guid, [
-            backup_guid
-          ]);
-          mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid}`);
-          mocks.cloudProvider.remove(pathName14DaysPrior);
-          return chai.request(apps.external)
-            .delete(`${base_url}/backups/${backup_guid}?space_guid=${space_guid}`)
-            .set('Authorization', adminAuthHeader)
-            .set('Accept', 'application/json')
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
               mocks.verify();
             });
         });

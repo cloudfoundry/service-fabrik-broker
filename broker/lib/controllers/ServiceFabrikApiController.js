@@ -717,27 +717,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   deleteBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.deleteBackupV2(req, res);
-    }
-    return this.deleteBackupV1(req, res);
-  }
-
-  deleteBackupV1(req, res) {
-    const options = {
-      tenant_id: req.entity.tenant_id,
-      backup_guid: req.params.backup_guid,
-      user: req.user
-    };
-    return this.backupStore
-      .deleteBackupFile(options)
-      .then(() => res
-        .status(CONST.HTTP_STATUS_CODE.OK)
-        .send({})
-      );
-  }
-
-  deleteBackupV2(req, res) {
     const options = {
       tenant_id: req.entity.tenant_id,
       backup_guid: req.params.backup_guid,

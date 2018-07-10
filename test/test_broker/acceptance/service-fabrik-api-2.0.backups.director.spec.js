@@ -25,7 +25,6 @@ describe('service-fabrik-api', function () {
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const container = backupStore.containerName;
-      const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
       const instance_id = 'ab0ed6d6-42d9-4318-9b65-721f34719499';
       const instance_id1 = '6666666-42d9-4318-9b65-721f34719499';
       const started_at = '2015-11-18T11-28-42Z';
@@ -48,8 +47,6 @@ describe('service-fabrik-api', function () {
         state: 'succeeded',
         logs: []
       };
-      const archiveFilename = `${backup_guid}/volume.tgz.enc`;
-      const archivePathname = `/${blueprintContainer}/${archiveFilename}`;
 
       before(function () {
         enableServiceFabrikV2();
@@ -305,7 +302,7 @@ describe('service-fabrik-api', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup',
-            '01234567-0000-4000-9000-0123456789ab' , {}, 1, 404);
+            '01234567-0000-4000-9000-0123456789ab', {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/backups/01234567-0000-4000-9000-0123456789ab`)
             .query({
