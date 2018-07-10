@@ -197,9 +197,10 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'credentials/create', body, 200));
   }
 
-  deleteCredentials(ips, credentials) {
+  deleteCredentials(ips, credentials, preUnbindResponse) {
     const body = {
-      credentials: credentials
+      credentials: credentials,
+      preUnbindHook: preUnbindResponse
     };
     return this
       .getHost(ips, 'credentials')

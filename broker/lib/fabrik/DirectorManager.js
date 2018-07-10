@@ -584,13 +584,14 @@ class DirectorManager extends BaseManager {
       'id': id
     };
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
-      .then(() =>
+      .then((preUnbindResponse) =>
         Promise
         .all([
+          Promise.resolve(preUnbindResponse),
           this.getDeploymentIps(deploymentName),
           this.getBindingProperty(deploymentName, id)
         ]))
-      .spread((ips, binding) => this.agent.deleteCredentials(ips, binding.credentials))
+      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catch(err => {
