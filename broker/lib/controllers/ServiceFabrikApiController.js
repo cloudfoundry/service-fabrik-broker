@@ -488,26 +488,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   abortLastBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.abortLastBackupV2(req, res);
-    }
-    return this.abortLastBackupV1(req, res);
-  }
-
-  abortLastBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const instanceId = req.params.instance_id;
-    const tenantId = req.entity.tenant_id;
-    return req.manager
-      .abortLastBackup(tenantId, instanceId)
-      .then(result => res
-        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
-        .send({})
-      );
-  }
-
-
-  abortLastBackupV2(req, res) {
     req.manager.verifyFeatureSupport('backup');
     const backupStartedAt = new Date();
     return eventmesh.apiServerClient.getLastOperation({
