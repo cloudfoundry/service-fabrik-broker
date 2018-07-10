@@ -13,6 +13,7 @@ const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
+const Gone = errors.Gone;
 const Timeout = errors.Timeout;
 const cf = require('../cf');
 const Forbidden = errors.Forbidden;
@@ -748,7 +749,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         operationId: req.params.backup_guid,
         value: options
-      }).then(() =>
+      })
+      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
+      .then(() =>
         eventmesh.apiServerClient.updateOperationState({
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
