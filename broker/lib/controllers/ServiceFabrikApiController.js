@@ -314,46 +314,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  startBackup(req, res) {
-    logger.info(`Service fabrik enabled: ${config.enable_service_fabrik_v2}`);
-    if (config.enable_service_fabrik_v2) {
-      return this.startBackupV2(req, res);
-    }
-    logger.info(`Calling service fabrik v1`);
-    return this.startBackupV1(req, res);
-  }
-
-  startBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
-    return Promise
-      .try(() => this.checkQuota(req, trigger))
-      .then(() => {
-        _.set(req.body, 'trigger', trigger);
-        const bearer = _
-          .chain(req.headers)
-          .get('authorization')
-          .split(' ')
-          .nth(1)
-          .value();
-        return this.fabrik
-          .createOperation('backup', {
-            instance_id: req.params.instance_id,
-            bearer: bearer,
-            arguments: req.body,
-            isOperationSync: true,
-            username: req.user.name,
-            useremail: req.user.email || ''
-          })
-          .invoke()
-          .tap(response => logger.info('backup response ', response))
-          .then(body => res
-            .status(CONST.HTTP_STATUS_CODE.ACCEPTED)
-            .send(body)
-          );
-      });
-  }
-
   getBackupOptions(backupGuid, req) {
     return Promise
       .all([
@@ -379,7 +339,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  startBackupV2(req, res) {
+  startBackup(req, res) {
     let backupStartedAt;
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);

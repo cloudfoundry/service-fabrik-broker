@@ -417,6 +417,7 @@ describe('service-fabrik-api-sf2.0', function () {
             }));
         });
 
+        // TODO
         // it.only('should initiate a  backup operation & if a backup is already in progress then it must result in DeploymentAlready locked message', function () {
         //   mocks.uaa.tokenKey();
         //   mocks.cloudController.getServiceInstance(instance_id, {
