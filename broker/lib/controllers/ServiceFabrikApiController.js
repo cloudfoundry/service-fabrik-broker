@@ -465,9 +465,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           operationId: backupGuid,
         }))
-      .then(result => this.backupStore.getBackupFile(result)
-        .then(metadata => _.merge(result, metadata))
-      )
       .then(result => {
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
