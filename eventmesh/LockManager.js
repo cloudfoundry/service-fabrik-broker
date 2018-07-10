@@ -148,7 +148,6 @@ class LockManager {
       .catch(Conflict, () => {
         return eventmesh.apiServerClient.getResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, resourceId)
           .then(resource => {
-            console.log('Hi');
             const resourceBody = resource.body;
             const currentlLockDetails = JSON.parse(resourceBody.spec.options);
             const currentLockTime = new Date(currentlLockDetails.lockTime);
