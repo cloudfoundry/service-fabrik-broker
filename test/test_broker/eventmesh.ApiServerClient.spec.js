@@ -448,6 +448,50 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('updateOperationStateAndResponse', () => {
+      const opts = {
+        resourceId: 'resource-guid',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
+        operationId: 'operation-guid',
+        stateValue: 'fakeState',
+        response: {
+          key: 'fakeValue'
+        }
+      };
+      const payload = {
+        status: {
+          state: opts.stateValue,
+          response: JSON.stringify(opts.response),
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          state: opts.stateValue,
+          response: JSON.stringify(opts.response),
+        }
+      }, sampleBackupResource);
+      it('updates the operation state and response', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', 'operation-guid', finalResource, payload);
+        apiserver.updateOperationStateAndResponse(opts)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql(finalResource);
+            done();
+            verify();
+          })
+          .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', opts.operationId, finalResource, payload, 409);
+        return apiserver.updateOperationStateAndResponse(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
+    });
+
 
     describe('updateOperationState', () => {
       const opts = {

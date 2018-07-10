@@ -4,6 +4,8 @@ const catalog = require('../../broker/lib/models/catalog');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../broker/lib/iaas/BackupStore');
+const lib = require('../../broker/lib');
+const backupStore = lib.iaas.backupStore;
 
 describe('managers', function () {
   describe('BackupService', function () {
@@ -55,7 +57,19 @@ describe('managers', function () {
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const BackupService = require('../../managers/backup-manager/BackupService');
+    const started_at = '2015-11-18T11-28-42Z';
+    const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);
+    const prefix = `${space_guid}/backup`;
+    const filename = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+    const pathname = `/${container}/${filename}`;
+    const data = {
+      backup_guid: backup_guid,
+      instance_guid: instance_id,
+      service_id: service_id,
+      state: 'succeeded',
+      logs: []
+    };
 
     const manager = new BackupService(plan);
     it('Should start backup successfully', function () {
@@ -79,14 +93,22 @@ describe('managers', function () {
       mocks.agent.startBackup();
       mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
         status: {
-          state: 'in_progress'
-        }
-      }, 2);
-      mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
-        status: {
           state: 'in_progress',
-          response: '{}'
+          response: {}
         }
+      }, 1, body => {
+        expect(body.status.state).to.eql('in_progress');
+        const resp = JSON.parse(body.status.response);
+        expect(resp.service_id).to.eql(service_id);
+        expect(resp.plan_id).to.eql(plan_id);
+        expect(resp.instance_guid).to.eql(instance_id);
+        expect(resp.operation).to.eql('backup');
+        expect(resp.type).to.eql('online');
+        expect(resp.backup_guid).to.eql(backup_guid);
+        expect(resp.trigger).to.eql('on-demand');
+        expect(resp.state).to.eql('processing');
+        expect(resp.tenant_id).to.eql(space_guid);
+        return true;
       });
       return manager.startBackup(opts)
         .then(() => {
@@ -140,6 +162,10 @@ describe('managers', function () {
         status: {
           state: 'aborting'
         }
+      }, 1, body => {
+        expect(body.status.state).to.eql('aborting');
+        expect(body.status.response).to.be.an('undefined');
+        return true;
       });
       mocks.agent.abortBackup();
       return manager.abortLastBackup(opts, true)
@@ -153,6 +179,32 @@ describe('managers', function () {
           });
           mocks.verify();
         });
+    });
+
+    describe('#deleteBackup', function () {
+      it('should return 200 OK', function () {
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
+        mocks.cloudProvider.remove(pathname);
+        mocks.cloudProvider.download(pathname, data);
+        mocks.apiServerEventMesh.nockLoadSpec();
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'deleting'
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('deleted');
+          expect(body.status.response).to.be.an('undefined');
+          return true;
+        });
+        return manager.deleteBackup({
+          tenant_id: space_guid,
+          service_id: service_id,
+          instance_guid: instance_id,
+          backup_guid: backup_guid,
+          time_stamp: started_at
+        });
+      });
     });
 
   });
