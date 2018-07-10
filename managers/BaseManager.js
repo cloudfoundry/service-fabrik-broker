@@ -77,9 +77,9 @@ class BaseManager {
       if (!objectBody.metadata.annotations || objectBody.metadata.annotations.lockedByManager === '') {
         return this._acquireProcessingLock(objectBody)
           .catch(err => {
+            processingLockStatus.conflict = true;
             if (err instanceof Conflict) {
-              processingLockStatus.conflict = true;
-              logger.info(`Not able to acquire processing lock, Request with ${JSON.stringify(options)} is probably picked by other worker`);
+              logger.info(`Not able to acquire processing lock, Request with options ${JSON.stringify(options)} is probably picked by other worker`);
             } else {
               logger.error(`Error while trying to get processing lock for request with options ${JSON.stringify(options)}`, err);
             }
