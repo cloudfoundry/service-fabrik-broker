@@ -468,7 +468,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(result => {
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
-          .send(_.omit(result, 'secret', 'agent_ip'));
+          .send(_.omit(result, 'secret', 'agent_ip', 'description'));
       })
       .catch((err) => {
         logger.error('Error occured during getLastBackup ', err);
