@@ -447,13 +447,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.getLastBackupV2(req, res);
-    }
-    return this.getLastBackupV1(req, res);
-  }
-
-  getLastBackupV2(req, res) {
     req.manager.verifyFeatureSupport('backup');
     return eventmesh.apiServerClient.getLastOperation({
         resourceId: req.params.instance_id,
