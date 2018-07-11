@@ -133,6 +133,7 @@ describe('managers', function () {
         agent_ip: agent_ip,
         context: context
       };
+      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
       return manager.getOperationState('backup', opts)
         .then((res) => {
           expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
@@ -142,6 +143,16 @@ describe('managers', function () {
           expect(getBackupLogsStub.callCount).to.eql(1);
           expect(getBackupLogsStub.firstCall.args[0]).to.eql(opts.agent_ip);
           expect(patchBackupFileStub.callCount).to.eql(1);
+          expect(getFileStub.callCount).to.eql(1);
+          expect(getFileStub.firstCall.args[0]).to.eql({
+            service_id: service_id,
+            plan_id: plan_id,
+            tenant_id: space_guid,
+            deployment: deployment_name,
+            instance_guid: instance_id,
+            agent_ip: opts.agent_ip,
+            context: context
+          });
           mocks.verify();
         });
     });

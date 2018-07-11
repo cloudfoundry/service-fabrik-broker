@@ -419,13 +419,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           operationId: backupGuid,
         }))
-      .then(result => this.backupStore.getBackupFile(result)
-        .then(metadata => _.merge(result, metadata))
-      )
       .then(result => {
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
-          .send(_.omit(result, 'secret', 'agent_ip'));
+          .send(_.omit(result, 'secret', 'agent_ip', 'description'));
       })
       .catch((err) => {
         logger.error('Error occured during getLastBackup ', err);
