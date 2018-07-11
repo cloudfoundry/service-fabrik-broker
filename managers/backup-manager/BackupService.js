@@ -308,7 +308,7 @@ class BackupService extends BaseDirectorService {
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
-            response: err
+            response: _.omit(err, 'stack')
           }));
       });
   }

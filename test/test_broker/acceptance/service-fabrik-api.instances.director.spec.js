@@ -265,10 +265,6 @@ describe('service-fabrik-api', function () {
           type: type,
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND
         };
-        const scheduled_args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
-        };
         const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time + 1)}.json`;
@@ -278,22 +274,6 @@ describe('service-fabrik-api', function () {
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'succeeded',
           agent_ip: mocks.agent.ip
-        };
-        const instanceInfo = {
-          space_guid: space_guid,
-          backup_guid: backup_guid,
-          instance_guid: instance_id,
-          agent_ip: '10.0.1.10',
-          service_id: service_id,
-          plan_id: plan_id,
-          deployment: mocks.director.deploymentNameByIndex(index),
-          started_at: new Date()
-        };
-        const lockInfo = {
-          username: 'admin',
-          lockedForOperation: 'backup',
-          createdAt: new Date(),
-          instanceInfo: instanceInfo
         };
         const FabrikStatusPoller = require('../../../broker/lib/fabrik/FabrikStatusPoller');
         afterEach(function () {

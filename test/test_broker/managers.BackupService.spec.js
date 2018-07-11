@@ -5,6 +5,9 @@ const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../broker/lib/iaas/BackupStore');
 const lib = require('../../broker/lib');
+const moment = require('moment');
+const config = lib.config;
+const CONST = require('../../common/constants');
 const backupStore = lib.iaas.backupStore;
 
 describe('managers', function () {
@@ -182,7 +185,15 @@ describe('managers', function () {
     });
 
     describe('#deleteBackup', function () {
-      it('should return 200 OK', function () {
+      const scheduled_data = {
+        trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
+        state: 'succeeded',
+        backup_guid: backup_guid,
+        started_at: new Date().toISOString(),
+        agent_ip: mocks.agent.ip,
+        service_id: service_id
+      };
+      it('should return 200 for an demand backup', function () {
         mocks.cloudProvider.auth();
         mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
         mocks.cloudProvider.remove(pathname);
@@ -195,6 +206,59 @@ describe('managers', function () {
         }, 1, body => {
           expect(body.status.state).to.eql('deleted');
           expect(body.status.response).to.be.an('undefined');
+          return true;
+        });
+        return manager.deleteBackup({
+          tenant_id: space_guid,
+          service_id: service_id,
+          instance_guid: instance_id,
+          backup_guid: backup_guid,
+          time_stamp: started_at
+        });
+      });
+
+      it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container,
+          `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
+        mocks.cloudProvider.download(pathname, scheduled_data);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'deleting'
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('error');
+          expect(body.status.response).to.eql(JSON.stringify({
+            'name': 'Forbidden',
+            'status': 403,
+            'reason': 'Forbidden'
+          }));
+          return true;
+        });
+        return manager.deleteBackup({
+          tenant_id: space_guid,
+          service_id: service_id,
+          instance_guid: instance_id,
+          backup_guid: backup_guid,
+          time_stamp: started_at
+        });
+      });
+
+      it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
+        const started14DaysPrior = new Date(moment()
+          .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container,
+          `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
+        scheduled_data.started_at = started14DaysPrior;
+        mocks.cloudProvider.download(pathname, scheduled_data);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'deleting'
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('error');
+          expect(body.status.response).to.eql(JSON.stringify({}));
           return true;
         });
         return manager.deleteBackup({
