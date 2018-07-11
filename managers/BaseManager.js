@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
 const config = require('../common/config');
