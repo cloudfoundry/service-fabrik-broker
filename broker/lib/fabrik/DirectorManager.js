@@ -31,7 +31,6 @@ const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const Forbidden = errors.Forbidden;
 const DeploymentDelayed = errors.DeploymentDelayed;
 const catalog = require('../models/catalog');
 

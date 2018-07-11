@@ -170,101 +170,11 @@ describe('service-fabrik-api', function () {
             });
         });
       });
-      describe('#unlock-start', function () {
-        const name = 'unlock';
-        const deploymentName = mocks.director.deploymentNameByIndex(mocks.director.networkSegmentIndex);
-        const args = {
-          description: `Backup operation for ${deploymentName} finished with status ${CONST.OPERATION.SUCCEEDED}`
-        };
-
-        it('should receive the update request from cloud controller and unlock deployment', function () {
-          mocks.director.releaseLock();
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                const expectedDescription = `Unlocked deployment ${deploymentName}`;
-                expect(res.body.description).to.be.eql(expectedDescription);
-                mocks.verify();
-              })
-            );
-        });
-        it('should receive the update request from cloud controller and if deployment is already unlocked, should return back successfully', function () {
-          mocks.director.releaseLock(deploymentName, 404);
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                expect(res.body.description).to.be.eql(args.description);
-                mocks.verify();
-              })
-            );
-        });
-      });
       describe('#backup-start', function () {
         const prefix = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}`;
         const filename = `${prefix}.${started_at}.json`;
         const pathname = `/${container}/${filename}`;
         const type = 'online';
-        const name = 'backup';
-        const args = {
-          type: type,
-          trigger: CONST.BACKUP.TRIGGER.ON_DEMAND
-        };
         const list_prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
         const list_filename = `${list_prefix}.${backup_guid}.${started_at}.json`;
         const list_filename2 = `${list_prefix}.${backup_guid}.${isoDate(time + 1)}.json`;
@@ -335,60 +245,6 @@ describe('service-fabrik-api', function () {
               expect(res.body.description).to.eql('Scheduled backups can only be initiated by the System User');
               mocks.verify();
             });
-        });
-
-        it('should receive the update request from cloud controller and start the backup', function () {
-          mocks.director.acquireLock();
-          mocks.director.verifyDeploymentLockStatus();
-          mocks.director.getDeploymentVms(deployment_name);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.startBackup();
-          mocks.cloudProvider.upload(pathname, body => {
-            expect(body.type).to.equal(type);
-            expect(body.instance_guid).to.equal(instance_id);
-            expect(body.username).to.equal(username);
-            expect(body.backup_guid).to.equal(backup_guid);
-            expect(body.trigger).to.equal(CONST.BACKUP.TRIGGER.ON_DEMAND);
-            expect(body.state).to.equal('processing');
-            return true;
-          });
-          mocks.cloudProvider.headObject(pathname);
-          return support.jwt
-            .sign({
-              guid: backup_guid,
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(200);
-                expect(res.body.description).to.be.defined;
-                mocks.verify();
-              })
-            );
         });
 
         it('should receive last_operation call from cloud controller while backup is processing', function () {

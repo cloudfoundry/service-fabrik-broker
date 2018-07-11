@@ -50,15 +50,7 @@ class DirectorInstance extends BaseInstance {
   }
 
   get async() {
-    if (config.enable_service_fabrik_v2) {
-      return true;
-      //Backup operation is being turned into SYNCH and behind the scenes polling will happen to check status.
-      //Rationale : Bind operations can happen while backups are happening.
-    } else {
-      return this.operation !== CONST.OPERATION_TYPE.BACKUP && this.operation !== CONST.OPERATION_TYPE.UNLOCK;
-      //Backup/Unlock operation is being turned into SYNCH and behind the scenes polling will happen to check status.
-      //Rationale : Bind operations can happen while backups are happening.
-    }
+    return true;
   }
 
   initialize(operation) {
