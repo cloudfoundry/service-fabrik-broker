@@ -179,26 +179,6 @@ class BnRStatusPollerJob extends BaseJob {
       });
   }
 
-  static unlockDeployment(instanceInfo, operation, operationStatusResponse) {
-    const unlockOperation = new ServiceFabrikOperation('unlock', {
-      instance_id: instanceInfo.instance_guid,
-      isOperationSync: true,
-      arguments: {
-        description: _.get(operationStatusResponse, 'description')
-      }
-    });
-    return unlockOperation
-      .invoke()
-      .then(() => {
-        logger.info(`Unlocked deployment : ${instanceInfo.deployment} for backup_guid : ${instanceInfo.backup_guid} successfully. Poller stopped.`);
-        return this._logEvent(instanceInfo, operation, operationStatusResponse);
-      })
-      .catch(err => {
-        logger.error(`Error occurred while unlocking deployment: ${instanceInfo.deployment} for ${operation} with guid : ${instanceInfo.backup_guid}`, err);
-        throw err;
-      });
-  }
-
   static _logEvent(instanceInfo, operation, operationStatusResponse) {
     const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
     const check_res_body = true;
