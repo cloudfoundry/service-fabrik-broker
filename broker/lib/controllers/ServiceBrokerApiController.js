@@ -16,7 +16,6 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
-const config = require('../config');
 const CONST = require('../constants');
 
 class ServiceBrokerApiController extends FabrikBaseController {
@@ -129,49 +128,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(ServiceInstanceNotFound, gone);
   }
   getLastInstanceOperation(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.getLastInstanceOperationV2(req, res);
-    }
-    return this.getLastInstanceOperationV1(req, res);
-  }
-
-  getLastInstanceOperationV1(req, res) {
-    const encodedOp = _.get(req, 'query.operation', undefined);
-    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
-    const action = _.capitalize(operation.type);
-    const instanceType = req.instance.constructor.typeDescription;
-    const guid = req.instance.guid;
-
-    function done(result) {
-      const body = _.pick(result, 'state', 'description');
-      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
-    }
-
-    function failed(err) {
-      res.status(CONST.HTTP_STATUS_CODE.OK).send({
-        state: 'failed',
-        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
-      });
-    }
-
-    function gone() {
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
-    }
-
-    function notFound(err) {
-      if (operation.type === 'delete') {
-        return gone();
-      }
-      failed(err);
-    }
-    return Promise
-      .try(() => req.instance.lastOperation(operation))
-      .then(done)
-      .catch(AssertionError, failed)
-      .catch(ServiceInstanceNotFound, notFound);
-  }
-
-  getLastInstanceOperationV2(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
     const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
     const action = _.capitalize(operation.type);
