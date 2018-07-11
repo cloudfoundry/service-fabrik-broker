@@ -1049,31 +1049,6 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  abortLastBackup(tenant_id, instance_guid, force) {
-    return this.backupStore
-      .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        if (!force && metadata.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
-          throw new Forbidden('System scheduled backup runs cannot be aborted');
-        }
-        switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortBackup(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
-        }
-      });
-  }
-
   startRestore(opts) {
     const deploymentName = opts.deployment;
     const args = opts.arguments;
