@@ -1049,26 +1049,6 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  getLastBackup(tenant_id, instance_guid, noCache) {
-    return this.backupStore
-      .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        switch (metadata.state) {
-        case 'processing':
-          return noCache ? this.agent
-            .getBackupLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage'))) : metadata;
-        default:
-          return metadata;
-        }
-      });
-  }
-
   abortLastBackup(tenant_id, instance_guid, force) {
     return this.backupStore
       .getBackupFile({
