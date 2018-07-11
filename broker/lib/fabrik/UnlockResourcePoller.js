@@ -6,7 +6,6 @@ const CONST = require('../constants');
 const logger = require('../logger');
 const lockManager = require('./../../../eventmesh').lockManager;
 const errors = require('../errors');
-const config = require('../config');
 const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {

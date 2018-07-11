@@ -160,12 +160,9 @@ describe('service-fabrik-api', function () {
       });
 
       describe('#restore-start', function () {
-        const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
-        const restoreFilename = `${restorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
         const name = 'restore';
         const backupMetadata = {
@@ -450,59 +447,6 @@ describe('service-fabrik-api', function () {
             });
         });
 
-        it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeploymentVms(deployment_name);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.verifyDeploymentLockStatus();
-          mocks.agent.getInfo();
-          mocks.agent.startRestore();
-          mocks.cloudProvider.upload(restorePathname, body => {
-            expect(body.instance_guid).to.equal(instance_id);
-            expect(body.username).to.equal(username);
-            expect(body.backup_guid).to.equal(backup_guid);
-            expect(body.state).to.equal('processing');
-            return true;
-          });
-          mocks.cloudProvider.headObject(restorePathname);
-          return support.jwt
-            .sign({
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(202);
-                expect(res.body).to.have.property('operation');
-                const operation = utils.decodeBase64(res.body.operation);
-                expect(operation.type).to.equal('update');
-                expect(operation.subtype).to.equal('restore');
-                expect(operation).to.have.property('agent_ip');
-                mocks.verify();
-              })
-            );
-        });
 
         it('should receive last_operation call from cloud controller while restore is processing', function () {
           const restoreState = {
