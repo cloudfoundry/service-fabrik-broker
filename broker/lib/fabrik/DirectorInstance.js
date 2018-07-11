@@ -206,31 +206,6 @@ class DirectorInstance extends BaseInstance {
   }
 
   delete(params) {
-    if (config.enable_service_fabrik_v2) {
-      return this.delete20(params);
-    }
-    return this.delete10(params);
-  }
-
-  delete10(params) {
-    const operation = {
-      type: 'delete'
-    };
-    return this
-      .initialize(operation)
-      .then(() => this.manager.verifyDeploymentLockStatus(this.deploymentName))
-      .then(() => this.manager.deleteDeployment(this.deploymentName, params))
-      .then(taskId => _
-        .chain(operation)
-        .set('task_id', taskId)
-        .set('context', {
-          platform: this.platformManager.platform
-        })
-        .value()
-      );
-  }
-
-  delete20(params) {
     const operation = {
       type: 'delete'
     };
