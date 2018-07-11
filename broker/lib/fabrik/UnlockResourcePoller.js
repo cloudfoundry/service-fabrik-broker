@@ -68,7 +68,7 @@ class UnlockResourcePoller {
 }
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
-  if (eventInfo.type === 'internal' && config.enable_service_fabrik_v2) {
+  if (eventInfo.type === 'internal') {
     UnlockResourcePoller.start();
   }
 });
