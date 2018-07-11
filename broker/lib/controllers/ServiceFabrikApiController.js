@@ -430,20 +430,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getLastBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const instanceId = req.params.instance_id;
-    const noCache = req.query.no_cache === 'true' ? true : false;
-    const tenantId = req.entity.tenant_id;
-    return req.manager
-      .getLastBackup(tenantId, instanceId, noCache)
-      .then(result => res
-        .status(CONST.HTTP_STATUS_CODE.OK)
-        .send(_.omit(result, 'secret', 'agent_ip'))
-      )
-      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instanceId}'`));
-  }
-
   abortLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
     const backupStartedAt = new Date();
