@@ -110,6 +110,16 @@ describe('eventmesh', () => {
     afterEach(() => {
       nock.cleanAll();
     });
+    describe('parseResourceDetailsFromSelfLink', () => {
+      it('Should parse resource details from selflink', () => {
+        const selfLink = '/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/sample_director';
+        const resourceDetails = apiserver.parseResourceDetailsFromSelfLink(selfLink);
+        expect(resourceDetails).to.deep.eql({
+          resourceGroup: 'deployment',
+          resourceType: 'directors'
+        });
+      });
+    });
 
     describe('createLockResource', () => {
       it('calls the post rest api to create lock type resource', done => {
