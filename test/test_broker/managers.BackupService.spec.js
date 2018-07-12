@@ -120,8 +120,7 @@ describe('managers', function () {
         });
     });
 
-    describe('#deleteBackup', function () {
-      it('Should get backup operation state successfully', function () {
+    describe('#backup-state', function () {
         const agent_ip = mocks.agent.ip;
         const context = {
           platform: 'cloudfoundry',
@@ -134,6 +133,7 @@ describe('managers', function () {
           agent_ip: agent_ip,
           context: context
         };
+      it('Should get backup operation state successfully', function () {
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
         return manager.getOperationState('backup', opts)
           .then((res) => {
@@ -154,6 +154,23 @@ describe('managers', function () {
               agent_ip: opts.agent_ip,
               context: context
             });
+            mocks.verify();
+          });
+      });
+      it('should return 200 Ok - backup state is retrieved from agent while in \'succeeded\' state', function () {
+        sandbox.restore();
+        mocks.agent.getBackupLogs([]);
+        mocks.agent.lastBackupOperation(backup_state);
+        // mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}`, [filename], 200 ,2);
+        mocks.cloudProvider.download(pathname, data, 2);
+        mocks.cloudProvider.upload(pathname, undefined);
+        mocks.cloudProvider.headObject(pathname);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        return manager.getOperationState('backup', opts)
+          .then((res) => {
+            expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
+            expect(res.state).to.eql('succeeded');
             mocks.verify();
           });
       });

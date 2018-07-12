@@ -85,8 +85,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       if (req.instance.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64(result);
-      } else if (result && result.description) {
-        body.description = result.description;
       }
       res.status(statusCode).send(body);
     }
