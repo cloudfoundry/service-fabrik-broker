@@ -2,16 +2,13 @@
 
 const _ = require('lodash');
 const lib = require('../../../broker/lib');
-const errors = require('../../../broker/lib/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
-const utils = lib.utils;
 const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
 const backupStore = lib.iaas.backupStore;
 const ScheduleManager = require('../../../broker/lib/jobs');
-const CONST = require('../../../broker/lib/constants');
 const DirectorManager = lib.fabrik.DirectorManager;
 const cloudController = require('../../../broker/lib/cf').cloudController;
 
@@ -26,44 +23,14 @@ describe('service-broker-api', function () {
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
       const plan = catalog.getPlan(plan_id);
-      const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const instance_id = mocks.director.uuidByIndex(index);
       const deployment_name = mocks.director.deploymentNameByIndex(index);
-      const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
-      const app_guid = 'app-guid';
-      const task_id = 4711;
       const parameters = {
         foo: 'bar'
       };
-      const deploymentHookRequestBody = {
-        phase: 'PreCreate',
-        actions: ['Blueprint', 'ReserveIps'],
-        context: {
-          params: {
-            context: {
-              platform: 'cloudfoundry',
-              organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-              space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-            },
-            organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-            space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
-            parameters: {
-              'foo': 'bar'
-            },
-            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
-            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f'
-          },
-          deployment_name: 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
-          sf_operations_args: {},
-          instance_guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
-        }
-      };
       const accepts_incomplete = true;
-      const protocol = config.external.protocol;
-      const host = config.external.host;
-      const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});

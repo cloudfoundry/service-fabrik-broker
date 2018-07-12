@@ -22,8 +22,6 @@ describe('service-fabrik-api', function () {
     /* jshint expr:true */
     describe('director', function () {
       const base_url = '/api/v1';
-      const broker_api_base_url = '/cf/v2';
-      const broker_api_version = '2.12';
       const authHeader = `bearer ${mocks.uaa.jwtToken}`;
       const adminAuthHeader = `bearer ${mocks.uaa.adminJwtToken}`;
       const authHeaderInsufficientScopes = `bearer ${mocks.uaa.jwtTokenInsufficientScopes}`;
@@ -45,17 +43,6 @@ describe('service-fabrik-api', function () {
       const container = backupStore.containerName;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
-      const restoreOperation = {
-        type: 'update',
-        subtype: 'restore',
-        deployment: deployment_name,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        },
-        agent_ip: mocks.agent.ip
-      };
 
       const getJob = (name, type) => {
         return Promise.resolve({

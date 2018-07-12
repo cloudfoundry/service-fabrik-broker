@@ -9,7 +9,6 @@ const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('./models/catalog');
-const config = require('./config');
 const lockManager = require('../../eventmesh').lockManager;
 const CONST = require('./constants');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
