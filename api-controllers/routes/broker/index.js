@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-require('../../../../common/utils/enableAbsMatchingRouteLookup')(express);
+require('../../../common/utils/enableAbsMatchingRouteLookup')(express);
 const router = module.exports = express.Router({
   mergeParams: true
 });

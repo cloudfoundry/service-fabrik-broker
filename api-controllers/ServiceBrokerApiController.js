@@ -3,11 +3,11 @@
 const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const errors = require('../errors');
-const utils = require('../utils');
-const catalog = require('../models/catalog');
+const errors = require('../common/errors');
+const utils = require('../broker/lib/utils');
+const catalog = require('../broker/lib/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
-const lockManager = require('../../../eventmesh').lockManager;
+const lockManager = require('../eventmesh').lockManager;
 const AssertionError = assert.AssertionError;
 const BadRequest = errors.BadRequest;
 const PreconditionFailed = errors.PreconditionFailed;
@@ -16,7 +16,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
-const CONST = require('../constants');
+const CONST = require('../common/constants');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {

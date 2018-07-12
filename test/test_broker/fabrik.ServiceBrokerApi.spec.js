@@ -1,7 +1,7 @@
 'use strict';
 
 const lib = require('../../broker/lib');
-const api = lib.controllers.serviceBrokerApi;
+const api = require('../../api-controllers').serviceBrokerApi;
 const errors = lib.errors;
 const PreconditionFailed = errors.PreconditionFailed;
 const ContinueWithNext = errors.ContinueWithNext;

@@ -1,9 +1,9 @@
 'use strict';
 
 const express = require('express');
-const config = require('../config');
-const commonMiddleware = require('../../../common/middleware');
-const controller = require('../controllers').serviceFabrikReport;
+const config = require('../../common/config');
+const commonMiddleware = require('../../common/middleware');
+const controller = require('../').serviceFabrikReport;
 const router = module.exports = express.Router();
 
 router.use(commonMiddleware.basicAuth(config.username, config.password));

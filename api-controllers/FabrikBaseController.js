@@ -3,19 +3,19 @@
 const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
-const BaseController = require('../../../common/controllers/BaseController');
-const config = require('../config');
-const utils = require('../utils');
-const errors = require('../errors');
-const cf = require('../cf');
-const bosh = require('../bosh');
-const fabrik = require('../fabrik');
-const backupStore = require('../iaas').backupStore;
-const catalog = require('../models/catalog');
+const BaseController = require('../common/controllers/BaseController');
+const config = require('../common/config');
+const utils = require('../broker/lib/utils');
+const errors = require('../common/errors');
+const cf = require('../broker/lib/cf');
+const bosh = require('../broker/lib/bosh');
+const fabrik = require('../broker/lib/fabrik');
+const backupStore = require('../broker/lib/iaas').backupStore;
+const catalog = require('../broker/lib/models/catalog');
 const ContinueWithNext = errors.ContinueWithNext;
 const BadRequest = errors.BadRequest;
-const CONST = require('../constants');
-const lockManager = require('../../../eventmesh').lockManager;
+const CONST = require('../common/constants');
+const lockManager = require('../eventmesh').lockManager;
 
 class FabrikBaseController extends BaseController {
   constructor() {

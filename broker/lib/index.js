@@ -11,10 +11,10 @@ exports.middleware = require('./middleware');
 exports.bosh = require('./bosh');
 exports.cf = require('./cf');
 exports.models = require('./models');
-exports.routes = require('./routes');
+//exports.routes = require('./routes');
 exports.ScheduleManager = require('./jobs');
 exports.fabrik = require('./fabrik');
-exports.controllers = require('./controllers');
+//exports.controllers = require('./controllers');
 exports.iaas = require('./iaas');
 exports.bootstrap = bootstrap;
 if (config.enable_swarm_manager) {

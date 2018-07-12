@@ -3,10 +3,10 @@
 const Promise = require('bluebird');
 const express = require('express');
 const expressSession = require('express-session');
-const store = require('../store');
-const config = require('../config');
-const commonMiddleware = require('../../../common/middleware');
-const controller = require('../controllers').dashboard;
+const store = require('../../broker/lib/store');
+const config = require('../../common/config');
+const commonMiddleware = require('../../common/middleware');
+const controller = require('../').dashboard;
 Promise.promisifyAll(expressSession.Session.prototype);
 
 const cfg = config.external;

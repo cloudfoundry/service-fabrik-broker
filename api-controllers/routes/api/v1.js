@@ -1,10 +1,10 @@
 'use strict';
 
 const express = require('express');
-const middleware = require('../../middleware');
-const commonMiddleware = require('../../../../common/middleware');
-const CONST = require('../../constants');
-const controller = require('../../controllers').serviceFabrikApi;
+const middleware = require('../../../broker/lib/middleware');
+const commonMiddleware = require('../../../common/middleware');
+const CONST = require('../../../common/constants');
+const controller = require('../../').serviceFabrikApi;
 
 const router = module.exports = express.Router();
 const instanceRouter = express.Router({

@@ -1,11 +1,11 @@
 'use strict';
 
 var moment = require('moment-timezone');
-const errors = require('../errors');
-const logger = require('../logger');
+const errors = require('../common/errors');
+const logger = require('../common/logger');
 const FabrikBaseController = require('./FabrikBaseController');
-const BackupReportManager = require('../reports');
-const CONST = require('../constants');
+const BackupReportManager = require('../broker/lib/reports');
+const CONST = require('../common/constants');
 const BadRequest = errors.BadRequest;
 
 class ServiceFabrikReportController extends FabrikBaseController {

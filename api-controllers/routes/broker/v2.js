@@ -2,11 +2,11 @@
 
 const express = require('express');
 const _ = require('lodash');
-const config = require('../../config');
-const CONST = require('../../constants');
-const middleware = require('../../middleware');
-const commonMiddleware = require('../../../../common/middleware');
-const controller = require('../../controllers').serviceBrokerApi;
+const config = require('../../../common/config');
+const middleware = require('../../../broker/lib/middleware');
+const commonMiddleware = require('../../../common/middleware');
+const CONST = require('../../../common/constants');
+const controller = require('../../').serviceBrokerApi;
 
 const router = module.exports = express.Router({
   mergeParams: true
