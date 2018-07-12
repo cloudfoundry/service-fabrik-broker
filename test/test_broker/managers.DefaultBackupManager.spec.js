@@ -62,6 +62,7 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
   /* jshint unused:false */
   const bm = new DefaultBackupManager();
+  bm.init();
   expect(registerWatcherStub.callCount).to.equal(1);
   expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.BACKUP);
   expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);

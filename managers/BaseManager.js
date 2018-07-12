@@ -20,7 +20,7 @@ class BaseManager {
           try {
             logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
-            return this.registerWatcher();
+            return this.registerWatcher(resourceGroup, resourceType, queryString);
           } catch (err) {
             logger.error('Error caught in the set timout callback');
             throw err;
@@ -119,8 +119,6 @@ class BaseManager {
       return this._preProcessRequest(changeObjectBody, processingLockStatus)
         .then(() => {
           if (!processingLockStatus.conflict) {
-            // console.log(Object.getOwnPropertyNames(ParentClass))
-            // return ParentClass.prototype.processRequest.call(this, changeObject);
             return this.processRequest(changeObjectBody);
           }
         })

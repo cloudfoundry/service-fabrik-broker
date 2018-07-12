@@ -13,10 +13,10 @@ const DBManager = require('../../broker/lib/fabrik/DBManager');
 new DBManager(); //to start the BnRStatusPoller
 
 class DefaultBackupManager extends BaseManager {
-  constructor() {
-    super();
+
+  init() {
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
-    this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, queryString);
+    return this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, queryString);
   }
 
   processRequest(requestObjectBody) {
