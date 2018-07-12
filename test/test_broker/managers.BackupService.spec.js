@@ -121,18 +121,18 @@ describe('managers', function () {
     });
 
     describe('#backup-state', function () {
-        const agent_ip = mocks.agent.ip;
-        const context = {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        };
-        const opts = {
-          deployment: deployment_name,
-          instance_guid: instance_id,
-          agent_ip: agent_ip,
-          context: context
-        };
+      const agent_ip = mocks.agent.ip;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
+      const opts = {
+        deployment: deployment_name,
+        instance_guid: instance_id,
+        agent_ip: agent_ip,
+        context: context
+      };
       it('Should get backup operation state successfully', function () {
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
         return manager.getOperationState('backup', opts)
@@ -162,7 +162,7 @@ describe('managers', function () {
         mocks.agent.getBackupLogs([]);
         mocks.agent.lastBackupOperation(backup_state);
         // mocks.cloudProvider.auth();
-        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}`, [filename], 200 ,2);
+        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}`, [filename], 200, 2);
         mocks.cloudProvider.download(pathname, data, 2);
         mocks.cloudProvider.upload(pathname, undefined);
         mocks.cloudProvider.headObject(pathname);
