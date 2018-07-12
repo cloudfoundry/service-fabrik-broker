@@ -741,12 +741,8 @@ class DirectorManager extends BaseManager {
   invokeServiceFabrikOperation(name, opts) {
     logger.info(`Invoking service fabrik operation '${name}' with:`, opts);
     switch (name) {
-    case CONST.OPERATION_TYPE.BACKUP:
-      return this.startBackup(opts);
     case CONST.OPERATION_TYPE.RESTORE:
       return this.startRestore(opts);
-    case CONST.OPERATION_TYPE.UNLOCK:
-      return this.unlock(opts);
     }
     throw new BadRequest(`Invalid service fabrik operation '${name}'`);
   }
@@ -756,8 +752,6 @@ class DirectorManager extends BaseManager {
     return Promise
       .try(() => {
         switch (name) {
-        case 'backup':
-          return this.getBackupOperationState(opts);
         case 'restore':
           return this.getRestoreOperationState(opts);
         }
@@ -798,44 +792,6 @@ class DirectorManager extends BaseManager {
       .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
       .then(deploymentName => this.getDeploymentIps(deploymentName))
       .then(ips => this.agent.getState(ips));
-  }
-
-  getLockProperty(deploymentName) {
-    return this.director.getLockProperty(deploymentName);
-  }
-
-  verifyDeploymentLockStatus(deploymentName) {
-    return this
-      .getLockProperty(deploymentName)
-      .then(lockInfo => {
-        if (!lockInfo) {
-          return;
-        }
-        throw new errors.DeploymentAlreadyLocked(this.getInstanceGuid(deploymentName), lockInfo);
-      });
-  }
-
-  static registerBnRStatusPoller(opts, instanceInfo) {
-    let deploymentName = _.get(instanceInfo, 'deployment');
-    const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
-    logger.debug(`Scheduling deployment ${deploymentName} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
-          ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
-    const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
-    const data = {
-      operation: opts.operation,
-      type: opts.type,
-      trigger: opts.trigger,
-      operation_details: instanceInfo
-    };
-    return ScheduleManager
-      .schedule(
-        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
-        CONST.JOB.BNR_STATUS_POLLER,
-        repeatInterval,
-        data, {
-          name: config.cf.username
-        }
-      );
   }
 
   startRestore(opts) {
