@@ -447,32 +447,6 @@ describe('service-fabrik-api', function () {
             });
         });
 
-
-        it('should receive last_operation call from cloud controller while restore is processing', function () {
-          const restoreState = {
-            state: 'processing',
-            stage: 'Attaching volume',
-            updated_at: new Date(Date.now())
-          };
-          mocks.agent.lastRestoreOperation(restoreState);
-          return chai
-            .request(apps.internal)
-            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', broker_api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64(restoreOperation)
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body.state).to.equal('in progress');
-              expect(res.body).to.have.property('description');
-              mocks.verify();
-            });
-        });
       });
 
       describe('#restore-state', function () {
