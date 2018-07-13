@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const DockerCredentials = require('../../broker/lib/docker/DockerCredentials');
+const CONST = require('../../broker/lib/constants');
 
 describe('docker', function () {
   describe('DockerCredentials', function () {
@@ -64,6 +65,7 @@ describe('docker', function () {
         expect(dockerCredentials.password).to.eql({});
         expect(dockerCredentials.dbname).to.eql({});
         expect(dockerCredentials.uri).to.eql({});
+        expect(dockerCredentials.end_points).to.eql(undefined);
       });
       it('should create credentials with an empty username object', function () {
         const dockerCredentials = createCredentials({
@@ -223,6 +225,29 @@ describe('docker', function () {
       });
     });
 
+    describe('#endpoints', function () {
+      it('returns undefined', function () {
+        const dockerCredentials = createCredentials();
+        expect(dockerCredentials.end_points).to.equal(undefined);
+      });
+      it('returns well defined endpoints', function () {
+        const hostname = 'localhost';
+        const port = 1234;
+        const ports = {
+          '1234/tcp': port
+        };
+        const dockerCredentials = createCredentials({}, hostname, port);
+        const credentials = dockerCredentials.create({}, hostname, ports);
+        expect(credentials.end_points.length).to.equal(1);
+        expect(credentials.end_points[0]).to.eql({
+          network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+          host: hostname,
+          port: port
+        });
+      });
+    });
+
+
     describe('#createEnvironment', function () {
       it('should return an environment with random strings', function () {
         const dockerCredentials = createCredentials();
@@ -254,7 +279,12 @@ describe('docker', function () {
               dbname: env.DBNAME,
               username: env.USERNAME,
               password: env.PASSWORD,
-              uri: `${protocol}://${env.USERNAME}:${env.PASSWORD}@${hostname}:${port}/${env.DBNAME}`
+              uri: `${protocol}://${env.USERNAME}:${env.PASSWORD}@${hostname}:${port}/${env.DBNAME}`,
+              end_points: [{
+                network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+                host: hostname,
+                port: port
+              }]
             });
           });
       });
@@ -278,7 +308,12 @@ describe('docker', function () {
           port: port,
           ports: ports,
           password: env.PASSWORD,
-          uri: `${protocol}://:${env.PASSWORD}@${hostname}:${port}`
+          uri: `${protocol}://:${env.PASSWORD}@${hostname}:${port}`,
+          end_points: [{
+            network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+            host: hostname,
+            port: port
+          }]
         });
       });
 
@@ -300,7 +335,12 @@ describe('docker', function () {
           port: port,
           ports: ports,
           username: env.USERNAME,
-          uri: `${protocol}://${env.USERNAME}@${hostname}:${port}`
+          uri: `${protocol}://${env.USERNAME}@${hostname}:${port}`,
+          end_points: [{
+            network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+            host: hostname,
+            port: port
+          }]
         });
       });
 
@@ -321,7 +361,12 @@ describe('docker', function () {
           port: port,
           ports: ports,
           username: env.USERNAME,
-          password: env.PASSWORD
+          password: env.PASSWORD,
+          end_points: [{
+            network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+            host: hostname,
+            port: port
+          }]
         });
       });
     });

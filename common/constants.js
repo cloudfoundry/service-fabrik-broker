@@ -349,5 +349,8 @@ module.exports = Object.freeze({
       MODIFIED: 'MODIFIED',
       DELETED: 'DELETED'
     }
+  },
+  NETWORK_MANAGER: {
+    NETWORK_ID: 'SF'
   }
 });

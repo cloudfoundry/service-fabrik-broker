@@ -1,20 +1,16 @@
 {
   "host": "10.0.2.2",
-  "message_bus_servers": [
-    {
-      "host": "10.244.0.6:4222",
-      "password": "nats",
-      "user": "nats"
-    }
-  ],
-  "routes": [
-    {
-      "name": "fabrik",
-      "port": 9292,
-      "registration_interval": "20s",
-      "uris": [
-        "service-fabrik-broker.bosh-lite.com"
-      ]
-    }
-  ]
+  "message_bus_servers": [{
+    "host": "10.244.0.129:4222",
+    "password": "964ocneqleo1kdzjt6v7",
+    "user": "nats"
+  }],
+  "routes": [{
+    "name": "fabrik",
+    "port": 9292,
+    "registration_interval": "20s",
+    "uris": [
+      "service-fabrik-broker.bosh-lite.com"
+    ]
+  }]
 }
