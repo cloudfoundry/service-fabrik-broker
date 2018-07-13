@@ -13,6 +13,7 @@ const errors = require('../errors');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
+const Gone = errors.Gone;
 const Timeout = errors.Timeout;
 const cf = require('../cf');
 const Forbidden = errors.Forbidden;
@@ -313,46 +314,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  startBackup(req, res) {
-    logger.info(`Service fabrik enabled: ${config.enable_service_fabrik_v2}`);
-    if (config.enable_service_fabrik_v2) {
-      return this.startBackupV2(req, res);
-    }
-    logger.info(`Calling service fabrik v1`);
-    return this.startBackupV1(req, res);
-  }
-
-  startBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
-    return Promise
-      .try(() => this.checkQuota(req, trigger))
-      .then(() => {
-        _.set(req.body, 'trigger', trigger);
-        const bearer = _
-          .chain(req.headers)
-          .get('authorization')
-          .split(' ')
-          .nth(1)
-          .value();
-        return this.fabrik
-          .createOperation('backup', {
-            instance_id: req.params.instance_id,
-            bearer: bearer,
-            arguments: req.body,
-            isOperationSync: true,
-            username: req.user.name,
-            useremail: req.user.email || ''
-          })
-          .invoke()
-          .tap(response => logger.info('backup response ', response))
-          .then(body => res
-            .status(CONST.HTTP_STATUS_CODE.ACCEPTED)
-            .send(body)
-          );
-      });
-  }
-
   getBackupOptions(backupGuid, req) {
     return Promise
       .all([
@@ -378,7 +339,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  startBackupV2(req, res) {
+  startBackup(req, res) {
     let backupStartedAt;
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
@@ -446,13 +407,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.getLastBackupV2(req, res);
-    }
-    return this.getLastBackupV1(req, res);
-  }
-
-  getLastBackupV2(req, res) {
     req.manager.verifyFeatureSupport('backup');
     return eventmesh.apiServerClient.getLastOperation({
         resourceId: req.params.instance_id,
@@ -465,13 +419,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           operationId: backupGuid,
         }))
-      .then(result => this.backupStore.getBackupFile(result)
-        .then(metadata => _.merge(result, metadata))
-      )
       .then(result => {
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
-          .send(_.omit(result, 'secret', 'agent_ip'));
+          .send(_.omit(result, 'secret', 'agent_ip', 'description'));
       })
       .catch((err) => {
         logger.error('Error occured during getLastBackup ', err);
@@ -479,41 +430,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getLastBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const instanceId = req.params.instance_id;
-    const noCache = req.query.no_cache === 'true' ? true : false;
-    const tenantId = req.entity.tenant_id;
-    return req.manager
-      .getLastBackup(tenantId, instanceId, noCache)
-      .then(result => res
-        .status(CONST.HTTP_STATUS_CODE.OK)
-        .send(_.omit(result, 'secret', 'agent_ip'))
-      )
-      .catchThrow(NotFound, new NotFound(`No backup found for service instance '${instanceId}'`));
-  }
-
   abortLastBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.abortLastBackupV2(req, res);
-    }
-    return this.abortLastBackupV1(req, res);
-  }
-
-  abortLastBackupV1(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    const instanceId = req.params.instance_id;
-    const tenantId = req.entity.tenant_id;
-    return req.manager
-      .abortLastBackup(tenantId, instanceId)
-      .then(result => res
-        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
-        .send({})
-      );
-  }
-
-
-  abortLastBackupV2(req, res) {
     req.manager.verifyFeatureSupport('backup');
     const backupStartedAt = new Date();
     return eventmesh.apiServerClient.getLastOperation({
@@ -716,27 +633,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   deleteBackup(req, res) {
-    if (config.enable_service_fabrik_v2) {
-      return this.deleteBackupV2(req, res);
-    }
-    return this.deleteBackupV1(req, res);
-  }
-
-  deleteBackupV1(req, res) {
-    const options = {
-      tenant_id: req.entity.tenant_id,
-      backup_guid: req.params.backup_guid,
-      user: req.user
-    };
-    return this.backupStore
-      .deleteBackupFile(options)
-      .then(() => res
-        .status(CONST.HTTP_STATUS_CODE.OK)
-        .send({})
-      );
-  }
-
-  deleteBackupV2(req, res) {
     const options = {
       tenant_id: req.entity.tenant_id,
       backup_guid: req.params.backup_guid,
@@ -748,7 +644,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         operationId: req.params.backup_guid,
         value: options
-      }).then(() =>
+      })
+      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
+      .then(() =>
         eventmesh.apiServerClient.updateOperationState({
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,

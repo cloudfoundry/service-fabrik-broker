@@ -5,6 +5,9 @@ const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../broker/lib/iaas/BackupStore');
 const lib = require('../../broker/lib');
+const moment = require('moment');
+const config = lib.config;
+const CONST = require('../../common/constants');
 const backupStore = lib.iaas.backupStore;
 
 describe('managers', function () {
@@ -117,7 +120,7 @@ describe('managers', function () {
         });
     });
 
-    it('Should get backup operation state successfully', function () {
+    describe('#backup-state', function () {
       const agent_ip = mocks.agent.ip;
       const context = {
         platform: 'cloudfoundry',
@@ -130,17 +133,47 @@ describe('managers', function () {
         agent_ip: agent_ip,
         context: context
       };
-      return manager.getOperationState('backup', opts)
-        .then((res) => {
-          expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
-          expect(res.state).to.eql('succeeded');
-          expect(getBackupLastOperationStub.callCount).to.eql(1);
-          expect(getBackupLastOperationStub.firstCall.args[0]).to.eql(opts.agent_ip);
-          expect(getBackupLogsStub.callCount).to.eql(1);
-          expect(getBackupLogsStub.firstCall.args[0]).to.eql(opts.agent_ip);
-          expect(patchBackupFileStub.callCount).to.eql(1);
-          mocks.verify();
-        });
+      it('Should get backup operation state successfully', function () {
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        return manager.getOperationState('backup', opts)
+          .then((res) => {
+            expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
+            expect(res.state).to.eql('succeeded');
+            expect(getBackupLastOperationStub.callCount).to.eql(1);
+            expect(getBackupLastOperationStub.firstCall.args[0]).to.eql(opts.agent_ip);
+            expect(getBackupLogsStub.callCount).to.eql(1);
+            expect(getBackupLogsStub.firstCall.args[0]).to.eql(opts.agent_ip);
+            expect(patchBackupFileStub.callCount).to.eql(1);
+            expect(getFileStub.callCount).to.eql(1);
+            expect(getFileStub.firstCall.args[0]).to.eql({
+              service_id: service_id,
+              plan_id: plan_id,
+              tenant_id: space_guid,
+              deployment: deployment_name,
+              instance_guid: instance_id,
+              agent_ip: opts.agent_ip,
+              context: context
+            });
+            mocks.verify();
+          });
+      });
+      it('should return 200 Ok - backup state is retrieved from agent while in \'succeeded\' state', function () {
+        sandbox.restore();
+        mocks.agent.getBackupLogs([]);
+        mocks.agent.lastBackupOperation(backup_state);
+        // mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}`, [filename], 200, 2);
+        mocks.cloudProvider.download(pathname, data, 2);
+        mocks.cloudProvider.upload(pathname, undefined);
+        mocks.cloudProvider.headObject(pathname);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        return manager.getOperationState('backup', opts)
+          .then((res) => {
+            expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
+            expect(res.state).to.eql('succeeded');
+            mocks.verify();
+          });
+      });
     });
 
     it('Should abort last backup successfully', function () {
@@ -182,7 +215,15 @@ describe('managers', function () {
     });
 
     describe('#deleteBackup', function () {
-      it('should return 200 OK', function () {
+      const scheduled_data = {
+        trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
+        state: 'succeeded',
+        backup_guid: backup_guid,
+        started_at: new Date().toISOString(),
+        agent_ip: mocks.agent.ip,
+        service_id: service_id
+      };
+      it('should return 200 for an demand backup', function () {
         mocks.cloudProvider.auth();
         mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
         mocks.cloudProvider.remove(pathname);
@@ -195,6 +236,59 @@ describe('managers', function () {
         }, 1, body => {
           expect(body.status.state).to.eql('deleted');
           expect(body.status.response).to.be.an('undefined');
+          return true;
+        });
+        return manager.deleteBackup({
+          tenant_id: space_guid,
+          service_id: service_id,
+          instance_guid: instance_id,
+          backup_guid: backup_guid,
+          time_stamp: started_at
+        });
+      });
+
+      it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container,
+          `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
+        mocks.cloudProvider.download(pathname, scheduled_data);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'deleting'
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('error');
+          expect(body.status.response).to.eql(JSON.stringify({
+            'name': 'Forbidden',
+            'status': 403,
+            'reason': 'Forbidden'
+          }));
+          return true;
+        });
+        return manager.deleteBackup({
+          tenant_id: space_guid,
+          service_id: service_id,
+          instance_guid: instance_id,
+          backup_guid: backup_guid,
+          time_stamp: started_at
+        });
+      });
+
+      it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
+        const started14DaysPrior = new Date(moment()
+          .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.list(container,
+          `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
+        scheduled_data.started_at = started14DaysPrior;
+        mocks.cloudProvider.download(pathname, scheduled_data);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'deleting'
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('error');
+          expect(body.status.response).to.eql(JSON.stringify({}));
           return true;
         });
         return manager.deleteBackup({

@@ -9,7 +9,6 @@ const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('./models/catalog');
-const config = require('./config');
 const lockManager = require('../../eventmesh').lockManager;
 const CONST = require('./constants');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
@@ -47,7 +46,7 @@ exports.validateCreateRequest = function () {
 
 exports.lock = function (operationType, lastOperationCall) {
   return function (req, res, next) {
-    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance
       return lockManager.lock(req.params.instance_id, {
           lockedResourceDetails: {
@@ -75,7 +74,7 @@ exports.lock = function (operationType, lastOperationCall) {
 
 exports.checkBlockingOperationInProgress = function () {
   return function (req, res, next) {
-    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.enable_service_fabrik_v2) {
+    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance
       return lockManager.checkWriteLockStatus(req.params.instance_id)
         .then(writeLockStatus => {

@@ -6,8 +6,16 @@ const app = require('../support/apps').external;
 const config = lib.config;
 const backupStore = lib.iaas.backupStore;
 
+function enableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = true;
+}
+
+function disableServiceFabrikV2() {
+  config.enable_service_fabrik_v2 = false;
+}
+
 describe('service-fabrik-api', function () {
-  describe('backups', function () {
+  describe('backups-v2', function () {
     /* jshint expr:true */
     describe('director', function () {
       const base_url = '/api/v1';
@@ -41,6 +49,7 @@ describe('service-fabrik-api', function () {
       };
 
       before(function () {
+        enableServiceFabrikV2();
         backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
@@ -50,6 +59,7 @@ describe('service-fabrik-api', function () {
       });
 
       after(function () {
+        disableServiceFabrikV2();
         backupStore.cloudProvider = lib.iaas.cloudProvider;
       });
 
@@ -200,6 +210,113 @@ describe('service-fabrik-api', function () {
         });
       });
 
+      describe('#deleteBackup', function () {
+        it('should return 200 OK', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: '{}'
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          return chai.request(app)
+            .delete(`${base_url}/backups/${backup_guid}`)
+            .query({
+              space_guid: space_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+
+        it('should return 200 OK - with platform', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: '{}'
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          return chai.request(app)
+            .delete(`${base_url}/backups/${backup_guid}`)
+            .query({
+              space_guid: space_guid,
+              platform: 'cloudfoundry'
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('should return 200 OK - with random platform defaults to cf', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            spec: {
+              options: JSON.stringify(data)
+            },
+            status: {
+              state: 'deleted',
+              response: '{}'
+            }
+          }, 3);
+          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
+          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          return chai.request(app)
+            .delete(`${base_url}/backups/${backup_guid}`)
+            .query({
+              space_guid: space_guid,
+              platform: 'random'
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('should return 410 Gone', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup',
+            '01234567-0000-4000-9000-0123456789ab', {}, 1, 404);
+          return chai.request(app)
+            .delete(`${base_url}/backups/01234567-0000-4000-9000-0123456789ab`)
+            .query({
+              space_guid: space_guid
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(410);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+      });
     });
   });
 });
