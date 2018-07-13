@@ -10,7 +10,7 @@ const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Repository = require('../../common/db').Repository;
-const NetworkSegmentIndex = require('../../broker/lib/bosh/NetworkSegmentIndex');
+const NetworkSegmentIndex = require('../../data-access-layer/bosh/NetworkSegmentIndex');
 
 describe('Jobs', function () {
   const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);

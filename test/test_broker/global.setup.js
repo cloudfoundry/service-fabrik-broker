@@ -1,8 +1,6 @@
 'use strict';
 const _ = require('lodash');
-const lib = require('../../broker/lib');
-
-const director = lib.bosh.director;
+const director = require('../../data-access-layer/bosh').director;
 let boshConfigCacheDetails = {};
 let deploymentIpsCacheDetails = {};
 

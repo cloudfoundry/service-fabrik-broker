@@ -15,7 +15,7 @@ const backupStoreForInstance = require('../iaas').backupStore;
 const backupStoreForOob = require('../iaas').backupStoreForOob;
 const ScheduleManager = require('./ScheduleManager');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
-const bosh = require('../bosh');
+const bosh = require('../../../data-access-layer/bosh');
 
 class BackupReaperJob extends BaseJob {
 

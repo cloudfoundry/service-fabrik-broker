@@ -2,9 +2,9 @@
 
 const _ = require('lodash');
 const ip = require('ip');
-const utils = require('../utils');
+const utils = require('../../broker/lib/utils');
 const BoshDirectorClient = require('./BoshDirectorClient');
-const CONST = require('../constants');
+const CONST = require('../../common/constants');
 
 const NetworkSegmentIndexLength = CONST.NETWORK_SEGMENT_LENGTH;
 

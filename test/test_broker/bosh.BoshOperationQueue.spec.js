@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const subject = require('../../broker/lib/bosh').BoshOperationQueue;
+const subject = require('../../data-access-layer/bosh').BoshOperationQueue;
 const {
   Etcd3
 } = require('etcd3');

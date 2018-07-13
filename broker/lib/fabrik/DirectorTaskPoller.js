@@ -1,6 +1,6 @@
 'use strict';
 
-const bosh = require('../bosh');
+const bosh = require('../../../data-access-layer/bosh');
 const DirectorManager = require('./DirectorManager');
 const logger = require('../logger');
 const catalog = require('../models/catalog');

@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
-const bosh = require('../bosh');
+const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../utils');
 const VirtualHostInstance = require('./VirtualHostInstance');
 const BaseManager = require('./BaseManager');

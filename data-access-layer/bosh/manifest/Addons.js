@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const assert = require('assert');
-const CONST = require('../../constants');
-const config = require('../../config');
+const CONST = require('../../../common/constants');
+const config = require('../../../common/config');
 
 class Addons {
   constructor(context) {

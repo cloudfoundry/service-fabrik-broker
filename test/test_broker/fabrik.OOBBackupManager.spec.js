@@ -2,13 +2,13 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const BoshDirectorClient = require('../../broker/lib/bosh/BoshDirectorClient');
+const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
 const BackupStore = require('../../broker/lib/iaas/BackupStore');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const FabrikBaseController = require('../../api-controllers/FabrikBaseController');
 const CONST = require('../../broker/lib/constants');
 const OobBackupManager = require('../../broker/lib/fabrik/OobBackupManager');
-const bosh = require('../../broker/lib/bosh');
+const bosh = require('../../data-access-layer/bosh');
 const lib = require('../../broker/lib');
 const backupStoreForOob = lib.iaas.backupStoreForOob;
 

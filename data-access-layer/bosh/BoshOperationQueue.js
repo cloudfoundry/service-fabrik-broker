@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../config');
-const logger = require('../logger');
-const errors = require('../errors');
-const CONST = require('../constants');
+const config = require('../../common/config');
+const logger = require('../../common/logger');
+const errors = require('../../common/errors');
+const CONST = require('../../common/constants');
 const CacheUpdateError = errors.CacheUpdateError;
 const CACHE_KEY = 'bosh/deployments/';
 const TASK_KEY = 'bosh/tasks/';
