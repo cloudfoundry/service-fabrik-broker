@@ -5,7 +5,7 @@ const CONST = require('../../broker/lib/constants');
 const utils = require('../../broker/lib/utils');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-const BackupStore = require('../../broker/lib/iaas/BackupStore');
+const BackupStore = require('../../data-access-layer/iaas/BackupStore');
 const OperationStatusPollerJob = require('../../broker/lib/jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {

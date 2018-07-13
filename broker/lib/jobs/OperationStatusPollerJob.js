@@ -8,7 +8,7 @@ const moment = require('moment');
 const CONST = require('../constants');
 const errors = require('../errors');
 const ScheduleManager = require('./ScheduleManager');
-const backupStore = require('../iaas').backupStoreForOob;
+const backupStore = require('../../../data-access-layer/iaas').backupStoreForOob;
 const utils = require('../utils');
 const Promise = require('bluebird');
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const errors = require('../errors');
+const errors = require('../../common/errors');
 const BackupStore = require('./BackupStore');
 const NotFound = errors.NotFound;
 

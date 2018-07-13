@@ -4,7 +4,8 @@ const lib = require('../../../broker/lib');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const config = lib.config;
-const virtualHostStore = lib.iaas.virtualHostStore;
+const iaas = require('../../../data-access-layer/iaas');
+const virtualHostStore = iaas.virtualHostStore;
 
 describe('service-broker-api', function () {
   describe('instances', function () {
@@ -44,7 +45,7 @@ describe('service-broker-api', function () {
       Promise.onPossiblyUnhandledRejection(() => {});
 
       before(function () {
-        virtualHostStore.cloudProvider = new lib.iaas.CloudProviderClient(config.virtual_host.provider);
+        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([

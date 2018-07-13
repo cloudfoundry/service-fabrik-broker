@@ -4,14 +4,13 @@ const _ = require('lodash');
 const CONST = require('../../broker/lib/constants');
 const config = require('../../broker/lib/config');
 const moment = require('moment');
-const lib = require('../../broker/lib');
 const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const errors = require('../../broker/lib/errors');
 const NotFound = errors.NotFound;
-const backupStore = lib.iaas.backupStore;
-const filename = lib.iaas.backupStore.filename;
+const backupStore = require('../../data-access-layer/iaas').backupStore;
+const filename = require('../../data-access-layer/iaas').backupStore.filename;
 
 describe('Jobs', function () {
   /* jshint expr:true */

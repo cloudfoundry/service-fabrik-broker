@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const errors = require('../errors');
+const errors = require('../../common/errors');
 const BackupStore = require('./BackupStore');
-const CONST = require('../constants');
+const CONST = require('../../common/constants');
 const NotFound = errors.NotFound;
 
 class BackupStoreForServiceInstance extends BackupStore {

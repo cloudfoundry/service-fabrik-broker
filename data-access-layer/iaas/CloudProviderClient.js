@@ -3,11 +3,11 @@
 const _ = require('lodash');
 const pkgcloud = require('pkgcloud');
 const Promise = require('bluebird');
-const logger = require('../logger');
-const errors = require('../errors');
-const utils = require('../utils');
+const logger = require('../../common/logger');
+const errors = require('../../common/errors');
+const utils = require('../../broker/lib/utils');
 const ComputeClient = require('./ComputeClient');
-const CONST = require('../constants');
+const CONST = require('../../common/constants');
 const BaseCloudClient = require('./BaseCloudClient');
 
 Promise.promisifyAll([

@@ -6,7 +6,8 @@ const lib = require('../../../broker/lib');
 const logger = lib.logger;
 const app = require('../support/apps').internal;
 const config = lib.config;
-const backupStore = lib.iaas.backupStoreForOob;
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStoreForOob;
 const filename = backupStore.filename;
 const CONST = require('../../../broker/lib/constants');
 const utils = require('../../../broker/lib/utils');
@@ -64,7 +65,7 @@ describe('service-fabrik-admin', function () {
 
     before(function () {
       mocks.reset();
-      backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');

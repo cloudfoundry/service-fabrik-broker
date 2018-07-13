@@ -3,12 +3,12 @@
 const catalog = require('../../broker/lib/models/catalog');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
-const BackupStore = require('../../broker/lib/iaas/BackupStore');
+const BackupStore = require('../../data-access-layer/iaas/BackupStore');
 const lib = require('../../broker/lib');
 const moment = require('moment');
 const config = lib.config;
 const CONST = require('../../common/constants');
-const backupStore = lib.iaas.backupStore;
+const backupStore = require('../../data-access-layer/iaas').backupStore;
 
 describe('managers', function () {
   describe('BackupService', function () {

@@ -15,7 +15,7 @@ exports.models = require('./models');
 exports.ScheduleManager = require('./jobs');
 exports.fabrik = require('./fabrik');
 //exports.controllers = require('./controllers');
-exports.iaas = require('./iaas');
+//exports.iaas = require('./iaas');
 exports.bootstrap = bootstrap;
 if (config.enable_swarm_manager) {
   exports.docker = require('./docker');

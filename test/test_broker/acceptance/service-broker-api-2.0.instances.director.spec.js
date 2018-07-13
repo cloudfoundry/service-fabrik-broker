@@ -9,12 +9,12 @@ const utils = lib.utils;
 const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
-const backupStore = lib.iaas.backupStore;
 const ScheduleManager = require('../../../broker/lib/jobs');
 const CONST = require('../../../broker/lib/constants');
 const DirectorManager = lib.fabrik.DirectorManager;
 const cloudController = require('../../../broker/lib/cf').cloudController;
-
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 
 function enableServiceFabrikV2() {
   config.enable_service_fabrik_v2 = true;
@@ -81,7 +81,7 @@ describe('service-broker-api-2.0', function () {
 
       before(function () {
         enableServiceFabrikV2();
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         _.unset(fabrik.DirectorManager, plan_id);

@@ -5,8 +5,8 @@ const Promise = require('bluebird');
 const AWS = require('aws-sdk');
 const MsRestAzure = require('ms-rest-azure');
 const ComputeManagementClient = require('azure-arm-compute');
-const CONST = require('../constants');
-const errors = require('../errors');
+const CONST = require('../../common/constants');
+const errors = require('../../common/errors');
 const NotImplemented = errors.NotImplemented;
 
 class ComputeClient {

@@ -10,8 +10,9 @@ const errors = lib.errors;
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const backupStore = lib.iaas.backupStore;
-const filename = lib.iaas.backupStore.filename;
+const backupStore = require('../../data-access-layer/iaas').backupStore;
+const filename = require('../../data-access-layer/iaas').backupStore.filename;
+const iaas = require('../../data-access-layer/iaas');
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -90,7 +91,7 @@ describe('Jobs', function () {
       let baseJobLogRunHistoryStub, cancelScheduleStub, runAtStub, delayStub;
 
       before(function () {
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');

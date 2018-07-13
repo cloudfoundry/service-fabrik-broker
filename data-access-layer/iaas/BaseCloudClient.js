@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const errors = require('../errors');
-const CONST = require('../constants');
+const errors = require('../../common/errors');
+const CONST = require('../../common/constants');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 const CloudProviderError = {

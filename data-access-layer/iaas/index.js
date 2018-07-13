@@ -1,6 +1,6 @@
 'use strict';
 
-const config = require('../config');
+const config = require('../../common/config');
 const CloudProviderClient = require('./CloudProviderClient');
 const AzureClient = require('./AzureClient');
 const GcpClient = require('./GcpClient');

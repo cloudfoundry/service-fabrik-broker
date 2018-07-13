@@ -7,7 +7,8 @@ const app = require('../support/apps').internal;
 const config = lib.config;
 const catalog = lib.models.catalog;
 const fabrik = lib.fabrik;
-const backupStore = lib.iaas.backupStore;
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 const ScheduleManager = require('../../../broker/lib/jobs');
 const DirectorManager = lib.fabrik.DirectorManager;
 const cloudController = require('../../../broker/lib/cf').cloudController;
@@ -37,7 +38,7 @@ describe('service-broker-api', function () {
       let getScheduleStub;
 
       before(function () {
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         _.unset(fabrik.DirectorManager, plan_id);
