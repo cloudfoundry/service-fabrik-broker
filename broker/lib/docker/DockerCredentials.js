@@ -4,6 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const crypto = require('crypto');
 const formatUrl = require('url').format;
+const CONST = require('../constants');
 
 class DockerCredentials {
   constructor(options) {
@@ -115,6 +116,13 @@ class DockerCredentials {
         uri.pathname = credentials.dbname;
       }
       credentials.uri = formatUrl(uri);
+    }
+    if (credentials.hostname && credentials.port) {
+      credentials.end_points = [{
+        network_id: CONST.NETWORK_MANAGER.NETWORK_ID,
+        host: credentials.hostname,
+        port: credentials.port
+      }];
     }
     return credentials;
   }
