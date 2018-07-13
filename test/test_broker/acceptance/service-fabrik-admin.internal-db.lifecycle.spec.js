@@ -33,11 +33,13 @@ describe('service-fabrik-admin', function () {
         actions: ['Blueprint', 'ReserveIps'],
         context: {
           params: {
-            '_runImmediately': true,
             context: {
               platform: 'service-fabrik',
               organization_guid: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
               space_guid: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID
+            },
+            parameters: {
+              '_runImmediately': true,
             },
             network_index: config.mongodb.provision.network_index,
             skip_addons: true,

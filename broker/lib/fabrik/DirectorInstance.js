@@ -420,12 +420,18 @@ class DirectorInstance extends BaseInstance {
       .then(() => this.manager.deleteBinding(this.deploymentName, params.binding_id));
   }
 
+  getApplicationAccessPortsOfService() {
+    let service = this.manager.service.toJSON();
+    return _.get(service, 'application_access_ports');
+  }
+
   buildIpRules() {
+    let applicationAccessPorts = this.getApplicationAccessPortsOfService();
     return _.map(this.manager.getNetwork(this.networkSegmentIndex), net => {
       return {
         protocol: 'tcp',
         ips: net.static,
-        ports: [1024, 65535]
+        applicationAccessPorts: applicationAccessPorts
       };
     });
   }

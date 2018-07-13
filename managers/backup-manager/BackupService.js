@@ -6,63 +6,22 @@ const config = require('../../broker/lib/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const bosh = require('../../broker/lib/bosh');
-const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../broker/lib/iaas').backupStore;
 const utils = require('../../broker/lib/utils');
 const eventmesh = require('../../eventmesh');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const ScheduleManager = require('../../broker/lib/jobs');
 const CONST = require('../../broker/lib/constants');
+const BaseDirectorService = require('../BaseDirectorService');
 const Forbidden = errors.Forbidden;
 
-class BackupService {
+class BackupService extends BaseDirectorService {
   constructor(plan) {
+    super(plan);
     this.plan = plan;
     this.director = bosh.director;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
-  }
-
-  get settings() {
-    return this.plan.manager.settings;
-  }
-
-  get subnet() {
-    return this.settings.subnet || this.service.subnet;
-  }
-
-  static get prefix() {
-    return _
-      .reduce(config.directors,
-        (prefix, director) => director.primary === true ? director.prefix : prefix,
-        null) || CONST.SERVICE_FABRIK_PREFIX;
-  }
-
-  static getDeploymentName(guid, networkSegmentIndex) {
-    let subnet = this.subnet ? `_${this.subnet}` : '';
-    return `${BackupService.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
-  }
-
-  //TODO-PR - Move the common piece of codes in BaseService which can be leveraged by other Service classes
-  static parseDeploymentName(deploymentName, subnet) {
-    return _
-      .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))
-      .slice(1)
-      .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
-      .value();
-  }
-
-  static getNetworkSegmentIndex(deploymentName) {
-    return _.nth(BackupService.parseDeploymentName(deploymentName, this.subnet), 1);
-  }
-
-  static findNetworkSegmentIndex(guid) {
-    logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
-    return bosh
-      .director
-      .getDeploymentNameForInstanceId(guid)
-      .then(deploymentName => BackupService.getNetworkSegmentIndex(deploymentName))
-      .tap(networkSegmentIndex => logger.info(`+-> Found network segment index '${networkSegmentIndex}'`));
   }
 
   getTenantGuid(context) {
@@ -158,11 +117,9 @@ class BackupService {
       registeredStatusPoller = false;
 
     let deploymentName;
-    //TODO-PR - Use getDeploymentNameForInstanceId from BoshDirectorClient
-    return BackupService
-      .findNetworkSegmentIndex(opts.instance_guid)
-      .then(networkIndex => BackupService.getDeploymentName(opts.instance_guid, networkIndex))
-      .then(res => {
+    return bosh
+      .director
+      .getDeploymentNameForInstanceId(opts.instance_guid).then(res => {
         deploymentName = res;
         logger.info('Obtained the deployment name for instance :', deploymentName);
       })
@@ -203,33 +160,16 @@ class BackupService {
           });
       })
       //TODO-PR - Break it into multiple methods
-      //TODO-PR - Update state and response as part of single comment
-      .then(backupInfo =>
-        eventmesh.apiServerClient.updateOperationResponse({
-          resourceId: opts.instance_guid,
-          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          operationId: result.backup_guid,
-          value: backupInfo
-        })
-        .then(() =>
-          eventmesh.apiServerClient.updateOperationState({
+      .then(backupInfo => {
+        return eventmesh.apiServerClient.updateOperationStateAndResponse({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+            response: backupInfo
           })
-        )
-      )
-      //TODO-PR - Dowe need to fetch it from APIServer??
-      .then(() => {
-        return eventmesh.apiServerClient.getOperationResponse({
-          resourceId: opts.instance_guid,
-          operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-          operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-          operationId: result.backup_guid,
-        });
+          .then(() => backupInfo);
       })
       .catch(err => {
         return Promise
@@ -243,19 +183,13 @@ class BackupService {
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
-          .then(() => eventmesh.apiServerClient.updateOperationState({
+          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
-          }))
-          .then(() => eventmesh.apiServerClient.updateOperationResponse({
-            resourceId: opts.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: result.backup_guid,
-            value: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
+            response: err
           }))
           .then(() => {
             if (backupStarted) {
@@ -341,18 +275,19 @@ class BackupService {
                 logs: logs,
                 snapshotId: lastOperation.snapshotId
               })
-            ).then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.apiServerClient.updateOperationResponse({
-              resourceId: options.instance_guid,
-              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: metadata.backup_guid,
-              value: metadata
-            }));
+            );
         }
       });
   }
 
+  /**
+   * @description Delete backup from backup store and Apiserver
+   * @param {string} options.tenant_id
+   * @param {string} options.service_id
+   * @param {string} options.instance_guid
+   * @param {string} options.backup_guid
+   * @param {string} options.time_stamp
+   */
   deleteBackup(options) {
     logger.info('Attempting delete with:', options);
     return this.backupStore
@@ -367,20 +302,13 @@ class BackupService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during delete of backup`, err))
-          //TODO-PR - Do it in one call
-          .then(() => eventmesh.apiServerClient.updateOperationState({
+          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
             resourceId: options.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR
-          }))
-          .then(() => eventmesh.apiServerClient.updateOperationResponse({
-            resourceId: options.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: options.guid,
-            value: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
+            response: err
           }));
       });
   }

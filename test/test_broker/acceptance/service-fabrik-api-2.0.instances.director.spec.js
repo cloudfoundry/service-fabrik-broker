@@ -204,7 +204,6 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -246,7 +245,6 @@ describe('service-fabrik-api-sf2.0', function () {
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -290,7 +288,6 @@ describe('service-fabrik-api-sf2.0', function () {
             list_filename
           ]);
           mocks.cloudProvider.download(list_pathname, data);
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -392,7 +389,6 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -443,7 +439,6 @@ describe('service-fabrik-api-sf2.0', function () {
         //     }
         //   };
 
-        //   mocks.apiServerEventMesh.nockLoadSpec(7);
         //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
         //     spec: {
         //       options: '{}'
@@ -486,13 +481,31 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-state', function () {
+        const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
+        const instance_id = mocks.director.uuidByIndex(index);
+        const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
+        const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+        const container = backupStore.containerName;
+        const prefix = `${space_guid}/backup`;
+        const backupFilename = `${prefix}/${service_id}.${instance_id}.${backup_guid}`;
+        const pathname = `/${container}/${backupFilename}`;
         const data = {
+          instance_guid: instance_id,
+          tenant_id: space_guid,
+          service_id: service_id,
+          backup_guid: backup_guid,
           trigger: CONST.BACKUP.TRIGGER.ON_DEMAND,
           state: 'processing',
           agent_ip: mocks.agent.ip
         };
         const backupState = {
-          state: 'aborting',
+          instance_guid: instance_id,
+          tenant_id: space_guid,
+          service_id: service_id,
+          backup_guid: backup_guid,
+          state: 'processing',
           stage: 'Deleting volume',
           updated_at: new Date(Date.now())
         };
@@ -505,8 +518,9 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
 
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -534,7 +548,7 @@ describe('service-fabrik-api-sf2.0', function () {
               const result = _
                 .chain(data)
                 .omit('agent_ip')
-                .merge(_.pick(backupState, 'state', 'stage'))
+                .merge(_.pick(backupState, 'state', 'stage', 'backup_guid', 'instance_guid', 'service_id', 'tenant_id'))
                 .value();
               expect(res).to.have.status(200);
               expect(res.body).to.eql(result);
@@ -550,7 +564,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -582,7 +597,8 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -617,7 +633,8 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
+          mocks.cloudProvider.list(container, backupFilename, [backupFilename]);
+          mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -657,7 +674,6 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -686,7 +702,6 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -726,7 +741,6 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
@@ -1064,7 +1078,6 @@ describe('service-fabrik-api-sf2.0', function () {
             return true;
           });
           mocks.cloudProvider.headObject(restorePathname);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1118,7 +1131,6 @@ describe('service-fabrik-api-sf2.0', function () {
             stage: 'Attaching volume',
             updated_at: new Date(Date.now())
           };
-          mocks.apiServerEventMesh.nockLoadSpec();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: JSON.stringify({
@@ -1179,7 +1191,6 @@ describe('service-fabrik-api-sf2.0', function () {
             return true;
           });
           mocks.cloudProvider.headObject(restorePathname);
-          mocks.apiServerEventMesh.nockLoadSpec(2);
           mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
@@ -1423,7 +1434,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
-          mocks.apiServerEventMesh.nockLoadSpec(6);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1451,7 +1461,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it(`should return 403 for a scheduled backup within ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockLoadSpec(5);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1477,7 +1486,6 @@ describe('service-fabrik-api-sf2.0', function () {
 
         it(`should return 200 for a scheduled backup After ${config.backup.retention_period_in_days} days`, function () {
           mocks.uaa.tokenKey();
-          mocks.apiServerEventMesh.nockLoadSpec(6);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
             spec: {
               options: JSON.stringify(data)
@@ -1741,6 +1749,31 @@ describe('service-fabrik-api-sf2.0', function () {
             .send({
               type: 'online',
               repeatInterval: '*/1 * * * *'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
+
+        it('should return 201 OK - when rate limiting against bosh is explicitly not required', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.director.getDeployments();
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *',
+              runImmediately: 'true'
             })
             .catch(err => err.response)
             .then(res => {

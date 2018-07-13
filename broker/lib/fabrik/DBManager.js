@@ -177,10 +177,14 @@ class DBManager {
       const operation = createIfNotPresent ? 'Create' : 'Update';
       if (createIfNotPresent) {
         logger.warn('createIfNotPresent flag is set to true. Ensure this is happening only in the first deployment.');
+        // MongoDB update operations should go through to BOSH without any rate limits applied by broker
         params = {
           context: context,
           organization_guid: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
           space_guid: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID,
+          parameters: {
+            _runImmediately: true
+          }
         };
       } else {
         params = {
@@ -189,6 +193,9 @@ class DBManager {
             plan_id: config.mongodb.provision.plan_id,
             organization_id: CONST.FABRIK_INTERNAL_MONGO_DB.ORG_ID,
             space_id: CONST.FABRIK_INTERNAL_MONGO_DB.SPACE_ID
+          },
+          parameters: {
+            _runImmediately: true
           }
         };
         logger.info('Updating DB Deployment...');
@@ -199,8 +206,6 @@ class DBManager {
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
-      // MongoDB update operations should go through to BOSH without any rate limits applied by broker
-      params._runImmediately = true;
       return this.directorManager.createOrUpdateDeployment(config.mongodb.deployment_name, params)
         .tap(out => {
           const taskId = out.task_id;

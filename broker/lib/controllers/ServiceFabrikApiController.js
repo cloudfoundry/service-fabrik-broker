@@ -465,6 +465,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           operationId: backupGuid,
         }))
+      .then(result => this.backupStore.getBackupFile(result)
+        .then(metadata => _.merge(result, metadata))
+      )
       .then(result => {
         return res
           .status(CONST.HTTP_STATUS_CODE.OK)
@@ -835,9 +838,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .chain({
           instance_id: req.params.instance_id,
           instance_name: req.entity.name,
-          deployment_name: deploymentName
+          deployment_name: deploymentName,
+          run_immediately: (req.body.runImmediately === 'true' ? true : false)
         })
-        .assign(_.omit(req.body, 'repeatInterval'))
+        .assign(_.omit(req.body, ['repeatInterval', 'runImmediately']))
         .value()
       )
       .then((jobData) => ScheduleManager

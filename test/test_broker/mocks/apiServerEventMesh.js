@@ -50,11 +50,13 @@ function nockGetResourceRegex(resourceGroup, resourceType, response, times) {
     .reply(200, response);
 }
 
-function nockPatchResourceRegex(resourceGroup, resourceType, response, times) {
+function nockPatchResourceRegex(resourceGroup, resourceType, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
-    .patch(new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})/status`))
+    .patch(
+      new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`),
+      verifier)
     .times(times || 1)
-    .reply(200, response);
+    .reply(expectedStatusCode || 200, response);
 }
 
 function nockDeleteResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {

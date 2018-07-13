@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const swagger = require('./helper-files/apiserver-swagger.json');
 const apiserver = require('../../eventmesh').apiServerClient;
 const apiServerHost = 'https://10.0.2.2:9443';
 const lib = require('../../broker/lib');
@@ -107,14 +106,19 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, expectedE
 
 describe('eventmesh', () => {
   describe('ApiServerClient', () => {
-    beforeEach(() => {
-      nock(apiServerHost)
-        .get('/swagger.json')
-        .reply(200, swagger);
-    });
 
     afterEach(() => {
       nock.cleanAll();
+    });
+    describe('parseResourceDetailsFromSelfLink', () => {
+      it('Should parse resource details from selflink', () => {
+        const selfLink = '/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/sample_director';
+        const resourceDetails = apiserver.parseResourceDetailsFromSelfLink(selfLink);
+        expect(resourceDetails).to.deep.eql({
+          resourceGroup: 'deployment',
+          resourceType: 'directors'
+        });
+      });
     });
 
     describe('createLockResource', () => {
@@ -447,6 +451,50 @@ describe('eventmesh', () => {
       it('throws error if api call is errored', done => {
         nockPatchResourceStatus('backup', 'defaultbackup', 'b1', finalResource, input, 409);
         return apiserver.updateOperationResponse(opts)
+          .catch(err => {
+            expect(err).to.have.status(409);
+            done();
+          });
+      });
+    });
+
+    describe('updateOperationStateAndResponse', () => {
+      const opts = {
+        resourceId: 'resource-guid',
+        operationName: 'backup',
+        operationType: 'defaultbackup',
+        operationId: 'operation-guid',
+        stateValue: 'fakeState',
+        response: {
+          key: 'fakeValue'
+        }
+      };
+      const payload = {
+        status: {
+          state: opts.stateValue,
+          response: JSON.stringify(opts.response),
+        }
+      };
+      const finalResource = _.assign({
+        status: {
+          state: opts.stateValue,
+          response: JSON.stringify(opts.response),
+        }
+      }, sampleBackupResource);
+      it('updates the operation state and response', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', 'operation-guid', finalResource, payload);
+        apiserver.updateOperationStateAndResponse(opts)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql(finalResource);
+            done();
+            verify();
+          })
+          .catch(done);
+      });
+      it('throws error if api call is errored', done => {
+        nockPatchResourceStatus('backup', 'defaultbackup', opts.operationId, finalResource, payload, 409);
+        return apiserver.updateOperationStateAndResponse(opts)
           .catch(err => {
             expect(err).to.have.status(409);
             done();
