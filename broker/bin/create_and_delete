@@ -4,7 +4,7 @@
 const uuid = require('uuid');
 const lib = require('../lib');
 const config = lib.config;
-const docker = lib.docker;
+const docker = require('../../data-access-layer/docker');
 const models = require('../../../common/models');
 
 const argv = process.argv.slice(2);

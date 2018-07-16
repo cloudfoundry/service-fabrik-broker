@@ -8,10 +8,10 @@ exports.cf = require('./cf');
 exports.ScheduleManager = require('./jobs');
 exports.fabrik = require('./fabrik');
 exports.bootstrap = bootstrap;
-const config = require('../../common/config');
-if (config.enable_swarm_manager) {
-  exports.docker = require('./docker');
-}
+// const config = require('../../common/config');
+// if (config.enable_swarm_manager) {
+//   exports.docker = require('./docker');
+// }
 const logger = require('../../common/logger');
 const docker = exports.docker;
 

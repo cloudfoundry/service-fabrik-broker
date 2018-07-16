@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const crypto = require('crypto');
 const formatUrl = require('url').format;
-const CONST = require('../../../common/constants');
+const CONST = require('../../common/constants');
 
 class DockerCredentials {
   constructor(options) {

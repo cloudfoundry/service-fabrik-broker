@@ -3,7 +3,7 @@
 const lib = require('../../broker/lib');
 const fabrik = require('../../broker/lib/fabrik/Fabrik');
 const config = require('../../common/config');
-const portRegistry = lib.docker.portRegistry;
+const portRegistry = require('../../data-access-layer/docker').portRegistry;
 const catalog = require('../../common/models').catalog;
 const DockerManager = lib.fabrik.DockerManager;
 

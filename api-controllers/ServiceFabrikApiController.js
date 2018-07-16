@@ -30,7 +30,7 @@ const config = require('../common/config');
 const CONST = require('../common/constants');
 const catalog = require('../common/models').catalog;
 const utils = require('../broker/lib/utils');
-const docker = config.enable_swarm_manager ? require('../broker/lib/docker') : undefined;
+const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
 
 const CloudControllerError = {
   NotAuthorized: err => {

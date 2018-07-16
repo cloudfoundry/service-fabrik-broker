@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../../common/config');
-const logger = require('../../../common/logger');
+const config = require('../../common/config');
+const logger = require('../../common/logger');
 
 Promise.promisifyAll([
   require('dockerode/lib/docker'),
