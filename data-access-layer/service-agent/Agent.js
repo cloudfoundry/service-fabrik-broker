@@ -190,7 +190,7 @@ class Agent extends HttpClient {
   createCredentials(ips, parameters, preBindResponse) {
     const body = {
       parameters: parameters,
-      preBindHook: preBindResponse
+      actions: preBindResponse
     };
     return this
       .getHost(ips, 'credentials')
@@ -200,7 +200,7 @@ class Agent extends HttpClient {
   deleteCredentials(ips, credentials, preUnbindResponse) {
     const body = {
       credentials: credentials,
-      preUnbindHook: preUnbindResponse
+      actions: preUnbindResponse
     };
     return this
       .getHost(ips, 'credentials')

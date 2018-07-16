@@ -331,12 +331,12 @@ describe('fabrik', function () {
         pathname = 'credentials/create';
         expectedStatus = 200;
         _.set(body, 'parameters', parameters);
-        _.set(body, 'preBindHook', preBindResponse);
+        _.set(body, 'actions', preBindResponse);
       });
 
       after(function () {
         _.unset(body, 'parameters');
-        _.unset(body, 'preBindHook');
+        _.unset(body, 'actions');
       });
 
       it('returns a JSON object', function () {
@@ -354,12 +354,12 @@ describe('fabrik', function () {
         pathname = 'credentials/delete';
         expectedStatus = 200;
         _.set(body, 'credentials', credentials);
-        _.set(body, 'preUnbindHook', preUnbindResponse);
+        _.set(body, 'actions', preUnbindResponse);
       });
 
       after(function () {
         _.unset(body, 'credentials');
-        _.unset(body, 'preUnbindHook');
+        _.unset(body, 'actions');
       });
 
       it('returns a JSON object', function () {
