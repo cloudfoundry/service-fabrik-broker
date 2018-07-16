@@ -31,7 +31,7 @@ const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const DeploymentDelayed = errors.DeploymentDelayed;
-const catalog = require('../models/catalog');
+const catalog = require('../../../common/models/catalog');
 
 class DirectorManager extends BaseManager {
   constructor(plan) {

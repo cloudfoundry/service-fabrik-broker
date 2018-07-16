@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const BoshDirectorClient = require('../../../data-access-layer/bosh/BoshDirectorClient');
+const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
 
 class Plan {
   constructor(service, options) {

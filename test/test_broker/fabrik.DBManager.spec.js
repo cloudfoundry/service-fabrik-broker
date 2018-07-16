@@ -75,7 +75,7 @@ const proxyLibs = {
   './DirectorManager': {
     load: () => Promise.resolve(DirectorManagerStub)
   },
-  '../models/Catalog': {
+  '../../../common/models/Catalog': {
     getPlan: () => {}
   }
 };

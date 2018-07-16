@@ -5,7 +5,6 @@ exports.utils = require('./utils');
 exports.store = require('./store');
 exports.middleware = require('./middleware');
 exports.cf = require('./cf');
-exports.models = require('./models');
 exports.ScheduleManager = require('./jobs');
 exports.fabrik = require('./fabrik');
 exports.bootstrap = bootstrap;

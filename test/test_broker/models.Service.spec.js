@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
-const Service = require('../../broker/lib/models/Service');
+const Service = require('../../common/models/Service');
 
 describe('models', () => {
   describe('Service', () => {

@@ -5,7 +5,7 @@ const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
-const catalog = require('../../broker/lib/models/catalog');
+const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../eventmesh/ApiServerClient');
 
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180bc';

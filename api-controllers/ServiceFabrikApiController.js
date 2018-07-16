@@ -28,7 +28,7 @@ const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const ScheduleManager = require('../broker/lib/jobs');
 const config = require('../common/config');
 const CONST = require('../common/constants');
-const catalog = require('../broker/lib/models').catalog;
+const catalog = require('../common/models').catalog;
 const utils = require('../broker/lib/utils');
 const docker = config.enable_swarm_manager ? require('../broker/lib/docker') : undefined;
 

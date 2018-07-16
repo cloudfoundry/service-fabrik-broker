@@ -2,8 +2,7 @@
 
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const lib = require('../../broker/lib');
-const catalog = lib.models.catalog;
+const catalog = require('../../common/models').catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const errors = require('../../common/errors');

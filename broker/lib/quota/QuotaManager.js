@@ -4,7 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const logger = require('../../../common/logger');
 const cf = require('../cf');
-const catalog = require('../models/catalog');
+const catalog = require('../../../common/models/catalog');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
 

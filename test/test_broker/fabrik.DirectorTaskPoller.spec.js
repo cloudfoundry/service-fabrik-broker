@@ -31,7 +31,7 @@ describe('fabrik', function () {
         '../../../data-access-layer/bosh': {
           BoshOperationQueue: boshCache
         },
-        '../models/catalog': {
+        '../../../common/models/catalog': {
           getPlan: getPlanSpy
         },
         './DirectorManager': {
