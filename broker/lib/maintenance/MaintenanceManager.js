@@ -2,10 +2,10 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const utils = require('../utils');
 const Repository = require('../../../common/db').Repository;
-const logger = require('../logger');
-const CONST = require('../constants');
-const errors = require('../errors');
-const config = require('../config');
+const logger = require('../../../common/logger');
+const CONST = require('../../../common/constants');
+const errors = require('../../../common/errors');
+const config = require('../../../common/config');
 
 class MaintenanceManager {
 

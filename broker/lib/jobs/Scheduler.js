@@ -11,12 +11,12 @@ Promise.promisifyAll([
 const Agenda = require('agenda');
 const CronTime = require('cron').CronTime;
 const humanInterval = require('human-interval');
-const logger = require('../logger');
-const config = require('../config');
-const CONST = require('../constants');
+const logger = require('../../../common/logger');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const JobFabrik = require('./JobFabrik');
 const BaseJob = require('./BaseJob');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const BadRequest = errors.BadRequest;
 const ServiceUnavailable = errors.ServiceUnavailable;
 const ServiceInMaintenance = errors.ServiceInMaintenance;

@@ -2,14 +2,13 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const lib = require('../../../broker/lib');
-const logger = lib.logger;
+const logger = require('../../../common/logger');
 const app = require('../support/apps').internal;
-const config = lib.config;
+const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStoreForOob;
 const filename = backupStore.filename;
-const CONST = require('../../../broker/lib/constants');
+const CONST = require('../../../common/constants');
 const utils = require('../../../broker/lib/utils');
 const ScheduleManager = require('../../../broker/lib/jobs/ScheduleManager');
 

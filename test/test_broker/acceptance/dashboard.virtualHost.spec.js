@@ -7,7 +7,7 @@ const app = require('../support/apps').external;
 const fabrik = lib.fabrik;
 const iaas = require('../../../data-access-layer/iaas');
 const virtualHostStore = iaas.virtualHostStore;
-const config = lib.config;
+const config = require('../../../common/config');
 
 describe('dashboard', function () {
   describe('virtualHost', function () {

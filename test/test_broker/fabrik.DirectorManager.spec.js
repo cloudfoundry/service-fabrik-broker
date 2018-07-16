@@ -6,8 +6,8 @@ const lib = require('../../broker/lib');
 const catalog = lib.models.catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const errors = require('../../broker/lib/errors');
-const CONST = require('../../broker/lib/constants');
+const errors = require('../../common/errors');
+const CONST = require('../../common/constants');
 const assert = require('assert');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
@@ -218,7 +218,7 @@ describe('fabrik', function () {
       };
       deploymentSpy.returns(Promise.resolve(task_id));
       var DirectorManagerSub = proxyquire('../../broker/lib/fabrik/DirectorManager', {
-        '../config': configStub,
+        '../../../common/config': configStub,
         '../../../data-access-layer/bosh': boshStub
       });
       manager = new DirectorManagerSub(catalog.getPlan(plan_id));

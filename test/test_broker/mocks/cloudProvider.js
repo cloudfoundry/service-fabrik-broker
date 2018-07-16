@@ -2,8 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const lib = require('../../../broker/lib');
-const config = lib.config;
+const config = require('../../../common/config');
 const provider = config.backup.provider;
 const cloudProviderUrl = provider.authUrl;
 const objectStoreUrl = `http://objectstore/v1/AUTH_${provider.tenantId}`;

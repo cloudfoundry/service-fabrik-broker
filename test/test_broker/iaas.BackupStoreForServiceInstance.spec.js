@@ -1,6 +1,6 @@
 'use strict';
 
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 

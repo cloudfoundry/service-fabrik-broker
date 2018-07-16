@@ -2,15 +2,15 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../logger');
+const logger = require('../../../common/logger');
 const backupStore = require('../../../data-access-layer/iaas').backupStoreForOob;
 const Agent = require('./Agent');
 const utils = require('../utils');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const bosh = require('../../../data-access-layer/bosh');
 const NotFound = errors.NotFound;
 const UnprocessableEntity = errors.UnprocessableEntity;
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 
 class OobBackupManager {
 
@@ -159,7 +159,7 @@ class OobBackupManager {
         time_stamp: opts.time_stamp,
         root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
       })
-      .catchThrow(NotFound, new UnprocessableEntity(`backup for OOB deployment - ${deploymentName} with guid/ brefore time stamp '${opts.backup_guid? opts.backup_guid :opts.time_stamp}' not found`))
+      .catchThrow(NotFound, new UnprocessableEntity(`backup for OOB deployment - ${deploymentName} with guid/ brefore time stamp '${opts.backup_guid ? opts.backup_guid : opts.time_stamp}' not found`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Cannot restore backup '${opts.backup_guid}' due to state '${metadata.state}'`);

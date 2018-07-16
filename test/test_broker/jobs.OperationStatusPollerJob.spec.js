@@ -1,7 +1,7 @@
 'use strict';
 
-const config = require('../../broker/lib/config');
-const CONST = require('../../broker/lib/constants');
+const config = require('../../common/config');
+const CONST = require('../../common/constants');
 const utils = require('../../broker/lib/utils');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');

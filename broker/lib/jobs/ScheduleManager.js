@@ -5,14 +5,14 @@ const Promise = require('bluebird');
 const pubsub = require('pubsub-js');
 var moment = require('moment-timezone');
 const utils = require('../utils');
-const config = require('../config');
+const config = require('../../../common/config');
 const Scheduler = require('./Scheduler');
 const JobFabrik = require('./JobFabrik');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const scheduler = new Scheduler();
 const Repository = require('../../../common/db').Repository;
-const logger = require('../logger');
-const CONST = require('../constants');
+const logger = require('../../../common/logger');
+const CONST = require('../../../common/constants');
 
 class ScheduleManager {
 

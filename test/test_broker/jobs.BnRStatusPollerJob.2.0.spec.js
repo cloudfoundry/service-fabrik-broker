@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
@@ -41,7 +41,7 @@ describe('Jobs', function () {
       }
     };
     const BnRStatusPollerJob = proxyquire('../../broker/lib/jobs/BnRStatusPollerJob', {
-      '../config': config
+      '../../../common/config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
     _.set(instanceInfo_InProgress, 'backup_guid', IN_PROGRESS_BACKUP_GUID);

@@ -3,12 +3,12 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const moment = require('moment');
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
-const errors = require('../../broker/lib/errors');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
+const errors = require('../../common/errors');
 const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
 const serviceFabrikClient = require('../../broker/lib/cf').serviceFabrikClient;
-const logger = require('../../broker/lib/logger');
+const logger = require('../../common/logger');
 
 describe('JobScheduler', function () {
   /* jshint expr:true */
@@ -58,7 +58,7 @@ describe('JobScheduler', function () {
               id: count
             }
           },
-          './lib/config': {
+          '../common/config': {
             scheduler: {
               max_workers: 5,
               start_delay: 0,
@@ -80,7 +80,7 @@ describe('JobScheduler', function () {
         return worker;
       }
     },
-    './lib/config': {
+    '../common/config': {
       scheduler: schedulerConfig
     }
   };

@@ -2,9 +2,9 @@
 
 const azureStorage = require('azure-storage');
 const AzureClient = require('../../data-access-layer/iaas').AzureClient;
-const CONST = require('../../broker/lib/constants');
-const logger = require('../../broker/lib/logger');
-const errors = require('../../broker/lib/errors');
+const CONST = require('../../common/constants');
+const logger = require('../../common/logger');
+const errors = require('../../common/errors');
 const moment = require('moment');
 const filename = require('../../data-access-layer/iaas').backupStore.filename;
 const NotFound = errors.NotFound;

@@ -1,13 +1,13 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
-const logger = require('../../broker/lib/logger');
+const logger = require('../../common/logger');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOperation');
-const errors = require('../../broker/lib/errors');
+const errors = require('../../common/errors');
 const lib = require('../../broker/lib');
 const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
@@ -45,7 +45,7 @@ describe('Jobs', function () {
       }
     };
     const BnRStatusPollerJob = proxyquire('../../broker/lib/jobs/BnRStatusPollerJob', {
-      '../config': config
+      '../../../common/config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
     _.set(instanceInfo_InProgress, 'backup_guid', IN_PROGRESS_BACKUP_GUID);

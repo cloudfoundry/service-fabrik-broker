@@ -3,8 +3,8 @@
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
-const CONST = require('../../broker/lib/constants');
-const errors = require('../../broker/lib/errors');
+const CONST = require('../../common/constants');
+const errors = require('../../common/errors');
 const utils = require('../../broker/lib/utils');
 const Repo = require('../../common/db').Repository;
 
@@ -606,7 +606,7 @@ describe('Jobs', function () {
         subStub = sandbox.stub(pubsub, 'subscribe', (topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
         ScheduleManager2 = proxyquire('../../broker/lib/jobs/ScheduleManager', {
-          '../config': systemJobConfig
+          '../../../common/config': systemJobConfig
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');

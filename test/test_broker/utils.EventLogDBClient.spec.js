@@ -3,7 +3,7 @@
 const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const Repository = require('../../common/db').Repository;
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const jwt = require('../../broker/lib/jwt');
 
 describe('utils', function () {

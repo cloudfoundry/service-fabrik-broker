@@ -3,10 +3,10 @@
 const mongoose = require('mongoose');
 const Promise = require('bluebird');
 const pubsub = require('pubsub-js');
-const logger = require('../logger');
-const CONST = require('../constants');
+const logger = require('../../../common/logger');
+const CONST = require('../../../common/constants');
 const utils = require('../utils');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 mongoose.Promise = Promise;
 const CONNECTION_STATE = CONST.DB.CONNECTION_STATE;
 

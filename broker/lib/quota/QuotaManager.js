@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../logger');
+const logger = require('../../../common/logger');
 const cf = require('../cf');
 const catalog = require('../models/catalog');
-const config = require('../config');
-const CONST = require('../constants');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 
 class QuotaManager {
   constructor(quotaAPIClient) {

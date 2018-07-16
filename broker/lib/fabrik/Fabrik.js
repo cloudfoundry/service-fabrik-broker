@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const Promise = require('bluebird');
-const config = require('../config');
+const config = require('../../../common/config');
 const catalog = require('../models').catalog;
 const Agent = require('./Agent');
 const VirtualHostAgent = require('./VirtualHostAgent');
@@ -14,7 +14,7 @@ const BoshTaskPoller = require('./DirectorTaskPoller');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
 const BasePlatformManager = require('./BasePlatformManager');
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const DockerManager = config.enable_swarm_manager ? require('./DockerManager') : undefined;
 
 class Fabrik {

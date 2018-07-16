@@ -10,7 +10,7 @@ const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('./models/catalog');
 const lockManager = require('../../eventmesh').lockManager;
-const CONST = require('./constants');
+const CONST = require('./../../common/constants');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const UnprocessableEntity = errors.UnprocessableEntity;
 

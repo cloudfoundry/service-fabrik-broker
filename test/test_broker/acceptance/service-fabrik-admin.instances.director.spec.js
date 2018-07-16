@@ -1,10 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const Repository = require('../../../common/db').Repository;
 const apps = require('../support/apps');
-const config = lib.config;
+const config = require('../../../common/config');
 
 describe('service-fabrik-admin', function () {
   describe('instances', function () {

@@ -5,7 +5,7 @@ const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../utils');
 const mapper = require('./VirtualHostRelationMapper');
 const catalog = require('../models').catalog;
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 
 class VirtualHostInstance extends BaseInstance {
   constructor(guid, manager) {

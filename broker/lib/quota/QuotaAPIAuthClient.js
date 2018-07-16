@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const HttpClient = require('../utils').HttpClient;
-const config = require('../config');
-const CONST = require('../constants');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 
 class QuotaAPIAuthClient extends HttpClient {
   constructor(options) {

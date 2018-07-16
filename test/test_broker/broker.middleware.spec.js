@@ -9,12 +9,12 @@ const middleware = proxyquire('../../broker/lib/middleware', {
 });
 const lib = require('../../broker/lib');
 const quota = require('../../broker/lib/quota');
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
 const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
 const quotaManager = quota.quotaManager;
 const utils = lib.utils;
-const errors = lib.errors;
+const errors = require('../../common/errors');
 const BadRequest = errors.BadRequest;
 const Forbidden = errors.Forbidden;
 const PROMISE_WAIT_SIMULATED_DELAY = 2;

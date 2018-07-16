@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const lib = require('../../../broker/lib');
-const config = lib.config;
+const config = require('../../../common/config');
 const jwt = lib.jwt;
 
 exports.verify = verify;

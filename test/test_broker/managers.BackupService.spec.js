@@ -4,9 +4,8 @@ const catalog = require('../../broker/lib/models/catalog');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../data-access-layer/iaas/BackupStore');
-const lib = require('../../broker/lib');
 const moment = require('moment');
-const config = lib.config;
+const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 

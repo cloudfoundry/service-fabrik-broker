@@ -6,7 +6,7 @@ const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
 const catalog = lib.models.catalog;
 const docker = lib.docker;
-const config = lib.config;
+const config = require('../../../common/config');
 const fabrik = lib.fabrik;
 
 describe('service-broker-api', function () {

@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const config = require('../config');
-const errors = require('../errors');
+const config = require('../../../common/config');
+const errors = require('../../../common/errors');
 const Service = require('./Service');
 const ServiceNotFound = errors.ServiceNotFound;
 const ServicePlanNotFound = errors.ServicePlanNotFound;

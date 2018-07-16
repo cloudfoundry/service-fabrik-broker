@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const DockerCredentials = require('../../broker/lib/docker/DockerCredentials');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 
 describe('docker', function () {
   describe('DockerCredentials', function () {

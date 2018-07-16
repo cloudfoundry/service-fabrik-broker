@@ -9,7 +9,7 @@ const BluePrintJob = require('../../broker/lib/jobs/BluePrintJob');
 const BackupReaperJob = require('../../broker/lib/jobs/BackupReaperJob');
 const ServiceInstanceUpdateJob = require('../../broker/lib/jobs/ServiceInstanceUpdateJob');
 const DbCollectionReaperJob = require('../../broker/lib/jobs/DbCollectionReaperJob');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const AssertionError = require('assert').AssertionError;
 
 describe('Jobs', function () {

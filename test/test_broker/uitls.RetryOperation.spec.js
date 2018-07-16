@@ -2,7 +2,7 @@
 
 const lib = require('../../broker/lib');
 const RetryOperation = lib.utils.RetryOperation;
-const Timeout = lib.errors.Timeout;
+const Timeout = require('../../common/errors').Timeout;
 
 describe('utils', function () {
   describe('RetryOperation', function () {

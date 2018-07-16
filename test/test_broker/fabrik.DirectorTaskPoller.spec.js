@@ -41,7 +41,7 @@ describe('fabrik', function () {
             };
           }
         },
-        '../config': {
+        '../../../common/config': {
           enable_bosh_rate_limit: true
         },
         'pubsub-js': {

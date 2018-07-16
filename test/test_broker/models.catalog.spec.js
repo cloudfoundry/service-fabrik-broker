@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const errors = require('../../broker/lib/errors');
+const errors = require('../../common/errors');
 const ServiceNotFound = errors.ServiceNotFound;
 const ServicePlanNotFound = errors.ServicePlanNotFound;
 
@@ -21,7 +21,7 @@ let service1 = {
 };
 
 const catalog = proxyquire('../../broker/lib/models/catalog', {
-  '../config': {
+  '../../../common/config': {
     services: [service1]
   },
   './Service': class {

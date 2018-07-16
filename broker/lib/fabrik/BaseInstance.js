@@ -1,6 +1,6 @@
 'use strict';
 
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const cloudController = require('../cf').cloudController;
 const serviceFabrikClient = require('../cf').serviceFabrikClient;
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;

@@ -1,12 +1,12 @@
 'use strict';
 
 const _ = require('lodash');
-const logger = require('../logger');
-const config = require('../config');
+const logger = require('../../../common/logger');
+const config = require('../../../common/config');
 const BaseJob = require('./BaseJob');
 const moment = require('moment');
-const CONST = require('../constants');
-const errors = require('../errors');
+const CONST = require('../../../common/constants');
+const errors = require('../../../common/errors');
 const ScheduleManager = require('./ScheduleManager');
 const backupStore = require('../../../data-access-layer/iaas').backupStoreForOob;
 const utils = require('../utils');

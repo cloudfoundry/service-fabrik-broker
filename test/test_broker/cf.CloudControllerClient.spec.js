@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const formatUrl = require('url').format;
 const CloudControllerClient = require('../../broker/lib/cf/CloudControllerClient');
-const errors = require('../../broker/lib/errors');
+const errors = require('../../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 

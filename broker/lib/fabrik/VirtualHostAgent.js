@@ -1,5 +1,5 @@
 'use strict';
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const Agent = require('./Agent');
 
 class VirtualHostAgent extends Agent {

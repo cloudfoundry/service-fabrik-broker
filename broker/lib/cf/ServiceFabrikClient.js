@@ -1,9 +1,9 @@
 const _ = require('lodash');
-const config = require('../config');
+const config = require('../../../common/config');
 const utils = require('../utils');
 const HttpClient = utils.HttpClient;
-const errors = require('../errors');
-const CONST = require('../constants');
+const errors = require('../../../common/errors');
+const CONST = require('../../../common/constants');
 const InternalServerError = errors.InternalServerError;
 
 class ServiceFabrikClient extends HttpClient {

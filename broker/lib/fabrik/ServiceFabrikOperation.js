@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
-const config = require('../config');
-const CONST = require('../constants');
-const errors = require('../errors');
-const logger = require('../logger');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
+const errors = require('../../../common/errors');
+const logger = require('../../../common/logger');
 const jwt = require('../jwt');
 const utils = require('../utils');
 const cf = require('../cf');

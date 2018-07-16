@@ -6,7 +6,7 @@ const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs');
 const Repository = require('../../common/db').Repository;
 const DbCollectionReaperJob = require('../../broker/lib/jobs/DbCollectionReaperJob');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 
 describe('Jobs', function () {
   /* jshint expr:true */

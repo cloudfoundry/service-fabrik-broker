@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const Plan = require('./Plan');
-const config = require('../config');
-const CONST = require('../constants');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 
 class Service {
   constructor(options) {

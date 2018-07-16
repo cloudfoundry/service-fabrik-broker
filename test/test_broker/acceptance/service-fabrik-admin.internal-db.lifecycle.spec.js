@@ -5,11 +5,11 @@ const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
 const DBManager = require('../../../broker/lib/fabrik/DBManager');
 const fabrik = lib.fabrik;
-const config = lib.config;
+const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = backupStore.filename;
-const CONST = require('../../../broker/lib/constants');
+const CONST = require('../../../common/constants');
 const utils = require('../../../broker/lib/utils');
 
 describe('service-fabrik-admin', function () {

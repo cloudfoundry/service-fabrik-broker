@@ -6,11 +6,11 @@ const pubsub = require('pubsub-js');
 const cluster = require('cluster');
 const moment = require('moment');
 const cpus = require('os').cpus();
-const CONST = require('./lib/constants');
-const logger = require('./lib/logger');
-const config = require('./lib/config');
+const CONST = require('../common/constants');
+const logger = require('../common/logger');
+const config = require('../common/config');
 const utils = require('./lib/utils');
-const errors = require('./lib/errors');
+const errors = require('../common/errors');
 const maintenanceManager = require('./lib/maintenance').maintenanceManager;
 const serviceFabrikClient = require('./lib/cf').serviceFabrikClient;
 require('./lib/fabrik');
@@ -193,7 +193,7 @@ class JobScheduler {
               if (this.maintenanceStartTime && currTime.diff(this.maintenanceStartTime) > config.scheduler.maintenance_mode_time_out) {
                 logger.warn(`System in maintenance since ${maintenanceInfo.createdAt}. Exceeds configured maintenance timeout  ${config.scheduler.maintenance_mode_time_out} (ms). Flagging the current maintenance window as aborted.`);
                 return maintenanceManager
-                  .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out/1000/60} (mins). JobScheduler aborting it.`,
+                  .updateMaintenace(`System in maintenance beyond configured timeout time ${config.scheduler.maintenance_mode_time_out / 1000 / 60} (mins). JobScheduler aborting it.`,
                     CONST.OPERATION.ABORTED,
                     CONST.SYSTEM_USER)
                   .then(() => logger.info('JobScheduler Aborted current maintenance window'))

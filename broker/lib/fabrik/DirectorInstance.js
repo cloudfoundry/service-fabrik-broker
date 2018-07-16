@@ -5,16 +5,16 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const yaml = require('js-yaml');
 const BaseInstance = require('./BaseInstance');
-const config = require('../config');
-const logger = require('../logger');
-const errors = require('../errors');
+const config = require('../../../common/config');
+const logger = require('../../../common/logger');
+const errors = require('../../../common/errors');
 const jwt = require('../jwt');
 const utils = require('../utils');
 const catalog = require('../models').catalog;
 const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../jobs');
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 
 class DirectorInstance extends BaseInstance {

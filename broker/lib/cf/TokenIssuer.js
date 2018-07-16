@@ -2,9 +2,9 @@
 
 const Promise = require('bluebird');
 const TokenInfo = require('./TokenInfo');
-const config = require('../config');
-const errors = require('../errors');
-const logger = require('../logger');
+const config = require('../../../common/config');
+const errors = require('../../../common/errors');
+const logger = require('../../../common/logger');
 const Unauthorized = errors.Unauthorized;
 
 class TokenIssuer {

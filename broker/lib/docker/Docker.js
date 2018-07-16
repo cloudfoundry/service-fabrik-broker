@@ -2,13 +2,13 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../config');
-const logger = require('../logger');
+const config = require('../../../common/config');
+const logger = require('../../../common/logger');
 const utils = require('../utils');
 const DockerClient = require('./DockerClient');
 const DockerPortRegistry = require('./DockerPortRegistry');
 const DockerCredentials = require('./DockerCredentials');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const ServiceUnavailable = errors.ServiceUnavailable;
 
 class Docker {

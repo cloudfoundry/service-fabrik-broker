@@ -8,9 +8,9 @@ const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
 const os = require('os');
 var EventEmitter = require('events').EventEmitter;
-const CONST = require('../../broker/lib/constants');
-const logger = require('../../broker/lib/logger');
-const errors = require('../../broker/lib/errors');
+const CONST = require('../../common/constants');
+const logger = require('../../common/logger');
+const errors = require('../../common/errors');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
 
@@ -202,7 +202,7 @@ const proxyLibs = {
     }
   },
   'agenda': Agenda,
-  '../config': {
+  '../../../common/config': {
     scheduler: schedulerConfig,
     mongodb: {
       backup: {
@@ -213,7 +213,7 @@ const proxyLibs = {
 };
 
 const cloneProxyLibs = _.cloneDeep(proxyLibs);
-cloneProxyLibs['../config'].scheduler = schedulerConfig;
+cloneProxyLibs['../../../common/config'].scheduler = schedulerConfig;
 const SchedulerPubSub = proxyquire('../../broker/lib/jobs/Scheduler', cloneProxyLibs);
 const Scheduler = proxyquire('../../broker/lib/jobs/Scheduler', _.set(proxyLibs, 'pubsub-js', proxyPubSub));
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const config = require('../config');
+const config = require('../../../common/config');
 const utils = require('../utils');
 const HttpClient = utils.HttpClient;
 

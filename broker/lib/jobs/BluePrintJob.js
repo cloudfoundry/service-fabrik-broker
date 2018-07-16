@@ -1,6 +1,6 @@
 'use strict';
 
-const logger = require('../logger');
+const logger = require('../../../common/logger');
 const BaseJob = require('./BaseJob');
 
 class BluePrintJob extends BaseJob {

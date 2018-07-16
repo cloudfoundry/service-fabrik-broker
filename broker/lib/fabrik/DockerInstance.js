@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../logger');
-const errors = require('../errors');
+const logger = require('../../../common/logger');
+const errors = require('../../../common/errors');
 const utils = require('../utils');
 const docker = require('../docker');
 const BaseInstance = require('./BaseInstance');
@@ -12,7 +12,7 @@ const Timeout = errors.Timeout;
 const ContainerStartError = errors.ContainerStartError;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 
 const DockerError = {
   NotFound: {

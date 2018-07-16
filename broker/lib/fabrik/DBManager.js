@@ -2,16 +2,16 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../config');
-const logger = require('../logger');
+const config = require('../../../common/config');
+const logger = require('../../../common/logger');
 const catalog = require('../models/catalog');
 const DirectorManager = require('./DirectorManager');
 const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../utils');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../db/DbConnectionManager');
 
 /**

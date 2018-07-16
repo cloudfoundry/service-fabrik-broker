@@ -125,7 +125,7 @@ describe('quota', () => {
 
     describe('checkQuota', () => {
       const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-        '../config': {
+        '../../../common/config': {
           quota: {
             enabled: true,
             whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -422,7 +422,7 @@ describe('quota', () => {
 
       it('returns that the org is not whitelisted', () => {
         const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-          '../config': {
+          '../../../common/config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -439,7 +439,7 @@ describe('quota', () => {
 
       it('returns that the org is whitelisted', () => {
         const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-          '../config': {
+          '../../../common/config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning', 'dev']

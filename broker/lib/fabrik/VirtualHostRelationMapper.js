@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../logger');
+const logger = require('../../../common/logger');
 const bosh = require('../../../data-access-layer/bosh');
 const cloudController = require('../cf').cloudController;
 const virtualHostStore = require('../../../data-access-layer/iaas').virtualHostStore;

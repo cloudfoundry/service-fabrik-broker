@@ -1,26 +1,19 @@
 'use strict';
 
-const config = require('./config');
-exports.config = config;
-exports.errors = require('./errors');
 exports.jwt = require('./jwt');
-exports.logger = require('./logger');
 exports.utils = require('./utils');
 exports.store = require('./store');
 exports.middleware = require('./middleware');
-//exports.bosh = require('./bosh');
 exports.cf = require('./cf');
 exports.models = require('./models');
-//exports.routes = require('./routes');
 exports.ScheduleManager = require('./jobs');
 exports.fabrik = require('./fabrik');
-//exports.controllers = require('./controllers');
-//exports.iaas = require('./iaas');
 exports.bootstrap = bootstrap;
+const config = require('../../common/config');
 if (config.enable_swarm_manager) {
   exports.docker = require('./docker');
 }
-const logger = exports.logger;
+const logger = require('../../common/logger');
 const docker = exports.docker;
 
 function bootstrap() {

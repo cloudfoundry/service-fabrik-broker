@@ -1,9 +1,9 @@
 'use strict';
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const config = require('../../broker/lib').config;
+const config = require('../../common/config');
 const moment = require('moment-timezone');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const getInstance = (instanceId) => {
   return Promise.resolve({
     _id: `${instanceId}-12121`,

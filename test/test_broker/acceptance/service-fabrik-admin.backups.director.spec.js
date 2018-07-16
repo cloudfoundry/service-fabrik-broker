@@ -1,9 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
-const config = lib.config;
+const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = backupStore.filename;

@@ -5,7 +5,7 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire');
 
 const QuotaAPIClient = proxyquire('../../broker/lib/quota/QuotaAPIClient', {
-  '../config': {
+  '../../../common/config': {
     quota: {
       enabled: false,
       oauthDomain: 'sap-provisioning',

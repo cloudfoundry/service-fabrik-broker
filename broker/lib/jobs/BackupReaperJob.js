@@ -2,12 +2,12 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../logger');
-const config = require('../config');
-const CONST = require('../constants');
+const logger = require('../../../common/logger');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const moment = require('moment');
 const BaseJob = require('./BaseJob');
-const errors = require('../errors');
+const errors = require('../../../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
 const cloudController = require('../cf').cloudController;
