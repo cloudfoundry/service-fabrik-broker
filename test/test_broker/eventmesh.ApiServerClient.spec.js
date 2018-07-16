@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const apiserver = require('../../eventmesh').apiServerClient;
+const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const apiServerHost = 'https://10.0.2.2:9443';
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');

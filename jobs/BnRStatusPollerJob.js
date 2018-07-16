@@ -13,7 +13,7 @@ const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
 const catalog = require('../common/models').catalog;
 const BackupService = require('../managers/backup-manager');
-const eventmesh = require('../eventmesh');
+const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../common/EventLogInterceptor');
 

@@ -15,7 +15,7 @@ const catalog = require('../common/models/catalog');
 const ContinueWithNext = errors.ContinueWithNext;
 const BadRequest = errors.BadRequest;
 const CONST = require('../common/constants');
-const lockManager = require('../eventmesh').lockManager;
+const lockManager = require('../data-access-layer/eventmesh').lockManager;
 
 class FabrikBaseController extends BaseController {
   constructor() {

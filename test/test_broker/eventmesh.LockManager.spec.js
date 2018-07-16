@@ -1,7 +1,6 @@
 'use strict';
 
 const Promise = require('bluebird');
-// const lockManager = require('../../eventmesh').lockManager;
 const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
 const errors = require('../../common/errors');
@@ -69,7 +68,7 @@ const LockManagerDummy = {
   createLockResourceDummy: () => {},
   getResourceDummy: () => {},
 };
-const apiServerLockManager = proxyquire('../../eventmesh/LockManager', {
+const apiServerLockManager = proxyquire('../../data-access-layer/eventmesh/LockManager', {
   './': {
     'apiServerClient': {
       'getLockDetails': function (resourceName, resourceId) {
