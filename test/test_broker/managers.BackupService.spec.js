@@ -2,7 +2,7 @@
 
 const catalog = require('../../common/models/catalog');
 const ScheduleManager = require('../../jobs/ScheduleManager');
-const Agent = require('../../broker/lib/fabrik/Agent');
+const Agent = require('../../data-access-layer/service-agent');
 const BackupStore = require('../../data-access-layer/iaas/BackupStore');
 const moment = require('moment');
 const config = require('../../common/config');
