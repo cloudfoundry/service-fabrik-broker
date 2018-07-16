@@ -5,12 +5,12 @@ const _ = require('lodash');
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const utils = require('../../broker/lib/utils');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const BaseJob = require('../../jobs/BaseJob');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStoreForOob;
 const filename = iaas.backupStoreForOob.filename;
-const ScheduledOobDeploymentBackupJob = require('../../broker/lib/jobs/ScheduledOobDeploymentBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../../jobs/ScheduledOobDeploymentBackupJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

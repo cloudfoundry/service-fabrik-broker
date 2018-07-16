@@ -3,19 +3,19 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const BaseJob = require('./BaseJob');
-const CONST = require('../../../common/constants');
+const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const utils = require('../utils');
-const logger = require('../../../common/logger');
-const errors = require('../../../common/errors');
+const utils = require('../common/utils');
+const logger = require('../common/logger');
+const errors = require('../common/errors');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
-const config = require('../../../common/config');
-const bosh = require('../../../data-access-layer/bosh');
-const catalog = require('../../../common/models').catalog;
-const BackupService = require('../../../managers/backup-manager');
-const eventmesh = require('../../../eventmesh');
+const config = require('../common/config');
+const bosh = require('../data-access-layer/bosh');
+const catalog = require('../common/models').catalog;
+const BackupService = require('../managers/backup-manager');
+const eventmesh = require('../eventmesh');
 const lockManager = eventmesh.lockManager;
-const EventLogInterceptor = require('../../../common/EventLogInterceptor');
+const EventLogInterceptor = require('../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BaseJob {
   constructor() {

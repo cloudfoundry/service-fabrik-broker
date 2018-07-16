@@ -2,20 +2,20 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../../common/logger');
-const config = require('../../../common/config');
-const CONST = require('../../../common/constants');
+const logger = require('../common/logger');
+const config = require('../common/config');
+const CONST = require('../common/constants');
 const moment = require('moment');
 const BaseJob = require('./BaseJob');
-const errors = require('../../../common/errors');
+const errors = require('../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
-const cloudController = require('../../../data-access-layer/cf').cloudController;
-const backupStoreForInstance = require('../../../data-access-layer/iaas').backupStore;
-const backupStoreForOob = require('../../../data-access-layer/iaas').backupStoreForOob;
+const cloudController = require('../data-access-layer/cf').cloudController;
+const backupStoreForInstance = require('../data-access-layer/iaas').backupStore;
+const backupStoreForOob = require('../data-access-layer/iaas').backupStoreForOob;
 const ScheduleManager = require('./ScheduleManager');
-const EventLogInterceptor = require('../../../common/EventLogInterceptor');
-const bosh = require('../../../data-access-layer/bosh');
+const EventLogInterceptor = require('../common/EventLogInterceptor');
+const bosh = require('../data-access-layer/bosh');
 
 class BackupReaperJob extends BaseJob {
 

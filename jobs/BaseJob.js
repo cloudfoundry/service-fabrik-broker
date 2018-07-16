@@ -4,13 +4,13 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const os = require('os');
 const cluster = require('cluster');
-const errors = require('../../../common/errors');
-const logger = require('../../../common/logger');
+const errors = require('../common/errors');
+const logger = require('../common/logger');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
-const CONST = require('../../../common/constants');
-const serviceFabrikClient = require('../../../data-access-layer/cf').serviceFabrikClient;
-const serviceBrokerClient = require('../utils/ServiceBrokerClient');
-const Repository = require('../../../common/db').Repository;
+const CONST = require('../common/constants');
+const serviceFabrikClient = require('../data-access-layer/cf').serviceFabrikClient;
+const serviceBrokerClient = require('../broker/lib/utils/ServiceBrokerClient');
+const Repository = require('../common/db').Repository;
 
 class BaseJob {
 

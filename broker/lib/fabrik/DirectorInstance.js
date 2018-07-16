@@ -13,7 +13,7 @@ const utils = require('../utils');
 const catalog = require('../../../common/models').catalog;
 const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const ScheduleManager = require('../jobs');
+const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 

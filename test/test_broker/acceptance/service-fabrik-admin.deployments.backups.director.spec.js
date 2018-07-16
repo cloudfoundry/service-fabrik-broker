@@ -10,7 +10,7 @@ const backupStore = iaas.backupStoreForOob;
 const filename = backupStore.filename;
 const CONST = require('../../../common/constants');
 const utils = require('../../../broker/lib/utils');
-const ScheduleManager = require('../../../broker/lib/jobs/ScheduleManager');
+const ScheduleManager = require('../../../jobs/ScheduleManager');
 
 describe('service-fabrik-admin', function () {
   describe('oob-deployment', function () {

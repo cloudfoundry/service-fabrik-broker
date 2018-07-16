@@ -2,17 +2,17 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../../common/logger');
-const config = require('../../../common/config');
+const logger = require('../common/logger');
+const config = require('../common/config');
 const BaseJob = require('./BaseJob');
-const errors = require('../../../common/errors');
-const utils = require('../utils');
-const cloudController = require('../../../data-access-layer/cf').cloudController;
-const Fabrik = require('../fabrik');
-const catalog = require('../../../common/models/catalog');
-const CONST = require('../../../common/constants');
+const errors = require('../common/errors');
+const utils = require('../common/utils');
+const cloudController = require('../data-access-layer/cf').cloudController;
+const Fabrik = require('../broker/lib/fabrik');
+const catalog = require('../common/models/catalog');
+const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const Repository = require('../../../common/db').Repository;
+const Repository = require('..//common/db').Repository;
 //NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {

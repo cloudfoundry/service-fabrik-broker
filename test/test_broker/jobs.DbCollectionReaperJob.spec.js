@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const ScheduleManager = require('../../broker/lib/jobs');
+const BaseJob = require('../../jobs/BaseJob');
+const ScheduleManager = require('../../jobs');
 const Repository = require('../../common/db').Repository;
-const DbCollectionReaperJob = require('../../broker/lib/jobs/DbCollectionReaperJob');
+const DbCollectionReaperJob = require('../../jobs/DbCollectionReaperJob');
 const CONST = require('../../common/constants');
 
 describe('Jobs', function () {

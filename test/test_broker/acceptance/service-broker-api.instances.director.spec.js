@@ -9,7 +9,7 @@ const catalog = require('../../../common/models').catalog;
 const fabrik = lib.fabrik;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
-const ScheduleManager = require('../../../broker/lib/jobs');
+const ScheduleManager = require('../../../jobs');
 const DirectorManager = lib.fabrik.DirectorManager;
 const cloudController = require('../../../data-access-layer/cf').cloudController;
 

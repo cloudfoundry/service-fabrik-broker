@@ -4,15 +4,15 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const pubsub = require('pubsub-js');
 var moment = require('moment-timezone');
-const utils = require('../utils');
-const config = require('../../../common/config');
+const utils = require('../common/utils');
+const config = require('../common/config');
 const Scheduler = require('./Scheduler');
 const JobFabrik = require('./JobFabrik');
-const errors = require('../../../common/errors');
+const errors = require('../common/errors');
 const scheduler = new Scheduler();
-const Repository = require('../../../common/db').Repository;
-const logger = require('../../../common/logger');
-const CONST = require('../../../common/constants');
+const Repository = require('../common/db').Repository;
+const logger = require('../common/logger');
+const CONST = require('../common/constants');
 
 class ScheduleManager {
 

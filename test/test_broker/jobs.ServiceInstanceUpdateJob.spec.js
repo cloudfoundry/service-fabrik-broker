@@ -6,9 +6,9 @@ const catalog = require('../../common/models/catalog');
 const utils = require('../../broker/lib/utils');
 const config = require('../../common/config');
 const errors = require('../../common/errors');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const BaseJob = require('../../jobs/BaseJob');
+const JobFabrik = require('../../jobs/JobFabrik');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const Repository = require('../../common/db').Repository;
 const NetworkSegmentIndex = require('../../data-access-layer/bosh/NetworkSegmentIndex');
 

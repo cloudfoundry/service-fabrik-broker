@@ -3,8 +3,8 @@
 const _ = require('lodash');
 const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const BaseJob = require('../../jobs/BaseJob');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 const BackupService = require('../../managers/backup-manager');
 
@@ -40,8 +40,8 @@ describe('Jobs', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const BnRStatusPollerJob = proxyquire('../../broker/lib/jobs/BnRStatusPollerJob', {
-      '../../../common/config': config
+    const BnRStatusPollerJob = proxyquire('../../jobs/BnRStatusPollerJob', {
+      '../common/config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
     _.set(instanceInfo_InProgress, 'backup_guid', IN_PROGRESS_BACKUP_GUID);
@@ -369,7 +369,7 @@ describe('Jobs', function () {
       });
 
       it('calling BnRStatusPollerJob constructor', function (done) {
-        let BnRStatusPollerJobClass = require('../../broker/lib/jobs/BnRStatusPollerJob');
+        let BnRStatusPollerJobClass = require('../../jobs/BnRStatusPollerJob');
         let bnRStatusPollerJobObj = new BnRStatusPollerJobClass();
         return Promise.try(() => {
             expect(bnRStatusPollerJobObj instanceof BnRStatusPollerJobClass).to.be.eql(true);

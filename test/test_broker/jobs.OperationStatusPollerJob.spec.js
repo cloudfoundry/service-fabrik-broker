@@ -3,10 +3,10 @@
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const utils = require('../../broker/lib/utils');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const BaseJob = require('../../jobs/BaseJob');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const BackupStore = require('../../data-access-layer/iaas/BackupStore');
-const OperationStatusPollerJob = require('../../broker/lib/jobs/OperationStatusPollerJob');
+const OperationStatusPollerJob = require('../../jobs/OperationStatusPollerJob');
 
 describe('Jobs', function () {
   /* jshint expr:true */

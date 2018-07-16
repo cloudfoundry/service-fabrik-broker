@@ -1,7 +1,7 @@
 'use strict';
 
 const catalog = require('../../common/models/catalog');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const Agent = require('../../broker/lib/fabrik/Agent');
 const BackupStore = require('../../data-access-layer/iaas/BackupStore');
 const moment = require('moment');

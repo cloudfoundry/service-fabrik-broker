@@ -2,16 +2,16 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../../common/logger');
-const config = require('../../../common/config');
+const logger = require('../common/logger');
+const config = require('../common/config');
 const BaseJob = require('./BaseJob');
-const CONST = require('../../../common/constants');
-const errors = require('../../../common/errors');
-const utils = require('../utils');
+const CONST = require('../common/constants');
+const errors = require('../common/errors');
+const utils = require('../common/utils');
 const retry = utils.retry;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const cloudController = require('../../../data-access-layer/cf').cloudController;
-const backupStore = require('../../../data-access-layer/iaas').backupStore;
+const cloudController = require('../data-access-layer/cf').cloudController;
+const backupStore = require('../data-access-layer/iaas').backupStore;
 const ScheduleManager = require('./ScheduleManager');
 //Above reference to schedulemanager leads to the below cyclic dependency:
 // ScheduleManager -> Scheduler -> JobFabrik -> ScheduleBackupJob -> ScheduleManager
