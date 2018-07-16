@@ -4,7 +4,8 @@ const _ = require('lodash');
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
 const config = lib.config;
-const backupStore = lib.iaas.backupStore;
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 
 describe('service-fabrik-api', function () {
   describe('backups', function () {
@@ -41,7 +42,7 @@ describe('service-fabrik-api', function () {
       };
 
       before(function () {
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([
@@ -50,7 +51,7 @@ describe('service-fabrik-api', function () {
       });
 
       after(function () {
-        backupStore.cloudProvider = lib.iaas.cloudProvider;
+        backupStore.cloudProvider = iaas.cloudProvider;
       });
 
       afterEach(function () {

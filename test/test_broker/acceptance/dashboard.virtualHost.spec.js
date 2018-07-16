@@ -5,7 +5,8 @@ const parseUrl = require('url').parse;
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
 const fabrik = lib.fabrik;
-const virtualHostStore = lib.iaas.virtualHostStore;
+const iaas = require('../../../data-access-layer/iaas');
+const virtualHostStore = iaas.virtualHostStore;
 const config = lib.config;
 
 describe('dashboard', function () {
@@ -27,7 +28,7 @@ describe('dashboard', function () {
     };
     before(function () {
       _.unset(fabrik.VirtualHostManager, plan_id);
-      virtualHostStore.cloudProvider = new lib.iaas.CloudProviderClient(config.virtual_host.provider);
+      virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       return mocks.setup([

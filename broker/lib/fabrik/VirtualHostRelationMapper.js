@@ -2,9 +2,9 @@
 
 const Promise = require('bluebird');
 const logger = require('../logger');
-const bosh = require('../bosh');
+const bosh = require('../../../data-access-layer/bosh');
 const cloudController = require('../cf').cloudController;
-const virtualHostStore = require('../iaas').virtualHostStore;
+const virtualHostStore = require('../../../data-access-layer/iaas').virtualHostStore;
 
 class VirtualHostRelationMapper {
   constructor() {

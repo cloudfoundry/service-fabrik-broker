@@ -10,7 +10,7 @@ const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOpe
 const errors = require('../../broker/lib/errors');
 const lib = require('../../broker/lib');
 const DirectorManager = lib.fabrik.DirectorManager;
-const BoshDirectorClient = lib.bosh.BoshDirectorClient;
+const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 describe('Jobs', function () {
   /* jshint expr:true */

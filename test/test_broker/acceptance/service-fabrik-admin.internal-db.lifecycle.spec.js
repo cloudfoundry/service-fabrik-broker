@@ -6,7 +6,8 @@ const app = require('../support/apps').internal;
 const DBManager = require('../../../broker/lib/fabrik/DBManager');
 const fabrik = lib.fabrik;
 const config = lib.config;
-const backupStore = lib.iaas.backupStore;
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 const filename = backupStore.filename;
 const CONST = require('../../../broker/lib/constants');
 const utils = require('../../../broker/lib/utils');
@@ -56,7 +57,7 @@ describe('service-fabrik-admin', function () {
       fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
-      backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');

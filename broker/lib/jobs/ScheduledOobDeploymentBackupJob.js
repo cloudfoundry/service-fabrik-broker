@@ -9,8 +9,8 @@ const BaseJob = require('./BaseJob');
 const CONST = require('../constants');
 const errors = require('../errors');
 const NotFound = errors.NotFound;
-const backupStore = require('../iaas').backupStoreForOob;
-const bosh = require('../bosh');
+const backupStore = require('../../../data-access-layer/iaas').backupStoreForOob;
+const bosh = require('../../../data-access-layer/bosh');
 const ScheduleManager = require('./ScheduleManager');
 
 class ScheduledOobDeploymentBackupJob extends BaseJob {

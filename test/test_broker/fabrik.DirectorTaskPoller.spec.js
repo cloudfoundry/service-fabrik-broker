@@ -28,7 +28,7 @@ describe('fabrik', function () {
         getDeploymentByName: getDeploymentSpy
       };
       subject = proxyquire('../../broker/lib/fabrik/DirectorTaskPoller', {
-        '../bosh': {
+        '../../../data-access-layer/bosh': {
           BoshOperationQueue: boshCache
         },
         '../models/catalog': {

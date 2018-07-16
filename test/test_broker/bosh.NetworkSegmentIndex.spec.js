@@ -3,7 +3,7 @@
 const lib = require('../../broker/lib');
 const catalog = lib.models.catalog;
 const DirectorManager = lib.fabrik.DirectorManager;
-const BoshDirectorClient = lib.bosh.BoshDirectorClient;
+const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 const proxyquire = require('proxyquire');
 let networks = [{
@@ -30,7 +30,7 @@ let networks = [{
 
 let mock_config;
 
-const NetworkSegmentIndex = proxyquire('../../broker/lib/bosh/NetworkSegmentIndex', {
+const NetworkSegmentIndex = proxyquire('../../data-access-layer/bosh/NetworkSegmentIndex', {
   lodash: {
     sample: function (collection) {
       return collection[2];

@@ -43,7 +43,7 @@ describe('fabrik', function () {
     let return_value;
     let manager;
     var DirectorManager = proxyquire('../../broker/lib/fabrik/DirectorManager', {
-      '../bosh': boshStub,
+      '../../../data-access-layer/bosh': boshStub,
     });
 
     before(function () {
@@ -219,7 +219,7 @@ describe('fabrik', function () {
       deploymentSpy.returns(Promise.resolve(task_id));
       var DirectorManagerSub = proxyquire('../../broker/lib/fabrik/DirectorManager', {
         '../config': configStub,
-        '../bosh': boshStub
+        '../../../data-access-layer/bosh': boshStub
       });
       manager = new DirectorManagerSub(catalog.getPlan(plan_id));
       manager.director = {

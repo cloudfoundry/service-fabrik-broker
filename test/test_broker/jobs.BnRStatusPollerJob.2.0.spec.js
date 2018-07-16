@@ -5,8 +5,7 @@ const CONST = require('../../broker/lib/constants');
 const proxyquire = require('proxyquire');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-const lib = require('../../broker/lib');
-const BoshDirectorClient = lib.bosh.BoshDirectorClient;
+const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 const BackupService = require('../../managers/backup-manager');
 
 describe('Jobs', function () {

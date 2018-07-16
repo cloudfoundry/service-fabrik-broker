@@ -4,12 +4,12 @@ const moment = require('moment');
 const _ = require('lodash');
 const CONST = require('../../broker/lib/constants');
 const config = require('../../broker/lib/config');
-const lib = require('../../broker/lib');
 const utils = require('../../broker/lib/utils');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
 const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-const backupStore = lib.iaas.backupStoreForOob;
-const filename = lib.iaas.backupStoreForOob.filename;
+const iaas = require('../../data-access-layer/iaas');
+const backupStore = iaas.backupStoreForOob;
+const filename = iaas.backupStoreForOob.filename;
 const ScheduledOobDeploymentBackupJob = require('../../broker/lib/jobs/ScheduledOobDeploymentBackupJob');
 
 describe('Jobs', function () {
@@ -60,7 +60,7 @@ describe('Jobs', function () {
 
     before(function () {
       mocks.reset();
-      backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
