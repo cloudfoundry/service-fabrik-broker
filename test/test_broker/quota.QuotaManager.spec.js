@@ -6,7 +6,7 @@ const quota = require('../../broker/lib/quota');
 const proxyquire = require('proxyquire');
 const quotaManager = quota.quotaManager;
 const catalog = require('../../common/models/catalog');
-const CloudControllerClient = require('../../broker/lib/cf/CloudControllerClient');
+const CloudControllerClient = require('../../data-access-layer/cf/CloudControllerClient');
 
 
 describe('quota', () => {

@@ -7,7 +7,7 @@ const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const errors = require('../../common/errors');
 const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
-const serviceFabrikClient = require('../../broker/lib/cf').serviceFabrikClient;
+const serviceFabrikClient = require('../../data-access-layer/cf').serviceFabrikClient;
 const logger = require('../../common/logger');
 
 describe('JobScheduler', function () {

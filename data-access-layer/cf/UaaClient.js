@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const querystring = require('querystring');
-const HttpClient = require('../utils').HttpClient;
-const config = require('../../../common/config');
+const HttpClient = require('../../broker/lib/utils').HttpClient;
+const config = require('../../common/config');
 
 class UaaClient extends HttpClient {
   constructor(options) {

@@ -12,7 +12,7 @@ const fabrik = lib.fabrik;
 const ScheduleManager = require('../../../broker/lib/jobs');
 const CONST = require('../../../common/constants');
 const DirectorManager = lib.fabrik.DirectorManager;
-const cloudController = require('../../../broker/lib/cf').cloudController;
+const cloudController = require('../../../data-access-layer/cf').cloudController;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 

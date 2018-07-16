@@ -2,12 +2,12 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../../common/config');
-const utils = require('../utils');
+const config = require('../../common/config');
+const utils = require('../../broker/lib/utils');
 const HttpClient = utils.HttpClient;
 const ResourceStream = require('./ResourceStream');
-const logger = require('../../../common/logger');
-const errors = require('../../../common/errors');
+const logger = require('../../common/logger');
+const errors = require('../../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
 const ServiceBrokerNotFound = errors.ServiceBrokerNotFound;

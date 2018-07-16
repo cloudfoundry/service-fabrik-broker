@@ -8,7 +8,7 @@ const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 const CONST = require('../../common/constants');
 const errors = require('../../common/errors');
-const ServiceFabrikClient = require('../../broker/lib/cf/ServiceFabrikClient');
+const ServiceFabrikClient = require('../../data-access-layer/cf/ServiceFabrikClient');
 const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOperation');
 
 describe('fabrik', function () {

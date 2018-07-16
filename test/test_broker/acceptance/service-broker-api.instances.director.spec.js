@@ -11,7 +11,7 @@ const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const ScheduleManager = require('../../../broker/lib/jobs');
 const DirectorManager = lib.fabrik.DirectorManager;
-const cloudController = require('../../../broker/lib/cf').cloudController;
+const cloudController = require('../../../data-access-layer/cf').cloudController;
 
 describe('service-broker-api', function () {
   describe('instances', function () {

@@ -15,7 +15,6 @@ const serviceFabrikClient = require('./serviceFabrikClient');
 const serviceBrokerClient = require('./serviceBrokerClient');
 const deploymentHookClient = require('./deploymentHookClient');
 const apiServerEventMesh = require('./apiServerEventMesh');
-const lib = require('../../../broker/lib');
 const logger = require('../../../common/logger');
 
 exports = module.exports = init;
@@ -50,7 +49,7 @@ function verify() {
 }
 
 function setup() {
-  const tokenIssuer = lib.cf.cloudController.tokenIssuer;
+  const tokenIssuer = require('../../../data-access-layer/cf').cloudController.tokenIssuer;
   tokenIssuer.logout();
   mocks.uaa.getAccessToken();
   return Promise

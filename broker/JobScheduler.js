@@ -12,7 +12,7 @@ const config = require('../common/config');
 const utils = require('./lib/utils');
 const errors = require('../common/errors');
 const maintenanceManager = require('./lib/maintenance').maintenanceManager;
-const serviceFabrikClient = require('./lib/cf').serviceFabrikClient;
+const serviceFabrikClient = require('../data-access-layer/cf').serviceFabrikClient;
 require('./lib/fabrik');
 
 let cpuCount = cpus.length;

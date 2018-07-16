@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const TokenIssuer = proxyquire('../../broker/lib/cf/TokenIssuer', {});
+const TokenIssuer = proxyquire('../../data-access-layer/cf/TokenIssuer', {});
 
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
