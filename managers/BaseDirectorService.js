@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const utils = require('../broker/lib/utils');
+const utils = require('../common/utils');
 
 class BaseDirectorService {
   constructor(plan) {

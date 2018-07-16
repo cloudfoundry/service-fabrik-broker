@@ -5,7 +5,7 @@ const proxyquire = require('proxyquire');
 const pubsub = require('pubsub-js');
 const CONST = require('../../common/constants');
 const errors = require('../../common/errors');
-const utils = require('../../broker/lib/utils');
+const utils = require('../../common/utils');
 const Repo = require('../../common/db').Repository;
 
 const instance_id = '9999-8888-7777-6666';

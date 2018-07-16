@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const utils = require('../../../broker/lib/utils');
+const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const serviceBrokerUrl = `${config.internal.protocol}://${config.internal.host}`;
 const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';

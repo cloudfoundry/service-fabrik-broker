@@ -7,13 +7,12 @@ const middleware = proxyquire('../../broker/lib/middleware', {
     return req.auth;
   }
 });
-const lib = require('../../broker/lib');
 const quota = require('../../quota');
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
 const quotaManager = quota.quotaManager;
-const utils = lib.utils;
+const utils = require('../../common/utils');
 const errors = require('../../common/errors');
 const BadRequest = errors.BadRequest;
 const Forbidden = errors.Forbidden;

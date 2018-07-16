@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const formatUrl = require('url').format;
-const deploymentHookClient = require('../../broker/lib/utils/DeploymentHookClient');
+const deploymentHookClient = require('../../common/utils/DeploymentHookClient');
 
 describe('Utils', function () {
   describe('DeploymentHookClient', function () {

@@ -9,7 +9,7 @@ const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStoreForOob;
 const filename = backupStore.filename;
 const CONST = require('../../../common/constants');
-const utils = require('../../../broker/lib/utils');
+const utils = require('../../../common/utils');
 const ScheduleManager = require('../../../jobs/ScheduleManager');
 
 describe('service-fabrik-admin', function () {

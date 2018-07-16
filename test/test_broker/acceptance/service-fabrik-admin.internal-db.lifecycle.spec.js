@@ -10,7 +10,7 @@ const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = backupStore.filename;
 const CONST = require('../../../common/constants');
-const utils = require('../../../broker/lib/utils');
+const utils = require('../../../common/utils');
 
 describe('service-fabrik-admin', function () {
   describe('internal-db-lifecycle', function () {

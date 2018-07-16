@@ -5,7 +5,7 @@ const Promise = require('bluebird');
 const url = require('url');
 const Readable = require('stream').Readable;
 const logger = require('../../common/logger');
-const utils = require('../../broker/lib/utils');
+const utils = require('../../common/utils');
 const parseUrl = _.partialRight(url.parse, true);
 const formatUrl = url.format;
 

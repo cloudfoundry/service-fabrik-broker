@@ -2,7 +2,7 @@
 
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
-const utils = require('../../broker/lib/utils');
+const utils = require('../../common/utils');
 const BaseJob = require('../../jobs/BaseJob');
 const ScheduleManager = require('../../jobs/ScheduleManager');
 const BackupStore = require('../../data-access-layer/iaas/BackupStore');

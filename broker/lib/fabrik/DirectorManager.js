@@ -9,7 +9,7 @@ const errors = require('../../../common/errors');
 const bosh = require('../../../data-access-layer/bosh');
 const cf = require('../../../data-access-layer/cf');
 const backupStore = require('../../../data-access-layer/iaas').backupStore;
-const utils = require('../utils');
+const utils = require('../../../common/utils');
 const Agent = require('./Agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
@@ -485,7 +485,7 @@ class DirectorManager extends BaseManager {
     //Lazy create of deploymentHookClient
     //Only Processes that require service lifecycle operations will need deployment_hooks properties.
     //Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../../common/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :

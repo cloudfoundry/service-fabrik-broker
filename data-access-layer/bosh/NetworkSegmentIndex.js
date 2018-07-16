@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const ip = require('ip');
-const utils = require('../../broker/lib/utils');
+const utils = require('../../common/utils');
 const BoshDirectorClient = require('./BoshDirectorClient');
 const CONST = require('../../common/constants');
 

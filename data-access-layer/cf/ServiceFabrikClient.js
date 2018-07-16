@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const config = require('../../common/config');
-const utils = require('../../broker/lib/utils');
+const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');

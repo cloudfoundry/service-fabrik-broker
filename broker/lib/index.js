@@ -1,7 +1,6 @@
 'use strict';
 
 exports.jwt = require('./jwt');
-exports.utils = require('./utils');
 exports.store = require('./store');
 exports.middleware = require('./middleware');
 exports.fabrik = require('./fabrik');

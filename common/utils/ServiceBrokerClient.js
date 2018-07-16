@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const config = require('../../../common/config');
-const HttpClient = require('../../../common/utils').HttpClient;
-const logger = require('../../../common/logger');
+const config = require('../config');
+const HttpClient = require('./HttpClient');
+const logger = require('../logger');
 
 class ServiceBrokerClient extends HttpClient {
   constructor() {

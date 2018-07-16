@@ -1,7 +1,6 @@
 'use strict';
 
-const lib = require('../../broker/lib');
-const RetryOperation = lib.utils.RetryOperation;
+const RetryOperation = require('../../common/utils').RetryOperation;
 const Timeout = require('../../common/errors').Timeout;
 
 describe('utils', function () {
