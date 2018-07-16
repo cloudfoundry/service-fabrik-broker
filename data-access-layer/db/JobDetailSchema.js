@@ -1,7 +1,7 @@
 'use strict';
 
 const Mongoose = require('mongoose');
-const CONST = require('../../../common/constants');
+const CONST = require('../../common/constants');
 
 const JobSchema = new Mongoose.Schema({
   name: {

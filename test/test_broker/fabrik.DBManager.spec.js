@@ -62,7 +62,7 @@ const proxyLibs = {
       bosh_job_name: 'broker_mongodb'
     }
   },
-  '../db/DbConnectionManager': {
+  '../../../data-access-layer/db/DbConnectionManager': {
     startUp: () => Promise.try(() => {
       if (errorOnDbStart) {
         throw new errors.ServiceUnavailable('DB Down...Simulated expected test error.');

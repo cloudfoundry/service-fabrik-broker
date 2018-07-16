@@ -1,8 +1,8 @@
 'use strict';
 
 const Mongoose = require('mongoose');
-const CONST = require('../../../common/constants');
-const config = require('../../../common/config');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
 
 function validateMetric(metric) {
   return metric === config.monitoring.success_metric ||

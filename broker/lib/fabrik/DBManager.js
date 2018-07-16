@@ -12,7 +12,7 @@ const errors = require('../../../common/errors');
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
-const dbConnectionManager = require('../db/DbConnectionManager');
+const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
