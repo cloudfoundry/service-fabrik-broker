@@ -1,9 +1,8 @@
 'use strict';
 
 const Promise = require('bluebird');
-const config = require('../../../common/config');
-const utils = require('../utils');
-const HttpClient = utils.HttpClient;
+const config = require('../common/config');
+const HttpClient = require('../common/utils').HttpClient;
 
 class QuotaAPIClient extends HttpClient {
   constructor(tokenIssuer) {

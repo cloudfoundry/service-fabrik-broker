@@ -8,7 +8,7 @@ const middleware = proxyquire('../../broker/lib/middleware', {
   }
 });
 const lib = require('../../broker/lib');
-const quota = require('../../broker/lib/quota');
+const quota = require('../../quota');
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');

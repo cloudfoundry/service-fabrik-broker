@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const TokenInfo = require('./TokenInfo');
-const logger = require('../../../common/logger');
+const logger = require('../common/logger');
 
 class TokenIssuer {
   constructor(quotaAPIAuthClient) {

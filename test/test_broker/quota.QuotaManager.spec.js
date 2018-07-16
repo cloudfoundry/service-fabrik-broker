@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const quota = require('../../broker/lib/quota');
+const quota = require('../../quota');
 const proxyquire = require('proxyquire');
 const quotaManager = quota.quotaManager;
 const catalog = require('../../common/models/catalog');
@@ -124,8 +124,8 @@ describe('quota', () => {
     });
 
     describe('checkQuota', () => {
-      const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-        '../../../common/config': {
+      const QuotaManager = proxyquire('../../quota/QuotaManager', {
+        '../common/config': {
           quota: {
             enabled: true,
             whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -421,8 +421,8 @@ describe('quota', () => {
       });
 
       it('returns that the org is not whitelisted', () => {
-        const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-          '../../../common/config': {
+        const QuotaManager = proxyquire('../../quota/QuotaManager', {
+          '../common/config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning']
@@ -438,8 +438,8 @@ describe('quota', () => {
       });
 
       it('returns that the org is whitelisted', () => {
-        const QuotaManager = proxyquire('../../broker/lib/quota/QuotaManager', {
-          '../../../common/config': {
+        const QuotaManager = proxyquire('../../quota/QuotaManager', {
+          '../common/config': {
             quota: {
               enabled: true,
               whitelist: ['SAP_UAA', 'SAP_provisioning', 'dev']
