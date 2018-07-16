@@ -106,8 +106,8 @@ class Repository {
 
 
 describe('BackupReportManager', function () {
-  const BackupReportManager = proxyquire('../../broker/lib/reports/BackupReportManager', {
-    '../../../common/db': {
+  const BackupReportManager = proxyquire('../../reports/BackupReportManager', {
+    '../common/db': {
       Repository: Repository
     }
   });

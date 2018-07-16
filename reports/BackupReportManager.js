@@ -3,10 +3,10 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const moment = require('moment-timezone');
-const Repository = require('../../../common/db').Repository;
-const logger = require('../../../common/logger');
-const CONST = require('../../../common/constants');
-const config = require('../../../common/config');
+const Repository = require('../common/db').Repository;
+const logger = require('../common/logger');
+const CONST = require('../common/constants');
+const config = require('../common/config');
 
 class BackupReportManager {
   static getJobRunDetailCount(instanceId, startTime, endTime) {

@@ -4,7 +4,7 @@ var moment = require('moment-timezone');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
 const FabrikBaseController = require('./FabrikBaseController');
-const BackupReportManager = require('../broker/lib/reports');
+const BackupReportManager = require('../reports');
 const CONST = require('../common/constants');
 const BadRequest = errors.BadRequest;
 
