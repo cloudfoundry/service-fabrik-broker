@@ -12,7 +12,7 @@ const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
+const maintenanceManager = require('../../maintenance').maintenanceManager;
 
 const MONGO_INIT_SUCCEEDED = 2;
 const MONGO_INIT_FAILED = 1;

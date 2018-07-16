@@ -5,7 +5,7 @@ const Repository = require('../../common/db').Repository;
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const errors = require('../../common/errors');
-const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
+const maintenanceManager = require('../../maintenance').maintenanceManager;
 
 describe('maintenance', function () {
   /* jshint unused:false */
