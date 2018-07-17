@@ -642,13 +642,13 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 404 Not Found', function () {
+        it('should return 200 Ok - should check blobstore if metadata is not found in apiserver', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
@@ -657,9 +657,62 @@ describe('service-fabrik-api-sf2.0', function () {
               }
             }
           });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          }, 1, 404);
+          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
+          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          const pathname = `/${container}/${backupFilename}`;
+          mocks.cloudProvider.download(pathname, data);
+          // mocks.agent.lastBackupOperation(backupState);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
+            .query({
+              plan_id: plan_id,
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(_.omit(data, 'agent_ip'));
+              mocks.verify();
+            });
+        });
+
+        it('should return 404 if Not Found in blobstore and apiserver', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: backup_guid
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+            status: {
+              response: JSON.stringify(data)
+            }
+          }, 1, 404);
+          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
+          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          const pathname = `/${container}/${backupFilename}`;
+          mocks.cloudProvider.download(pathname, new NotFound('not found'));
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .query({
+              plan_id: plan_id,
+            })
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
@@ -667,6 +720,7 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+
       });
 
       describe('#backup-abort', function () {
