@@ -248,7 +248,7 @@ class ApiServerClient {
     logger.info('Patching Operation with :', opts);
     return this.getOperationResponse(opts)
       .then(res => {
-        logger.info(`Patching ${res} with ${opts.value}`);
+        logger.info(`Patching ${JSON.stringify(res)} with ${JSON.stringify(opts.value)}`);
         opts.value = _.merge(res, opts.value);
         return this.updateOperationResponse(opts);
       });
@@ -390,7 +390,7 @@ class ApiServerClient {
   patchOperationOptions(opts) {
     return this.getOperationOptions(opts)
       .then(res => {
-        logger.info(`Patching ${res} with ${opts.value}`);
+        logger.info(`Patching ${JSON.stringify(res)} with ${JSON.stringify(opts.value)}`);
         opts.value = _.merge(res, opts.value);
         return this.updateOperationOptions(opts);
       });
