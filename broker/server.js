@@ -5,7 +5,7 @@ const lib = require('./lib');
 const routes = require('../api-controllers/routes');
 const HttpServer = require('../common/HttpServer');
 const ExpressApp = require('../common/ExpressApp');
-const config = lib.config;
+const config = require('../common/config');
 
 if (config.enable_swarm_manager) {
   lib.bootstrap();
