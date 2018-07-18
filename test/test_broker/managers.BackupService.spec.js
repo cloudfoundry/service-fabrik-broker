@@ -88,50 +88,52 @@ describe('managers', function () {
       getFileStub.restore();
     });
 
-    it('Should start backup successfully', function () {
-      const context = {
-        platform: 'cloudfoundry',
-        organization_guid: organization_guid,
-        space_guid: space_guid
-      };
-      const opts = {
-        guid: backup_guid,
-        deployment: deployment_name,
-        instance_guid: instance_id,
-        plan_id: plan_id,
-        service_id: service_id,
-        context: context
-      };
-      // const type = 'online';
-      mocks.director.getDeploymentVms(deployment_name);
-      mocks.director.getDeploymentInstances(deployment_name);
-      mocks.agent.getInfo();
-      mocks.agent.startBackup();
-      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
-        status: {
-          state: 'in_progress',
-          response: {}
-        }
-      }, 1, body => {
-        expect(body.status.state).to.eql('in_progress');
-        const resp = JSON.parse(body.status.response);
-        expect(resp.service_id).to.eql(service_id);
-        expect(resp.plan_id).to.eql(plan_id);
-        expect(resp.instance_guid).to.eql(instance_id);
-        expect(resp.operation).to.eql('backup');
-        expect(resp.type).to.eql('online');
-        expect(resp.backup_guid).to.eql(backup_guid);
-        expect(resp.trigger).to.eql('on-demand');
-        expect(resp.state).to.eql('processing');
-        expect(resp.tenant_id).to.eql(space_guid);
-        return true;
-      });
-      return manager.startBackup(opts)
-        .then(() => {
-          expect(scheduleStub.callCount).to.eql(1);
-          mocks.verify();
+    describe('#startBackup', function () {
+      it('Should start backup successfully', function () {
+        const context = {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        };
+        const opts = {
+          guid: backup_guid,
+          deployment: deployment_name,
+          instance_guid: instance_id,
+          plan_id: plan_id,
+          service_id: service_id,
+          context: context
+        };
+        // const type = 'online';
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.startBackup();
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'in_progress',
+            response: {}
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('in_progress');
+          const resp = JSON.parse(body.status.response);
+          expect(resp.service_id).to.eql(service_id);
+          expect(resp.plan_id).to.eql(plan_id);
+          expect(resp.instance_guid).to.eql(instance_id);
+          expect(resp.operation).to.eql('backup');
+          expect(resp.type).to.eql('online');
+          expect(resp.backup_guid).to.eql(backup_guid);
+          expect(resp.trigger).to.eql('on-demand');
+          expect(resp.state).to.eql('processing');
+          expect(resp.tenant_id).to.eql(space_guid);
+          return true;
         });
-    });
+        return manager.startBackup(opts)
+          .then(() => {
+            expect(scheduleStub.callCount).to.eql(1);
+            mocks.verify();
+          });
+      });
+    })
 
     describe('#backup-state', function () {
       const agent_ip = mocks.agent.ip;
