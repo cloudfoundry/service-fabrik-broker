@@ -340,7 +340,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getPlanIdFromInstanceId(instance_id){
+  getPlanIdFromInstanceId(instance_id) {
     return cf
       .cloudController.findServicePlanByInstanceId(instance_id)
       .then(planDetails => planDetails.entity.unique_id);
@@ -428,15 +428,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
         })
       )
       .catch(NotFound, (err) => {
-        logger.info('Backup metadata not found in apiserver, checking blobstore ', err.message);
+        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
         const tenantId = _.get(req, 'body.space_guid') ||
           _.get(req, 'query.space_guid') ||
           _.get(req, 'query.tenant_id') ||
           _.get(req, 'body.context.space_guid') ||
           _.get(req, 'body.context.namespace');
         return this.getPlanIdFromInstanceId(req.params.instance_id)
-          .then( plan_id => BackupService.createService(catalog.getPlan(plan_id)))
-          .then(backupService => backupService.getLastBackup(tenant_id, req.params.instance_id ));
+          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
+          .then(backupService => backupService.getLastBackup(tenantId, req.params.instance_id));
       })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
@@ -671,15 +671,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
         value: options
       })
       .catch(NotFound, (err) => {
-        logger.info('Backup metadata not found in apiserver, checking blobstore ', err.message);
+        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
         const tenantId = _.get(req, 'body.space_guid') ||
           _.get(req, 'query.space_guid') ||
           _.get(req, 'query.tenant_id') ||
           _.get(req, 'body.context.space_guid') ||
           _.get(req, 'body.context.namespace');
         return this.getPlanIdFromInstanceId(req.params.instance_id)
-          .then( plan_id => BackupService.createService(catalog.getPlan(plan_id)))
-          .then(backupService => backupService.deleteBackup(tenant_id, req.params.instance_id ));
+          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
+          .then(backupService => backupService.deleteBackup(tenantId, req.params.instance_id));
       })
       .then(() =>
         eventmesh.apiServerClient.updateOperationState({
