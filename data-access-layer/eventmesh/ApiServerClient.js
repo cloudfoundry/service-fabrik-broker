@@ -130,7 +130,7 @@ class ApiServerClient {
         }));
   }
 
-  patchResourceStatus(resourceGroup, resourceType, resourceId, statusDelta){
+  patchResourceStatus(resourceGroup, resourceType, resourceId, statusDelta) {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
@@ -326,7 +326,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    * @param {Object} opts.error - Value to set as error
    */
-  updateOperationError(opts){
+  updateOperationError(opts) {
     const change = {
       'status': {
         'error': JSON.stringify(opts.error)

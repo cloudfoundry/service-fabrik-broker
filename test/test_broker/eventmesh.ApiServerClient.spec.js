@@ -455,7 +455,7 @@ describe('eventmesh', () => {
             done();
           });
       });
-    })
+    });
 
     describe('updateOperationResponse', () => {
       const opts = {

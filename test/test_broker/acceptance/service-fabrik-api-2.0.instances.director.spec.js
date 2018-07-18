@@ -799,6 +799,44 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+        it('should return skip abort if state is not "in_progress"', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
+            metadata: {
+              labels: {
+                last_backup_defaultbackups: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'succeeded',
+              response: '{"guid": "some_guid"}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResourceRegex('backup', 'defaultbackup', {
+            status: {
+              state: 'aborted',
+              response: '{"guid": "some_guid"}'
+            }
+          }, 2);
+          return chai
+            .request(apps.external)
+            .delete(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.be.empty;
+              mocks.verify();
+            });
+        });
       });
 
       describe('#restore-start', function () {
