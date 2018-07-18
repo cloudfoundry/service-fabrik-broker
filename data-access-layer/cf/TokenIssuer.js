@@ -63,6 +63,14 @@ class TokenIssuer {
       .catch(() => this.login())
       .then(result => this.updateTokenInfo(result).accessToken);
   }
+
+  getAccessTokenBoshUAA(clientId, clientSecret){
+    return Promise.try(() => this.uaa.accessWithClientCredentials(clientId,clientSecret))
+    .then(result => {
+      this.tokenInfo.update(result);
+      return this.tokenInfo.accessToken;
+    });
+  }
 }
 
 module.exports = TokenIssuer;

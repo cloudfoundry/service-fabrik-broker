@@ -14,6 +14,8 @@ const HttpClient = utils.HttpClient;
 const config = require('../../common/config');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
+const UaaClient = require('../cf/UaaClient');
+const TokenIssuer = require('../cf/TokenIssuer');
 
 class BoshDirectorClient extends HttpClient {
   constructor() {
@@ -33,7 +35,53 @@ class BoshDirectorClient extends HttpClient {
     this.deploymentIpsCache = {};
     this.cacheLoadInProgressForDeployment = {};
     this.cacheLoadInProgress = false;
-    this.ready = this.populateConfigCache();
+    //this.ready = this.populateConfigCache();
+    //Determine authentication method supported by primary bosh
+    Promise.try(() => this.determineDirectorAuthenticationMethod())
+    .then(() => {
+      this.populateConfigCache();
+    });
+  }
+
+  determineDirectorAuthenticationMethod(){
+    logger.info('querying /info endpoints to decide authentication methods used by directors');
+    return Promise
+    .map(config.directors, (directorConfig) => {
+      directorConfig.uaaEnabled = false;
+      return this.getDirectorInfo(directorConfig)
+      .then(info => {
+        if(info.user_authentication.type === 'uaa') {
+          logger.info('Director ', directorConfig.name, ' uses UAA based authentication. Populating UAA objects in directoConfig.');
+          this.populateUAAInfo(directorConfig,info.user_authentication.options);
+          if(directorConfig.uaaClient && directorConfig.tokenIssuer){
+            directorConfig.uaaEnabled = true;
+          } else {
+            //TODO: Fatal error condition. Logging and exiting.
+          }
+        } else{
+          logger.info('Basic authentication is used by director ', directorConfig.name, '.');
+        }
+      });
+    });
+  }
+
+  getDirectorInfo(directorConfig){
+    return this
+    .makeRequestWithConfig({
+      method: 'GET',
+      url: '/info'
+    }, 200, directorConfig)
+    .then(res => JSON.parse(res.body));
+  }
+
+  populateUAAInfo(directorConfig, options){
+    if(!directorConfig.uaa.client_id || !directorConfig.uaa.client_secret){
+      logger.info('UAA credentials for director ', directorConfig.name, ' not provided. Error condition.');
+      return;
+    }
+    directorConfig.uaaClient = new UaaClient({},options.url);
+    directorConfig.tokenIssuer = new TokenIssuer(directorConfig.uaaClient);
+    logger.info('UAA url for director ', directorConfig.name, ' is: ', directorConfig.uaaClient.baseUrl);
   }
 
   clearConfigCache(config) {
@@ -196,12 +244,22 @@ class BoshDirectorClient extends HttpClient {
 
   makeRequestWithConfig(requestDetails, expectedStatusCode, directorConfig) {
     requestDetails.baseUrl = directorConfig.url;
-    requestDetails.auth = {
-      user: directorConfig.username,
-      pass: directorConfig.password
-    };
     requestDetails.rejectUnauthorized = !directorConfig.skip_ssl_validation;
-    return this.request(requestDetails, expectedStatusCode);
+    if(directorConfig.uaaEnabled) {
+      return Promise.try(() => directorConfig.tokenIssuer.getAccessTokenBoshUAA(directorConfig.uaa.client_id, directorConfig.uaa.client_secret))
+      .then(accessToken => {
+        requestDetails.auth = {
+          bearer: accessToken
+        };
+        return this.request(requestDetails, expectedStatusCode);
+      });
+    } else {
+      requestDetails.auth = {
+        user: directorConfig.username,
+        pass: directorConfig.password
+      };
+      return this.request(requestDetails, expectedStatusCode);
+    }  
   }
 
   getInfo() {
