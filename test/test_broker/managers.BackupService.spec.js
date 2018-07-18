@@ -18,7 +18,7 @@ describe('managers', function () {
       updated_at: finishDate
     };
     const backup_logs = ['Starting Backup ... ', 'Backup Complete.'];
-    let sandbox, scheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
+    let sandbox, scheduleStub, cancelScheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
 
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -46,6 +46,7 @@ describe('managers', function () {
     before(function () {
       sandbox = sinon.sandbox.create();
       scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
+      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
       getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
       getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
       getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
@@ -75,6 +76,7 @@ describe('managers', function () {
     afterEach(function () {
       mocks.reset();
       scheduleStub.reset();
+      cancelScheduleStub.reset();
       getBackupLastOperationStub.reset();
       getBackupLogsStub.reset();
       patchBackupFileStub.reset();
@@ -82,6 +84,7 @@ describe('managers', function () {
     });
     after(function () {
       scheduleStub.restore();
+      cancelScheduleStub.restore();
       getBackupLastOperationStub.restore();
       getBackupLogsStub.restore();
       patchBackupFileStub.restore();
@@ -89,6 +92,39 @@ describe('managers', function () {
     });
 
     describe('#startBackup', function () {
+      it('Should cancel staus poller if backup fails', function () {
+        const context = {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        };
+        const opts = {
+          guid: backup_guid,
+          deployment: deployment_name,
+          instance_guid: instance_id,
+          plan_id: plan_id,
+          service_id: service_id,
+          context: context
+        };
+        // const type = 'online';
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.startBackup();
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'in_progress',
+            response: {}
+          }
+        }, 1, undefined, 404);
+        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {}, 1);
+        return manager.startBackup(opts)
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            expect(cancelScheduleStub.callCount).to.eql(1);
+            mocks.verify();
+          });
+      });
       it('Should start backup successfully', function () {
         const context = {
           platform: 'cloudfoundry',
@@ -133,7 +169,7 @@ describe('managers', function () {
             mocks.verify();
           });
       });
-    })
+    });
 
     describe('#backup-state', function () {
       const agent_ip = mocks.agent.ip;
