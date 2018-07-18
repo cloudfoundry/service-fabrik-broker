@@ -1,9 +1,9 @@
 'use strict';
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const config = require('../../broker/lib').config;
+const config = require('../../common/config');
 const moment = require('moment-timezone');
-const CONST = require('../../broker/lib/constants');
+const CONST = require('../../common/constants');
 const getInstance = (instanceId) => {
   return Promise.resolve({
     _id: `${instanceId}-12121`,
@@ -106,8 +106,8 @@ class Repository {
 
 
 describe('BackupReportManager', function () {
-  const BackupReportManager = proxyquire('../../broker/lib/reports/BackupReportManager', {
-    '../../../common/db': {
+  const BackupReportManager = proxyquire('../../reports/BackupReportManager', {
+    '../common/db': {
       Repository: Repository
     }
   });

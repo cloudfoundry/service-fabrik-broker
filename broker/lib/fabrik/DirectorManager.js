@@ -3,17 +3,17 @@
 const _ = require('lodash');
 const yaml = require('js-yaml');
 const Promise = require('bluebird');
-const config = require('../config');
-const logger = require('../logger');
-const errors = require('../errors');
-const bosh = require('../bosh');
-const cf = require('../cf');
-const backupStore = require('../iaas').backupStore;
-const utils = require('../utils');
-const Agent = require('./Agent');
+const config = require('../../../common/config');
+const logger = require('../../../common/logger');
+const errors = require('../../../common/errors');
+const bosh = require('../../../data-access-layer/bosh');
+const cf = require('../../../data-access-layer/cf');
+const backupStore = require('../../../data-access-layer/iaas').backupStore;
+const utils = require('../../../common/utils');
+const Agent = require('../../../data-access-layer/service-agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
@@ -31,7 +31,7 @@ const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const DeploymentDelayed = errors.DeploymentDelayed;
-const catalog = require('../models/catalog');
+const catalog = require('../../../common/models/catalog');
 
 class DirectorManager extends BaseManager {
   constructor(plan) {
@@ -485,7 +485,7 @@ class DirectorManager extends BaseManager {
     //Lazy create of deploymentHookClient
     //Only Processes that require service lifecycle operations will need deployment_hooks properties.
     //Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../utils/DeploymentHookClient');
+    const deploymentHookClient = require('../../../common/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :

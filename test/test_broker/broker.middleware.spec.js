@@ -7,14 +7,13 @@ const middleware = proxyquire('../../broker/lib/middleware', {
     return req.auth;
   }
 });
-const lib = require('../../broker/lib');
-const quota = require('../../broker/lib/quota');
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
-const ServiceFabrikApiController = require('../../broker/lib/controllers/ServiceFabrikApiController');
+const quota = require('../../quota');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
+const ServiceFabrikApiController = require('../../api-controllers/ServiceFabrikApiController');
 const quotaManager = quota.quotaManager;
-const utils = lib.utils;
-const errors = lib.errors;
+const utils = require('../../common/utils');
+const errors = require('../../common/errors');
 const BadRequest = errors.BadRequest;
 const Forbidden = errors.Forbidden;
 const PROMISE_WAIT_SIMULATED_DELAY = 2;
@@ -45,10 +44,10 @@ describe('#timeout', function () {
     config.http_timeout = 10;
     delete require.cache[require.resolve('./support/apps')];
     delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../broker/lib/routes')];
-    delete require.cache[require.resolve('../../broker/lib/routes/api')];
-    delete require.cache[require.resolve('../../broker/lib/routes/api/v1')];
-    delete require.cache[require.resolve('../../broker/lib/controllers')];
+    delete require.cache[require.resolve('../../api-controllers/routes')];
+    delete require.cache[require.resolve('../../api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../api-controllers')];
     app = require('./support/apps').external;
   });
   after(function () {
@@ -56,10 +55,10 @@ describe('#timeout', function () {
     getInfoStub.restore();
     delete require.cache[require.resolve('./support/apps')];
     delete require.cache[require.resolve('../../broker/lib')];
-    delete require.cache[require.resolve('../../broker/lib/routes')];
-    delete require.cache[require.resolve('../../broker/lib/routes/api')];
-    delete require.cache[require.resolve('../../broker/lib/routes/api/v1')];
-    delete require.cache[require.resolve('../../broker/lib/controllers')];
+    delete require.cache[require.resolve('../../api-controllers/routes')];
+    delete require.cache[require.resolve('../../api-controllers/routes/api')];
+    delete require.cache[require.resolve('../../api-controllers/routes/api/v1')];
+    delete require.cache[require.resolve('../../api-controllers')];
     app = require('./support/apps').external;
   });
   it('should return 503 after timeout occurs', function () {

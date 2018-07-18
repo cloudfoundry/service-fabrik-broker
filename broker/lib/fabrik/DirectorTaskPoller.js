@@ -1,12 +1,12 @@
 'use strict';
 
-const bosh = require('../bosh');
+const bosh = require('../../../data-access-layer/bosh');
 const DirectorManager = require('./DirectorManager');
-const logger = require('../logger');
-const catalog = require('../models/catalog');
+const logger = require('../../../common/logger');
+const catalog = require('../../../common/models/catalog');
 const pubsub = require('pubsub-js');
-const CONST = require('../constants');
-const config = require('../config');
+const CONST = require('../../../common/constants');
+const config = require('../../../common/config');
 const boshCache = bosh.BoshOperationQueue;
 const TIME_POLL = 1 * 60 * 1000;
 const LockStatusPoller = require('./LockStatusPoller');

@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
-const config = lib.config;
-const backupStore = lib.iaas.backupStore;
+const config = require('../../../common/config');
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 
 function enableServiceFabrikV2() {
   config.enable_service_fabrik_v2 = true;
@@ -50,7 +50,7 @@ describe('service-fabrik-api', function () {
 
       before(function () {
         enableServiceFabrikV2();
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([
@@ -60,7 +60,7 @@ describe('service-fabrik-api', function () {
 
       after(function () {
         disableServiceFabrikV2();
-        backupStore.cloudProvider = lib.iaas.cloudProvider;
+        backupStore.cloudProvider = iaas.cloudProvider;
       });
 
       afterEach(function () {

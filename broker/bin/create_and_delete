@@ -4,8 +4,8 @@
 const uuid = require('uuid');
 const lib = require('../lib');
 const config = lib.config;
-const docker = lib.docker;
-const models = lib.models;
+const docker = require('../../data-access-layer/docker');
+const models = require('../../../common/models');
 
 const argv = process.argv.slice(2);
 const planId = argv[0] || '48063144-aaa4-4e77-a808-b883b399b5ba';

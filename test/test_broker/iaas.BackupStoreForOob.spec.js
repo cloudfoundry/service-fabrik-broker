@@ -1,9 +1,8 @@
 'use strict';
 
-const lib = require('../../broker/lib');
-const CONST = require('../../broker/lib/constants');
-const CloudProviderClient = lib.iaas.CloudProviderClient;
-const backupStoreForOob = lib.iaas.backupStoreForOob;
+const CONST = require('../../common/constants');
+const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
+const backupStoreForOob = require('../../data-access-layer/iaas').backupStoreForOob;
 
 describe('iaas', function () {
   describe('backupStoreForOob', function () {

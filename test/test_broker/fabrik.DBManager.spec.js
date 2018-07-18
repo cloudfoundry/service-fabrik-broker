@@ -3,12 +3,12 @@
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const _ = require('lodash');
-const BoshDirectorClient = require('../../broker/lib/bosh/BoshDirectorClient');
-const errors = require('../../broker/lib/errors');
-const config = require('../../broker/lib/config');
-const utils = require('../../broker/lib/utils');
-const logger = require('../../broker/lib/logger');
-const CONST = require('../../broker/lib/constants');
+const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
+const errors = require('../../common/errors');
+const config = require('../../common/config');
+const utils = require('../../common/utils');
+const logger = require('../../common/logger');
+const CONST = require('../../common/constants');
 const DBManagerNoProxy = require('../../broker/lib/fabrik/DBManager');
 
 let bindPropertyFound = 0;
@@ -47,7 +47,7 @@ const DirectorManagerStub = {
 };
 let errorOnDbStart = false;
 const proxyLibs = {
-  '../config': {
+  '../../../common/config': {
     mongodb: {
       provision: {
         plan_id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a',
@@ -62,7 +62,7 @@ const proxyLibs = {
       bosh_job_name: 'broker_mongodb'
     }
   },
-  '../db/DbConnectionManager': {
+  '../../../data-access-layer/db/DbConnectionManager': {
     startUp: () => Promise.try(() => {
       if (errorOnDbStart) {
         throw new errors.ServiceUnavailable('DB Down...Simulated expected test error.');
@@ -75,25 +75,25 @@ const proxyLibs = {
   './DirectorManager': {
     load: () => Promise.resolve(DirectorManagerStub)
   },
-  '../models/Catalog': {
+  '../../../common/models/Catalog': {
     getPlan: () => {}
   }
 };
 
 const DBManager = proxyquire('../../broker/lib/fabrik/DBManager', proxyLibs);
 const proxyLib0 = _.cloneDeep(proxyLibs);
-delete proxyLib0['../config'].mongodb.deployment_name;
+delete proxyLib0['../../../common/config'].mongodb.deployment_name;
 const DBManagerWithUndefinedDeploymentName = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib0);
 const proxyLib1 = _.cloneDeep(proxyLibs);
-delete proxyLib1['../config'].mongodb.provision.network_index;
+delete proxyLib1['../../../common/config'].mongodb.provision.network_index;
 const DBManagerWithUndefinedNetworkSegmentIdx = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib1);
 const proxyLib2 = _.cloneDeep(proxyLibs);
-proxyLib2['../config'].mongodb.deployment_name = 'service-fabrik-mongodb';
+proxyLib2['../../../common/config'].mongodb.deployment_name = 'service-fabrik-mongodb';
 const DBManagerForUpdate = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib2);
 const proxyLib3 = _.cloneDeep(proxyLibs);
-delete proxyLib3['../config'].mongodb.provision;
-delete proxyLib3['../config'].mongodb.deployment_name;
-proxyLib3['../config'].mongodb.url = 'mongodb://user:pass@localhost:27017/service-fabrik';
+delete proxyLib3['../../../common/config'].mongodb.provision;
+delete proxyLib3['../../../common/config'].mongodb.deployment_name;
+proxyLib3['../../../common/config'].mongodb.url = 'mongodb://user:pass@localhost:27017/service-fabrik';
 const DBManagerByUrl = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib3);
 
 describe('fabrik', function () {

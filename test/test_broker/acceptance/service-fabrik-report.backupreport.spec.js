@@ -1,8 +1,7 @@
 'use strict';
 
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').report;
-const config = lib.config;
+const config = require('../../../common/config');
 
 describe('service-fabrik-report', function () {
   /* jshint expr:true */

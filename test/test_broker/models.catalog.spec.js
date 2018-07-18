@@ -1,8 +1,7 @@
 'use strict';
 
-const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
-const errors = require('../../broker/lib/errors');
+const errors = require('../../common/errors');
 const ServiceNotFound = errors.ServiceNotFound;
 const ServicePlanNotFound = errors.ServicePlanNotFound;
 
@@ -20,7 +19,7 @@ let service1 = {
   plans: [plan1, plan2]
 };
 
-const catalog = proxyquire('../../broker/lib/models/catalog', {
+const catalog = proxyquire('../../common/models/catalog', {
   '../config': {
     services: [service1]
   },
@@ -29,17 +28,6 @@ const catalog = proxyquire('../../broker/lib/models/catalog', {
       this.id = service.id;
       this.name = service.name;
       this.plans = service.plans;
-    }
-  },
-  '../cf': {
-    cloudController: {
-      findServicePlanByInstanceId: function () {
-        return Promise.resolve({
-          entity: {
-            unique_id: 2
-          }
-        });
-      }
     }
   }
 });

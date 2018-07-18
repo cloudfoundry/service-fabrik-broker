@@ -1,9 +1,8 @@
 'use strict';
 
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
-const config = lib.config;
-const CONST = require('../../../broker/lib/constants');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 
 
 describe('service-broker-api', function () {

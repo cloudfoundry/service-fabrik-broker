@@ -28,10 +28,10 @@ describe('fabrik', function () {
         getDeploymentByName: getDeploymentSpy
       };
       subject = proxyquire('../../broker/lib/fabrik/DirectorTaskPoller', {
-        '../bosh': {
+        '../../../data-access-layer/bosh': {
           BoshOperationQueue: boshCache
         },
-        '../models/catalog': {
+        '../../../common/models/catalog': {
           getPlan: getPlanSpy
         },
         './DirectorManager': {
@@ -41,7 +41,7 @@ describe('fabrik', function () {
             };
           }
         },
-        '../config': {
+        '../../../common/config': {
           enable_bosh_rate_limit: true
         },
         'pubsub-js': {

@@ -1,7 +1,7 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../../broker/lib').config;
+const config = require('../../common/config');
 const _ = require('lodash');
 const Promise = require('bluebird');
 const CONST = require('../../common/constants');

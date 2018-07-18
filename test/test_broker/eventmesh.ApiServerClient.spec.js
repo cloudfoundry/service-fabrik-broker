@@ -2,11 +2,10 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const apiserver = require('../../eventmesh').apiServerClient;
+const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const apiServerHost = 'https://10.0.2.2:9443';
-const lib = require('../../broker/lib');
 const CONST = require('../../common/constants');
-const logger = lib.logger;
+const logger = require('../../common/logger');
 
 const sampleLockResource = {
   kind: 'DeploymentLock',

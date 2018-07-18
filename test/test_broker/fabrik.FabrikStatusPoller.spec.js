@@ -3,12 +3,12 @@
 const lib = require('../../broker/lib');
 const _ = require('lodash');
 const proxyquire = require('proxyquire');
-const logger = require('../../broker/lib/logger');
+const logger = require('../../common/logger');
 const DirectorManager = lib.fabrik.DirectorManager;
-const BoshDirectorClient = lib.bosh.BoshDirectorClient;
-const CONST = require('../../broker/lib/constants');
-const errors = require('../../broker/lib/errors');
-const ServiceFabrikClient = require('../../broker/lib/cf/ServiceFabrikClient');
+const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
+const CONST = require('../../common/constants');
+const errors = require('../../common/errors');
+const ServiceFabrikClient = require('../../data-access-layer/cf/ServiceFabrikClient');
 const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOperation');
 
 describe('fabrik', function () {
@@ -52,7 +52,7 @@ describe('fabrik', function () {
       }
     };
     const FabrikStatusPoller = proxyquire('../../broker/lib/fabrik/FabrikStatusPoller', {
-      '../config': config
+      '../../../common/config': config
     });
 
     describe('#PollOperation', function () {

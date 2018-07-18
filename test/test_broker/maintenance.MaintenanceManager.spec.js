@@ -2,10 +2,10 @@
 
 const _ = require('lodash');
 const Repository = require('../../common/db').Repository;
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
-const errors = require('../../broker/lib/errors');
-const maintenanceManager = require('../../broker/lib/maintenance').maintenanceManager;
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
+const errors = require('../../common/errors');
+const maintenanceManager = require('../../maintenance').maintenanceManager;
 
 describe('maintenance', function () {
   /* jshint unused:false */

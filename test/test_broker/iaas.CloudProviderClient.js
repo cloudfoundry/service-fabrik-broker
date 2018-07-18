@@ -1,8 +1,7 @@
 'use strict';
 
-const lib = require('../../broker/lib');
 const pkgcloud = require('pkgcloud');
-const CloudProviderClient = lib.iaas.CloudProviderClient;
+const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
 
 describe('iaas', function () {
   describe('CloudProviderClient', function () {

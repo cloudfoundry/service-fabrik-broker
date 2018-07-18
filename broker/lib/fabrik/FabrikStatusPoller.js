@@ -3,18 +3,18 @@
 const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const catalog = require('../models/catalog');
+const catalog = require('../../../common/models/catalog');
 const pubsub = require('pubsub-js');
-const logger = require('../logger');
+const logger = require('../../../common/logger');
 const ServiceFabrikOperation = require('./ServiceFabrikOperation');
-const bosh = require('../bosh');
-const utils = require('../utils');
-const errors = require('../errors');
-const config = require('../config');
-const CONST = require('../constants');
+const bosh = require('../../../data-access-layer/bosh');
+const utils = require('../../../common/utils');
+const errors = require('../../../common/errors');
+const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const EventLogInterceptor = require('../../../common/EventLogInterceptor');
 const DirectorManager = require('./DirectorManager');
-const serviceFabrikClient = require('../cf').serviceFabrikClient;
+const serviceFabrikClient = require('../../../data-access-layer/cf').serviceFabrikClient;
 
 class FabrikStatusPoller {
 

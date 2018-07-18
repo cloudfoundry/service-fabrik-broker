@@ -60,7 +60,7 @@ describe('fabrik', () => {
         cleanupOperation: removeCachedTaskSpy
       };
       DirectorInstanceSub = proxyquire('../../broker/lib/fabrik/DirectorInstance', {
-        '../config': configStub
+        '../../../common/config': configStub
       });
       directorInstance = new DirectorInstanceSub(guid, manager);
       directorInstance.initialize = initializeSpy;
@@ -221,7 +221,7 @@ describe('fabrik', () => {
         cleanupOperation: removeCachedTaskSpy
       };
       DirectorInstanceSub = proxyquire('../../broker/lib/fabrik/DirectorInstance', {
-        '../config': configStub
+        '../../../common/config': configStub
       });
       directorInstance = new DirectorInstanceSub(guid, manager);
       directorInstance.initialize = initializeSpy;

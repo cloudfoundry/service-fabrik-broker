@@ -2,10 +2,10 @@
 
 const formatUrl = require('url').format;
 const _ = require('lodash');
-const config = require('../config');
-const errors = require('../errors');
+const config = require('../../../common/config');
+const errors = require('../../../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
-const CONST = require('../constants');
+const CONST = require('../../../common/constants');
 const Promise = require('bluebird');
 
 class BaseManager {

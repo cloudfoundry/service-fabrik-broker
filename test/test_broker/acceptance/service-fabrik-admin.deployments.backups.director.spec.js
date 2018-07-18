@@ -2,15 +2,15 @@
 
 const _ = require('lodash');
 const moment = require('moment');
-const lib = require('../../../broker/lib');
-const logger = lib.logger;
+const logger = require('../../../common/logger');
 const app = require('../support/apps').internal;
-const config = lib.config;
-const backupStore = lib.iaas.backupStoreForOob;
+const config = require('../../../common/config');
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStoreForOob;
 const filename = backupStore.filename;
-const CONST = require('../../../broker/lib/constants');
-const utils = require('../../../broker/lib/utils');
-const ScheduleManager = require('../../../broker/lib/jobs/ScheduleManager');
+const CONST = require('../../../common/constants');
+const utils = require('../../../common/utils');
+const ScheduleManager = require('../../../jobs/ScheduleManager');
 
 describe('service-fabrik-admin', function () {
   describe('oob-deployment', function () {
@@ -64,7 +64,7 @@ describe('service-fabrik-admin', function () {
 
     before(function () {
       mocks.reset();
-      backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+      backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
       timestampStub = sinon.stub(filename, 'timestamp');

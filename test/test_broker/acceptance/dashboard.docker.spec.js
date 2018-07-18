@@ -4,8 +4,8 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
-const catalog = lib.models.catalog;
-const docker = lib.docker;
+const catalog = require('../../../common/models').catalog;
+const docker = require('../../../data-access-layer/docker');
 const fabrik = lib.fabrik;
 
 

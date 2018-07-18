@@ -1,8 +1,7 @@
 'use strict';
 
 const nock = require('nock');
-const lib = require('../../../broker/lib');
-const config = lib.config;
+const config = require('../../../common/config');
 const deploymentHookUrl = `${config.deployment_hooks.protocol}://${config.deployment_hooks.host}`;
 
 exports.executeDeploymentActions = executeDeploymentActions;

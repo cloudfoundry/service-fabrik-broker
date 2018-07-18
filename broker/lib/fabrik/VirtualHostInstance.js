@@ -1,11 +1,11 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const BaseInstance = require('./BaseInstance');
-const bosh = require('../bosh');
-const utils = require('../utils');
+const bosh = require('../../../data-access-layer/bosh');
+const utils = require('../../../common/utils');
 const mapper = require('./VirtualHostRelationMapper');
-const catalog = require('../models').catalog;
-const CONST = require('../constants');
+const catalog = require('../../../common/models').catalog;
+const CONST = require('../../../common/constants');
 
 class VirtualHostInstance extends BaseInstance {
   constructor(guid, manager) {

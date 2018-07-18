@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
-const config = lib.config;
-const backupStore = lib.iaas.backupStore;
+const config = require('../../../common/config');
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
 const filename = backupStore.filename;
 
 describe('service-fabrik-admin', function () {
@@ -45,7 +45,7 @@ describe('service-fabrik-admin', function () {
       const archivePathname = `/${blueprintContainer}/${archiveFilename}`;
 
       before(function () {
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         return mocks.setup([

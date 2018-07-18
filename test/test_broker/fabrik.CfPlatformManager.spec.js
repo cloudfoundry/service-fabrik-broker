@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const CfPlatformManager = require('../../broker/lib/fabrik/CfPlatformManager');
 const assert = require('assert');
-let config = require('../../broker/lib/config');
+let config = require('../../common/config');
 
 describe('fabrik', function () {
   describe('CfPlatformManager', function () {

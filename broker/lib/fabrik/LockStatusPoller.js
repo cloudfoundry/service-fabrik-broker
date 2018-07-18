@@ -6,8 +6,8 @@ const {
   EtcdLeaseInvalidError
 } = require('etcd3');
 
-const config = require('../config');
-const logger = require('../logger');
+const config = require('../../../common/config');
+const logger = require('../../../common/logger');
 
 function etcdConnector() {
   const client = new Etcd3({

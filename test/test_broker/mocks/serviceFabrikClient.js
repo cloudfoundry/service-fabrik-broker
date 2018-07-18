@@ -1,10 +1,9 @@
 'use strict';
 
 const nock = require('nock');
-const lib = require('../../../broker/lib');
-const CONST = require('../../../broker/lib/constants');
+const CONST = require('../../../common/constants');
 
-const config = lib.config;
+const config = require('../../../common/config');
 const serviceFabrikUrl = `${config.external.protocol}://${config.external.host}`;
 const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 

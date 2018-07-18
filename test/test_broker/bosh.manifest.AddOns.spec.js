@@ -1,8 +1,8 @@
 'use strict';
 
-const Addons = require('../../broker/lib/bosh/manifest/Addons');
-const CONST = require('../../broker/lib/constants');
-const Networks = require('../../broker/lib/bosh/manifest/Networks');
+const Addons = require('../../data-access-layer/bosh/manifest/Addons');
+const CONST = require('../../common/constants');
+const Networks = require('../../data-access-layer/bosh/manifest/Networks');
 
 describe('bosh', () => {
   describe('manifest', () => {

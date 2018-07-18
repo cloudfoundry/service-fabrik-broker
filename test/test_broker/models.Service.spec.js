@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
-const Service = require('../../broker/lib/models/Service');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
+const Service = require('../../common/models/Service');
 
 describe('models', () => {
   describe('Service', () => {

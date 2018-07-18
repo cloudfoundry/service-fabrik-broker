@@ -1,16 +1,16 @@
 'use strict';
 const _ = require('lodash');
 const Promise = require('bluebird');
-const CONST = require('../../broker/lib/constants');
-const catalog = require('../../broker/lib/models/catalog');
-const utils = require('../../broker/lib/utils');
-const config = require('../../broker/lib/config');
-const errors = require('../../broker/lib/errors');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
+const CONST = require('../../common/constants');
+const catalog = require('../../common/models/catalog');
+const utils = require('../../common/utils');
+const config = require('../../common/config');
+const errors = require('../../common/errors');
+const BaseJob = require('../../jobs/BaseJob');
+const JobFabrik = require('../../jobs/JobFabrik');
+const ScheduleManager = require('../../jobs/ScheduleManager');
 const Repository = require('../../common/db').Repository;
-const NetworkSegmentIndex = require('../../broker/lib/bosh/NetworkSegmentIndex');
+const NetworkSegmentIndex = require('../../data-access-layer/bosh/NetworkSegmentIndex');
 
 describe('Jobs', function () {
   const ServiceInstanceUpdateJob = JobFabrik.getJob(CONST.JOB.SERVICE_INSTANCE_UPDATE);

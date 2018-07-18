@@ -1,8 +1,8 @@
 'use strict';
 
 const Promise = require('bluebird');
-const catalog = require('../../broker/lib/models/catalog');
-const eventmesh = require('../../eventmesh');
+const catalog = require('../../common/models/catalog');
+const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const bm = require('./');

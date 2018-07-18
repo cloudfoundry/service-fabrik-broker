@@ -1,8 +1,9 @@
 'use strict';
 
-const errors = require('../errors');
-const cloudController = require('../cf').cloudController;
-const serviceFabrikClient = require('../cf').serviceFabrikClient;
+const errors = require('../../../common/errors');
+const cf = require('../../../data-access-layer/cf');
+const cloudController = cf.cloudController;
+const serviceFabrikClient = cf.serviceFabrikClient;
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 
 class BaseInstance {

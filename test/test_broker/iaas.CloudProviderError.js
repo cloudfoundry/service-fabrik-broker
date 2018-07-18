@@ -1,6 +1,6 @@
 'use strict';
-const lib = require('../../broker/lib');
-const CloudProviderClient = lib.iaas.CloudProviderClient;
+
+const CloudProviderClient = require('../../data-access-layer/iaas').CloudProviderClient;
 
 describe('iaas', function () {
   describe('validate not found responses', function () {

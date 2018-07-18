@@ -4,17 +4,18 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const moment = require('moment');
 const lib = require('../../../broker/lib');
-const ScheduleManager = require('../../../broker/lib/jobs');
-const CONST = require('../../../broker/lib/constants');
+const ScheduleManager = require('../../../jobs');
+const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
-const catalog = lib.models.catalog;
-const config = lib.config;
-const errors = lib.errors;
+const catalog = require('../../../common/models').catalog;
+const config = require('../../../common/config');
+const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
-const utils = lib.utils;
+const utils = require('../../../common/utils');
 const NotFound = errors.NotFound;
-const backupStore = lib.iaas.backupStore;
-const filename = lib.iaas.backupStore.filename;
+const iaas = require('../../../data-access-layer/iaas');
+const backupStore = iaas.backupStore;
+const filename = iaas.backupStore.filename;
 
 function enableServiceFabrikV2() {
   config.enable_service_fabrik_v2 = true;
@@ -92,7 +93,7 @@ describe('service-fabrik-api-sf2.0', function () {
       before(function () {
         enableServiceFabrikV2();
         config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         _.unset(fabrik.DirectorManager, plan_id);
@@ -118,7 +119,7 @@ describe('service-fabrik-api-sf2.0', function () {
       after(function () {
         disableServiceFabrikV2();
         timestampStub.restore();
-        backupStore.cloudProvider = lib.iaas.cloudProvider;
+        backupStore.cloudProvider = iaas.cloudProvider;
         cancelScheduleStub.restore();
         scheduleStub.restore();
         getScheduleStub.restore();

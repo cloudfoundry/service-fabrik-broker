@@ -2,12 +2,11 @@
 
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const lib = require('../../broker/lib');
-const catalog = lib.models.catalog;
+const catalog = require('../../common/models').catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const errors = require('../../broker/lib/errors');
-const CONST = require('../../broker/lib/constants');
+const errors = require('../../common/errors');
+const CONST = require('../../common/constants');
 const assert = require('assert');
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
@@ -43,7 +42,7 @@ describe('fabrik', function () {
     let return_value;
     let manager;
     var DirectorManager = proxyquire('../../broker/lib/fabrik/DirectorManager', {
-      '../bosh': boshStub,
+      '../../../data-access-layer/bosh': boshStub,
     });
 
     before(function () {
@@ -218,8 +217,8 @@ describe('fabrik', function () {
       };
       deploymentSpy.returns(Promise.resolve(task_id));
       var DirectorManagerSub = proxyquire('../../broker/lib/fabrik/DirectorManager', {
-        '../config': configStub,
-        '../bosh': boshStub
+        '../../../common/config': configStub,
+        '../../../data-access-layer/bosh': boshStub
       });
       manager = new DirectorManagerSub(catalog.getPlan(plan_id));
       manager.director = {

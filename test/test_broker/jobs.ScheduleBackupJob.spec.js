@@ -1,17 +1,17 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../../broker/lib/constants');
-const config = require('../../broker/lib/config');
+const CONST = require('../../common/constants');
+const config = require('../../common/config');
 const moment = require('moment');
 const Promise = require('bluebird');
-const lib = require('../../broker/lib');
-const errors = lib.errors;
-const ScheduleManager = require('../../broker/lib/jobs/ScheduleManager');
-const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
-const BaseJob = require('../../broker/lib/jobs/BaseJob');
-const backupStore = lib.iaas.backupStore;
-const filename = lib.iaas.backupStore.filename;
+const errors = require('../../common/errors');
+const ScheduleManager = require('../../jobs/ScheduleManager');
+const JobFabrik = require('../../jobs/JobFabrik');
+const BaseJob = require('../../jobs/BaseJob');
+const backupStore = require('../../data-access-layer/iaas').backupStore;
+const filename = require('../../data-access-layer/iaas').backupStore.filename;
+const iaas = require('../../data-access-layer/iaas');
 
 describe('Jobs', function () {
   /* jshint expr:true */
@@ -90,7 +90,7 @@ describe('Jobs', function () {
       let baseJobLogRunHistoryStub, cancelScheduleStub, runAtStub, delayStub;
 
       before(function () {
-        backupStore.cloudProvider = new lib.iaas.CloudProviderClient(config.backup.provider);
+        backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
         baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');

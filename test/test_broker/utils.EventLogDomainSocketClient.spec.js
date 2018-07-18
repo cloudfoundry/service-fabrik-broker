@@ -1,8 +1,8 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const config = require('../../broker/lib').config;
-const logger = require('../../broker/lib').logger;
+const config = require('../../common/config');
+const logger = require('../../common/logger');
 var EventEmitter = require('events').EventEmitter;
 const _ = require('lodash');
 

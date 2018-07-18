@@ -2,16 +2,16 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../broker/lib/config');
+const config = require('../../common/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
-const bosh = require('../../broker/lib/bosh');
-const backupStore = require('../../broker/lib/iaas').backupStore;
-const utils = require('../../broker/lib/utils');
-const eventmesh = require('../../eventmesh');
-const Agent = require('../../broker/lib/fabrik/Agent');
-const ScheduleManager = require('../../broker/lib/jobs');
-const CONST = require('../../broker/lib/constants');
+const bosh = require('../../data-access-layer/bosh');
+const backupStore = require('../../data-access-layer/iaas').backupStore;
+const utils = require('../../common/utils');
+const eventmesh = require('../../data-access-layer/eventmesh');
+const Agent = require('../../data-access-layer/service-agent');
+const ScheduleManager = require('../../jobs');
+const CONST = require('../../common/constants');
 const BaseDirectorService = require('../BaseDirectorService');
 const Forbidden = errors.Forbidden;
 

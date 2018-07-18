@@ -2,7 +2,7 @@
 
 const lib = require('../../broker/lib');
 const DirectorManager = lib.fabrik.DirectorManager;
-const utils = lib.utils;
+const utils = require('../../common/utils');
 
 describe('utils', function () {
   describe('#deploymentNameRegExp', function () {

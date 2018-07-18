@@ -1,11 +1,11 @@
 'use strict';
 
 const pubsub = require('pubsub-js');
-const eventmesh = require('../../../eventmesh');
-const CONST = require('../constants');
-const logger = require('../logger');
-const lockManager = require('./../../../eventmesh').lockManager;
-const errors = require('../errors');
+const eventmesh = require('../../../data-access-layer/eventmesh');
+const CONST = require('../../../common/constants');
+const logger = require('../../../common/logger');
+const lockManager = eventmesh.lockManager;
+const errors = require('../../../common/errors');
 const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {

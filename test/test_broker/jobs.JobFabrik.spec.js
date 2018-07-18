@@ -1,15 +1,15 @@
 'use strict';
 
-const JobFabrik = require('../../broker/lib/jobs/JobFabrik');
-const ScheduledBackup = require('../../broker/lib/jobs/ScheduleBackupJob');
-const ScheduledOobDeploymentBackupJob = require('../../broker/lib/jobs/ScheduledOobDeploymentBackupJob');
-const OperationStatusPollerJob = require('../../broker/lib/jobs/OperationStatusPollerJob');
-const BnRStatusPollerJob = require('../../broker/lib/jobs/BnRStatusPollerJob');
-const BluePrintJob = require('../../broker/lib/jobs/BluePrintJob');
-const BackupReaperJob = require('../../broker/lib/jobs/BackupReaperJob');
-const ServiceInstanceUpdateJob = require('../../broker/lib/jobs/ServiceInstanceUpdateJob');
-const DbCollectionReaperJob = require('../../broker/lib/jobs/DbCollectionReaperJob');
-const CONST = require('../../broker/lib/constants');
+const JobFabrik = require('../../jobs/JobFabrik');
+const ScheduledBackup = require('../../jobs/ScheduleBackupJob');
+const ScheduledOobDeploymentBackupJob = require('../../jobs/ScheduledOobDeploymentBackupJob');
+const OperationStatusPollerJob = require('../../jobs/OperationStatusPollerJob');
+const BnRStatusPollerJob = require('../../jobs/BnRStatusPollerJob');
+const BluePrintJob = require('../../jobs/BluePrintJob');
+const BackupReaperJob = require('../../jobs/BackupReaperJob');
+const ServiceInstanceUpdateJob = require('../../jobs/ServiceInstanceUpdateJob');
+const DbCollectionReaperJob = require('../../jobs/DbCollectionReaperJob');
+const CONST = require('../../common/constants');
 const AssertionError = require('assert').AssertionError;
 
 describe('Jobs', function () {

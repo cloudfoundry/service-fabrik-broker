@@ -5,8 +5,8 @@ const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
-const catalog = require('../../broker/lib/models/catalog');
-const eventmesh = require('../../eventmesh/ApiServerClient');
+const catalog = require('../../common/models/catalog');
+const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
 
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -23,7 +23,7 @@ const resultOptions = {
   plan_id: plan_id
 };
 const DefaultBackupManager = proxyquire('../../managers/backup-manager/DefaultBackupManager', {
-  '../../eventmesh': {
+  '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOperationOptions': function (opts) {
         DefaultBackupManagerDummy.getOperationOptionsDummy(opts);
