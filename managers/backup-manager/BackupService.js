@@ -277,6 +277,7 @@ class BackupService extends BaseDirectorService {
       plan_id: this.plan.id,
       tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
     }, opts);
+
     function isFinished(state) {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
