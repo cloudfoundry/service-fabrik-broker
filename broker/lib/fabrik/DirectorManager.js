@@ -558,9 +558,11 @@ class DirectorManager extends BaseManager {
       'deployment_name': deploymentName
     };
     _.assign(actionContext, binding);
-    return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext)
-      .then(() => this.getDeploymentIps(deploymentName))
-      .then(ips => this.agent.createCredentials(ips, binding.parameters))
+    return Promise.join(
+        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
+        this.getDeploymentIps(deploymentName),
+        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
+      )
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -582,13 +584,14 @@ class DirectorManager extends BaseManager {
       'id': id
     };
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
-      .then(() =>
+      .then((preUnbindResponse) =>
         Promise
         .all([
+          Promise.resolve(preUnbindResponse),
           this.getDeploymentIps(deploymentName),
           this.getBindingProperty(deploymentName, id)
         ]))
-      .spread((ips, binding) => this.agent.deleteCredentials(ips, binding.credentials))
+      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catch(err => {
