@@ -9,6 +9,7 @@ const CONST = require('../../common/constants');
 const kc = require('kubernetes-client');
 const JSONStream = require('json-stream');
 const errors = require('../../common/errors');
+const Timeout = errors.Timeout;
 const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
@@ -23,22 +24,35 @@ const apiserver = new kc.Client({
 });
 
 function buildErrors(err) {
-  let throwErr;
-  switch (err.code) {
+  let message = err.message;
+  if (err.error && err.error.description) {
+    message = `${message}. ${err.error.description}`;
+  }
+  let newErr;
+  let code;
+  if (err.code) {
+    code = err.code;
+  } else if (err.status) {
+    code = err.status;
+  }
+  switch (code) {
   case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-    throwErr = new BadRequest(err.message);
+    newErr = new BadRequest(message);
     break;
   case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-    throwErr = new NotFound(err.message);
+    newErr = new NotFound(message);
     break;
   case CONST.HTTP_STATUS_CODE.CONFLICT:
-    throwErr = new Conflict(err.message);
+    newErr = new Conflict(message);
+    break;
+  case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+    newErr = new errors.Forbidden(message);
     break;
   default:
-    throwErr = new InternalServerError(err.message);
+    newErr = new InternalServerError(message);
     break;
   }
-  throw throwErr;
+  throw newErr;
 }
 
 class ApiServerClient {
@@ -57,6 +71,61 @@ class ApiServerClient {
           });
       }
     });
+  }
+
+  /**
+   * Poll for Status until opts.start_state changes
+   * @param {object} opts - Object containing options
+   * @param {string} opts.operationId - Id of the operation ex. backupGuid
+   * @param {string} opts.start_state - start state of the operation ex. in_queue
+   * @param {object} opts.started_at - Date object specifying operation start time
+   */
+  getResourceOperationStatus(opts) {
+    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
+    let finalState;
+    return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
+      .then(() => this.getOperationState({
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        operationId: opts.operationId
+      })).then(state => {
+        const duration = (new Date() - opts.started_at) / 1000;
+        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
+          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
+          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
+        }
+        if (state === opts.start_state) {
+          return this.getResourceOperationStatus(opts);
+        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+          finalState = state;
+          return this.getOperationResponse({
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              operationId: opts.operationId,
+            })
+            .then(errorResponse => {
+              logger.info('Operation manager reported error', errorResponse);
+              return buildErrors(errorResponse);
+            });
+        } else {
+          finalState = state;
+          return this.getOperationResponse({
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            operationId: opts.operationId,
+          });
+        }
+      })
+      .then(result => {
+        if (result.state) {
+          return result;
+        }
+        return {
+          state: finalState,
+          response: result
+        };
+      });
   }
 
   /**

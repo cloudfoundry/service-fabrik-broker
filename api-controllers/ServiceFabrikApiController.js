@@ -15,16 +15,13 @@ const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Gone = errors.Gone;
-const Timeout = errors.Timeout;
 const cf = require('../data-access-layer/cf');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
-const Conflict = errors.Conflict;
 const UnprocessableEntity = errors.UnprocessableEntity;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
-const InternalServerError = errors.InternalServerError;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const ScheduleManager = require('../jobs');
 const config = require('../common/config');
@@ -46,87 +43,6 @@ const CloudControllerError = {
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
     super();
-  }
-
-  static _processError(errorResponse) {
-    let message = errorResponse.message;
-    if (errorResponse.error && errorResponse.error.description) {
-      message = `${message}. ${errorResponse.error.description}`;
-    }
-    let err;
-    switch (errorResponse.status) {
-    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-      err = new BadRequest(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-      err = new NotFound(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.CONFLICT:
-      err = new Conflict(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
-      err = new errors.Forbidden(message);
-      break;
-    default:
-      err = new InternalServerError(message);
-      break;
-    }
-    throw err;
-  }
-
-  /**
-   * Poll for Status until opts.start_state changes
-   * @param {object} opts - Object containing options
-   * @param {string} opts.operationId - Id of the operation ex. backupGuid
-   * @param {string} opts.start_state - start state of the operation ex. in_queue
-   * @param {object} opts.started_at - Date object specifying operation start time
-   */
-  static getResourceOperationStatus(opts) {
-    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
-    let finalState;
-    return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
-      .then(() => eventmesh.apiServerClient.getOperationState({
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        operationId: opts.operationId
-      })).then(state => {
-        const duration = (new Date() - opts.started_at) / 1000;
-        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
-          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
-          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
-        }
-        if (state === opts.start_state) {
-          return ServiceFabrikApiController.getResourceOperationStatus(opts);
-        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
-          finalState = state;
-          return eventmesh.apiServerClient.getOperationResponse({
-              operationName: CONST.OPERATION_TYPE.BACKUP,
-              operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-              operationId: opts.operationId,
-            })
-            .then(errorResponse => {
-              logger.info('Operation manager reported error', errorResponse);
-              return this._processError(errorResponse);
-            });
-        } else {
-          finalState = state;
-          return eventmesh.apiServerClient.getOperationResponse({
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            operationId: opts.operationId,
-          });
-        }
-      })
-      .then(result => {
-        if (result.state) {
-          return result;
-        }
-        return {
-          state: finalState,
-          response: result
-        };
-      });
   }
 
   verifyAccessToken(req, res) {
@@ -479,7 +395,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               logger.info(`Skipping abort as state is : ${state}`);
             }
           })
-          .then(() => ServiceFabrikApiController.getResourceOperationStatus({
+          .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
             operationId: backupGuid,
             start_state: CONST.OPERATION.ABORT,
             started_at: backupStartedAt
@@ -686,7 +602,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         })
       )
       .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
-      .then(() => ServiceFabrikApiController.getResourceOperationStatus({
+      .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
         operationId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
