@@ -428,6 +428,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         })
       )
       .catch(NotFound, (err) => {
+        // This code block is specifically for the transition of Service Fabrik to v2
+        // Here we reffer to BackupService to get the lastBackup status
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
         const tenantId = _.get(req, 'body.space_guid') ||
           _.get(req, 'query.space_guid') ||
@@ -671,15 +673,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
         value: options
       })
       .catch(NotFound, (err) => {
+        // if not found in apiserver delete from blobstore
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        const tenantId = _.get(req, 'body.space_guid') ||
-          _.get(req, 'query.space_guid') ||
-          _.get(req, 'query.tenant_id') ||
-          _.get(req, 'body.context.space_guid') ||
-          _.get(req, 'body.context.namespace');
-        return this.getPlanIdFromInstanceId(req.params.instance_id)
-          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
-          .then(backupService => backupService.deleteBackup(tenantId, req.params.instance_id));
+        return this.backupStore.deleteBackupFile(options);
       })
       .then(() =>
         eventmesh.apiServerClient.updateOperationState({
