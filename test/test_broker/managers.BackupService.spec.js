@@ -19,37 +19,6 @@ describe('managers', function () {
     };
     const backup_logs = ['Starting Backup ... ', 'Backup Complete.'];
     let sandbox, scheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
-    before(function () {
-      sandbox = sinon.sandbox.create();
-      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
-      getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
-      getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
-      getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
-      getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
-      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
-      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
-      getFileStub = sandbox.stub(BackupStore.prototype, 'getBackupFile');
-      getFileStub.withArgs().returns(Promise.resolve({
-        backup_guid: backup_guid,
-        state: 'processing',
-        agent_ip: mocks.agent.ip
-      }));
-    });
-    afterEach(function () {
-      mocks.reset();
-      scheduleStub.reset();
-      getBackupLastOperationStub.reset();
-      getBackupLogsStub.reset();
-      patchBackupFileStub.reset();
-      getFileStub.reset();
-    });
-    after(function () {
-      scheduleStub.restore();
-      getBackupLastOperationStub.restore();
-      getBackupLogsStub.restore();
-      patchBackupFileStub.restore();
-      getFileStub.restore();
-    });
 
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -72,8 +41,53 @@ describe('managers', function () {
       state: 'succeeded',
       logs: []
     };
-
     const manager = new BackupService(plan);
+
+    before(function () {
+      sandbox = sinon.sandbox.create();
+      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
+      getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
+      getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
+      getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
+      getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
+      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
+      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
+      getFileStub = sandbox.stub(BackupStore.prototype, 'getBackupFile');
+      getFileStub.withArgs({
+        tenant_id: space_guid,
+        service_id: service_id,
+        instance_guid: instance_id
+      }).returns(Promise.resolve({
+        backup_guid: backup_guid,
+        state: 'processing',
+        agent_ip: mocks.agent.ip
+      }));
+      getFileStub.withArgs({
+        tenant_id: space_guid,
+        service_id: service_id,
+        instance_guid: 'fakeInstanceId'
+      }).returns(Promise.resolve({
+        backup_guid: backup_guid,
+        state: 'succeeded',
+        agent_ip: mocks.agent.ip
+      }));
+    });
+    afterEach(function () {
+      mocks.reset();
+      scheduleStub.reset();
+      getBackupLastOperationStub.reset();
+      getBackupLogsStub.reset();
+      patchBackupFileStub.reset();
+      getFileStub.reset();
+    });
+    after(function () {
+      scheduleStub.restore();
+      getBackupLastOperationStub.restore();
+      getBackupLogsStub.restore();
+      patchBackupFileStub.restore();
+      getFileStub.restore();
+    });
+
     it('Should start backup successfully', function () {
       const context = {
         platform: 'cloudfoundry',
@@ -133,6 +147,11 @@ describe('managers', function () {
         context: context
       };
       it('Should get backup operation state successfully', function () {
+        getFileStub.withArgs().returns(Promise.resolve({
+          backup_guid: backup_guid,
+          state: 'succeeded',
+          agent_ip: mocks.agent.ip
+        }));
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
         return manager.getOperationState('backup', opts)
           .then((res) => {
@@ -208,6 +227,34 @@ describe('managers', function () {
             service_id: service_id,
             tenant_id: space_guid,
             instance_guid: instance_id
+          });
+          mocks.verify();
+        });
+    });
+
+    it('Abort Backup is a no-op if state is succeeded', function () {
+      const agent_ip = mocks.agent.ip;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
+      const opts = {
+        service_id: service_id,
+        deployment: deployment_name,
+        instance_guid: 'fakeInstanceId',
+        agent_ip: agent_ip,
+        context: context,
+        guid: backup_guid
+      };
+      return manager.abortLastBackup(opts, true)
+        .then((res) => {
+          expect(res.state).to.eql('succeeded');
+          expect(getFileStub.callCount).to.eql(1);
+          expect(getFileStub.firstCall.args[0]).to.eql({
+            service_id: service_id,
+            tenant_id: space_guid,
+            instance_guid: 'fakeInstanceId'
           });
           mocks.verify();
         });
