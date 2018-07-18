@@ -130,6 +130,15 @@ class ApiServerClient {
         }));
   }
 
+  patchResourceStatus(resourceGroup, resourceType, resourceId, statusDelta){
+    return Promise.try(() => this.init())
+      .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId)
+        .status.patch({
+          body: statusDelta
+        }));
+  }
+
   deleteLock(resourceType, resourceId) {
     return this.deleteResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, resourceType, resourceId)
       .catch(err => {
@@ -305,6 +314,25 @@ class ApiServerClient {
         .status.patch({
           body: patchedResource
         }))
+      .catch(err => {
+        return buildErrors(err);
+      });
+  }
+
+  /**
+   * @description Function to Update the error field
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.error - Value to set as error
+   */
+  updateOperationError(opts){
+    const change = {
+      'status': {
+        'error': JSON.stringify(opts.error)
+      }
+    };
+    return this.patchResourceStatus(opts.operationName, opts.operationType, opts.operationId, change)
       .catch(err => {
         return buildErrors(err);
       });
