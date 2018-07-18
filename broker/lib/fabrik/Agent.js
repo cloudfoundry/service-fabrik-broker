@@ -187,18 +187,20 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, agentCredsBeforeUpdate));
   }
 
-  createCredentials(ips, parameters) {
+  createCredentials(ips, parameters, preBindResponse) {
     const body = {
-      parameters: parameters
+      parameters: parameters,
+      actions: preBindResponse
     };
     return this
       .getHost(ips, 'credentials')
       .then(ip => this.post(ip, 'credentials/create', body, 200));
   }
 
-  deleteCredentials(ips, credentials) {
+  deleteCredentials(ips, credentials, preUnbindResponse) {
     const body = {
-      credentials: credentials
+      credentials: credentials,
+      actions: preUnbindResponse
     };
     return this
       .getHost(ips, 'credentials')
