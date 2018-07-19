@@ -1531,7 +1531,7 @@ describe('service-fabrik-api-sf2.0', function () {
               options: JSON.stringify(data)
             },
             status: {
-              state: 'delete_failed',
+              state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
               error: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
             }
           }, 3);
