@@ -92,7 +92,7 @@ class ApiServerClient {
       .then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
         logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
+        if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
           logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
           throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
         }
