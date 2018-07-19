@@ -90,27 +90,33 @@ class ApiServerClient {
         operationId: opts.operationId
       }))
       .then(state => {
-        const duration = (new Date() - opts.started_at) / 1000;
-        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
-          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
-        }
         if (state === opts.start_state) {
           return this.getResourceOperationStatus(opts);
-        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+        } else if (
+          state === CONST.APISERVER.RESOURCE_STATE.FAILED ||
+          state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+        ) {
           finalState = state;
-          return this.getOperationResponse({
+          return this.getOperationStatus({
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               operationId: opts.operationId,
             })
-            .then(errorResponse => {
-              logger.info('Operation manager reported error', errorResponse);
-              return convertToHttpErrorAndThrow(errorResponse);
+            .then(status => {
+              if (status.error) {
+                const errorResponse = JSON.parse(status.error);
+                logger.info('Operation manager reported error', errorResponse);
+                return convertToHttpErrorAndThrow(errorResponse);
+              }
             });
         } else {
           finalState = state;
+          const duration = (new Date() - opts.started_at) / 1000;
+          logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+          if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
+            logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
+            throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
+          }
           return this.getOperationResponse({
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -568,6 +574,51 @@ class ApiServerClient {
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
         .get())
       .then(json => JSON.parse(json.body.status.response))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  /**
+   * @description Get Operation Status
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   */
+  getOperationStatus(opts) {
+    logger.info('Getting Operation Status with :', opts);
+    return this.getResource(opts.operationName, opts.operationType, opts.operationId)
+      .then(json => json.body.status)
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  /**
+   * @description Function to Update the status field
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.stateValue - Value to set as state
+   * @param {Object} opts.error - Value to set as error
+   * @param {Object} opts.response - Value to set as error
+   */
+  updateOperationStatus(opts) {
+    logger.info('Updating Operation Status with :', opts);
+    const patchedResource = {
+      'status': {
+        'state': opts.stateValue ? opts.stateValue : '',
+        'error': opts.error ? JSON.stringify(opts.error) : '',
+        'response': opts.response ? JSON.stringify(opts.response) : '',
+      }
+    };
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
+        .status.patch({
+          body: patchedResource
+        }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });

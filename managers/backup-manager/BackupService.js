@@ -183,13 +183,13 @@ class BackupService extends BaseDirectorService {
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
-          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
+          .then(() => eventmesh.apiServerClient.updateOperationStatus({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
-            response: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: err
           }))
           .then(() => {
             if (backupStarted) {
@@ -225,25 +225,25 @@ class BackupService extends BaseDirectorService {
         const timestamp = result.updated_at;
         //TODO-PR - Try to move to BaseService
         switch (result.state) {
-        case CONST.APISERVER.RESOURCE_STATE.SUCCEEDED:
+        case CONST.BACKUP_OPERATION.SUCCEEDED:
           return {
             description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+            state: CONST.BACKUP_OPERATION.SUCCEEDED
           };
-        case CONST.APISERVER.RESOURCE_STATE.ABORTED:
+        case CONST.BACKUP_OPERATION.ABORTED:
           return {
             description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED
+            state: CONST.BACKUP_OPERATION.FAILED
           };
-        case CONST.APISERVER.RESOURCE_STATE.FAILED:
+        case CONST.BACKUP_OPERATION.FAILED:
           return {
             description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED
+            state: CONST.BACKUP_OPERATION.FAILED
           };
         default:
           return {
             description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            state: CONST.BACKUP_OPERATION.PROCESSING
           };
         }
       });
@@ -320,13 +320,13 @@ class BackupService extends BaseDirectorService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during delete of backup`, err))
-          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
+          .then(() => eventmesh.apiServerClient.updateOperationStatus({
             resourceId: options.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
-            response: _.omit(err, 'stack')
+            stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+            error: err
           }));
       });
   }

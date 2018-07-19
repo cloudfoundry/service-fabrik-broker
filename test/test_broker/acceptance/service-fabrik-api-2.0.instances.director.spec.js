@@ -1531,8 +1531,8 @@ describe('service-fabrik-api-sf2.0', function () {
               options: JSON.stringify(data)
             },
             status: {
-              state: 'error',
-              response: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
+              state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+              error: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
             }
           }, 3);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});

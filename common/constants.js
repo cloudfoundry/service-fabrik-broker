@@ -31,6 +31,12 @@ module.exports = Object.freeze({
   },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
+  BACKUP_OPERATION: {
+    SUCCEEDED: 'succeeded',
+    FAILED: 'failed',
+    ABORTED: 'aborted',
+    PROCESSING: 'processing'
+  },
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -249,8 +255,8 @@ module.exports = Object.freeze({
       DELETE: 'delete',
       DELETED: 'deleted',
       SUCCEEDED: 'succeeded',
-      ERROR: 'error',
       FAILED: 'failed',
+      DELETE_FAILED: 'delete_failed',
       ABORTED: 'aborted',
     },
     RESOURCE_KEYS: {

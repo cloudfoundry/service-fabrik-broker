@@ -1,6 +1,7 @@
 'use strict';
 
 const pubsub = require('pubsub-js');
+const _ = require('lodash');
 const eventmesh = require('../../../data-access-layer/eventmesh');
 const CONST = require('../../../common/constants');
 const logger = require('../../../common/logger');
@@ -18,7 +19,11 @@ class UnlockResourcePoller {
           const resourceState = resource.body.status.state;
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
           //TODO-PR - reuse util method is operationCompleted.
-          if (resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED || resourceState === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+          if (_.includes([
+              CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+              CONST.APISERVER.RESOURCE_STATE.FAILED,
+              CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+            ], resourceState)) {
             return lockManager.unlock(object.metadata.name)
               .then(() => clearInterval(interval));
           }
