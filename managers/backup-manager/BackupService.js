@@ -243,7 +243,7 @@ class BackupService extends BaseDirectorService {
         default:
           return {
             description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            state: CONST.BACKUP_OPREATION.PROCESSING
           };
         }
       });

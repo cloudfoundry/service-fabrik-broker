@@ -31,6 +31,9 @@ module.exports = Object.freeze({
   },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
+  BACKUP_OPREATION: {
+    PROCESSING: 'processing'
+  },
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
