@@ -584,6 +584,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    */
   getOperationStatus(opts) {
+    logger.info('Getting Operation Status with :', opts);
     return this.getResource(opts.operationName, opts.operationType, opts.operationId)
       .then(json => json.body.status)
       .catch(err => {
@@ -601,7 +602,7 @@ class ApiServerClient {
    * @param {Object} opts.response - Value to set as error
    */
   updateOperationStatus(opts) {
-    logger.info('Updating Operation State with :', opts);
+    logger.info('Updating Operation Status with :', opts);
     const patchedResource = {
       'status': {
         'state': opts.stateValue ? opts.stateValue : '',
