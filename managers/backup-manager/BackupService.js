@@ -225,25 +225,25 @@ class BackupService extends BaseDirectorService {
         const timestamp = result.updated_at;
         //TODO-PR - Try to move to BaseService
         switch (result.state) {
-        case CONST.APISERVER.RESOURCE_STATE.SUCCEEDED:
+        case CONST.BACKUP_OPERATION.SUCCEEDED:
           return {
             description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+            state: CONST.BACKUP_OPERATION.SUCCEEDED
           };
-        case CONST.APISERVER.RESOURCE_STATE.ABORTED:
+        case CONST.BACKUP_OPERATION.ABORTED:
           return {
             description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED
+            state: CONST.BACKUP_OPERATION.FAILED
           };
-        case CONST.APISERVER.RESOURCE_STATE.FAILED:
+        case CONST.BACKUP_OPERATION.FAILED:
           return {
             description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED
+            state: CONST.BACKUP_OPERATION.FAILED
           };
         default:
           return {
             description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: CONST.BACKUP_OPREATION.PROCESSING
+            state: CONST.BACKUP_OPERATION.PROCESSING
           };
         }
       });

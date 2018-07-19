@@ -383,7 +383,9 @@ describe('managers', function () {
           instance_guid: instance_id,
           backup_guid: backup_guid,
           time_stamp: started_at,
-          user: { name: 'admin' }
+          user: {
+            name: 'admin'
+          }
         });
       });
     });
