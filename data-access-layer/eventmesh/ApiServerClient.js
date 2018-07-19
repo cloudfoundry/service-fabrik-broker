@@ -103,7 +103,7 @@ class ApiServerClient {
               operationId: opts.operationId,
             })
             .then(status => {
-              if( status.error ){
+              if (status.error) {
                 const errorResponse = JSON.parse(status.error);
                 logger.info('Operation manager reported error', errorResponse);
                 return convertToHttpErrorAndThrow(errorResponse);

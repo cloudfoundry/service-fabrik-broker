@@ -342,11 +342,11 @@ describe('managers', function () {
           }
         }, 1, body => {
           expect(body.status.state).to.eql(CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED);
-          expect(body.status.error).to.eql(JSON.stringify({
-            'name': 'Forbidden',
-            'status': 403,
-            'reason': 'Forbidden'
-          }));
+          const parsed = JSON.parse(body.status.error);
+          expect(parsed.name).to.eql('Forbidden');
+          expect(parsed.status).to.eql(403);
+          expect(parsed.reason).to.eql('Forbidden');
+          expect(parsed.message).to.eql(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
           expect(body.status.response).to.eql('');
           return true;
         });
@@ -373,7 +373,8 @@ describe('managers', function () {
           }
         }, 1, body => {
           expect(body.status.state).to.eql(CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED);
-          expect(body.status.error).to.eql(JSON.stringify({}));
+          const parsed = JSON.parse(body.status.error);
+          expect(parsed.message).to.eql('Backup does not exist or has already been deleted');
           return true;
         });
         return manager.deleteBackup({
@@ -381,7 +382,8 @@ describe('managers', function () {
           service_id: service_id,
           instance_guid: instance_id,
           backup_guid: backup_guid,
-          time_stamp: started_at
+          time_stamp: started_at,
+          user: { name: 'admin' }
         });
       });
     });
