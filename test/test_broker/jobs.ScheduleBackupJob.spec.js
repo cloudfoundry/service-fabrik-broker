@@ -275,6 +275,52 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
+
+      it('should initiate backup, should  delete backups older than 15 days when unsuccessful', function () {
+        const backupResponse = {
+          backup_guid: backup_guid
+        };
+        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.serviceFabrikClient.startBackup(instance_id, {
+          type: 'online',
+          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        }, backupResponse);
+        mocks.cloudProvider.list(container, prefix, [
+          fileName14Daysprior,
+          fileName16DaysPrior,
+          fileName18DaysPrior,
+          fileName1Daysprior
+        ]);
+        //Out of 4 files 1 day prior is filtered out.
+        mocks.cloudProvider.download(pathname14,
+          getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
+        mocks.cloudProvider.download(pathname16,
+          getBackupData(backup_guid16, CONST.BACKUP.TRIGGER.SCHEDULED, started16DaysPrior, CONST.OPERATION.FAILED));
+        mocks.cloudProvider.download(pathname18,
+          getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.FAILED));
+        mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
+        return ScheduleBackupJob.run(job, () => {
+          mocks.verify();
+          const expectedBackupResponse = {
+            start_backup_status: {
+              name: 'backup',
+              guid: backupResponse.backup_guid
+            },
+            delete_backup_status: {
+              deleted_guids: [backup_guid, backup_guid16, backup_guid2],
+              job_cancelled: false,
+              instance_deleted: false
+            }
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        });
+      });
       it('should log start backup as failed', function () {
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
