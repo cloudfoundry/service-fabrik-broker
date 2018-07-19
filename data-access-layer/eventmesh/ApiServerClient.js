@@ -573,6 +573,50 @@ class ApiServerClient {
       });
   }
 
+  /**
+   * @description Get Operation Status
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   */
+  getOperationStatus(opts) {
+    return this.getResource(opts.operationName, opts.operationType, opts.operationId)
+      .then(json => json.body.status)
+      .catch(err => {
+        return buildErrors(err);
+      });
+  }
+
+  /**
+   * @description Function to Update the status field
+   * @param {string} opts.operationName - Name of operation
+   * @param {string} opts.operationType - Type of operation
+   * @param {string} opts.operationId - Unique id of operation
+   * @param {Object} opts.stateValue - Value to set as state
+   * @param {Object} opts.error - Value to set as error
+   * @param {Object} opts.response - Value to set as error
+   */
+  updateOperationStatus(opts) {
+    logger.info('Updating Operation State with :', opts);
+    const patchedResource = {
+      'status': {
+        'state': opts.stateValue ? opts.stateValue : '',
+        'error': opts.error ? opts.error : '',
+        'response': opts.response ? opts.response : '',
+      }
+    };
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.operationType](opts.operationId)
+        .status.patch({
+          body: patchedResource
+        }))
+      .catch(err => {
+        return buildErrors(err);
+      });
+  }
+
 }
 
 module.exports = ApiServerClient;
