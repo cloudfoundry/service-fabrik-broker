@@ -249,8 +249,8 @@ module.exports = Object.freeze({
       DELETE: 'delete',
       DELETED: 'deleted',
       SUCCEEDED: 'succeeded',
-      ERROR: 'error',
       FAILED: 'failed',
+      DELETE_FAILED: 'delete_failed',
       ABORTED: 'aborted',
     },
     RESOURCE_KEYS: {

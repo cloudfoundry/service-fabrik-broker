@@ -183,13 +183,13 @@ class BackupService extends BaseDirectorService {
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
-          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
+          .then(() => eventmesh.apiServerClient.updateOperationStatus({
             resourceId: opts.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
-            response: err
+            stateValue: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: _.omit(err, 'stack')
           }))
           .then(() => {
             if (backupStarted) {
@@ -320,13 +320,13 @@ class BackupService extends BaseDirectorService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during delete of backup`, err))
-          .then(() => eventmesh.apiServerClient.updateOperationStateAndResponse({
+          .then(() => eventmesh.apiServerClient.updateOperationStatus({
             resourceId: options.instance_guid,
             operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.ERROR,
-            response: _.omit(err, 'stack')
+            stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+            error: _.omit(err, 'stack')
           }));
       });
   }

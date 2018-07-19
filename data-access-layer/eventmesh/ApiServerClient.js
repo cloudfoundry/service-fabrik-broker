@@ -98,14 +98,18 @@ class ApiServerClient {
         }
         if (state === opts.start_state) {
           return this.getResourceOperationStatus(opts);
-        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+        } else if (
+          state === CONST.APISERVER.RESOURCE_STATE.FAILED ||
+          state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+        ) {
           finalState = state;
-          return this.getOperationResponse({
+          return this.getOperationStatus({
               operationName: CONST.OPERATION_TYPE.BACKUP,
               operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               operationId: opts.operationId,
             })
-            .then(errorResponse => {
+            .then(status => {
+              const errorResponse = JSON.parse(status.error);
               logger.info('Operation manager reported error', errorResponse);
               return convertToHttpErrorAndThrow(errorResponse);
             });
@@ -601,8 +605,8 @@ class ApiServerClient {
     const patchedResource = {
       'status': {
         'state': opts.stateValue ? opts.stateValue : '',
-        'error': opts.error ? opts.error : '',
-        'response': opts.response ? opts.response : '',
+        'error': opts.error ? JSON.stringify(opts.error) : '',
+        'response': opts.response ? JSON.stringify(opts.response) : '',
       }
     };
     return Promise.try(() => this.init())

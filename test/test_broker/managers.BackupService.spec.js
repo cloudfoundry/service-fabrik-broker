@@ -341,12 +341,13 @@ describe('managers', function () {
             state: 'deleting'
           }
         }, 1, body => {
-          expect(body.status.state).to.eql('error');
-          expect(body.status.response).to.eql(JSON.stringify({
+          expect(body.status.state).to.eql(CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED);
+          expect(body.status.error).to.eql(JSON.stringify({
             'name': 'Forbidden',
             'status': 403,
             'reason': 'Forbidden'
           }));
+          expect(body.status.response).to.eql('');
           return true;
         });
         return manager.deleteBackup({
@@ -371,8 +372,8 @@ describe('managers', function () {
             state: 'deleting'
           }
         }, 1, body => {
-          expect(body.status.state).to.eql('error');
-          expect(body.status.response).to.eql(JSON.stringify({}));
+          expect(body.status.state).to.eql(CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED);
+          expect(body.status.error).to.eql(JSON.stringify({}));
           return true;
         });
         return manager.deleteBackup({

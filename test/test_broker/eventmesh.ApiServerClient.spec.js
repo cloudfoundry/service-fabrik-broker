@@ -64,8 +64,12 @@ const sampleBackupResource = {
   },
   status: {
     state: 'defaultState',
-    error: 'defaultError',
-    response: 'defaultResponse',
+    error: JSON.stringify({
+      name: 'defaultErrorObj'
+    }),
+    response: JSON.stringify({
+      name: 'defaultResponseObj'
+    }),
   }
 };
 
@@ -811,8 +815,8 @@ describe('eventmesh', () => {
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql('in_progress');
-            expect(res.body.status.error).to.eql('defaultError');
+            expect(res.body.status.state).to.eql(opts.stateValue);
+            expect(res.body.status.error).to.eql(sampleBackupResource.status.error);
             done();
             verify();
           })
@@ -825,12 +829,14 @@ describe('eventmesh', () => {
           operationType: 'defaultbackup',
           operationId: 'fakeOperationId',
           stateValue: 'in_progress',
-          error: 'errorVal'
+          error: {
+            name: 'errorVal'
+          }
         };
         input = {
           status: {
             state: opts.stateValue,
-            error: opts.error
+            error: JSON.stringify(opts.error)
           }
         };
         finalResource = _
@@ -843,8 +849,8 @@ describe('eventmesh', () => {
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql('in_progress');
-            expect(res.body.status.error).to.eql('errorVal');
+            expect(res.body.status.state).to.eql(opts.stateValue);
+            expect(res.body.status.error).to.eql(JSON.stringify(opts.error));
             done();
             verify();
           })
@@ -856,11 +862,13 @@ describe('eventmesh', () => {
           operationName: 'backup',
           operationType: 'defaultbackup',
           operationId: 'fakeOperationId',
-          error: 'errorVal'
+          error: {
+            name: 'errorVal'
+          }
         };
         input = {
           status: {
-            error: opts.error
+            error: JSON.stringify(opts.error)
           }
         };
         finalResource = _
@@ -873,8 +881,8 @@ describe('eventmesh', () => {
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql('defaultState');
-            expect(res.body.status.error).to.eql('errorVal');
+            expect(res.body.status.state).to.eql(sampleBackupResource.status.state);
+            expect(res.body.status.error).to.eql(JSON.stringify(opts.error));
             done();
             verify();
           })
@@ -886,11 +894,13 @@ describe('eventmesh', () => {
           operationName: 'backup',
           operationType: 'defaultbackup',
           operationId: 'fakeOperationId',
-          response: 'fakeResponse'
+          response: {
+            name: 'fakeResponse'
+          }
         };
         input = {
           status: {
-            response: opts.response
+            response: JSON.stringify(opts.response)
           }
         };
         finalResource = _
@@ -903,9 +913,9 @@ describe('eventmesh', () => {
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql('defaultState');
-            expect(res.body.status.error).to.eql('defaultError');
-            expect(res.body.status.response).to.eql('fakeResponse');
+            expect(res.body.status.state).to.eql(sampleBackupResource.status.state);
+            expect(res.body.status.error).to.eql(sampleBackupResource.status.error);
+            expect(res.body.status.response).to.eql(JSON.stringify(opts.response));
             done();
             verify();
           })
@@ -917,15 +927,19 @@ describe('eventmesh', () => {
           operationName: 'backup',
           operationType: 'defaultbackup',
           operationId: 'fakeOperationId',
-          response: 'fakeResponse',
+          response: {
+            name: 'fakeResponse'
+          },
           stateValue: 'fakeState',
-          error: 'fakeError'
+          error: {
+            name: 'errorVal'
+          }
         };
         input = {
           status: {
-            response: opts.response,
+            response: JSON.stringify(opts.response),
             state: opts.stateValue,
-            error: opts.error
+            error: JSON.stringify(opts.error)
           }
         };
         finalResource = _

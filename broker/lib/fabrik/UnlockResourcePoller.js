@@ -18,7 +18,11 @@ class UnlockResourcePoller {
           const resourceState = resource.body.status.state;
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
           //TODO-PR - reuse util method is operationCompleted.
-          if (resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED || resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED || resourceState === CONST.APISERVER.RESOURCE_STATE.ERROR) {
+          if (resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED ||
+            resourceState === CONST.APISERVER.RESOURCE_STATE.FAILED ||
+            resourceState === CONST.APISERVER.RESOURCE_STATE.ERROR ||
+            resourceState === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+          ) {
             return lockManager.unlock(object.metadata.name)
               .then(() => clearInterval(interval));
           }
