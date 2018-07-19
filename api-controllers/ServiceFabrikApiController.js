@@ -10,20 +10,18 @@ const filename = backupStore.filename;
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const errors = require('../common/errors');
+const BackupService = require('../managers/backup-manager');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
 const Gone = errors.Gone;
-const Timeout = errors.Timeout;
 const cf = require('../data-access-layer/cf');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
-const Conflict = errors.Conflict;
 const UnprocessableEntity = errors.UnprocessableEntity;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
-const InternalServerError = errors.InternalServerError;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const ScheduleManager = require('../jobs');
 const config = require('../common/config');
@@ -45,87 +43,6 @@ const CloudControllerError = {
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
     super();
-  }
-
-  static _processError(errorResponse) {
-    let message = errorResponse.message;
-    if (errorResponse.error && errorResponse.error.description) {
-      message = `${message}. ${errorResponse.error.description}`;
-    }
-    let err;
-    switch (errorResponse.status) {
-    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-      err = new BadRequest(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-      err = new NotFound(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.CONFLICT:
-      err = new Conflict(message);
-      break;
-    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
-      err = new errors.Forbidden(message);
-      break;
-    default:
-      err = new InternalServerError(message);
-      break;
-    }
-    throw err;
-  }
-
-  /**
-   * Poll for Status until opts.start_state changes
-   * @param {object} opts - Object containing options
-   * @param {string} opts.operationId - Id of the operation ex. backupGuid
-   * @param {string} opts.start_state - start state of the operation ex. in_queue
-   * @param {object} opts.started_at - Date object specifying operation start time
-   */
-  static getResourceOperationStatus(opts) {
-    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
-    let finalState;
-    return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
-      .then(() => eventmesh.apiServerClient.getOperationState({
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        operationId: opts.operationId
-      })).then(state => {
-        const duration = (new Date() - opts.started_at) / 1000;
-        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
-          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
-          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
-        }
-        if (state === opts.start_state) {
-          return ServiceFabrikApiController.getResourceOperationStatus(opts);
-        } else if (state === CONST.APISERVER.RESOURCE_STATE.ERROR) {
-          finalState = state;
-          return eventmesh.apiServerClient.getOperationResponse({
-              operationName: CONST.OPERATION_TYPE.BACKUP,
-              operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-              operationId: opts.operationId,
-            })
-            .then(errorResponse => {
-              logger.info('Operation manager reported error', errorResponse);
-              return this._processError(errorResponse);
-            });
-        } else {
-          finalState = state;
-          return eventmesh.apiServerClient.getOperationResponse({
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            operationId: opts.operationId,
-          });
-        }
-      })
-      .then(result => {
-        if (result.state) {
-          return result;
-        }
-        return {
-          state: finalState,
-          response: result
-        };
-      });
   }
 
   verifyAccessToken(req, res) {
@@ -418,13 +335,22 @@ class ServiceFabrikApiController extends FabrikBaseController {
           operationName: CONST.OPERATION_TYPE.BACKUP,
           operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
           operationId: backupGuid,
-        }))
-      .then(result => {
-        return res
-          .status(CONST.HTTP_STATUS_CODE.OK)
-          .send(_.omit(result, 'secret', 'agent_ip', 'description'));
+        })
+      )
+      .catch(NotFound, (err) => {
+        // This code block is specifically for the transition of Service Fabrik to v2
+        // Here we reffer to BackupService to get the lastBackup status
+        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
+        const tenantId = req.entity.tenant_id;
+        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
+          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
+          .then(backupService => backupService.getLastBackup(tenantId, req.params.instance_id));
       })
-      .catch((err) => {
+      .then(result => res
+        .status(CONST.HTTP_STATUS_CODE.OK)
+        .send(_.omit(result, 'secret', 'agent_ip', 'description'))
+      )
+      .catch(NotFound, (err) => {
         logger.error('Error occured during getLastBackup ', err);
         throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
       });
@@ -433,33 +359,39 @@ class ServiceFabrikApiController extends FabrikBaseController {
   abortLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
     const backupStartedAt = new Date();
-    return eventmesh.apiServerClient.getLastOperation({
-      resourceId: req.params.instance_id,
-      operationName: CONST.OPERATION_TYPE.BACKUP,
-      operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-    }).then(backupGuid => {
-      return eventmesh.apiServerClient.getOperationState({
+    return eventmesh
+      .apiServerClient.getLastOperation({
+        resourceId: req.params.instance_id,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        operationId: backupGuid,
-      }).then(state => {
-        // abort only if the state is in progress
-        if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
-          return eventmesh.apiServerClient.updateOperationState({
+      })
+      .then(backupGuid => {
+        return eventmesh
+          .apiServerClient.getOperationState({
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             operationId: backupGuid,
-            stateValue: CONST.OPERATION.ABORT
-          });
-        } else {
-          logger.info(`Skipping abort as state is : ${state}`);
-        }
-      }).then(() => ServiceFabrikApiController.getResourceOperationStatus({
-        operationId: backupGuid,
-        start_state: CONST.OPERATION.ABORT,
-        started_at: backupStartedAt
-      }));
-    }).then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send({}));
+          })
+          .then(state => {
+            // abort only if the state is in progress
+            if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+              return eventmesh.apiServerClient.updateOperationState({
+                operationName: CONST.OPERATION_TYPE.BACKUP,
+                operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                operationId: backupGuid,
+                stateValue: CONST.OPERATION.ABORT
+              });
+            } else {
+              logger.info(`Skipping abort for ${backupGuid} as state is : ${state}`);
+            }
+          })
+          .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+            operationId: backupGuid,
+            start_state: CONST.OPERATION.ABORT,
+            started_at: backupStartedAt
+          }));
+      })
+      .then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send({}));
   }
 
   startRestore(req, res) {
@@ -639,13 +571,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
       user: req.user
     };
     logger.info('Attempting delete with:', options);
-    return eventmesh.apiServerClient.patchOperationOptions({
+    return eventmesh
+      .apiServerClient.patchOperationOptions({
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         operationId: req.params.backup_guid,
         value: options
       })
-      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
+      .catch(NotFound, (err) => {
+        // if not found in apiserver delete from blobstore
+        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
+        return this.backupStore.deleteBackupFile(options);
+      })
       .then(() =>
         eventmesh.apiServerClient.updateOperationState({
           operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -654,7 +591,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE
         })
       )
-      .then(() => ServiceFabrikApiController.getResourceOperationStatus({
+      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
+      .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
         operationId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()

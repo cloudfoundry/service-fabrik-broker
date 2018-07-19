@@ -18,38 +18,7 @@ describe('managers', function () {
       updated_at: finishDate
     };
     const backup_logs = ['Starting Backup ... ', 'Backup Complete.'];
-    let sandbox, scheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
-    before(function () {
-      sandbox = sinon.sandbox.create();
-      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
-      getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
-      getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
-      getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
-      getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
-      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
-      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
-      getFileStub = sandbox.stub(BackupStore.prototype, 'getBackupFile');
-      getFileStub.withArgs().returns(Promise.resolve({
-        backup_guid: backup_guid,
-        state: 'processing',
-        agent_ip: mocks.agent.ip
-      }));
-    });
-    afterEach(function () {
-      mocks.reset();
-      scheduleStub.reset();
-      getBackupLastOperationStub.reset();
-      getBackupLogsStub.reset();
-      patchBackupFileStub.reset();
-      getFileStub.reset();
-    });
-    after(function () {
-      scheduleStub.restore();
-      getBackupLastOperationStub.restore();
-      getBackupLogsStub.restore();
-      patchBackupFileStub.restore();
-      getFileStub.restore();
-    });
+    let sandbox, scheduleStub, cancelScheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
 
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -72,51 +41,134 @@ describe('managers', function () {
       state: 'succeeded',
       logs: []
     };
-
     const manager = new BackupService(plan);
-    it('Should start backup successfully', function () {
-      const context = {
-        platform: 'cloudfoundry',
-        organization_guid: organization_guid,
-        space_guid: space_guid
-      };
-      const opts = {
-        guid: backup_guid,
-        deployment: deployment_name,
-        instance_guid: instance_id,
-        plan_id: plan_id,
+
+    before(function () {
+      sandbox = sinon.sandbox.create();
+      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
+      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+      getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
+      getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
+      getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
+      getBackupLogsStub.withArgs().returns(Promise.resolve(backup_logs));
+      patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
+      patchBackupFileStub.withArgs().returns(Promise.resolve({}));
+      getFileStub = sandbox.stub(BackupStore.prototype, 'getBackupFile');
+      getFileStub.withArgs({
+        tenant_id: space_guid,
         service_id: service_id,
-        context: context
-      };
-      // const type = 'online';
-      mocks.director.getDeploymentVms(deployment_name);
-      mocks.director.getDeploymentInstances(deployment_name);
-      mocks.agent.getInfo();
-      mocks.agent.startBackup();
-      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
-        status: {
-          state: 'in_progress',
-          response: {}
-        }
-      }, 1, body => {
-        expect(body.status.state).to.eql('in_progress');
-        const resp = JSON.parse(body.status.response);
-        expect(resp.service_id).to.eql(service_id);
-        expect(resp.plan_id).to.eql(plan_id);
-        expect(resp.instance_guid).to.eql(instance_id);
-        expect(resp.operation).to.eql('backup');
-        expect(resp.type).to.eql('online');
-        expect(resp.backup_guid).to.eql(backup_guid);
-        expect(resp.trigger).to.eql('on-demand');
-        expect(resp.state).to.eql('processing');
-        expect(resp.tenant_id).to.eql(space_guid);
-        return true;
+        instance_guid: instance_id
+      }).returns(Promise.resolve({
+        backup_guid: backup_guid,
+        state: 'processing',
+        agent_ip: mocks.agent.ip
+      }));
+      getFileStub.withArgs({
+        tenant_id: space_guid,
+        service_id: service_id,
+        instance_guid: 'fakeInstanceId'
+      }).returns(Promise.resolve({
+        backup_guid: backup_guid,
+        state: 'succeeded',
+        agent_ip: mocks.agent.ip
+      }));
+    });
+    afterEach(function () {
+      mocks.reset();
+      scheduleStub.reset();
+      cancelScheduleStub.reset();
+      getBackupLastOperationStub.reset();
+      getBackupLogsStub.reset();
+      patchBackupFileStub.reset();
+      getFileStub.reset();
+    });
+    after(function () {
+      scheduleStub.restore();
+      cancelScheduleStub.restore();
+      getBackupLastOperationStub.restore();
+      getBackupLogsStub.restore();
+      patchBackupFileStub.restore();
+      getFileStub.restore();
+    });
+
+    describe('#startBackup', function () {
+      it('Should cancel staus poller if backup fails', function () {
+        const context = {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        };
+        const opts = {
+          guid: backup_guid,
+          deployment: deployment_name,
+          instance_guid: instance_id,
+          plan_id: plan_id,
+          service_id: service_id,
+          context: context
+        };
+        // const type = 'online';
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.startBackup();
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'in_progress',
+            response: {}
+          }
+        }, 1, undefined, 404);
+        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {}, 1);
+        return manager.startBackup(opts)
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            expect(cancelScheduleStub.callCount).to.eql(1);
+            mocks.verify();
+          });
       });
-      return manager.startBackup(opts)
-        .then(() => {
-          expect(scheduleStub.callCount).to.eql(1);
-          mocks.verify();
+      it('Should start backup successfully', function () {
+        const context = {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        };
+        const opts = {
+          guid: backup_guid,
+          deployment: deployment_name,
+          instance_guid: instance_id,
+          plan_id: plan_id,
+          service_id: service_id,
+          context: context
+        };
+        // const type = 'online';
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.startBackup();
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+          status: {
+            state: 'in_progress',
+            response: {}
+          }
+        }, 1, body => {
+          expect(body.status.state).to.eql('in_progress');
+          const resp = JSON.parse(body.status.response);
+          expect(resp.service_id).to.eql(service_id);
+          expect(resp.plan_id).to.eql(plan_id);
+          expect(resp.instance_guid).to.eql(instance_id);
+          expect(resp.operation).to.eql('backup');
+          expect(resp.type).to.eql('online');
+          expect(resp.backup_guid).to.eql(backup_guid);
+          expect(resp.trigger).to.eql('on-demand');
+          expect(resp.state).to.eql('processing');
+          expect(resp.tenant_id).to.eql(space_guid);
+          return true;
         });
+        return manager.startBackup(opts)
+          .then(() => {
+            expect(scheduleStub.callCount).to.eql(1);
+            mocks.verify();
+          });
+      });
     });
 
     describe('#backup-state', function () {
@@ -133,6 +185,11 @@ describe('managers', function () {
         context: context
       };
       it('Should get backup operation state successfully', function () {
+        getFileStub.withArgs().returns(Promise.resolve({
+          backup_guid: backup_guid,
+          state: 'succeeded',
+          agent_ip: mocks.agent.ip
+        }));
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
         return manager.getOperationState('backup', opts)
           .then((res) => {
@@ -208,6 +265,34 @@ describe('managers', function () {
             service_id: service_id,
             tenant_id: space_guid,
             instance_guid: instance_id
+          });
+          mocks.verify();
+        });
+    });
+
+    it('Abort Backup is a no-op if state is succeeded', function () {
+      const agent_ip = mocks.agent.ip;
+      const context = {
+        platform: 'cloudfoundry',
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      };
+      const opts = {
+        service_id: service_id,
+        deployment: deployment_name,
+        instance_guid: 'fakeInstanceId',
+        agent_ip: agent_ip,
+        context: context,
+        guid: backup_guid
+      };
+      return manager.abortLastBackup(opts, true)
+        .then((res) => {
+          expect(res.state).to.eql('succeeded');
+          expect(getFileStub.callCount).to.eql(1);
+          expect(getFileStub.firstCall.args[0]).to.eql({
+            service_id: service_id,
+            tenant_id: space_guid,
+            instance_guid: 'fakeInstanceId'
           });
           mocks.verify();
         });

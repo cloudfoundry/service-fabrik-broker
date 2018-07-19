@@ -126,6 +126,11 @@ class CloudControllerClient extends HttpClient {
     return this.createServicePlanStream(options).all();
   }
 
+  getPlanIdFromInstanceId(instance_id) {
+    return this.findServicePlanByInstanceId(instance_id)
+      .then(planDetails => planDetails.entity.unique_id);
+  }
+
   findServicePlanByInstanceId(instance_id) {
     return this
       .getServicePlans(`service_instance_guid:${instance_id}`)

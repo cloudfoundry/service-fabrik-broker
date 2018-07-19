@@ -14,8 +14,8 @@ function disableServiceFabrikV2() {
   config.enable_service_fabrik_v2 = false;
 }
 
-describe('service-fabrik-api', function () {
-  describe('backups-v2', function () {
+describe('service-fabrik-api-2.0', function () {
+  describe('backups', function () {
     /* jshint expr:true */
     describe('director', function () {
       const base_url = '/api/v1';
@@ -298,11 +298,13 @@ describe('service-fabrik-api', function () {
               mocks.verify();
             });
         });
-        it('should return 410 Gone', function () {
+        it('should return 410 Gone - when not found in both blobstore and apiserver', function () {
+          const backupPrefix = `${space_guid}/backup`;
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup',
             '01234567-0000-4000-9000-0123456789ab', {}, 1, 404);
+          mocks.cloudProvider.list(container, backupPrefix, []);
           return chai.request(app)
             .delete(`${base_url}/backups/01234567-0000-4000-9000-0123456789ab`)
             .query({
