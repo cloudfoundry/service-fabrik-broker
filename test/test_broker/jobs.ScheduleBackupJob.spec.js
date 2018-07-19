@@ -28,19 +28,24 @@ describe('Jobs', function () {
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const backup_guid2 = '081acb05-66a3-471b-af3c-8bbf1e4180bf';
       const backup_guid3 = '091acb05-66a3-471b-af3c-8bbf1e4180bg';
+      const backup_guid16 = '061acb05-66a3-471b-af3c-8bbf1e4180be';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const container = backupStore.containerName;
       const started1DaysPrior = filename.isoDate(moment().subtract(1, 'days').toISOString());
       const started18DaysPrior = filename.isoDate(moment()
         .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
+      const started16DaysPrior = filename.isoDate(moment()
+        .subtract(config.backup.retention_period_in_days + 2, 'days').toISOString());
       const started14DaysPrior = filename.isoDate(moment()
         .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
       const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
       const failed_prefix = `${space_guid}/backup/${service_id}.${failed_instance_id}`;
       const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
       const fileName14Daysprior = `${prefix}.${backup_guid}.${started14DaysPrior}.json`;
+      const fileName16DaysPrior = `${prefix}.${backup_guid16}.${started16DaysPrior}.json`;
       const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
       const pathname14 = `/${container}/${fileName14Daysprior}`;
+      const pathname16 = `/${container}/${fileName16DaysPrior}`;
       const pathname18 = `/${container}/${fileName18DaysPrior}`;
       const scheduled_data = {
         trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
@@ -48,6 +53,15 @@ describe('Jobs', function () {
         state: 'succeeded',
         backup_guid: backup_guid,
         started_at: started14DaysPrior,
+        agent_ip: mocks.agent.ip,
+        service_id: service_id
+      };
+      const scheduled_data16 = {
+        trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
+        type: 'online',
+        state: 'succeeded',
+        backup_guid: backup_guid16,
+        started_at: started16DaysPrior,
         agent_ip: mocks.agent.ip,
         service_id: service_id
       };
@@ -60,6 +74,18 @@ describe('Jobs', function () {
         agent_ip: mocks.agent.ip,
         service_id: service_id
       };
+
+      function getBackupData(backupGuid, trigger_type, startedAt, stateOfBackup) {
+        return {
+          trigger: trigger_type,
+          type: 'online',
+          state: stateOfBackup,
+          backup_guid: backupGuid,
+          started_at: startedAt,
+          agent_ip: mocks.agent.ip,
+          service_id: service_id
+        };
+      }
       let saveJobFailure = false;
       const job = {
         attrs: {
@@ -122,7 +148,7 @@ describe('Jobs', function () {
         delayStub.restore();
       });
 
-      it('should initiate backup, delete scheduled backup older than 14 days & should not delete on-demand backup', function () {
+      it('should initiate backup, delete scheduled backup older than 14+1 days & should not delete on-demand backup', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
@@ -133,13 +159,16 @@ describe('Jobs', function () {
         }, backupResponse);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior,
+          fileName16DaysPrior,
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
-        //Out of 3 files 1 day prior is filtered out & the 18 day prior on demand will not be deleted
+        //Out of 4 files 1 and 14 day prior is filtered out 
+        // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14, scheduled_data);
+        mocks.cloudProvider.download(pathname16, scheduled_data16);
         mocks.cloudProvider.download(pathname18, ondemand_data);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const expectedBackupResponse = {
@@ -148,12 +177,98 @@ describe('Jobs', function () {
               guid: backupResponse.backup_guid
             },
             delete_backup_status: {
-              deleted_guids: [undefined, '071acb05-66a3-471b-af3c-8bbf1e4180be'],
+              deleted_guids: [backup_guid16, undefined],
+              job_cancelled: false,
+              instance_deleted: false
+            }
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        });
+      });
+      it('should initiate backup, should delete scheduled backup older than 15 days only beyond one successful backup', function () {
+        const backupResponse = {
+          backup_guid: backup_guid
+        };
+        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.serviceFabrikClient.startBackup(instance_id, {
+          type: 'online',
+          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        }, backupResponse);
+        mocks.cloudProvider.list(container, prefix, [
+          fileName14Daysprior,
+          fileName16DaysPrior,
+          fileName18DaysPrior,
+          fileName1Daysprior
+        ]);
+        //Out of 4 files 1 and 14 day prior is filtered out 
+        // & the 18 day prior on demand will not be deleted
+        mocks.cloudProvider.download(pathname14,
+          getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
+        mocks.cloudProvider.download(pathname16,
+          getBackupData(backup_guid16, CONST.BACKUP.TRIGGER.SCHEDULED, started16DaysPrior, CONST.OPERATION.SUCCEEDED));
+        mocks.cloudProvider.download(pathname18,
+          getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.SUCCEEDED));
+        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
+        return ScheduleBackupJob.run(job, () => {
+          mocks.verify();
+          const expectedBackupResponse = {
+            start_backup_status: {
+              name: 'backup',
+              guid: backupResponse.backup_guid
+            },
+            delete_backup_status: {
+              deleted_guids: [backup_guid2],
               job_cancelled: false,
               instance_deleted: false
             }
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        });
+      });
+      it('should initiate backup, should not delete backups even older than 15 days when successful backup is oldest', function () {
+        const backupResponse = {
+          backup_guid: backup_guid
+        };
+        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.serviceFabrikClient.startBackup(instance_id, {
+          type: 'online',
+          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        }, backupResponse);
+        mocks.cloudProvider.list(container, prefix, [
+          fileName14Daysprior,
+          fileName16DaysPrior,
+          fileName18DaysPrior,
+          fileName1Daysprior
+        ]);
+        //Out of 4 files 1 day prior is filtered out.
+        mocks.cloudProvider.download(pathname14,
+          getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
+        mocks.cloudProvider.download(pathname16,
+          getBackupData(backup_guid16, CONST.BACKUP.TRIGGER.SCHEDULED, started16DaysPrior, CONST.OPERATION.FAILED));
+        mocks.cloudProvider.download(pathname18,
+          getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.SUCCEEDED));
+        return ScheduleBackupJob.run(job, () => {
+          mocks.verify();
+          const expectedBackupResponse = {
+            start_backup_status: {
+              name: 'backup',
+              guid: backupResponse.backup_guid
+            },
+            delete_backup_status: {
+              deleted_guids: [],
+              job_cancelled: false,
+              instance_deleted: false
+            }
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -271,13 +386,16 @@ describe('Jobs', function () {
         mocks.cloudController.findServicePlan(instance_id);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior,
+          fileName16DaysPrior,
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
         mocks.cloudProvider.download(pathname14, scheduled_data);
+        mocks.cloudProvider.download(pathname16, scheduled_data16);
         mocks.cloudProvider.download(pathname18, ondemand_data);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
+        // mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
         mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
         mocks.cloudProvider.list(container, prefix, [
           fileName1Daysprior
         ]);
@@ -286,12 +404,12 @@ describe('Jobs', function () {
           const expectedJobResponse = {
             start_backup_status: 'instance_deleted',
             delete_backup_status: {
-              deleted_guids: [backup_guid2, backup_guid],
+              deleted_guids: [backup_guid16, backup_guid2],
               job_cancelled: false,
               instance_deleted: true
             }
           };
-          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedJobResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
