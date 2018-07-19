@@ -256,12 +256,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  getPlanIdFromInstanceId(instance_id) {
-    return cf
-      .cloudController.findServicePlanByInstanceId(instance_id)
-      .then(planDetails => planDetails.entity.unique_id);
-  }
-
   startBackup(req, res) {
     let backupStartedAt;
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
@@ -347,12 +341,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         // This code block is specifically for the transition of Service Fabrik to v2
         // Here we reffer to BackupService to get the lastBackup status
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        const tenantId = _.get(req, 'body.space_guid') ||
-          _.get(req, 'query.space_guid') ||
-          _.get(req, 'query.tenant_id') ||
-          _.get(req, 'body.context.space_guid') ||
-          _.get(req, 'body.context.namespace');
-        return this.getPlanIdFromInstanceId(req.params.instance_id)
+        const tenantId = req.entity.tenant_id;
+        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
           .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
           .then(backupService => backupService.getLastBackup(tenantId, req.params.instance_id));
       })
@@ -392,7 +382,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
                 stateValue: CONST.OPERATION.ABORT
               });
             } else {
-              logger.info(`Skipping abort as state is : ${state}`);
+              logger.info(`Skipping abort for ${backupGuid} as state is : ${state}`);
             }
           })
           .then(() => eventmesh.apiServerClient.getResourceOperationStatus({

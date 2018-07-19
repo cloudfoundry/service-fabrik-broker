@@ -23,7 +23,7 @@ const apiserver = new kc.Client({
   version: CONST.APISERVER.VERSION
 });
 
-function buildErrors(err) {
+function convertToHttpErrorAndThrow(err) {
   let message = err.message;
   if (err.error && err.error.description) {
     message = `${message}. ${err.error.description}`;
@@ -88,10 +88,11 @@ class ApiServerClient {
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         operationId: opts.operationId
-      })).then(state => {
+      }))
+      .then(state => {
         const duration = (new Date() - opts.started_at) / 1000;
         logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT) {
+        if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
           logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
           throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
         }
@@ -106,7 +107,7 @@ class ApiServerClient {
             })
             .then(errorResponse => {
               logger.info('Operation manager reported error', errorResponse);
-              return buildErrors(errorResponse);
+              return convertToHttpErrorAndThrow(errorResponse);
             });
         } else {
           finalState = state;
@@ -155,7 +156,7 @@ class ApiServerClient {
         return stream;
       })
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -181,7 +182,7 @@ class ApiServerClient {
   createLock(lockType, body) {
     return this._createResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, lockType, body)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -211,14 +212,14 @@ class ApiServerClient {
   deleteLock(resourceType, resourceId) {
     return this.deleteResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, resourceType, resourceId)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
   updateResource(resourceGroup, resourceType, resourceId, delta) {
     return this.patchResource(resourceGroup, resourceType, resourceId, delta)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -230,7 +231,7 @@ class ApiServerClient {
         return JSON.parse(resource.body.spec.options);
       })
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -239,7 +240,7 @@ class ApiServerClient {
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -273,7 +274,7 @@ class ApiServerClient {
         .get())
       .then(json => json.body.status.state)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -311,7 +312,7 @@ class ApiServerClient {
           body: statusJson
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -354,7 +355,7 @@ class ApiServerClient {
           body: patchedResource
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -384,7 +385,7 @@ class ApiServerClient {
           body: patchedResource
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -396,14 +397,14 @@ class ApiServerClient {
    * @param {Object} opts.error - Value to set as error
    */
   updateOperationError(opts) {
-    const change = {
+    const operationStatus = {
       'status': {
         'error': JSON.stringify(opts.error)
       }
     };
-    return this.patchResourceStatus(opts.operationName, opts.operationType, opts.operationId, change)
+    return this.patchResourceStatus(opts.operationName, opts.operationType, opts.operationId, operationStatus)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -431,7 +432,7 @@ class ApiServerClient {
           body: patchedResource
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -455,7 +456,7 @@ class ApiServerClient {
           body: patchedResource
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -473,7 +474,7 @@ class ApiServerClient {
         .get())
       .then(json => json.body.metadata.labels[`last_${opts.operationName}_${opts.operationType}`])
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -509,7 +510,7 @@ class ApiServerClient {
     };
     return this.patchResource(opts.operationName, opts.operationType, opts.operationId, change)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
   /**
@@ -529,7 +530,7 @@ class ApiServerClient {
         .get())
       .then(json => JSON.parse(json.body.spec.options))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -550,7 +551,7 @@ class ApiServerClient {
         .get())
       .then(json => json.body.status.state)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -568,7 +569,7 @@ class ApiServerClient {
         .get())
       .then(json => JSON.parse(json.body.status.response))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
