@@ -90,12 +90,6 @@ class ApiServerClient {
         operationId: opts.operationId
       }))
       .then(state => {
-        const duration = (new Date() - opts.started_at) / 1000;
-        logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
-        if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-          logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
-          throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
-        }
         if (state === opts.start_state) {
           return this.getResourceOperationStatus(opts);
         } else if (
@@ -115,6 +109,12 @@ class ApiServerClient {
             });
         } else {
           finalState = state;
+          const duration = (new Date() - opts.started_at) / 1000;
+          logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+          if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
+            logger.error(`Backup with guid ${opts.operationId} not picked up from the queue`);
+            throw new Timeout(`Backup with guid ${opts.operationId} not picked up from the queue`);
+          }
           return this.getOperationResponse({
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -588,7 +588,7 @@ class ApiServerClient {
     return this.getResource(opts.operationName, opts.operationType, opts.operationId)
       .then(json => json.body.status)
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -618,7 +618,7 @@ class ApiServerClient {
           body: patchedResource
         }))
       .catch(err => {
-        return buildErrors(err);
+        return convertToHttpErrorAndThrow(err);
       });
   }
 
