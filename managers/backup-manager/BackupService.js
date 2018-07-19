@@ -189,7 +189,7 @@ class BackupService extends BaseDirectorService {
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: result.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: _.omit(err, 'stack')
+            error: err
           }))
           .then(() => {
             if (backupStarted) {
@@ -326,7 +326,7 @@ class BackupService extends BaseDirectorService {
             operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
             operationId: options.backup_guid,
             stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-            error: _.omit(err, 'stack')
+            error: err
           }));
       });
   }

@@ -103,9 +103,11 @@ class ApiServerClient {
               operationId: opts.operationId,
             })
             .then(status => {
-              const errorResponse = JSON.parse(status.error);
-              logger.info('Operation manager reported error', errorResponse);
-              return convertToHttpErrorAndThrow(errorResponse);
+              if( status.error ){
+                const errorResponse = JSON.parse(status.error);
+                logger.info('Operation manager reported error', errorResponse);
+                return convertToHttpErrorAndThrow(errorResponse);
+              }
             });
         } else {
           finalState = state;
