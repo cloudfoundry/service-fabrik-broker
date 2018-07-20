@@ -64,7 +64,42 @@ class BnRStatusPollerJob extends BaseJob {
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
-    return Promise.try(() => {
+    return Promise
+      .try(() => {
+        logger.info(`Check if the backup resouce ${backup_guid} and deployment resource ${instance_guid} already exists`);
+        // For transition of sf to sfv2 we need to create bakcup and deployment resource
+        // if they are not present
+        // Can be removed once SFv2 transition is over
+        return eventmesh.apiServerClient.getResource(
+            CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            backup_guid)
+          .catch(() => {
+            logger.info(`Creating missing operation resource for backup ${backup_guid}`);
+            return eventmesh.apiServerClient.createOperation({
+              resourceId: instance_guid,
+              operationName: CONST.OPERATION_TYPE.BACKUP,
+              operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              operationId: backup_guid,
+              value: job_data.operation_details
+            });
+          })
+          .then(() => eventmesh.apiServerClient.getResource(
+            CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            instance_guid))
+          .catch(() => {
+            logger.info(`Creating missing operation resource for instance ${instance_guid}`);
+            return eventmesh.apiServerClient.createDeployment(instance_guid, {});
+          })
+          .then(() => eventmesh.apiServerClient.updateLastOperation({
+            resourceId: instance_guid,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            value: backup_guid
+          }));
+      })
+      .then(() => {
         if (operationName === CONST.OPERATION_TYPE.BACKUP) {
           return lockManager.lock(instance_guid, {
               lockedResourceDetails: {

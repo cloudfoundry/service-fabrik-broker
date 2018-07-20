@@ -242,6 +242,7 @@ class ApiServerClient {
   }
 
   getResource(resourceGroup, resourceType, resourceId) {
+    logger.debug(`Getting resource ${resourceGroup}/${resourceType}/${resourceId}`);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
@@ -450,6 +451,7 @@ class ApiServerClient {
    * @param {Object} opts.value - Unique if of the last operation
    */
   updateLastOperation(opts) {
+    logger.debug(`Updating last operation on ${opts.resourceId} with ${opts.value}`);
     const patchedResource = {};
     patchedResource.metadata = {};
     patchedResource.metadata.labels = {};

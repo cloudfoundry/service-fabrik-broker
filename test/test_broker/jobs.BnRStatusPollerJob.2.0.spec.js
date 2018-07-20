@@ -113,7 +113,61 @@ describe('Jobs', function () {
 
     describe('#CheckBackupStatus', function () {
 
-      it('backup status check should be succesful and status is succeeded', function () {
+      it('backup status check should be succesful and status is succeeded - when resource is not in apiserver', function () {
+        mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockCreateResource('deployment', 'director', {});
+        mocks.apiServerEventMesh.nockPatchResourceStatus('deployment', 'director', {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: SUCCEEDED_BACKUP_GUID
+            }
+          }
+        });
+        backupOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
+          state: CONST.OPERATION.SUCCEEDED,
+          description: 'Backup operation successful'
+        }));
+        const job = getJobBasedOnOperation('backup', {
+          backup_guid: SUCCEEDED_BACKUP_GUID
+        });
+        mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
+          spec: {
+            options: JSON.stringify({
+              lockTTL: Infinity,
+              lockTime: new Date(),
+              lockedResourceDetails: {}
+            })
+          }
+        });
+        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        return BnRStatusPollerJob.run(job, () => {
+          expect(cancelScheduleStub).to.be.calledOnce;
+          expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
+          expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.BNR_STATUS_POLLER);
+          expect(backupOperationStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].state).to.eql(CONST.OPERATION.SUCCEEDED);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].operationTimedOut).to.eql(false);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1].jobCancelled).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          mocks.verify();
+        });
+      });
+
+      it('backup status check should be succesful and status is succeeded - when resource is present in apiserver', function () {
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', SUCCEEDED_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instanceInfo.instance_guid, {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: SUCCEEDED_BACKUP_GUID
+            }
+          }
+        });
         backupOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
           state: CONST.OPERATION.SUCCEEDED,
           description: 'Backup operation successful'
@@ -158,6 +212,15 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instanceInfo.instance_guid, {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: IN_PROGRESS_BACKUP_GUID
+            }
+          }
+        });
         mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instanceInfo.instance_guid, {
           spec: {
             options: JSON.stringify({
@@ -191,6 +254,15 @@ describe('Jobs', function () {
       });
 
       it('backup is processing - exceeded deployment lock timeout', function () {
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instanceInfo.instance_guid, {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: IN_PROGRESS_BACKUP_GUID
+            }
+          }
+        });
         backupOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           description: 'Backup operation in-progress'
@@ -236,6 +308,15 @@ describe('Jobs', function () {
       });
 
       it('backup is aborting - within abort timeout', function () {
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instanceInfo.instance_guid, {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: IN_PROGRESS_BACKUP_GUID
+            }
+          }
+        });
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
         });
@@ -282,6 +363,15 @@ describe('Jobs', function () {
       });
 
       it('backup is aborting - abort timeout exceeded', function () {
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', ABORTING_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instanceInfo.instance_guid, {});
+        mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: ABORTING_BACKUP_GUID
+            }
+          }
+        });
         config.backup.abort_time_out = 0;
         getDirectorConfigStub.withArgs(instanceInfo.deployment).returns({
           lock_deployment_max_duration: 0
