@@ -32,13 +32,15 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
+    const runImmediately = (req.body.run_immediately === 'true' ? true: false);
 
     function updateDeployment() {
       return self.fabrik
         .createOperation('update', {
           deployment: deploymentName,
           username: req.user.name,
-          arguments: req.body
+          arguments: req.body,
+          runImmediately: runImmediately
         }).invoke()
         .then(body => {
           res.format({
