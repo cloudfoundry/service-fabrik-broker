@@ -82,7 +82,7 @@ class EventLogRiemannClient {
   }
 
   /**
-   * This method suffixes the instance_id if avaialble or backup guid if avaialble or instance_id if avaialble or service_name if avaialble to event name to provide more information in the email alerts
+   * This method suffixes the instance_id if available or backup guid if available or instance_id if available or service_name if available to event name to provide more information in the email alerts
    */
   suffixGuidsToEventName(eventInfo) {
     var eventName = eventInfo.eventName;
