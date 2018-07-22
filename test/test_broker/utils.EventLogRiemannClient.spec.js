@@ -172,7 +172,8 @@ describe('utils', function () {
             user: {
               name: 'broker'
             },
-            instance_id: 'fe27a9ea-0e93-485a-86f2-600aa725fc88'
+            instance_id: 'fe27a9ea-0e93-485a-86f2-600aa725fc88',
+            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
           },
           response: {}
         };
@@ -192,7 +193,7 @@ describe('utils', function () {
         const expectedSecondResultObject = _
           .chain(event)
           .pick('metric', 'state', 'description', 'tags')
-          .set('service', `${event.eventName}.instance_id.fe27a9ea-0e93-485a-86f2-600aa725fc88`)
+          .set('service', `${event.eventName}.instance_id.fe27a9ea-0e93-485a-86f2-600aa725fc88.service_name.blueprint`)
           .set('host', _.get(config, 'riemann.prefix', 'CF'))
           .set('attributes', [{
             key: 'request',
