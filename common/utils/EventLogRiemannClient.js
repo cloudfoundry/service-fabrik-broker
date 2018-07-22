@@ -6,7 +6,6 @@ const logger = require('../logger');
 const config = require('../config');
 const pubsub = require('pubsub-js');
 const CONST = require('../constants');
-const catalog = require('../models').catalog;
 
 class EventLogRiemannClient {
   constructor(options) {
@@ -108,7 +107,7 @@ class EventLogRiemannClient {
       }
 
       if (serviceId !== undefined) {
-        let serviceName = catalog.getServiceName(serviceId);
+        let serviceName = require('../models').catalog.getServiceName(serviceId);
         eventName = `${eventName}.service_name.${serviceName}`;
       }
     }
