@@ -54,6 +54,16 @@ describe('models', () => {
       });
     });
 
+    describe('#getServiceName', () => {
+      it('returns a service name', () => {
+        expect(catalog.getServiceName(1)).to.eql('service1');
+      });
+
+      it('returns a ServiceNotFound error', () => {
+        expect(catalog.getServiceName.bind(catalog, 2)).to.throw(ServiceNotFound);
+      });
+    });
+
     describe('#toJSON', () => {
       it('returns a JSON object', () => {
         expect(catalog.toJSON()).to.eql({
