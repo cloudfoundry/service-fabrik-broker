@@ -181,6 +181,7 @@ describe('managers', function () {
       const opts = {
         deployment: deployment_name,
         instance_guid: instance_id,
+        backup_guid: backup_guid,
         agent_ip: agent_ip,
         context: context
       };
@@ -190,6 +191,11 @@ describe('managers', function () {
           state: 'succeeded',
           agent_ip: mocks.agent.ip
         }));
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+          status: {
+            response: JSON.stringify('{}')
+          }
+        });
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
         return manager.getOperationState('backup', opts)
           .then((res) => {
@@ -200,16 +206,6 @@ describe('managers', function () {
             expect(getBackupLogsStub.callCount).to.eql(1);
             expect(getBackupLogsStub.firstCall.args[0]).to.eql(opts.agent_ip);
             expect(patchBackupFileStub.callCount).to.eql(1);
-            expect(getFileStub.callCount).to.eql(1);
-            expect(getFileStub.firstCall.args[0]).to.eql({
-              service_id: service_id,
-              plan_id: plan_id,
-              tenant_id: space_guid,
-              deployment: deployment_name,
-              instance_guid: instance_id,
-              agent_ip: opts.agent_ip,
-              context: context
-            });
             mocks.verify();
           });
       });
@@ -217,12 +213,16 @@ describe('managers', function () {
         sandbox.restore();
         mocks.agent.getBackupLogs([]);
         mocks.agent.lastBackupOperation(backup_state);
-        // mocks.cloudProvider.auth();
-        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}`, [filename], 200, 2);
-        mocks.cloudProvider.download(pathname, data, 2);
+        mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename], 200);
+        mocks.cloudProvider.download(pathname, data);
         mocks.cloudProvider.upload(pathname, undefined);
         mocks.cloudProvider.headObject(pathname);
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+          status: {
+            response: JSON.stringify('{}')
+          }
+        });
         return manager.getOperationState('backup', opts)
           .then((res) => {
             expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
