@@ -570,7 +570,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    */
   getOperationResponse(opts) {
-    logger.debug('Getting operation response with', opts)
+    logger.debug('Getting operation response with', opts);
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]

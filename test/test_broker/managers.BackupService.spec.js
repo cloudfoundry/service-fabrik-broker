@@ -210,17 +210,32 @@ describe('managers', function () {
           });
       });
       it('should return 200 Ok - backup state is retrieved from agent while in \'succeeded\' state', function () {
+        const logobj = {
+          level: 'INFO',
+          msg: 'fake log line 1'
+        };
+        const fakeLogs = JSON.stringify(logobj);
         sandbox.restore();
-        mocks.agent.getBackupLogs([]);
+        mocks.agent.getBackupLogs(fakeLogs);
         mocks.agent.lastBackupOperation(backup_state);
         mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename], 200);
         mocks.cloudProvider.download(pathname, data);
         mocks.cloudProvider.upload(pathname, undefined);
         mocks.cloudProvider.headObject(pathname);
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {}, 1, body => {
+          expect(body.status.response).to.eql(
+            JSON.stringify({
+              body: 'value',
+              logs: [logobj]
+            })
+          );
+          return true;
+        });
         mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
           status: {
-            response: JSON.stringify('{}')
+            response: JSON.stringify({
+              body: 'value'
+            })
           }
         });
         return manager.getOperationState('backup', opts)
