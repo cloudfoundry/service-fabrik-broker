@@ -285,9 +285,9 @@ class BackupService extends BaseDirectorService {
                 logs: logs,
                 snapshotId: lastOperation.snapshotId
               })
+              .return(logs);
             )
-            .then(() => this.backupStore.getBackupFile(options))
-            .then(metadata => eventmesh.apiServerClient.updateOperationResponse({
+            .then(metadata => eventmesh.apiServerClient.patchOperationResponse({
               resourceId: options.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
