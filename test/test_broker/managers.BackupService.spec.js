@@ -362,7 +362,7 @@ describe('managers', function () {
           expect(parsed.status).to.eql(403);
           expect(parsed.reason).to.eql('Forbidden');
           expect(parsed.message).to.eql(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
-          expect(body.status.response).to.eql('');
+          expect(body.status.response).to.eql(undefined);
           return true;
         });
         return manager.deleteBackup({

@@ -608,13 +608,10 @@ class ApiServerClient {
    */
   updateOperationStatus(opts) {
     logger.info('Updating Operation Status with :', opts);
-    const patchedResource = {
-      'status': {
-        'state': opts.stateValue ? opts.stateValue : '',
-        'error': opts.error ? JSON.stringify(opts.error) : '',
-        'response': opts.response ? JSON.stringify(opts.response) : '',
-      }
-    };
+    const patchedResource = { 'status': { } };
+    if (opts.stateValue) { patchedResource.status.state = opts.stateValue; }
+    if (opts.error) { patchedResource.status.error = JSON.stringify(opts.error); }
+    if (opts.response){ patchedResource.status.response = JSON.stringify(opts.response); }
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
