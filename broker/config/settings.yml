@@ -197,7 +197,8 @@ defaults: &defaults
     ip: '127.0.0.1'
     port: 9443
     encryption:
-      password: 'ABCDEFGH'
+      password: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
+      initialization_vector: 'ABCDEFGHABCDEFGH'
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

@@ -10,9 +10,9 @@ class EncryptionManager {
    * @param text test to be encrypted
    */
   encrypt(text) {
-    const cipher = crypto.createCipher(CONST.APISERVER.ENCRYPTION.AES_256_ALGORITHM, config.apiserver.encryption.password);
-    let crypted = cipher.update(text, CONST.APISERVER.ENCRYPTION.INPUT_ENCODING, CONST.APISERVER.ENCRYPTION.OUTPUT_ENCODING);
-    crypted += cipher.final(CONST.APISERVER.ENCRYPTION.OUTPUT_ENCODING);
+    const cipher = crypto.createCipheriv(CONST.ENCRYPTION.AES_256_ALGORITHM, config.apiserver.encryption.password, config.apiserver.encryption.initialization_vector);
+    let crypted = cipher.update(text, CONST.ENCRYPTION.INPUT_ENCODING, CONST.ENCRYPTION.OUTPUT_ENCODING);
+    crypted += cipher.final(CONST.ENCRYPTION.OUTPUT_ENCODING);
     return crypted;
   }
 
@@ -20,9 +20,9 @@ class EncryptionManager {
    * @param text test to be decrypted
    */
   decrypt(text) {
-    var decipher = crypto.createDecipher(CONST.APISERVER.ENCRYPTION.AES_256_ALGORITHM, config.apiserver.encryption.password);
-    let dec = decipher.update(text, CONST.APISERVER.ENCRYPTION.OUTPUT_ENCODING, CONST.APISERVER.ENCRYPTION.INPUT_ENCODING);
-    dec += decipher.final(CONST.APISERVER.ENCRYPTION.INPUT_ENCODING);
+    var decipher = crypto.createDecipheriv(CONST.ENCRYPTION.AES_256_ALGORITHM, config.apiserver.encryption.password, config.apiserver.encryption.initialization_vector);
+    let dec = decipher.update(text, CONST.ENCRYPTION.OUTPUT_ENCODING, CONST.ENCRYPTION.INPUT_ENCODING);
+    dec += decipher.final(CONST.ENCRYPTION.INPUT_ENCODING);
     return dec;
   }
 

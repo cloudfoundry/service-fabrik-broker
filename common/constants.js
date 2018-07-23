@@ -239,11 +239,6 @@ module.exports = Object.freeze({
     HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
-    ENCRYPTION: {
-      AES_256_ALGORITHM: 'aes-256-ctr',
-      INPUT_ENCODING: 'utf8',
-      OUTPUT_ENCODING: 'hex'
-    },
     RESOURCE_GROUPS: {
       LOCK: 'lock',
       DEPLOYMENT: 'deployment',
@@ -287,7 +282,11 @@ module.exports = Object.freeze({
     ATTRIBUTES: 'attributes',
     PLANS: 'plans'
   },
-
+  ENCRYPTION: {
+    AES_256_ALGORITHM: 'aes-256-ctr',
+    INPUT_ENCODING: 'utf8',
+    OUTPUT_ENCODING: 'hex'
+  },
   PLATFORM: {
     CF: 'cloudfoundry',
     K8S: 'kubernetes'
