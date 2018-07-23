@@ -193,6 +193,11 @@ defaults: &defaults
     ip: '127.0.0.1'
     port: 9443
 
+  apiserver:
+    ip: '127.0.0.1'
+    port: 9443
+    encryption:
+      password: 'ABCDEFGH'
 
   ##############################
   # REPORT ENDPOINT SETTINGS #
