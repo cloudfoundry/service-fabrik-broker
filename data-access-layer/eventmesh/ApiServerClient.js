@@ -242,6 +242,7 @@ class ApiServerClient {
   }
 
   getResource(resourceGroup, resourceType, resourceId) {
+    logger.debug(`Getting resource ${resourceGroup}/${resourceType}/${resourceId}`);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[`${resourceGroup}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[resourceType](resourceId).get())
@@ -450,6 +451,7 @@ class ApiServerClient {
    * @param {Object} opts.value - Unique if of the last operation
    */
   updateLastOperation(opts) {
+    logger.debug(`Updating last operation on ${opts.resourceId} with ${opts.value}`);
     const patchedResource = {};
     patchedResource.metadata = {};
     patchedResource.metadata.labels = {};
@@ -568,6 +570,7 @@ class ApiServerClient {
    * @param {string} opts.operationId - Unique id of operation
    */
   getOperationResponse(opts) {
+    logger.debug('Getting operation response with', opts);
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
@@ -606,12 +609,17 @@ class ApiServerClient {
   updateOperationStatus(opts) {
     logger.info('Updating Operation Status with :', opts);
     const patchedResource = {
-      'status': {
-        'state': opts.stateValue ? opts.stateValue : '',
-        'error': opts.error ? JSON.stringify(opts.error) : '',
-        'response': opts.response ? JSON.stringify(opts.response) : '',
-      }
+      'status': {}
     };
+    if (opts.stateValue) {
+      patchedResource.status.state = opts.stateValue;
+    }
+    if (opts.error) {
+      patchedResource.status.error = JSON.stringify(opts.error);
+    }
+    if (opts.response) {
+      patchedResource.status.response = JSON.stringify(opts.response);
+    }
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[`${opts.operationName}.${CONST.APISERVER.HOSTNAME}`][CONST.APISERVER.API_VERSION]
