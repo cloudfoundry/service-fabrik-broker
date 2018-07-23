@@ -70,10 +70,19 @@ class BnRStatusPollerJob extends BaseJob {
         // For transition of sf to sfv2 we need to create bakcup and deployment resource
         // if they are not present
         // Can be removed once SFv2 transition is over
-        return eventmesh.apiServerClient.getResource(
+        return Promise
+          .try(() => eventmesh.apiServerClient.getResource(
+            CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            instance_guid))
+          .catch(() => {
+            logger.info(`Creating missing operation resource for instance ${instance_guid}`);
+            return eventmesh.apiServerClient.createDeployment(instance_guid, {});
+          })
+          .then(() => eventmesh.apiServerClient.getResource(
             CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            backup_guid)
+            backup_guid))
           .catch(() => {
             logger.info(`Creating missing operation resource for backup ${backup_guid}`);
             return eventmesh.apiServerClient.createOperation({
@@ -83,14 +92,6 @@ class BnRStatusPollerJob extends BaseJob {
               operationId: backup_guid,
               value: job_data.operation_details
             });
-          })
-          .then(() => eventmesh.apiServerClient.getResource(
-            CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            instance_guid))
-          .catch(() => {
-            logger.info(`Creating missing operation resource for instance ${instance_guid}`);
-            return eventmesh.apiServerClient.createDeployment(instance_guid, {});
           })
           .then(() => eventmesh.apiServerClient.updateLastOperation({
             resourceId: instance_guid,
