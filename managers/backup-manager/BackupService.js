@@ -286,15 +286,20 @@ class BackupService extends BaseDirectorService {
                 snapshotId: lastOperation.snapshotId
               })
               .return({
-                logs: logs
+                state: lastOperation.state,
+                logs: logs,
+                snapshotId: lastOperation.snapshotId,
+                finished_at: new Date(Date.now())
+                  .toISOString()
+                  .replace(/\.\d*/, '')
               })
             )
-            .then(logObj => eventmesh.apiServerClient.patchOperationResponse({
+            .then(patchObj => eventmesh.apiServerClient.patchOperationResponse({
               resourceId: options.instance_guid,
               operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
               operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
               operationId: opts.backup_guid,
-              value: logObj
+              value: patchObj
             }));
         }
       });

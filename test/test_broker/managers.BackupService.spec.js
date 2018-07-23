@@ -15,7 +15,8 @@ describe('managers', function () {
     const backup_state = {
       state: 'succeeded',
       'stage': 'Backup complete',
-      updated_at: finishDate
+      updated_at: finishDate,
+      snapshotId: 'fakeSnapshotId'
     };
     const backup_logs = ['Starting Backup ... ', 'Backup Complete.'];
     let sandbox, scheduleStub, cancelScheduleStub, getBackupLastOperationStub, getBackupLogsStub, patchBackupFileStub, getFileStub;
@@ -223,12 +224,11 @@ describe('managers', function () {
         mocks.cloudProvider.upload(pathname, undefined);
         mocks.cloudProvider.headObject(pathname);
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {}, 1, body => {
-          expect(body.status.response).to.eql(
-            JSON.stringify({
-              body: 'value',
-              logs: [logobj]
-            })
-          );
+          const responseObj = JSON.parse(body.status.response);
+          expect(responseObj.body).to.eql('value');
+          expect(responseObj.logs).to.eql([logobj]);
+          expect(responseObj.state).to.eql('succeeded');
+          expect(responseObj.snapshotId).to.eql('fakeSnapshotId');
           return true;
         });
         mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
