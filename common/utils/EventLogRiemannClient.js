@@ -97,15 +97,12 @@ class EventLogRiemannClient {
       if (instanceId !== undefined) {
         eventName = `${eventName}.instance_id.${instanceId}`;
       }
-
       if (backupGuid !== undefined) {
         eventName = `${eventName}.backup_guid.${backupGuid}`;
       }
-
       if (appGuid !== undefined) {
         eventName = `${eventName}.app_guid.${appGuid}`;
       }
-
       if (serviceId !== undefined) {
         let serviceName = require('../models').catalog.getServiceName(serviceId);
         eventName = `${eventName}.service_name.${serviceName}`;
