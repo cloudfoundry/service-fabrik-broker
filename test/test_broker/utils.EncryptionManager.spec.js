@@ -9,9 +9,7 @@ describe('utils', () => {
       it('returns the same string after decryption', () => {
         const manager = new EncryptionManager();
         const testText = 'Hello World';
-        console.log(testText);
         const encryptedText = manager.encrypt(testText);
-        console.log(encryptedText);
         const decryptedText = manager.decrypt(encryptedText);
         expect(decryptedText).to.equal(testText);
       });
