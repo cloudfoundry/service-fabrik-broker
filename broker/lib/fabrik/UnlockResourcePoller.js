@@ -53,20 +53,18 @@ class UnlockResourcePoller {
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
       .then(stream => {
         logger.info(`Successfully set watcher on lock resources`);
-        return setTimeout(() => {
-          try {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
-            stream.abort();
-            return this.start();
-          } catch (err) {
-            logger.error('Error caught in the set timout callback for unlock resource poller');
-            throw err;
-          }
-        }, CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+        return Promise.delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL, () => {
+          logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+          stream.abort();
+          return this.start();
+        });
       })
       .catch(e => {
-        logger.error('Failed registering watche on lock resources with error:', e);
-        throw e;
+        logger.error(`Error occured in registerWatcher:`, e);
+        return Promise.delay(CONST.APISERVER.WATCHER_ERROR_DELAY, () => {
+          logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+          return this.start();
+        });
       });
   }
 }
