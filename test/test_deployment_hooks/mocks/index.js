@@ -16,7 +16,6 @@ function init() {
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
-    console.log('pending mocks: %j', nock.pendingMocks());
     logger.error('pending mocks: %j', nock.pendingMocks());
   }
   expect(nock.isDone()).to.be.true;

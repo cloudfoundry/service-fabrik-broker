@@ -282,12 +282,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
               })
               .then(() => {
                 lockedDeployment = true;
-                return eventmesh.apiServerClient.createOperation({
-                  resourceId: req.params.instance_id,
-                  operationName: CONST.OPERATION_TYPE.BACKUP,
-                  operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                  operationId: backupGuid,
-                  value: backupOptions
+                return eventmesh.apiServerClient.createResource({
+                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                  resourceId: backupGuid,
+                  parentResourceId: req.params.instance_id,
+                  options: backupOptions,
+                  status: {
+                    state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                    lastOperation: {},
+                    response: {}
+                  }
                 });
               });
           });
@@ -295,12 +300,29 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => {
         backupStartedAt = new Date();
         //check if resource exist, else create and then update
-        return eventmesh.apiServerClient.getResource('deployment', 'directors', req.params.instance_id)
-          .catch(() => eventmesh.apiServerClient.createDeployment(req.params.instance_id, {}))
-          .then(() => eventmesh.apiServerClient.updateLastOperation({
+        return eventmesh.apiServerClient.getResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: req.params.instance_id
+          })
+          .catch(() => eventmesh.apiServerClient.createResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: req.params.instance_id,
+            parentResourceId: req.params.instance_id,
+            options: {},
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+              lastOperation: {},
+              response: {}
+            }
+          }))
+          .then(() => eventmesh.apiServerClient.updateLastOperation({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             operationName: CONST.OPERATION_TYPE.BACKUP,
             operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: req.params.instance_id,
             value: backupGuid
           }));
       })
@@ -326,15 +348,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
     return eventmesh.apiServerClient.getLastOperation({
-        resourceId: req.params.instance_id,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: req.params.instance_id
       })
       .then(backupGuid =>
-        eventmesh.apiServerClient.getOperationResponse({
-          operationName: CONST.OPERATION_TYPE.BACKUP,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          operationId: backupGuid,
+        eventmesh.apiServerClient.getResponse({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: backupGuid
         })
       )
       .catch(NotFound, (err) => {
@@ -361,32 +385,37 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupStartedAt = new Date();
     return eventmesh
       .apiServerClient.getLastOperation({
-        resourceId: req.params.instance_id,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: req.params.instance_id
       })
       .then(backupGuid => {
         return eventmesh
-          .apiServerClient.getOperationState({
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            operationId: backupGuid,
+          .apiServerClient.getResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: backupGuid
           })
-          .then(state => {
+          .then(response => {
+            const state = response.status.state;
             // abort only if the state is in progress
             if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
-              return eventmesh.apiServerClient.updateOperationState({
-                operationName: CONST.OPERATION_TYPE.BACKUP,
-                operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                operationId: backupGuid,
-                stateValue: CONST.OPERATION.ABORT
+              return eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceId: backupGuid,
+                status: {
+                  'state': CONST.OPERATION.ABORT
+                }
               });
             } else {
               logger.info(`Skipping abort for ${backupGuid} as state is : ${state}`);
             }
           })
           .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-            operationId: backupGuid,
+            resourceId: backupGuid,
             start_state: CONST.OPERATION.ABORT,
             started_at: backupStartedAt
           }));
@@ -572,11 +601,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
     };
     logger.info('Attempting delete with:', options);
     return eventmesh
-      .apiServerClient.patchOperationOptions({
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        operationId: req.params.backup_guid,
-        value: options
+      .apiServerClient.patchOptions({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: req.params.backup_guid,
+        options: options
       })
       .catch(NotFound, (err) => {
         // if not found in apiserver delete from blobstore
@@ -584,21 +613,27 @@ class ServiceFabrikApiController extends FabrikBaseController {
         return this.backupStore.deleteBackupFile(options);
       })
       .then(() =>
-        eventmesh.apiServerClient.updateOperationState({
-          operationName: CONST.OPERATION_TYPE.BACKUP,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          operationId: req.params.backup_guid,
-          stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE
+        eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: req.params.backup_guid,
+          status: {
+            'state': CONST.APISERVER.RESOURCE_STATE.DELETE
+          }
         })
       )
       .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        operationId: req.params.backup_guid,
+        resourceId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
       //delete resource from apiserver here if state is delted 
-      .then(() => eventmesh.apiServerClient.deleteResource(CONST.APISERVER.ANNOTATION_NAMES.BACKUP, CONST.APISERVER.ANNOTATION_TYPES.BACKUP, req.params.backup_guid))
+      .then(() => eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: req.params.backup_guid
+      }))
       .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
