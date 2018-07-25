@@ -2,6 +2,7 @@
 
 const pubsub = require('pubsub-js');
 const _ = require('lodash');
+const Promise = require('bluebird');
 const eventmesh = require('../../../data-access-layer/eventmesh');
 const CONST = require('../../../common/constants');
 const logger = require('../../../common/logger');
@@ -53,20 +54,22 @@ class UnlockResourcePoller {
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
       .then(stream => {
         logger.info(`Successfully set watcher on lock resources`);
-        return setTimeout(() => {
-          try {
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
+          .then(() => {
             logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
             return this.start();
-          } catch (err) {
-            logger.error('Error caught in the set timout callback for unlock resource poller');
-            throw err;
-          }
-        }, CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+          });
       })
       .catch(e => {
-        logger.error('Failed registering watche on lock resources with error:', e);
-        throw e;
+        logger.error(`Error occured in registerWatcher:`, e);
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
+          .then(() => {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            return this.start();
+          });
       });
   }
 }
