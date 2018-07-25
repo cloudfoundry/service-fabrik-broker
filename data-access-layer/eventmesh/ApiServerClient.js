@@ -17,7 +17,7 @@ const InternalServerError = errors.InternalServerError;
 
 const apiserver = new kc.Client({
   config: {
-    url: `https://${config.internal.ip}:${CONST.APISERVER.PORT}`,
+    url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
     insecureSkipTlsVerify: true
   },
   version: CONST.APISERVER.VERSION

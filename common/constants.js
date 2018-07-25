@@ -234,7 +234,6 @@ module.exports = Object.freeze({
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 60,
     WATCHER_REFRESH_INTERVAL: 1200000, // in ms ( 20 minutes )
-    PORT: 9443,
     VERSION: '1.9',
     HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
