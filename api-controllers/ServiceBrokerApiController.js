@@ -73,9 +73,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
         const planId = params.plan_id;
         const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.createResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: req.params.instance_id,
-          resourceType: plan.manager.name,
-          value: params
+          parentResourceId: req.params.instance_id,
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            lastOperation: {},
+            response: {}
+          }
         });
       })
       .then(() => {
@@ -126,13 +133,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         const planId = params.plan_id;
         const plan = catalog.getPlan(planId);
-        return eventmesh.apiServerClient.updateDeploymentResource({
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: req.params.instance_id,
-          resourceType: plan.manager.name,
-          value: params,
-          state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-          lastOperation: {},
-          response: {}
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+            lastOperation: {},
+            response: {}
+          }
         });
       })
       .then(done);
@@ -164,12 +174,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
         const planId = params.plan_id;
         const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.updateDeploymentResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           resourceId: req.params.instance_id,
-          resourceType: plan.manager.name,
-          value: params,
-          state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-          lastOperation: {},
-          response: {}
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            lastOperation: {},
+            response: {}
+          }
         });
       })
       .then(done)
@@ -214,9 +227,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
-    return eventmesh.apiServerClient.getResourceLastOperation({
-        resourceId: req.params.instance_id,
-        resourceType: plan.manager.name
+    return eventmesh.apiServerClient.getLastOperation({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: req.params.instance_id
       })
       .then(done)
       .catch(AssertionError, failed)
@@ -248,11 +262,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
         const planId = params.plan_id;
         const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.createOperation({
-          resourceId: req.params.instance_id,
-          operationId: params.binding_id,
-          operationName: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-          value: params
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: params.binding_id,
+          parentResourceId: req.params.instance_id,
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
+          }
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
@@ -287,11 +304,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .try(() => {
         const planId = params.plan_id;
         const plan = catalog.getPlan(planId);
-        return eventmesh.apiServerClient.updateOperationState({
-          operationId: params.binding_id,
-          operationName: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-          stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: params.binding_id,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.DELETE
+          }
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
@@ -301,7 +320,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
-      .then(() => eventmesh.apiServerClient.deleteResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, params.binding_id))
+      .then(() => eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceId: params.binding_id
+      }))
       .then(done)
       .catch(NotFound, gone);
   }

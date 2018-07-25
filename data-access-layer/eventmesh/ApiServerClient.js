@@ -39,21 +39,21 @@ function convertToHttpErrorAndThrow(err) {
     code = err.status;
   }
   switch (code) {
-  case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-    newErr = new BadRequest(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-    newErr = new NotFound(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.CONFLICT:
-    newErr = new Conflict(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.FORBIDDEN:
-    newErr = new errors.Forbidden(message);
-    break;
-  default:
-    newErr = new InternalServerError(message);
-    break;
+    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+      newErr = new BadRequest(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+      newErr = new NotFound(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.CONFLICT:
+      newErr = new Conflict(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+      newErr = new errors.Forbidden(message);
+      break;
+    default:
+      newErr = new InternalServerError(message);
+      break;
   }
   throw newErr;
 }
@@ -68,8 +68,8 @@ class ApiServerClient {
     return Promise.try(() => {
       if (!this.ready) {
         return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
-            apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
-          })
+          apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+        })
           .then(() => apiserver.loadSpec())
           .then(() => {
             this.ready = true;
@@ -85,6 +85,8 @@ class ApiServerClient {
   /**
    * Poll for Status until opts.start_state changes
    * @param {object} opts - Object containing options
+   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
+   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
@@ -93,9 +95,9 @@ class ApiServerClient {
     logger.debug(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
     let finalState;
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
-      .then(() => this.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      .then(() => this.getState({
+        resourceGroup: opts.resourceGroup,
+        resourceType: opts.resourceType,
         resourceId: opts.resourceId
       }))
       .then(resource => {
@@ -113,14 +115,31 @@ class ApiServerClient {
           state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
         ) {
           finalState = state;
-          if (resource.status.error) {
-            const errorResponse = resource.status.error;
-            logger.info('Operation manager reported error', errorResponse);
-            return convertToHttpErrorAndThrow(errorResponse);
-          }
+          return this.getResource({
+            resourceGroup: opts.resourceGroup,
+            resourceType: opts.resourceType,
+            resourceId: opts.resourceId
+          })
+            .then(response => {
+              if (response.status.error) {
+                const errorResponse = response.status.error;
+                logger.info('Operation manager reported error', errorResponse);
+                return convertToHttpErrorAndThrow(errorResponse);
+              }
+            });
         } else {
           finalState = state;
-          return resource.status.response;
+          const duration = (new Date() - opts.started_at) / 1000;
+          logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+          if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
+            logger.error(`Backup with guid ${opts.resourceId} not picked up from the queue`);
+            throw new Timeout(`Backup with guid ${opts.resourceId} not picked up from the queue`);
+          }
+          return this.getResponse({
+            resourceGroup: opts.resourceGroup,
+            resourceType: opts.resourceType,
+            resourceId: opts.resourceId
+          });
         }
       })
       .then(result => {
@@ -184,11 +203,11 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-            body: crdJson,
-            headers: {
-              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-            }
-          })
+          body: crdJson,
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        })
           .catch(err => {
             return convertToHttpErrorAndThrow(err);
           });
@@ -280,39 +299,39 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
     assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to update resource`);
     return Promise.try(() => {
-        const patchBody = {};
-        if (opts.metadata) {
-          patchBody.metadata = opts.metadata;
-        }
-        if (opts.options) {
-          patchBody.spec = {
-            'options': JSON.stringify(opts.options)
-          };
-        }
-        if (opts.status) {
-          const statusJson = {};
-          _.forEach(opts.status, (val, key) => {
-            if (key === 'state') {
-              patchBody.metadata = _.merge(patchBody.metadata, {
-                labels: {
-                  'state': val
-                }
-              });
-            }
-            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
-          });
-          patchBody.status = statusJson;
-        }
-        return Promise.try(() => this.init())
-          .then(() => apiserver
-            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
-              body: patchBody,
-              headers: {
-                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+      const patchBody = {};
+      if (opts.metadata) {
+        patchBody.metadata = opts.metadata;
+      }
+      if (opts.options) {
+        patchBody.spec = {
+          'options': JSON.stringify(opts.options)
+        };
+      }
+      if (opts.status) {
+        const statusJson = {};
+        _.forEach(opts.status, (val, key) => {
+          if (key === 'state') {
+            patchBody.metadata = _.merge(patchBody.metadata, {
+              labels: {
+                'state': val
               }
-            }));
-      })
+            });
+          }
+          statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+        });
+        patchBody.status = statusJson;
+      }
+      return Promise.try(() => this.init())
+        .then(() => apiserver
+          .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+          .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+            body: patchBody,
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          }));
+    })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -391,8 +410,6 @@ class ApiServerClient {
       .value();
     return this.updateResource(options);
   }
-
-
 
   /**
    * @description Get Resource in Apiserver with the opts
@@ -483,6 +500,18 @@ class ApiServerClient {
     return this.getResource(opts)
       .then(resource => resource.status.state);
   }
+
+  /**
+   * @description Get resource last operation
+   * @param {string} opts.resourceGroup - Name of operation
+   * @param {string} opts.resourceType - Type of operation
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getLastOperation(opts) {
+    return this.getResource(opts)
+      .then(resource => resource.status.lastOperation);
+  }
+
 }
 
 module.exports = ApiServerClient;

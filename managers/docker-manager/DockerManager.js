@@ -32,12 +32,14 @@ class DockerManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
 
@@ -47,12 +49,14 @@ class DockerManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
 
@@ -62,12 +66,14 @@ class DockerManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
 

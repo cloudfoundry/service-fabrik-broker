@@ -18,11 +18,14 @@ class BOSHTaskPoller {
       return DirectorService.createDirectorService(object.metadata.name, changedOptions)
         .then(boshService => boshService.lastOperation(response))
         .tap(lastOperationValue => logger.info('last operation value is ', lastOperationValue))
-        .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResourceStateAndLastOperation({
-          resourceId: object.metadata.name,
+        .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          lastOperation: lastOperationValue,
-          stateValue: lastOperationValue.resourceState
+          resourceId: object.metadata.name,
+          status: {
+            lastOperation: lastOperationValue,
+            state: lastOperationValue.resourceState
+          }
         }), Promise.try(() => {
           if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
             //cancel the poller and clear the array
@@ -34,7 +37,11 @@ class BOSHTaskPoller {
           if (response.type === 'delete') {
             clearInterval(interval);
             BOSHTaskPoller.pollers[object.metadata.name] = false;
-            return eventmesh.apiServerClient.deleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, object.metadata.name);
+            return eventmesh.apiServerClient.deleteResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: object.metadata.name
+            });
           } else {
             //TODO set error field
           }

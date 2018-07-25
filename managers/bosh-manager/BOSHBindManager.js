@@ -31,12 +31,14 @@ class BOSHBindManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(instance_guid, changedOptions)
       .then(boshService => boshService.bind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
   _processUnbind(changeObjectBody) {
@@ -46,12 +48,14 @@ class BOSHBindManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(instance_guid, changedOptions)
       .then(boshService => boshService.unbind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
 

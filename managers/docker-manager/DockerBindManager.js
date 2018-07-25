@@ -31,12 +31,14 @@ class DockerBindManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(instance_guid, changedOptions)
       .then(dockerService => dockerService.bind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
   _processUnbind(changeObjectBody) {
@@ -46,12 +48,14 @@ class DockerBindManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(instance_guid, changedOptions)
       .then(dockerService => dockerService.unbind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
       }));
   }
 }

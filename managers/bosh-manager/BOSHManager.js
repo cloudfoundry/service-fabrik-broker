@@ -32,12 +32,14 @@ class BOSHManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.create(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        }
       }));
   }
 
@@ -47,12 +49,14 @@ class BOSHManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.update(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        }
       }));
   }
 
@@ -62,12 +66,14 @@ class BOSHManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.delete(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResourceStateAndResponse({
+      .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceId: changeObjectBody.metadata.name,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        response: response,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        resourceId: changeObjectBody.metadata.name,
+        status: {
+          response: response,
+          state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        }
       }));
   }
 
