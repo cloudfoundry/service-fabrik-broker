@@ -38,6 +38,7 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     PROCESSING: 'processing'
   },
+  DIRECTOR_RESOURCE_POLLER_INTERVAL: 3000,
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -251,6 +252,9 @@ module.exports = Object.freeze({
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
+      DOCKER: 'dockers',
+      DIRECTOR_BIND: 'directorbinds',
+      DOCKER_BIND: 'dockerbinds',
       DEFAULT_BACKUP: 'defaultbackups'
     },
     RESOURCE_STATE: {
@@ -262,6 +266,7 @@ module.exports = Object.freeze({
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
       ABORTED: 'aborted',
+      UPDATE: 'update'
     },
     RESOURCE_KEYS: {
       STATE: 'state',
