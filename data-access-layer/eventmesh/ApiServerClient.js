@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
+const assert = require('assert');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -185,6 +186,10 @@ class ApiServerClient {
    */
   createResource(opts) {
     logger.info(`Creating resource with opts: `, opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
+    assert.ok(opts.options, `Property 'options' is required to create resource`);
     let metadata = {
       name: opts.resourceId
     };
@@ -235,6 +240,9 @@ class ApiServerClient {
    */
   updateResource(opts) {
     logger.info('Updating resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
     return Promise.try(() => {
         if (opts.options || opts.metadata) {
           let patchBody = {};
@@ -282,6 +290,10 @@ class ApiServerClient {
    */
   patchResponse(opts) {
     logger.info('Patching resource response with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch response`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch response`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch response`);
+    assert.ok(opts.response, `Property 'response' is required to patch response`);
     return this.getResource(opts)
       .then((resource) => {
         const oldResponse = resource.status.response;
@@ -306,6 +318,10 @@ class ApiServerClient {
 
   patchOptions(opts) {
     logger.info('Patching resource options with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
+    assert.ok(opts.options, `Property 'options' is required to patch options`);
     return this.getResource(opts)
       .then((resource) => {
         const oldOptions = resource.spec.options;
@@ -324,6 +340,9 @@ class ApiServerClient {
 
   deleteResource(opts) {
     logger.info('Deleting resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to delete resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to delete resource`);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).delete())
@@ -343,6 +362,12 @@ class ApiServerClient {
    */
   updateLastOperation(opts) {
     logger.info('Updating last operation with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update lastOperation`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to update lastOperation`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update lastOperation`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to update lastOperation`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to update lastOperation`);
+    assert.ok(opts.value, `Property 'value' is required to update lastOperation`);
     let metadata = {};
     metadata.labels = {};
     metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
@@ -363,6 +388,10 @@ class ApiServerClient {
    */
 
   getResource(opts) {
+    logger.debug('Get resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get resource`);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).get())
@@ -397,6 +426,11 @@ class ApiServerClient {
    * @param {string} opts.operationType - Type of operation
    */
   getLastOperation(opts) {
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get lastOperation`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get lastOperation`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to get lastOperation`);
+    assert.ok(opts.operationName, `Property 'operationName' is required to get lastOperation`);
+    assert.ok(opts.operationType, `Property 'operationType' is required to get lastOperation`);
     let options = _.chain(opts)
       .omit('operationName', 'operationType')
       .value();
