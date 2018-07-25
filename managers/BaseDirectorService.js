@@ -10,6 +10,7 @@ const BaseService = require('./BaseService');
 
 class BaseDirectorService extends BaseService {
   constructor(plan) {
+    super(plan);
     this.plan = plan;
     this.director = bosh.director;
     this.agent = new Agent(this.settings.agent);

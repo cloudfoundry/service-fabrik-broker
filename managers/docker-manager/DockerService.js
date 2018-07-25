@@ -40,6 +40,7 @@ class DockerService extends BaseService {
     this.prefix = CONST.SERVICE_FABRIK_PREFIX;
     this.credentials = docker.createCredentials(this.plan.credentials);
     this.imageInfo = undefined;
+    this.docker = docker.createClient();
   }
 
   assignPlatformManager(platformManager) {
@@ -294,7 +295,7 @@ class DockerService extends BaseService {
     return _(this.persistentVolumes)
       .map(volume => {
         assert.ok(_.has(volume, 'path'), 'Volume configuration must have a \'path\' property');
-        return `${this.getVolumeName(guid, volume)}:${volume.path}`;
+        return `${this.getVolumeName(volume)}:${volume.path}`;
       })
       .value();
   }
@@ -785,20 +786,15 @@ class DockerService extends BaseService {
     const context = _.get(options, 'context');
     const dockerService = new DockerService(instanceId, plan);
 
-    return Promise.try(() => {
-        if (this[plan.id]) {
-          return Promise.resolve(this[plan.id]);
-        }
-        return dockerClient
-          .getImage(this.imageName)
-          .inspectAsync()
-          .tap(imageInfo => {
-            this.imageInfo = imageInfo;
-            this[plan.id] = dockerService;
-          });
+    return dockerClient
+      .getImage(dockerService.imageName)
+      .inspectAsync()
+      .tap(imageInfo => {
+        dockerService.imageInfo = imageInfo;
+        dockerService[plan.id] = dockerService;
       })
       .then(() => context ? context : dockerService.platformContext)
-      .then(context => dockerService.assignPlatformManager(dockerService.getPlatformManager(context.platform)))
+      .then(context => dockerService.assignPlatformManager(DockerService.getPlatformManager(context.platform)))
       .return(dockerService);
   }
 

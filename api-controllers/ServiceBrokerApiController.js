@@ -78,6 +78,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
           value: params
         });
       })
+      .then(() => {
+        if (plan.manager.name === 'docker') {
+          return eventmesh.apiServerClient.getResourceOperationStatus({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: plan.manager.name,
+            resourceId: req.params.instance_id,
+            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            started_at: new Date()
+          })
+        }
+      })
       .then(done)
       .catch(ServiceInstanceAlreadyExists, conflict);
   }
