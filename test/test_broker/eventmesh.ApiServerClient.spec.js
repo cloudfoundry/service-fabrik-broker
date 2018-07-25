@@ -2,7 +2,7 @@
 
 const nock = require('nock');
 const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
-const apiServerHost = 'https://10.0.2.2:9443';
+const apiServerHost = 'https://127.0.0.1:9443';
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
 
@@ -123,13 +123,13 @@ describe('eventmesh', () => {
         };
         nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload);
         return apiserver.createResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(201);
             expect(res.body).to.eql({});
@@ -153,14 +153,14 @@ describe('eventmesh', () => {
         };
         nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload);
         return apiserver.createResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          parentResourceId: 'deployment1',
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(201);
             expect(res.body).to.eql({});
@@ -195,20 +195,20 @@ describe('eventmesh', () => {
         nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, payload1);
         nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
         return apiserver.createResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          parentResourceId: 'deployment1',
-          options: {
-            opts: 'sample_options'
-          },
-          status: {
-            state: 'create',
-            response: {
-              resp: 'resp'
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            },
+            status: {
+              state: 'create',
+              response: {
+                resp: 'resp'
+              }
             }
-          }
-        })
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(expectedResponse);
@@ -235,14 +235,14 @@ describe('eventmesh', () => {
         };
         nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload1, 404);
         return apiserver.createResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          parentResourceId: 'deployment1',
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .catch(err => {
             expect(err.status).to.eql(404);
             verify();
@@ -262,13 +262,13 @@ describe('eventmesh', () => {
         };
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.updateResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -293,14 +293,14 @@ describe('eventmesh', () => {
         };
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.updateResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          metadata: payload.metadata,
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            metadata: payload.metadata,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -336,20 +336,20 @@ describe('eventmesh', () => {
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, payload1);
         nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
         return apiserver.updateResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          metadata: payload1.metadata,
-          options: {
-            opts: 'sample_options'
-          },
-          status: {
-            state: 'create',
-            response: {
-              resp: 'resp'
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            metadata: payload1.metadata,
+            options: {
+              opts: 'sample_options'
+            },
+            status: {
+              state: 'create',
+              response: {
+                resp: 'resp'
+              }
             }
-          }
-        })
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql(expectedResponse);
@@ -370,13 +370,13 @@ describe('eventmesh', () => {
         };
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1, 404);
         return apiserver.updateResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          options: {
-            opts: 'sample_options'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .catch(err => {
             expect(err.status).to.eql(404);
             verify();
@@ -405,14 +405,14 @@ describe('eventmesh', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
         nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.patchResponse({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          response: {
-            resp: 'resp1',
-            resp2: 'resp2'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            response: {
+              resp: 'resp1',
+              resp2: 'resp2'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -442,14 +442,14 @@ describe('eventmesh', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.patchOptions({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          options: {
-            opt: 'opt1',
-            opt2: 'opt2'
-          }
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opt: 'opt1',
+              opt2: 'opt2'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -463,10 +463,10 @@ describe('eventmesh', () => {
         const expectedResponse = {};
         nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse);
         return apiserver.deleteResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -476,10 +476,10 @@ describe('eventmesh', () => {
       it('Throws error when delete fails', () => {
         nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, 404);
         return apiserver.deleteResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
+          })
           .catch(err => {
             expect(err.status).to.eql(404);
             verify();
@@ -499,13 +499,13 @@ describe('eventmesh', () => {
         };
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.updateLastOperation({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          operationName: CONST.OPERATION_TYPE.BACKUP,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          value: 'backup1'
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            value: 'backup1'
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
             expect(res.body).to.eql({});
@@ -518,10 +518,10 @@ describe('eventmesh', () => {
       it('Gets resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
         return apiserver.getResource({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          })
           .then(res => {
             expect(res).to.eql(sampleDeploymentResource);
             verify();
@@ -533,12 +533,12 @@ describe('eventmesh', () => {
       it('Gets last operation on resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
         return apiserver.getLastOperation({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          operationName: CONST.OPERATION_TYPE.BACKUP,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
+          })
           .then(res => {
             expect(res).to.eql('backup1');
             verify();
@@ -550,11 +550,11 @@ describe('eventmesh', () => {
       it('Gets options of resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
         return apiserver.getOptions({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          operationName: CONST.OPERATION_TYPE.BACKUP
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
+          })
           .then(res => {
             expect(res).to.eql(sampleDeploymentResource.spec.options);
             verify();
@@ -566,11 +566,11 @@ describe('eventmesh', () => {
       it('Gets options of resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
         return apiserver.getResponse({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          operationName: CONST.OPERATION_TYPE.BACKUP
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
+          })
           .then(res => {
             expect(res).to.eql(sampleDeploymentResource.status.response);
             verify();
@@ -582,11 +582,11 @@ describe('eventmesh', () => {
       it('Gets options of resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
         return apiserver.getState({
-          resourceId: 'deployment1',
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          operationName: CONST.OPERATION_TYPE.BACKUP
-        })
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
+          })
           .then(res => {
             expect(res).to.eql(sampleDeploymentResource.status.state);
             verify();
