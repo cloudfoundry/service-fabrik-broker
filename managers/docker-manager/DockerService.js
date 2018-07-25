@@ -166,7 +166,7 @@ class DockerService extends BaseService {
   }
 
   getContainerName(guid) {
-    return `${this.constructor.prefix}-${guid}`;
+    return `${this.prefix}-${guid}`;
   }
 
 
@@ -185,7 +185,7 @@ class DockerService extends BaseService {
     }
     return _
       .chain([
-        this.constructor.prefix,
+        this.prefix,
         this.guid,
         volume.name,
         formatSize(volume.size)

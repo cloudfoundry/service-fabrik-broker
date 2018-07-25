@@ -247,6 +247,7 @@ module.exports = Object.freeze({
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
+      BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {

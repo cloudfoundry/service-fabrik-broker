@@ -19,6 +19,9 @@ const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
+const config = require('../common/config');
+const formatUrl = require('url').format;
+
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -47,36 +50,37 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   putInstance(req, res) {
     const params = req.body;
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
+
+    function getDashboardUrl(serviceId, planId, instanceGuid) {
+      return formatUrl(_
+        .chain(config.external)
+        .pick('protocol', 'host')
+        .set('slashes', true)
+        .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceGuid}`)
+        .value()
+      );
+    }
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
-        dashboard_url: req.instance.dashboardUrl
+        dashboard_url: getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
       };
-      if (req.instance.async) {
+      if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        //body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
     }
 
-    function conflict(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
-    }
-
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise
-      //.try(() => this.createDirectorService(req))
-      //.then(directorService => directorService.create(params))
       .try(() => {
-        const planId = params.plan_id;
-        const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.createResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceGroup: plan.manager.resource_group,
+          resourceType: plan.manager.resource_type,
           resourceId: req.params.instance_id,
-          parentResourceId: req.params.instance_id,
           options: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -86,18 +90,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .then(() => {
-        if (plan.manager.name === 'docker') {
+        if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: plan.manager.name,
+            resourceGroup: plan.manager.resource_group,
+            resourceType: plan.manager.resource_type,
             resourceId: req.params.instance_id,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
           })
         }
       })
-      .then(done)
-      .catch(ServiceInstanceAlreadyExists, conflict);
+      .then(done);
   }
 
   patchInstance(req, res) {

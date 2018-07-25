@@ -2,11 +2,9 @@
 
 const _ = require('lodash');
 const CONST = require('../common/constants');
-const config = require('../common/config');
 const Agent = require('../data-access-layer/service-agent');
 const errors = require('../common/errors');
 const NotImplemented = errors.NotImplemented;
-const formatUrl = require('url').format;
 
 class BaseService {
   constructor(plan) {
@@ -57,21 +55,6 @@ class BaseService {
       throw new NotImplemented(`Feature '${feature}' not supported`);
     }
   }
-
-  getDashboardUrl(guid) {
-    return formatUrl(_
-      .chain(config.external)
-      .pick('protocol', 'host')
-      .set('slashes', true)
-      .set('pathname', `/manage/instances/${this.service.id}/${this.plan.id}/${guid}`)
-      .value()
-    );
-  }
-
-  get dashboardUrl() {
-    return this.getDashboardUrl(this.guid);
-  }
-
 
   get securityGroupName() {
     return `${this.constructor.prefix}-${this.guid}`;
