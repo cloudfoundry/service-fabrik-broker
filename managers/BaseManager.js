@@ -16,18 +16,22 @@ class BaseManager {
     return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, this.handleResource.bind(this), queryString)
       .then(stream => {
         logger.info(`Successfully set watcher with query string:`, queryString);
-        return Promise.delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL, () => {
-          logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
-          stream.abort();
-          return this.registerWatcher(resourceGroup, resourceType, queryString);
-        });
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
+          .then(() => {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            stream.abort();
+            return this.registerWatcher(resourceGroup, resourceType, queryString);
+          });
       })
       .catch(e => {
         logger.error(`Error occured in registerWatcher:`, e);
-        return Promise.delay(CONST.APISERVER.WATCHER_ERROR_DELAY, () => {
-          logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
-          return this.registerWatcher(resourceGroup, resourceType, queryString);
-        });
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
+          .then(() => {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            return this.registerWatcher(resourceGroup, resourceType, queryString);
+          });
       });
   }
 
