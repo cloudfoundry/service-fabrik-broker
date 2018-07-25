@@ -204,7 +204,7 @@ class ApiServerClient {
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
           body: resourceBody
         }))
-      .then(() => {
+      .then((resource) => {
         if (opts.status) {
           let statusJson = {};
           _.forEach(opts.status, (val, key) => {
@@ -212,9 +212,12 @@ class ApiServerClient {
           });
           return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
             .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-              body: statusJson
+              body: {
+                'status': statusJson
+              }
             });
         }
+        return resource;
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -250,7 +253,7 @@ class ApiServerClient {
             });
         }
       })
-      .then(() => {
+      .then((resource) => {
         if (opts.status) {
           let statusJson = {};
           _.forEach(opts.status, (val, key) => {
@@ -263,6 +266,7 @@ class ApiServerClient {
               }
             });
         }
+        return resource;
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -397,10 +401,7 @@ class ApiServerClient {
       .omit('operationName', 'operationType')
       .value();
     return this.getResource(options)
-      .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`])
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
+      .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`]);
   }
 
   /**
