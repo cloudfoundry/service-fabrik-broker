@@ -210,9 +210,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const encodedOp = _.get(req, 'query.operation', undefined);
     const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
     const guid = req.params.instance_id;
+    let action, instanceType;
     if (operation) {
-      const action = _.capitalize(operation.type);
-      const instanceType = req.instance.constructor.typeDescription;
+      action = _.capitalize(operation.type);
+      instanceType = req.instance.constructor.typeDescription;
     }
 
     function done(result) {
