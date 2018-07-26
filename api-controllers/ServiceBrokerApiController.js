@@ -106,58 +106,77 @@ class ServiceBrokerApiController extends FabrikBaseController {
   patchInstance(req, res) {
     const params = _
       .chain(req.body)
-      //.omit('plan_id', 'service_id')
+      // .omit('plan_id', 'service_id') //Not omiting even for restore. will that be a problem?
       .cloneDeep()
       .value();
     //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
+    const isRestoreOperation = _.get(params.parameters, 'service-fabrik-operation', null) ? false : true;
+    req.operation_type = CONST.OPERATION_TYPE.UPDATE;
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
 
     function done(result) {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
-      if (req.instance.async) {
+      if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        //body.operation = utils.encodeBase64(result);
+        if (isRestoreOperation) {
+          body.operation = utils.encodeBase64(result);
+        }
       }
       res.status(statusCode).send(body);
     }
 
-    req.operation_type = CONST.OPERATION_TYPE.UPDATE;
+    function isUpdatePossible(previousPlanId) {
+      const planId = params.plan_id;
+      const plan = catalog.getPlan(planId);
+      const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
+      return plan === previousPlan || _.includes(plan.manager.settings.updatePredecessors, previousPlan.id);
+    }
 
-    return Promise
-      .try(() => {
-        if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) {
-          throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
-        }
-        //return this.createDirectorService(req);
-      })
-
-      //.then(directorService => directorService.update(params))
-      //TODO : handle existing cases
-      .then(() => {
-        const planId = params.plan_id;
-        const plan = catalog.getPlan(planId);
-        return eventmesh.apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: req.params.instance_id,
-          options: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-            lastOperation: {},
-            response: {}
+    if (isRestoreOperation) {
+      return Promise
+        .try(() => {
+          if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) { //ideally this can also use the local function but not changing as this piece of code anyways go away once restore manager in place.
+            throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
           }
-        });
-      })
-      .then(done);
+          return req.instance.update(params);
+        })
+        .then(done);
+    } else {
+      return Promise
+        .try(() => {
+          if (!isUpdatePossible(params.previous_values.plan_id)) {
+            throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+          }
+        })
+        //TODO : handle existing cases
+        .then(() => {
+          return eventmesh.apiServerClient.updateResource({
+            resourceGroup: plan.manager.resource_group,
+            resourceType: plan.manager.resource_type,
+            resourceId: req.params.instance_id,
+            options: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+              lastOperation: {},
+              response: {}
+            }
+          });
+        })
+        .then(done);
+    }
   }
 
   deleteInstance(req, res) {
     const params = req.query;
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
 
     function done(result) {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
-      if (req.instance.async) {
+      if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         //body.operation = utils.encodeBase64(result);
       }
@@ -171,14 +190,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
 
     return Promise
-      // .try(() => this.createDirectorService(req))
-      // .then(directorService => directorService.delete(params))
       .try(() => {
-        const planId = params.plan_id;
-        const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.updateDeploymentResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceGroup: plan.manager.resource_group,
+          resourceType: plan.manager.resource_type,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -192,11 +207,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(ServiceInstanceNotFound, gone);
   }
   getLastInstanceOperation(req, res) {
-    // const encodedOp = _.get(req, 'query.operation', undefined);
-    // const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
-    // const action = _.capitalize(operation.type);
-    // const instanceType = req.instance.constructor.typeDescription;
-    // const guid = req.instance.guid;
+    const encodedOp = _.get(req, 'query.operation', undefined);
+    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
+    const guid = req.params.instance_id;
+    if (operation) {
+      const action = _.capitalize(operation.type);
+      const instanceType = req.instance.constructor.typeDescription;
+    }
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
@@ -222,27 +239,36 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     function notFound(err) {
-      //      if (operation.type === 'delete') {
-      return gone();
-      //      }
-      //TODO : for non delete case, check when notfound is thrown and handle. similarly for AssertionError
-      //      failed(err);
+      if (operation && operation.type === 'delete') {
+        return gone();
+      } else if (!operation) { //TODO : for non delete case, check when notfound is thrown and handle. similarly for AssertionError
+        //      failed(err);
+        return gone();
+      }
+      failed(err);
     }
-    const planId = req.query.plan_id;
-    const plan = catalog.getPlan(planId);
-    return eventmesh.apiServerClient.getLastOperation({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: req.params.instance_id
-      })
-      .then(done)
-      .catch(AssertionError, failed)
-      .catch(NotFound, notFound);
+
+    if (operation) { // keeping it to support last operation for the restore and for any ongoing update
+      return req.instance.lastOperation(operation)
+        .then(done)
+        .catch(AssertionError, failed)
+        .catch(ServiceInstanceNotFound, notFound);
+    } else {
+      const planId = req.query.plan_id;
+      const plan = catalog.getPlan(planId);
+      return eventmesh.apiServerClient.getLastOperation({
+          resourceGroup: plan.manager.resource_group,
+          resourceType: plan.manager.resource_type,
+          resourceId: req.params.instance_id
+        })
+        .then(done)
+        .catch(AssertionError, failed)
+        .catch(NotFound, notFound);
+    }
   }
 
   putBinding(req, res) {
     const params = _(req.body)
-      // .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
       .value();
 
@@ -257,16 +283,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
+
     return Promise
-      // .try(() => this.createDirectorService(req))
-      // .then(directorService => directorService.delete(params))
-      //TODO Handle docker resource also 
       .try(() => {
-        const planId = params.plan_id;
-        const plan = catalog.getPlan(planId);
-        return eventmesh.apiServerClient.createOperation({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        return eventmesh.apiServerClient.createResource({
+          resourceGroup: plan.manager.bind.resource_group,
+          resourceType: plan.manager.bind.resource_type,
           resourceId: params.binding_id,
           parentResourceId: req.params.instance_id,
           options: params,
@@ -276,8 +300,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceGroup: plan.manager.bind.resource_group,
+        resourceType: plan.manager.bind.resource_type,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
@@ -288,7 +312,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   deleteBinding(req, res) {
     const params = _(req.query)
-      // .omit('plan_id', 'service_id')
       .set('binding_id', req.params.binding_id)
       .value();
 
@@ -300,16 +323,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       /* jshint unused:false */
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
+    const planId = params.plan_id;
+    const plan = catalog.getPlan(planId);
 
     return Promise
-      // .try(() => this.createDirectorService(req))
-      // .then(directorService => directorService.delete(params))
       .try(() => {
-        const planId = params.plan_id;
-        const plan = catalog.getPlan(planId);
         return eventmesh.apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceGroup: plan.manager.bind.resource_group,
+          resourceType: plan.manager.bind.resource_type,
           resourceId: params.binding_id,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.DELETE
@@ -317,15 +338,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceGroup: plan.manager.bind.resource_group,
+        resourceType: plan.manager.bind.resource_type,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
       .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceGroup: plan.manager.bind.resource_group,
+        resourceType: plan.manager.bind.resource_type,
         resourceId: params.binding_id
       }))
       .then(done)

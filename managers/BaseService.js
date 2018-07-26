@@ -40,11 +40,6 @@ class BaseService {
     return this.settings.restore_predecessors || this.updatePredecessors;
   }
 
-  isUpdatePossible(plan_id) {
-    const previousPlan = _.find(this.service.plans, ['id', plan_id]);
-    return this.plan === previousPlan || _.includes(this.updatePredecessors, previousPlan.id);
-  }
-
   isRestorePossible(plan_id) {
     const previousPlan = _.find(this.service.plans, ['id', plan_id]);
     return this.plan === previousPlan || _.includes(this.restorePredecessors, previousPlan.id);
