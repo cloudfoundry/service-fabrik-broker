@@ -204,7 +204,8 @@ class ApiServerClient {
         'options': JSON.stringify(opts.options)
       },
     };
-    return Promise.try(() => apiserver
+    return Promise.try(() => this.init())
+      .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
           body: resourceBody
@@ -215,12 +216,13 @@ class ApiServerClient {
           _.forEach(opts.status, (val, key) => {
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
-          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-              body: {
-                'status': statusJson
-              }
-            });
+          return Promise.try(() => this.init())
+            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
+                body: {
+                  'status': statusJson
+                }
+              }));
         }
         return resource;
       })
@@ -254,11 +256,12 @@ class ApiServerClient {
               'options': JSON.stringify(opts.options)
             };
           }
-          return apiserver
-            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
-              body: patchBody
-            });
+          return Promise.try(() => this.init())
+            .then(() => apiserver
+              .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+                body: patchBody
+              }));
         }
       })
       .then((resource) => {
@@ -267,12 +270,13 @@ class ApiServerClient {
           _.forEach(opts.status, (val, key) => {
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
-          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-              body: {
-                'status': statusJson
-              }
-            });
+          return Promise.try(() => this.init())
+            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
+                body: {
+                  'status': statusJson
+                }
+              }));
         }
         return resource;
       })
