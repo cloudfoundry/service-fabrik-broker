@@ -11,11 +11,9 @@ const lockManager = require('../data-access-layer/eventmesh').lockManager;
 const AssertionError = assert.AssertionError;
 const BadRequest = errors.BadRequest;
 const PreconditionFailed = errors.PreconditionFailed;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ContinueWithNext = errors.ContinueWithNext;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
@@ -97,7 +95,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             resourceId: req.params.instance_id,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
-          })
+          });
         }
       })
       .then(done);
@@ -173,12 +171,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
 
-    function done(result) {
+    function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        //body.operation = utils.encodeBase64(result);
       }
       res.status(statusCode).send(body);
     }

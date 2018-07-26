@@ -271,7 +271,7 @@ class DockerService extends BaseService {
   }
 
   getHostConfig(guid, portBindings) {
-    const volumeBindings = this.getVolumeBindings(guid);
+    const volumeBindings = this.getVolumeBindings();
     const volumeDriver = config.docker.volume_driver || 'local';
     return {
       Binds: volumeBindings,
@@ -293,7 +293,7 @@ class DockerService extends BaseService {
     };
   }
 
-  getVolumeBindings(guid) {
+  getVolumeBindings() {
     return _(this.persistentVolumes)
       .map(volume => {
         assert.ok(_.has(volume, 'path'), 'Volume configuration must have a \'path\' property');
