@@ -108,7 +108,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .cloneDeep()
       .value();
     //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
-    const isRestoreOperation = _.get(params.parameters, 'service-fabrik-operation', null) ? false : true;
+    const isRestoreOperation = _.get(params.parameters, 'service-fabrik-operation', null) ? true : false;
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
@@ -129,7 +129,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const planId = params.plan_id;
       const plan = catalog.getPlan(planId);
       const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
-      return plan === previousPlan || _.includes(plan.manager.settings.updatePredecessors, previousPlan.id);
+      return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
 
     if (isRestoreOperation) {
