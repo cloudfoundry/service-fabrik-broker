@@ -38,7 +38,7 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     PROCESSING: 'processing'
   },
-  DIRECTOR_RESOURCE_POLLER_INTERVAL: 15000, // Change it to 60000 same as lastoperation frequency
+  DIRECTOR_RESOURCE_POLLER_INTERVAL: 3000, // Change it to 60000 same as lastoperation frequency
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
