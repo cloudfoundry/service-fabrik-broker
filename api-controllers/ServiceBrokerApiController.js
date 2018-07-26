@@ -303,10 +303,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(credentials) {
       // omit credentials from resource response
-
-      res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
-        credentials: credentials
-      });
+      return eventmesh.apiServerClient.updateResource({
+          resourceGroup: plan.manager.resource_mappings.bind.resource_group,
+          resourceType: plan.manager.resource_mappings.bind.resource_type,
+          resourceId: params.binding_id,
+          status: {
+            response: {}
+          }
+        })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
+          credentials: credentials
+        }));
     }
 
     function conflict(err) {
