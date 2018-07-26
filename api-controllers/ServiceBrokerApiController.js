@@ -4,6 +4,7 @@ const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
+const logger = require('../common/logger');
 const utils = require('../common/utils');
 const catalog = require('../common/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
@@ -162,6 +163,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         })
+        .catch(NotFound, () => {
+          logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
+            `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+          return eventmesh.apiServerClient.createResource({
+            resourceGroup: plan.manager.resource_mappings.resource_group,
+            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceId: req.params.instance_id,
+            options: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+              lastOperation: {},
+              response: {}
+            }
+          });
+        })
         .then(done);
     }
   }
@@ -189,6 +205,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.updateResource({
+          resourceGroup: plan.manager.resource_mappings.resource_group,
+          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceId: req.params.instance_id,
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            lastOperation: {},
+            response: {}
+          }
+        });
+      })
+      .catch(NotFound, () => {
+        logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
+          `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+        return eventmesh.apiServerClient.createResource({
           resourceGroup: plan.manager.resource_mappings.resource_group,
           resourceType: plan.manager.resource_mappings.resource_type,
           resourceId: req.params.instance_id,
@@ -246,7 +277,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       failed(err);
     }
 
-    if (operation) { // keeping it to support last operation for the restore and for any ongoing update
+    if (operation) { // keeping it to support last operation for the restore and for any ongoing update, delete?
       return req.instance.lastOperation(operation)
         .then(done)
         .catch(AssertionError, failed)
@@ -271,6 +302,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done(credentials) {
+      // omit credentials from resource response
+
       res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
         credentials: credentials
       });
