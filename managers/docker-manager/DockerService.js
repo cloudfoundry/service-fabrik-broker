@@ -41,6 +41,8 @@ class DockerService extends BaseService {
     this.credentials = docker.createCredentials(this.plan.credentials);
     this.imageInfo = undefined;
     this.docker = docker.createClient();
+    this.container = this.docker.getContainer(this.containerName);
+    this.containerInfo = undefined;
   }
 
   assignPlatformManager(platformManager) {

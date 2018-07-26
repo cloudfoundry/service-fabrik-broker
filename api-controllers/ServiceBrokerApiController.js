@@ -191,7 +191,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.updateDeploymentResource({
+        return eventmesh.apiServerClient.updateResource({
           resourceGroup: plan.manager.resource_group,
           resourceType: plan.manager.resource_type,
           resourceId: req.params.instance_id,

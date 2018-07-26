@@ -54,7 +54,7 @@ class BOSHBindManager extends BaseManager {
         resourceId: changeObjectBody.metadata.name,
         status: {
           response: response,
-          stateValue: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
       }));
   }
