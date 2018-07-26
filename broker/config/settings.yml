@@ -588,10 +588,10 @@ defaults: &defaults
       free: true
       manager:
         name: 'docker'
+        async: false
         resource_mappings: &docker_resource_mappings
           resource_group: 'deployment.servicefabrik.io'
           resource_type: 'docker'
-          async: false
           bind:
             resource_group: 'bind.servicefabrik.io'
             resource_type: 'dockerbind'
@@ -627,6 +627,7 @@ defaults: &defaults
       free: true
       manager:
         name: 'docker'
+        async: false
         resource_mappings: *docker_resource_mappings
         settings:
           image: 'servicefabrikjenkins/blueprint'
@@ -660,6 +661,7 @@ defaults: &defaults
       free: true
       manager:
         name: 'docker'
+        async: false
         resource_mappings: *docker_resource_mappings
         settings:
           image: 'servicefabrikjenkins/blueprint'
@@ -698,10 +700,10 @@ defaults: &defaults
 #      actions: ReserveIps
       manager: &manager_plan3
         name: 'director'
+        async: true
         resource_mappings: &director_resource_mappings
           resource_group: 'deployment.servicefabrik.io'
           resource_type: 'director'
-          async: true
           bind:
             resource_group: 'bind.servicefabrik.io'
             resource_type: 'directorbind'
@@ -740,6 +742,7 @@ defaults: &defaults
       free: false
       manager: &manager_plan4
         name: 'director'
+        async: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan4
           prefix: 'blueprint'
@@ -773,6 +776,7 @@ defaults: &defaults
       free: false
       manager: &manager_plan5
         name: 'director'
+        async: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan5
           prefix: 'blueprint'
@@ -807,6 +811,7 @@ defaults: &defaults
       free: false
       manager: &manager_plan7
         name: 'director'
+        async: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan7
           prefix: 'blueprint'
@@ -840,6 +845,7 @@ defaults: &defaults
       free: false
       manager: &manager_plan6
         name: 'director'
+        async: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan6
           prefix: 'blueprint'
@@ -899,6 +905,7 @@ defaults: &defaults
       free: false
       manager: &manager_plan9
         name: 'director'
+        async: true
         resource_mappings: *director_resource_mappings
         settings: &settings_plan9
           prefix: 'rabbitmq'
