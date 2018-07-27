@@ -80,47 +80,37 @@ class ApiServerClient {
    * @param {object} opts.started_at - Date object specifying operation start time
    */
   getResourceOperationStatus(opts) {
-    logger.info(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
+    logger.debug(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
     let finalState;
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
-      .then(() => this.getState({
+      .then(() => this.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: opts.resourceId
       }))
-      .then(state => {
+      .then(resource => {
+        const state = resource.status.state;
         if (state === opts.start_state) {
-          return this.getResourceOperationStatus(opts);
-        } else if (
-          state === CONST.APISERVER.RESOURCE_STATE.FAILED ||
-          state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
-        ) {
-          finalState = state;
-          return this.getResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-              resourceId: opts.resourceId
-            })
-            .then(response => {
-              if (response.status.error) {
-                const errorResponse = response.status.error;
-                logger.info('Operation manager reported error', errorResponse);
-                return convertToHttpErrorAndThrow(errorResponse);
-              }
-            });
-        } else {
-          finalState = state;
           const duration = (new Date() - opts.started_at) / 1000;
           logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
           if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
             logger.error(`Backup with guid ${opts.resourceId} not picked up from the queue`);
             throw new Timeout(`Backup with guid ${opts.resourceId} not picked up from the queue`);
           }
-          return this.getResponse({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: opts.resourceId
-          });
+          return this.getResourceOperationStatus(opts);
+        } else if (
+          state === CONST.APISERVER.RESOURCE_STATE.FAILED ||
+          state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+        ) {
+          finalState = state;
+          if (resource.status.error) {
+            const errorResponse = resource.status.error;
+            logger.info('Operation manager reported error', errorResponse);
+            return convertToHttpErrorAndThrow(errorResponse);
+          }
+        } else {
+          finalState = state;
+          return resource.status.response;
         }
       })
       .then(result => {
@@ -364,7 +354,7 @@ class ApiServerClient {
    * @param {string} opts.operationType - Type of operation which was last operation
    * @param {Object} opts.value - Unique id of the last operation ex: backup_guid
    */
-  updateLastOperation(opts) {
+  updateLastOperationValue(opts) {
     logger.info('Updating last operation with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update lastOperation`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update lastOperation`);
@@ -429,7 +419,7 @@ class ApiServerClient {
    * @param {string} opts.operationName - Name of operation
    * @param {string} opts.operationType - Type of operation
    */
-  getLastOperation(opts) {
+  getLastOperationValue(opts) {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get lastOperation`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get lastOperation`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get lastOperation`);

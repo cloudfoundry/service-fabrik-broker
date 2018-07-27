@@ -257,7 +257,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startBackup(req, res) {
-    let backupStartedAt;
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
@@ -298,7 +297,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           });
       })
       .then(() => {
-        backupStartedAt = new Date();
         //check if resource exist, else create and then update
         return eventmesh.apiServerClient.getResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -322,7 +320,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               }
             });
           })
-          .then(() => eventmesh.apiServerClient.updateLastOperation({
+          .then(() => eventmesh.apiServerClient.updateLastOperationValue({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -352,7 +350,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    return eventmesh.apiServerClient.getLastOperation({
+    return eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -387,9 +385,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   abortLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
-    const backupStartedAt = new Date();
     return eventmesh
-      .apiServerClient.getLastOperation({
+      .apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.BACKUP,
@@ -398,13 +395,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(backupGuid => {
         return eventmesh
-          .apiServerClient.getResource({
+          .apiServerClient.getState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: backupGuid
           })
-          .then(response => {
-            const state = response.status.state;
+          .then(state => {
             // abort only if the state is in progress
             if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
               return eventmesh.apiServerClient.updateResource({
@@ -422,7 +418,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
             resourceId: backupGuid,
             start_state: CONST.OPERATION.ABORT,
-            started_at: backupStartedAt
+            started_at: new Date()
           }));
       })
       .then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send({}));

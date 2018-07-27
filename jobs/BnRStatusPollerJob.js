@@ -111,7 +111,7 @@ class BnRStatusPollerJob extends BaseJob {
               }
             });
           })
-          .then(() => eventmesh.apiServerClient.updateLastOperation({
+          .then(() => eventmesh.apiServerClient.updateLastOperationValue({
             resourceId: instance_guid,
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,

@@ -498,7 +498,7 @@ describe('eventmesh', () => {
           }
         };
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
-        return apiserver.updateLastOperation({
+        return apiserver.updateLastOperationValue({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -532,7 +532,7 @@ describe('eventmesh', () => {
     describe('getLastOperation', () => {
       it('Gets last operation on resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
-        return apiserver.getLastOperation({
+        return apiserver.getLastOperationValue({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
