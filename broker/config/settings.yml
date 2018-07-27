@@ -192,10 +192,6 @@ defaults: &defaults
   apiserver:
     ip: '127.0.0.1'
     port: 9443
-
-  apiserver:
-    ip: '127.0.0.1'
-    port: 9443
     encryption:
       key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
       initialization_vector: 'ABCDEFGHABCDEFGH'
