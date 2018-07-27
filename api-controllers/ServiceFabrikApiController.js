@@ -305,18 +305,23 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: req.params.instance_id
           })
-          .catch(() => eventmesh.apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: req.params.instance_id,
-            parentResourceId: req.params.instance_id,
-            options: {},
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-              lastOperation: {},
-              response: {}
-            }
-          }))
+          /* jshint unused:false */
+          .catch(NotFound, () => {
+            logger.debug(`Resource resourceGroup: ${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT},` +
+              `resourceType: ${CONST.APISERVER.RESOURCE_TYPES.DIRECTOR}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+            return eventmesh.apiServerClient.createResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: req.params.instance_id,
+              parentResourceId: req.params.instance_id,
+              options: {},
+              status: {
+                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                lastOperation: {},
+                response: {}
+              }
+            });
+          })
           .then(() => eventmesh.apiServerClient.updateLastOperation({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,

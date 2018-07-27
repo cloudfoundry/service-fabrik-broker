@@ -43,9 +43,8 @@ class BaseManager {
     logger.info('Trying to acquire processing lock for request with options: ', changedOptions);
     // Set lockedManager annotations to true
     const patchBody = _.cloneDeep(changeObjectBody);
-    let metadata = patchBody.metadata;
-    let currentAnnotations = metadata.annotations;
-    let patchAnnotations = currentAnnotations ? currentAnnotations : {};
+    const metadata = patchBody.metadata;
+    const patchAnnotations = metadata.annotations ? metadata.annotations : {};
     patchAnnotations.lockedByManager = config.broker_ip;
     metadata.annotations = patchAnnotations;
     const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);

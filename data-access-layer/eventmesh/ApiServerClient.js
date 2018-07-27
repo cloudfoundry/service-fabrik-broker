@@ -190,7 +190,7 @@ class ApiServerClient {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
     assert.ok(opts.options, `Property 'options' is required to create resource`);
-    let metadata = {
+    const metadata = {
       name: opts.resourceId
     };
     if (opts.parentResourceId) {
@@ -212,7 +212,7 @@ class ApiServerClient {
         }))
       .then((resource) => {
         if (opts.status) {
-          let statusJson = {};
+          const statusJson = {};
           _.forEach(opts.status, (val, key) => {
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
@@ -247,7 +247,7 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
     return Promise.try(() => {
         if (opts.options || opts.metadata) {
-          let patchBody = {};
+          const patchBody = {};
           if (opts.metadata) {
             patchBody.metadata = opts.metadata;
           }
@@ -266,7 +266,7 @@ class ApiServerClient {
       })
       .then((resource) => {
         if (opts.status) {
-          let statusJson = {};
+          const statusJson = {};
           _.forEach(opts.status, (val, key) => {
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
@@ -372,7 +372,7 @@ class ApiServerClient {
     assert.ok(opts.operationName, `Property 'operationName' is required to update lastOperation`);
     assert.ok(opts.operationType, `Property 'operationType' is required to update lastOperation`);
     assert.ok(opts.value, `Property 'value' is required to update lastOperation`);
-    let metadata = {};
+    const metadata = {};
     metadata.labels = {};
     metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
     const options = _.chain(opts)
