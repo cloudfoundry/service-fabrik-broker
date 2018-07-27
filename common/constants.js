@@ -282,7 +282,11 @@ module.exports = Object.freeze({
     ATTRIBUTES: 'attributes',
     PLANS: 'plans'
   },
-
+  ENCRYPTION: {
+    AES_256_ALGORITHM: 'aes-256-ctr',
+    INPUT_ENCODING: 'utf8',
+    OUTPUT_ENCODING: 'hex'
+  },
   PLATFORM: {
     CF: 'cloudfoundry',
     K8S: 'kubernetes'
