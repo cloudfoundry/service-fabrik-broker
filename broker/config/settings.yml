@@ -197,7 +197,7 @@ defaults: &defaults
     ip: '127.0.0.1'
     port: 9443
     encryption:
-      password: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
+      key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
       initialization_vector: 'ABCDEFGHABCDEFGH'
 
   ##############################
