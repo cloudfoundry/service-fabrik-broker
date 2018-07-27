@@ -178,6 +178,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         })
+        .then(() => {
+          if (!plan.manager.async) {
+            return eventmesh.apiServerClient.getResourceOperationStatus({
+              resourceGroup: plan.manager.resource_mappings.resource_group,
+              resourceType: plan.manager.resource_mappings.resource_type,
+              resourceId: req.params.instance_id,
+              start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+              started_at: new Date()
+            });
+          }
+        })
         .then(done);
     }
   }
@@ -191,6 +202,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (plan.manager.async) {
+        // Delete resource from here
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
       }
       res.status(statusCode).send(body);
@@ -230,6 +242,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
             response: {}
           }
         });
+      })
+      .then(() => {
+        if (!plan.manager.async) {
+          return eventmesh.apiServerClient.getResourceOperationStatus({
+            resourceGroup: plan.manager.resource_mappings.resource_group,
+            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceId: req.params.instance_id,
+            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            started_at: new Date()
+          });
+        }
       })
       .then(done)
       .catch(ServiceInstanceNotFound, gone);
@@ -367,13 +390,28 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.updateResource({
-          resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-          resourceType: plan.manager.resource_mappings.bind.resource_type,
-          resourceId: params.binding_id,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.DELETE
-          }
-        });
+            resourceGroup: plan.manager.resource_mappings.bind.resource_group,
+            resourceType: plan.manager.resource_mappings.bind.resource_type,
+            resourceId: params.binding_id,
+            options: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.DELETE
+            }
+          })
+          .catch((NotFound), () => {
+            logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.bind.resource_group},` +
+              `resourceType: ${plan.manager.resource_mappings.bind.resource_type}, resourceId: ${params.binding_id} not found, Creating now...`);
+            return eventmesh.apiServerClient.createResource({
+              resourceGroup: plan.manager.resource_mappings.bind.resource_group,
+              resourceType: plan.manager.resource_mappings.bind.resource_type,
+              resourceId: params.binding_id,
+              parentResourceId: req.params.instance_id,
+              options: params,
+              status: {
+                state: CONST.APISERVER.RESOURCE_STATE.DELETE
+              }
+            });
+          });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
         resourceGroup: plan.manager.resource_mappings.bind.resource_group,

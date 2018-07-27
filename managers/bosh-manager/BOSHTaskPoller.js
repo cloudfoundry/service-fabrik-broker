@@ -10,6 +10,7 @@ const config = require('../../common/config');
 const DirectorService = require('./DirectorService');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
+/* jshint unused:false */
 const Conflict = errors.Conflict;
 
 class BOSHTaskPoller {
@@ -30,7 +31,7 @@ class BOSHTaskPoller {
           const pollerAnnotation = resource.metadata.annotations.lockedByTaskPoller;
           logger.info(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
-            if (pollerAnnotation && JSON.parse(pollerAnnotation).ip !== config.ip && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + 2000))) { // cahnge this to 5000
+            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + 2000))) { // cahnge this to 5000
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resource);
@@ -82,6 +83,7 @@ class BOSHTaskPoller {
                       //TODO set error field
                     }
                   })
+                  /* jshint unused:false */
                   .catch(Conflict => {
                     logger.debug(`Not able to acquire poller processing lock, Request with is probably picked by other worker`);
                   }));
