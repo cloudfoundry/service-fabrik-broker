@@ -1628,8 +1628,6 @@ describe('service-broker-api-2.0', function () {
         });
       });
 
-
-
       describe('#bind', function () {
         it('no context : returns 201 Created', function (done) {
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
@@ -1653,7 +1651,7 @@ describe('service-broker-api-2.0', function () {
           mocks.director.createBindingProperty(binding_id);
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: 'daily'
+            repeatInterval: '8 hours'
           });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
@@ -1715,7 +1713,7 @@ describe('service-broker-api-2.0', function () {
           mocks.director.createBindingProperty(binding_id);
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: 'daily'
+            repeatInterval: '8 hours'
           });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
@@ -1777,7 +1775,7 @@ describe('service-broker-api-2.0', function () {
           mocks.director.createBindingProperty(binding_id);
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: 'daily'
+            repeatInterval: '8 hours'
           });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {

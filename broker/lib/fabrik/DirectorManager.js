@@ -799,14 +799,14 @@ class DirectorManager extends BaseManager {
   startRestore(opts) {
     const deploymentName = opts.deployment;
     const args = opts.arguments;
-    const backupMetadata = args.backup;
+    const backupMetadata = _.get(args, 'backup');
 
     const backup = {
       guid: args.backup_guid,
       timeStamp: args.time_stamp,
-      type: backupMetadata.type,
-      secret: backupMetadata.secret,
-      snapshotId: backupMetadata.snapshotId
+      type: _.get(backupMetadata, 'type'),
+      secret: _.get(backupMetadata, 'secret'),
+      snapshotId: _.get(backupMetadata, 'snapshotId')
     };
 
     const data = _
@@ -867,20 +867,64 @@ class DirectorManager extends BaseManager {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
 
+    let restoreMetadata;
     return this.agent
       .getRestoreLastOperation(agent_ip)
       .tap(lastOperation => {
         if (isFinished(lastOperation.state)) {
-          return this.agent
-            .getRestoreLogs(agent_ip)
-            .then(logs => this.backupStore
-              .patchRestoreFile(options, {
-                state: lastOperation.state,
-                logs: logs
-              })
-            );
+          return Promise.all([this.agent
+              .getRestoreLogs(agent_ip), this.backupStore
+              .getRestoreFile(options)
+            ])
+            .spread((logs, metadata) => {
+              restoreMetadata = metadata;
+              const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
+              const date_history = this.updateHistoryOfDates(
+                _.get(restoreMetadata, 'date_history'), restoreFinishiedAt);
+              return this.backupStore
+                .patchRestoreFile(options, {
+                  state: lastOperation.state,
+                  logs: logs,
+                  finished_at: restoreFinishiedAt,
+                  date_history: date_history
+                });
+            })
+            .tap(() => {
+              // Trigger schedule backup when restore is successful
+              if (lastOperation.state === CONST.OPERATION.SUCCEEDED) {
+                return this.scheduleBackup({
+                  instance_id: options.instance_guid,
+                  afterXminute: 3
+                });
+              }
+            });
         }
       });
+  }
+
+  updateHistoryOfDates(arrayOfDates, isoDateToUpdate) {
+    let updatedHistory = arrayOfDates || [];
+    updatedHistory.push(isoDateToUpdate);
+    _.remove(updatedHistory, date => {
+      const twoMonthOlderDate = Date.now() - 1000 * 60 * 60 * 24 * 60;
+      return Date.parse(date) < twoMonthOlderDate;
+    });
+    return updatedHistory.sort();
+  }
+  scheduleBackup(opts) {
+    const options = {
+      instance_id: opts.instance_id,
+      repeatInterval: 'daily',
+      type: CONST.BACKUP.TYPE.ONLINE
+    };
+    let interval;
+    if (this.service.backup_interval) {
+      interval = this.service.backup_interval;
+    }
+    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(interval, opts.afterXminute);
+    logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
+    //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+    return cf.serviceFabrikClient.scheduleBackup(options);
   }
 
   getLastRestore(tenant_id, instance_guid) {

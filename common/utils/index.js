@@ -40,6 +40,7 @@ exports.deploymentNameRegExp = deploymentNameRegExp;
 exports.getRandomInt = getRandomInt;
 exports.getRandomCronForOnceEveryXDays = getRandomCronForOnceEveryXDays;
 exports.getRandomCronForEveryDayAtXHoursInterval = getRandomCronForEveryDayAtXHoursInterval;
+exports.getCronWithIntervalAndAfterXminute = getCronWithIntervalAndAfterXminute;
 exports.isDBConfigured = isDBConfigured;
 exports.isFeatureEnabled = isFeatureEnabled;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
@@ -363,6 +364,38 @@ function getRandomCronForOnceEveryXDays(days, options) {
     daysApplicable = `${daysApplicable},${day}`;
   }
   return `${min} ${hr} ${daysApplicable} * *`;
+}
+
+function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
+  afterXminute = afterXminute || 3;
+  const currentTime = new Date().getTime();
+  const timeAfterXMinute = new Date(currentTime + afterXminute * 60 * 1000);
+  const hr = timeAfterXMinute.getHours();
+  const min = timeAfterXMinute.getMinutes();
+
+  if (interval === CONST.SCHEDULE.DAILY) {
+    interval = `${min} ${hr} * * *`;
+  } else if (interval.indexOf('hours') !== -1) {
+    const everyXhrs = parseInt(/^[0-9]+/.exec(interval)[0]);
+    assert.ok((everyXhrs > 0 && everyXhrs <= 24), 'Input hours can be any number between 1 to 24 only');
+    let arrayOfHours = [hr];
+    let nthHour = hr;
+    while (nthHour + everyXhrs < 24) {
+      nthHour = nthHour + everyXhrs;
+      arrayOfHours.push(nthHour);
+    }
+    nthHour = hr;
+    while (nthHour - everyXhrs >= 0) {
+      nthHour = nthHour - everyXhrs;
+      arrayOfHours.push(nthHour);
+    }
+    if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
+      arrayOfHours.push(0);
+    }
+    const hoursApplicable = _.sortBy(arrayOfHours).join(',');
+    interval = `${min} ${hoursApplicable} * * *`;
+  }
+  return interval;
 }
 
 function isServiceFabrikOperation(params) {

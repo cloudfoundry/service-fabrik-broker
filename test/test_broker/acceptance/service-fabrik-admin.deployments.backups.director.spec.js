@@ -23,6 +23,7 @@ describe('service-fabrik-admin', function () {
     const started_at = isoDate(time);
     const timeAfter = moment(time).add(2, 'seconds').toDate();
     const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
+    const restoreAtEpoch = Date.parse(restore_at);
     const container = backupStore.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
@@ -369,7 +370,7 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
-            time_stamp: restore_at
+            time_stamp: restoreAtEpoch
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -377,7 +378,7 @@ describe('service-fabrik-admin', function () {
           .then(res => {
             expect(scheduleStub).to.be.calledOnce;
             expect(res).to.have.status(202);
-            expect(res.body.time_stamp).to.eql(restore_at);
+            expect(res.body.time_stamp).to.eql(restoreAtEpoch);
             expect(res.body.operation).to.eql(operation_restore);
             expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
             mocks.verify();
@@ -392,7 +393,7 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
-            time_stamp: restore_at
+            time_stamp: restoreAtEpoch
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)
@@ -434,7 +435,7 @@ describe('service-fabrik-admin', function () {
           .request(app)
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
-            time_stamp: restore_at
+            time_stamp: restoreAtEpoch
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)

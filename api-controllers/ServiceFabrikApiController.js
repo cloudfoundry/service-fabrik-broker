@@ -401,6 +401,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const tenantId = req.entity.tenant_id;
     const instanceId = req.params.instance_id;
     const serviceId = req.manager.service.id;
+    const planId = req.manager.plan.id;
     const bearer = _
       .chain(req.headers)
       .get('authorization')
@@ -414,7 +415,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else if (backupGuid) {
           return this.validateUuid(backupGuid, 'Backup GUID');
         } else if (timeStamp) {
-          return this.validateDateString(timeStamp);
+          return Promise.try(() => this.validateRestoreTimeStamp(timeStamp))
+            .then(() => this.validateRestoreHistory({
+              instance_guid: instanceId,
+              service_id: serviceId,
+              plan_id: planId,
+              tenant_id: tenantId
+            }));
         }
       })
       .then(() => {
@@ -427,16 +434,27 @@ class ServiceFabrikApiController extends FabrikBaseController {
           backup_guid: backupGuid,
           tenant_id: tenantId
         };
-        return this.backupStore
-          .getBackupFile(backupFileOptions);
+        return timeStamp ?
+          this.backupStore
+          .listBackupsOlderThan(backupFileOptions, new Date(timeStamp))
+          .then(oldBackupArray =>
+            _.sortBy(oldBackupArray, ['started_at']))
+          .then(sortedArray =>
+            _.findLast(sortedArray, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
+          .tap(successfulBackup => {
+            if (_.isEmpty(successfulBackup)) {
+              throw new NotFound(`No backup successful found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)} `);
+            }
+          }) :
+          this.backupStore.getBackupFile(backupFileOptions);
       })
-      .catchThrow(NotFound, new UnprocessableEntity(`No backup with guid '${backupGuid}' found in this space`))
+      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' found in this space`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {
-          throw new UnprocessableEntity(`Can not restore backup '${backupGuid}' due to state '${metadata.state}'`);
+          throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
         }
         if (!req.manager.isRestorePossible(metadata.plan_id)) {
-          throw new UnprocessableEntity(`Cannot restore backup: '${backupGuid}' to plan:'${metadata.plan_id}'`);
+          throw new UnprocessableEntity(`Cannot restore for guid/timeStamp: '${timeStamp || backupGuid}' to plan:'${metadata.plan_id}'`);
         }
       })
       .then(metadata => this.fabrik
@@ -446,7 +464,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           arguments: _.assign({
             backup: _.pick(metadata, 'type', 'secret')
           }, req.body, {
-            backup_guid: backupGuid || metadata.backup_guid
+            backup_guid: backupGuid || _.get(metadata, 'backup_guid')
           })
         })
         .handle(req, res)

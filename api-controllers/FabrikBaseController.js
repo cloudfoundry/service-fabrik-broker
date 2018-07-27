@@ -14,6 +14,7 @@ const backupStore = require('../data-access-layer/iaas').backupStore;
 const catalog = require('../common/models/catalog');
 const ContinueWithNext = errors.ContinueWithNext;
 const BadRequest = errors.BadRequest;
+const NotFound = errors.NotFound;
 const CONST = require('../common/constants');
 const lockManager = require('../data-access-layer/eventmesh').lockManager;
 
@@ -111,10 +112,42 @@ class FabrikBaseController extends BaseController {
     }
   }
 
-  validateDateString(isoDateString) {
-    if (isoDateString && isNaN(Date.parse(isoDateString))) {
-      throw new BadRequest(`Invalid Date String ${isoDateString}`);
+  validateRestoreTimeStamp(epochDateString) {
+    // Here validating 
+    // 1. Requested time stamp should be an epoch.
+    // 2. Requested time should not be older than 14(retention period) days
+    const retentionMillis = config.backup.retention_period_in_days * 24 * 60 * 60 * 1000;
+    const epochRequestDate = Number(epochDateString);
+    if (!epochDateString ||
+      isNaN(epochDateString) ||
+      (Date.now - epochRequestDate) > retentionMillis) {
+      throw new BadRequest(`Invalid date ${epochDateString} or out of range of ${config.backup.retention_period_in_days} days.`);
     }
+  }
+
+  validateRestoreHistory(options) {
+    return this.backupStore
+      .getRestoreFile(options)
+      .then(metdata => {
+        let dateArray = _.get(metdata, 'date_history');
+        if (_.isEmpty(dateArray)) {
+          return true;
+        } else {
+          _.remove(dateArray, date => {
+            const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
+            return Date.parse(date) < olderDateTillRestoreAllowed;
+          });
+          //after removeing all older restore 'dateArray' conatains dates within allowed time
+          // dates count should be less than 'config.backup.restore_history_count'
+          if (dateArray.length >= config.backup.restore_history_count) {
+            throw new BadRequest(`Restore allowed only ${config.backup.restore_history_count} times within ${config.backup.restore_history_days} days.`);
+          }
+        }
+      })
+      .catch(NotFound, () => {
+        //Restoe file might not be found, first time restore.
+        return true;
+      });
   }
 
   ensurePlatformContext(req, res) {

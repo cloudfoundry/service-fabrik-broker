@@ -538,7 +538,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         } else if (opts.backup_guid) {
           this.validateUuid(opts.backup_guid, 'Backup GUID');
         } else if (opts.time_stamp) {
-          this.validateDateString(opts.time_stamp);
+          this.validateRestoreTimeStamp(opts.time_stamp);
         }
 
         logger.info(`Starting OOB restore for: ${opts.deploymentName}`);
