@@ -2,9 +2,9 @@
 
 const BOSHManager = require('./bosh-manager/BOSHManager');
 const BOSHBindManager = require('./bosh-manager/BOSHBindManager');
-const BOSHTaskpoller = require('./bosh-manager/BOSHTaskpoller');
+const BOSHTaskPoller = require('./bosh-manager/BOSHTaskPoller');
 
-BOSHTaskpoller.start();
+BOSHTaskPoller.start();
 const boshManager = new BOSHManager();
 const bindManager = new BOSHBindManager();
 boshManager.init();
