@@ -378,22 +378,26 @@ function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
   } else if (interval.indexOf('hours') !== -1) {
     const everyXhrs = parseInt(/^[0-9]+/.exec(interval)[0]);
     assert.ok((everyXhrs > 0 && everyXhrs <= 24), 'Input hours can be any number between 1 to 24 only');
-    let arrayOfHours = [hr];
-    let nthHour = hr;
-    while (nthHour + everyXhrs < 24) {
-      nthHour = nthHour + everyXhrs;
-      arrayOfHours.push(nthHour);
+    if (everyXhrs === 24) {
+      interval = `${min} ${hr} * * *`;
+    } else {
+      let arrayOfHours = [hr];
+      let nthHour = hr;
+      while (nthHour + everyXhrs < 24) {
+        nthHour = nthHour + everyXhrs;
+        arrayOfHours.push(nthHour);
+      }
+      nthHour = hr;
+      while (nthHour - everyXhrs >= 0) {
+        nthHour = nthHour - everyXhrs;
+        arrayOfHours.push(nthHour);
+      }
+      if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
+        arrayOfHours.push(0);
+      }
+      const hoursApplicable = _.sortBy(arrayOfHours).join(',');
+      interval = `${min} ${hoursApplicable} * * *`;
     }
-    nthHour = hr;
-    while (nthHour - everyXhrs >= 0) {
-      nthHour = nthHour - everyXhrs;
-      arrayOfHours.push(nthHour);
-    }
-    if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
-      arrayOfHours.push(0);
-    }
-    const hoursApplicable = _.sortBy(arrayOfHours).join(',');
-    interval = `${min} ${hoursApplicable} * * *`;
   }
   return interval;
 }

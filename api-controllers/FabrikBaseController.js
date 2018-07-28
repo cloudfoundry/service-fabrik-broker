@@ -130,9 +130,7 @@ class FabrikBaseController extends BaseController {
       .getRestoreFile(options)
       .then(metdata => {
         let dateArray = _.get(metdata, 'date_history');
-        if (_.isEmpty(dateArray)) {
-          return true;
-        } else {
+        if (!_.isEmpty(dateArray)) {
           _.remove(dateArray, date => {
             const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
             return Date.parse(date) < olderDateTillRestoreAllowed;
@@ -144,10 +142,10 @@ class FabrikBaseController extends BaseController {
           }
         }
       })
-      .catch(NotFound, () => {
+      .catch(NotFound, () =>
+        true
         //Restoe file might not be found, first time restore.
-        return true;
-      });
+      );
   }
 
   ensurePlatformContext(req, res) {
