@@ -254,8 +254,10 @@ module.exports = Object.freeze({
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
       DOCKER: 'dockers',
+      VIRTUALHOST: 'virtualhosts',
       DIRECTOR_BIND: 'directorbinds',
       DOCKER_BIND: 'dockerbinds',
+      VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups'
     },
     RESOURCE_STATE: {

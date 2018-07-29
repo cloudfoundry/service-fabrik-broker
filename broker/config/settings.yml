@@ -912,14 +912,73 @@ defaults: &defaults
           agent: *agent_rabbitmq
           template: <%= base64_template('templates/rabbitmq-manifest.yml.ejs') %>
           releases: &dedicated_releases
-          - { name: rabbitmq, version: 16 }
+          - { name: rabbitmq, version: 25 }
           # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
-          - { name: broker-agent-rabbitmq, version: 26 }
+          - { name: broker-agent-rabbitmq, version: 36 }
           context: &context_plan9
             agent: *agent_rabbitmq
-            resource_pool: micro
-            disk_pool: hdd_1gb
+            disk_type: 1GB
+            vm_type: default
+            rabbitmq:
+              instances: 3
+              version: "3.6"
+              vm_type: minimal
+              disk_type: 1GB
+              mqtt_enabled: false
+              stomp_enabled: false
+              amqp1_0_enabled: false
+              policy_definition: {"ha-mode":"all","ha-sync-mode":"automatic"}
+            erlang:
+              version: "19.3"
+            haproxy:
+              vm_type: minimal
+              disk_type: 1GB
       description: 'RabbitMQ 3.6 service x-small'
+      metadata:
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+        bullets:
+        - 'Dedicated Deployment'
+        - '3 Node Cluster'
+        - '1 GB Memory'
+        - '10 GB Disk'
+    - &rabbitmq_plan2
+      id: '0c59fe4b-7b2d-4db9-9a9f-8a889a592652'
+      name: 'v3.7-xsmall'
+      free: false
+      manager: &manager_plan10
+        name: 'director'
+        async: true
+        resource_mappings: *director_resource_mappings
+        settings: &settings_plan10
+          prefix: 'rabbitmq'
+          agent: *agent_rabbitmq
+          template: <%= base64_template('templates/rabbitmq-manifest.yml.ejs') %>
+          releases: &dedicated_releases
+          - { name: rabbitmq, version: 25 }
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          - { name: broker-agent-rabbitmq, version: 36 }
+          context: &context_plan9
+            agent: *agent_rabbitmq
+            disk_type: 1GB
+            vm_type: default
+            rabbitmq:
+              instances: 3
+              version: "3.7"
+              vm_type: minimal
+              disk_type: 1GB
+              mqtt_enabled: false
+              stomp_enabled: false
+              amqp1_0_enabled: false
+              policy_definition: {"ha-mode":"all","ha-sync-mode":"automatic"}
+            erlang:
+              version: "20.3"
+            haproxy:
+              vm_type: minimal
+              disk_type: 1GB
+      description: 'RabbitMQ 3.7 service x-small'
       metadata:
         costs:
         - amount:
@@ -940,6 +999,12 @@ defaults: &defaults
       free: true
       manager: &virtual_host_manager
         name: 'virtual_host'
+        resource_mappings:
+          resource_group: 'deployment.servicefabrik.io'
+          resource_type: 'virtualhost'
+          bind:
+            resource_group: 'bind.servicefabrik.io'
+            resource_type: 'virtualhostbind'
         settings: &settings_virtual_host
           prefix: 'rabbitmq'
           agent: *agent_rabbitmq

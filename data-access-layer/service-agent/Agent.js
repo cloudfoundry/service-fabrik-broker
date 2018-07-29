@@ -110,6 +110,18 @@ class Agent extends HttpClient {
         .then(res => res.body));
   }
 
+  put(ip, pathname, body, expectedStatusCode) {
+    return this
+      .getUrl(ip, pathname)
+      .then(url => this.request({
+        method: 'PUT',
+        url: url,
+        auth: this.auth,
+        body: body
+      }, expectedStatusCode || 204))
+      .return();
+  }
+
   delete(ip, pathname, body, expectedStatusCode) {
     return this
       .getUrl(ip, pathname)
