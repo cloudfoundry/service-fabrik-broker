@@ -8,6 +8,7 @@ const ScheduleManager = require('./ScheduleManager');
 const utils = require('../common/utils');
 const logger = require('../common/logger');
 const errors = require('../common/errors');
+const NotFound = errors.NotFound;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
@@ -76,7 +77,7 @@ class BnRStatusPollerJob extends BaseJob {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: instance_guid
           }))
-          .catch(() => {
+          .catch(NotFound, () => {
             logger.info(`Creating missing operation resource for instance ${instance_guid}`);
             return eventmesh.apiServerClient.createResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -96,7 +97,7 @@ class BnRStatusPollerJob extends BaseJob {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: backup_guid
           }))
-          .catch(() => {
+          .catch(NotFound, () => {
             logger.info(`Creating missing operation resource for backup ${backup_guid}`);
             return eventmesh.apiServerClient.createResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,

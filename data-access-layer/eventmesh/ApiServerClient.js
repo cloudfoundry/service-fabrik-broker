@@ -132,6 +132,8 @@ class ApiServerClient {
    * @param {string} callback - Fucntion to call when event is received
    */
   registerWatcher(resourceGroup, resourceType, callback, queryString) {
+    assert.ok(resourceGroup, `Argument 'resourceGroup' is required to register watcher`);
+    assert.ok(resourceType, `Argument 'resourceType' is required to register watcher`);
     return Promise.try(() => this.init())
       .then(() => {
         const stream = apiserver
@@ -200,7 +202,7 @@ class ApiServerClient {
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
           body: resourceBody
         }))
-      .then((resource) => {
+      .then(resource => {
         if (opts.status) {
           const statusJson = {};
           _.forEach(opts.status, (val, key) => {
@@ -254,7 +256,7 @@ class ApiServerClient {
               }));
         }
       })
-      .then((resource) => {
+      .then(resource => {
         if (opts.status) {
           const statusJson = {};
           _.forEach(opts.status, (val, key) => {
@@ -289,7 +291,7 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch response`);
     assert.ok(opts.response, `Property 'response' is required to patch response`);
     return this.getResource(opts)
-      .then((resource) => {
+      .then(resource => {
         const oldResponse = resource.status.response;
         const response = _.merge(oldResponse, opts.response);
         const options = _.chain(opts)
@@ -317,7 +319,7 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
     assert.ok(opts.options, `Property 'options' is required to patch options`);
     return this.getResource(opts)
-      .then((resource) => {
+      .then(resource => {
         const oldOptions = resource.spec.options;
         const options = _.merge(oldOptions, opts.options);
         _.set(opts, 'options', options);
@@ -389,7 +391,7 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).get())
-      .then((resource) => {
+      .then(resource => {
         _.forEach(resource.body.spec, (val, key) => {
           try {
             resource.body.spec[key] = JSON.parse(val);
