@@ -113,7 +113,7 @@ describe('Jobs', function () {
           return;
         }
       };
-      let baseJobLogRunHistoryStub, cancelScheduleStub, runAtStub, delayStub;
+      let baseJobLogRunHistoryStub, cancelScheduleStub, runAtStub, scheduleStub, delayStub;
 
       before(function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
@@ -128,6 +128,9 @@ describe('Jobs', function () {
         runAtStub = sinon.stub(ScheduleManager, 'runAt');
         runAtStub.withArgs(failed_instance_id).throws(new errors.ServiceUnavailable('Scheduler Unavailable'));
         runAtStub.returns(Promise.resolve({}));
+        scheduleStub = sinon.stub(ScheduleManager, 'schedule');
+        scheduleStub.withArgs(failed_instance_id).throws(new errors.ServiceUnavailable('Scheduler Unavailable'));
+        scheduleStub.returns(Promise.resolve({}));
         return mocks.setup([backupStore.cloudProvider.getContainer()]);
       });
 
@@ -136,6 +139,7 @@ describe('Jobs', function () {
         baseJobLogRunHistoryStub.reset();
         cancelScheduleStub.reset();
         runAtStub.reset();
+        scheduleStub.reset();
         delayStub.reset();
         job.attrs.data.attempt = 1;
         saveJobFailure = false;
@@ -145,6 +149,7 @@ describe('Jobs', function () {
         baseJobLogRunHistoryStub.restore();
         cancelScheduleStub.restore();
         runAtStub.restore();
+        scheduleStub.restore();
         delayStub.restore();
       });
 
@@ -351,7 +356,7 @@ describe('Jobs', function () {
         }, {
           status: 409
         });
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const errStatusCode = 409;
@@ -360,14 +365,14 @@ describe('Jobs', function () {
             delete_backup_status: 'failed'
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(runAtStub).to.be.calledOnce;
-          expect(runAtStub.firstCall.args[0]).to.eql(instance_id);
-          expect(runAtStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
-          expect(runAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          expect(scheduleStub).to.be.calledOnce;
+          expect(scheduleStub.firstCall.args[0]).to.eql(instance_id);
+          expect(scheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+          expect(RegExp('[0-9]+ [0-9]+[\,]{1}[0-9]+[\,]{1}[0-9]+ \* \* \*').test(scheduleStub.firstCall.args[2])).to.be.eql(true);
           const expectedJobData = _.clone(job.attrs.data);
           expectedJobData.attempt = 2;
-          expect(runAtStub.firstCall.args[3]).to.eql(expectedJobData);
-          expect(runAtStub.firstCall.args[4]).to.eql(CONST.SYSTEM_USER);
+          expect(scheduleStub.firstCall.args[3]).to.eql(expectedJobData);
+          expect(scheduleStub.firstCall.args[4]).to.eql(CONST.SYSTEM_USER);
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
           expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(errStatusCode);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
@@ -392,7 +397,7 @@ describe('Jobs', function () {
             delete_backup_status: 'failed'
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(runAtStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+          expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);

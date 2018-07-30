@@ -123,6 +123,7 @@ module.exports = Object.freeze({
   SCHEDULE: {
     DAILY: 'daily',
     RANDOM: 'random',
+    RETRY_DELAY: 30
   },
   SCHEDULE_INTERVAL: {
     HUMAN_INTERVAL: 'human-readable-interval',

@@ -11,6 +11,7 @@ const errors = require('../common/errors');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
+const cf = require('../data-access-layer/cf');
 const catalog = require('../common/models').catalog;
 const BackupService = require('../managers/backup-manager');
 const eventmesh = require('../data-access-layer/eventmesh');
@@ -147,7 +148,17 @@ class BnRStatusPollerJob extends BaseJob {
         }
       })
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
-        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) : operationStatusResponse
+        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo)
+        .tap(() => {
+          if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
+            const options = {
+              instance_id: instance_guid,
+              repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
+              type: CONST.BACKUP.TYPE.ONLINE
+            };
+            return cf.serviceFabrikClient.scheduleBackup(options);
+          }
+        }) : operationStatusResponse
       )
       .catch(err => {
         logger.error(`Caught error while checking for operation completion status:`, err);
