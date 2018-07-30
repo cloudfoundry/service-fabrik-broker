@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const moment = require('moment');
 const logger = require('../../../common/logger');
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
@@ -21,9 +20,6 @@ describe('service-fabrik-admin', function () {
     const root_folder_name = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const time = Date.now();
     const started_at = isoDate(time);
-    const timeAfter = moment(time).add(2, 'seconds').toDate();
-    const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
-    const restoreAtEpoch = Date.parse(restore_at);
     const container = backupStore.containerName;
     const operation_backup = 'backup';
     const operation_restore = 'restore';
@@ -44,7 +40,6 @@ describe('service-fabrik-admin', function () {
     const pathname = `/${container}/${filenameObj}`;
     const restorePathname = `/${container}/${restoreFileName}`;
     const prefix = `${root_folder_name}/${operation_backup}/${deployment_name}.${backup_guid}`;
-    const pitrPrefix = `${root_folder_name}/${operation_backup}/${deployment_name}`;
     const data = {
       backup_guid: backup_guid,
       deployment_name: deployment_name,
