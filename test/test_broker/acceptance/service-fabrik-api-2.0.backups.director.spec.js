@@ -37,10 +37,12 @@ describe('service-fabrik-api-2.0', function () {
       const filename2 = `${prefix}/${service_id}.${instance_id2}.${backup_guid2}.${dateOlderthanRetentionPeriod}.json`;
       const pathname = `/${container}/${filename}`;
       const pathname1 = `/${container}/${filename1}`;
+      const pathname2 = `/${container}/${filename2}`;
       const data = {
         backup_guid: backup_guid,
         instance_guid: instance_id,
         service_id: service_id,
+        started_at: started_at,
         state: 'succeeded',
         logs: []
       };
@@ -48,6 +50,16 @@ describe('service-fabrik-api-2.0', function () {
         backup_guid: backup_guid1,
         instance_guid: instance_id1,
         service_id: service_id,
+        started_at: started_at,
+        state: 'succeeded',
+        logs: []
+      };
+
+      const data2 = {
+        backup_guid: backup_guid2,
+        instance_guid: instance_id2,
+        service_id: service_id,
+        started_at: dateOlderthanRetentionPeriod,
         state: 'succeeded',
         logs: []
       };
@@ -93,7 +105,7 @@ describe('service-fabrik-api-2.0', function () {
             });
         });
 
-        it('should return 200 OK - onlny backups within retention period', function () {
+        it('should return 200 OK - only backups within retention period', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, prefix, [filename, filename1, filename2]);
@@ -109,6 +121,55 @@ describe('service-fabrik-api-2.0', function () {
             .then(res => {
               expect(res).to.have.status(200);
               const body = [_.omit(data, 'logs'), _.omit(data1, 'logs')];
+              expect(res.body).to.eql(body);
+              mocks.verify();
+            });
+        });
+
+        it('should return 200 OK - only backups with after time', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename, filename1, filename2]);
+          mocks.cloudProvider.download(pathname, data);
+          mocks.cloudProvider.download(pathname1, data1);
+          mocks.cloudProvider.download(pathname2, data2);
+          const afterDate = backupStore.filename.isoDate(new Date(Date.now() - (config.backup.retention_period_in_days + 5) * 60 * 60 * 24 * 1000));
+          return chai.request(app)
+            .get(`${base_url}/backups`)
+            .query({
+              space_guid: space_guid,
+              after: afterDate
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const body = [_.omit(data2, 'logs'), _.omit(data, 'logs'), _.omit(data1, 'logs')];
+              expect(res.body).to.eql(body);
+              mocks.verify();
+            });
+        });
+
+        it('should return 200 OK - only backups with before time', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename, filename1, filename2]);
+          mocks.cloudProvider.download(pathname2, data2);
+          const beforeDate = backupStore.filename.isoDate(new Date(Date.now() - (config.backup.retention_period_in_days - 1) * 60 * 60 * 24 * 1000));
+          const afterDate = backupStore.filename.isoDate(new Date(Date.now() - (config.backup.retention_period_in_days + 5) * 60 * 60 * 24 * 1000));
+          return chai.request(app)
+            .get(`${base_url}/backups`)
+            .query({
+              space_guid: space_guid,
+              before: beforeDate,
+              after: afterDate
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const body = [_.omit(data2, 'logs')];
+              console.log(res.body);
               expect(res.body).to.eql(body);
               mocks.verify();
             });
