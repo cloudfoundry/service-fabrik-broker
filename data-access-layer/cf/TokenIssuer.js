@@ -64,10 +64,34 @@ class TokenIssuer {
       .then(result => this.updateTokenInfo(result).accessToken);
   }
 
-  getAccessTokenBoshUAA(clientId, clientSecret){
+  scheduleNextRequestAccessToken(clientId, clientSecret){
+    const delay = this.tokenInfo.accessTokenExpiresIn - 15;
+    logger.info('delay: ', delay);
+    if (delay > 0 && delay < 2147483647) {
+      this.clearTimeoutObject();
+      logger.info('scheduling next request for access token after delay:', delay*1000);
+      this.timeoutObject = setTimeout(() => {
+        logger.debug('requesting new access token with client id: ', clientId);
+        return this.uaa.accessWithClientCredentials(clientId,clientSecret)
+          .then(token => {
+            this.tokenInfo.update(token);
+            this.scheduleNextRequestAccessToken(clientId,clientSecret);
+          })
+          .catch(err => logger.error(err.message));
+      }, delay * 1000);
+    }
+  }
+
+  getAccessTokenBoshUAA(clientId, clientSecret) {
+    if (!this.tokenInfo.expiresSoon) {
+      logger.debug('reusing access token.');
+      return Promise.resolve(this.tokenInfo.accessToken);
+    }
+    logger.debug('explicit request for access token being made.');
     return Promise.try(() => this.uaa.accessWithClientCredentials(clientId,clientSecret))
     .then(result => {
       this.tokenInfo.update(result);
+      this.scheduleNextRequestAccessToken(clientId, clientSecret);
       return this.tokenInfo.accessToken;
     });
   }

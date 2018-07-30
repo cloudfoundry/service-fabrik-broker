@@ -39,7 +39,7 @@ class BoshDirectorClient extends HttpClient {
     //Determine authentication method supported by primary bosh
     Promise.try(() => this.determineDirectorAuthenticationMethod())
     .then(() => {
-      this.populateConfigCache();
+      this.ready = this.populateConfigCache();
     });
   }
 
@@ -47,19 +47,27 @@ class BoshDirectorClient extends HttpClient {
     logger.info('querying /info endpoints to decide authentication methods used by directors');
     return Promise
     .map(config.directors, (directorConfig) => {
-      directorConfig.uaaEnabled = false;
+      _.set(directorConfig,'uaaEnabled', false);
       return this.getDirectorInfo(directorConfig)
       .then(info => {
-        if(info.user_authentication.type === 'uaa') {
+        let auth_type = _.get(info, 'user_authentication.type', undefined);
+        if(auth_type === 'uaa') {
           logger.info('Director ', directorConfig.name, ' uses UAA based authentication. Populating UAA objects in directoConfig.');
-          this.populateUAAInfo(directorConfig,info.user_authentication.options);
+          this.populateUAAInfo(directorConfig, _.get(info,'user_authentication.options',undefined));
           if(directorConfig.uaaClient && directorConfig.tokenIssuer){
-            directorConfig.uaaEnabled = true;
+            _.set(directorConfig,'uaaEnabled', true);
           } else {
             //TODO: Fatal error condition. Logging and exiting.
+            logger.error('UAA objects were not popoulated successfully.');
           }
-        } else{
-          logger.info('Basic authentication is used by director ', directorConfig.name, '.');
+        } 
+        else if(auth_type === 'basic'){
+          logger.info('Basic authentication is used by director ', directorConfig.name, '. Not populating UAA auth objects.');
+        } 
+        else {
+          /* TODO: Path user_authentication.type not found in info object or auth type other than uaa or basic.*/
+          /* Error condition either way*/
+          logger.error('should not happen. auth_type for director is: ', auth_type);
         }
       });
     });
@@ -71,15 +79,34 @@ class BoshDirectorClient extends HttpClient {
       method: 'GET',
       url: '/info'
     }, 200, directorConfig)
-    .then(res => JSON.parse(res.body));
+    .then(res => JSON.parse(res.body))
+    .catch(err => {
+      /*TODO: Could not obtain auth method used by Director. Can't proceed further.*/
+      /* Options: Go with basic auth or Kill the broker or Retry */
+      logger.error('querying /info endpoint failed for director: ', directorConfig.name);
+      logger.error(err);
+    });
   }
 
-  populateUAAInfo(directorConfig, options){
-    if(!directorConfig.uaa.client_id || !directorConfig.uaa.client_secret){
-      logger.info('UAA credentials for director ', directorConfig.name, ' not provided. Error condition.');
+  populateUAAInfo(directorConfig, options) {
+    if(!options){
+      logger.error('Empty options provided in populateUAAInfo. Not able to obtain UAA url and port.');
       return;
     }
-    directorConfig.uaaClient = new UaaClient({},options.url);
+    /* Client id and client secret will be used when requesting the token. Here just a sanity check.*/
+    let uaa_client_id = _.get(directorConfig,'uaa.client_id', undefined);
+    let uaa_client_secret = _.get(directorConfig,'uaa.client_secret', undefined);
+    if(!uaa_client_id || !uaa_client_secret){
+      logger.error('UAA credentials for director ', directorConfig.name, ' not provided. Error condition.');
+      return;
+    }
+    /* create uaaClient and tokenIssuer for this director*/
+    let uaa_url = _.get(options, 'url', undefined);
+    if(!uaa_url){
+      logger.error('UAA url not provided to populateUAAInfo.');
+      return;
+    }
+    directorConfig.uaaClient = new UaaClient({}, uaa_url);
     directorConfig.tokenIssuer = new TokenIssuer(directorConfig.uaaClient);
     logger.info('UAA url for director ', directorConfig.name, ' is: ', directorConfig.uaaClient.baseUrl);
   }
