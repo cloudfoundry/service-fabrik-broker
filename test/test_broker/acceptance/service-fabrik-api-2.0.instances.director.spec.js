@@ -863,7 +863,7 @@ describe('service-fabrik-api-sf2.0', function () {
           secret: 'hugo',
           started_at: started_at,
           trigger: 'online',
-          date_history: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+          restore_dates: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
         };
 
         function getDateHistory(days) {
@@ -1108,7 +1108,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.download(restorePathname, _.chain(_.cloneDeep(restoreMetadata))
-            .set('date_history', getDateHistory(11))
+            .set('restore_dates', getDateHistory(11))
             .value());
           return chai
             .request(apps.external)
@@ -1223,7 +1223,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
           mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
-            date_history: undefined
+            restore_dates: undefined
           }));
           mocks.cloudController.updateServiceInstance(instance_id, body => {
             const token = _.get(body.parameters, 'service-fabrik-operation');
@@ -1253,7 +1253,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
-            date_history: getDateHistory(11)
+            restore_dates: getDateHistory(11)
           }));
           return chai
             .request(apps.external)

@@ -130,15 +130,15 @@ class FabrikBaseController extends BaseController {
     return this.backupStore
       .getRestoreFile(options)
       .then(metdata => {
-        let dateArray = _.get(metdata, 'date_history');
-        if (!_.isEmpty(dateArray)) {
-          _.remove(dateArray, date => {
+        let restoreDates = _.get(metdata, 'restore_dates');
+        if (!_.isEmpty(restoreDates)) {
+          _.remove(restoreDates, date => {
             const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
             return Date.parse(date) < olderDateTillRestoreAllowed;
           });
           //after removeing all older restore 'dateArray' conatains dates within allowed time
           // dates count should be less than 'config.backup.num_of_allowed_restores'
-          if (dateArray.length >= config.backup.num_of_allowed_restores) {
+          if (restoreDates.length >= config.backup.num_of_allowed_restores) {
             throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
           }
         }

@@ -877,14 +877,14 @@ class DirectorManager extends BaseManager {
             ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              const date_history = this.updateHistoryOfDates(
-                _.get(restoreMetadata, 'date_history'), restoreFinishiedAt);
+              const restore_dates = this.updateHistoryOfRestoreDates(
+                _.get(restoreMetadata, 'restore_dates'), restoreFinishiedAt);
               return this.backupStore
                 .patchRestoreFile(options, {
                   state: lastOperation.state,
                   logs: logs,
                   finished_at: restoreFinishiedAt,
-                  date_history: date_history
+                  restore_dates: restore_dates
                 });
             })
             .tap(() => {
@@ -900,14 +900,15 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  updateHistoryOfDates(arrayOfDates, isoDateToUpdate) {
-    let updatedHistory = arrayOfDates || [];
-    updatedHistory.push(isoDateToUpdate);
-    _.remove(updatedHistory, date => {
-      const twoMonthOlderDate = Date.now() - 1000 * 60 * 60 * 24 * 60;
+  updateHistoryOfRestoreDates(restoreDates, isoDateToUpdate) {
+    restoreDates = restoreDates || [];
+    restoreDates.push(isoDateToUpdate);
+    _.remove(restoreDates, date => {
+      const restoreHistoryRetentionDays = config.backup.restore_history_retention_days || 60;
+      const twoMonthOlderDate = Date.now() - 1000 * 60 * 60 * 24 * restoreHistoryRetentionDays;
       return Date.parse(date) < twoMonthOlderDate;
     });
-    return updatedHistory.sort();
+    return _.sortBy(restoreDates);
   }
 
   reScheduleBackup(opts) {
@@ -915,11 +916,8 @@ class DirectorManager extends BaseManager {
       instance_id: opts.instance_id,
       type: CONST.BACKUP.TYPE.ONLINE
     };
-    let interval;
-    if (this.service.backup_interval) {
-      interval = this.service.backup_interval;
-    }
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(interval, opts.afterXminute);
+
+    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(this.service.backup_interval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
     return cf.serviceFabrikClient.scheduleBackup(options);
