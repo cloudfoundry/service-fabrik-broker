@@ -892,7 +892,7 @@ class DirectorManager extends BaseManager {
               if (lastOperation.state === CONST.OPERATION.SUCCEEDED) {
                 return this.reScheduleBackup({
                   instance_id: options.instance_guid,
-                  afterXminute: 3
+                  afterXminute: config.backup.reschedule_backup_delay_after_restore || 3
                 });
               }
             });
