@@ -41,40 +41,23 @@ class BackupStoreForOob extends BackupStore {
     const root_folder = options.root_folder;
     const deployment_name = options.deployment_name;
     const backup_guid = options.backup_guid;
-    const time_stamp = options.time_stamp;
     const iteratees = ['started_at'];
 
     let prefix = `${root_folder}/backup`;
     let predicate;
     let message = `No backup found`;
-    let isoDate;
-
-    function getPredicate(isoDate) {
-      return function predicate(filenameobject) {
-        //backUpStartedBefore defaults to current timestamp as part of isoDate function.
-        return _.lt(filenameobject.started_at, isoDate);
-      };
-    }
 
     if (deployment_name) {
       prefix += `/${deployment_name}`;
       if (backup_guid) {
         prefix += `.${backup_guid}`;
         message = `Backup '${backup_guid}' not found`;
-      } else if (time_stamp) {
-        isoDate = this.filename.isoDate(time_stamp);
-        predicate = getPredicate(isoDate);
-        message = `No backup found for time stamp '${time_stamp}'`;
       } else {
         message = `No backup found for deployment '${deployment_name}'`;
       }
     } else if (backup_guid) {
       predicate = ['backup_guid', backup_guid];
       message = `Backup '${backup_guid}' not found`;
-    } else if (time_stamp) {
-      isoDate = this.filename.isoDate(time_stamp);
-      predicate = getPredicate(isoDate);
-      message = `No backup found for time stamp '${time_stamp}'`;
     }
 
     return this

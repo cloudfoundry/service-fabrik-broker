@@ -867,7 +867,6 @@ class DirectorManager extends BaseManager {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
 
-    let restoreMetadata;
     return this.agent
       .getRestoreLastOperation(agent_ip)
       .tap(lastOperation => {
@@ -876,8 +875,7 @@ class DirectorManager extends BaseManager {
               .getRestoreLogs(agent_ip), this.backupStore
               .getRestoreFile(options)
             ])
-            .spread((logs, metadata) => {
-              restoreMetadata = metadata;
+            .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
               const date_history = this.updateHistoryOfDates(
                 _.get(restoreMetadata, 'date_history'), restoreFinishiedAt);
@@ -892,7 +890,7 @@ class DirectorManager extends BaseManager {
             .tap(() => {
               // Trigger schedule backup when restore is successful
               if (lastOperation.state === CONST.OPERATION.SUCCEEDED) {
-                return this.scheduleBackup({
+                return this.reScheduleBackup({
                   instance_id: options.instance_guid,
                   afterXminute: 3
                 });
@@ -911,10 +909,10 @@ class DirectorManager extends BaseManager {
     });
     return updatedHistory.sort();
   }
-  scheduleBackup(opts) {
+
+  reScheduleBackup(opts) {
     const options = {
       instance_id: opts.instance_id,
-      repeatInterval: 'daily',
       type: CONST.BACKUP.TYPE.ONLINE
     };
     let interval;

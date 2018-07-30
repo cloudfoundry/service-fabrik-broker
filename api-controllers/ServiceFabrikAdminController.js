@@ -529,7 +529,6 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         const opts = {
           user: req.user,
           backup_guid: req.body.backup_guid,
-          time_stamp: req.body.time_stamp,
           deploymentName: req.params.name
         };
 
@@ -537,8 +536,6 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           throw new BadRequest('Invalid input as backup_guid or time_stamp not present');
         } else if (opts.backup_guid) {
           this.validateUuid(opts.backup_guid, 'Backup GUID');
-        } else if (opts.time_stamp) {
-          this.validateRestoreTimeStamp(opts.time_stamp);
         }
 
         logger.info(`Starting OOB restore for: ${opts.deploymentName}`);

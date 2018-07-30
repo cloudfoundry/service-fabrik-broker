@@ -6,6 +6,7 @@ const Promise = require('bluebird');
 const BaseController = require('../common/controllers/BaseController');
 const config = require('../common/config');
 const utils = require('../common/utils');
+const logger = require('../common/logger');
 const errors = require('../common/errors');
 const cf = require('../data-access-layer/cf');
 const bosh = require('../data-access-layer/bosh');
@@ -136,16 +137,17 @@ class FabrikBaseController extends BaseController {
             return Date.parse(date) < olderDateTillRestoreAllowed;
           });
           //after removeing all older restore 'dateArray' conatains dates within allowed time
-          // dates count should be less than 'config.backup.restore_history_count'
-          if (dateArray.length >= config.backup.restore_history_count) {
-            throw new BadRequest(`Restore allowed only ${config.backup.restore_history_count} times within ${config.backup.restore_history_days} days.`);
+          // dates count should be less than 'config.backup.num_of_allowed_restores'
+          if (dateArray.length >= config.backup.num_of_allowed_restores) {
+            throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
           }
         }
       })
-      .catch(NotFound, () =>
-        true
+      .catch(NotFound, (err) => {
+        logger.debug('Not found any restore data.', err);
         //Restoe file might not be found, first time restore.
-      );
+        return true;
+      });
   }
 
   ensurePlatformContext(req, res) {

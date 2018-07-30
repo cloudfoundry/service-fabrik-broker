@@ -351,59 +351,6 @@ describe('service-fabrik-admin', function () {
           });
       });
 
-      it('should initiate ccdb restore operation successfully: PITR', function () {
-        mocks.director.getDeployment(deployment_name, true);
-        mocks.director.getDeploymentVms(deployment_name);
-        mocks.director.getDeploymentInstances(deployment_name);
-        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
-        mocks.cloudProvider.download(pathname, data);
-        mocks.agent.getInfo();
-        mocks.agent.startRestore();
-        logger.debug(`uploading json here: ${pathname}`);
-        mocks.cloudProvider.upload(restorePathname, body => {
-          expect(body.username).to.equal(config.username);
-          expect(body.state).to.equal('processing');
-          return true;
-        });
-        mocks.cloudProvider.headObject(restorePathname);
-        return chai
-          .request(app)
-          .post(`${base_url}/deployments/${deployment_name}/restore`)
-          .send({
-            time_stamp: restoreAtEpoch
-          })
-          .set('Accept', 'application/json')
-          .auth(config.username, config.password)
-          .catch(err => err.response)
-          .then(res => {
-            expect(scheduleStub).to.be.calledOnce;
-            expect(res).to.have.status(202);
-            expect(res.body.time_stamp).to.eql(restoreAtEpoch);
-            expect(res.body.operation).to.eql(operation_restore);
-            expect(utils.decodeBase64(res.body.token).agent_ip).to.eql(mocks.agent.ip);
-            mocks.verify();
-          });
-      });
-
-      it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
-        mocks.cloudProvider.list(container, pitrPrefix, []);
-        logger.debug(`uploading json here: ${pathname}`);
-
-        return chai
-          .request(app)
-          .post(`${base_url}/deployments/${deployment_name}/restore`)
-          .send({
-            time_stamp: restoreAtEpoch
-          })
-          .set('Accept', 'application/json')
-          .auth(config.username, config.password)
-          .catch(err => err.response)
-          .then(res => {
-            expect(res).to.have.status(422);
-            mocks.verify();
-          });
-      });
-
       it('should return 422 Unprocessable Entity (backup still in progress)', function () {
         mocks.cloudProvider.list(container, prefix, [filenameObj]);
         mocks.cloudProvider.download(pathname, {
@@ -415,27 +362,6 @@ describe('service-fabrik-admin', function () {
           .post(`${base_url}/deployments/${deployment_name}/restore`)
           .send({
             backup_guid: backup_guid
-          })
-          .set('Accept', 'application/json')
-          .auth(config.username, config.password)
-          .catch(err => err.response)
-          .then(res => {
-            expect(res).to.have.status(422);
-            mocks.verify();
-          });
-      });
-
-      it('should return 422 Unprocessable Entity (backup still in progress): PITR', function () {
-        mocks.cloudProvider.list(container, pitrPrefix, [filenameObj]);
-        mocks.cloudProvider.download(pathname, {
-          state: 'processing'
-        });
-        logger.debug(`uploading json here: ${pathname}`);
-        return chai
-          .request(app)
-          .post(`${base_url}/deployments/${deployment_name}/restore`)
-          .send({
-            time_stamp: restoreAtEpoch
           })
           .set('Accept', 'application/json')
           .auth(config.username, config.password)

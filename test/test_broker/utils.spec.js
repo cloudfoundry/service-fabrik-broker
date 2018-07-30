@@ -101,8 +101,8 @@ describe('utils', function () {
       expect(RegExp('[0-9]+ [0-9\,]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('9 hours', 2))).to.be.eql(true);
     });
 
-    it('should support \'random\' schedule', function () {
-      expect(utils.getCronWithIntervalAndAfterXminute('random', 2)).to.be.eql('random');
+    it('should not support invalid interval format', function () {
+      expect(utils.getCronWithIntervalAndAfterXminute.bind(utils, 'random', 2)).to.throw(AssertionError);
     });
 
     it('should not support invalid schedule', function () {

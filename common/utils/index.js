@@ -367,7 +367,7 @@ function getRandomCronForOnceEveryXDays(days, options) {
 }
 
 function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
-  afterXminute = afterXminute || 3;
+  afterXminute = afterXminute || 0;
   const currentTime = new Date().getTime();
   const timeAfterXMinute = new Date(currentTime + afterXminute * 60 * 1000);
   const hr = timeAfterXMinute.getHours();
@@ -392,12 +392,18 @@ function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
         nthHour = nthHour - everyXhrs;
         arrayOfHours.push(nthHour);
       }
+      //This to handle e.g. '7 hours' where 7 doesn't divide 24
+      //then it shoud run in every 7 hours a day including 0
       if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
         arrayOfHours.push(0);
       }
       const hoursApplicable = _.sortBy(arrayOfHours).join(',');
       interval = `${min} ${hoursApplicable} * * *`;
     }
+  } else {
+    throw new assert.AssertionError({
+      message: 'interval should \'daily\' or in \'x hours\' format'
+    });
   }
   return interval;
 }
