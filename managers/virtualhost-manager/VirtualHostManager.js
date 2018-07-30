@@ -23,6 +23,22 @@ class VirtualHostManager extends BaseManager {
       } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         return this._processDelete(requestObjectBody);
       }
+    })
+    .catch(Error, (err) => {
+      return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+        resourceId: requestObjectBody.metadata.name,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+          lastOperation: {},
+          response: {},
+          error:{
+            message: err.message,
+            code: err.status
+          }
+        }
+      });
     });
   }
 

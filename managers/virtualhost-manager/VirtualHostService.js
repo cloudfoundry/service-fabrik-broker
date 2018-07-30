@@ -11,6 +11,7 @@ const NotFound = errors.NotFound;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const BadRequest = errors.BadRequest;
+const Gone = errors.Gone;
 const BaseService = require('../BaseService');
 const cf = require('../../data-access-layer/cf');
 const bosh = require('../../data-access-layer/bosh');
@@ -71,7 +72,10 @@ class VirtualHostService extends BaseService {
         };
         let instanceDeleted = true;
         return this.initialize(operation)
-          .tap(() => logger.info(`Deleting virtual host '${this.guid}' for deployment '${this.deploymentName}'...`))
+          .tap(() => {
+              logger.info(`Deleting virtual host '${this.guid}' for deployment '${this.deploymentName}'...`);
+              delete this.director.deploymentIpsCache[this.deploymentName];
+            })
           .then(() => this.director.getDeploymentIps(this.deploymentName))
           .tap(() => instanceDeleted = false)
           .then(ips => Promise.all([this.agent.deleteVirtualHost(ips, this.guid),
@@ -82,7 +86,7 @@ class VirtualHostService extends BaseService {
             if (instanceDeleted) {
               this.mapper.deleteVirtualHostRelation(this.guid);
             }
-            throw new ServiceInstanceNotFound(this.guid);
+            throw new Gone(this.guid);
           });
     }
 

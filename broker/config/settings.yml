@@ -995,7 +995,7 @@ defaults: &defaults
     ###########################
     - &shared_plan1
       id: 'd035f948-5d3a-43d7-9aec-954e134c3e9d'
-      name: 'virtual_host'
+      name: 'virtualhost'
       free: true
       manager: &virtual_host_manager
         name: 'virtual_host'

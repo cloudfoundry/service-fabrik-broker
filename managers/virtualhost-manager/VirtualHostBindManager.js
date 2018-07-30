@@ -21,6 +21,21 @@ class VirtualHostBindManager extends BaseManager {
       } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         return this._processUnbind(requestObjectBody);
       }
+    })
+    .catch(Error, (err) => {
+      return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
+        resourceId: requestObjectBody.metadata.name,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+          response: {},
+          error:{
+            message: err.message,
+            code: err.status
+          }
+        }
+      });
     });
   }
 

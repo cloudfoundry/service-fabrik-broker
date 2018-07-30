@@ -51,6 +51,9 @@ function convertToHttpErrorAndThrow(err) {
     case CONST.HTTP_STATUS_CODE.FORBIDDEN:
       newErr = new errors.Forbidden(message);
       break;
+    case CONST.HTTP_STATUS_CODE.GONE:
+      newErr = new errors.Gone(message);
+      break;
     default:
       newErr = new InternalServerError(message);
       break;
