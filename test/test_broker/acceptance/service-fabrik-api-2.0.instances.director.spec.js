@@ -919,7 +919,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 400 Bad Request (invalid time_stamp given)', function () {
+        it('should return 400 Bad Request (invalid time_stamp format given)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -937,6 +937,30 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid time_stamp older than 14 days given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          const requestTimeStamp = `${Date.now() - (config.backup.retention_period_in_days + 2) * 60 * 60 * 24 * 1000}`;
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: requestTimeStamp
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.text).to.contain(`Invalid date ${requestTimeStamp} out of range of ${config.backup.retention_period_in_days} days.`);
               mocks.verify();
             });
         });

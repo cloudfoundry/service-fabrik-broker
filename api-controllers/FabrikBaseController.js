@@ -121,8 +121,8 @@ class FabrikBaseController extends BaseController {
     const epochRequestDate = Number(epochDateString);
     if (!epochDateString ||
       isNaN(epochDateString) ||
-      (Date.now - epochRequestDate) > retentionMillis) {
-      throw new BadRequest(`Invalid date ${epochDateString} or out of range of ${config.backup.retention_period_in_days} days.`);
+      _.lt(new Date(epochRequestDate), new Date(Date.now() - retentionMillis))) {
+      throw new BadRequest(`Invalid date ${epochDateString} out of range of ${config.backup.retention_period_in_days} days.`);
     }
   }
 
