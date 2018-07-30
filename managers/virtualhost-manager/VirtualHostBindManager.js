@@ -16,27 +16,27 @@ class VirtualHostBindManager extends BaseManager {
 
   processRequest(requestObjectBody) {
     return Promise.try(() => {
-      if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        return this._processBind(requestObjectBody);
-      } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-        return this._processUnbind(requestObjectBody);
-      }
-    })
-    .catch(Error, (err) => {
-      return eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
-        resourceId: requestObjectBody.metadata.name,
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          response: {},
-          error:{
-            message: err.message,
-            code: err.status
-          }
+        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+          return this._processBind(requestObjectBody);
+        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+          return this._processUnbind(requestObjectBody);
         }
+      })
+      .catch(Error, (err) => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
+          resourceId: requestObjectBody.metadata.name,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            response: {},
+            error: {
+              message: err.message,
+              code: err.status
+            }
+          }
+        });
       });
-    });
   }
 
   _processBind(changeObjectBody) {
