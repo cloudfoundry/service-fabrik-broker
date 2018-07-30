@@ -502,6 +502,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
   listBackups(req, res) {
     const options = _.pick(req.query, 'service_id', 'plan_id', 'instance_id', 'before', 'after');
     options.tenant_id = req.entity.tenant_id;
+    if (_.isEmpty(options.after)) {
+      const retentionPeriodOlderMillis = Date.now() - config.backup.retention_period_in_days * 24 * 60 * 60 * 1000;
+      options.after = new Date(retentionPeriodOlderMillis).toISOString();
+    }
     return this.listBackupFiles(options)
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.OK)
