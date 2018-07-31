@@ -345,10 +345,12 @@ describe('iaas', function () {
           prefix: 'blob'
         };
         const expectedResponse = [{
-            name: 'blob1.txt'
+            name: 'blob1.txt',
+            lastModified: '2018-03-08T14:15:49.655Z'
           },
           {
-            name: 'blob2.txt'
+            name: 'blob2.txt',
+            lastModified: '2018-03-08T14:15:49.655Z'
           }
         ];
         return client.list(options)

@@ -10,6 +10,7 @@ const bosh = require('../../../data-access-layer/bosh');
 const cf = require('../../../data-access-layer/cf');
 const backupStore = require('../../../data-access-layer/iaas').backupStore;
 const utils = require('../../../common/utils');
+const retry = utils.retry;
 const Agent = require('../../../data-access-layer/service-agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
@@ -924,7 +925,10 @@ class DirectorManager extends BaseManager {
     options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(interval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
-    return cf.serviceFabrikClient.scheduleBackup(options);
+    return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+      maxAttempts: 3,
+      minDelay: 500
+    });
   }
 
   getLastRestore(tenant_id, instance_guid) {

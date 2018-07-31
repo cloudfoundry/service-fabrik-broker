@@ -13,6 +13,7 @@ const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
 const cf = require('../data-access-layer/cf');
 const catalog = require('../common/models').catalog;
+const retry = utils.retry;
 const BackupService = require('../managers/backup-manager');
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
@@ -156,7 +157,10 @@ class BnRStatusPollerJob extends BaseJob {
               repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
               type: CONST.BACKUP.TYPE.ONLINE
             };
-            return cf.serviceFabrikClient.scheduleBackup(options);
+            return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+              maxAttempts: 3,
+              minDelay: 500
+            });
           }
         }) : operationStatusResponse
       )
