@@ -380,6 +380,31 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
+      it(`If a backup fails for more than ${config.scheduler.jobs.scheduled_backup.max_attempts} attempts, then the scheduler should throw and error and then gracefully exit`, function () {
+        job.attrs.data.instance_id = failed_instance_id;
+        const max_attmpts = config.scheduler.jobs.scheduled_backup.max_attempts;
+        mocks.serviceFabrikClient.startBackup(failed_instance_id, {
+          type: 'online',
+          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        }, {
+          status: 409
+        });
+        mocks.cloudController.findServicePlan(failed_instance_id, plan_id);
+        return ScheduleBackupJob.run(_.chain(_.cloneDeep(job)).set('attrs.data.attempt', max_attmpts).value(), () => {
+          mocks.verify();
+          const backupRunStatus = {
+            start_backup_status: 'failed',
+            delete_backup_status: 'failed'
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(_.chain(_.cloneDeep(job.attrs)).set('data.attempt', max_attmpts).value());
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          config.scheduler.jobs.scheduled_backup.max_attempts = max_attmpts;
+        });
+      });
       it('If error occurs while rescheduling job due to a backup run, same must be retried and then gracefully exit', function () {
         job.attrs.data.instance_id = failed_instance_id;
         const max_attmpts = config.scheduler.jobs.scheduled_backup.max_attempts;
