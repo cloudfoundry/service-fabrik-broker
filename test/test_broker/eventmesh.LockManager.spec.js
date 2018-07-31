@@ -59,6 +59,7 @@ const LockManagerDummy = {
   updateResourceDummy: () => {},
   createResourceDummy: () => {},
   getResourceDummy: () => {},
+  deleteResourceDummy: () => {}
 };
 const apiServerLockManager = proxyquire('../../data-access-layer/eventmesh/LockManager', {
   './': {
@@ -87,23 +88,38 @@ const apiServerLockManager = proxyquire('../../data-access-layer/eventmesh/LockM
           }
         });
       },
+      'deleteResource': function (opts) {
+        LockManagerDummy.deleteResourceDummy(opts);
+        return Promise.try(() => {
+          if (lock[opts.resourceId]) {
+            return {};
+          }
+          if (opts.resourceId === 'lockId4') {
+            throw new NotFound('Lock not found');
+          } else {
+            throw new InternalServerError('Internal Server Error');
+          }
+        });
+      }
     }
   }
 });
 
 describe('eventmesh', () => {
   describe('LockManager', () => {
-    let updateResourceSpy, createResourceSpy, getResourceSpy;
+    let updateResourceSpy, createResourceSpy, getResourceSpy, deleteResourceSpy;
     before(function () {
       updateResourceSpy = sinon.spy(LockManagerDummy, 'updateResourceDummy');
       createResourceSpy = sinon.spy(LockManagerDummy, 'createResourceDummy');
       getResourceSpy = sinon.spy(LockManagerDummy, 'getResourceDummy');
+      deleteResourceSpy = sinon.spy(LockManagerDummy, 'deleteResourceDummy');
     });
 
     afterEach(function () {
       updateResourceSpy.reset();
       createResourceSpy.reset();
       getResourceSpy.reset();
+      deleteResourceSpy.reset();
     });
     describe('#checkWriteLockStatus', () => {
       it('should return true if write lock is present and ttl has not expired', () => {
@@ -260,6 +276,37 @@ describe('eventmesh', () => {
           });
       });
     });
-    describe('#unlock', () => {});
+    describe('#unlock', () => {
+      it('should successfully unlock resource in first try', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.unlock('lockId1')
+          .then(() => {
+            expect(deleteResourceSpy.callCount).to.equal(1);
+            expect(deleteResourceSpy.firstCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+              resourceId: 'lockId1'
+            });
+          });
+      });
+      it('should fail to unlock resource after multiple retries', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.unlock('lockId5', 3, 100)
+          .catch((err) => {
+            expect(err.code).to.eql('ETIMEDOUT');
+            expect(deleteResourceSpy.callCount).to.equal(CONST.ETCD.MAX_RETRY_UNLOCK);
+            expect(deleteResourceSpy.firstCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+              resourceId: 'lockId5'
+            });
+            expect(deleteResourceSpy.secondCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+              resourceId: 'lockId5'
+            });
+          });
+      });
+    });
   });
 });

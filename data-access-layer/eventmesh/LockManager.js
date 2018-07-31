@@ -1,10 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
-const Promise = require('bluebird');
 const eventmesh = require('./');
 const errors = require('../../common/errors');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const utils = require('../../common/utils');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const NotFound = errors.NotFound;
@@ -170,10 +170,13 @@ class LockManager {
    * @param {number} [maxRetryCount=CONST.ETCD.MAX_RETRY_UNLOCK] - Max unlock attempts
    */
 
-  unlock(resourceId, maxRetryCount) {
+  unlock(resourceId, maxRetryCount, retryDelay) {
+    assert.ok(resourceId, `Parameter 'resourceId' is required to release lock`);
     maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
-
-    function unlockResourceRetry(currentRetryCount) {
+    retryDelay = retryDelay || CONST.APISERVER.RETRY_DELAY;
+    logger.debug(`Attempting to unlock resource ${resourceId}`);
+    return utils.retry(tries => {
+      logger.info(`+-> Attempt ${tries + 1} to unlock resource ${resourceId}`);
       return eventmesh.apiServerClient.deleteResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
@@ -185,17 +188,13 @@ class LockManager {
             logger.debug(`Successfully Unlocked resource ${resourceId} `);
             return;
           }
-          if (currentRetryCount >= maxRetryCount) {
-            logger.error(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
-            throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${maxRetryCount} retries`);
-          }
-          logger.error(`Error in unlocking resource ${resourceId}... Retrying`, err);
-          return Promise.delay(CONST.ETCD.RETRY_DELAY)
-            .then(() => unlockResourceRetry(resourceId, currentRetryCount + 1));
+          logger.error(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
+          throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
         });
-    }
-    logger.debug(`Attempting to unlock resource ${resourceId}`);
-    return unlockResourceRetry(0);
+    }, {
+      maxAttempts: maxRetryCount,
+      minDelay: retryDelay
+    });
   }
 
   _getLockType(operation) {

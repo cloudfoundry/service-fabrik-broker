@@ -233,6 +233,7 @@ module.exports = Object.freeze({
   },
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 60,
+    RETRY_DELAY: 2000,
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 1200000, // in ms ( 20 minutes )
     VERSION: '1.9',
