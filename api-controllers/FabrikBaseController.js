@@ -136,7 +136,7 @@ class FabrikBaseController extends BaseController {
             const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
             return Date.parse(date) < olderDateTillRestoreAllowed;
           });
-          //after removeing all older restore 'dateArray' conatains dates within allowed time
+          //after removing all older restore 'restoreDates' conatains dates within allowed time
           // dates count should be less than 'config.backup.num_of_allowed_restores'
           if (restoreDates.length >= config.backup.num_of_allowed_restores) {
             throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
@@ -145,7 +145,7 @@ class FabrikBaseController extends BaseController {
       })
       .catch(NotFound, (err) => {
         logger.debug('Not found any restore data.', err);
-        //Restoe file might not be found, first time restore.
+        //Restore file might not be found, first time restore.
         return true;
       });
   }
