@@ -6,6 +6,7 @@ const Promise = require('bluebird');
 const BaseController = require('../common/controllers/BaseController');
 const config = require('../common/config');
 const utils = require('../common/utils');
+const logger = require('../common/logger');
 const errors = require('../common/errors');
 const cf = require('../data-access-layer/cf');
 const bosh = require('../data-access-layer/bosh');
@@ -120,32 +121,33 @@ class FabrikBaseController extends BaseController {
     const epochRequestDate = Number(epochDateString);
     if (!epochDateString ||
       isNaN(epochDateString) ||
-      (Date.now - epochRequestDate) > retentionMillis) {
-      throw new BadRequest(`Invalid date ${epochDateString} or out of range of ${config.backup.retention_period_in_days} days.`);
+      _.lt(new Date(epochRequestDate), new Date(Date.now() - retentionMillis))) {
+      throw new BadRequest(`Invalid date ${epochDateString} out of range of ${config.backup.retention_period_in_days} days.`);
     }
   }
 
-  validateRestoreHistory(options) {
+  validateRestoreQuota(options) {
     return this.backupStore
       .getRestoreFile(options)
       .then(metdata => {
-        let dateArray = _.get(metdata, 'date_history');
-        if (!_.isEmpty(dateArray)) {
-          _.remove(dateArray, date => {
+        let restoreDates = _.get(metdata, 'restore_dates');
+        if (!_.isEmpty(restoreDates)) {
+          _.remove(restoreDates, date => {
             const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
             return Date.parse(date) < olderDateTillRestoreAllowed;
           });
-          //after removeing all older restore 'dateArray' conatains dates within allowed time
-          // dates count should be less than 'config.backup.restore_history_count'
-          if (dateArray.length >= config.backup.restore_history_count) {
-            throw new BadRequest(`Restore allowed only ${config.backup.restore_history_count} times within ${config.backup.restore_history_days} days.`);
+          //after removing all older restore 'restoreDates' conatains dates within allowed time
+          // dates count should be less than 'config.backup.num_of_allowed_restores'
+          if (restoreDates.length >= config.backup.num_of_allowed_restores) {
+            throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
           }
         }
       })
-      .catch(NotFound, () =>
-        true
-        //Restoe file might not be found, first time restore.
-      );
+      .catch(NotFound, (err) => {
+        logger.debug('Not found any restore data.', err);
+        //Restore file might not be found, first time restore.
+        return true;
+      });
   }
 
   ensurePlatformContext(req, res) {

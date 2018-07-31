@@ -156,10 +156,9 @@ class OobBackupManager {
       .getBackupFile({
         deployment_name: deploymentName,
         backup_guid: opts.backup_guid,
-        time_stamp: opts.time_stamp,
         root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
       })
-      .catchThrow(NotFound, new UnprocessableEntity(`backup for OOB deployment - ${deploymentName} with guid/ brefore time stamp '${opts.backup_guid ? opts.backup_guid : opts.time_stamp}' not found`))
+      .catchThrow(NotFound, new UnprocessableEntity(`backup for OOB deployment - ${deploymentName} with guid '${opts.backup_guid}' not found`))
       .tap(metadata => {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Cannot restore backup '${opts.backup_guid}' due to state '${metadata.state}'`);
@@ -168,7 +167,6 @@ class OobBackupManager {
       .then(metadata => {
         const backup = {
           guid: opts.backup_guid,
-          timeStamp: opts.time_stamp,
           type: metadata.type,
           secret: metadata.secret
         };
@@ -177,7 +175,6 @@ class OobBackupManager {
           operation: 'restore',
           deployment_name: deploymentName,
           backup_guid: backup.guid,
-          time_stamp: backup.timeStamp,
           state: 'processing',
           agent_ip: undefined,
           started_at: new Date().toISOString(),
@@ -190,10 +187,8 @@ class OobBackupManager {
           operation: 'restore',
           agent_ip: undefined
         };
-        result = _.assign(result, opts.backup_guid ? {
+        result = _.assign(result, {
           backup_guid: opts.backup_guid
-        } : {
-          time_stamp: opts.time_stamp
         });
 
         return Promise

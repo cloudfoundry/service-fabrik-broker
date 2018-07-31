@@ -83,7 +83,7 @@ class ScheduleBackupJob extends BaseJob {
     const options = _.omit(job.attrs.data, 'trigger', 'type');
     return backupStore
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
-      .then(oldBackupArray => this.filterOldBackups(oldBackupArray))
+      .then(oldBackups => this.filterOldBackups(oldBackups))
       .map(backup => {
         logger.debug(`Backup meta info : ${JSON.stringify(backup)}`);
         if (backup.trigger === CONST.BACKUP.TRIGGER.SCHEDULED || instanceDeleted) {
@@ -137,14 +137,14 @@ class ScheduleBackupJob extends BaseJob {
       });
   }
 
-  static filterOldBackups(oldBackupArray) {
+  static filterOldBackups(oldBackups) {
     let filteredOldBackups = [];
-    /* oldBackupArray : This aray should contain all older backups
+    /* oldBackups : This aray should contain all older backups
     // including last retenion day's backup. E.g. if retention period
     // is 15 days it would include all backups in (15th, 16th, 17th ...) */
-    if (typeof oldBackupArray !== 'undefined' && oldBackupArray.length > 0) {
+    if (typeof oldBackups !== 'undefined' && oldBackups.length > 0) {
       // Older backups are sorted as latest at first
-      let sortedBackups = _.sortBy(oldBackupArray, ['started_at']).reverse();
+      let sortedBackups = _.sortBy(oldBackups, ['started_at']).reverse();
       const latestSuccessIndex = _.findIndex(sortedBackups,
         backup => backup.state === CONST.OPERATION.SUCCEEDED);
       if (latestSuccessIndex === -1) {

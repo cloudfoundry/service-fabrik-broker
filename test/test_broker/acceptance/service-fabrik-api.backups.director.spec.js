@@ -19,7 +19,7 @@ describe('service-fabrik-api', function () {
       const container = backupStore.containerName;
       const instance_id = 'ab0ed6d6-42d9-4318-9b65-721f34719499';
       const instance_id1 = '6666666-42d9-4318-9b65-721f34719499';
-      const started_at = '2015-11-18T11-28-42Z';
+      const started_at = backupStore.filename.isoDate(new Date(Date.now() - (config.backup.retention_period_in_days - 1) * 60 * 60 * 24 * 1000));
       const prefix = `${space_guid}/backup`;
       const filename = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
       const filename1 = `${prefix}/${service_id}.${instance_id1}.${backup_guid1}.${started_at}.json`;

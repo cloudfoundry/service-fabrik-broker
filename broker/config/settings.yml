@@ -368,8 +368,10 @@ defaults: &defaults
     backup_restore_status_check_every: 120000 # (ms) Check the status of deployment backup/restore once every 2 mins
     abort_time_out: 300000 #(ms) Timeout time for abort of backup to complete
     consecutive_backup_failure_sla_count: 3 # Max allowed no backup days in a row
-    restore_history_count: 10 #
+    num_of_allowed_restores: 10 # Number of allowed restores in restore_history_days
     restore_history_days: 30 # Max allowed restores  10 in 30 days
+    reschedule_backup_delay_after_restore: 3 #(minute)
+
     provider:
       name: openstack
       authUrl: <%= cloudProvider.authUrl %>

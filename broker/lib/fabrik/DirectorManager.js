@@ -868,7 +868,6 @@ class DirectorManager extends BaseManager {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
 
-    let restoreMetadata;
     return this.agent
       .getRestoreLastOperation(agent_ip)
       .tap(lastOperation => {
@@ -877,25 +876,24 @@ class DirectorManager extends BaseManager {
               .getRestoreLogs(agent_ip), this.backupStore
               .getRestoreFile(options)
             ])
-            .spread((logs, metadata) => {
-              restoreMetadata = metadata;
+            .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              const date_history = this.updateHistoryOfDates(
-                _.get(restoreMetadata, 'date_history'), restoreFinishiedAt);
+              let restoreDates = _.get(restoreMetadata, 'restore_dates') || [];
+              restoreDates.push(restoreFinishiedAt);
               return this.backupStore
                 .patchRestoreFile(options, {
                   state: lastOperation.state,
                   logs: logs,
                   finished_at: restoreFinishiedAt,
-                  date_history: date_history
+                  restore_dates: _.sortBy(restoreDates)
                 });
             })
             .tap(() => {
               // Trigger schedule backup when restore is successful
               if (lastOperation.state === CONST.OPERATION.SUCCEEDED) {
-                return this.scheduleBackup({
+                return this.reScheduleBackup({
                   instance_id: options.instance_guid,
-                  afterXminute: 3
+                  afterXminute: config.backup.reschedule_backup_delay_after_restore || 3
                 });
               }
             });
@@ -903,26 +901,13 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  updateHistoryOfDates(arrayOfDates, isoDateToUpdate) {
-    let updatedHistory = arrayOfDates || [];
-    updatedHistory.push(isoDateToUpdate);
-    _.remove(updatedHistory, date => {
-      const twoMonthOlderDate = Date.now() - 1000 * 60 * 60 * 24 * 60;
-      return Date.parse(date) < twoMonthOlderDate;
-    });
-    return updatedHistory.sort();
-  }
-  scheduleBackup(opts) {
+  reScheduleBackup(opts) {
     const options = {
       instance_id: opts.instance_id,
-      repeatInterval: 'daily',
       type: CONST.BACKUP.TYPE.ONLINE
     };
-    let interval;
-    if (this.service.backup_interval) {
-      interval = this.service.backup_interval;
-    }
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(interval, opts.afterXminute);
+
+    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(this.service.backup_interval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
     return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {

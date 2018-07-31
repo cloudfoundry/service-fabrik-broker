@@ -863,7 +863,7 @@ describe('service-fabrik-api-sf2.0', function () {
           secret: 'hugo',
           started_at: started_at,
           trigger: 'online',
-          date_history: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+          restore_dates: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
         };
 
         function getDateHistory(days) {
@@ -919,7 +919,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 400 Bad Request (invalid time_stamp given)', function () {
+        it('should return 400 Bad Request (invalid time_stamp format given)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -937,6 +937,30 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid time_stamp older than 14 days given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          const requestTimeStamp = `${Date.now() - (config.backup.retention_period_in_days + 2) * 60 * 60 * 24 * 1000}`;
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: requestTimeStamp
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.text).to.contain(`Invalid date ${requestTimeStamp} out of range of ${config.backup.retention_period_in_days} days.`);
               mocks.verify();
             });
         });
@@ -1099,6 +1123,31 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
+        it('should return 400 BadRequest : backup_guid based (quota exceeded)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.download(restorePathname, _.chain(_.cloneDeep(restoreMetadata))
+            .set('restore_dates', getDateHistory(11))
+            .value());
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              backup_guid: backup_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
         it('should initiate a start-restore operation at cloud controller via a service instance update', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1197,8 +1246,8 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
-          mocks.cloudProvider.download(restorePathname, _.assign(restoreMetadata, {
-            date_history: undefined
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: undefined
           }));
           mocks.cloudController.updateServiceInstance(instance_id, body => {
             const token = _.get(body.parameters, 'service-fabrik-operation');
@@ -1227,8 +1276,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(restorePathname, _.assign(restoreMetadata, {
-            date_history: getDateHistory(11)
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: getDateHistory(11)
           }));
           return chai
             .request(apps.external)
