@@ -139,7 +139,9 @@ class BackupStore {
         .uploadJson(filename, _
           .chain(data)
           .assign(newData)
-          .set('finished_at', this.filename.isoDate(_.get(newData, 'finished_at')))
+          .set('finished_at',
+            _.get(newData, 'finished_at') ?
+            new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
           .value()
         )
       );
