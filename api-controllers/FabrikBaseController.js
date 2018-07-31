@@ -126,7 +126,7 @@ class FabrikBaseController extends BaseController {
     }
   }
 
-  validateRestoreHistory(options) {
+  validateRestoreQuota(options) {
     return this.backupStore
       .getRestoreFile(options)
       .then(metdata => {

@@ -877,14 +877,14 @@ class DirectorManager extends BaseManager {
             ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              const restore_dates = this.updateHistoryOfRestoreDates(
-                _.get(restoreMetadata, 'restore_dates'), restoreFinishiedAt);
+              let restoreDates = _.get(restoreMetadata, 'restore_dates') || [];
+              restoreDates.push(restoreFinishiedAt);
               return this.backupStore
                 .patchRestoreFile(options, {
                   state: lastOperation.state,
                   logs: logs,
                   finished_at: restoreFinishiedAt,
-                  restore_dates: restore_dates
+                  restore_dates: _.sortBy(restoreDates)
                 });
             })
             .tap(() => {
@@ -898,17 +898,6 @@ class DirectorManager extends BaseManager {
             });
         }
       });
-  }
-
-  updateHistoryOfRestoreDates(restoreDates, isoDateToUpdate) {
-    restoreDates = restoreDates || [];
-    restoreDates.push(isoDateToUpdate);
-    _.remove(restoreDates, date => {
-      const restoreHistoryRetentionDays = config.backup.restore_history_retention_days || 60;
-      const twoMonthOlderDate = Date.now() - 1000 * 60 * 60 * 24 * restoreHistoryRetentionDays;
-      return Date.parse(date) < twoMonthOlderDate;
-    });
-    return _.sortBy(restoreDates);
   }
 
   reScheduleBackup(opts) {

@@ -418,7 +418,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.validateUuid(backupGuid, 'Backup GUID');
         }
       })
-      .then(() => this.validateRestoreHistory({
+      .then(() => this.validateRestoreQuota({
         instance_guid: instanceId,
         service_id: serviceId,
         plan_id: planId,
@@ -441,10 +441,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
               _.sortBy(oldBackups, ['started_at']))
             .then(sortedOldBackups =>
               _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
-            .tap(successfulBackup => {
+            .then(successfulBackup => {
               if (_.isEmpty(successfulBackup)) {
-                logger.error(`No backup successful found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)}`);
+                logger.error(`No successful backup found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)}`);
                 throw new NotFound(`Cannot restore service instance '${instanceId}' as no successful backup found for time_stamp ${timeStamp}`);
+              } else {
+                return successfulBackup;
               }
             });
         } else {
@@ -452,13 +454,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space`))
-      .tap(metadata => {
+      .then(metadata => {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
         }
         if (!req.manager.isRestorePossible(metadata.plan_id)) {
           throw new UnprocessableEntity(`Cannot restore for guid/timeStamp: '${timeStamp || backupGuid}' to plan:'${metadata.plan_id}'`);
         }
+        return metadata;
       })
       .then(metadata => this.fabrik
         .createOperation('restore', {

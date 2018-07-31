@@ -370,7 +370,6 @@ defaults: &defaults
     consecutive_backup_failure_sla_count: 3 # Max allowed no backup days in a row
     num_of_allowed_restores: 10 # Number of allowed restores in restore_history_days
     restore_history_days: 30 # Max allowed restores  10 in 30 days
-    restore_history_retention_days: 60 #Number of days to keep restore history
     reschedule_backup_delay_after_restore: 3 #(minute)
 
     provider:
