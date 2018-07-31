@@ -437,8 +437,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (timeStamp) {
           return this.backupStore
             .listBackupsOlderThan(backupFileOptions, new Date(timeStamp))
-            .then(oldBackups =>
-              _.sortBy(oldBackups, ['started_at']))
             .then(sortedOldBackups =>
               _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
             .then(successfulBackup => {
