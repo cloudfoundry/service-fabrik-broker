@@ -151,10 +151,15 @@ class BnRStatusPollerJob extends BaseJob {
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
         this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo)
         .tap(() => {
+          const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
+          let retryDelayInMinutes;
+          if (RUN_AFTER.indexOf('minutes') !== -1) {
+            retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+          }
           if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
             const options = {
               instance_id: instance_guid,
-              repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
+              repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, retryDelayInMinutes),
               type: CONST.BACKUP.TYPE.ONLINE
             };
             return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
