@@ -180,12 +180,16 @@ class ScheduleBackupJob extends BaseJob {
           });
       }
       const RUN_AFTER = _.get(jobData, 'reschedule_delay', config.scheduler.jobs.reschedule_delay);
+      let retryDelayInMinutes;
       logger.info(`Re-Schedulding Backup Job for ${jobData.instance_id} @ ${RUN_AFTER} - Attempt - ${jobData.attempt}. Initial attempt was done @: ${jobData.firstAttemptAt}`);
+      if (RUN_AFTER.indexOf('minutes') !== -1) {
+        retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+      }
       const plan = catalog.getPlan(jobData.plan_id);
       return ScheduleManager.schedule(
         jobData.instance_id,
         CONST.JOB.SCHEDULED_BACKUP,
-        utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
+        utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, retryDelayInMinutes),
         jobData,
         CONST.SYSTEM_USER);
 
