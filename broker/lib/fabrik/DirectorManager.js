@@ -886,6 +886,8 @@ class DirectorManager extends BaseManager {
             ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
+              // following restoreDates will have structure
+              // 'restore_dates' : {'succeeded':[<dateISOString>], 'failed':[<dateISOString>],'aborted':[<dateISOString>]}
               let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
               let restoreDateByState = _.get(restoreDates, lastOperation.state) || [];
               restoreDateByState.push(restoreFinishiedAt);
