@@ -350,6 +350,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastBackup(req, res) {
     req.manager.verifyFeatureSupport('backup');
+    // TODO-PR: We should get lastOperation response from querying backup resource with instance_guid
     return eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -395,7 +396,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(backupGuid => {
         return eventmesh
-          .apiServerClient.getState({
+          .apiServerClient.getResourceState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: backupGuid
@@ -602,34 +603,27 @@ class ServiceFabrikApiController extends FabrikBaseController {
     };
     logger.info('Attempting delete with:', options);
     return eventmesh
-      .apiServerClient.patchOptions({
+      .apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: req.params.backup_guid,
-        options: options
+        options: options,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.DELETE
+        }
       })
+      // Migration Code: to be removed 
       .catch(NotFound, (err) => {
         // if not found in apiserver delete from blobstore
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
         return this.backupStore.deleteBackupFile(options);
       })
-      .then(() =>
-        eventmesh.apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          resourceId: req.params.backup_guid,
-          status: {
-            'state': CONST.APISERVER.RESOURCE_STATE.DELETE
-          }
-        })
-      )
-      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'))
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
         resourceId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
-      //delete resource from apiserver here if state is delted 
+      //delete resource from apiserver here if state is deleted 
       .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -638,7 +632,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({})
-      );
+      )
+      .catchThrow(NotFound, new Gone('Backup does not exist or has already been deleted'));
   }
 
   scheduleBackup(req, res) {

@@ -296,11 +296,13 @@ class BackupService extends BaseDirectorService {
                   .replace(/\.\d*/, '')
               })
             )
-            .then(patchObj => eventmesh.apiServerClient.patchResponse({
+            .then(patchObj => eventmesh.apiServerClient.patchResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               resourceId: opts.backup_guid,
-              response: patchObj
+              status: {
+                response: patchObj
+              }
             }));
         }
       });

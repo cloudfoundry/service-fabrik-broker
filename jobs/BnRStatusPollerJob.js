@@ -158,11 +158,13 @@ class BnRStatusPollerJob extends BaseJob {
           return Promise
             .try(() => eventmesh
               .apiServerClient
-              .patchResponse({
+              .patchResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
                 resourceId: instanceInfo.backup_guid,
-                response: _.omit(operationStatusResponse, 'jobCancelled', 'operationTimedOut', 'operationFinished')
+                status: {
+                  response: _.omit(operationStatusResponse, 'jobCancelled', 'operationTimedOut', 'operationFinished')
+                }
               }))
             .then(() => bosh.director.getDirectorConfig(instanceInfo.deployment))
             .then(directorConfig => {

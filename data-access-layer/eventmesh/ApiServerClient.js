@@ -67,7 +67,11 @@ class ApiServerClient {
         return apiserver.loadSpec()
           .then(() => {
             this.ready = true;
-            logger.info('Successfully loaded ApiServer Spec');
+            logger.debug('Successfully loaded ApiServer Spec');
+          })
+          .catch(err => {
+            logger.error('Error occured while loading ApiServer Spec', err);
+            return convertToHttpErrorAndThrow(err);
           });
       }
     });
@@ -186,6 +190,7 @@ class ApiServerClient {
       name: opts.resourceId
     };
     if (opts.parentResourceId) {
+      // TODO-PR: revisit key name instance_guid
       metadata.labels = {
         instance_guid: opts.parentResourceId
       };
@@ -237,6 +242,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
+    assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to update resource`);
     return Promise.try(() => {
         if (opts.options || opts.metadata) {
           const patchBody = {};
@@ -276,53 +282,31 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       });
   }
-
   /**
-   * @description Patch given response fields in status.response
+   * @description Patches Resource in Apiserver with the opts
+   * Use this method when you want to append something in status.response or spec.options
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
-   * @param {string} opts.response - Value to set for status.response field of resource
    */
-  patchResponse(opts) {
-    logger.info('Patching resource response with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch response`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch response`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch response`);
-    assert.ok(opts.response, `Property 'response' is required to patch response`);
-    return this.getResource(opts)
-      .then(resource => {
-        const oldResponse = resource.status.response;
-        const response = _.merge(oldResponse, opts.response);
-        const options = _.chain(opts)
-          .omit('response')
-          .set('status', {
-            'response': response
-          })
-          .value();
-        return this.updateResource(options);
-      });
-  }
-
-  /**
-   * @description Patch given options fields in spec.options
-   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
-   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
-   * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
-   * @param {string} opts.options - Value to set for spec.options field of resource
-   */
-
-  patchOptions(opts) {
+  patchResource(opts) {
     logger.info('Patching resource options with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
-    assert.ok(opts.options, `Property 'options' is required to patch options`);
+    assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to patch resource`);
     return this.getResource(opts)
       .then(resource => {
-        const oldOptions = resource.spec.options;
-        const options = _.merge(oldOptions, opts.options);
-        _.set(opts, 'options', options);
+        if (opts.status && opts.status.response && resource.status) {
+          const oldResponse = resource.status.response;
+          const response = _.merge(oldResponse, opts.status.response);
+          _.set(opts.status, 'response', response);
+        }
+        if (opts.options && resource.spec) {
+          const oldOptions = resource.spec.options;
+          const options = _.merge(oldOptions, opts.options);
+          _.set(opts, 'options', options);
+        }
         return this.updateResource(opts);
       });
   }
@@ -333,7 +317,6 @@ class ApiServerClient {
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
    */
-
   deleteResource(opts) {
     logger.info('Deleting resource with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
@@ -382,7 +365,6 @@ class ApiServerClient {
    * @param {string} opts.resourceType - Name of operation
    * @param {string} opts.resourceId - Type of operation
    */
-
   getResource(opts) {
     logger.debug('Get resource with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
@@ -462,7 +444,7 @@ class ApiServerClient {
    * @param {string} opts.resourceType - Type of operation
    * @param {string} opts.resourceId - Unique id of resource
    */
-  getState(opts) {
+  getResourceState(opts) {
     return this.getResource(opts)
       .then(resource => resource.status.state);
   }
