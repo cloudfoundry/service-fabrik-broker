@@ -80,10 +80,35 @@ class ScheduleBackupJob extends BaseJob {
   }
 
   static deleteOldBackup(job, instanceDeleted) {
+    let transactionLogsDeleteBefore;
+
+    function filterOldBackups(oldBackups) {
+      let filteredOldBackups = [];
+      /* oldBackups : This aray should contain all older backups
+      // including last retenion day's backup. E.g. if retention period
+      // is 15 days it would include all backups in (15th, 16th, 17th ...) */
+      if (typeof oldBackups !== 'undefined' && oldBackups.length > 0) {
+        // Older backups are sorted as latest at first
+        let sortedBackups = _.sortBy(oldBackups, ['started_at']).reverse();
+        const latestSuccessIndex = _.findIndex(sortedBackups,
+          backup => backup.state === CONST.OPERATION.SUCCEEDED);
+        if (latestSuccessIndex === -1) {
+          //No successful backup beyond retention period.
+          filteredOldBackups = sortedBackups;
+          transactionLogsDeleteBefore = new Date();
+        } else {
+          //Should return backups before a successful backup.
+          filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
+          transactionLogsDeleteBefore = _.get(sortedBackups[latestSuccessIndex], 'started_at');
+        }
+      }
+      return filteredOldBackups;
+    }
+
     const options = _.omit(job.attrs.data, 'trigger', 'type');
     return backupStore
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
-      .then(oldBackups => this.filterOldBackups(oldBackups))
+      .then(oldBackups => filterOldBackups(oldBackups))
       .map(backup => {
         logger.debug(`Backup meta info : ${JSON.stringify(backup)}`);
         if (backup.trigger === CONST.BACKUP.TRIGGER.SCHEDULED || instanceDeleted) {
@@ -99,11 +124,30 @@ class ScheduleBackupJob extends BaseJob {
             .deleteBackup(deleteOptions)
             .then(() => backup.backup_guid);
         }
-      }).then(deletedBackupGuids => {
-        logger.info(`Successfully deleted backup guids : ${deletedBackupGuids} - instance deleted : ${instanceDeleted}`);
+      })
+      .then(deletedBackupGuids => {
+        const serviceName = catalog.getService(job.attrs.data.service_id).name;
+        const listOptions = {
+          prefix: `/${serviceName}/logs/${job.attrs.data.instance_id}`
+        };
+        let deletedTransactionLogFilesCount = 0;
+        backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsDeleteBefore)
+          .map(transactionLogsFile => {
+            deletedTransactionLogFilesCount++;
+            return backupStore.cloudProvider.remove(transactionLogsFile);
+          });
+        const deletedObjects = {
+          deletedBackupGuids: deletedBackupGuids,
+          deletedTransactionLogFilesCount: deletedTransactionLogFilesCount
+        };
+        return deletedObjects;
+      })
+      .then(deletedObjects => {
+        logger.info(`Successfully deleted backup guids : ${deletedObjects.deletedBackupGuids} - instance deleted : ${instanceDeleted}`);
         const deleteResponse = {
-          deleted_guids: deletedBackupGuids,
+          deleted_guids: deletedObjects.deletedBackupGuids,
           job_cancelled: false,
+          deleted_transaction_log_files_count: deletedObjects.deletedTransactionLogFilesCount,
           instance_deleted: instanceDeleted
         };
         if (!instanceDeleted) {
@@ -135,27 +179,6 @@ class ScheduleBackupJob extends BaseJob {
             }
           });
       });
-  }
-
-  static filterOldBackups(oldBackups) {
-    let filteredOldBackups = [];
-    /* oldBackups : This aray should contain all older backups
-    // including last retenion day's backup. E.g. if retention period
-    // is 15 days it would include all backups in (15th, 16th, 17th ...) */
-    if (typeof oldBackups !== 'undefined' && oldBackups.length > 0) {
-      // Older backups are sorted as latest at first
-      let sortedBackups = _.sortBy(oldBackups, ['started_at']).reverse();
-      const latestSuccessIndex = _.findIndex(sortedBackups,
-        backup => backup.state === CONST.OPERATION.SUCCEEDED);
-      if (latestSuccessIndex === -1) {
-        //No successful backup beyond retention period.
-        filteredOldBackups = sortedBackups;
-      } else {
-        //Should return backups before a successful backup.
-        filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
-      }
-    }
-    return filteredOldBackups;
   }
 
   static reScheduleBackup(jobOptions, repeatInterval) {

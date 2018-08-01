@@ -32,7 +32,7 @@ class BackupStore {
     return _.nth(/^(.+)-broker$/.exec(this.containerName), 1);
   }
 
-  listFilenames(prefix, predicate, iteratees) {
+  listFilenames(prefix, predicate, iteratees, dontParseFilename) {
     const options = {
       prefix: prefix
     };
@@ -72,7 +72,7 @@ class BackupStore {
       .then(() =>
         _
         .chain(fileList)
-        .map(file => this.filename.parse(file.name))
+        .map(file => dontParseFilename ? file : this.filename.parse(file.name))
         .filter(predicate)
         .sortBy(iteratees)
         .value());
@@ -274,6 +274,22 @@ class BackupStore {
     return Promise
       .try(() => this.filename.isoDate(backupStartedBefore))
       .then(isoDate => this.listBackupFiles(options, getPredicate(isoDate), iteratees));
+  }
+
+  listTransactionLogsOlderThan(options, dateOlderThan) {
+    const iteratees = ['lastModified'];
+    let prefix = options.prefix;
+
+    function getPredicate(isoDate) {
+      return function predicate(filenameobject) {
+        //transactionLogsDeletionStartDate defaults to current timestamp as part of isoDate function.
+        return _.lt(filenameobject.lastModified, isoDate);
+      };
+    }
+
+    return Promise
+      .try(() => this.filename.isoDate(dateOlderThan))
+      .then(isoDate => this.listFilenames(prefix, getPredicate(isoDate), iteratees, true));
   }
 }
 

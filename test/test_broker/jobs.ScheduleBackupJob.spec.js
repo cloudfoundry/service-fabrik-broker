@@ -184,7 +184,8 @@ describe('Jobs', function () {
             delete_backup_status: {
               deleted_guids: [backup_guid16, undefined],
               job_cancelled: false,
-              instance_deleted: false
+              instance_deleted: false,
+              deleted_transaction_log_files_count: 0
             }
           };
           expect(baseJobLogRunHistoryStub).to.be.calledTwice;
@@ -227,11 +228,12 @@ describe('Jobs', function () {
             },
             delete_backup_status: {
               deleted_guids: [backup_guid2],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: false,
               instance_deleted: false
             }
           };
-          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
@@ -269,6 +271,7 @@ describe('Jobs', function () {
             },
             delete_backup_status: {
               deleted_guids: [],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: false,
               instance_deleted: false
             }
@@ -280,7 +283,7 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
-
+      //modify this to add op-logs.
       it('should initiate backup, should  delete backups older than 15 days when unsuccessful', function () {
         const backupResponse = {
           backup_guid: backup_guid
@@ -315,6 +318,7 @@ describe('Jobs', function () {
             },
             delete_backup_status: {
               deleted_guids: [backup_guid, backup_guid16, backup_guid2],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: false,
               instance_deleted: false
             }
@@ -458,6 +462,7 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
+      //modify this to add op-logs deletion too.
       it('should delete scheduled backup & any on-demand backups even when service instance is deleted', function () {
         mocks.cloudController.findServicePlan(instance_id);
         mocks.cloudProvider.list(container, prefix, [
@@ -481,6 +486,7 @@ describe('Jobs', function () {
             start_backup_status: 'instance_deleted',
             delete_backup_status: {
               deleted_guids: [backup_guid16, backup_guid2],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: false,
               instance_deleted: true
             }
@@ -502,6 +508,7 @@ describe('Jobs', function () {
             start_backup_status: 'instance_deleted',
             delete_backup_status: {
               deleted_guids: [],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: true,
               instance_deleted: true
             }
@@ -527,6 +534,7 @@ describe('Jobs', function () {
             start_backup_status: 'instance_deleted',
             delete_backup_status: {
               deleted_guids: [],
+              deleted_transaction_log_files_count: 0,
               job_cancelled: false,
               instance_deleted: true
             }
