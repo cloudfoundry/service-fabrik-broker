@@ -850,9 +850,17 @@ class DirectorManager extends BaseManager {
         .tap(agent_ip => {
           // set data and result agent ip
           data.agent_ip = result.agent_ip = agent_ip;
-          return this.backupStore.putFile(data);
-        })
-      )
+          return this.backupStore
+            .getRestoreFile(data)
+            .catch(NotFound, (err) => {
+              logger.debug('Not found any restore data. May be first time.', err);
+              //Restore file might not be found, first time restore.
+              return;
+            })
+            .then(restoreMetadata => this.backupStore.putFile(_.assign(data, {
+              restore_dates: _.get(restoreMetadata, 'restore_dates')
+            })));
+        }))
       .return(result);
   }
 
@@ -878,14 +886,17 @@ class DirectorManager extends BaseManager {
             ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              let restoreDates = _.get(restoreMetadata, 'restore_dates') || [];
-              restoreDates.push(restoreFinishiedAt);
+              let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
+              let restoreDateByState = _.get(restoreDates, lastOperation.state) || [];
+              restoreDateByState.push(restoreFinishiedAt);
               return this.backupStore
                 .patchRestoreFile(options, {
                   state: lastOperation.state,
                   logs: logs,
                   finished_at: restoreFinishiedAt,
-                  restore_dates: _.sortBy(restoreDates)
+                  restore_dates: _.chain(restoreDates)
+                    .set(lastOperation.state, _.sortBy(restoreDateByState))
+                    .value()
                 });
             })
             .tap(() => {

@@ -436,13 +436,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
         };
         if (timeStamp) {
           return this.backupStore
-            .listBackupsOlderThan(backupFileOptions, new Date(timeStamp))
+            .listBackupsOlderThan(backupFileOptions, new Date(Number(timeStamp)))
             .then(sortedOldBackups =>
               _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
             .then(successfulBackup => {
               if (_.isEmpty(successfulBackup)) {
                 logger.error(`No successful backup found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)}`);
-                throw new NotFound(`Cannot restore service instance '${instanceId}' as no successful backup found for time_stamp ${timeStamp}`);
+                throw new NotFound(`Cannot restore service instance '${instanceId}' as no successful backup found before time_stamp ${timeStamp}`);
               } else {
                 return successfulBackup;
               }
@@ -503,10 +503,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   listBackups(req, res) {
     const options = _.pick(req.query, 'service_id', 'plan_id', 'instance_id', 'before', 'after');
     options.tenant_id = req.entity.tenant_id;
-    if (_.isEmpty(options.after)) {
-      const retentionPeriodOlderMillis = Date.now() - config.backup.retention_period_in_days * 24 * 60 * 60 * 1000;
-      options.after = new Date(retentionPeriodOlderMillis).toISOString();
-    }
     return this.listBackupFiles(options)
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.OK)
