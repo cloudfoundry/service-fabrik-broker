@@ -107,7 +107,7 @@ function list(containerName, prefix, filenames, responseStatusCode, times) {
     .chain(filenames)
     .map(name => ({
       name: name,
-      lastModified: new Date().toISOString()
+      last_modified: new Date('2018-07-01T15:57:11.037Z').toISOString()
     }))
     .value();
   const qs = {

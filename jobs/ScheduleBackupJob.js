@@ -128,19 +128,22 @@ class ScheduleBackupJob extends BaseJob {
       .then(deletedBackupGuids => {
         const serviceName = catalog.getService(job.attrs.data.service_id).name;
         const listOptions = {
-          prefix: `/${serviceName}/logs/${job.attrs.data.instance_id}`
+          prefix: `${serviceName}/logs/${job.attrs.data.instance_id}`
         };
+        const container = `${backupStore.containerPrefix}-${serviceName}`;
         let deletedTransactionLogFilesCount = 0;
-        backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsDeleteBefore)
+        return backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsDeleteBefore, container)
           .map(transactionLogsFile => {
-            deletedTransactionLogFilesCount++;
-            return backupStore.cloudProvider.remove(transactionLogsFile);
+            deletedTransactionLogFilesCount = deletedTransactionLogFilesCount + 1;
+            return backupStore.cloudProvider.remove(container, transactionLogsFile.name);
+          })
+          .then(() => {
+            const deletedObjects = {
+              deletedBackupGuids: deletedBackupGuids,
+              deletedTransactionLogFilesCount: deletedTransactionLogFilesCount
+            };
+            return deletedObjects;
           });
-        const deletedObjects = {
-          deletedBackupGuids: deletedBackupGuids,
-          deletedTransactionLogFilesCount: deletedTransactionLogFilesCount
-        };
-        return deletedObjects;
       })
       .then(deletedObjects => {
         logger.info(`Successfully deleted backup guids : ${deletedObjects.deletedBackupGuids} - instance deleted : ${instanceDeleted}`);

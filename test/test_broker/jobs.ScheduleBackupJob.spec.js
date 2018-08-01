@@ -24,6 +24,7 @@ describe('Jobs', function () {
       const instance_id = mocks.director.uuidByIndex(index);
       const failed_instance_id = mocks.director.uuidByIndex(22);
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+      const service_name = 'blueprint';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
       const backup_guid2 = '081acb05-66a3-471b-af3c-8bbf1e4180bf';
@@ -31,6 +32,7 @@ describe('Jobs', function () {
       const backup_guid16 = '061acb05-66a3-471b-af3c-8bbf1e4180be';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const container = backupStore.containerName;
+      const serviceContainer = 'cf.service-fabrik.myopenstack.com-service-fabrik-blueprint';
       const started1DaysPrior = filename.isoDate(moment().subtract(1, 'days').toISOString());
       const started18DaysPrior = filename.isoDate(moment()
         .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
@@ -39,14 +41,21 @@ describe('Jobs', function () {
       const started14DaysPrior = filename.isoDate(moment()
         .subtract(config.backup.retention_period_in_days + 1, 'days').toISOString());
       const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
+      const transactionLogsPrefix = `${service_name}/logs/${instance_id}`;
+      const transactionLogsPrefixFailedInstance = `${service_name}/logs/${failed_instance_id}`;
       const failed_prefix = `${space_guid}/backup/${service_id}.${failed_instance_id}`;
       const fileName1Daysprior = `${prefix}.${backup_guid3}.${started1DaysPrior}.json`;
       const fileName14Daysprior = `${prefix}.${backup_guid}.${started14DaysPrior}.json`;
       const fileName16DaysPrior = `${prefix}.${backup_guid16}.${started16DaysPrior}.json`;
       const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
+      const transactionLogsFileName1Daysprior = `${transactionLogsPrefix}.bson`;
+      const transactionLogsFileName14Daysprior = `${transactionLogsPrefix}.bson`;
+      const transactionLogsFileName16DaysPrior = `${transactionLogsPrefix}.bson`;
+      const transactionLogsFileName18DaysPrior = `${transactionLogsPrefix}.bson`;
       const pathname14 = `/${container}/${fileName14Daysprior}`;
       const pathname16 = `/${container}/${fileName16DaysPrior}`;
       const pathname18 = `/${container}/${fileName18DaysPrior}`;
+      const pathname1 = `/${serviceContainer}/${transactionLogsFileName1Daysprior}`;
       const scheduled_data = {
         trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
         type: 'online',
@@ -168,6 +177,7 @@ describe('Jobs', function () {
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, []);
         //Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14, scheduled_data);
@@ -210,6 +220,9 @@ describe('Jobs', function () {
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, [
+          transactionLogsFileName14Daysprior
+        ]);
         //Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14,
@@ -219,6 +232,7 @@ describe('Jobs', function () {
         mocks.cloudProvider.download(pathname18,
           getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.SUCCEEDED));
         mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
+        mocks.cloudProvider.remove(pathname1);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const expectedBackupResponse = {
@@ -228,7 +242,7 @@ describe('Jobs', function () {
             },
             delete_backup_status: {
               deleted_guids: [backup_guid2],
-              deleted_transaction_log_files_count: 0,
+              deleted_transaction_log_files_count: 1,
               job_cancelled: false,
               instance_deleted: false
             }
@@ -255,6 +269,7 @@ describe('Jobs', function () {
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, []);
         //Out of 4 files 1 day prior is filtered out.
         mocks.cloudProvider.download(pathname14,
           getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
@@ -299,6 +314,7 @@ describe('Jobs', function () {
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, []);
         //Out of 4 files 1 day prior is filtered out.
         mocks.cloudProvider.download(pathname14,
           getBackupData(backup_guid, CONST.BACKUP.TRIGGER.SCHEDULED, started14DaysPrior, CONST.OPERATION.FAILED));
@@ -480,6 +496,7 @@ describe('Jobs', function () {
         mocks.cloudProvider.list(container, prefix, [
           fileName1Daysprior
         ]);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, []);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const expectedJobResponse = {
@@ -502,6 +519,7 @@ describe('Jobs', function () {
         mocks.cloudController.findServicePlan(instance_id);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.cloudProvider.list(container, prefix, []);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, []);
         return ScheduleBackupJob.run(job, () => {}).then(() => {
           mocks.verify();
           const expectedJobResponse = {
@@ -528,6 +546,7 @@ describe('Jobs', function () {
         mocks.cloudController.findServicePlan(failed_instance_id);
         mocks.cloudProvider.list(container, failed_prefix, []);
         mocks.cloudProvider.list(container, failed_prefix, []);
+        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefixFailedInstance, []);
         return ScheduleBackupJob.run(job, () => {}).then(() => {
           mocks.verify();
           const expectedJobResponse = {
