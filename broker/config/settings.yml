@@ -267,7 +267,13 @@ defaults: &defaults
       schedule_interval: 0 12 * * * #Backup schedule interval for service fabrik DB
       status_check_every: 120000 # (ms) Check the status of service fabrik backup once every 2 mins
       backup_timeout_time: 7200000 # (ms) Service Fabrik backup must finish within this timeout time (2 hrs)
-
+  ######################
+  # APISERVER LOCK TTL #
+  ######################
+  lockttl:
+    lifecycle: 86400 # in sec(1 day)
+    backup: 86400 # in sec(1 days)
+    restore: 86400 # in sec(1 days)
   ######################
   # SCHEDULER SETTINGS #
   ######################

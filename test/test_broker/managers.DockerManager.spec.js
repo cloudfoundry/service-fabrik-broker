@@ -122,7 +122,7 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -168,7 +168,7 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -214,7 +214,7 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -301,7 +301,7 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: ''
         }
@@ -344,7 +344,7 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: ''
         }
@@ -428,12 +428,12 @@ describe('docker-manager', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: config.broker_ip
         }
       });
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'docker', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {
         metadata: {
           annotations: config.broker_ip
         }

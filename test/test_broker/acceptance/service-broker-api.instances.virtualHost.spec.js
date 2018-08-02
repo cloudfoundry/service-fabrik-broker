@@ -3,6 +3,7 @@
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
+const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
 const NotFound = errors.NotFound;
 
@@ -132,8 +133,8 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 201 created', function () {
-          mocks.apiServerEventMesh.nockCreateResource('deployment', 'virtualhost', {}, 1, payload);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -157,8 +158,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 404 not found when wrong service instance name is passed.', function () {
-          mocks.apiServerEventMesh.nockCreateResource('deployment', 'virtualhost', {}, 1, payload);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload3, 1);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, payload3, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -248,9 +249,9 @@ describe('service-broker-api', function () {
         };
 
         it('returns 201 Created', function () {
-          mocks.apiServerEventMesh.nockCreateResource('bind', 'virtualhostbind', bindPayload, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'virtualhostbind', binding_id, bindPayload2, 1);
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'virtualhostbind', binding_id, {
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, bindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, bindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, {
             'status': {
               'response': '{}'
             }
@@ -342,9 +343,9 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'virtualhostbind', binding_id, unbindPayload, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'virtualhostbind', binding_id, unbindPayload2, 1);
-          mocks.apiServerEventMesh.nockDeleteResource('bind', 'virtualhostbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -427,8 +428,8 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'virtualhost', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -445,8 +446,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'virtualhost', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, {}, 1, 404);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({

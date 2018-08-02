@@ -97,7 +97,7 @@ describe('managers', function () {
         // mocks.cloudProvider.auth();
         // mocks.agent.getInfo();
         mocks.agent.abortRestore();
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultrestore', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
           status: {
             state: 'aborting'
           }
@@ -139,7 +139,7 @@ describe('managers', function () {
           return true;
         });
         mocks.cloudProvider.headObject(restorePathname);
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultrestore', {}, 1, body => {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {}, 1, body => {
           const responseObj = JSON.parse(body.status.response);
           expect(responseObj.service_id).to.eql(service_id);
           expect(responseObj.plan_id).to.eql(plan_id);
@@ -233,11 +233,11 @@ describe('managers', function () {
           return body.type === CONST.BACKUP.TYPE.ONLINE;
         });
         mocks.apiServerEventMesh.nockPatchResourceRegex(
-          'backup',
-          'defaultrestore', {});
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
         mocks.apiServerEventMesh.nockGetResourceRegex(
-          'backup',
-          'defaultrestore', {
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
             status: {
               state: CONST.OPERATION.IN_PROGRESS,
               response: '{"guid": "some_guid"}'
@@ -294,11 +294,11 @@ describe('managers', function () {
         });
         mocks.cloudProvider.headObject(restorePathname);
         mocks.apiServerEventMesh.nockPatchResourceRegex(
-          'backup',
-          'defaultrestore', {});
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
         mocks.apiServerEventMesh.nockGetResourceRegex(
-          'backup',
-          'defaultrestore', {
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
             status: {
               state: CONST.OPERATION.IN_PROGRESS,
               response: '{"guid": "some_guid"}'
@@ -342,11 +342,11 @@ describe('managers', function () {
         });
         mocks.cloudProvider.headObject(restorePathname);
         mocks.apiServerEventMesh.nockPatchResourceRegex(
-          'backup',
-          'defaultrestore', {});
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
         mocks.apiServerEventMesh.nockGetResourceRegex(
-          'backup',
-          'defaultrestore', {
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
             status: {
               state: CONST.OPERATION.IN_PROGRESS,
               response: '{"guid": "some_guid"}'
@@ -362,7 +362,6 @@ describe('managers', function () {
         const non_pitr_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
         const non_pitr_service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
         const nonPitrRestorePrefix = `${space_guid}/restore/${non_pitr_service_id}.${instance_id}`;
-        console.log(nonPitrRestorePrefix);
         const nonPitrRestoreFilename = `${nonPitrRestorePrefix}.json`;
         const nonPitrRestorePathname = `/${container}/${nonPitrRestoreFilename}`;
         let getServiceStub;
@@ -412,11 +411,11 @@ describe('managers', function () {
           mocks.cloudProvider.headObject(nonPitrRestorePathname);
           let non_pitr_plan = catalog.getPlan(non_pitr_plan_id);
           mocks.apiServerEventMesh.nockPatchResourceRegex(
-            'backup',
-            'defaultrestore', {});
+            CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
           mocks.apiServerEventMesh.nockGetResourceRegex(
-            'backup',
-            'defaultrestore', {
+            CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
               status: {
                 state: CONST.OPERATION.IN_PROGRESS,
                 response: '{"guid": "some_guid"}'
@@ -471,11 +470,11 @@ describe('managers', function () {
           return body.type === CONST.BACKUP.TYPE.ONLINE;
         });
         mocks.apiServerEventMesh.nockPatchResourceRegex(
-          'backup',
-          'defaultrestore', {});
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
         mocks.apiServerEventMesh.nockGetResourceRegex(
-          'backup',
-          'defaultrestore', {
+          CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {
             status: {
               state: CONST.OPERATION.IN_PROGRESS,
               response: '{"guid": "some_guid"}'

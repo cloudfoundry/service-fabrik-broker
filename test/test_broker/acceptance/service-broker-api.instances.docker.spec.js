@@ -7,6 +7,7 @@ const app = require('../support/apps').internal;
 const catalog = require('../../../common/models').catalog;
 const docker = require('../../../data-access-layer/docker');
 const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
 const fabrik = lib.fabrik;
 
@@ -183,8 +184,9 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 Created', function () {
-          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payload);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
+
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -211,8 +213,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 201 Created - start fails once internally', function () {
-          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payload);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -239,8 +241,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 201 Created: For K8S', function () {
-          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payloadK8s);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, {}, 1, payloadK8s);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2K8s, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -269,8 +271,8 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 200 OK', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -297,8 +299,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 200 OK : For K8S', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payloadK8s, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2K8s, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -454,8 +456,8 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -472,8 +474,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 410 Gone', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, {}, 1, 404);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -491,8 +493,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -509,8 +511,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: In K8S platform', function () {
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payloadK8s, 1);
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2K8s, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -601,8 +603,8 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 201 Created', function () {
-          mocks.apiServerEventMesh.nockCreateResource('bind', 'dockerbind', bindPayload, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, bindPayload2, 1);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, bindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, bindPayload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -778,9 +780,9 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
-          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -798,9 +800,9 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
-          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -818,9 +820,9 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: In K8S Platform', function () {
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayloadK8s, 1);
-          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);
-          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2K8s, 1);
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND, binding_id, unbindPayload2K8s, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({

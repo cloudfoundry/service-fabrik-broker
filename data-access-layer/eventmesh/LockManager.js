@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const eventmesh = require('./');
 const errors = require('../../common/errors');
+const config = require('../../common/config');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const utils = require('../../common/utils');
 const logger = require('../../common/logger');
@@ -28,14 +29,13 @@ class LockManager {
         resourceId: resourceId
       })
       .then(resource => {
-        const lockDetails = resource.spec.options;
+        const lockDetails = _.get(resource, 'spec.options');
         const currentTime = new Date();
         const lockTime = new Date(lockDetails.lockTime);
-        const lockTTL = lockDetails.lockTTL ? lockDetails.lockTTL : Infinity;
-        if (lockDetails.lockType === CONST.ETCD.LOCK_TYPE.WRITE && ((currentTime - lockTime) < lockTTL)) {
-          logger.info(`Resource ${resourceId} was write locked for ${lockDetails.lockedResourceDetails.operation ?
-            lockDetails.lockedResourceDetails.operation : 'unknown'} ` +
-            `operation with id ${lockDetails.lockedResourceDetails.resourceId} at ${lockTime} `);
+        const lockTTL = this.getLockTTL(_.get(lockDetails, 'lockedResourceDetails.operation'));
+        if (lockDetails.lockType === CONST.APISERVER.LOCK_TYPE.WRITE && _.get(resource, 'status.state') !== CONST.APISERVER.RESOURCE_STATE.UNLOCKED && ((currentTime - lockTime) < lockTTL)) {
+          logger.info(`Resource ${resourceId} was write locked for ${_.get(lockDetails, 'lockedResourceDetails.operation')} ` +
+            `operation with id ${_.get(lockDetails, 'lockedResourceDetails.resourceId')} at ${lockTime} `);
           return {
             isWriteLocked: true,
             lockDetails: lockDetails
@@ -64,7 +64,6 @@ class LockManager {
           options: JSON.stringify({
                 lockType: <Read/Write>,
                 lockTime: <time in UTC when lock was acquired, can be updated when one wants to refresh lock>,
-                lockTTL: <lock ttl in miliseconds=> set to Infinity if not provided>,
                 lockedResourceDetails: {
                     resourceGroup: <type of resource who is trying to acquire lock ex. backup>
                     resourceType: <name of resource who is trying to acquire lock ex. defaultbackup>
@@ -88,13 +87,11 @@ class LockManager {
   /**
    * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
    * @param {object} lockDetails - Details of the lock that is to be acquired
-   * @param {number} [lockDetails.lockTTL=Infinity] - TTL in miliseconds for the lock that is to be acquired
-   * @param {string} lockDetails.lockType - Type of lock ('READ'/'WRITE')
    * @param {object} [lockDetails.lockedResourceDetails] - Details of the operation who is trying to acquire the lock
    * @param {string} [lockDetails.lockedResourceDetails.resourceGroup] - Type of resource for which lock is being acquired. ex: backup
    * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Name of resource for which lock is being acquired. ex: defaultbackup
    * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
-   * @param {string} [lockDetails.lockedResourceDetails.operation=unknown] - Operation type who is acquiring the lock. ex: backup
+   * @param {string} [lockDetails.lockedResourceDetails.operation] - Operation type who is acquiring the lock. ex: backup
    */
 
   lock(resourceId, lockDetails) {
@@ -104,8 +101,8 @@ class LockManager {
 
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockType = this._getLockType(opts.lockedResourceDetails.operation);
-    opts.lockTTL = opts.lockTTL ? opts.lockTTL : Infinity;
+    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'));
+    opts.lockTTL = this.getLockTTL(_.get(opts, 'lockedResourceDetails.operation'));
     _.extend(opts, {
       'lockTime': opts.lockTime ? opts.lockTime : currentTime
     });
@@ -116,34 +113,43 @@ class LockManager {
         resourceId: resourceId
       })
       .then(resource => {
-        const currentlLockDetails = resource.spec.options;
-        const currentLockTTL = currentlLockDetails.lockTTL ? currentlLockDetails.lockTTL : Infinity;
+        const currentlLockDetails = _.get(resource, 'spec.options');
+        const currentLockTTL = this.getLockTTL(_.get(currentlLockDetails, 'lockedResourceDetails.operation'));
         const currentLockTime = new Date(currentlLockDetails.lockTime);
-        if ((currentTime - currentLockTime) < currentLockTTL) {
-          logger.error(`Resource ${resourceId} was locked for ${currentlLockDetails.lockedResourceDetails.operation} ` +
-            `operation with id ${currentlLockDetails.lockedResourceDetails.resourceId} at ${currentLockTime} `);
+        if (_.get(resource, 'status.state') !== CONST.APISERVER.RESOURCE_STATE.UNLOCKED && (currentTime - currentLockTime) < currentLockTTL) {
+          logger.error(`Resource ${resourceId} was locked for ${_.get(currentlLockDetails, 'lockedResourceDetails.operation')} ` +
+            `operation with id ${_.get(currentlLockDetails, 'lockedResourceDetails.resourceId')} at ${currentLockTime} `);
           throw new DeploymentAlreadyLocked(resourceId, {
             createdAt: currentLockTime,
-            lockForOperation: currentlLockDetails.lockedResourceDetails.operation
+            lockForOperation: _.get(currentlLockDetails, 'lockedResourceDetails.operation')
           });
         } else {
           return eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
             resourceId: resourceId,
-            options: opts
+            metadata: resource.metadata,
+            options: opts,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.LOCKED
+            }
           });
         }
       })
       .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
+      .then(resource => _.get(resource, 'body.metadata.resourceVersion'))
       .catch(NotFound, () => {
         return eventmesh.apiServerClient.createResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
             resourceId: resourceId,
-            options: opts
+            options: opts,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.LOCKED
+            }
           })
-          .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
+          .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
+          .then(resource => _.get(resource, 'body.metadata.resourceVersion'));
       })
       .catch(Conflict, () => {
         return eventmesh.apiServerClient.getResource({
@@ -152,11 +158,11 @@ class LockManager {
             resourceId: resourceId
           })
           .then(resource => {
-            const currentlLockDetails = resource.spec.options;
+            const currentlLockDetails = _.get(resource, 'spec.options');
             const currentLockTime = new Date(currentlLockDetails.lockTime);
             throw new DeploymentAlreadyLocked(resourceId, {
               createdAt: currentLockTime,
-              lockForOperation: currentlLockDetails.lockedResourceDetails.operation
+              lockForOperation: _.get(currentlLockDetails, 'lockedResourceDetails.operation')
             });
           });
       });
@@ -167,28 +173,39 @@ class LockManager {
   */
   /**
    * @param {string} resourceId - Id (name) of the resource that is being locked. In case of deployment lock, it is instance_id
-   * @param {number} [maxRetryCount=CONST.ETCD.MAX_RETRY_UNLOCK] - Max unlock attempts
+   * @param {string} lockId - lockId which is return by lockManager.lock when lock is acquired
+   * @param {number} [maxRetryCount=CONST.APISERVER.MAX_RETRY_UNLOCK] - Max unlock attempts
    */
 
-  unlock(resourceId, maxRetryCount, retryDelay) {
+  unlock(resourceId, lockId, maxRetryCount, retryDelay) {
     assert.ok(resourceId, `Parameter 'resourceId' is required to release lock`);
-    maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
+    // assert.ok(lockId, `Parameter 'lockId' is required to release lock`);
+    // TODO-PR: making lockId not mendatory as currently we don't have deployment resources
+    // hence from lastOperation call we can't pass lockId for unlock call
+    // assert.ok(lockId, `Parameter 'lockId' is required to release lock`);
+    maxRetryCount = maxRetryCount || CONST.APISERVER.MAX_RETRY_UNLOCK;
     retryDelay = retryDelay || CONST.APISERVER.RETRY_DELAY;
     logger.info(`Attempting to unlock resource ${resourceId}`);
     return utils.retry(tries => {
       logger.info(`+-> Attempt ${tries + 1} to unlock resource ${resourceId}`);
-      return eventmesh.apiServerClient.deleteResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
-          resourceId: resourceId
-        })
+      const opts = {
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+        resourceId: resourceId,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.UNLOCKED
+        }
+      };
+      if (lockId) {
+        opts.metadata = {
+          resourceVersion: lockId
+        };
+      }
+      return eventmesh.apiServerClient.updateResource(opts)
         .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
+        .catch(Conflict, NotFound, err => logger.info(`Lock on resource ${resourceId} has been updated by some other operation because it expired, no need to unlock now`, err))
         .catch(err => {
-          if (err instanceof NotFound) {
-            logger.info(`Successfully Unlocked resource ${resourceId} `);
-            return;
-          }
-          logger.error(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
+          logger.error(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`, err);
           throw new InternalServerError(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
         });
     }, {
@@ -199,10 +216,15 @@ class LockManager {
 
   _getLockType(operation) {
     if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, operation)) {
-      return CONST.ETCD.LOCK_TYPE.WRITE;
+      return CONST.APISERVER.LOCK_TYPE.WRITE;
     } else {
-      return CONST.ETCD.LOCK_TYPE.READ;
+      return CONST.APISERVER.LOCK_TYPE.READ;
     }
+  }
+  getLockTTL(operation) {
+    const MS_IN_SEC = 1000;
+    const lockTTLKey = _.includes(CONST.OPERATION_TYPE.LIFECYCLE, operation) ? 'lifecycle' : operation;
+    return _.get(config, `lockttl.${lockTTLKey}`, CONST.APISERVER.DEFAULT_LOCK_TTL) * MS_IN_SEC;
   }
 }
 

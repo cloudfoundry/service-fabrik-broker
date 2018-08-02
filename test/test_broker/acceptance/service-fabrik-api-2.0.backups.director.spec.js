@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const app = require('../support/apps').external;
 const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
@@ -269,7 +270,7 @@ describe('service-fabrik-api-2.0', function () {
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
             spec: {
               options: JSON.stringify(data)
             },
@@ -278,8 +279,8 @@ describe('service-fabrik-api-2.0', function () {
               response: '{}'
             }
           }, 2);
-          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {});
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)
             .query({
@@ -297,7 +298,7 @@ describe('service-fabrik-api-2.0', function () {
         it('should return 200 OK - with platform', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
             spec: {
               options: JSON.stringify(data)
             },
@@ -306,8 +307,8 @@ describe('service-fabrik-api-2.0', function () {
               response: '{}'
             }
           }, 2);
-          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {});
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)
             .query({
@@ -325,7 +326,7 @@ describe('service-fabrik-api-2.0', function () {
         it('should return 200 OK - with random platform defaults to cf', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
             spec: {
               options: JSON.stringify(data)
             },
@@ -334,8 +335,8 @@ describe('service-fabrik-api-2.0', function () {
               response: '{}'
             }
           }, 2);
-          mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {});
+          mocks.apiServerEventMesh.nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)
             .query({
@@ -354,7 +355,7 @@ describe('service-fabrik-api-2.0', function () {
           const backupPrefix = `${space_guid}/backup`;
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup',
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             '01234567-0000-4000-9000-0123456789ab', {}, 1, 404);
           mocks.cloudProvider.list(container, backupPrefix, []);
           return chai.request(app)

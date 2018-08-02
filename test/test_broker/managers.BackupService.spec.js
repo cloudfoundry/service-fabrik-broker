@@ -112,7 +112,7 @@ describe('managers', function () {
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'in_progress',
             response: {}
@@ -144,7 +144,7 @@ describe('managers', function () {
         mocks.agent.getInfo();
         const putFileStub = sinon.stub(BackupStore.prototype, 'putFile');
         mocks.agent.startBackup();
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'in_progress',
             response: {}
@@ -193,12 +193,12 @@ describe('managers', function () {
           state: 'succeeded',
           agent_ip: mocks.agent.ip
         }));
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
           status: {
             response: JSON.stringify('{}')
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
         return manager.getOperationState('backup', opts)
           .then((res) => {
             expect(res.description).to.eql(`Backup deployment ${deployment_name} succeeded at ${finishDate}`);
@@ -224,7 +224,7 @@ describe('managers', function () {
         mocks.cloudProvider.download(pathname, data);
         mocks.cloudProvider.upload(pathname, undefined);
         mocks.cloudProvider.headObject(pathname);
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {}, 1, body => {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {}, 1, body => {
           const responseObj = JSON.parse(body.status.response);
           expect(responseObj.body).to.eql('value');
           expect(responseObj.logs).to.eql([logobj]);
@@ -232,7 +232,7 @@ describe('managers', function () {
           expect(responseObj.snapshotId).to.eql('fakeSnapshotId');
           return true;
         });
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', backup_guid, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
           status: {
             response: JSON.stringify({
               body: 'value'
@@ -263,7 +263,7 @@ describe('managers', function () {
         context: context,
         guid: backup_guid
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
         status: {
           state: 'aborting'
         }
@@ -329,7 +329,7 @@ describe('managers', function () {
         mocks.cloudProvider.remove(pathname);
         mocks.cloudProvider.download(pathname, data);
         mocks.apiServerEventMesh.nockLoadSpec();
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'deleting'
           }
@@ -352,7 +352,7 @@ describe('managers', function () {
         mocks.cloudProvider.list(container,
           `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
         mocks.cloudProvider.download(pathname, scheduled_data);
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'deleting'
           }
@@ -381,7 +381,7 @@ describe('managers', function () {
           `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
         scheduled_data.started_at = started14DaysPrior;
         mocks.cloudProvider.download(pathname, scheduled_data);
-        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
+        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'deleting'
           }

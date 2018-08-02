@@ -64,6 +64,7 @@ module.exports = Object.freeze({
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
   OPERATION_TYPE: {
+    LIFECYCLE: ['create', 'update', 'delete'],
     BACKUP: 'backup',
     RESTORE: 'restore',
     UNLOCK: 'unlock',
@@ -253,6 +254,12 @@ module.exports = Object.freeze({
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 175,
     RETRY_DELAY: 2000,
+    MAX_RETRY_UNLOCK: 3,
+    LOCK_TYPE: {
+      WRITE: 'WRITE',
+      READ: 'READ'
+    },
+    DEFAULT_LOCK_TTL: 86400, // 1 days in sec
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 60000, // in ms ( 1 minute )
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
@@ -290,7 +297,9 @@ module.exports = Object.freeze({
       DELETE_FAILED: 'delete_failed',
       ABORT: 'abort',
       ABORTED: 'aborted',
-      UPDATE: 'update'
+      UPDATE: 'update',
+      LOCKED: 'locked',
+      UNLOCKED: 'unlocked'
     },
     RESOURCE_KEYS: {
       STATE: 'state',
@@ -365,12 +374,6 @@ module.exports = Object.freeze({
     JSON: 'json',
     NUMBER: 'number',
     STRING: 'string',
-    RETRY_DELAY: 2000,
-    MAX_RETRY_UNLOCK: 3,
-    LOCK_TYPE: {
-      WRITE: 'WRITE',
-      READ: 'READ'
-    },
     LOCK_TTL: 5,
     LOCK_KEY_SUFFIX: '/lock',
     LOCK_DETAILS_SUFFIX: '/lock/details'
