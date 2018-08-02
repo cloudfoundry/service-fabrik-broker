@@ -153,7 +153,7 @@ class BnRStatusPollerJob extends BaseJob {
         .tap(() => {
           const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
           let retryDelayInMinutes;
-          if (RUN_AFTER.indexOf('minutes') !== -1) {
+          if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
             retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
           }
           if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
