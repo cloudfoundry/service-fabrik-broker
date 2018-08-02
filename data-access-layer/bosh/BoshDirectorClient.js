@@ -35,64 +35,27 @@ class BoshDirectorClient extends HttpClient {
     this.deploymentIpsCache = {};
     this.cacheLoadInProgressForDeployment = {};
     this.cacheLoadInProgress = false;
-    //this.ready = this.populateConfigCache();
-    //Determine authentication method supported by primary bosh
-    Promise.try(() => this.determineDirectorAuthenticationMethod())
-    .then(() => {
-      this.ready = this.populateConfigCache();
-    });
+    //populate UAA objects if uaa based auth is being used by any of the dorectors
+    this.determineDirectorAuthenticationMethod();
+    this.ready = this.populateConfigCache();
   }
 
-  determineDirectorAuthenticationMethod(){
-    logger.info('querying /info endpoints to decide authentication methods used by directors');
-    return Promise
-    .map(config.directors, (directorConfig) => {
-      _.set(directorConfig,'uaaEnabled', false);
-      return this.getDirectorInfo(directorConfig)
-      .then(info => {
-        let auth_type = _.get(info, 'user_authentication.type', undefined);
-        if(auth_type === 'uaa') {
-          logger.info('Director ', directorConfig.name, ' uses UAA based authentication. Populating UAA objects in directoConfig.');
-          this.populateUAAInfo(directorConfig, _.get(info,'user_authentication.options',undefined));
-          if(directorConfig.uaaClient && directorConfig.tokenIssuer){
-            _.set(directorConfig,'uaaEnabled', true);
-          } else {
-            //TODO: Fatal error condition. Logging and exiting.
-            logger.error('UAA objects were not popoulated successfully.');
-          }
-        } 
-        else if(auth_type === 'basic'){
-          logger.info('Basic authentication is used by director ', directorConfig.name, '. Not populating UAA auth objects.');
-        } 
-        else {
-          /* TODO: Path user_authentication.type not found in info object or auth type other than uaa or basic.*/
-          /* Error condition either way*/
-          logger.error('should not happen. auth_type for director is: ', auth_type);
+  determineDirectorAuthenticationMethod() {
+    _.forEach(config.directors, (directorConfig) => {
+      if(_.get(directorConfig, 'uaa.uaa_auth', undefined)) {
+        logger.info('Director ', directorConfig.name, ' uses UAA based authentication. Populating UAA objects in directorConfig.');
+        this.populateUAAInfo(directorConfig);
+        if(directorConfig.uaaClient && directorConfig.tokenIssuer) {
+          _.set(directorConfig,'uaaEnabled', true);
+        } else {
+          //TODO: Fatal error condition. Logging and exiting.
+          logger.error('UAA objects were not popoulated successfully.');
         }
-      });
+      }
     });
   }
 
-  getDirectorInfo(directorConfig){
-    return this
-    .makeRequestWithConfig({
-      method: 'GET',
-      url: '/info'
-    }, 200, directorConfig)
-    .then(res => JSON.parse(res.body))
-    .catch(err => {
-      /*TODO: Could not obtain auth method used by Director. Can't proceed further.*/
-      /* Options: Go with basic auth or Kill the broker or Retry */
-      logger.error('querying /info endpoint failed for director: ', directorConfig.name);
-      logger.error(err);
-    });
-  }
-
-  populateUAAInfo(directorConfig, options) {
-    if(!options){
-      logger.error('Empty options provided in populateUAAInfo. Not able to obtain UAA url and port.');
-      return;
-    }
+  populateUAAInfo(directorConfig) {
     /* Client id and client secret will be used when requesting the token. Here just a sanity check.*/
     let uaa_client_id = _.get(directorConfig,'uaa.client_id', undefined);
     let uaa_client_secret = _.get(directorConfig,'uaa.client_secret', undefined);
@@ -101,7 +64,7 @@ class BoshDirectorClient extends HttpClient {
       return;
     }
     /* create uaaClient and tokenIssuer for this director*/
-    let uaa_url = _.get(options, 'url', undefined);
+    let uaa_url = _.get(directorConfig, 'uaa.uaa_url', undefined);
     if(!uaa_url){
       logger.error('UAA url not provided to populateUAAInfo.');
       return;

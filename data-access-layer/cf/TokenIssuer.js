@@ -83,7 +83,7 @@ class TokenIssuer {
   }
 
   getAccessTokenBoshUAA(clientId, clientSecret) {
-    if (!this.tokenInfo.expiresSoon) {
+    if (!this.tokenInfo.accessTokenExpiresSoon) {
       logger.debug('reusing access token.');
       return Promise.resolve(this.tokenInfo.accessToken);
     }
