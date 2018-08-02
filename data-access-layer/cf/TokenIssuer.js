@@ -71,7 +71,7 @@ class TokenIssuer {
       this.clearTimeoutObject();
       logger.info('scheduling next request for access token after delay:', delay*1000);
       this.timeoutObject = setTimeout(() => {
-        logger.debug('requesting new access token with client id: ', clientId);
+        logger.info('requesting new access token with client id: ', clientId);
         return this.uaa.accessWithClientCredentials(clientId,clientSecret)
           .then(token => {
             this.tokenInfo.update(token);
@@ -84,10 +84,10 @@ class TokenIssuer {
 
   getAccessTokenBoshUAA(clientId, clientSecret) {
     if (!this.tokenInfo.accessTokenExpiresSoon) {
-      logger.debug('reusing access token.');
+      logger.info('reusing access token.');
       return Promise.resolve(this.tokenInfo.accessToken);
     }
-    logger.debug('explicit request for access token being made.');
+    logger.info('explicit request for access token being made.');
     return Promise.try(() => this.uaa.accessWithClientCredentials(clientId,clientSecret))
     .then(result => {
       this.tokenInfo.update(result);
