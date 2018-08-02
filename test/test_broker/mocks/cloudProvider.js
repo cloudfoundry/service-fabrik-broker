@@ -13,6 +13,7 @@ exports.upload = upload;
 exports.headObject = headObject;
 exports.getContainer = getContainer;
 exports.list = list;
+exports.listTransactionLogs = listTransactionLogs;
 exports.remove = remove;
 
 function auth(times) {
@@ -123,6 +124,29 @@ function list(containerName, prefix, filenames, responseStatusCode, times, lastM
     .query(qs)
     .times(times || 1)
     .reply(responseStatusCode || 200, files, {
+      'X-Container-Object-Count': '42'
+    });
+}
+
+function listTransactionLogs(containerName, prefix, fileObjects) {
+  const files = _
+    .chain(fileObjects)
+    .map(fileObject => ({
+      name: fileObject.file_name,
+      last_modified: new Date(fileObject.last_modified).toISOString()
+    }))
+    .value();
+  const qs = {
+    format: 'json'
+  };
+  if (prefix) {
+    qs.prefix = prefix;
+  }
+  return nock(objectStoreUrl)
+    .replyContentLength()
+    .get(`/${containerName}`)
+    .query(qs)
+    .reply(200, files, {
       'X-Container-Object-Count': '42'
     });
 }

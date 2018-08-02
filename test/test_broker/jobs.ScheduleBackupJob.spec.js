@@ -49,7 +49,7 @@ describe('Jobs', function () {
       const fileName16DaysPrior = `${prefix}.${backup_guid16}.${started16DaysPrior}.json`;
       const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
       const transactionLogsFileName1Daysprior = `${transactionLogsPrefix}.bson`;
-      const transactionLogsFileName14Daysprior = `${transactionLogsPrefix}.bson`;
+      const transactionLogsFileName19Daysprior = `${transactionLogsPrefix}.bson`;
       const transactionLogsFileName16DaysPrior = `${transactionLogsPrefix}.bson`;
       const transactionLogsFileName18DaysPrior = `${transactionLogsPrefix}.bson`;
       const pathname14 = `/${container}/${fileName14Daysprior}`;
@@ -205,7 +205,7 @@ describe('Jobs', function () {
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
         });
       });
-      it('should initiate backup, should delete scheduled backup older than 15 days only beyond one successful backup', function () {
+      it('should initiate backup, should delete scheduled backup older than 15 days and transaction logs older than the latest successful backup before retention-period, beyond one successful backup', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
@@ -220,9 +220,15 @@ describe('Jobs', function () {
           fileName18DaysPrior,
           fileName1Daysprior
         ]);
-        mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, [
-          transactionLogsFileName14Daysprior
-        ], undefined, undefined, new Date() - (config.backup.retention_period_in_days + 5) * 60 * 60 * 24 * 1000);
+        mocks.cloudProvider.listTransactionLogs(serviceContainer, transactionLogsPrefix, [{
+            file_name: transactionLogsFileName1Daysprior,
+            last_modified: new Date() - 1 * 60 * 60 * 24 * 1000
+          },
+          {
+            file_name: transactionLogsFileName19Daysprior,
+            last_modified: new Date() - (config.backup.retention_period_in_days + 3) * 60 * 60 * 24 * 1000
+          }
+        ]);
         //Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14,
