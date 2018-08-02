@@ -222,7 +222,7 @@ describe('Jobs', function () {
         ]);
         mocks.cloudProvider.list(serviceContainer, transactionLogsPrefix, [
           transactionLogsFileName14Daysprior
-        ]);
+        ], undefined, undefined, new Date() - (config.backup.retention_period_in_days + 5) * 60 * 60 * 24 * 1000);
         //Out of 4 files 1 and 14 day prior is filtered out 
         // & the 18 day prior on demand will not be deleted
         mocks.cloudProvider.download(pathname14,

@@ -102,12 +102,13 @@ function getContainer(containerName) {
     });
 }
 
-function list(containerName, prefix, filenames, responseStatusCode, times) {
+function list(containerName, prefix, filenames, responseStatusCode, times, lastModifiedDate) {
+  const lastModifiedDateISO = lastModifiedDate ? new Date(lastModifiedDate).toISOString() : new Date().toISOString();
   const files = _
     .chain(filenames)
     .map(name => ({
       name: name,
-      last_modified: new Date('2018-07-01T15:57:11.037Z').toISOString()
+      last_modified: lastModifiedDateISO
     }))
     .value();
   const qs = {
