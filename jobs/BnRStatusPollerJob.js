@@ -156,10 +156,11 @@ class BnRStatusPollerJob extends BaseJob {
           if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
             retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
           }
+          let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
           if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
             const options = {
               instance_id: instance_guid,
-              repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, retryDelayInMinutes),
+              repeatInterval: retryInterval,
               type: CONST.BACKUP.TYPE.ONLINE
             };
             return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {

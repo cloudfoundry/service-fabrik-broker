@@ -168,12 +168,13 @@ class ScheduleBackupJob extends BaseJob {
         // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
         jobData.attempt = 0;
         return Promise.try(() => {
-            return ScheduleManager.schedule(
-              jobData.instance_id,
-              CONST.JOB.SCHEDULED_BACKUP,
-              repeatInterval,
-              jobData,
-              CONST.SYSTEM_USER);
+            return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+              .then(() => ScheduleManager.schedule(
+                jobData.instance_id,
+                CONST.JOB.SCHEDULED_BACKUP,
+                repeatInterval,
+                jobData,
+                CONST.SYSTEM_USER));
           })
           .then(() => {
             throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
@@ -186,12 +187,14 @@ class ScheduleBackupJob extends BaseJob {
         retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
       }
       const plan = catalog.getPlan(jobData.plan_id);
-      return ScheduleManager.schedule(
-        jobData.instance_id,
-        CONST.JOB.SCHEDULED_BACKUP,
-        utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, retryDelayInMinutes),
-        jobData,
-        CONST.SYSTEM_USER);
+      let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
+      return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+        .then(() => ScheduleManager.schedule(
+          jobData.instance_id,
+          CONST.JOB.SCHEDULED_BACKUP,
+          retryInterval,
+          jobData,
+          CONST.SYSTEM_USER));
 
     });
   }
