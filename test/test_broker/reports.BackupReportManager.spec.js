@@ -204,7 +204,6 @@ describe('BackupReportManager', function () {
       };
       return BackupReportManager.getBackupResult(instanceId, startTime, endTime)
         .then(backups => {
-          // console.log(backups);
           expect(backups).to.deep.eql(resultBackups);
           expect(repoSpy.search.callCount).to.equal(2);
           expect(repoSpy.search.firstCall.args[0][0]).to.be.equal(CONST.DB_MODEL.EVENT_DETAIL);

@@ -41,11 +41,10 @@ class DefaultBackupManager extends BaseManager {
 
   static _processAbort(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    return eventmesh.apiServerClient.getOperationOptions({
-        resourceId: changedOptions.instance_guid,
-        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        operationId: changedOptions.guid
+    return eventmesh.apiServerClient.getOptions({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: changedOptions.guid
       })
       .then(options => {
         return Promise.try(() => {
@@ -57,11 +56,10 @@ class DefaultBackupManager extends BaseManager {
 
   static _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    return eventmesh.apiServerClient.getOperationOptions({
-        resourceId: changedOptions.instance_guid,
-        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        operationId: changedOptions.guid
+    return eventmesh.apiServerClient.getOptions({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: changedOptions.guid
       })
       .then(options => {
         return Promise.try(() => {

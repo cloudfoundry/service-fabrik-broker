@@ -15,9 +15,12 @@ class UnlockResourcePoller {
     function poller(object, interval) {
       //TODO-PR - instead of a poller, its better to convert this to a watcher.
       const lockDetails = JSON.parse(object.spec.options);
-      return eventmesh.apiServerClient.getResource(lockDetails.lockedResourceDetails.resourceGroup, lockDetails.lockedResourceDetails.resourceType, lockDetails.lockedResourceDetails.resourceId)
-        .then((resource) => {
-          const resourceState = resource.body.status.state;
+      return eventmesh.apiServerClient.getResourceState({
+          resourceGroup: lockDetails.lockedResourceDetails.resourceGroup,
+          resourceType: lockDetails.lockedResourceDetails.resourceType,
+          resourceId: lockDetails.lockedResourceDetails.resourceId
+        })
+        .then((resourceState) => {
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
           //TODO-PR - reuse util method is operationCompleted.
           if (_.includes([

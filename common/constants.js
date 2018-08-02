@@ -233,16 +233,16 @@ module.exports = Object.freeze({
   },
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 60,
+    RETRY_DELAY: 2000,
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 1200000, // in ms ( 20 minutes )
     VERSION: '1.9',
-    HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
     RESOURCE_GROUPS: {
-      LOCK: 'lock',
-      DEPLOYMENT: 'deployment',
-      BACKUP: 'backup'
+      LOCK: 'lock.servicefabrik.io',
+      DEPLOYMENT: 'deployment.servicefabrik.io',
+      BACKUP: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -263,17 +263,6 @@ module.exports = Object.freeze({
       STATE: 'state',
       OPTIONS: 'options',
       LASTOPERATION: 'lastoperation'
-    },
-    ANNOTATION_KEYS: {
-      STATE: 'state',
-      OPTIONS: 'options',
-      RESULT: 'result'
-    },
-    ANNOTATION_NAMES: {
-      BACKUP: 'backup'
-    },
-    ANNOTATION_TYPES: {
-      BACKUP: 'defaultbackups'
     },
     WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore'],
     READ_OPERATIONS: ['backup'],

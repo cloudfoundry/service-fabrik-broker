@@ -161,13 +161,14 @@ class BackupService extends BaseDirectorService {
       })
       //TODO-PR - Break it into multiple methods
       .then(backupInfo => {
-        return eventmesh.apiServerClient.updateOperationStateAndResponse({
-            resourceId: opts.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-            response: backupInfo
+        return eventmesh.apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: result.backup_guid,
+            status: {
+              'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+              'response': backupInfo
+            }
           })
           .then(() => backupInfo);
       })
@@ -183,13 +184,14 @@ class BackupService extends BaseDirectorService {
                 .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           })
-          .then(() => eventmesh.apiServerClient.updateOperationStatus({
-            resourceId: opts.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: result.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: err
+          .then(() => eventmesh.apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: result.backup_guid,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              error: err
+            }
           }))
           .then(() => {
             if (backupStarted) {
@@ -294,12 +296,13 @@ class BackupService extends BaseDirectorService {
                   .replace(/\.\d*/, '')
               })
             )
-            .then(patchObj => eventmesh.apiServerClient.patchOperationResponse({
-              resourceId: options.instance_guid,
-              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: opts.backup_guid,
-              value: patchObj
+            .then(patchObj => eventmesh.apiServerClient.patchResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              resourceId: opts.backup_guid,
+              status: {
+                response: patchObj
+              }
             }));
         }
       });
@@ -317,23 +320,25 @@ class BackupService extends BaseDirectorService {
     logger.info('Attempting delete with:', options);
     return this.backupStore
       .deleteBackupFile(options)
-      .then(() => eventmesh.apiServerClient.updateOperationState({
-        resourceId: options.instance_guid,
-        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        operationId: options.backup_guid,
-        stateValue: CONST.APISERVER.RESOURCE_STATE.DELETED
+      .then(() => eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: options.backup_guid,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.DELETED
+        }
       }))
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during delete of backup`, err))
-          .then(() => eventmesh.apiServerClient.updateOperationStatus({
-            resourceId: options.instance_guid,
-            operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-            operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-            operationId: options.backup_guid,
-            stateValue: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-            error: err
+          .then(() => eventmesh.apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: options.backup_guid,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+              error: err
+            }
           }));
       });
   }
@@ -353,12 +358,13 @@ class BackupService extends BaseDirectorService {
         case 'processing':
           return this.agent
             .abortBackup(metadata.agent_ip)
-            .then(() => eventmesh.apiServerClient.updateOperationState({
-              resourceId: abortOptions.instance_guid,
-              operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-              operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-              operationId: abortOptions.guid,
-              stateValue: CONST.OPERATION.ABORTING
+            .then(() => eventmesh.apiServerClient.updateResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              resourceId: abortOptions.guid,
+              status: {
+                'state': CONST.OPERATION.ABORTING
+              }
             }))
             .return({
               state: CONST.OPERATION.ABORTING

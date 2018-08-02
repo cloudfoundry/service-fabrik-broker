@@ -43,12 +43,17 @@ class BaseManager {
     logger.info('Trying to acquire processing lock for request with options: ', changedOptions);
     // Set lockedManager annotations to true
     const patchBody = _.cloneDeep(changeObjectBody);
-    let currentAnnotations = patchBody.metadata.annotations;
-    let patchAnnotations = currentAnnotations ? currentAnnotations : {};
+    const metadata = patchBody.metadata;
+    const patchAnnotations = metadata.annotations ? metadata.annotations : {};
     patchAnnotations.lockedByManager = config.broker_ip;
-    patchBody.metadata.annotations = patchAnnotations;
+    metadata.annotations = patchAnnotations;
     const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
-    return eventmesh.apiServerClient.updateResource(resourceDetails.resourceGroup, resourceDetails.resourceType, changeObjectBody.metadata.name, patchBody)
+    return eventmesh.apiServerClient.updateResource({
+        resourceGroup: resourceDetails.resourceGroup,
+        resourceType: resourceDetails.resourceType,
+        resourceId: metadata.name,
+        metadata: metadata
+      })
       .tap((resource) => logger.info(`Successfully acquired processing lock for request with options: ${JSON.stringify(changedOptions)}\n` +
         `Updated resource with annotations is: `, resource));
   }
@@ -60,15 +65,18 @@ class BaseManager {
   _releaseProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Trying to release processing lock for request with options: ', changedOptions);
-    const patchBody = {
-      metadata: {
-        annotations: {
-          lockedByManager: ''
-        }
+    const metadata = {
+      annotations: {
+        lockedByManager: ''
       }
     };
     const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
-    return eventmesh.apiServerClient.updateResource(resourceDetails.resourceGroup, resourceDetails.resourceType, changeObjectBody.metadata.name, patchBody)
+    return eventmesh.apiServerClient.updateResource({
+        resourceGroup: resourceDetails.resourceGroup,
+        resourceType: resourceDetails.resourceType,
+        resourceId: changeObjectBody.metadata.name,
+        metadata: metadata
+      })
       .tap((resource) => logger.info(`Successfully released processing lock for the request with options: ${JSON.stringify(changedOptions)}\n` +
         `Updated resource with annotations is: `, resource));
   }

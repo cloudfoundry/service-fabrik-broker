@@ -213,7 +213,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -254,7 +254,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -297,7 +297,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -398,7 +398,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
 
           return chai
@@ -747,7 +747,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborting',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
@@ -786,7 +786,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborted',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
@@ -825,7 +825,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborted',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           return chai
             .request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/backup`)
@@ -1507,7 +1507,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'deleted',
               response: '{}'
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
@@ -1534,7 +1534,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
               error: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
@@ -1559,7 +1559,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'deleted',
               response: '{}'
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
