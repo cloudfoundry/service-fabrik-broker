@@ -1519,7 +1519,77 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should download the restore logs and update the metadata but don\'t schedule backup', function () {
+        it('should download the restore logs and update the metadata - shoudn\'t schedule backup (duplicate check)  ', function () {
+          const state = 'succeeded';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: '2015-11-18T11:28:44Z'
+          };
+          const restoreLogs = [{
+              time: '2015-11-18T11:28:40+00:00',
+              level: 'info',
+              msg: 'Downloading tarball ...'
+            }, {
+              time: '2015-11-18T11:28:42+00:00',
+              level: 'info',
+              msg: 'Extracting tarball ...'
+            },
+            {
+              time: '2015-11-18T11:28:44+00:00',
+              level: 'info',
+              msg: 'Restore finished'
+            }
+          ];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: {
+              succeeded: ['2015-11-18T11:28:44.000Z']
+            }
+          }), 2);
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined;
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
+          return chai
+            .request(apps.internal)
+            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', broker_api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64(restoreOperation)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.equal(state);
+              expect(res.body).to.have.property('description');
+              mocks.verify();
+            });
+        });
+
+        it('should download the restore logs and update the metadata but don\'t schedule backup (failed restore)', function () {
           const state = 'failed';
           const restoreState = {
             state: state,
