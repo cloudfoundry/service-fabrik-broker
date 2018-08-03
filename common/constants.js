@@ -20,6 +20,7 @@ module.exports = Object.freeze({
   PLATFORM_CONTEXT_KEY: 'platform-context',
   NOT_APPLICABLE: 'NA',
   FINISHED_JOBS_RETENTION_DURATION_DAYS: 14,
+  BACKUP_REAPER_BUFFER_DURATION_DAYS: 15,
   EVENT_LOG_RIEMANN_CLIENT: {
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
@@ -122,7 +123,7 @@ module.exports = Object.freeze({
   },
   SCHEDULE: {
     DAILY: 'daily',
-    RANDOM: 'random',
+    RANDOM: 'random'
   },
   SCHEDULE_INTERVAL: {
     HUMAN_INTERVAL: 'human-readable-interval',

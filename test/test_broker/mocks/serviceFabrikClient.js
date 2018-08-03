@@ -41,7 +41,7 @@ function scheduleBackup(instance_id, payload) {
     .put(`/api/v1/service_instances/${instance_id}/schedule_backup`, payload)
     .reply(201, {
       name: `${instance_id}_${CONST.JOB.SCHEDULED_BACKUP}`,
-      repeatInterval: payload.repeatInterval,
+      repeatInterval: '54 8 * * *',
       data: {
         instance_id: instance_id,
         type: 'online'

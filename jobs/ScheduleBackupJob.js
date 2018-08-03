@@ -10,6 +10,7 @@ const errors = require('../common/errors');
 const utils = require('../common/utils');
 const retry = utils.retry;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
+const catalog = require('../common/models').catalog;
 const cloudController = require('../data-access-layer/cf').cloudController;
 const backupStore = require('../data-access-layer/iaas').backupStore;
 const ScheduleManager = require('./ScheduleManager');
@@ -49,7 +50,7 @@ class ScheduleBackupJob extends BaseJob {
               .startBackup(_.pick(jobData, 'instance_id', 'type', 'trigger'))
               .catch(errors.Conflict, errors.UnprocessableEntity, (err) => {
                 logger.error('Some other operation already in progress on this instance:', err);
-                return retry(() => this.reScheduleBackup(job.attrs.data), {
+                return retry(() => this.reScheduleBackup(job.attrs.data, job.attrs.repeatInterval), {
                   maxAttempts: 3,
                   minDelay: 500
                 }).then(() => {
@@ -82,6 +83,7 @@ class ScheduleBackupJob extends BaseJob {
     const options = _.omit(job.attrs.data, 'trigger', 'type');
     return backupStore
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
+      .then(oldBackups => this.filterOldBackups(oldBackups))
       .map(backup => {
         logger.debug(`Backup meta info : ${JSON.stringify(backup)}`);
         if (backup.trigger === CONST.BACKUP.TRIGGER.SCHEDULED || instanceDeleted) {
@@ -135,24 +137,65 @@ class ScheduleBackupJob extends BaseJob {
       });
   }
 
-  static reScheduleBackup(jobOptions) {
+  static filterOldBackups(oldBackups) {
+    let filteredOldBackups = [];
+    /* oldBackups : This aray should contain all older backups
+    // including last retenion day's backup. E.g. if retention period
+    // is 15 days it would include all backups in (15th, 16th, 17th ...) */
+    if (typeof oldBackups !== 'undefined' && oldBackups.length > 0) {
+      // Older backups are sorted as latest at first
+      let sortedBackups = _.sortBy(oldBackups, ['started_at']).reverse();
+      const latestSuccessIndex = _.findIndex(sortedBackups,
+        backup => backup.state === CONST.OPERATION.SUCCEEDED);
+      if (latestSuccessIndex === -1) {
+        //No successful backup beyond retention period.
+        filteredOldBackups = sortedBackups;
+      } else {
+        //Should return backups before a successful backup.
+        filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
+      }
+    }
+    return filteredOldBackups;
+  }
+
+  static reScheduleBackup(jobOptions, repeatInterval) {
     return Promise.try(() => {
       const jobData = _.cloneDeep(jobOptions);
       jobData.attempt = jobData.attempt + 1;
       const MAX_ATTEMPTS = _.get(jobData, 'max_attempts', config.scheduler.jobs.scheduled_backup.max_attempts);
       if (jobData.attempt > MAX_ATTEMPTS) {
         logger.error(`Scheduled backup for instance  ${jobData.instance_id} has exceeded max configured attempts : ${MAX_ATTEMPTS} - ${jobData.attempt}}. Initial attempt was done @: ${jobData.firstAttemptAt}.`);
-        throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
+        // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
+        jobData.attempt = 0;
+        return Promise.try(() => {
+            return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+              .then(() => ScheduleManager.schedule(
+                jobData.instance_id,
+                CONST.JOB.SCHEDULED_BACKUP,
+                repeatInterval,
+                jobData,
+                CONST.SYSTEM_USER));
+          })
+          .then(() => {
+            throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
+          });
       }
       const RUN_AFTER = _.get(jobData, 'reschedule_delay', config.scheduler.jobs.reschedule_delay);
+      let retryDelayInMinutes;
       logger.info(`Re-Schedulding Backup Job for ${jobData.instance_id} @ ${RUN_AFTER} - Attempt - ${jobData.attempt}. Initial attempt was done @: ${jobData.firstAttemptAt}`);
-      return ScheduleManager
-        .runAt(jobData.instance_id,
+      if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+        retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+      }
+      const plan = catalog.getPlan(jobData.plan_id);
+      let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
+      return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+        .then(() => ScheduleManager.schedule(
+          jobData.instance_id,
           CONST.JOB.SCHEDULED_BACKUP,
-          RUN_AFTER,
+          retryInterval,
           jobData,
-          CONST.SYSTEM_USER
-        );
+          CONST.SYSTEM_USER));
+
     });
   }
 }

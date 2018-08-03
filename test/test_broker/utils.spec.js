@@ -83,6 +83,33 @@ describe('utils', function () {
       expect(utils.isServiceFabrikOperation(queryParams)).to.be.true;
     });
   });
+  describe('#getCronWithIntervalAndAfterXminute', function () {
+    const AssertionError = require('assert').AssertionError;
+    it('should support daily schedule', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('daily'))).to.be.eql(true);
+    });
+
+    it('should support every \'24 hours\' schedule', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('24 hours'))).to.be.eql(true);
+    });
+
+    it('should support every \'8 hours\' (divides 24) schedule', function () {
+      expect(RegExp('[0-9]+ [0-9]+[\,]{1}[0-9]+[\,]{1}[0-9]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('8 hours'))).to.be.eql(true);
+    });
+
+    it('should support every \'9 hours\' (24 non divisible) schedule', function () {
+      expect(RegExp('[0-9]+ [0-9\,]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('9 hours', 2))).to.be.eql(true);
+    });
+
+    it('should not support invalid interval format', function () {
+      expect(utils.getCronWithIntervalAndAfterXminute.bind(utils, 'random', 2)).to.throw(AssertionError);
+    });
+
+    it('should not support invalid schedule', function () {
+      expect(utils.getCronWithIntervalAndAfterXminute.bind(utils, '35 hours')).to.throw(AssertionError);
+    });
+  });
+
   describe('#getBrokerAgentCredsFromManifest', function () {
     const manifest1 = {
       name: 'test-deployment-name',

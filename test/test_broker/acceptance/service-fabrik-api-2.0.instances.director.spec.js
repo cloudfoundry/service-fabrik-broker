@@ -49,6 +49,7 @@ describe('service-fabrik-api-sf2.0', function () {
       const started_at = isoDate(time);
       const timeAfter = moment(time).add(1, 'seconds').toDate();
       const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
+      const restoreAtEpoch = Date.parse(restore_at);
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
@@ -852,8 +853,30 @@ describe('service-fabrik-api-sf2.0', function () {
           plan_id: plan_id,
           state: 'succeeded',
           type: 'online',
-          secret: 'hugo'
+          secret: 'hugo',
+          started_at: started_at
         };
+        const restoreMetadata = {
+          plan_id: plan_id,
+          state: 'succeeded',
+          type: 'online',
+          secret: 'hugo',
+          started_at: started_at,
+          trigger: 'online',
+          restore_dates: {
+            succeeded: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+          }
+        };
+
+        function getDateHistory(days) {
+          let restoreHistory = [];
+          for (let i = 1; i <= days; i++) {
+            restoreHistory.push(moment(time).subtract(i, 'days').toDate().toISOString());
+          }
+          return {
+            succeeded: restoreHistory
+          };
+        }
         const args = {
           backup_guid: backup_guid,
           backup: _.pick(backupMetadata, 'type', 'secret')
@@ -900,7 +923,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 400 Bad Request (invalid time_stamp given)', function () {
+        it('should return 400 Bad Request (invalid time_stamp format given)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -912,12 +935,36 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: '2017-12-04T07:560:02.203Z'
+              time_stamp: '2017-12-04T07:56:02.203Z' // should be epoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 Bad Request (invalid time_stamp older than 14 days given)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          const requestTimeStamp = `${Date.now() - (config.backup.retention_period_in_days + 2) * 60 * 60 * 24 * 1000}`;
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: requestTimeStamp
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.text).to.contain(`Date '${requestTimeStamp}' is not epoch milliseconds or out of range of ${config.backup.retention_period_in_days} days.`);
               mocks.verify();
             });
         });
@@ -958,7 +1005,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1010,7 +1057,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1030,7 +1077,11 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
-            plan_id: 'some-other-plan-id'
+            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073e',
+            state: 'succeeded',
+            type: 'online',
+            secret: 'hugo',
+            started_at: started_at
           });
           return chai
             .request(apps.external)
@@ -1056,18 +1107,47 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
-            plan_id: 'some-other-plan-id'
+            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073e',
+            state: 'succeeded',
+            type: 'online',
+            secret: 'hugo',
+            started_at: started_at
           });
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 BadRequest : backup_guid based (quota exceeded)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.download(restorePathname, _.chain(_.cloneDeep(restoreMetadata))
+            .set('restore_dates', getDateHistory(11))
+            .value());
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              backup_guid: backup_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
               mocks.verify();
             });
         });
@@ -1120,7 +1200,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restore_at
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1130,11 +1210,162 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
+        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR (within quota)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, backupMetadata);
+          mocks.cloudProvider.download(restorePathname, restoreMetadata);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: restoreAtEpoch
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
+
+        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR (within quota - no history)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
+          mocks.cloudProvider.download(backupPathname, backupMetadata);
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: undefined
+          }));
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: restoreAtEpoch
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 BadRequest : PITR (quota exceeded)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: getDateHistory(11)
+          }));
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: restoreAtEpoch
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              //expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
+
         it('should receive the update request from cloud controller and start the restore', function () {
           mocks.director.getDeploymentVms(deployment_name);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.startRestore();
+          mocks.cloudProvider.download(restorePathname, restoreMetadata);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.instance_guid).to.equal(instance_id);
+            expect(body.username).to.equal(username);
+            expect(body.backup_guid).to.equal(backup_guid);
+            expect(body.state).to.equal('processing');
+            expect(body.restore_dates.succeeded.length).to.equal(2);
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+
+          return support.jwt
+            .sign({
+              username: username
+            }, name, args)
+            .then(token => chai
+              .request(apps.internal)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+              .send({
+                plan_id: plan_id,
+                service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
+                previous_values: {
+                  plan_id: plan_id,
+                  service_id: service_id
+                },
+                parameters: {
+                  'service-fabrik-operation': token
+                }
+              })
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(202);
+                expect(res.body).to.have.property('operation');
+                const operation = utils.decodeBase64(res.body.operation);
+                expect(operation.type).to.equal('update');
+                expect(operation.subtype).to.equal('restore');
+                expect(operation).to.have.property('agent_ip');
+                mocks.verify();
+              })
+            );
+        });
+
+        it('should receive the update request from cloud controller and start the restore - no restore history', function () {
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.startRestore();
+          mocks.cloudProvider.download(restorePathname, new NotFound('Not Found'));
           mocks.cloudProvider.upload(restorePathname, body => {
             expect(body.instance_guid).to.equal(instance_id);
             expect(body.username).to.equal(username);
@@ -1246,7 +1477,80 @@ describe('service-fabrik-api-sf2.0', function () {
             .map(JSON.stringify)
             .join('\n')
             .value();
-          mocks.cloudProvider.download(restorePathname, {});
+          mocks.cloudProvider.download(restorePathname, {}, 2);
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined;
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
+          mocks.serviceFabrikClient.scheduleBackup(instance_id, function (body) {
+            return body.type === CONST.BACKUP.TYPE.ONLINE;
+          });
+          return chai
+            .request(apps.internal)
+            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', broker_api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64(restoreOperation)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.equal(state);
+              expect(res.body).to.have.property('description');
+              mocks.verify();
+            });
+        });
+
+        it('should download the restore logs and update the metadata - shoudn\'t schedule backup (duplicate check)  ', function () {
+          const state = 'succeeded';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: '2015-11-18T11:28:44Z'
+          };
+          const restoreLogs = [{
+              time: '2015-11-18T11:28:40+00:00',
+              level: 'info',
+              msg: 'Downloading tarball ...'
+            }, {
+              time: '2015-11-18T11:28:42+00:00',
+              level: 'info',
+              msg: 'Extracting tarball ...'
+            },
+            {
+              time: '2015-11-18T11:28:44+00:00',
+              level: 'info',
+              msg: 'Restore finished'
+            }
+          ];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: {
+              succeeded: ['2015-11-18T11:28:44.000Z']
+            }
+          }), 2);
           mocks.agent.lastRestoreOperation(restoreState);
           mocks.agent.getRestoreLogs(restoreLogsStream);
           mocks.cloudProvider.upload(restorePathname, body => {
@@ -1284,6 +1588,67 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+
+        it('should download the restore logs and update the metadata but don\'t schedule backup (failed restore)', function () {
+          const state = 'failed';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: new Date(Date.now())
+          };
+          const restoreLogs = [{
+            time: '2015-11-18T11:28:40+00:00',
+            level: 'info',
+            msg: 'Downloading tarball ...'
+          }, {
+            time: '2015-11-18T11:28:42+00:00',
+            level: 'info',
+            msg: 'Extracting tarball error ...'
+          }];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          mocks.cloudProvider.download(restorePathname, {}, 2);
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined;
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
+          return chai
+            .request(apps.internal)
+            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', broker_api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64(restoreOperation)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.equal(state);
+              expect(res.body).to.have.property('description');
+              mocks.verify();
+            });
+        });
+
       });
 
       describe('#restore-state', function () {

@@ -39,6 +39,7 @@ describe('service-fabrik-api', function () {
       const started_at = isoDate(time);
       const timeAfter = moment(time).add(1, 'seconds').toDate();
       const restore_at = new Date(timeAfter).toISOString().replace(/\.\d*/, '');
+      const restoreAtEpoch = Date.parse(restore_at);
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const username = 'hugo';
       const container = backupStore.containerName;
@@ -263,7 +264,7 @@ describe('service-fabrik-api', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -315,7 +316,7 @@ describe('service-fabrik-api', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -367,7 +368,7 @@ describe('service-fabrik-api', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -425,7 +426,7 @@ describe('service-fabrik-api', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restore_at
+              time_stamp: restoreAtEpoch
             })
             .catch(err => err.response)
             .then(res => {

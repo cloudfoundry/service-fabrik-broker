@@ -139,7 +139,9 @@ class BackupStore {
         .uploadJson(filename, _
           .chain(data)
           .assign(newData)
-          .set('finished_at', this.filename.isoDate())
+          .set('finished_at',
+            _.get(newData, 'finished_at') ?
+            new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
           .value()
         )
       );
@@ -249,9 +251,18 @@ class BackupStore {
       .then(isoDate => this.listFilenames(this.getFileNamePrefix(options), getPredicate(isoDate), iteratees));
   }
 
-  listBackupsOlderThan(options, daysPrior) {
+  listBackupsOlderThan(options, dateOrDaysOlderThan) {
     const iteratees = ['started_at'];
-    const backupStartedBefore = moment().subtract(daysPrior, 'days').toISOString();
+
+    let backupStartedBefore;
+    // The following check made accept dateOlderThan as both formats
+    // 1. number: (say older than 14 days)
+    // 2. date: any date format which can be parsed javascript Date interface
+    if (Number.isInteger(dateOrDaysOlderThan)) {
+      backupStartedBefore = moment().subtract(dateOrDaysOlderThan, 'days').toISOString();
+    } else {
+      backupStartedBefore = dateOrDaysOlderThan;
+    }
 
     function getPredicate(isoDate) {
       return function predicate(filenameobject) {

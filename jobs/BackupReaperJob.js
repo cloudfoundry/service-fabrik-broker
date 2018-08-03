@@ -76,7 +76,7 @@ class BackupReaperJob extends BaseJob {
   }
 
   static deleteOldBackup(job, options) {
-    const backupStartedBefore = moment().subtract(config.backup.retention_period_in_days + 1, 'days').toISOString();
+    const backupStartedBefore = moment().subtract(config.backup.retention_period_in_days + CONST.BACKUP_REAPER_BUFFER_DURATION_DAYS, 'days').toISOString();
     let numberOfBackups = 0;
     const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
     const backupStore = options.backupStore;

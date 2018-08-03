@@ -61,7 +61,8 @@ class GcpClient extends BaseCloudClient {
       .getFiles(queryOptions)
       .then(results => {
         return _.get(results, 0, []).map(file => ({
-          name: file.name
+          name: file.name,
+          lastModified: file.metadata.updated
         }));
       })
     );

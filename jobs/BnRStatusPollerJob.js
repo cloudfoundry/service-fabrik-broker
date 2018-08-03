@@ -12,7 +12,9 @@ const NotFound = errors.NotFound;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
+const cf = require('../data-access-layer/cf');
 const catalog = require('../common/models').catalog;
+const retry = utils.retry;
 const BackupService = require('../managers/backup-manager');
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
@@ -206,7 +208,26 @@ class BnRStatusPollerJob extends BaseJob {
         }
       })
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
-        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) : operationStatusResponse
+        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo)
+        .tap(() => {
+          const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
+          let retryDelayInMinutes;
+          if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+            retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+          }
+          let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
+          if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
+            const options = {
+              instance_id: instance_guid,
+              repeatInterval: retryInterval,
+              type: CONST.BACKUP.TYPE.ONLINE
+            };
+            return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+              maxAttempts: 3,
+              minDelay: 500
+            });
+          }
+        }) : operationStatusResponse
       )
       .catch(err => {
         logger.error(`Caught error while checking for operation completion status:`, err);

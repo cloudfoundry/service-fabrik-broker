@@ -49,30 +49,17 @@ class BackupStoreForServiceInstance extends BackupStore {
     const service_id = options.service_id;
     const instance_guid = options.instance_guid || options.instance_id;
     const backup_guid = options.backup_guid;
-    const time_stamp = options.time_stamp;
     const iteratees = ['started_at'];
 
     let prefix = `${tenant_id}/backup`;
     let predicate;
     let message = `No backup found`;
-    let isoDate;
-
-    function getPredicate(isoDate) {
-      return function predicate(filenameobject) {
-        //backUpStartedBefore defaults to current timestamp as part of isoDate function.
-        return _.lt(filenameobject.started_at, isoDate);
-      };
-    }
 
     if (service_id && instance_guid) {
       prefix += `/${service_id}.${instance_guid}`;
       if (backup_guid) {
         prefix += `.${backup_guid}`;
         message = `Backup '${backup_guid}' not found`;
-      } else if (time_stamp) {
-        isoDate = this.filename.isoDate(time_stamp);
-        predicate = getPredicate(isoDate);
-        message = `No backup found for time stamp '${time_stamp}'`;
       } else {
         message = `No backup found for service instance '${instance_guid}'`;
       }
