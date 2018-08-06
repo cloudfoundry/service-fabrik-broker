@@ -29,13 +29,13 @@ class UnlockResourcePoller {
               CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
             ], resourceState)) {
             return lockManager.unlock(object.metadata.name)
-              .then(() => clearInterval(interval));
+              .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, interval));
           }
         })
         .catch(NotFound, err => {
           logger.info('Resource not found : ', err);
           return lockManager.unlock(object.metadata.name)
-            .then(() => clearInterval(interval));
+            .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, interval));
         });
     }
     /*
@@ -47,11 +47,11 @@ class UnlockResourcePoller {
       logger.debug('Received Lock Event: ', event);
       const lockDetails = JSON.parse(event.object.spec.options);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
-        // startPoller(event.object);
         logger.info('starting unlock resource poller for deployment ', event.object.metadata.name);
         //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
         // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
         const interval = setInterval(() => poller(event.object, interval), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
+        UnlockResourcePoller.pollers[event.object.metadata.name] = interval;
       }
     }
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
@@ -62,6 +62,8 @@ class UnlockResourcePoller {
           .then(() => {
             logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
+            // Clearing all pollers
+            UnlockResourcePoller.clearAllPollers();
             return this.start();
           });
       })
@@ -75,7 +77,23 @@ class UnlockResourcePoller {
           });
       });
   }
+  static clearPoller(resourceId, interval) {
+    logger.info(`Clearing unlock interval for deployment `, resourceId);
+    clearInterval(interval);
+    UnlockResourcePoller.pollers[resourceId] = false;
+  }
+  static clearAllPollers() {
+    logger.info(`Clearing all unlock resource pollers`);
+    _.forEach(UnlockResourcePoller.pollers, (interval, id) => {
+      if (interval) {
+        clearInterval(interval);
+      }
+      UnlockResourcePoller.pollers[id] = false;
+    });
+  }
 }
+
+UnlockResourcePoller.pollers = {};
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'internal') {
