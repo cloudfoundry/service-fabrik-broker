@@ -497,8 +497,10 @@ defaults: &defaults
         - { range: 10.244.11.0/24, az: z2, cloud_properties: { name: random } }
         - { range: 10.244.12.0/24, az: z3, cloud_properties: { name: random } }
     uaa:
-      client_id: admin
-      client_secret: 'h0fixi8cvn512n3lkud8'
+      uaa_auth: false #make it true if bosh uses UAA for authentication
+      uaa_url: '' #provide complete uaa url here.,e.g., https://192.168.48.6:8443
+      client_id: '' #Assuming client credential grant being used, provide client id here
+      client_secret: '' #provide corrsponding client secret 
   - cpi: warden_cpi
     url: https://192.168.50.4:25555
     username: admin
