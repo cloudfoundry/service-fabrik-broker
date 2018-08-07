@@ -21,7 +21,8 @@ class UnlockResourcePoller {
           resourceId: lockDetails.lockedResourceDetails.resourceId
         })
         .then((resourceState) => {
-          logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state as `, resourceState);
+          logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state of ${lockDetails.lockedResourceDetails.operation}` +
+            ` operation for deployment ${object.metadata.name} as`, resourceState);
           //TODO-PR - reuse util method is operationCompleted.
           if (_.includes([
               CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
