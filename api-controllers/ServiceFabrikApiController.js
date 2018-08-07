@@ -434,7 +434,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
-    const instanceId = req.params.instance_id;
+    const instanceId = req.body.source_instance_id || req.params.instance_id;
     const serviceId = req.manager.service.id;
     const planId = req.manager.plan.id;
     const bearer = _
@@ -454,7 +454,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       .then(() => this.validateRestoreQuota({
-        instance_guid: instanceId,
+        instance_guid: req.params.instance_id,
         service_id: serviceId,
         plan_id: planId,
         tenant_id: tenantId
@@ -486,7 +486,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.backupStore.getBackupFile(backupFileOptions);
         }
       })
-      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space`))
+      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space.`))
       .then(metadata => {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
