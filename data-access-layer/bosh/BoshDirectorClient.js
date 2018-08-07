@@ -35,8 +35,8 @@ class BoshDirectorClient extends HttpClient {
     this.deploymentIpsCache = {};
     this.cacheLoadInProgressForDeployment = {};
     this.cacheLoadInProgress = false;
-    //populate UAA objects if uaa based auth is being used by any of the dorectors
     this.uaaObjects = {};
+    //populate UAA objects if uaa based auth is being used by any of the directors
     this.determineDirectorAuthenticationMethod();
     this.ready = this.populateConfigCache();
   }
