@@ -6,8 +6,8 @@ const HttpClient = require('../../common/utils').HttpClient;
 const config = require('../../common/config');
 
 class UaaClient extends HttpClient {
-  constructor(options, baseUrl='') {
-    if(!baseUrl){
+  constructor(options, baseUrl = '') {
+    if (!baseUrl) {
       baseUrl = config.cf.token_endpoint;
     }
     super(_.defaultsDeep({
@@ -141,7 +141,7 @@ class UaaClient extends HttpClient {
     });
   }
 
-  accessWithClientCredentials(clientId,clientSecret){
+  accessWithClientCredentials(clientId, clientSecret) {
     return this.request({
       method: 'POST',
       url: '/oauth/token',

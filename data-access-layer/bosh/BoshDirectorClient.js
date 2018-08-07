@@ -16,6 +16,7 @@ const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
+const HttpServer = require('../../common/HttpServer');
 
 class BoshDirectorClient extends HttpClient {
   constructor() {
@@ -43,17 +44,19 @@ class BoshDirectorClient extends HttpClient {
 
   determineDirectorAuthenticationMethod() {
     _.forEach(config.directors, (directorConfig) => {
-      if(_.get(directorConfig, 'uaa.uaa_auth', undefined)) {
+      if (_.get(directorConfig, 'uaa.uaa_auth', undefined)) {
         let directorName = _.get(directorConfig, 'name', undefined);
         logger.info('Director ', directorName, ' uses UAA based authentication. Populating UAA objects in directorConfig.');
         this.populateUAAObjects(directorConfig);
-        if(_.get(this.uaaObjects, directorName + '.uaaClient', undefined) && _.get(this.uaaObjects, directorName + '.tokenIssuer', undefined)) {
-          _.set(directorConfig,'uaaEnabled', true);
+        if (_.get(this.uaaObjects, directorName + '.uaaClient', undefined) && _.get(this.uaaObjects, directorName + '.tokenIssuer', undefined)) {
+          _.set(directorConfig, 'uaaEnabled', true);
         } else {
           //TODO: Fatal error condition. Logging and exiting.
-          logger.error('UAA objects were not popoulated successfully.');
+          logger.error('UAA objects were not popoulated successfully for bosh ', directorName, '.');
+          logger.error('Without UAA objects, communication to bosh not possible. Exiting.');
+          HttpServer.immediateShutdown();
         }
-      } else{
+      } else {
         logger.info('Director ' + directorConfig.name + ' uses basic authentication.');
       }
     });
@@ -61,15 +64,15 @@ class BoshDirectorClient extends HttpClient {
 
   populateUAAObjects(directorConfig) {
     /* Client id and client secret will be used when requesting the token. Here just a sanity check.*/
-    let uaa_client_id = _.get(directorConfig,'uaa.client_id', undefined);
-    let uaa_client_secret = _.get(directorConfig,'uaa.client_secret', undefined);
-    if(!uaa_client_id || !uaa_client_secret){
+    let uaa_client_id = _.get(directorConfig, 'uaa.client_id', undefined);
+    let uaa_client_secret = _.get(directorConfig, 'uaa.client_secret', undefined);
+    if (!uaa_client_id || !uaa_client_secret) {
       logger.error('UAA credentials for director ', directorConfig.name, ' not provided. Error condition.');
       return;
     }
     /* create uaaClient and tokenIssuer for this director */
     let uaa_url = _.get(directorConfig, 'uaa.uaa_url', undefined);
-    if(!uaa_url){
+    if (!uaa_url) {
       logger.error('UAA url not provided to populateUAAObjects.');
       return;
     }
@@ -244,25 +247,25 @@ class BoshDirectorClient extends HttpClient {
   makeRequestWithConfig(requestDetails, expectedStatusCode, directorConfig) {
     requestDetails.baseUrl = directorConfig.url;
     requestDetails.rejectUnauthorized = !directorConfig.skip_ssl_validation;
-    if(directorConfig.uaaEnabled) {
+    if (directorConfig.uaaEnabled) {
       let directorName = _.get(directorConfig, 'name', undefined);
       let client_id = this.uaaObjects[directorName].client_id;
       let client_secret = this.uaaObjects[directorName].client_secret;
       let tokenIssuer = this.uaaObjects[directorName].tokenIssuer;
-      return Promise.try(() => tokenIssuer.getAccessTokenBoshUAA(client_id, client_secret)) 
-      .then(accessToken => {
-        requestDetails.auth = {
-          bearer: accessToken
-        };
-        return this.request(requestDetails, expectedStatusCode);
-      });
+      return Promise.try(() => tokenIssuer.getAccessTokenBoshUAA(client_id, client_secret))
+        .then(accessToken => {
+          requestDetails.auth = {
+            bearer: accessToken
+          };
+          return this.request(requestDetails, expectedStatusCode);
+        });
     } else {
       requestDetails.auth = {
         user: directorConfig.username,
         pass: directorConfig.password
       };
       return this.request(requestDetails, expectedStatusCode);
-    }  
+    }
   }
 
   getInfo() {
