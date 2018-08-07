@@ -10,7 +10,11 @@ const logger = require('../../common/logger');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
+const UaaClient = require('../../data-access-layer/cf/UaaClient');
+const TokenIssuer = require('../../data-access-layer/cf/TokenIssuer');
+const HttpServer = require('../../common/HttpServer');
 const yaml = require('js-yaml');
+const assert = require('assert');
 const id = uuid.v4();
 const deployment_name = id;
 const taskId = Math.floor(Math.random() * 123456789);
@@ -855,6 +859,95 @@ describe('bosh', () => {
         expect(content).to.be.a('string');
         expect(content).to.equal('path');
         done();
+      });
+    });
+
+    describe('#determineDirectorAuthenticationMethod', () => {
+      it('should set uaaEnabled true when valid config is provided', () => {
+        //inject test config in config.directors
+        let prevConfigDirectors = config.directors;
+        config.directors = [{
+          'name': 'bosh',
+          'uaa': {
+            'client_id': 'client_id',
+            'client_secret': 'client_secret',
+            'uaa_url': 'uaa_url',
+            'uaa_auth': 'true'
+          }
+        }];
+        let mockBoshClient = new MockBoshDirectorClient();
+        //clear uaa objects cache
+        mockBoshClient.uaaObjects = {};
+        mockBoshClient.determineDirectorAuthenticationMethod();
+        assert(config.directors[0].uaaEnabled === true);
+        config.directors = prevConfigDirectors;
+      });
+
+      it('should call shutdown in the event of failure to initialize', () => {
+        /* jshint expr:true */
+        /* jshint unused:false */
+        let prevConfigDirectors = config.directors;
+        config.directors = [{
+          'name': 'bosh',
+          'uaa': {
+            'uaa_auth': true
+          }
+        }];
+        let sandbox = sinon.sandbox.create();
+        let immediateShutdownStub = sandbox.stub(HttpServer, 'immediateShutdown');
+        let mock = new MockBoshDirectorClient();
+        expect(immediateShutdownStub).to.be.calledOnce;
+        config.directors = prevConfigDirectors;
+        sandbox.restore();
+      });
+    });
+
+    describe('#populateUAAObjects', () => {
+      it('should populate valid UAA objects when valid information is provided in directorConfig', () => {
+        let directorConfig = {
+          'name': 'bosh',
+          'uaa': {
+            'client_id': 'client_id',
+            'client_secret': 'client_secret',
+            'uaa_url': 'uaa_url',
+            'uaa_auth': 'true'
+          }
+        };
+
+        let mockBoshClient = new MockBoshDirectorClient();
+        mockBoshClient.populateUAAObjects(directorConfig);
+
+        //assert whether valid objects were popoulatd or not 
+        assert(mockBoshClient.uaaObjects[directorConfig.name] !== undefined);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].client_id === directorConfig.uaa.client_id);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].client_secret === directorConfig.uaa.client_secret);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].uaaClient instanceof UaaClient);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].tokenIssuer instanceof TokenIssuer);
+      });
+
+      it('should not populate UAA objects when invalid information is provided in directorConfig', () => {
+        let directorConfig = {
+          'name': 'bosh',
+        };
+
+        let mockBoshClient = new MockBoshDirectorClient();
+        mockBoshClient.populateUAAObjects(directorConfig);
+        console.log(config.directors);
+        assert(mockBoshClient.uaaObjects[directorConfig.name] === undefined);
+
+        //To cover the branch when uaa_url is not provided
+        directorConfig = {
+          'name': 'bosh',
+          'uaa': {
+            'client_id': 'client_id',
+            'client_secret': 'client_secret',
+            'uaa_auth': 'true'
+          }
+        };
+
+        mockBoshClient.populateUAAObjects(directorConfig);
+        assert(mockBoshClient.uaaObjects[directorConfig.name] === undefined);
+
       });
     });
   });

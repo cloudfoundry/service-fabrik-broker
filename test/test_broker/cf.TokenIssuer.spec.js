@@ -31,7 +31,8 @@ describe('cf', () => {
           return Promise.reject(tokenInfoExpired);
         }
       },
-      accessWithClientCredentials: function (client_id, client_secret){
+      accessWithClientCredentials: function (client_id, client_secret) {
+        /* jshint unused:false */
         return Promise.try(() => {
           return tokenInfoNotExpired;
         });
@@ -135,6 +136,7 @@ describe('cf', () => {
       });
 
       it('should make explicit request for access token (access token expires soon)', (done) => {
+        /* jshint expr:true */
         tokenIssuer.updateTokenInfo(tokenInfoExpired);
         let sandbox = sinon.sandbox.create();
         let scheduleAccessTokenStub = sandbox.stub(tokenIssuer, 'scheduleNextRequestAccessToken');
@@ -149,6 +151,7 @@ describe('cf', () => {
 
     describe('scheduleNextRequestAccessToken', () => {
       it('should create a valid timeout object', () => {
+        /* jshint expr:true */
         //IST: Sunday, August 25, 2086 3:36:08 AM. Delay < 2147483647, as per condition in this function.
         let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
         let tokenInfoSpecific = {
@@ -158,7 +161,7 @@ describe('cf', () => {
         };
         tokenIssuer.updateTokenInfo(tokenInfoSpecific);
         let sandbox = sinon.sandbox.create();
-        let setTimeoutStub = sandbox.stub(global, 'setTimeout')
+        let setTimeoutStub = sandbox.stub(global, 'setTimeout');
         tokenIssuer.scheduleNextRequestAccessToken();
         expect(setTimeoutStub).to.be.calledOnce;
         sandbox.restore();
