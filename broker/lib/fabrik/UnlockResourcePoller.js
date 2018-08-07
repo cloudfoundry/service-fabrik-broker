@@ -12,7 +12,7 @@ const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {
   static start() {
-    function poller(object, interval) {
+    function poller(object, intervalId) {
       //TODO-PR - instead of a poller, its better to convert this to a watcher.
       const lockDetails = JSON.parse(object.spec.options);
       return eventmesh.apiServerClient.getResourceState({
@@ -30,13 +30,13 @@ class UnlockResourcePoller {
               CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
             ], resourceState)) {
             return lockManager.unlock(object.metadata.name)
-              .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, interval));
+              .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
           }
         })
         .catch(NotFound, err => {
           logger.info('Resource not found : ', err);
           return lockManager.unlock(object.metadata.name)
-            .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, interval));
+            .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
         });
     }
     /*
@@ -52,8 +52,8 @@ class UnlockResourcePoller {
         logger.info('starting unlock resource poller for deployment', event.object.metadata.name);
         //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
         // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
-        const interval = setInterval(() => poller(event.object, interval), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
-        UnlockResourcePoller.pollers[event.object.metadata.name] = interval;
+        const intervalId = setInterval(() => poller(event.object, intervalId), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
+        UnlockResourcePoller.pollers[event.object.metadata.name] = intervalId;
       }
     }
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
@@ -77,12 +77,12 @@ class UnlockResourcePoller {
           });
       });
   }
-  static clearPoller(resourceId, interval) {
+  static clearPoller(resourceId, intervalId) {
     logger.info(`Clearing unlock interval for deployment`, resourceId);
-    if (interval) {
-      clearInterval(interval);
+    if (intervalId) {
+      clearInterval(intervalId);
     }
-    delete UnlockResourcePoller.pollers[resourceId];
+    _.unset(UnlockResourcePoller.pollers, resourceId);
   }
 }
 
