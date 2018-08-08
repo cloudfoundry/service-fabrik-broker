@@ -838,16 +838,13 @@ describe('service-fabrik-api-sf2.0', function () {
 
       describe('#restore-start', function () {
         const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
-        //const citrRestorePrefix = `${space_guid}/restore/${citr_instance_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
         const citrBackupPrefix1 = `${backupPrefix}/${service_id}.${citr_instance_id}`;
         const restoreFilename = `${restorePrefix}.json`;
-        //const citrRestoreFilename = `${citrRestorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
         const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
-        //const citrRestorePathname = `/${container}/${citrRestoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
         const citrBackupPathname = `/${container}/${citrBackupFilename}`;
         const name = 'restore';
