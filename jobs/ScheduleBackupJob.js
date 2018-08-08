@@ -194,26 +194,33 @@ class ScheduleBackupJob extends BaseJob {
         // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
         jobData.attempt = 0;
         return Promise.try(() => {
-            return ScheduleManager.schedule(
-              jobData.instance_id,
-              CONST.JOB.SCHEDULED_BACKUP,
-              repeatInterval,
-              jobData,
-              CONST.SYSTEM_USER);
+            return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+              .then(() => ScheduleManager.schedule(
+                jobData.instance_id,
+                CONST.JOB.SCHEDULED_BACKUP,
+                repeatInterval,
+                jobData,
+                CONST.SYSTEM_USER));
           })
           .then(() => {
             throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
           });
       }
       const RUN_AFTER = _.get(jobData, 'reschedule_delay', config.scheduler.jobs.reschedule_delay);
+      let retryDelayInMinutes;
       logger.info(`Re-Schedulding Backup Job for ${jobData.instance_id} @ ${RUN_AFTER} - Attempt - ${jobData.attempt}. Initial attempt was done @: ${jobData.firstAttemptAt}`);
+      if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+        retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+      }
       const plan = catalog.getPlan(jobData.plan_id);
-      return ScheduleManager.schedule(
-        jobData.instance_id,
-        CONST.JOB.SCHEDULED_BACKUP,
-        utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
-        jobData,
-        CONST.SYSTEM_USER);
+      let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
+      return ScheduleManager.cancelSchedule(jobData.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+        .then(() => ScheduleManager.schedule(
+          jobData.instance_id,
+          CONST.JOB.SCHEDULED_BACKUP,
+          retryInterval,
+          jobData,
+          CONST.SYSTEM_USER));
 
     });
   }

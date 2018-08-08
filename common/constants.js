@@ -20,6 +20,7 @@ module.exports = Object.freeze({
   PLATFORM_CONTEXT_KEY: 'platform-context',
   NOT_APPLICABLE: 'NA',
   FINISHED_JOBS_RETENTION_DURATION_DAYS: 14,
+  BACKUP_REAPER_BUFFER_DURATION_DAYS: 15,
   EVENT_LOG_RIEMANN_CLIENT: {
     MAX_QUEUE_SIZE: 100,
     MAX_SEND_RETRIES: 2
@@ -122,8 +123,7 @@ module.exports = Object.freeze({
   },
   SCHEDULE: {
     DAILY: 'daily',
-    RANDOM: 'random',
-    RETRY_DELAY: 30 //in-minutes
+    RANDOM: 'random'
   },
   SCHEDULE_INTERVAL: {
     HUMAN_INTERVAL: 'human-readable-interval',
@@ -234,16 +234,16 @@ module.exports = Object.freeze({
   },
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 60,
+    RETRY_DELAY: 2000,
+    WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 1200000, // in ms ( 20 minutes )
-    PORT: 9443,
     VERSION: '1.9',
-    HOSTNAME: 'servicefabrik.io',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
     RESOURCE_GROUPS: {
-      LOCK: 'lock',
-      DEPLOYMENT: 'deployment',
-      BACKUP: 'backup'
+      LOCK: 'lock.servicefabrik.io',
+      DEPLOYMENT: 'deployment.servicefabrik.io',
+      BACKUP: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -265,17 +265,6 @@ module.exports = Object.freeze({
       OPTIONS: 'options',
       LASTOPERATION: 'lastoperation'
     },
-    ANNOTATION_KEYS: {
-      STATE: 'state',
-      OPTIONS: 'options',
-      RESULT: 'result'
-    },
-    ANNOTATION_NAMES: {
-      BACKUP: 'backup'
-    },
-    ANNOTATION_TYPES: {
-      BACKUP: 'defaultbackups'
-    },
     WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore'],
     READ_OPERATIONS: ['backup'],
   },
@@ -283,7 +272,11 @@ module.exports = Object.freeze({
     ATTRIBUTES: 'attributes',
     PLANS: 'plans'
   },
-
+  ENCRYPTION: {
+    AES_256_ALGORITHM: 'aes-256-ctr',
+    INPUT_ENCODING: 'utf8',
+    OUTPUT_ENCODING: 'hex'
+  },
   PLATFORM: {
     CF: 'cloudfoundry',
     K8S: 'kubernetes'

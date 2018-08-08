@@ -8,6 +8,7 @@ const ScheduleManager = require('./ScheduleManager');
 const utils = require('../common/utils');
 const logger = require('../common/logger');
 const errors = require('../common/errors');
+const NotFound = errors.NotFound;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
@@ -66,7 +67,63 @@ class BnRStatusPollerJob extends BaseJob {
     const backup_guid = instanceInfo.backup_guid;
     const deployment = instanceInfo.deployment;
     const plan = catalog.getPlan(instanceInfo.plan_id);
-    return Promise.try(() => {
+    return Promise
+      .try(() => {
+        logger.info(`Check if the backup resource ${backup_guid} and deployment resource ${instance_guid} already exists`);
+        // For transition of sf to sfv2 we need to create bakcup and deployment resource
+        // if they are not present
+        // Can be removed once SFv2 transition is over
+        return Promise
+          .try(() => eventmesh.apiServerClient.getResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: instance_guid
+          }))
+          .catch(NotFound, () => {
+            logger.info(`Creating missing operation resource for instance ${instance_guid}`);
+            return eventmesh.apiServerClient.createResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: instance_guid,
+              parentResourceId: instance_guid,
+              options: {},
+              status: {
+                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                lastOperation: {},
+                response: {}
+              }
+            });
+          })
+          .then(() => eventmesh.apiServerClient.getResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            resourceId: backup_guid
+          }))
+          .catch(NotFound, () => {
+            logger.info(`Creating missing operation resource for backup ${backup_guid}`);
+            return eventmesh.apiServerClient.createResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+              resourceId: backup_guid,
+              parentResourceId: instance_guid,
+              options: job_data.operation_details,
+              status: {
+                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                lastOperation: {},
+                response: {}
+              }
+            });
+          })
+          .then(() => eventmesh.apiServerClient.updateLastOperationValue({
+            resourceId: instance_guid,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            value: backup_guid
+          }));
+      })
+      .then(() => {
         if (operationName === CONST.OPERATION_TYPE.BACKUP) {
           return lockManager.lock(instance_guid, {
               lockedResourceDetails: {
@@ -103,11 +160,13 @@ class BnRStatusPollerJob extends BaseJob {
           return Promise
             .try(() => eventmesh
               .apiServerClient
-              .patchOperationResponse({
-                operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-                operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-                operationId: instanceInfo.backup_guid,
-                value: _.omit(operationStatusResponse, 'jobCancelled', 'operationTimedOut', 'operationFinished')
+              .patchResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceId: instanceInfo.backup_guid,
+                status: {
+                  response: _.omit(operationStatusResponse, 'jobCancelled', 'operationTimedOut', 'operationFinished')
+                }
               }))
             .then(() => bosh.director.getDirectorConfig(instanceInfo.deployment))
             .then(directorConfig => {
@@ -151,10 +210,16 @@ class BnRStatusPollerJob extends BaseJob {
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
         this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo)
         .tap(() => {
+          const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
+          let retryDelayInMinutes;
+          if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+            retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+          }
+          let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
           if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
             const options = {
               instance_id: instance_guid,
-              repeatInterval: utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval, CONST.SCHEDULE.RETRY_DELAY),
+              repeatInterval: retryInterval,
               type: CONST.BACKUP.TYPE.ONLINE
             };
             return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
@@ -171,11 +236,13 @@ class BnRStatusPollerJob extends BaseJob {
   }
   static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
     return Promise
-      .try(() => eventmesh.apiServerClient.updateOperationState({
-        operationName: CONST.APISERVER.ANNOTATION_NAMES.BACKUP,
-        operationType: CONST.APISERVER.ANNOTATION_TYPES.BACKUP,
-        operationId: instanceInfo.backup_guid,
-        stateValue: operationStatusResponse.state
+      .try(() => eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: instanceInfo.backup_guid,
+        status: {
+          'state': operationStatusResponse.state
+        }
       }))
       .then(() => this._logEvent(instanceInfo, operationName, operationStatusResponse))
       .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))

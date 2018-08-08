@@ -850,9 +850,17 @@ class DirectorManager extends BaseManager {
         .tap(agent_ip => {
           // set data and result agent ip
           data.agent_ip = result.agent_ip = agent_ip;
-          return this.backupStore.putFile(data);
-        })
-      )
+          return this.backupStore
+            .getRestoreFile(data)
+            .catch(NotFound, (err) => {
+              logger.debug('Not found any restore data. May be first time.', err);
+              //Restore file might not be found, first time restore.
+              return;
+            })
+            .then(restoreMetadata => this.backupStore.putFile(_.assign(data, {
+              restore_dates: _.get(restoreMetadata, 'restore_dates')
+            })));
+        }))
       .return(result);
   }
 
@@ -868,6 +876,7 @@ class DirectorManager extends BaseManager {
       return _.includes(['succeeded', 'failed', 'aborted'], state);
     }
 
+    let statusAlreadyChecked = false;
     return this.agent
       .getRestoreLastOperation(agent_ip)
       .tap(lastOperation => {
@@ -878,23 +887,46 @@ class DirectorManager extends BaseManager {
             ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              let restoreDates = _.get(restoreMetadata, 'restore_dates') || [];
-              restoreDates.push(restoreFinishiedAt);
+              // following restoreDates will have structure
+              // 'restore_dates' : {'succeeded':[<dateISOString>], 'failed':[<dateISOString>],'aborted':[<dateISOString>]}
+              let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
+              let restoreDatesByState = _.get(restoreDates, lastOperation.state) || [];
+              //status check to prevent
+              if (_.indexOf(restoreDatesByState, restoreFinishiedAt) !== -1) {
+                statusAlreadyChecked = true;
+                logger.debug(`Restore status check came once again even after finish for instance ${options.instance_guid}`);
+              } else {
+                restoreDatesByState.push(restoreFinishiedAt);
+              }
+              //following can be treated as extra processing
+              // just to avoid duplicate entries in restore histroy
+              // which might lead to quota full
+              let uniqueDates = [...new Set(restoreDatesByState)];
               return this.backupStore
                 .patchRestoreFile(options, {
                   state: lastOperation.state,
                   logs: logs,
                   finished_at: restoreFinishiedAt,
-                  restore_dates: _.sortBy(restoreDates)
+                  restore_dates: _.chain(restoreDates)
+                    .set(lastOperation.state, _.sortBy(uniqueDates))
+                    .value()
                 });
             })
             .tap(() => {
               // Trigger schedule backup when restore is successful
-              if (lastOperation.state === CONST.OPERATION.SUCCEEDED) {
+              // statusAlreadyChecked should be false, otherwise
+              // if by chance restore state (this function called) two times
+              // for any reason after agent restores successfully,
+              // on seceond time also it would trigger schedule backup (which is incorrect).
+              if (lastOperation.state === CONST.OPERATION.SUCCEEDED &&
+                !statusAlreadyChecked) {
                 return this.reScheduleBackup({
                   instance_id: options.instance_guid,
                   afterXminute: config.backup.reschedule_backup_delay_after_restore || 3
                 });
+              } else {
+                logger.debug(`Did not re-scheduling backup for ${options.instance_guid} as current restore state check is not first time.`);
+                return;
               }
             });
         }
@@ -904,10 +936,15 @@ class DirectorManager extends BaseManager {
   reScheduleBackup(opts) {
     const options = {
       instance_id: opts.instance_id,
+      repeatInterval: 'daily',
       type: CONST.BACKUP.TYPE.ONLINE
     };
 
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(this.service.backup_interval, opts.afterXminute);
+    if (this.service.backup_interval) {
+      options.repeatInterval = this.service.backup_interval;
+    }
+
+    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
     //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
     return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {

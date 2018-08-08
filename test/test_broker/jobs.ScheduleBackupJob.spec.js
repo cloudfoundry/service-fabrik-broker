@@ -423,7 +423,7 @@ describe('Jobs', function () {
             delete_backup_status: 'failed'
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+          expect(cancelScheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(_.chain(_.cloneDeep(job.attrs)).set('data.attempt', max_attmpts).value());
@@ -448,7 +448,7 @@ describe('Jobs', function () {
             delete_backup_status: 'failed'
           };
           expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+          expect(cancelScheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
           expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);

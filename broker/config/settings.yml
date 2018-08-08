@@ -186,7 +186,15 @@ defaults: &defaults
     ssl:
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
-
+  ##############################
+  # APISERVER SETTINGS #
+  ##############################
+  apiserver:
+    ip: '127.0.0.1'
+    port: 9443
+    encryption:
+      key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
+      initialization_vector: 'ABCDEFGHABCDEFGH'
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

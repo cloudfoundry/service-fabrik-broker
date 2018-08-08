@@ -1,82 +1,62 @@
 'use strict';
 
-const _ = require('lodash');
 const nock = require('nock');
 const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
-const apiServerHost = 'https://10.0.2.2:9443';
+const apiServerHost = 'https://127.0.0.1:9443';
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
 
-const sampleLockResource = {
-  kind: 'DeploymentLock',
-  apiVersion: 'lock.servicefabrik.io/v1alpha1',
+const expectedGetDeploymentResponse = {
   metadata: {
-    name: 'l1',
-    namespace: 'default',
-    selfLink: '/apis/lock.servicefabrik.io/v1alpha1/namespaces/default/deploymentlocks/l1',
-    uid: '54e02d6c-72b6-11e8-80fe-9801a7b45ddd',
-    resourceVersion: '1076',
-    generation: 1,
-    creationTimestamp: '2018-06-18T05:13:26Z'
+    name: 'deployment1',
+    labels: {
+      label1: 'label1',
+      label2: 'label2',
+      last_backup_defaultbackups: 'backup1'
+    }
   },
   spec: {
     options: JSON.stringify({
-      'lockDetails': 'lockdetails'
-    })
-  },
-  status: {}
-};
-
-const sampleDeploymentResource = {
-  kind: 'Director',
-  apiVersion: 'deployment.servicefabrik.io/v1alpha1',
-  metadata: {
-    name: 'fakeResourceId',
-    namespace: 'default',
-    selfLink: '/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/fakeResourceId',
-    uid: '54e02d6c-72b6-11e8-80fe-9801a7b45ddd',
-    resourceVersion: '1076',
-    generation: 1,
-    creationTimestamp: '2018-06-18T05:13:26Z'
-  },
-  spec: {
-    options: 'sample_options'
+      opt1: 'opt1',
+      opt2: 'opt2'
+    }),
+    instanceId: 'deployment1'
   },
   status: {
-    state: 'in_progress'
+    state: 'create',
+    response: JSON.stringify({
+      resp: 'resp'
+    })
   }
 };
 
-const sampleBackupResource = {
-  kind: 'DefaultBackup',
-  apiVersion: 'backup.servicefabrik.io/v1alpha1',
+const sampleDeploymentResource = {
   metadata: {
-    name: 'fakeOperationId',
-    namespace: 'default',
-    selfLink: '/apis/backup.servicefabrik.io/v1alpha1/namespaces/default/defaultbackups/fakeOperationId',
-    uid: '54e02d6c-72b6-11e8-80fe-9801a7b45ddd',
-    resourceVersion: '1076',
-    generation: 1,
-    creationTimestamp: '2018-06-18T05:13:26Z'
+    name: 'deployment1',
+    labels: {
+      label1: 'label1',
+      label2: 'label2',
+      last_backup_defaultbackups: 'backup1'
+    }
   },
   spec: {
-    options: 'sample_options'
+    options: {
+      opt1: 'opt1',
+      opt2: 'opt2'
+    },
+    instanceId: 'deployment1'
   },
   status: {
-    state: 'defaultState',
-    error: JSON.stringify({
-      name: 'defaultErrorObj'
-    }),
-    response: JSON.stringify({
-      name: 'defaultResponseObj'
-    }),
+    state: 'create',
+    response: {
+      resp: 'resp'
+    }
   }
 };
 
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
-    // console.log('pending mocks: %j', nock.pendingMocks());
     logger.error('pending mocks: %j', nock.pendingMocks());
   }
   expect(nock.isDone()).to.be.true;
@@ -84,37 +64,36 @@ function verify() {
 
 function nockGetResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
   nock(apiServerHost)
-    .get(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
     .reply(expectedExpectedCode || 200, response);
 }
 
 function nockPatchResourceStatus(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}/status`, payload)
+    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}/status`, JSON.stringify(payload))
     .reply(expectedExpectedCode || 200, response);
 }
 
 function nockPatchResource(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`, payload)
+    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, JSON.stringify(payload))
     .reply(expectedExpectedCode || 200, response);
 }
 
 function nockCreateResource(resourceGroup, resourceType, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`, payload)
+    .post(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`, JSON.stringify(payload))
     .reply(expectedExpectedCode || 201, response);
 }
 
 function nockDeleteResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
   nock(apiServerHost)
-    .delete(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+    .delete(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
     .reply(expectedExpectedCode || 200, response);
 }
 
 describe('eventmesh', () => {
   describe('ApiServerClient', () => {
-
     afterEach(() => {
       nock.cleanAll();
     });
@@ -123,849 +102,570 @@ describe('eventmesh', () => {
         const selfLink = '/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/sample_director';
         const resourceDetails = apiserver.parseResourceDetailsFromSelfLink(selfLink);
         expect(resourceDetails).to.deep.eql({
-          resourceGroup: 'deployment',
-          resourceType: 'directors'
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
         });
       });
     });
 
-    describe('createLockResource', () => {
-      it('calls the post rest api to create lock type resource', done => {
-        nockCreateResource('lock', 'deploymentlock', sampleLockResource);
-        apiserver.createLock('deploymentlock', sampleLockResource)
+    describe('createResource', () => {
+      it('Creates resource without label and status', () => {
+        const expectedResponse = {};
+        const payload = {
+          metadata: {
+            name: 'deployment1'
+          },
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload);
+        return apiserver.createResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(201);
-            expect(res.body).to.eql(sampleLockResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
+          });
+      });
+      it('Creates resource without status', () => {
+        const expectedResponse = {};
+        const payload = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload);
+        return apiserver.createResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            }
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
-        return apiserver.createLock('deploymentlock', sampleLockResource)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+          .then(res => {
+            expect(res.statusCode).to.eql(201);
+            expect(res.body).to.eql({});
+            verify();
           });
       });
-    });
-
-    describe('createResource', () => {
-      it('throws error if api call is errored', done => {
-        nockCreateResource('lock', 'deploymentlock', sampleLockResource, undefined, 409);
-        return apiserver._createResource('lock', 'deploymentlock', sampleLockResource)
-          .catch(err => {
-            expect(err.code).to.eql(409);
-            done();
-          });
-      });
-    });
-
-    describe('deleteLock', () => {
-      const deleteLockResponse = {
-        kind: 'Status',
-        apiVersion: 'v1',
-        metadata: {},
-        status: 'Success',
-        details: {
-          name: 'l1',
-          group: 'lock.servicefabrik.io',
-          kind: 'deploymentlocks',
-          uid: '3576eca0-72b7-11e8-80fe-9801a7b45ddd'
-        }
-      };
-      it('calls the delete rest api to delete lock type resource', done => {
-        nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse);
-        apiserver.deleteLock('deploymentlock', 'l1')
+      it('Creates resource with label, options and status', () => {
+        const expectedResponse = {
+          res: 'res'
+        };
+        const payload1 = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        const payload2 = {
+          status: {
+            state: 'create',
+            response: JSON.stringify({
+              resp: 'resp'
+            })
+          }
+        };
+        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, payload1);
+        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
+        return apiserver.createResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            },
+            status: {
+              state: 'create',
+              response: {
+                resp: 'resp'
+              }
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(deleteLockResponse);
-            done();
+            expect(res.body).to.eql(expectedResponse);
             verify();
-          })
-          .catch(done);
+          });
       });
-      it('throws error if api call is errored', done => {
-        nockDeleteResource('lock', 'deploymentlock', 'l1', deleteLockResponse, 409);
-        return apiserver.deleteLock('deploymentlock', 'l1')
+
+      it('throws error if create api call is errored', () => {
+        const expectedResponse = {
+          res: 'res'
+        };
+        const payload1 = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload1, 404);
+        return apiserver.createResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            parentResourceId: 'deployment1',
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+            expect(err.status).to.eql(404);
+            verify();
           });
       });
     });
 
     describe('updateResource', () => {
-      it('calls the patch rest api to edit lock type resource', done => {
-        nockPatchResource('lock', 'deploymentlock', 'l1', sampleLockResource);
-        apiserver.updateResource('lock', 'deploymentlock', 'l1', {
-            spec: {
-              options: sampleLockResource.spec.options
+      it('Updates resource without label and status', () => {
+        const expectedResponse = {};
+        const payload = {
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.updateResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
             }
           })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(sampleLockResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
+          });
       });
-      it('throws error if api call is errored', done => {
-        const spec = {
+
+      it('Updates resource without status', () => {
+        const expectedResponse = {};
+        const payload = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
           spec: {
-            options: sampleLockResource.spec.options
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
           }
         };
-        nockPatchResource('lock', 'deploymentlock', 'l1', sampleLockResource, spec, 409);
-        return apiserver.updateResource('lock', 'deploymentlock', 'l1', spec)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('getLockDetails', () => {
-      it('returns options of the lock resource', done => {
-        nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource);
-        apiserver.getLockDetails('deploymentlock', 'l1')
-          .then(res => {
-            expect(res).to.eql(JSON.parse(sampleLockResource.spec.options));
-            done();
-            verify();
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.updateResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            metadata: payload.metadata,
+            options: {
+              opts: 'sample_options'
+            }
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('lock', 'deploymentlock', 'l1', sampleLockResource, 409);
-        return apiserver.getLockDetails('deploymentlock', 'l1')
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('getResource', () => {
-      it('returns the specified resource', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', sampleDeploymentResource);
-        apiserver.getResource('deployment', 'director', 'fakeResourceId')
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(sampleDeploymentResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', sampleDeploymentResource, 409);
-        return apiserver.getResource('deployment', 'director', 'fakeResourceId')
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
-    });
 
-    describe('createDeployment', () => {
-      const resourceId = 'fakeResourceId';
-      const val = {
-        key: 'value'
-      };
-      const input = {
-        metadata: {
-          name: `${resourceId}`,
-          labels: {
-            instance_guid: `${resourceId}`,
-          }
-        },
-        spec: {
-          options: JSON.stringify(val)
-        },
-      };
-
-      const statusJson = {
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-          lastOperation: 'created',
-          response: JSON.stringify({})
-        }
-      };
-      const finalResource = _.assign({
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-          lastOperation: 'created',
-          response: JSON.stringify({})
-        }
-      }, sampleDeploymentResource);
-
-      it('Creates a resource', done => {
-        nockCreateResource('deployment', 'director', sampleDeploymentResource, input);
-        nockPatchResourceStatus('deployment', 'director', 'fakeResourceId', finalResource, statusJson);
-        apiserver.createDeployment(resourceId, val)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockCreateResource('deployment', 'director', sampleDeploymentResource, input, 409);
-        return apiserver.createDeployment(resourceId, val)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('_updateResourceState', () => {
-      it('updates the specified resource state', done => {
-        nockPatchResourceStatus('deployment', 'director', 'fakeResourceId', sampleDeploymentResource);
-        apiserver._updateResourceState('director', 'fakeResourceId', sampleDeploymentResource.status.state)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(sampleDeploymentResource);
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('deployment', 'director', 'fakeResourceId', sampleDeploymentResource, undefined, 409);
-        return apiserver._updateResourceState('director', 'fakeResourceId', sampleDeploymentResource.status.state)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('getResourceState', () => {
-      it('gets the specified resource state', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', sampleDeploymentResource);
-        apiserver.getResourceState('director', 'fakeResourceId')
-          .then(res => {
-            expect(res).to.eql(sampleDeploymentResource.status.state);
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', sampleDeploymentResource, 409);
-        return apiserver.getResourceState('director', 'fakeResourceId')
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('createOperation', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackups',
-        operationId: 'fakeOperationId',
-        value: {
-          key: 'value'
-        }
-      };
-      const input = {
-        metadata: {
-          name: `${opts.operationId}`,
-          labels: {
-            instance_guid: `${opts.resourceId}`,
+      it('Updates resource with label, options and status', () => {
+        const expectedResponse = {
+          res: 'res'
+        };
+        const payload1 = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
           },
-        },
-        spec: {
-          options: JSON.stringify(opts.value)
-        },
-      };
-
-      const statusJson = {
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-          lastOperation: 'created',
-          response: JSON.stringify({})
-        }
-      };
-      const finalResource = _.assign({
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-          lastOperation: '',
-          response: ''
-        }
-      }, sampleBackupResource);
-      it('Creates an operation of a resource', done => {
-        nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input);
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, statusJson);
-        apiserver.createOperation(opts)
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        const payload2 = {
+          status: {
+            state: 'create',
+            response: JSON.stringify({
+              resp: 'resp'
+            })
+          }
+        };
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, payload1);
+        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
+        return apiserver.updateResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            metadata: payload1.metadata,
+            options: {
+              opts: 'sample_options'
+            },
+            status: {
+              state: 'create',
+              response: {
+                resp: 'resp'
+              }
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
+            expect(res.body).to.eql(expectedResponse);
             verify();
-          })
-          .catch(done);
+          });
       });
-      it('throws error if api call is errored', done => {
-        nockCreateResource('backup', 'defaultbackup', sampleBackupResource, input, 409);
-        return apiserver.createOperation(opts)
+
+      it('throws error if create api call is errored', () => {
+        const expectedResponse = {
+          res: 'res'
+        };
+        const payload1 = {
+          spec: {
+            options: JSON.stringify({
+              opts: 'sample_options'
+            })
+          }
+        };
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1, 404);
+        return apiserver.updateResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opts: 'sample_options'
+            }
+          })
           .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+            expect(err.status).to.eql(404);
+            verify();
           });
       });
     });
 
-    describe('updateOperationError', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId',
-        error: {
-          key: 'value'
-        }
-      };
-      const payload = {
-        status: {
-          error: JSON.stringify(opts.error),
-        }
-      };
-      const response = _.assign({
-        status: {
-          error: JSON.stringify(opts.error)
-        }
-      }, sampleBackupResource);
-      it('patches the operation error', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', response, payload);
-        apiserver.updateOperationError(opts)
+    describe('patchResource', () => {
+      it('Patches resource with response', () => {
+        const expectedGetResponse = {
+          status: {
+            response: {
+              resp: 'resp'
+            }
+          }
+        };
+        const expectedResponse = {};
+        const payload = {
+          status: {
+            response: JSON.stringify({
+              resp: 'resp1',
+              resp2: 'resp2'
+            })
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
+        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.patchResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            status: {
+              response: {
+                resp: 'resp1',
+                resp2: 'resp2'
+              }
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(response);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', response, payload, 409);
-        return apiserver.updateOperationError(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
-    });
 
-    describe('updateOperationResponse', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId',
-        value: {
-          key: 'value'
-        }
-      };
-      const input = {
-        status: {
-          response: JSON.stringify(opts.value),
-        }
-      };
-      const finalResource = _.assign({
-        status: {
-          response: JSON.stringify(opts.value)
-        }
-      }, sampleBackupResource);
-      it('updates the operation result', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationResponse(opts)
+      it('Patches resource with options', () => {
+        const expectedGetResponse = {
+          spec: {
+            options: {
+              opt: 'opt'
+            }
+          }
+        };
+        const expectedResponse = {};
+        const payload = {
+          spec: {
+            options: JSON.stringify({
+              opt: 'opt1',
+              opt2: 'opt2'
+            })
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.patchResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            options: {
+              opt: 'opt1',
+              opt2: 'opt2'
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input, 409);
-        return apiserver.updateOperationResponse(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
-    });
 
-    describe('updateOperationStateAndResponse', () => {
-      const opts = {
-        resourceId: 'resource-guid',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'operation-guid',
-        stateValue: 'fakeState',
-        response: {
-          key: 'fakeValue'
-        }
-      };
-      const payload = {
-        status: {
-          state: opts.stateValue,
-          response: JSON.stringify(opts.response),
-        }
-      };
-      const finalResource = _.assign({
-        status: {
-          state: opts.stateValue,
-          response: JSON.stringify(opts.response),
-        }
-      }, sampleBackupResource);
-      it('updates the operation state and response', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'operation-guid', finalResource, payload);
-        apiserver.updateOperationStateAndResponse(opts)
+      it('Patches resource with all fields', () => {
+        const expectedGetResponse = {
+          metadata: {
+            name: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
+          spec: {
+            options: {
+              opt1: 'opt1'
+            }
+          },
+          status: {
+            state: 'in_queue',
+            response: {
+              resp: 'resp',
+              resp1: 'resp1'
+            }
+          }
+        };
+        const expectedResponse = {};
+        const payload1 = {
+          metadata: {
+            labels: {
+              instance_guid: 'deployment1'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              opt1: 'opt1',
+              opt2: 'sample_options'
+            })
+          }
+        };
+        const payload = {
+          status: {
+            state: 'in_progress',
+            response: JSON.stringify({
+              resp: 'resp1',
+              resp1: 'resp1',
+              resp2: 'resp2'
+            })
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1);
+        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.patchResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            metadata: {
+              labels: {
+                instance_guid: 'deployment1'
+              }
+            },
+            options: {
+              opt2: 'sample_options'
+            },
+            status: {
+              state: 'in_progress',
+              response: {
+                resp: 'resp1',
+                resp2: 'resp2'
+              }
+            }
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', opts.operationId, finalResource, payload, 409);
-        return apiserver.updateOperationStateAndResponse(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
+
     });
 
-
-    describe('updateOperationState', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId',
-        stateValue: 'in_progress'
-      };
-      const input = {
-        status: {
-          state: opts.stateValue
-        }
-      };
-      const finalResource = _.assign({
-        status: {
-          state: opts.stateValue
-        }
-      }, sampleBackupResource);
-      it('updates the operation state', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationState(opts)
+    describe('deleteResource', () => {
+      it('Deletes resource', () => {
+        const expectedResponse = {};
+        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse);
+        return apiserver.deleteResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
+          });
       });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input, 409);
-        return apiserver.updateOperationState(opts)
+      it('Throws error when delete fails', () => {
+        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, 404);
+        return apiserver.deleteResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
+          })
           .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+            expect(err.status).to.eql(404);
+            verify();
           });
       });
     });
 
     describe('updateLastOperation', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        value: 'fakeOperationId'
-      };
-      const input = {};
-      input.metadata = {};
-      input.metadata.labels = {};
-      input.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      _.assign(finalResource, input);
-
-      it('updates the last operation value', done => {
-        nockPatchResource('deployment', 'director', 'fakeResourceId', finalResource, input);
-        apiserver.updateLastOperation(opts)
+      it('Updates last operation with given value', () => {
+        const expectedResponse = {};
+        const payload = {
+          metadata: {
+            labels: {
+              last_backup_defaultbackups: 'backup1'
+            }
+          }
+        };
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.updateLastOperationValue({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+            value: 'backup1'
+          })
           .then(res => {
             expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            done();
+            expect(res.body).to.eql({});
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResource('deployment', 'director', 'fakeResourceId', finalResource, input, 409);
-        return apiserver.updateLastOperation(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
+    });
 
+    describe('getResource', () => {
+      it('Gets resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          })
+          .then(res => {
+            expect(res).to.eql(sampleDeploymentResource);
+            verify();
+          });
+      });
     });
 
     describe('getLastOperation', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup'
-      };
-      const input = {};
-      input.metadata = {};
-      input.metadata.labels = {};
-      input.metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = 'fakeOperationId';
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      _.assign(finalResource, input);
-      it('gets the last operation value', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', finalResource);
-        apiserver.getLastOperation(opts)
-          .then(res => {
-            expect(res).to.eql('fakeOperationId');
-            done();
-            verify();
+      it('Gets last operation on resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getLastOperationValue({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('deployment', 'director', 'fakeResourceId', finalResource, 409);
-        return apiserver.getLastOperation(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+          .then(res => {
+            expect(res).to.eql('backup1');
+            verify();
           });
       });
     });
 
-    describe('getOperationOptions', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId'
-      };
-      const input = {};
-      input.spec = {};
-      const options = {
-        'options': 'opt'
-      };
-      input.spec.options = JSON.stringify(options);
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      _.assign(finalResource, input);
-      it('gets the last operation options', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource);
-        apiserver.getOperationOptions(opts)
-          .then(res => {
-            expect(res).to.eql(options);
-            done();
-            verify();
+    describe('getOptions', () => {
+      it('Gets options of resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getOptions({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource, 409);
-        return apiserver.getOperationOptions(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+          .then(res => {
+            expect(res).to.eql(sampleDeploymentResource.spec.options);
+            verify();
           });
       });
     });
 
-    describe('getOperationState', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId'
-      };
-      const input = {};
-      input.status = {};
-      input.status.state = 'in_progress';
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      _.assign(finalResource, input);
-      it('gets the last operation state', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource);
-        apiserver.getOperationState(opts)
-          .then(res => {
-            expect(res).to.eql('in_progress');
-            done();
-            verify();
+    describe('getResponse', () => {
+      it('Gets response of resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getResponse({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource, 409);
-        return apiserver.getOperationState(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
+          .then(res => {
+            expect(res).to.eql(sampleDeploymentResource.status.response);
+            verify();
           });
       });
     });
 
-    describe('getOperationResponse', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId'
-      };
-      const input = {};
-      input.status = {};
-      const response = {
-        'response': 'res'
-      };
-      input.status.response = JSON.stringify(response);
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      _.assign(finalResource, input);
-      it('gets the last operation Result', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource);
-        apiserver.getOperationResponse(opts)
-          .then(res => {
-            expect(res).to.eql(response);
-            done();
-            verify();
+    describe('getResourceState', () => {
+      it('Gets state of resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getResourceState({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP
           })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource, 409);
-        return apiserver.getOperationResponse(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('#getOperationStatus', () => {
-      const opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId'
-      };
-      const finalResource = _.cloneDeep(sampleDeploymentResource);
-      it('gets the operation status', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource);
-        apiserver.getOperationStatus(opts)
           .then(res => {
-            expect(res).to.eql({
-              state: 'in_progress'
-            });
-            done();
+            expect(res).to.eql(sampleDeploymentResource.status.state);
             verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockGetResource('backup', 'defaultbackup', 'fakeOperationId', finalResource, 409);
-        return apiserver.getOperationStatus(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
-          });
-      });
-    });
-
-    describe('#updateOperationStatus', () => {
-      let opts = {
-        resourceId: 'fakeResourceId',
-        operationName: 'backup',
-        operationType: 'defaultbackup',
-        operationId: 'fakeOperationId',
-        stateValue: 'in_progress',
-      };
-      let input = {
-        status: {
-          state: opts.stateValue,
-        }
-      };
-      let finalResource = _
-        .chain(sampleBackupResource)
-        .cloneDeep()
-        .value();
-      _.assign(finalResource.status, input.status);
-      it('updates the operation status', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationStatus(opts)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql(opts.stateValue);
-            expect(res.body.status.error).to.eql(sampleBackupResource.status.error);
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('updates the operation status and error if both are present', done => {
-        opts = {
-          resourceId: 'fakeResourceId',
-          operationName: 'backup',
-          operationType: 'defaultbackup',
-          operationId: 'fakeOperationId',
-          stateValue: 'in_progress',
-          error: {
-            name: 'errorVal'
-          }
-        };
-        input = {
-          status: {
-            state: opts.stateValue,
-            error: JSON.stringify(opts.error)
-          }
-        };
-        finalResource = _
-          .chain(sampleBackupResource)
-          .cloneDeep()
-          .value();
-        _.assign(finalResource.status, input.status);
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationStatus(opts)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql(opts.stateValue);
-            expect(res.body.status.error).to.eql(JSON.stringify(opts.error));
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('updates the operation error only and retain state', done => {
-        opts = {
-          resourceId: 'fakeResourceId',
-          operationName: 'backup',
-          operationType: 'defaultbackup',
-          operationId: 'fakeOperationId',
-          error: {
-            name: 'errorVal'
-          }
-        };
-        input = {
-          status: {
-            error: JSON.stringify(opts.error)
-          }
-        };
-        finalResource = _
-          .chain(sampleBackupResource)
-          .cloneDeep()
-          .value();
-        _.assign(finalResource.status, input.status);
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationStatus(opts)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql(sampleBackupResource.status.state);
-            expect(res.body.status.error).to.eql(JSON.stringify(opts.error));
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('updates the operation response only and retain state and error', done => {
-        opts = {
-          resourceId: 'fakeResourceId',
-          operationName: 'backup',
-          operationType: 'defaultbackup',
-          operationId: 'fakeOperationId',
-          response: {
-            name: 'fakeResponse'
-          }
-        };
-        input = {
-          status: {
-            response: JSON.stringify(opts.response)
-          }
-        };
-        finalResource = _
-          .chain(sampleBackupResource)
-          .cloneDeep()
-          .value();
-        _.assign(finalResource.status, input.status);
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationStatus(opts)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql(sampleBackupResource.status.state);
-            expect(res.body.status.error).to.eql(sampleBackupResource.status.error);
-            expect(res.body.status.response).to.eql(JSON.stringify(opts.response));
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('updates the operation response, state and error', done => {
-        opts = {
-          resourceId: 'fakeResourceId',
-          operationName: 'backup',
-          operationType: 'defaultbackup',
-          operationId: 'fakeOperationId',
-          response: {
-            name: 'fakeResponse'
-          },
-          stateValue: 'fakeState',
-          error: {
-            name: 'errorVal'
-          }
-        };
-        input = {
-          status: {
-            response: JSON.stringify(opts.response),
-            state: opts.stateValue,
-            error: JSON.stringify(opts.error)
-          }
-        };
-        finalResource = _
-          .chain(sampleBackupResource)
-          .cloneDeep()
-          .value();
-        _.assign(finalResource.status, input.status);
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input);
-        apiserver.updateOperationStatus(opts)
-          .then(res => {
-            expect(res.statusCode).to.eql(200);
-            expect(res.body).to.eql(finalResource);
-            expect(res.body.status.state).to.eql(input.status.state);
-            expect(res.body.status.error).to.eql(input.status.error);
-            expect(res.body.status.response).to.eql(input.status.response);
-            done();
-            verify();
-          })
-          .catch(done);
-      });
-      it('throws error if api call is errored', done => {
-        nockPatchResourceStatus('backup', 'defaultbackup', 'fakeOperationId', finalResource, input, 409);
-        return apiserver.updateOperationStatus(opts)
-          .catch(err => {
-            expect(err).to.have.status(409);
-            done();
           });
       });
     });

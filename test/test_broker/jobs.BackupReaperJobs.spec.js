@@ -31,19 +31,19 @@ describe('Jobs', function () {
     const blueprintContainer = `${backupStore.containerPrefix}-blueprint`;
     const root_folder = CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME;
     const deploymentName = CONST.FABRIK_INTERNAL_MONGO_DB.INSTANCE_ID;
-    const started18DaysPrior = filename.isoDate(moment()
-      .subtract(config.backup.retention_period_in_days + 4, 'days').toISOString());
-    const started16DaysPrior = filename.isoDate(moment()
-      .subtract(config.backup.retention_period_in_days + 2, 'days').toISOString());
+    const started33DaysPrior = filename.isoDate(moment()
+      .subtract(config.backup.retention_period_in_days + CONST.BACKUP_REAPER_BUFFER_DURATION_DAYS + 4, 'days').toISOString());
+    const started31DaysPrior = filename.isoDate(moment()
+      .subtract(config.backup.retention_period_in_days + CONST.BACKUP_REAPER_BUFFER_DURATION_DAYS + 2, 'days').toISOString());
     const prefix = `${space_guid}/backup/${service_id}.${instance_id}`;
     const prefixOob = `${root_folder}/backup/${deploymentName}`;
-    const fileName16Daysprior = `${prefix}.${backup_guid}.${started16DaysPrior}.json`;
-    const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started18DaysPrior}.json`;
+    const fileName16Daysprior = `${prefix}.${backup_guid}.${started31DaysPrior}.json`;
+    const fileName18DaysPrior = `${prefix}.${backup_guid2}.${started33DaysPrior}.json`;
     const pathname16 = `/${container}/${fileName16Daysprior}`;
     const pathname18 = `/${container}/${fileName18DaysPrior}`;
     //For OOB
-    const fileName16DayspriorOob = `${prefixOob}.${backup_guidOob}.${started16DaysPrior}.json`;
-    const fileName18DaysPriorOob = `${prefixOob}.${backup_guid2Oob}.${started18DaysPrior}.json`;
+    const fileName16DayspriorOob = `${prefixOob}.${backup_guidOob}.${started31DaysPrior}.json`;
+    const fileName18DaysPriorOob = `${prefixOob}.${backup_guid2Oob}.${started33DaysPrior}.json`;
     const pathname16Oob = `/${container}/${fileName16DayspriorOob}`;
     const pathname18Oob = `/${container}/${fileName18DaysPriorOob}`;
 
@@ -58,7 +58,7 @@ describe('Jobs', function () {
       type: 'online',
       state: 'succeeded',
       backup_guid: backup_guid,
-      started_at: started16DaysPrior,
+      started_at: started31DaysPrior,
       agent_ip: mocks.agent.ip,
       service_id: service_id,
       instance_guid: instance_id
@@ -68,7 +68,7 @@ describe('Jobs', function () {
       type: 'online',
       state: 'succeeded',
       backup_guid: backup_guidOob,
-      started_at: started16DaysPrior,
+      started_at: started31DaysPrior,
       agent_ip: mocks.agent.ip,
       deployment_name: deploymentName,
       container: blueprintContainer
@@ -78,7 +78,7 @@ describe('Jobs', function () {
       type: 'online',
       state: 'succeeded',
       backup_guid: backup_guid2,
-      started_at: started18DaysPrior,
+      started_at: started33DaysPrior,
       agent_ip: mocks.agent.ip,
       service_id: service_id,
       instance_guid: instance_id
@@ -88,7 +88,7 @@ describe('Jobs', function () {
       type: 'online',
       state: 'succeeded',
       backup_guid: backup_guid2Oob,
-      started_at: started18DaysPrior,
+      started_at: started33DaysPrior,
       agent_ip: mocks.agent.ip,
       deployment_name: deploymentName,
       container: blueprintContainer

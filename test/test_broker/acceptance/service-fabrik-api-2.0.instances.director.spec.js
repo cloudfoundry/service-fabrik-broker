@@ -214,7 +214,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -255,7 +255,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -298,7 +298,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
           return chai
             .request(apps.external)
@@ -399,7 +399,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
-          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
 
           return chai
@@ -748,7 +748,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborting',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
@@ -787,7 +787,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborted',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai
             .request(apps.external)
@@ -826,7 +826,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'aborted',
               response: '{"guid": "some_guid"}'
             }
-          }, 2);
+          });
           return chai
             .request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/backup`)
@@ -863,7 +863,9 @@ describe('service-fabrik-api-sf2.0', function () {
           secret: 'hugo',
           started_at: started_at,
           trigger: 'online',
-          restore_dates: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+          restore_dates: {
+            succeeded: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+          }
         };
 
         function getDateHistory(days) {
@@ -871,7 +873,9 @@ describe('service-fabrik-api-sf2.0', function () {
           for (let i = 1; i <= days; i++) {
             restoreHistory.push(moment(time).subtract(i, 'days').toDate().toISOString());
           }
-          return restoreHistory;
+          return {
+            succeeded: restoreHistory
+          };
         }
         const args = {
           backup_guid: backup_guid,
@@ -960,7 +964,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(400);
-              expect(res.text).to.contain(`Invalid date ${requestTimeStamp} out of range of ${config.backup.retention_period_in_days} days.`);
+              expect(res.text).to.contain(`Date '${requestTimeStamp}' is not epoch milliseconds or out of range of ${config.backup.retention_period_in_days} days.`);
               mocks.verify();
             });
         });
@@ -1196,7 +1200,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1299,6 +1303,69 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.startRestore();
+          mocks.cloudProvider.download(restorePathname, restoreMetadata);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.instance_guid).to.equal(instance_id);
+            expect(body.username).to.equal(username);
+            expect(body.backup_guid).to.equal(backup_guid);
+            expect(body.state).to.equal('processing');
+            expect(body.restore_dates.succeeded.length).to.equal(2);
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+
+          return support.jwt
+            .sign({
+              username: username
+            }, name, args)
+            .then(token => chai
+              .request(apps.internal)
+              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+              .send({
+                plan_id: plan_id,
+                service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: organization_guid,
+                  space_guid: space_guid
+                },
+                organization_guid: organization_guid,
+                space_guid: space_guid,
+                previous_values: {
+                  plan_id: plan_id,
+                  service_id: service_id
+                },
+                parameters: {
+                  'service-fabrik-operation': token
+                }
+              })
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(202);
+                expect(res.body).to.have.property('operation');
+                const operation = utils.decodeBase64(res.body.operation);
+                expect(operation.type).to.equal('update');
+                expect(operation.subtype).to.equal('restore');
+                expect(operation).to.have.property('agent_ip');
+                mocks.verify();
+              })
+            );
+        });
+
+        it('should receive the update request from cloud controller and start the restore - no restore history', function () {
+          mocks.director.getDeploymentVms(deployment_name);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.startRestore();
+          mocks.cloudProvider.download(restorePathname, new NotFound('Not Found'));
           mocks.cloudProvider.upload(restorePathname, body => {
             expect(body.instance_guid).to.equal(instance_id);
             expect(body.username).to.equal(username);
@@ -1452,7 +1519,77 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should download the restore logs and update the metadata but don\'t schedule backup', function () {
+        it('should download the restore logs and update the metadata - shoudn\'t schedule backup (duplicate check)  ', function () {
+          const state = 'succeeded';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: '2015-11-18T11:28:44Z'
+          };
+          const restoreLogs = [{
+              time: '2015-11-18T11:28:40+00:00',
+              level: 'info',
+              msg: 'Downloading tarball ...'
+            }, {
+              time: '2015-11-18T11:28:42+00:00',
+              level: 'info',
+              msg: 'Extracting tarball ...'
+            },
+            {
+              time: '2015-11-18T11:28:44+00:00',
+              level: 'info',
+              msg: 'Restore finished'
+            }
+          ];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: {
+              succeeded: ['2015-11-18T11:28:44.000Z']
+            }
+          }), 2);
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(restorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined;
+            return true;
+          });
+          mocks.cloudProvider.headObject(restorePathname);
+          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockTTL: Infinity,
+                lockTime: new Date(),
+                lockedResourceDetails: {}
+              })
+            }
+          });
+          return chai
+            .request(apps.internal)
+            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', broker_api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64(restoreOperation)
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body.state).to.equal(state);
+              expect(res.body).to.have.property('description');
+              mocks.verify();
+            });
+        });
+
+        it('should download the restore logs and update the metadata but don\'t schedule backup (failed restore)', function () {
           const state = 'failed';
           const restoreState = {
             state: state,
@@ -1735,7 +1872,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'deleted',
               response: '{}'
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
@@ -1762,7 +1899,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
               error: JSON.stringify(new errors.Forbidden('Delete of scheduled backup not permitted within retention period of 14 days'))
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           return chai.request(apps.external)
@@ -1787,7 +1924,7 @@ describe('service-fabrik-api-sf2.0', function () {
               state: 'deleted',
               response: '{}'
             }
-          }, 3);
+          }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
           mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);

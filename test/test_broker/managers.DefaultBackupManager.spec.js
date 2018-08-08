@@ -25,7 +25,7 @@ const resultOptions = {
 const DefaultBackupManager = proxyquire('../../managers/backup-manager/DefaultBackupManager', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
-      'getOperationOptions': function (opts) {
+      'getOptions': function (opts) {
         DefaultBackupManagerDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }

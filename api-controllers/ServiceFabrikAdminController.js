@@ -32,13 +32,15 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
+    const runImmediately = (req.body.run_immediately === 'true' ? true : false);
 
     function updateDeployment() {
       return self.fabrik
         .createOperation('update', {
           deployment: deploymentName,
           username: req.user.name,
-          arguments: req.body
+          arguments: req.body,
+          runImmediately: runImmediately
         }).invoke()
         .then(body => {
           res.format({
@@ -532,7 +534,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           deploymentName: req.params.name
         };
 
-        if (!opts.backup_guid && !opts.time_stamp) {
+        if (!opts.backup_guid) {
           throw new BadRequest('Invalid input as backup_guid or time_stamp not present');
         } else if (opts.backup_guid) {
           this.validateUuid(opts.backup_guid, 'Backup GUID');
@@ -544,7 +546,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         return oobBackupManager
           .startRestore(opts)
           .then(result => {
-            body = _.pick(result, 'operation', opts.backup_guid ? 'backup_guid' : 'time_stamp');
+            body = _.pick(result, 'operation', 'backup_guid');
             body.token = utils.encodeBase64(result);
             return registerOperationCompletionStatusPoller(req.params.name, 'restore', body,
               new Date().toISOString(), req.body.bosh_director);

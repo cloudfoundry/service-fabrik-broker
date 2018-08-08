@@ -122,7 +122,7 @@ class FabrikBaseController extends BaseController {
     if (!epochDateString ||
       isNaN(epochDateString) ||
       _.lt(new Date(epochRequestDate), new Date(Date.now() - retentionMillis))) {
-      throw new BadRequest(`Invalid date ${epochDateString} out of range of ${config.backup.retention_period_in_days} days.`);
+      throw new BadRequest(`Date '${epochDateString}' is not epoch milliseconds or out of range of ${config.backup.retention_period_in_days} days.`);
     }
   }
 
@@ -130,13 +130,13 @@ class FabrikBaseController extends BaseController {
     return this.backupStore
       .getRestoreFile(options)
       .then(metdata => {
-        let restoreDates = _.get(metdata, 'restore_dates');
+        let restoreDates = _.get(metdata, 'restore_dates.succeeded');
         if (!_.isEmpty(restoreDates)) {
           _.remove(restoreDates, date => {
-            const olderDateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
-            return Date.parse(date) < olderDateTillRestoreAllowed;
+            const dateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
+            return _.lt(new Date(date), new Date(dateTillRestoreAllowed));
           });
-          //after removing all older restore 'restoreDates' conatains dates within allowed time
+          //after removing all older restore, 'restoreDates' contains dates within allowed time
           // dates count should be less than 'config.backup.num_of_allowed_restores'
           if (restoreDates.length >= config.backup.num_of_allowed_restores) {
             throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
