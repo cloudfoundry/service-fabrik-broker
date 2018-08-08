@@ -289,6 +289,18 @@ describe('eventmesh', () => {
             });
           });
       });
+      it('should successfully unlock resource in first try if lock does not exist', () => {
+        const lockManager = new apiServerLockManager();
+        return lockManager.unlock('lockId4')
+          .then(() => {
+            expect(deleteResourceSpy.callCount).to.equal(1);
+            expect(deleteResourceSpy.firstCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+              resourceId: 'lockId4'
+            });
+          });
+      });
       it('should fail to unlock resource after multiple retries', () => {
         const lockManager = new apiServerLockManager();
         return lockManager.unlock('lockId5', 3, 100)
