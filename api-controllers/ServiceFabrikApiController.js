@@ -434,7 +434,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
-    const instanceId = req.body.source_instance_id || req.params.instance_id;
+    const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     const serviceId = req.manager.service.id;
     const planId = req.manager.plan.id;
     const bearer = _
@@ -463,7 +463,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
           tenant_id: tenantId,
-          instance_id: instanceId,
+          instance_id: sourceInstanceId,
           service_id: serviceId
         } : {
           backup_guid: backupGuid,
@@ -476,8 +476,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
               _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
             .then(successfulBackup => {
               if (_.isEmpty(successfulBackup)) {
-                logger.error(`No successful backup found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)}`);
-                throw new NotFound(`Cannot restore service instance '${instanceId}' as no successful backup found before time_stamp ${timeStamp}`);
+                logger.error(`No successful backup found for service instance '${sourceInstanceId}' before time_stamp ${new Date(timeStamp)}`);
+                throw new NotFound(`Cannot restore service instance '${sourceInstanceId}' as no successful backup found before time_stamp ${timeStamp}`);
               } else {
                 return successfulBackup;
               }
