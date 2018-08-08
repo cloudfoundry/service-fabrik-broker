@@ -109,7 +109,7 @@ class LockManager {
     _.extend(opts, {
       'lockTime': opts.lockTime ? opts.lockTime : currentTime
     });
-    logger.debug(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
+    logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
@@ -135,7 +135,7 @@ class LockManager {
           });
         }
       })
-      .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
+      .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId}`))
       .catch(NotFound, () => {
         return eventmesh.apiServerClient.createResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
@@ -143,7 +143,7 @@ class LockManager {
             resourceId: resourceId,
             options: opts
           })
-          .tap(() => logger.debug(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
+          .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `));
       })
       .catch(Conflict, () => {
         return eventmesh.apiServerClient.getResource({
@@ -174,7 +174,7 @@ class LockManager {
     assert.ok(resourceId, `Parameter 'resourceId' is required to release lock`);
     maxRetryCount = maxRetryCount || CONST.ETCD.MAX_RETRY_UNLOCK;
     retryDelay = retryDelay || CONST.APISERVER.RETRY_DELAY;
-    logger.debug(`Attempting to unlock resource ${resourceId}`);
+    logger.info(`Attempting to unlock resource ${resourceId}`);
     return utils.retry(tries => {
       logger.info(`+-> Attempt ${tries + 1} to unlock resource ${resourceId}`);
       return eventmesh.apiServerClient.deleteResource({
@@ -182,10 +182,10 @@ class LockManager {
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
           resourceId: resourceId
         })
-        .tap(() => logger.debug(`Successfully unlocked resource ${resourceId} `))
+        .tap(() => logger.info(`Successfully unlocked resource ${resourceId} `))
         .catch(err => {
           if (err instanceof NotFound) {
-            logger.debug(`Successfully Unlocked resource ${resourceId} `);
+            logger.info(`Successfully Unlocked resource ${resourceId} `);
             return;
           }
           logger.error(`Could not unlock resource ${resourceId} even after ${tries + 1} retries`);
