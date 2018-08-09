@@ -240,6 +240,7 @@ module.exports = Object.freeze({
     VERSION: '1.9',
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
+    CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',

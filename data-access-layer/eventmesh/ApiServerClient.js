@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
+const yaml = require('js-yaml');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -18,6 +19,8 @@ const InternalServerError = errors.InternalServerError;
 const apiserver = new kc.Client({
   config: {
     url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
+    cert: config.apiserver.certificate,
+    key: config.apiserver.private_key,
     insecureSkipTlsVerify: true
   },
   version: CONST.APISERVER.VERSION
@@ -64,6 +67,9 @@ class ApiServerClient {
   init() {
     return Promise.try(() => {
       if (!this.ready) {
+        _.forEach(config.apiserver.crds, crdTemplate => {
+          apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+        });
         return apiserver.loadSpec()
           .then(() => {
             this.ready = true;
@@ -142,7 +148,7 @@ class ApiServerClient {
       .then(() => {
         const stream = apiserver
           .apis[resourceGroup][CONST.APISERVER.API_VERSION]
-          .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream({
+          .watch[resourceType].getStream({
             qs: {
               labelSelector: queryString ? queryString : ''
             }
@@ -169,6 +175,30 @@ class ApiServerClient {
       resourceGroup: resourceGroup,
       resourceType: resourceType
     };
+  }
+
+  registerCrds(crdJson) {
+    return Promise.try(() => this.init())
+      .then(() => {
+        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
+            body: crdJson,
+            headers: {
+              'content-type': 'application/merge-patch+json'
+            }
+          })
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          })
+          .catch(NotFound, () => {
+            logger.info('CRD not yet registered, registering it now..');
+            return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
+              body: crdJson
+            });
+          });
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
   }
 
   /**
@@ -201,28 +231,20 @@ class ApiServerClient {
         'options': JSON.stringify(opts.options)
       },
     };
+
+    if (opts.status) {
+      const statusJson = {};
+      _.forEach(opts.status, (val, key) => {
+        statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+      });
+      resourceBody.status = statusJson;
+    }
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
           body: resourceBody
         }))
-      .then(resource => {
-        if (opts.status) {
-          const statusJson = {};
-          _.forEach(opts.status, (val, key) => {
-            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
-          });
-          return Promise.try(() => this.init())
-            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-                body: {
-                  'status': statusJson
-                }
-              }));
-        }
-        return resource;
-      })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -244,39 +266,31 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
     assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to update resource`);
     return Promise.try(() => {
-        if (opts.options || opts.metadata) {
-          const patchBody = {};
-          if (opts.metadata) {
-            patchBody.metadata = opts.metadata;
-          }
-          if (opts.options) {
-            patchBody.spec = {
-              'options': JSON.stringify(opts.options)
-            };
-          }
-          return Promise.try(() => this.init())
-            .then(() => apiserver
-              .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
-                body: patchBody
-              }));
+        const patchBody = {};
+        if (opts.metadata) {
+          patchBody.metadata = opts.metadata;
         }
-      })
-      .then(resource => {
+        if (opts.options) {
+          patchBody.spec = {
+            'options': JSON.stringify(opts.options)
+          };
+        }
         if (opts.status) {
           const statusJson = {};
           _.forEach(opts.status, (val, key) => {
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
-          return Promise.try(() => this.init())
-            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-                body: {
-                  'status': statusJson
-                }
-              }));
+          patchBody.status = statusJson;
         }
-        return resource;
+        return Promise.try(() => this.init())
+          .then(() => apiserver
+            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+              body: patchBody,
+              headers: {
+                'content-type': 'application/merge-patch+json'
+              }
+            }));
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);

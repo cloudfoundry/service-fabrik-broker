@@ -2,9 +2,11 @@
 
 const pubsub = require('pubsub-js');
 const _ = require('lodash');
+const yaml = require('js-yaml');
 const Promise = require('bluebird');
 const eventmesh = require('../../../data-access-layer/eventmesh');
 const CONST = require('../../../common/constants');
+const config = require('../../../common/config');
 const logger = require('../../../common/logger');
 const lockManager = eventmesh.lockManager;
 const errors = require('../../../common/errors');
@@ -90,7 +92,9 @@ UnlockResourcePoller.pollers = {};
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'internal') {
-    UnlockResourcePoller.start();
+    const lockCrdEncodedTemplate = config.apiserver.crds[`${CONST.APISERVER.RESOURCE_GROUPS.LOCK}_${CONST.APISERVER.API_VERSION}_${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}.yaml`];
+    return eventmesh.apiServerClient.registerCrds(yaml.safeLoad(Buffer.from(lockCrdEncodedTemplate, 'base64')))
+      .then(() => UnlockResourcePoller.start());
   }
 });
 module.exports = UnlockResourcePoller;

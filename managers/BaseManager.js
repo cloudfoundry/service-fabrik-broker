@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const yaml = require('js-yaml');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
@@ -11,6 +12,12 @@ const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Conflict = errors.Conflict;
 
 class BaseManager {
+
+  registerCrds(resourceGroup, resourceType) {
+    const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
+    return eventmesh.apiServerClient.registerCrds(yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64')));
+  }
+
   registerWatcher(resourceGroup, resourceType, queryString) {
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
     return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, this.handleResource.bind(this), queryString)
