@@ -127,6 +127,12 @@ class FabrikBaseController extends BaseController {
   }
 
   validateRestoreQuota(options) {
+    const isPitrEnabled = this.getService(options.service_id).pitr;
+    if (!isPitrEnabled) {
+      // For non pitr supported services skipping quota check
+      logger.debug('Non pitr service', options);
+      return true;
+    }
     return this.backupStore
       .getRestoreFile(options)
       .then(metdata => {
@@ -217,6 +223,10 @@ class FabrikBaseController extends BaseController {
 
   createInstance(instance_id, service_id, plan_id, context) {
     return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+  }
+
+  getService(service_id) {
+    return catalog.getService(service_id);
   }
 
   getPlan(plan_id) {

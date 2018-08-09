@@ -8,6 +8,7 @@ const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
+const Service = require('../../../common/models').Service;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
@@ -1700,6 +1701,120 @@ describe('service-fabrik-api-sf2.0', function () {
               expect(res.body).to.have.property('description');
               mocks.verify();
             });
+        });
+
+        describe('#non-pitr-services:', function () {
+          const indexOfService = _.findIndex(config.services, service => service.pitr === true);
+          const non_pitr_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
+          const non_pitr_service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
+          const nonPitrRestorePrefix = `${space_guid}/restore/${non_pitr_service_id}.${instance_id}`;
+          const nonPitrRestoreFilename = `${nonPitrRestorePrefix}.json`;
+          const nonPitrRestorePathname = `/${container}/${nonPitrRestoreFilename}`;
+          let getServiceStub;
+          before(function () {
+            config.services[indexOfService].pitr = false;
+            getServiceStub = sinon.stub(catalog, 'getService');
+            getServiceStub.withArgs(config.services[indexOfService].id).returns(new Service(config.services[indexOfService]));
+          });
+
+          after(function () {
+            config.services[indexOfService].pitr = true;
+          });
+
+          this.afterEach(function () {
+            getServiceStub.restore();
+          });
+
+          it('should initiate a start-restore operation at cloud controller via a service instance update: Non PITR service', function () {
+            mocks.uaa.tokenKey();
+            mocks.cloudController.getServiceInstance(instance_id, {
+              space_guid: space_guid,
+              service_plan_guid: plan_guid
+            });
+            mocks.cloudController.findServicePlan(instance_id, plan_id);
+            mocks.cloudController.getSpaceDevelopers(space_guid);
+            mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+            mocks.cloudProvider.download(backupPathname, backupMetadata);
+            mocks.cloudController.updateServiceInstance(instance_id, body => {
+              const token = _.get(body.parameters, 'service-fabrik-operation');
+              return support.jwt.verify(token, name, args);
+            });
+            return chai
+              .request(apps.external)
+              .post(`${base_url}/service_instances/${instance_id}/restore`)
+              .set('Authorization', authHeader)
+              .send({
+                backup_guid: backup_guid
+              })
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(202);
+                expect(res.body).to.have.property('guid');
+                expect(getServiceStub).to.have.been.calledOnce;
+                mocks.verify();
+              });
+          });
+
+          it('should download the restore logs and update the metadata - and shouldn\'t schedule backup - Non PITR service', function () {
+            const state = 'succeeded';
+            const restoreState = {
+              state: state,
+              stage: 'Finished',
+              updated_at: new Date(Date.now())
+            };
+            const restoreLogs = [{
+              time: '2015-11-18T11:28:40+00:00',
+              level: 'info',
+              msg: 'Downloading tarball ...'
+            }, {
+              time: '2015-11-18T11:28:42+00:00',
+              level: 'info',
+              msg: 'Extracting tarball ...'
+            }];
+            const restoreLogsStream = _
+              .chain(restoreLogs)
+              .map(JSON.stringify)
+              .join('\n')
+              .value();
+            mocks.cloudProvider.download(nonPitrRestorePathname, {}, 2);
+            mocks.agent.lastRestoreOperation(restoreState);
+            mocks.agent.getRestoreLogs(restoreLogsStream);
+            mocks.cloudProvider.upload(nonPitrRestorePathname, body => {
+              expect(body.logs).to.eql(restoreLogs);
+              expect(body.state).to.equal(state);
+              expect(body.finished_at).to.not.be.undefined;
+              return true;
+            });
+            mocks.cloudProvider.headObject(nonPitrRestorePathname);
+            mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+            mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+              spec: {
+                options: JSON.stringify({
+                  lockTTL: Infinity,
+                  lockTime: new Date(),
+                  lockedResourceDetails: {}
+                })
+              }
+            });
+            return chai
+              .request(apps.internal)
+              .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .query({
+                service_id: non_pitr_service_id,
+                plan_id: non_pitr_plan_id,
+                operation: utils.encodeBase64(restoreOperation)
+              })
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(200);
+                expect(res.body.state).to.equal(state);
+                expect(res.body).to.have.property('description');
+                mocks.verify();
+              });
+          });
+
         });
 
       });

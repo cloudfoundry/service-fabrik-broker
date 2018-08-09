@@ -542,10 +542,13 @@ defaults: &defaults
       - lifecycle
       - credentials
       - multi_tenancy
-  ########################################
-  # SERVICES CATALOG - BLUEPRINT SERVICE #
-  ########################################
+  ####################
+  # SERVICES CATALOG #
+  ####################
   services:
+  #####################
+  # BLUEPRINT SERVICE #
+  #####################
   - &blueprint_service
     id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
     name: 'blueprint'
@@ -570,6 +573,7 @@ defaults: &defaults
     - cf
     actions: Blueprint
     backup_interval: '8 hours'
+    pitr: true
     plans:
     ###########################
     # CONTAINER SERVICE PLANS #
