@@ -95,7 +95,7 @@ class ScheduleBackupJob extends BaseJob {
         if (latestSuccessIndex === -1) {
           //No successful backup beyond retention period.
           filteredOldBackups = sortedBackups;
-          transactionLogsDeleteBefore = new Date() - (config.backup.retention_period_in_days) * 60 * 60 * 24 * 1000;
+          transactionLogsDeleteBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
         } else {
           //Should return backups before a successful backup.
           filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
@@ -115,6 +115,7 @@ class ScheduleBackupJob extends BaseJob {
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
       .then(oldBackups => filterOldBackups(oldBackups))
       .map(backup => {
+        //Deleting base backup/backup guids.
         logger.debug(`Backup meta info : ${JSON.stringify(backup)}`);
         if (backup.trigger === CONST.BACKUP.TRIGGER.SCHEDULED || instanceDeleted) {
           //on-demand backups must be deleted after instance deletion.
@@ -131,6 +132,7 @@ class ScheduleBackupJob extends BaseJob {
         }
       })
       .then(deletedBackupGuids => {
+        // Deleting transaction logs from service-container.
         let deletedTransactionLogFilesCount = 0;
         return backupStore.listFilesOlderThan(listOptions, transactionLogsDeleteBefore, container)
           .map(transactionLogsFile => {
