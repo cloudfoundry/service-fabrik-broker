@@ -6,14 +6,6 @@ const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
-function enableServiceFabrikV2() {
-  config.enable_service_fabrik_v2 = true;
-}
-
-function disableServiceFabrikV2() {
-  config.enable_service_fabrik_v2 = false;
-}
-
 describe('service-fabrik-api-2.0', function () {
   describe('backups', function () {
     /* jshint expr:true */
@@ -65,7 +57,6 @@ describe('service-fabrik-api-2.0', function () {
       };
 
       before(function () {
-        enableServiceFabrikV2();
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
@@ -75,7 +66,6 @@ describe('service-fabrik-api-2.0', function () {
       });
 
       after(function () {
-        disableServiceFabrikV2();
         backupStore.cloudProvider = iaas.cloudProvider;
       });
 
