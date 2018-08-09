@@ -277,7 +277,7 @@ class BackupStore {
       .then(isoDate => this.listBackupFiles(options, getPredicate(isoDate), iteratees));
   }
 
-  listTransactionLogsOlderThan(options, dateOlderThan, container) {
+  listFilesOlderThan(options, dateOlderThan, container) {
     const iteratees = ['lastModified'];
     let prefix = options.prefix;
 

@@ -95,7 +95,7 @@ class ScheduleBackupJob extends BaseJob {
         if (latestSuccessIndex === -1) {
           //No successful backup beyond retention period.
           filteredOldBackups = sortedBackups;
-          transactionLogsDeleteBefore = new Date();
+          transactionLogsDeleteBefore = new Date() - (config.backup.retention_period_in_days) * 60 * 60 * 24 * 1000;
         } else {
           //Should return backups before a successful backup.
           filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
@@ -106,6 +106,11 @@ class ScheduleBackupJob extends BaseJob {
     }
 
     const options = _.omit(job.attrs.data, 'trigger', 'type');
+    const serviceName = catalog.getService(job.attrs.data.service_id).name;
+    const listOptions = {
+      prefix: `${serviceName}/logs/${job.attrs.data.instance_id}`
+    };
+    const container = `${backupStore.containerPrefix}-${serviceName}`;
     return backupStore
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
       .then(oldBackups => filterOldBackups(oldBackups))
@@ -126,13 +131,8 @@ class ScheduleBackupJob extends BaseJob {
         }
       })
       .then(deletedBackupGuids => {
-        const serviceName = catalog.getService(job.attrs.data.service_id).name;
-        const listOptions = {
-          prefix: `${serviceName}/logs/${job.attrs.data.instance_id}`
-        };
-        const container = `${backupStore.containerPrefix}-${serviceName}`;
         let deletedTransactionLogFilesCount = 0;
-        return backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsDeleteBefore, container)
+        return backupStore.listFilesOlderThan(listOptions, transactionLogsDeleteBefore, container)
           .map(transactionLogsFile => {
             deletedTransactionLogFilesCount = deletedTransactionLogFilesCount + 1;
             return backupStore.cloudProvider.remove(container, transactionLogsFile.name);
@@ -158,10 +158,13 @@ class ScheduleBackupJob extends BaseJob {
         }
         logger.info(`Instance deleted. Checking if there are any more backups for :${options.instance_id}`);
         const backupStartedBefore = new Date().toISOString();
-        return backupStore
-          .listBackupFilenames(backupStartedBefore, options)
-          .then(listOfFiles => {
-            if (listOfFiles.length === 0) {
+        transactionLogsDeleteBefore = new Date().toISOString();
+        return Promise.all([
+            backupStore.listBackupFilenames(backupStartedBefore, options),
+            backupStore.listFilesOlderThan(listOptions, transactionLogsDeleteBefore, container)
+          ])
+          .spread((listOfBackups, listOfTransactionLogs) => {
+            if (listOfBackups.length === 0 && listOfTransactionLogs.length === 0) {
               //Instance is deleted and no more backups present. Cancel the backup scheduler for the instance
               logger.info(`-> No more backups for the deleted instance : ${options.instance_id}. Cancelling backup scheduled Job`);
               return ScheduleManager
@@ -177,7 +180,7 @@ class ScheduleBackupJob extends BaseJob {
                 });
 
             } else {
-              logger.info(`Schedule Job for instance  ${options.instance_id} cannot be cancelled yet as ${listOfFiles.length} backup(s) exist`);
+              logger.info(`Schedule Job for instance  ${options.instance_id} cannot be cancelled yet as ${listOfBackups.length} backup(s) exist`);
               return deleteResponse;
             }
           });

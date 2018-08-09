@@ -13,7 +13,7 @@ exports.upload = upload;
 exports.headObject = headObject;
 exports.getContainer = getContainer;
 exports.list = list;
-exports.listTransactionLogs = listTransactionLogs;
+exports.listBlobs = listBlobs;
 exports.remove = remove;
 
 function auth(times) {
@@ -128,7 +128,7 @@ function list(containerName, prefix, filenames, responseStatusCode, times, lastM
     });
 }
 
-function listTransactionLogs(containerName, prefix, fileObjects) {
+function listBlobs(containerName, prefix, fileObjects, times) {
   const files = _
     .chain(fileObjects)
     .map(fileObject => ({
@@ -146,6 +146,7 @@ function listTransactionLogs(containerName, prefix, fileObjects) {
     .replyContentLength()
     .get(`/${containerName}`)
     .query(qs)
+    .times(times || 1)
     .reply(200, files, {
       'X-Container-Object-Count': '42'
     });
