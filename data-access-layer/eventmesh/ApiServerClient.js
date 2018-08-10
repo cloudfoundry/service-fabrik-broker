@@ -189,12 +189,12 @@ class ApiServerClient {
           .catch(err => {
             return convertToHttpErrorAndThrow(err);
           })
-          .catch(NotFound, () => {
-            logger.info('CRD not yet registered, registering it now..');
-            return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
-              body: crdJson
-            });
-          });
+      })
+      .catch(NotFound, () => {
+        logger.info('CRD not yet registered, registering it now..');
+        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
+          body: crdJson
+        });
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
