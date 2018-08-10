@@ -250,18 +250,14 @@ module.exports = Object.freeze({
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
-      BIND: 'bind.servicefabrik.io',
-      BACKUP: 'backup.servicefabrik.io'
+      BACKUP: 'backup.servicefabrik.io',
+      RESTORE: 'restore.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
-      DOCKER: 'dockers',
-      VIRTUALHOST: 'virtualhosts',
-      DIRECTOR_BIND: 'directorbinds',
-      DOCKER_BIND: 'dockerbinds',
-      VIRTUALHOST_BIND: 'virtualhostbinds',
-      DEFAULT_BACKUP: 'defaultbackups'
+      DEFAULT_BACKUP: 'defaultbackups',
+      DEFAULT_RESTORE: 'defaultrestores'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
@@ -271,6 +267,7 @@ module.exports = Object.freeze({
       SUCCEEDED: 'succeeded',
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
+      ABORT: 'abort',
       ABORTED: 'aborted',
       UPDATE: 'update'
     },

@@ -256,6 +256,30 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  getRestoreOptions(req, metadata) {
+    return Promise.try(() => {
+      const restoreOptions = {
+        plan_id: req.manager.plan.id,
+        service_id: req.manager.service.id,
+        context: req.body.context || {
+          space_guid: req.entity.tenant_id,
+          platform: CONST.PLATFORM.CF
+        },
+        instance_guid: req.params.instance_id,
+        deployment: req.manager.findDeploymentNameByInstanceId(req.params.instance_id),
+        arguments: _.assign({
+            backup: _.pick(metadata, 'type', 'secret')
+          },
+          req.body, {
+            backup_guid: _.get(metadata, 'backup_guid')
+          }),
+        username: req.user.name
+      };
+      logger.debug('Restore options:', restoreOptions)
+      return restoreOptions;
+    });
+  }
+
   startBackup(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
@@ -433,6 +457,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   startRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
+    const restoreGuid = utils.uuidV4();
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
@@ -504,18 +529,40 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         return metadata;
       })
-      .then(metadata => this.fabrik
-        .createOperation('restore', {
-          instance_id: req.params.instance_id,
-          bearer: bearer,
-          arguments: _.assign({
-            backup: _.pick(metadata, 'type', 'secret')
-          }, req.body, {
-            backup_guid: backupGuid || _.get(metadata, 'backup_guid')
-          })
+      .then(metadata => this
+        .getRestoreOptions(req, metadata)
+        .then(restoreOptions => {
+          logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
+          return lockManager.lock(req.params.instance_id, {
+              lockedResourceDetails: {
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceId: restoreGuid,
+                operation: CONST.OPERATION_TYPE.RESTORE
+              }
+            })
+            .then(() => {
+              return eventmesh.apiServerClient.createResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: restoreGuid,
+                options: restoreOptions,
+                status: {
+                  state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                  lastOperation: {},
+                  response: {}
+                }
+              })
+            })
+
         })
-        .handle(req, res)
-      );
+      )
+      .then(() => {
+        return res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
+          name: CONST.OPERATION_TYPE.RESTORE,
+          guid: restoreGuid
+        });
+      });
   }
 
   getLastRestore(req, res) {

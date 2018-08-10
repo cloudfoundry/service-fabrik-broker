@@ -16,6 +16,18 @@ class BaseDirectorService extends BaseService {
     this.agent = new Agent(this.settings.agent);
   }
 
+  getTenantGuid(context) {
+    if (context.platform === CONST.PLATFORM.CF) {
+      return context.space_guid;
+    } else if (context.platform === CONST.PLATFORM.K8S) {
+      return context.namespace;
+    }
+  }
+
+  getDeploymentIps(deploymentName) {
+    return this.director.getDeploymentIps(deploymentName);
+  }
+
   static parseDeploymentName(deploymentName, subnet) {
     return _
       .chain(utils.deploymentNameRegExp(subnet).exec(deploymentName))

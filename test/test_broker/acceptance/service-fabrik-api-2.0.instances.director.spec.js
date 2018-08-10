@@ -837,7 +837,7 @@ describe('service-fabrik-api-sf2.0', function () {
         });
       });
 
-      describe('#restore-start', function () {
+      describe.only('#restore-start', function () {
         const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
@@ -847,8 +847,6 @@ describe('service-fabrik-api-sf2.0', function () {
         const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
-        const citrBackupPathname = `/${container}/${citrBackupFilename}`;
-        const name = 'restore';
         const backupMetadata = {
           plan_id: plan_id,
           state: 'succeeded',
@@ -877,10 +875,6 @@ describe('service-fabrik-api-sf2.0', function () {
             succeeded: restoreHistory
           };
         }
-        const args = {
-          backup_guid: backup_guid,
-          backup: _.pick(backupMetadata, 'type', 'secret')
-        };
 
         it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
           mocks.uaa.tokenKey();
@@ -1176,32 +1170,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 400 BadRequest : PITR (quota exceeded)', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
-            restore_dates: getDateHistory(11)
-          }));
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .send({
-              time_stamp: `${restoreAtEpoch}`
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(400);
-              mocks.verify();
-            });
-        });
-
-        it('should initiate a start-restore operation at cloud controller via a service instance update', function () {
+        it('should initiate a start-restore operation via apiserver', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1211,10 +1180,67 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
+          const change_body = {
+            'metadata': {
+              'name': backup_guid
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'plan_id': plan_id,
+                'service_id': service_id,
+                'context': {
+                  'space_guid': space_guid,
+                  'platform': 'cloudfoundry'
+                },
+                'instance_guid': instance_id,
+                'deployment': {
+                  'isFulfilled': false,
+                  'isRejected': false
+                },
+                'arguments': {
+                  'backup': {
+                    'type': 'online',
+                    'secret': 'hugo'
+                  }
+                }
+              })
+            }
+          };
+          const lock_body = {
+            'metadata': {
+              'name': instance_id
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'lockedResourceDetails': {
+                  'resourceGroup': 'backup.servicefabrik.io',
+                  'resourceType': 'defaultbackups',
+                  'resourceId': {
+                    'isFulfilled': true,
+                    'isRejected': false,
+                    'fulfillmentValue': 'eeb83f57-ee6b-4c46-a4da-a06741dc0436'
+                  },
+                  'operation': 'restore'
+                },
+                'lockType': 'WRITE',
+                'lockTTL': null,
+                'lockTime': '2018-08-12T14:51:27.510Z'
+              })
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
           });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, lock_body);
+          mocks.apiServerEventMesh.nockCreateResource(
+            CONST.OPERATION_TYPE.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            change_body);
+          mocks.apiServerEventMesh.nockPatchResourceStatus(
+            CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1230,7 +1256,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR', function () {
+        it('should initiate a start-restore operation via apiserver:PITR', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1240,10 +1266,67 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
+          const change_body = {
+            'metadata': {
+              'name': backup_guid
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'plan_id': plan_id,
+                'service_id': service_id,
+                'context': {
+                  'space_guid': space_guid,
+                  'platform': 'cloudfoundry'
+                },
+                'instance_guid': instance_id,
+                'deployment': {
+                  'isFulfilled': false,
+                  'isRejected': false
+                },
+                'arguments': {
+                  'backup': {
+                    'type': 'online',
+                    'secret': 'hugo'
+                  }
+                }
+              })
+            }
+          };
+          const lock_body = {
+            'metadata': {
+              'name': instance_id
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'lockedResourceDetails': {
+                  'resourceGroup': 'backup.servicefabrik.io',
+                  'resourceType': 'defaultbackups',
+                  'resourceId': {
+                    'isFulfilled': true,
+                    'isRejected': false,
+                    'fulfillmentValue': 'eeb83f57-ee6b-4c46-a4da-a06741dc0436'
+                  },
+                  'operation': 'restore'
+                },
+                'lockType': 'WRITE',
+                'lockTTL': null,
+                'lockTime': '2018-08-12T14:51:27.510Z'
+              })
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
           });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, lock_body);
+          mocks.apiServerEventMesh.nockCreateResource(
+            CONST.OPERATION_TYPE.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            change_body);
+          mocks.apiServerEventMesh.nockPatchResourceStatus(
+            CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1259,7 +1342,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR (within quota)', function () {
+        it('should initiate a start-restore operation via apiserver :PITR (within quota)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1270,10 +1353,67 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, backupMetadata);
           mocks.cloudProvider.download(restorePathname, restoreMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
+          const change_body = {
+            'metadata': {
+              'name': backup_guid
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'plan_id': plan_id,
+                'service_id': service_id,
+                'context': {
+                  'space_guid': space_guid,
+                  'platform': 'cloudfoundry'
+                },
+                'instance_guid': instance_id,
+                'deployment': {
+                  'isFulfilled': false,
+                  'isRejected': false
+                },
+                'arguments': {
+                  'backup': {
+                    'type': 'online',
+                    'secret': 'hugo'
+                  }
+                }
+              })
+            }
+          };
+          const lock_body = {
+            'metadata': {
+              'name': instance_id
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'lockedResourceDetails': {
+                  'resourceGroup': 'backup.servicefabrik.io',
+                  'resourceType': 'defaultbackups',
+                  'resourceId': {
+                    'isFulfilled': true,
+                    'isRejected': false,
+                    'fulfillmentValue': 'eeb83f57-ee6b-4c46-a4da-a06741dc0436'
+                  },
+                  'operation': 'restore'
+                },
+                'lockType': 'WRITE',
+                'lockTTL': null,
+                'lockTime': '2018-08-12T14:51:27.510Z'
+              })
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
           });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, lock_body);
+          mocks.apiServerEventMesh.nockCreateResource(
+            CONST.OPERATION_TYPE.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            change_body);
+          mocks.apiServerEventMesh.nockPatchResourceStatus(
+            CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1289,7 +1429,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR (within quota - no history)', function () {
+        it('should initiate a start-restore operation via apiserver:PITR (within quota - no history)', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1302,10 +1442,67 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
             restore_dates: undefined
           }));
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
+          const change_body = {
+            'metadata': {
+              'name': backup_guid
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'plan_id': plan_id,
+                'service_id': service_id,
+                'context': {
+                  'space_guid': space_guid,
+                  'platform': 'cloudfoundry'
+                },
+                'instance_guid': instance_id,
+                'deployment': {
+                  'isFulfilled': false,
+                  'isRejected': false
+                },
+                'arguments': {
+                  'backup': {
+                    'type': 'online',
+                    'secret': 'hugo'
+                  }
+                }
+              })
+            }
+          };
+          const lock_body = {
+            'metadata': {
+              'name': instance_id
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'lockedResourceDetails': {
+                  'resourceGroup': 'backup.servicefabrik.io',
+                  'resourceType': 'defaultbackups',
+                  'resourceId': {
+                    'isFulfilled': true,
+                    'isRejected': false,
+                    'fulfillmentValue': 'eeb83f57-ee6b-4c46-a4da-a06741dc0436'
+                  },
+                  'operation': 'restore'
+                },
+                'lockType': 'WRITE',
+                'lockTTL': null,
+                'lockTime': '2018-08-12T14:51:27.510Z'
+              })
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
           });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, lock_body);
+          mocks.apiServerEventMesh.nockCreateResource(
+            CONST.OPERATION_TYPE.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            change_body);
+          mocks.apiServerEventMesh.nockPatchResourceStatus(
+            CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, {});
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1348,155 +1545,6 @@ describe('service-fabrik-api-sf2.0', function () {
             .then(res => {
               expect(res).to.have.status(202);
               expect(res.body).to.have.property('guid');
-              mocks.verify();
-            });
-        });
-
-        it('should receive the update request from cloud controller and start the restore', function () {
-          mocks.director.getDeploymentVms(deployment_name);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.startRestore();
-          mocks.cloudProvider.download(restorePathname, restoreMetadata);
-          mocks.cloudProvider.upload(restorePathname, body => {
-            expect(body.instance_guid).to.equal(instance_id);
-            expect(body.username).to.equal(username);
-            expect(body.backup_guid).to.equal(backup_guid);
-            expect(body.state).to.equal('processing');
-            expect(body.restore_dates.succeeded.length).to.equal(2);
-            return true;
-          });
-          mocks.cloudProvider.headObject(restorePathname);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-
-          return support.jwt
-            .sign({
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(202);
-                expect(res.body).to.have.property('operation');
-                const operation = utils.decodeBase64(res.body.operation);
-                expect(operation.type).to.equal('update');
-                expect(operation.subtype).to.equal('restore');
-                expect(operation).to.have.property('agent_ip');
-                mocks.verify();
-              })
-            );
-        });
-
-        it('should receive the update request from cloud controller and start the restore - no restore history', function () {
-          mocks.director.getDeploymentVms(deployment_name);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.startRestore();
-          mocks.cloudProvider.download(restorePathname, new NotFound('Not Found'));
-          mocks.cloudProvider.upload(restorePathname, body => {
-            expect(body.instance_guid).to.equal(instance_id);
-            expect(body.username).to.equal(username);
-            expect(body.backup_guid).to.equal(backup_guid);
-            expect(body.state).to.equal('processing');
-            return true;
-          });
-          mocks.cloudProvider.headObject(restorePathname);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-
-          return support.jwt
-            .sign({
-              username: username
-            }, name, args)
-            .then(token => chai
-              .request(apps.internal)
-              .patch(`${broker_api_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-              .send({
-                plan_id: plan_id,
-                service_id: service_id,
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                },
-                organization_guid: organization_guid,
-                space_guid: space_guid,
-                previous_values: {
-                  plan_id: plan_id,
-                  service_id: service_id
-                },
-                parameters: {
-                  'service-fabrik-operation': token
-                }
-              })
-              .set('X-Broker-API-Version', broker_api_version)
-              .auth(config.username, config.password)
-              .catch(err => err.response)
-              .then(res => {
-                expect(res).to.have.status(202);
-                expect(res.body).to.have.property('operation');
-                const operation = utils.decodeBase64(res.body.operation);
-                expect(operation.type).to.equal('update');
-                expect(operation.subtype).to.equal('restore');
-                expect(operation).to.have.property('agent_ip');
-                mocks.verify();
-              })
-            );
-        });
-
-        it('should receive last_operation call from cloud controller while restore is processing', function () {
-          const restoreState = {
-            state: 'processing',
-            stage: 'Attaching volume',
-            updated_at: new Date(Date.now())
-          };
-          mocks.agent.lastRestoreOperation(restoreState);
-          return chai
-            .request(apps.internal)
-            .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', broker_api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64(restoreOperation)
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body.state).to.equal('in progress');
-              expect(res.body).to.have.property('description');
               mocks.verify();
             });
         });
@@ -1563,19 +1611,19 @@ describe('service-fabrik-api-sf2.0', function () {
             updated_at: '2015-11-18T11:28:44Z'
           };
           const restoreLogs = [{
-              time: '2015-11-18T11:28:40+00:00',
-              level: 'info',
-              msg: 'Downloading tarball ...'
-            }, {
-              time: '2015-11-18T11:28:42+00:00',
-              level: 'info',
-              msg: 'Extracting tarball ...'
-            },
-            {
-              time: '2015-11-18T11:28:44+00:00',
-              level: 'info',
-              msg: 'Restore finished'
-            }
+            time: '2015-11-18T11:28:40+00:00',
+            level: 'info',
+            msg: 'Downloading tarball ...'
+          }, {
+            time: '2015-11-18T11:28:42+00:00',
+            level: 'info',
+            msg: 'Extracting tarball ...'
+          },
+          {
+            time: '2015-11-18T11:28:44+00:00',
+            level: 'info',
+            msg: 'Restore finished'
+          }
           ];
           const restoreLogsStream = _
             .chain(restoreLogs)
