@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const yaml = require('js-yaml');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');

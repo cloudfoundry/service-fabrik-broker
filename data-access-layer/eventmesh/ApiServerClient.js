@@ -178,6 +178,7 @@ class ApiServerClient {
   }
 
   registerCrds(resourceGroup, resourceType) {
+    const crdJson = this.getCrdJson(resourceGroup, resourceType);
     return Promise.try(() => this.init())
       .then(() => {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
@@ -188,7 +189,7 @@ class ApiServerClient {
           })
           .catch(err => {
             return convertToHttpErrorAndThrow(err);
-          })
+          });
       })
       .catch(NotFound, () => {
         logger.info('CRD not yet registered, registering it now..');

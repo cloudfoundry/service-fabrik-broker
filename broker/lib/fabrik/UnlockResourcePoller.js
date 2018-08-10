@@ -2,11 +2,9 @@
 
 const pubsub = require('pubsub-js');
 const _ = require('lodash');
-const yaml = require('js-yaml');
 const Promise = require('bluebird');
 const eventmesh = require('../../../data-access-layer/eventmesh');
 const CONST = require('../../../common/constants');
-const config = require('../../../common/config');
 const logger = require('../../../common/logger');
 const lockManager = eventmesh.lockManager;
 const errors = require('../../../common/errors');
