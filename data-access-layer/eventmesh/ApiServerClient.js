@@ -228,9 +228,10 @@ class ApiServerClient {
       // TODO-PR: revisit key name instance_guid
       metadata.labels = opts.labels;
     }
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
     const resourceBody = {
-      apiVersion: this.getCrdJson(opts.resourceGroup, opts.resourceType).spec.group,
-      kind: this.getCrdJson(opts.resourceGroup, opts.resourceType).spec.names.kind,
+      apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+      kind: crdJson.spec.names.kind,
       metadata: metadata,
       spec: {
         'options': JSON.stringify(opts.options)
