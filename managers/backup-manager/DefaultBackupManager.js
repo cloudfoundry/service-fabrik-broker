@@ -5,7 +5,7 @@ const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
-const bm = require('./');
+const BackupService = require('./');
 const BaseManager = require('../BaseManager');
 const DBManager = require('../../broker/lib/fabrik/DBManager');
 
@@ -35,8 +35,8 @@ class DefaultBackupManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering backup with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
-    return bm.createService(plan)
-      .then(manager => manager.startBackup(changedOptions));
+    return BackupService.createService(plan)
+      .then(service => service.startBackup(changedOptions));
   }
 
   static _processAbort(changeObjectBody) {
@@ -49,8 +49,8 @@ class DefaultBackupManager extends BaseManager {
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);
-          return bm.createService(plan);
-        }).then(manager => manager.abortLastBackup(options));
+          return BackupService.createService(plan);
+        }).then(service => service.abortLastBackup(options));
       });
   }
 
@@ -64,8 +64,8 @@ class DefaultBackupManager extends BaseManager {
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);
-          return bm.createService(plan);
-        }).then(manager => manager.deleteBackup(options));
+          return BackupService.createService(plan);
+        }).then(service => service.deleteBackup(options));
       });
   }
 }
