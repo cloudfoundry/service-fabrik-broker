@@ -177,11 +177,11 @@ class ApiServerClient {
     };
   }
 
-  registerCrds(crdJson) {
+  registerCrds(resourceGroup, resourceType) {
     return Promise.try(() => this.init())
       .then(() => {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-            body: crdJson,
+            body: this.getCrdJson(resourceGroup, resourceType),
             headers: {
               'content-type': 'application/merge-patch+json'
             }
@@ -199,6 +199,11 @@ class ApiServerClient {
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
+  }
+
+  getCrdJson(resourceGroup, resourceType) {
+    const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
+    return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
 
   /**
@@ -224,8 +229,8 @@ class ApiServerClient {
       metadata.labels = opts.labels;
     }
     const resourceBody = {
-      apiVersion: `${opts.resourceGroup}/${CONST.APISERVER.API_VERSION}`,
-      kind: _.upperFirst(opts.resourceType),
+      apiVersion: this.getCrdJson(opts.resourceGroup, opts.resourceType).spec.group,
+      kind: this.getCrdJson(opts.resourceGroup, opts.resourceType).spec.names.kind,
       metadata: metadata,
       spec: {
         'options': JSON.stringify(opts.options)

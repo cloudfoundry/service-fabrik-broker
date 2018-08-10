@@ -14,8 +14,7 @@ const Conflict = errors.Conflict;
 class BaseManager {
 
   registerCrds(resourceGroup, resourceType) {
-    const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
-    return eventmesh.apiServerClient.registerCrds(yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64')));
+    return eventmesh.apiServerClient.registerCrds(resourceGroup, resourceType);
   }
 
   registerWatcher(resourceGroup, resourceType, queryString) {

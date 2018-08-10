@@ -92,8 +92,7 @@ UnlockResourcePoller.pollers = {};
 pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
   logger.debug('-> Received event ->', eventName);
   if (eventInfo.type === 'internal') {
-    const lockCrdEncodedTemplate = config.apiserver.crds[`${CONST.APISERVER.RESOURCE_GROUPS.LOCK}_${CONST.APISERVER.API_VERSION}_${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}.yaml`];
-    return eventmesh.apiServerClient.registerCrds(yaml.safeLoad(Buffer.from(lockCrdEncodedTemplate, 'base64')))
+    return eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS)
       .then(() => UnlockResourcePoller.start());
   }
 });
