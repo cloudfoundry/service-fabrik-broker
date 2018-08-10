@@ -382,14 +382,7 @@ class ApiServerClient {
     assert.ok(opts.value, `Property 'value' is required to update lastOperation`);
     const metadata = {};
     metadata.labels = {};
-    metadata.labels[`
-          last_$ {
-            opts.operationName
-          }
-          _$ {
-            opts.operationType
-          }
-          `] = opts.value;
+    metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
     const options = _.chain(opts)
       .omit('value', 'operationName', 'operationType')
       .set('metadata', metadata)
@@ -453,14 +446,7 @@ class ApiServerClient {
       .omit('operationName', 'operationType')
       .value();
     return this.getResource(options)
-      .then(json => json.metadata.labels[`
-          last_$ {
-            opts.operationName
-          }
-          _$ {
-            opts.operationType
-          }
-          `]);
+      .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`]);
   }
 
   /**
