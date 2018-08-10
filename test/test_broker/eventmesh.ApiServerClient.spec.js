@@ -156,7 +156,9 @@ describe('eventmesh', () => {
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            parentResourceId: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            },
             options: {
               opts: 'sample_options'
             }
@@ -198,7 +200,9 @@ describe('eventmesh', () => {
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            parentResourceId: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            },
             options: {
               opts: 'sample_options'
             },
@@ -238,7 +242,9 @@ describe('eventmesh', () => {
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            parentResourceId: 'deployment1',
+            labels: {
+              instance_guid: 'deployment1'
+            },
             options: {
               opts: 'sample_options'
             }

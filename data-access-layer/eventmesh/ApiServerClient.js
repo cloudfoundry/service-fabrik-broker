@@ -206,7 +206,7 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
-   * @param {string} opts.parentResourceId - Id of parent resource to be put in label ex: instance_guid
+   * @param {string} opts.labels - to be put in label ex: instance_guid
    * @param {Object} opts.options - Value to set for spec.options field of resource
    * @param {string} opts.status - status of the resource
    */
@@ -219,13 +219,13 @@ class ApiServerClient {
     const metadata = {
       name: opts.resourceId
     };
-    if (opts.parentResourceId) {
+    if (opts.labels) {
       // TODO-PR: revisit key name instance_guid
-      metadata.labels = {
-        instance_guid: opts.parentResourceId
-      };
+      metadata.labels = opts.labels;
     }
     const resourceBody = {
+      apiVersion: `${opts.resourceGroup}/${CONST.APISERVER.API_VERSION}`,
+      kind: _.upperFirst(opts.resourceType),
       metadata: metadata,
       spec: {
         'options': JSON.stringify(opts.options)
@@ -235,6 +235,11 @@ class ApiServerClient {
     if (opts.status) {
       const statusJson = {};
       _.forEach(opts.status, (val, key) => {
+        if (key === 'state') {
+          resourceBody.metadata.labels = _.merge(resourceBody.metadata.labels, {
+            'state': val
+          });
+        }
         statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
       });
       resourceBody.status = statusJson;
@@ -278,6 +283,13 @@ class ApiServerClient {
         if (opts.status) {
           const statusJson = {};
           _.forEach(opts.status, (val, key) => {
+            if (key === 'state') {
+              patchBody.metadata = _.merge(patchBody.metadata, {
+                labels: {
+                  'state': val
+                }
+              });
+            }
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
           patchBody.status = statusJson;
@@ -363,7 +375,14 @@ class ApiServerClient {
     assert.ok(opts.value, `Property 'value' is required to update lastOperation`);
     const metadata = {};
     metadata.labels = {};
-    metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
+    metadata.labels[`
+          last_$ {
+            opts.operationName
+          }
+          _$ {
+            opts.operationType
+          }
+          `] = opts.value;
     const options = _.chain(opts)
       .omit('value', 'operationName', 'operationType')
       .set('metadata', metadata)
@@ -427,7 +446,14 @@ class ApiServerClient {
       .omit('operationName', 'operationType')
       .value();
     return this.getResource(options)
-      .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`]);
+      .then(json => json.metadata.labels[`
+          last_$ {
+            opts.operationName
+          }
+          _$ {
+            opts.operationType
+          }
+          `]);
   }
 
   /**

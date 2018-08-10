@@ -285,7 +285,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
                   resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                   resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
                   resourceId: backupGuid,
-                  parentResourceId: req.params.instance_id,
+                  labels: {
+                    instance_guid: req.params.instance_id
+                  },
                   options: backupOptions,
                   status: {
                     state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -311,7 +313,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: req.params.instance_id,
-              parentResourceId: req.params.instance_id,
+              labels: {
+                instance_guid: req.params.instance_id
+              },
               options: {},
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
