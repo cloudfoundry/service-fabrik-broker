@@ -31,7 +31,7 @@ class Catalog {
 
   toJSON() {
     return {
-      services: this.services
+      services: _.filter(this.services, service => service.name.indexOf('-fabrik-internal') === -1)
     };
   }
 }
