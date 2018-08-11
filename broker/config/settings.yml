@@ -190,8 +190,8 @@ defaults: &defaults
   # APISERVER SETTINGS #
   ##############################
   apiserver:
-    ip: '127.0.0.1'
-    port: 9443
+    ip: '10.244.14.252'
+    port: 8443
     encryption:
       key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
       initialization_vector: 'ABCDEFGHABCDEFGH'
