@@ -165,7 +165,7 @@ class ApiServerClient {
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
-        return jsonStream;
+        return stream;
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);

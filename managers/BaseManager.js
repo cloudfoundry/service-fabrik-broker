@@ -19,7 +19,15 @@ class BaseManager {
   registerWatcher(resourceGroup, resourceType, queryString) {
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
     return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, this.handleResource.bind(this), queryString)
-      .tap(() => logger.info(`Successfully set watcher with query string:`, queryString))
+      .then(stream => {
+        logger.info(`Successfully set watcher with query string:`, queryString);
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
+          .then(() => {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            stream.abort();
+          });
+      })
       .catch(e => {
         logger.error(`Error occured in registerWatcher:`, e);
         return Promise
