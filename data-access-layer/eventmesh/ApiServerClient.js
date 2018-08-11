@@ -216,7 +216,7 @@ class ApiServerClient {
           });
       })
       .catch(NotFound, () => {
-        logger.info('CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..');
+        logger.info(`CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..`);
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
           body: crdJson
         });
