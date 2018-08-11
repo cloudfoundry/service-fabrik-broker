@@ -153,14 +153,18 @@ class ApiServerClient {
               labelSelector: queryString ? queryString : ''
             }
           });
-        const jsonStream = new JSONStream();
-        stream.pipe(jsonStream);
-        jsonStream.on('data', callback);
-        jsonStream.on('error', err => {
+        stream.on('end', () => {
+          logger.info(`Stream ended, Reregistering watch on ${resourceGroup} and ${resourceType}`);
+          this.registerWatcher(resourceGroup, resourceType, callback, queryString);
+        });
+        stream.on('error', err => {
           logger.error('Error occured during watching', err);
           this.registerWatcher(resourceGroup, resourceType, callback, queryString);
           //throw err;
         });
+        const jsonStream = new JSONStream();
+        stream.pipe(jsonStream);
+        jsonStream.on('data', callback);
         return stream;
       })
       .catch(err => {
