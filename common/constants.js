@@ -247,9 +247,9 @@ module.exports = Object.freeze({
       BACKUP: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
-      DEPLOYMENT_LOCKS: 'deploymentlock',
-      DIRECTOR: 'director',
-      DEFAULT_BACKUP: 'defaultbackup'
+      DEPLOYMENT_LOCKS: 'deploymentlocks',
+      DIRECTOR: 'directors',
+      DEFAULT_BACKUP: 'defaultbackups'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',

@@ -178,11 +178,12 @@ class ApiServerClient {
   }
 
   registerCrds(resourceGroup, resourceType) {
+    logger.info(`Registering CRDs for ${resourceGroup}, ${resourceType}`);
     const crdJson = this.getCrdJson(resourceGroup, resourceType);
     return Promise.try(() => this.init())
       .then(() => {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-            body: this.getCrdJson(resourceGroup, resourceType),
+            body: crdJson,
             headers: {
               'content-type': 'application/merge-patch+json'
             }

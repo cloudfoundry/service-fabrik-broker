@@ -111,12 +111,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource('lock', 'deploymentlock', instance_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
             .set('X-Broker-API-Version', api_version)

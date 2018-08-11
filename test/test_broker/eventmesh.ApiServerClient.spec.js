@@ -68,12 +68,6 @@ function nockGetResource(resourceGroup, resourceType, id, response, expectedExpe
     .reply(expectedExpectedCode || 200, response);
 }
 
-function nockPatchResourceStatus(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
-  nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}/status`, JSON.stringify(payload))
-    .reply(expectedExpectedCode || 200, response);
-}
-
 function nockPatchResource(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
   nock(apiServerHost)
     .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, JSON.stringify(payload))
@@ -108,10 +102,48 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('registerCrds', () => {
+      it('Register crd successfully for first time', () => {
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJson.metadata.name, {}, crdJson, 404);
+        mocks.apiServerEventMesh.nockCreateCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJson.metadata.name, {}, crdJson);
+        return apiserver.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)
+          .then(res => {
+            expect(res.statusCode).to.eql(201);
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+
+      it('Patch already register crd successfully', () => {
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJson.metadata.name, {}, crdJson);
+        return apiserver.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+
+      it('Throw error in case of error', () => {
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJson.metadata.name, {}, crdJson, 404);
+        return apiserver.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            verify();
+          });
+      });
+    });
+
     describe('createResource', () => {
       it('Creates resource without label and status', () => {
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
         const expectedResponse = {};
         const payload = {
+          apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+          kind: crdJson.spec.names.kind,
           metadata: {
             name: 'deployment1'
           },
@@ -137,8 +169,11 @@ describe('eventmesh', () => {
           });
       });
       it('Creates resource without status', () => {
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
         const expectedResponse = {};
         const payload = {
+          apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+          kind: crdJson.spec.names.kind,
           metadata: {
             name: 'deployment1',
             labels: {
@@ -173,20 +208,22 @@ describe('eventmesh', () => {
         const expectedResponse = {
           res: 'res'
         };
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
         const payload1 = {
+          apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+          kind: crdJson.spec.names.kind,
           metadata: {
             name: 'deployment1',
             labels: {
-              instance_guid: 'deployment1'
+              instance_guid: 'deployment1',
+              state: 'create'
             }
           },
           spec: {
             options: JSON.stringify({
               opts: 'sample_options'
             })
-          }
-        };
-        const payload2 = {
+          },
           status: {
             state: 'create',
             response: JSON.stringify({
@@ -194,8 +231,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, payload1);
-        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
+        nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, expectedResponse, payload1);
         return apiserver.createResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -214,7 +250,7 @@ describe('eventmesh', () => {
             }
           })
           .then(res => {
-            expect(res.statusCode).to.eql(200);
+            expect(res.statusCode).to.eql(201);
             expect(res.body).to.eql(expectedResponse);
             verify();
           });
@@ -224,7 +260,10 @@ describe('eventmesh', () => {
         const expectedResponse = {
           res: 'res'
         };
+        const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
         const payload1 = {
+          apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+          kind: crdJson.spec.names.kind,
           metadata: {
             name: 'deployment1',
             labels: {
@@ -314,6 +353,40 @@ describe('eventmesh', () => {
           });
       });
 
+      it('Updates resource with only status', () => {
+        const expectedResponse = {};
+        const payload = {
+          metadata: {
+            labels: {
+              state: 'create'
+            }
+          },
+          status: {
+            state: 'create',
+            response: JSON.stringify({
+              resp: 'resp'
+            })
+          }
+        };
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        return apiserver.updateResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            status: {
+              state: 'create',
+              response: {
+                resp: 'resp'
+              }
+            }
+          })
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            verify();
+          });
+      });
+
       it('Updates resource with label, options and status', () => {
         const expectedResponse = {
           res: 'res'
@@ -322,16 +395,15 @@ describe('eventmesh', () => {
           metadata: {
             name: 'deployment1',
             labels: {
-              instance_guid: 'deployment1'
+              instance_guid: 'deployment1',
+              state: 'create',
             }
           },
           spec: {
             options: JSON.stringify({
               opts: 'sample_options'
             })
-          }
-        };
-        const payload2 = {
+          },
           status: {
             state: 'create',
             response: JSON.stringify({
@@ -339,8 +411,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, payload1);
-        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload2);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -409,7 +480,7 @@ describe('eventmesh', () => {
           }
         };
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
-        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.patchResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -488,7 +559,8 @@ describe('eventmesh', () => {
         const payload1 = {
           metadata: {
             labels: {
-              instance_guid: 'deployment1'
+              instance_guid: 'deployment1',
+              state: 'in_progress'
             }
           },
           spec: {
@@ -496,9 +568,7 @@ describe('eventmesh', () => {
               opt1: 'opt1',
               opt2: 'sample_options'
             })
-          }
-        };
-        const payload = {
+          },
           status: {
             state: 'in_progress',
             response: JSON.stringify({
@@ -510,7 +580,6 @@ describe('eventmesh', () => {
         };
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1);
-        nockPatchResourceStatus(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
         return apiserver.patchResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

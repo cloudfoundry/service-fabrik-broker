@@ -289,7 +289,6 @@ describe('service-fabrik-api-2.0', function () {
             }
           }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)
@@ -318,7 +317,6 @@ describe('service-fabrik-api-2.0', function () {
             }
           }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)
@@ -347,7 +345,6 @@ describe('service-fabrik-api-2.0', function () {
             }
           }, 2);
           mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', backup_guid, {});
-          mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
           mocks.apiServerEventMesh.nockDeleteResource('backup', 'defaultbackup', backup_guid);
           return chai.request(app)
             .delete(`${base_url}/backups/${backup_guid}`)

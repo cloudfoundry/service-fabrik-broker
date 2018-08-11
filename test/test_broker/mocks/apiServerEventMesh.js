@@ -7,12 +7,13 @@ const swagger = require('../helper-files/apiserver-swagger.json');
 
 exports.nockLoadSpec = nockLoadSpec;
 exports.nockCreateResource = nockCreateResource;
-exports.nockPatchResourceStatus = nockPatchResourceStatus;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
 exports.nockGetResourceRegex = nockGetResourceRegex;
 exports.nockDeleteResource = nockDeleteResource;
 exports.nockPatchResourceRegex = nockPatchResourceRegex;
+exports.nockCreateCrd = nockCreateCrd;
+exports.nockPatchCrd = nockPatchCrd;
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -21,19 +22,26 @@ function nockLoadSpec(times) {
     .reply(200, swagger);
 }
 
-function nockCreateResource(resourceGroup, resourceType, response, times) {
+function nockCreateCrd(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`)
+    .post(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions`)
     .times(times || 1)
     .reply(201, response);
 }
 
-function nockPatchResourceStatus(resourceGroup, resourceType, response, times) {
+function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    //.patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s$`)
-    .patch(/status$/)
+    .patch(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions/${resourceType}`)
     .times(times || 1)
-    .reply(200, response);
+    .reply(expectedStatusCode || 200, response);
+}
+
+
+function nockCreateResource(resourceGroup, resourceType, response, times, expectedStatusCode) {
+  nock(apiServerHost)
+    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`)
+    .times(times || 1)
+    .reply(expectedStatusCode || 201, response);
 }
 
 function nockPatchResource(resourceGroup, resourceType, id, response, times) {
