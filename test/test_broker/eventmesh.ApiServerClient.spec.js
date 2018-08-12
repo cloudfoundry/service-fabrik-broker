@@ -2,9 +2,11 @@
 
 const nock = require('nock');
 const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
-const apiServerHost = 'https://127.0.0.1:9443';
 const CONST = require('../../common/constants');
+const config = require('../../common/config');
 const logger = require('../../common/logger');
+
+const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 const expectedGetDeploymentResponse = {
   metadata: {

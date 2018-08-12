@@ -1,8 +1,9 @@
 'use strict';
 
 const nock = require('nock');
-const apiServerHost = 'https://127.0.0.1:9443';
 const swagger = require('../helper-files/apiserver-swagger.json');
+const config = require('../../../common/config');
+const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 
 exports.nockLoadSpec = nockLoadSpec;

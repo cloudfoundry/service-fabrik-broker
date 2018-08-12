@@ -45,7 +45,7 @@ class UnlockResourcePoller {
     */
 
     function startPoller(event) {
-      logger.info('Received Lock Event: ', event);
+      logger.debug('Received Lock Event: ', event);
       const lockDetails = JSON.parse(event.object.spec.options);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
         UnlockResourcePoller.clearPoller(event.object.metadata.name, UnlockResourcePoller.pollers[event.object.metadata.name]);
@@ -58,12 +58,13 @@ class UnlockResourcePoller {
     }
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
       .then(stream => {
-        logger.info(`Successfully set watcher on lock resources`);
+        logger.debug(`Successfully set watcher on lock resources`);
         return Promise
           .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
           .then(() => {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
+            return this.start();
           });
       })
       .catch(e => {

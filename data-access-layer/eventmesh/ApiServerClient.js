@@ -153,12 +153,8 @@ class ApiServerClient {
               labelSelector: queryString ? queryString : ''
             }
           });
-        stream.on('end', () => {
-          logger.info(`Stream ended, Reregistering watch on ${resourceGroup} and ${resourceType}`);
-          this.registerWatcher(resourceGroup, resourceType, callback, queryString);
-        });
         stream.on('error', err => {
-          logger.error('Error occured during watching', err);
+          logger.error(`Error occured during watching for resource ${resourceGroup}, ${resourceType}`, err);
           this.registerWatcher(resourceGroup, resourceType, callback, queryString);
           //throw err;
         });
