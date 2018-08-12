@@ -150,7 +150,8 @@ class ApiServerClient {
           .apis[resourceGroup][CONST.APISERVER.API_VERSION]
           .watch[resourceType].getStream({
             qs: {
-              labelSelector: queryString ? queryString : ''
+              labelSelector: queryString ? queryString : '',
+              timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
             }
           });
         stream.on('error', err => {
