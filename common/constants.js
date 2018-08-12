@@ -32,6 +32,13 @@ module.exports = Object.freeze({
   },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
+  RESTORE_RESOURCE_POLLER_INTERVAL: 3000,
+  RESTORE_OPERATION: {
+    SUCCEEDED: 'succeeded',
+    FAILED: 'failed',
+    ABORTED: 'aborted',
+    PROCESSING: 'processing'
+  },
   BACKUP_OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -251,7 +258,7 @@ module.exports = Object.freeze({
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
-      RESTORE: 'restore.servicefabrik.io'
+      RESTORE: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',

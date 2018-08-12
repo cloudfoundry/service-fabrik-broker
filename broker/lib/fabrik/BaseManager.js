@@ -65,14 +65,6 @@ class BaseManager {
     );
   }
 
-  getTenantGuid(context) {
-    if (context.platform === CONST.PLATFORM.CF) {
-      return context.space_guid;
-    } else if (context.platform === CONST.PLATFORM.K8S) {
-      return context.namespace;
-    }
-  }
-
   createInstance(guid, platformManager) {
     return new this.constructor.instanceConstructor(guid, this, platformManager);
   }

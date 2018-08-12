@@ -11,7 +11,8 @@ class DefaultRestoreManager extends BaseManager {
 
   init() {
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
-    return this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, queryString);
+    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE)
+      .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, queryString));
   }
 
   processRequest(requestObjectBody) {
@@ -36,6 +37,8 @@ class DefaultRestoreManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering abort restore with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
+    return RestoreService.createService(plan)
+      .then(rs => rs.abortLastRestore(changedOptions));
   }
 
 }

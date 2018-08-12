@@ -4,8 +4,8 @@ const DefaultRestoreManager = require('../../managers/restore-manager/DefaultRes
 const RestoreService = require('../../managers/restore-manager/RestoreService');
 const BaseManager = require('../../managers/BaseManager');
 const CONST = require('../../common/constants');
-
-
+// const logger = require('../../common/logger');
+// const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 const restore_guid = 'd2e0a44a-9c6f-11e8-acf5-784f43900dff';
 const restore_crd_prefix = '/apis/restore.servicefabrik.io/v1alpha1/namespaces/default/defaultrestore';
@@ -34,29 +34,55 @@ describe('managers', function () {
       },
       username: 'hugo'
     };
+    const changeObject = {
+      metadata: {
+        name: backup_guid,
+        selfLink: `${restore_crd_prefix}/${restore_guid}`
+      },
+      spec: {
+        options: JSON.stringify(restore_options)
+      },
+      status: {
+        state: 'in_queue'
+      }
+    };
 
     let sandbox, registerWatcherStub, _processRestoreStub,
-      startRestoreStub;
+      startRestoreStub, registerCrdsStub, abortLastRestoreStub,
+      _processAbortStub;
 
     before(function () {
       sandbox = sinon.sandbox.create();
       registerWatcherStub = sandbox.stub(BaseManager.prototype, 'registerWatcher');
+      registerCrdsStub = sandbox.stub(BaseManager.prototype, 'registerCrds', () => Promise.resolve({}));
+      abortLastRestoreStub = sandbox.stub(RestoreService.prototype, 'abortLastRestore', () => Promise.resolve({}));
+    });
+
+    after(function () {
+      sandbox.restore();
     });
 
     describe('#init', function () {
       it('should register watcher for restore resource', function () {
-        defaultRestoreManager.init();
-        expect(registerWatcherStub.callCount).to.equal(1);
-        expect(registerWatcherStub.calledWithExactly(
-          CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-          `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`
-        )).to.equal(true);
+        defaultRestoreManager.init()
+          .then(() => {
+            expect(registerCrdsStub.callCount).to.equal(1);
+            expect(registerCrdsStub.calledWithExactly(
+              CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+              CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE
+            )).to.equal(true);
+            expect(registerWatcherStub.callCount).to.equal(1);
+            expect(registerWatcherStub.calledWithExactly(
+              CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+              CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+              `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.OPERATION.ABORT},${CONST.APISERVER.RESOURCE_STATE.DELETE})`
+            )).to.equal(true);
+          });
       });
     });
 
     describe('#processRequest', function () {
-      it('should start restore in state is in queue', () => {
+      it('should start restore if state is in queue', () => {
         _processRestoreStub = sandbox.stub(DefaultRestoreManager, '_processRestore');
         const fakeRequestObjectBody = {
           status: {
@@ -68,21 +94,21 @@ describe('managers', function () {
         expect(_processRestoreStub.calledWithExactly(fakeRequestObjectBody)).to.equal(true);
         _processRestoreStub.restore();
       });
+      it('should start restore if state is in abort', () => {
+        const fakeRequestObjectBody = {
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.ABORT
+          }
+        };
+        _processAbortStub = sandbox.stub(DefaultRestoreManager, '_processAbort');
+        defaultRestoreManager.processRequest(fakeRequestObjectBody);
+        expect(_processAbortStub.callCount).to.equal(1);
+        expect(_processAbortStub.calledWithExactly(fakeRequestObjectBody)).to.equal(true);
+        _processAbortStub.restore();
+      });
     });
 
     describe('#_processRestore', function () {
-      const changeObject = {
-        metadata: {
-          name: backup_guid,
-          selfLink: `${restore_crd_prefix}/${restore_guid}`
-        },
-        spec: {
-          options: JSON.stringify(restore_options)
-        },
-        status: {
-          state: 'in_queue'
-        }
-      };
       it('should create manager and invoke startRestore', function () {
         startRestoreStub = sandbox.stub(RestoreService.prototype, 'startRestore');
         return DefaultRestoreManager
@@ -91,6 +117,18 @@ describe('managers', function () {
             expect(startRestoreStub.callCount).to.equal(1);
             expect(startRestoreStub.firstCall.args[0].plan_id).to.equal(restore_options.plan_id);
             expect(startRestoreStub.calledWithExactly(restore_options)).to.equal(true);
+            startRestoreStub.restore();
+          });
+      });
+    });
+
+    describe('#_processAbort', function () {
+      it('should create manager and invoke abortLastRestore', function () {
+        return DefaultRestoreManager
+          ._processAbort(changeObject)
+          .then(() => {
+            expect(abortLastRestoreStub.callCount).to.equal(1);
+            expect(abortLastRestoreStub.calledWithExactly(restore_options)).to.equal(true);
           });
       });
     });

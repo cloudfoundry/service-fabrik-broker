@@ -8,8 +8,8 @@ const BaseJob = require('../../jobs/BaseJob');
 const ScheduleManager = require('../../jobs/ScheduleManager');
 const ServiceFabrikOperation = require('../../broker/lib/fabrik/ServiceFabrikOperation');
 const errors = require('../../common/errors');
-const lib = require('../../broker/lib');
-const DirectorManager = lib.fabrik.DirectorManager;
+// const lib = require('../../broker/lib');
+// const DirectorManager = lib.fabrik.DirectorManager;
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 describe('Jobs', function () {
@@ -80,7 +80,7 @@ describe('Jobs', function () {
       return job;
     }
 
-    let sandbox, serviceFabrikOperationStub, directorOperationStub,
+    let sandbox, serviceFabrikOperationStub,
       getDirectorConfigStub, failUnlock, baseJobLogRunHistoryStub, scheduleJobStub, cancelScheduleStub;
     before(function () {
       sandbox = sinon.sandbox.create();
@@ -88,7 +88,6 @@ describe('Jobs', function () {
       scheduleJobStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      directorOperationStub = sandbox.stub(DirectorManager.prototype, 'getServiceFabrikOperationState');
 
       serviceFabrikOperationStub = sandbox.stub(ServiceFabrikOperation.prototype, 'invoke', () => Promise.try(() => {
         logger.warn('Unlock must fail:', failUnlock);
@@ -112,7 +111,6 @@ describe('Jobs', function () {
       baseJobLogRunHistoryStub.reset();
       serviceFabrikOperationStub.reset();
       getDirectorConfigStub.reset();
-      directorOperationStub.reset();
     });
 
     after(function () {

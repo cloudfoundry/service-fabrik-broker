@@ -10,7 +10,7 @@ const bosh = require('../../../data-access-layer/bosh');
 const cf = require('../../../data-access-layer/cf');
 const backupStore = require('../../../data-access-layer/iaas').backupStore;
 const utils = require('../../../common/utils');
-const retry = utils.retry;
+// const retry = utils.retry;
 const Agent = require('../../../data-access-layer/service-agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
@@ -229,9 +229,9 @@ class DirectorManager extends BaseManager {
 
   _deleteEntity(action, opts) {
     return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-        return action();
-      }, {
+      logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
+      return action();
+    }, {
         maxAttempts: opts.maxAttempts,
         minDelay: opts.minDelay
       })
@@ -250,17 +250,17 @@ class DirectorManager extends BaseManager {
       let retryTaskDelete = this._deleteEntity(() => {
         return boshOperationQueue.deleteBoshTask(serviceInstanceId);
       }, {
-        actionName: `delete bosh task for instance ${serviceInstanceId}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
+          actionName: `delete bosh task for instance ${serviceInstanceId}`,
+          maxAttempts: 5,
+          minDelay: 1000
+        });
       let retryDeploymentDelete = this._deleteEntity(() => {
         return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
       }, {
-        actionName: `delete bosh deployment ${deploymentName}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
+          actionName: `delete bosh deployment ${deploymentName}`,
+          maxAttempts: 5,
+          minDelay: 1000
+        });
       return Promise.all([retryTaskDelete, retryDeploymentDelete]);
     });
   }
@@ -403,45 +403,45 @@ class DirectorManager extends BaseManager {
     return Promise
       .try(() => {
         switch (action) {
-        case CONST.OPERATION_TYPE.UPDATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          if (_.get(params, 'parameters.bosh_director_name') ||
-            username || password) {
-            throw new BadRequest(`Update cannot be done on custom BOSH`);
-          }
-          return this
-            .getDeploymentManifest(deploymentName)
-            .then(manifest => {
-              _.assign(actionContext.params, {
-                'previous_manifest': manifest
+          case CONST.OPERATION_TYPE.UPDATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+            if (_.get(params, 'parameters.bosh_director_name') ||
+              username || password) {
+              throw new BadRequest(`Update cannot be done on custom BOSH`);
+            }
+            return this
+              .getDeploymentManifest(deploymentName)
+              .then(manifest => {
+                _.assign(actionContext.params, {
+                  'previous_manifest': manifest
+                });
+                _.assign(opts, {
+                  previous_manifest: manifest
+                }, opts.context);
+                return;
+              })
+              .then(() => {
+                let preUpdateContext = _.cloneDeep(actionContext);
+                return this.executePreUpdate(deploymentName, preUpdateContext);
+              })
+              .tap(response => {
+                logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
+                preUpdateAgentResponse = response;
               });
-              _.assign(opts, {
-                previous_manifest: manifest
-              }, opts.context);
-              return;
-            })
-            .then(() => {
-              let preUpdateContext = _.cloneDeep(actionContext);
-              return this.executePreUpdate(deploymentName, preUpdateContext);
-            })
-            .tap(response => {
-              logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
-              preUpdateAgentResponse = response;
-            });
-        case CONST.OPERATION_TYPE.CREATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
-          if (_.get(params, 'parameters.bosh_director_name')) {
-            return cf
-              .uaa
-              .getScope(username, password)
-              .then(scopes => {
-                const isAdmin = _.includes(scopes, 'cloud_controller.admin');
-                if (!isAdmin) {
-                  throw new errors.Forbidden('Token has insufficient scope');
-                }
-              });
-          }
-          return;
+          case CONST.OPERATION_TYPE.CREATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
+            if (_.get(params, 'parameters.bosh_director_name')) {
+              return cf
+                .uaa
+                .getScope(username, password)
+                .then(scopes => {
+                  const isAdmin = _.includes(scopes, 'cloud_controller.admin');
+                  if (!isAdmin) {
+                    throw new errors.Forbidden('Token has insufficient scope');
+                  }
+                });
+            }
+            return;
         }
       })
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
@@ -560,10 +560,10 @@ class DirectorManager extends BaseManager {
     };
     _.assign(actionContext, binding);
     return Promise.join(
-        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
-        this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
-      )
+      this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
+      this.getDeploymentIps(deploymentName),
+      (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
+    )
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -587,11 +587,11 @@ class DirectorManager extends BaseManager {
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
       .then((preUnbindResponse) =>
         Promise
-        .all([
-          Promise.resolve(preUnbindResponse),
-          this.getDeploymentIps(deploymentName),
-          this.getBindingProperty(deploymentName, id)
-        ]))
+          .all([
+            Promise.resolve(preUnbindResponse),
+            this.getDeploymentIps(deploymentName),
+            this.getBindingProperty(deploymentName, id)
+          ]))
       .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
@@ -741,192 +741,12 @@ class DirectorManager extends BaseManager {
       .catchReturn(DeploymentDoesNotExist, null);
   }
 
-  invokeServiceFabrikOperation(name, opts) {
-    logger.info(`Invoking service fabrik operation '${name}' with:`, opts);
-    switch (name) {
-    case CONST.OPERATION_TYPE.RESTORE:
-      return this.startRestore(opts);
-    }
-    throw new BadRequest(`Invalid service fabrik operation '${name}'`);
-  }
-
-  getServiceFabrikOperationState(name, opts) {
-    logger.info(`Retrieving state of last service fabrik operation '${name}' with:`, opts);
-    return Promise
-      .try(() => {
-        switch (name) {
-        case 'restore':
-          return this.getRestoreOperationState(opts);
-        }
-        throw new BadRequest(`Invalid service fabrik operation '${name}'`);
-      })
-      .then(result => {
-        const deploymentName = opts.deployment;
-        const action = _.capitalize(name);
-        const timestamp = result.updated_at;
-        switch (result.state) {
-        case 'succeeded':
-          return {
-            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: 'succeeded'
-          };
-        case 'aborted':
-          return {
-            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: 'failed'
-          };
-        case 'failed':
-          return {
-            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: 'failed'
-          };
-        default:
-          return {
-            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: 'in progress'
-          };
-        }
-      });
-  }
-
   getServiceInstanceState(instanceGuid) {
     return this
       .findNetworkSegmentIndex(instanceGuid)
       .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
       .then(deploymentName => this.getDeploymentIps(deploymentName))
       .then(ips => this.agent.getState(ips));
-  }
-
-  getRestoreOperationState(opts) {
-    const agent_ip = opts.agent_ip;
-    const options = _.assign({
-      service_id: this.service.id,
-      plan_id: this.plan.id,
-      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id
-    }, opts);
-
-    function isFinished(state) {
-      return _.includes(['succeeded', 'failed', 'aborted'], state);
-    }
-
-    let statusAlreadyChecked = false;
-    return this.agent
-      .getRestoreLastOperation(agent_ip)
-      .tap(lastOperation => {
-        if (isFinished(lastOperation.state)) {
-          return Promise.all([this.agent
-              .getRestoreLogs(agent_ip), this.backupStore
-              .getRestoreFile(options)
-            ])
-            .spread((logs, restoreMetadata) => {
-              const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
-              // following restoreDates will have structure
-              // 'restore_dates' : {'succeeded':[<dateISOString>], 'failed':[<dateISOString>],'aborted':[<dateISOString>]}
-              let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
-              let restoreDatesByState = _.get(restoreDates, lastOperation.state) || [];
-              //status check to prevent
-              if (_.indexOf(restoreDatesByState, restoreFinishiedAt) !== -1) {
-                statusAlreadyChecked = true;
-                logger.debug(`Restore status check came once again even after finish for instance ${options.instance_guid}`);
-              } else {
-                restoreDatesByState.push(restoreFinishiedAt);
-              }
-              //following can be treated as extra processing
-              // just to avoid duplicate entries in restore histroy
-              // which might lead to quota full
-              let uniqueDates = [...new Set(restoreDatesByState)];
-              return this.backupStore
-                .patchRestoreFile(options, {
-                  state: lastOperation.state,
-                  logs: logs,
-                  finished_at: restoreFinishiedAt,
-                  restore_dates: _.chain(restoreDates)
-                    .set(lastOperation.state, _.sortBy(uniqueDates))
-                    .value()
-                });
-            })
-            .tap(() => {
-              // Trigger schedule backup when restore is successful
-              // statusAlreadyChecked should be false, otherwise
-              // if by chance restore state (this function called) two times
-              // for any reason after agent restores successfully,
-              // on seceond time also it would trigger schedule backup (which is incorrect).
-              if (this.service.pitr === true &&
-                lastOperation.state === CONST.OPERATION.SUCCEEDED &&
-                !statusAlreadyChecked) {
-                return this.reScheduleBackup({
-                  instance_id: options.instance_guid,
-                  afterXminute: config.backup.reschedule_backup_delay_after_restore || 3
-                });
-              } else {
-                logger.debug(`Did not re-scheduling backup for ${options.instance_guid} as current restore state check is not first time.`);
-                return;
-              }
-            });
-        }
-      });
-  }
-
-  reScheduleBackup(opts) {
-    const options = {
-      instance_id: opts.instance_id,
-      repeatInterval: 'daily',
-      type: CONST.BACKUP.TYPE.ONLINE
-    };
-
-    if (this.service.backup_interval) {
-      options.repeatInterval = this.service.backup_interval;
-    }
-
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
-    logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
-    //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
-    return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
-      maxAttempts: 3,
-      minDelay: 500
-    });
-  }
-
-  getLastRestore(tenant_id, instance_guid) {
-    return this.backupStore
-      .getRestoreFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .getRestoreLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-        default:
-          return metadata;
-        }
-      });
-  }
-
-  abortLastRestore(tenant_id, instance_guid) {
-    return this.backupStore
-      .getRestoreFile({
-        tenant_id: tenant_id,
-        service_id: this.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      })
-      .then(metadata => {
-        switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortRestore(metadata.agent_ip)
-            .return({
-              state: 'aborting'
-            });
-        default:
-          return _.pick(metadata, 'state');
-        }
-      });
   }
 
   deleteRestoreFile(tenant_id, instance_guid) {
@@ -955,8 +775,8 @@ class DirectorManager extends BaseManager {
   static get prefix() {
     return _
       .reduce(config.directors,
-        (prefix, director) => director.primary === true ? director.prefix : prefix,
-        null) || super.prefix;
+      (prefix, director) => director.primary === true ? director.prefix : prefix,
+      null) || super.prefix;
   }
 
   static get instanceConstructor() {

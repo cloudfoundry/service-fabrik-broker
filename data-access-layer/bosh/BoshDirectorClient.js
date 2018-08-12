@@ -354,26 +354,6 @@ class BoshDirectorClient extends HttpClient {
       );
   }
 
-  getLockProperty(deploymentName) {
-    return this
-      .getDeploymentProperty(deploymentName, CONST.DEPLOYMENT_LOCK_NAME)
-      .then(result => {
-        const lockInfo = JSON.parse(result);
-        logger.debug('LockInfo :-', lockInfo);
-        if (lockInfo.createdAt) {
-          lockInfo.createdAt = new Date(lockInfo.createdAt);
-          //Above check unnecessary, but for whatsoever reason if the lock is corrupted, we dont return back lockinfo
-          const lockDuration = (new Date() - lockInfo.createdAt) / 1000;
-          logger.info(`Lock duration is : ${lockDuration} (secs) -- ${this.activePrimary[0].lock_deployment_max_duration}`);
-          if (lockDuration < this.activePrimary[0].lock_deployment_max_duration) {
-            return Promise.resolve(lockInfo);
-          }
-        }
-        return undefined;
-      })
-      .catch(NotFound, () => undefined);
-  }
-
   getDeployment(deploymentName) {
     return this
       .makeRequest({

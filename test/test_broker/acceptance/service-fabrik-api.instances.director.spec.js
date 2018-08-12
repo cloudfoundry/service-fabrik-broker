@@ -9,10 +9,10 @@ const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
 const config = require('../../../common/config');
-const errors = require('../../../common/errors');
+// const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
 const utils = require('../../../common/utils');
-const NotFound = errors.NotFound;
+// const NotFound = errors.NotFound;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = iaas.backupStore.filename;
@@ -153,17 +153,16 @@ describe('service-fabrik-api', function () {
         const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
         const backupPathname = `/${container}/${backupFilename}`;
-        const name = 'restore';
-        const backupMetadata = {
-          plan_id: plan_id,
-          state: 'succeeded',
-          type: 'online',
-          secret: 'hugo'
-        };
-        const args = {
-          backup_guid: backup_guid,
-          backup: _.pick(backupMetadata, 'type', 'secret')
-        };
+        // const backupMetadata = {
+        //   plan_id: plan_id,
+        //   state: 'succeeded',
+        //   type: 'online',
+        //   secret: 'hugo'
+        // };
+        // const args = {
+        //   backup_guid: backup_guid,
+        //   backup: _.pick(backupMetadata, 'type', 'secret')
+        // };
 
         it('should return 400 Bad Request (no backup_guid or time_stamp given)', function () {
           mocks.uaa.tokenKey();
@@ -374,183 +373,6 @@ describe('service-fabrik-api', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(422);
-              mocks.verify();
-            });
-        });
-
-        it('should initiate a start-restore operation at cloud controller via a service instance update', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-          mocks.cloudProvider.download(backupPathname, backupMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          });
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .send({
-              backup_guid: backup_guid
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
-            });
-        });
-
-        it('should initiate a start-restore operation at cloud controller via a service instance update:PITR', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
-          mocks.cloudProvider.download(backupPathname, backupMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          });
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .send({
-              time_stamp: restoreAtEpoch
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
-            });
-        });
-
-      });
-
-      describe('#restore-state', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
-        const filename = `${prefix}.json`;
-        const pathname = `/${container}/${filename}`;
-        const data = {
-          state: 'processing',
-          agent_ip: mocks.agent.ip
-        };
-        const restoreState = {
-          state: 'processing',
-          stage: 'Downloading tarball',
-          updated_at: new Date(Date.now())
-        };
-
-        it('should return 200 Ok', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.agent.lastRestoreOperation(restoreState);
-          return chai.request(apps.external)
-            .get(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql(_.merge(data, _.pick(restoreState, 'state', 'stage')));
-              mocks.verify();
-            });
-        });
-
-        it('should return 404 Not Found', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(pathname, new NotFound('not found'));
-          return chai.request(apps.external)
-            .get(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(404);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-      });
-
-      describe('#restore-abort', function () {
-        const prefix = `${space_guid}/restore/${service_id}.${instance_id}`;
-        const filename = `${prefix}.json`;
-        const pathname = `/${container}/${filename}`;
-        const data = {
-          state: 'processing',
-          agent_ip: mocks.agent.ip
-        };
-
-        it('should return 202 Accepted', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(pathname, _
-            .chain(data)
-            .omit('state')
-            .set('state', 'processing')
-            .value()
-          );
-          mocks.agent.abortRestore();
-          return chai
-            .request(apps.external)
-            .delete(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.be.empty;
-              mocks.verify();
-            });
-        });
-        it('should return 200 OK', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(pathname, _
-            .chain(data)
-            .omit('state')
-            .set('state', 'succeeded')
-            .value()
-          );
-          return chai
-            .request(apps.external)
-            .delete(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.be.empty;
               mocks.verify();
             });
         });

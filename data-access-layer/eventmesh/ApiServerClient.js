@@ -92,6 +92,8 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
+   * @param {string} opts.resourceGroup - Group of the operation
+   * @param {string} opts.resourceType - Type of the operation
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
    */
@@ -105,6 +107,7 @@ class ApiServerClient {
         resourceId: opts.resourceId
       }))
       .then(resource => {
+        logger.debug(`New resource for ${opts.resourceId}`, resource);
         const state = resource.status.state;
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
@@ -212,6 +215,7 @@ class ApiServerClient {
 
   getCrdJson(resourceGroup, resourceType) {
     const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
+    logger.info(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
     return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
 
@@ -451,6 +455,7 @@ class ApiServerClient {
     let options = _.chain(opts)
       .omit('operationName', 'operationType')
       .value();
+    logger.debug(`Getting label:  last_${opts.operationName}_${opts.operationType}`);
     return this.getResource(options)
       .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`]);
   }
