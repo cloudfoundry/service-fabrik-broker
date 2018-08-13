@@ -114,6 +114,7 @@ describe('cf', () => {
         tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
         tokenIssuer.getAccessToken().then((content) => {
           expect(content).to.eql(expiredToken);
+          tokenInfoNotExpired.access_token = tokenNotExpired;
           done();
         }).catch(done);
       });
@@ -126,10 +127,11 @@ describe('cf', () => {
         }).catch(done);
       });
     });
+
     describe('getAccessTokenBoshUAA', () => {
       it('should return existing access token (accessToken does not expire soon)', (done) => {
-        tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
-        tokenIssuer.getAccessTokenBoshUAA().then((content) => {
+        tokenIssuer.tokenInfo.update(tokenInfoNotExpired);
+        tokenIssuer.getAccessTokenBoshUAA().then(content => {
           expect(content).to.eql(tokenNotExpired);
           done();
         }).catch(done);
@@ -137,10 +139,10 @@ describe('cf', () => {
 
       it('should make explicit request for access token (access token expires soon)', (done) => {
         /* jshint expr:true */
-        tokenIssuer.updateTokenInfo(tokenInfoExpired);
+        tokenIssuer.tokenInfo.update(tokenInfoExpired);
         let sandbox = sinon.sandbox.create();
         let scheduleAccessTokenStub = sandbox.stub(tokenIssuer, 'scheduleNextRequestAccessToken');
-        tokenIssuer.getAccessTokenBoshUAA().then((content) => {
+        tokenIssuer.getAccessTokenBoshUAA().then(content => {
           expect(content).to.eql(tokenNotExpired);
           expect(scheduleAccessTokenStub).to.be.calledOnce;
           sandbox.restore();

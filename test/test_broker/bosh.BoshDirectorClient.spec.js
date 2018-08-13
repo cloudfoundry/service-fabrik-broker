@@ -932,7 +932,6 @@ describe('bosh', () => {
 
         let mockBoshClient = new MockBoshDirectorClient();
         mockBoshClient.populateUAAObjects(directorConfig);
-        console.log(config.directors);
         assert(mockBoshClient.uaaObjects[directorConfig.name] === undefined);
 
         //To cover the branch when uaa_url is not provided
