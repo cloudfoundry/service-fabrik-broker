@@ -48,8 +48,8 @@ class BoshDirectorClient extends HttpClient {
         let directorName = _.get(directorConfig, 'name', undefined);
         logger.info(`Director ${directorName} uses UAA based authentication. Populating UAA objects in directorConfig.`);
         this.populateUAAObjects(directorConfig);
-        if (_.get(this.uaaObjects, `${directorName}.uaaClient`, undefined) instanceof UaaClient && 
-            _.get(this.uaaObjects, `${directorName}.tokenIssuer`, undefined) instanceof TokenIssuer) {
+        if (_.get(this.uaaObjects, `${directorName}.uaaClient`, undefined) instanceof UaaClient &&
+          _.get(this.uaaObjects, `${directorName}.tokenIssuer`, undefined) instanceof TokenIssuer) {
           logger.info(`UAA based authentication enabled successfully for ${directorName}.`);
           _.set(directorConfig, 'uaaEnabled', true);
         } else {
