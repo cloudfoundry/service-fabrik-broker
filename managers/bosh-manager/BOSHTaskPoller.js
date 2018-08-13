@@ -65,7 +65,7 @@ class BOSHTaskPoller {
                     }
                   }), Promise.try(() => {
                     if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
-                      //cancel the poller and clear the array
+                      // cancel the poller and clear the array
                       clearInterval(interval);
                       BOSHTaskPoller.pollers[object.metadata.name] = false;
                     }
