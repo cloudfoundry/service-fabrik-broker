@@ -190,7 +190,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //3 mins = buffer time
           },
           {
             file_name: transactionLogsFileName14DaysPrior,
@@ -256,7 +256,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
           },
           {
             file_name: transactionLogsFileName14DaysPrior,
@@ -325,7 +325,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
           },
           {
             file_name: transactionLogsFileName14DaysPrior,
@@ -333,7 +333,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName18DaysPrior,
-            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
           }
         ]);
         //Out of 4 files 1 day prior is filtered out.
@@ -391,7 +391,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
           },
           {
             file_name: transactionLogsFileName14DaysPrior,
@@ -587,7 +587,7 @@ describe('Jobs', function () {
           },
           {
             file_name: transactionLogsFileName16DaysPrior,
-            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 3000 * 60 //3 mins = buffer time
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
           },
           {
             file_name: transactionLogsFileName14DaysPrior,

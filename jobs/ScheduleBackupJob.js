@@ -80,7 +80,7 @@ class ScheduleBackupJob extends BaseJob {
   }
 
   static deleteOldBackup(job, instanceDeleted) {
-    let transactionLogsDeleteBefore;
+    let transactionLogsBefore;
 
     function filterOldBackups(oldBackups) {
       let filteredOldBackups = [];
@@ -95,11 +95,12 @@ class ScheduleBackupJob extends BaseJob {
         if (latestSuccessIndex === -1) {
           //No successful backup beyond retention period.
           filteredOldBackups = sortedBackups;
-          transactionLogsDeleteBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
+          transactionLogsBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
         } else {
           //Should return backups before a successful backup.
           filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
-          transactionLogsDeleteBefore = _.get(sortedBackups[latestSuccessIndex], 'started_at');
+          let backupStartedMillis = new Date(_.get(sortedBackups[latestSuccessIndex], 'started_at')).getTime();
+          transactionLogsBefore = new Date(backupStartedMillis - config.backup.transaction_logs_delete_buffer_time * 60 * 1000).toISOString();
         }
       }
       return filteredOldBackups;
@@ -134,7 +135,7 @@ class ScheduleBackupJob extends BaseJob {
       .then(deletedBackupGuids => {
         // Deleting transaction logs from service-container.
         let deletedTransactionLogFilesCount = 0;
-        return backupStore.listFilesOlderThan(listOptions, transactionLogsDeleteBefore, container)
+        return backupStore.listFilesOlderThan(listOptions, transactionLogsBefore, container)
           .map(transactionLogsFile => {
             deletedTransactionLogFilesCount = deletedTransactionLogFilesCount + 1;
             return backupStore.cloudProvider.remove(container, transactionLogsFile.name);
@@ -160,10 +161,10 @@ class ScheduleBackupJob extends BaseJob {
         }
         logger.info(`Instance deleted. Checking if there are any more backups for :${options.instance_id}`);
         const backupStartedBefore = new Date().toISOString();
-        transactionLogsDeleteBefore = new Date().toISOString();
+        transactionLogsBefore = new Date().toISOString();
         return Promise.all([
             backupStore.listBackupFilenames(backupStartedBefore, options),
-            backupStore.listFilesOlderThan(listOptions, transactionLogsDeleteBefore, container)
+            backupStore.listFilesOlderThan(listOptions, transactionLogsBefore, container)
           ])
           .spread((listOfBackups, listOfTransactionLogs) => {
             if (listOfBackups.length === 0 && listOfTransactionLogs.length === 0) {
