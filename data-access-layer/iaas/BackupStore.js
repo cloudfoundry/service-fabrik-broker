@@ -34,8 +34,7 @@ class BackupStore {
 
   listFilenames(prefix, predicate, iteratees, container, dontParseFilename) {
     const options = {
-      prefix: prefix,
-      container: container
+      prefix: prefix
     };
 
     const self = this;
@@ -46,8 +45,7 @@ class BackupStore {
       level++;
       logger.debug(`Fetching recursively at level : ${level}`);
       const promise = new Promise(function (resolve, reject) {
-        self.cloudProvider
-          .list(options)
+        Promise.try(() => container ? self.cloudProvider.list(container, options) : self.cloudProvider.list(options))
           .then(files => {
             logger.debug('list of files recieved - ', files);
             if (files && files.length > 0) {

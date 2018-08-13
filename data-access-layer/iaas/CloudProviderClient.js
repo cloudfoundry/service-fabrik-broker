@@ -61,10 +61,10 @@ class CloudProviderClient extends BaseCloudClient {
   list(container, options) {
     if (arguments.length < 2) {
       options = container;
-      container = _.get(options, 'container') || this.containerName;
+      container = this.containerName;
     }
     return this.storage
-      .getFilesAsync(container, _.omit(options, 'container'))
+      .getFilesAsync(container, options)
       .then(listOfFiles => {
         let list = [];
         let isTruncated = false;
