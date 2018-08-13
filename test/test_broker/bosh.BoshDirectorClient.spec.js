@@ -872,7 +872,7 @@ describe('bosh', () => {
             'client_id': 'client_id',
             'client_secret': 'client_secret',
             'uaa_url': 'uaa_url',
-            'uaa_auth': 'true'
+            'uaa_auth': true
           }
         }];
         let mockBoshClient = new MockBoshDirectorClient();
@@ -910,7 +910,7 @@ describe('bosh', () => {
             'client_id': 'client_id',
             'client_secret': 'client_secret',
             'uaa_url': 'uaa_url',
-            'uaa_auth': 'true'
+            'uaa_auth': true
           }
         };
 
@@ -919,15 +919,15 @@ describe('bosh', () => {
 
         //assert whether valid objects were popoulatd or not 
         assert(mockBoshClient.uaaObjects[directorConfig.name] !== undefined);
-        assert(mockBoshClient.uaaObjects[directorConfig.name].client_id === directorConfig.uaa.client_id);
-        assert(mockBoshClient.uaaObjects[directorConfig.name].client_secret === directorConfig.uaa.client_secret);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].clientId === directorConfig.uaa.client_id);
+        assert(mockBoshClient.uaaObjects[directorConfig.name].clientSecret === directorConfig.uaa.client_secret);
         assert(mockBoshClient.uaaObjects[directorConfig.name].uaaClient instanceof UaaClient);
         assert(mockBoshClient.uaaObjects[directorConfig.name].tokenIssuer instanceof TokenIssuer);
       });
 
       it('should not populate UAA objects when invalid information is provided in directorConfig', () => {
         let directorConfig = {
-          'name': 'bosh',
+          'name': 'bosh'
         };
 
         let mockBoshClient = new MockBoshDirectorClient();
@@ -940,7 +940,7 @@ describe('bosh', () => {
           'uaa': {
             'client_id': 'client_id',
             'client_secret': 'client_secret',
-            'uaa_auth': 'true'
+            'uaa_auth': true
           }
         };
 

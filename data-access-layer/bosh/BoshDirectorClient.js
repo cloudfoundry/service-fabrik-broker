@@ -43,46 +43,47 @@ class BoshDirectorClient extends HttpClient {
   }
 
   determineDirectorAuthenticationMethod() {
-    _.forEach(config.directors, (directorConfig) => {
-      if (_.get(directorConfig, 'uaa.uaa_auth', undefined)) {
+    _.forEach(config.directors, directorConfig => {
+      if (_.get(directorConfig, 'uaa.uaa_auth', undefined) === true) {
         let directorName = _.get(directorConfig, 'name', undefined);
-        logger.info('Director ', directorName, ' uses UAA based authentication. Populating UAA objects in directorConfig.');
+        logger.info(`Director ${directorName} uses UAA based authentication. Populating UAA objects in directorConfig.`);
         this.populateUAAObjects(directorConfig);
-        if (_.get(this.uaaObjects, directorName + '.uaaClient', undefined) && _.get(this.uaaObjects, directorName + '.tokenIssuer', undefined)) {
+        if (_.get(this.uaaObjects, `${directorName}.uaaClient`, undefined) instanceof UaaClient && 
+            _.get(this.uaaObjects, `${directorName}.tokenIssuer`, undefined) instanceof TokenIssuer) {
+          logger.info(`UAA based authentication enabled successfully for ${directorName}.`);
           _.set(directorConfig, 'uaaEnabled', true);
         } else {
-          //TODO: Fatal error condition. Logging and exiting.
-          logger.error('UAA objects were not popoulated successfully for bosh ', directorName, '.');
-          logger.error('Without UAA objects, communication to bosh not possible. Exiting.');
+          //Fatal error condition. Logging and exiting.
+          logger.error(`UAA objects were not populated successfully for bosh ${directorName}. Exiting.`);
           HttpServer.immediateShutdown();
         }
       } else {
-        logger.info('Director ' + directorConfig.name + ' uses basic authentication.');
+        logger.info(`Director ${directorConfig.name} uses basic authentication.`);
       }
     });
   }
 
   populateUAAObjects(directorConfig) {
     /* Client id and client secret will be used when requesting the token. Here just a sanity check.*/
-    let uaa_client_id = _.get(directorConfig, 'uaa.client_id', undefined);
-    let uaa_client_secret = _.get(directorConfig, 'uaa.client_secret', undefined);
-    if (!uaa_client_id || !uaa_client_secret) {
-      logger.error('UAA credentials for director ', directorConfig.name, ' not provided. Error condition.');
+    let uaaClientId = _.get(directorConfig, 'uaa.client_id', undefined);
+    let uaaClientSecret = _.get(directorConfig, 'uaa.client_secret', undefined);
+    if (!uaaClientId || !uaaClientSecret) {
+      logger.error(`UAA credentials for director ${directorConfig.name} not provided. Error condition.`);
       return;
     }
     /* create uaaClient and tokenIssuer for this director */
-    let uaa_url = _.get(directorConfig, 'uaa.uaa_url', undefined);
-    if (!uaa_url) {
-      logger.error('UAA url not provided to populateUAAObjects.');
+    let uaaUrl = _.get(directorConfig, 'uaa.uaa_url', undefined);
+    if (!uaaUrl) {
+      logger.error(`UAA url not provided to populateUAAObjects.`);
       return;
     }
 
     let directorName = _.get(directorConfig, 'name', undefined);
     this.uaaObjects[directorName] = {};
-    this.uaaObjects[directorName].uaaClient = new UaaClient({}, uaa_url);
+    this.uaaObjects[directorName].uaaClient = new UaaClient({}, uaaUrl);
     this.uaaObjects[directorName].tokenIssuer = new TokenIssuer(this.uaaObjects[directorName].uaaClient);
-    this.uaaObjects[directorName].client_id = uaa_client_id;
-    this.uaaObjects[directorName].client_secret = uaa_client_secret;
+    this.uaaObjects[directorName].clientId = uaaClientId;
+    this.uaaObjects[directorName].clientSecret = uaaClientSecret;
 
   }
 
@@ -249,10 +250,10 @@ class BoshDirectorClient extends HttpClient {
     requestDetails.rejectUnauthorized = !directorConfig.skip_ssl_validation;
     if (directorConfig.uaaEnabled) {
       let directorName = _.get(directorConfig, 'name', undefined);
-      let client_id = this.uaaObjects[directorName].client_id;
-      let client_secret = this.uaaObjects[directorName].client_secret;
+      let clientId = this.uaaObjects[directorName].clientId;
+      let clientSecret = this.uaaObjects[directorName].clientSecret;
       let tokenIssuer = this.uaaObjects[directorName].tokenIssuer;
-      return Promise.try(() => tokenIssuer.getAccessTokenBoshUAA(client_id, client_secret))
+      return Promise.try(() => tokenIssuer.getAccessTokenBoshUAA(clientId, clientSecret))
         .then(accessToken => {
           requestDetails.auth = {
             bearer: accessToken

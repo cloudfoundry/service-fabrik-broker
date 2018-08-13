@@ -70,7 +70,6 @@ class HttpServer {
 
   static immediateShutdown() {
     logger.info('App shutting down now.');
-    pubsub.publish(CONST.TOPIC.APP_SHUTTING_DOWN);
     process.exit(2);
   }
 }
