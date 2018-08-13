@@ -82,27 +82,30 @@ class EventLogRiemannClient {
   }
 
   /**
-   * This method suffixes the instance_id if avaialble or backup guid if avaialble or instance_id if avaialble to event name to provide more information in the email alerts
+   * This method suffixes the instance_id if available or backup guid if available or instance_id if available or service_name if available to event name to provide more information in the email alerts
    */
   suffixGuidsToEventName(eventInfo) {
     var eventName = eventInfo.eventName;
     const instanceId = _.get(eventInfo, 'request.instance_id');
     const backupGuid = _.get(eventInfo, 'request.backup_guid');
     const appGuid = _.get(eventInfo, 'request.app_guid');
+    const serviceId = _.get(eventInfo, 'request.service_id');
 
-    if (instanceId === undefined && backupGuid === undefined && appGuid === undefined) {
+    if (instanceId === undefined && backupGuid === undefined && appGuid === undefined && serviceId === undefined) {
       return false;
     } else {
       if (instanceId !== undefined) {
         eventName = `${eventName}.instance_id.${instanceId}`;
       }
-
       if (backupGuid !== undefined) {
         eventName = `${eventName}.backup_guid.${backupGuid}`;
       }
-
       if (appGuid !== undefined) {
         eventName = `${eventName}.app_guid.${appGuid}`;
+      }
+      if (serviceId !== undefined) {
+        let serviceName = require('../models').catalog.getServiceName(serviceId);
+        eventName = `${eventName}.service_name.${serviceName}`;
       }
     }
     eventInfo.eventName = eventName;
