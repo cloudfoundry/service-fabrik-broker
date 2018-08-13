@@ -194,8 +194,8 @@ defaults: &defaults
     encryption:
       key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
       initialization_vector: 'ABCDEFGHABCDEFGH'
-    certificate: <%= certificate('broker.crt') %>
-    private_key: <%= certificate('broker.key') %>
+    certificate: <%= certificate('apiserver.crt') %>
+    private_key: <%= certificate('apiserver.key') %>
     crds:
       "deployment.servicefabrik.io_v1alpha1_directors.yaml": <%=base64_template('crds/deployment.servicefabrik.io_v1alpha1_directors.yaml') %>
       "lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml": <%= base64_template('crds/lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml') %>
