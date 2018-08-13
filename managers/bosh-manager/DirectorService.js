@@ -72,9 +72,9 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  // static get typeDescription() {
-  //   return 'deployment';
-  // }
+  static get typeDescription() {
+    return 'deployment';
+  }
 
   static get prefix() {
     return _

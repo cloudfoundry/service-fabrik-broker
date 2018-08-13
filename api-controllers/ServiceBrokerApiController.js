@@ -73,6 +73,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       res.status(statusCode).send(body);
     }
+
     function conflict() {
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }

@@ -17,14 +17,26 @@ class BOSHManager extends BaseManager {
 
   processRequest(requestObjectBody) {
     return Promise.try(() => {
-      if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        return this._processCreate(requestObjectBody);
-      } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
-        return this._processUpdate(requestObjectBody);
-      } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-        return this._processDelete(requestObjectBody);
-      }
-    });
+        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+          return this._processCreate(requestObjectBody);
+        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+          return this._processUpdate(requestObjectBody);
+        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+          return this._processDelete(requestObjectBody);
+        }
+      })
+      .catch(err => eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: requestObjectBody.metadata.name,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+          lastOperation: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            description: err.message
+          }
+        }
+      }));
   }
 
   _processCreate(changeObjectBody) {

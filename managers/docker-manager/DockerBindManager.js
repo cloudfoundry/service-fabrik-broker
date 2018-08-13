@@ -17,12 +17,24 @@ class DockerBindManager extends BaseManager {
 
   processRequest(requestObjectBody) {
     return Promise.try(() => {
-      if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        return this._processBind(requestObjectBody);
-      } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-        return this._processUnbind(requestObjectBody);
-      }
-    });
+        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+          return this._processBind(requestObjectBody);
+        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+          return this._processUnbind(requestObjectBody);
+        }
+      })
+      .catch(err => eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
+        resourceId: requestObjectBody.metadata.name,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+          lastOperation: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            description: err.message
+          }
+        }
+      }));;
   }
 
   _processBind(changeObjectBody) {

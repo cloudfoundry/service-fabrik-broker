@@ -10,6 +10,7 @@ const config = require('../../common/config');
 const DirectorService = require('./DirectorService');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
+const AssertionError = errors.AssertionError;
 /* jshint unused:false */
 const Conflict = errors.Conflict;
 
@@ -70,18 +71,49 @@ class BOSHTaskPoller {
                       BOSHTaskPoller.pollers[object.metadata.name] = false;
                     }
                   })]))
-                  .catch(ServiceInstanceNotFound, () => {
+                  .catch(ServiceInstanceNotFound, (err) => {
+                    clearInterval(interval);
+                    BOSHTaskPoller.pollers[object.metadata.name] = false;
                     if (response.type === 'delete') {
-                      clearInterval(interval);
-                      BOSHTaskPoller.pollers[object.metadata.name] = false;
                       return eventmesh.apiServerClient.deleteResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                         resourceId: object.metadata.name
                       });
                     } else {
-                      //TODO set error field
+                      const action = response.type;
+                      const guid = metadata.name;
+                      const instanceType = 'deployment';
+                      return eventmesh.apiServerClient.updateResource({
+                        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                        resourceId: metadata.name,
+                        status: {
+                          lastOperation: {
+                            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                            description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                          },
+                          state: CONST.APISERVER.RESOURCE_STATE.FAILED
+                        }
+                      })
                     }
+                  })
+                  .catch(AssertionError, err => {
+                    const action = response.type;
+                    const guid = metadata.name;
+                    const instanceType = 'deployment';
+                    return eventmesh.apiServerClient.updateResource({
+                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                      resourceId: metadata.name,
+                      status: {
+                        lastOperation: {
+                          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                          description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                        },
+                        state: CONST.APISERVER.RESOURCE_STATE.FAILED
+                      }
+                    })
                   })
                   /* jshint unused:false */
                   .catch(Conflict => {
