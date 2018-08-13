@@ -110,10 +110,10 @@ class BOSHTaskPoller {
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, startPoller, queryString)
       .then(stream => {
-        logger.info(`Successfully set watcher on director resources`);
+        logger.debug(`Successfully set watcher on director resources`);
         return setTimeout(() => {
           try {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
             return this.start();
           } catch (err) {
