@@ -353,7 +353,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
           resourceGroup: plan.manager.resource_mappings.bind.resource_group,
           resourceType: plan.manager.resource_mappings.bind.resource_type,
           resourceId: params.binding_id,
-          parentResourceId: req.params.instance_id,
+          labels: {
+            instance_guid: req.params.instance_id
+          },
           options: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
@@ -405,7 +407,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
               resourceGroup: plan.manager.resource_mappings.bind.resource_group,
               resourceType: plan.manager.resource_mappings.bind.resource_type,
               resourceId: params.binding_id,
-              parentResourceId: req.params.instance_id,
+              labels: {
+                instance_guid: req.params.instance_id
+              },
               options: params,
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.DELETE

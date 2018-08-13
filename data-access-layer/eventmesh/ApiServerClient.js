@@ -98,7 +98,7 @@ class ApiServerClient {
     logger.debug(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
     let finalState;
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
-      .then(() => this.getState({
+      .then(() => this.getResource({
         resourceGroup: opts.resourceGroup,
         resourceType: opts.resourceType,
         resourceId: opts.resourceId
