@@ -16,6 +16,7 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ContinueWithNext = errors.ContinueWithNext;
+const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const config = require('../common/config');
@@ -72,6 +73,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       res.status(statusCode).send(body);
     }
+    function conflict() {
+      res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
+    }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise
@@ -99,7 +103,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         }
       })
-      .then(done);
+      .then(done)
+      .catch(Conflict, conflict);
   }
 
   patchInstance(req, res) {
@@ -207,11 +212,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       res.status(statusCode).send(body);
     }
-
-    function gone(err) {
-      /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
-    }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
 
     return Promise
@@ -254,8 +254,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         }
       })
-      .then(done)
-      .catch(ServiceInstanceNotFound, gone);
+      .then(done);
   }
   getLastInstanceOperation(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
@@ -314,7 +313,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
           resourceId: req.params.instance_id
         })
         .then(done)
-        .catch(AssertionError, failed)
         .catch(NotFound, notFound);
     }
   }
