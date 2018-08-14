@@ -54,70 +54,76 @@ class BOSHTaskPoller {
                 })
                 .tap((resource) => logger.info(`Successfully acquired task poller lock for request with options: ${JSON.stringify(changedOptions)}\n` +
                   `Updated resource with poller annotations is: `, resource))
-                .then(() => DirectorService.createDirectorService(object.metadata.name, changedOptions)
-                  .then(boshService => boshService.lastOperation(response))
-                  .tap(lastOperationValue => logger.info('last operation value is ', lastOperationValue))
-                  .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
-                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                    resourceId: metadata.name,
-                    status: {
-                      lastOperation: lastOperationValue,
-                      state: lastOperationValue.resourceState
-                    }
-                  }), Promise.try(() => {
-                    if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
-                      // cancel the poller and clear the array
-                      clearInterval(interval);
-                      BOSHTaskPoller.pollers[object.metadata.name] = false;
-                    }
-                  })]))
-                  .catch(ServiceInstanceNotFound, (err) => {
-                    clearInterval(interval);
-                    BOSHTaskPoller.pollers[object.metadata.name] = false;
-                    if (response.type === 'delete') {
-                      return eventmesh.apiServerClient.deleteResource({
-                        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                        resourceId: object.metadata.name
-                      });
-                    } else {
-                      const action = response.type;
-                      const guid = metadata.name;
-                      const instanceType = 'deployment';
-                      return eventmesh.apiServerClient.updateResource({
+                .then(resource => {
+                  if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resource.body.status.state)) {
+                    BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                  } else {
+
+                    return DirectorService.createDirectorService(object.metadata.name, changedOptions)
+                      .then(boshService => boshService.lastOperation(response))
+                      .tap(lastOperationValue => logger.info('last operation value is ', lastOperationValue))
+                      .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                         resourceId: metadata.name,
                         status: {
-                          lastOperation: {
-                            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                            description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
-                          },
-                          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                          error: utils.buildErrorJson(err)
+                          lastOperation: lastOperationValue,
+                          state: lastOperationValue.resourceState
                         }
+                      }), Promise.try(() => {
+                        if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
+                          // cancel the poller and clear the array
+                          BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                        }
+                      })]))
+                      .catch(ServiceInstanceNotFound, (err) => {
+                        BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                        if (response.type === 'delete') {
+                          return eventmesh.apiServerClient.deleteResource({
+                            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                            resourceId: object.metadata.name
+                          });
+                        } else {
+                          const action = response.type;
+                          const guid = metadata.name;
+                          const instanceType = 'deployment';
+                          return eventmesh.apiServerClient.updateResource({
+                            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                            resourceId: metadata.name,
+                            status: {
+                              lastOperation: {
+                                state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                                description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                              },
+                              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                              error: utils.buildErrorJson(err)
+                            }
+                          });
+                        }
+                      })
+                      .catch(AssertionError, err => {
+                        BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                        const action = response.type;
+                        const guid = metadata.name;
+                        const instanceType = 'deployment';
+                        return eventmesh.apiServerClient.updateResource({
+                          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                          resourceId: metadata.name,
+                          status: {
+                            lastOperation: {
+                              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                              description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                            },
+                            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                            error: utils.buildErrorJson(err)
+                          }
+                        });
                       });
-                    }
-                  })
-                  .catch(AssertionError, err => {
-                    const action = response.type;
-                    const guid = metadata.name;
-                    const instanceType = 'deployment';
-                    return eventmesh.apiServerClient.updateResource({
-                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                      resourceId: metadata.name,
-                      status: {
-                        lastOperation: {
-                          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                          description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
-                        },
-                        state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                        error: utils.buildErrorJson(err)
-                      }
-                    });
-                  }))
+                  }
+                })
                 /* jshint unused:false */
                 .catch(Conflict => {
                   logger.debug(`Not able to acquire poller processing lock, Request with is probably picked by other worker`);
@@ -127,8 +133,7 @@ class BOSHTaskPoller {
         })
         .catch((NotFound), () => {
           logger.debug(`Resource not found, clearing interval`);
-          clearInterval(interval);
-          BOSHTaskPoller.pollers[object.metadata.name] = false;
+          BOSHTaskPoller.clearPoller(object.metadata.name, interval);
         });
     }
 
@@ -138,8 +143,6 @@ class BOSHTaskPoller {
         logger.info('starting poller for deployment ', event.object.metadata.name);
         const interval = setInterval(() => poller(event.object, interval), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
         BOSHTaskPoller.pollers[event.object.metadata.name] = true;
-      } else if (event.type === CONST.API_SERVER.WATCH_EVENT.DELETED) {
-        // logger.info('GETTING DELETE EVENT!!!!!!!!!!!!!!!!!!!! ', event.object);
       }
     }
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;
@@ -161,6 +164,14 @@ class BOSHTaskPoller {
         logger.error('Failed registering watche on director resources with error:', e);
         throw e;
       });
+  }
+
+  static clearPoller(resourceId, intervalId) {
+    logger.info(`Clearing bosh task poller for deployment`, resourceId);
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+    BOSHTaskPoller.pollers[resourceId] = false;
   }
 }
 
