@@ -88,10 +88,13 @@ class DockerManager extends BaseManager {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
+      }))
+      .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
+        resourceId: changeObjectBody.metadata.name
       }));
   }
-
-
 }
 
 module.exports = DockerManager;

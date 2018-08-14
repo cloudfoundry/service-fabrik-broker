@@ -29,6 +29,8 @@ spec:
           type: object
         status:
           properties:
+            error:
+              type: string
             response:
               type: string
             state:

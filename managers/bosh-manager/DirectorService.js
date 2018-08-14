@@ -222,7 +222,7 @@ class DirectorService extends BaseDirectorService {
       type: 'create'
     };
     return this
-      .initialize(operation)
+      .initialize(operation.bkah)
       .then(() => {
         return this.createOrUpdateDeployment(this.deploymentName, params);
       })
