@@ -30,7 +30,15 @@ class DefaultBackupManager extends BaseManager {
       } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         return DefaultBackupManager._processDelete(requestObjectBody);
       }
-    });
+    }).catch(err => eventmesh.apiServerClient.updateResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      resourceId: requestObjectBody.metadata.name,
+      status: {
+        state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+        error: err
+      }
+    }));
   }
 
   static _processBackup(changeObjectBody) {

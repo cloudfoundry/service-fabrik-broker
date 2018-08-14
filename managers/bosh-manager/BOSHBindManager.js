@@ -32,7 +32,8 @@ class BOSHBindManager extends BaseManager {
           lastOperation: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             description: err.message
-          }
+          },
+          error: err
         }
       }));
   }

@@ -591,10 +591,10 @@ defaults: &defaults
         async: false
         resource_mappings: &docker_resource_mappings
           resource_group: 'deployment.servicefabrik.io'
-          resource_type: 'docker'
+          resource_type: 'dockers'
           bind:
             resource_group: 'bind.servicefabrik.io'
-            resource_type: 'dockerbind'
+            resource_type: 'dockerbinds'
         settings:
           image: 'servicefabrikjenkins/blueprint'
           tag: 'latest'
@@ -703,13 +703,13 @@ defaults: &defaults
         async: true
         resource_mappings: &director_resource_mappings
           resource_group: 'deployment.servicefabrik.io'
-          resource_type: 'director'
+          resource_type: 'directors'
           bind:
             resource_group: 'bind.servicefabrik.io'
-            resource_type: 'directorbind'
+            resource_type: 'directorbinds'
           backup:
             resource_group: 'backup.servicefabrik.io'
-            resource_type: 'defaultbackup'
+            resource_type: 'defaultbackups'
         settings: &settings_plan3
           prefix: 'blueprint'
           agent: *agent_blueprint
@@ -1001,10 +1001,10 @@ defaults: &defaults
         name: 'virtual_host'
         resource_mappings:
           resource_group: 'deployment.servicefabrik.io'
-          resource_type: 'virtualhost'
+          resource_type: 'virtualhosts'
           bind:
             resource_group: 'bind.servicefabrik.io'
-            resource_type: 'virtualhostbind'
+            resource_type: 'virtualhostbinds'
         settings: &settings_virtual_host
           prefix: 'rabbitmq'
           agent: *agent_rabbitmq

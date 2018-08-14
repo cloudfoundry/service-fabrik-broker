@@ -31,10 +31,11 @@ class DockerBindManager extends BaseManager {
           state: CONST.APISERVER.RESOURCE_STATE.FAILED,
           lastOperation: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: err.message
-          }
+            description: err.message,
+          },
+          error: err
         }
-      }));;
+      }));
   }
 
   _processBind(changeObjectBody) {

@@ -89,8 +89,6 @@ class BOSHManager extends BaseManager {
         }
       }));
   }
-
-
 }
 
 module.exports = BOSHManager;

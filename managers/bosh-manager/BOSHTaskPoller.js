@@ -93,9 +93,10 @@ class BOSHTaskPoller {
                             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                             description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
                           },
-                          state: CONST.APISERVER.RESOURCE_STATE.FAILED
+                          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                          error: err
                         }
-                      })
+                      });
                     }
                   })
                   .catch(AssertionError, err => {
@@ -111,9 +112,10 @@ class BOSHTaskPoller {
                           state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
                         },
-                        state: CONST.APISERVER.RESOURCE_STATE.FAILED
+                        state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                        error: err
                       }
-                    })
+                    });
                   })
                   /* jshint unused:false */
                   .catch(Conflict => {

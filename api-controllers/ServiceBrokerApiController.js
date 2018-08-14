@@ -213,6 +213,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       res.status(statusCode).send(body);
     }
+
+    function gone(err) {
+      /* jshint unused:false */
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
+    }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
 
     return Promise
@@ -247,12 +252,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
-            resourceId: req.params.instance_id,
-            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-            started_at: new Date()
-          });
+              resourceGroup: plan.manager.resource_mappings.resource_group,
+              resourceType: plan.manager.resource_mappings.resource_type,
+              resourceId: req.params.instance_id,
+              start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+              started_at: new Date()
+            })
+            .catch(NotFound, gone);
         }
       })
       .then(done);
