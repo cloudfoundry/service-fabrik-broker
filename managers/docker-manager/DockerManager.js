@@ -6,6 +6,8 @@ const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const BaseManager = require('../BaseManager');
 const DockerService = require('./DockerService');
+const errors = require('../../common/errors');
+const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
 class DockerManager extends BaseManager {
 
@@ -80,14 +82,10 @@ class DockerManager extends BaseManager {
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
+        resourceId: changeObjectBody.metadata.name
       }))
       .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

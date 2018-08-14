@@ -116,11 +116,11 @@ class BOSHTaskPoller {
                         error: err
                       }
                     });
-                  })
-                  /* jshint unused:false */
-                  .catch(Conflict => {
-                    logger.debug(`Not able to acquire poller processing lock, Request with is probably picked by other worker`);
-                  }));
+                  }))
+                /* jshint unused:false */
+                .catch(Conflict => {
+                  logger.debug(`Not able to acquire poller processing lock, Request with is probably picked by other worker`);
+                });
             }
           });
         })

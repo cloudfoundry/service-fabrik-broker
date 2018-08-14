@@ -252,16 +252,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-              resourceGroup: plan.manager.resource_mappings.resource_group,
-              resourceType: plan.manager.resource_mappings.resource_type,
-              resourceId: req.params.instance_id,
-              start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-              started_at: new Date()
-            })
-            .catch(NotFound, gone);
+            resourceGroup: plan.manager.resource_mappings.resource_group,
+            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceId: req.params.instance_id,
+            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            started_at: new Date()
+          });
         }
       })
-      .then(done);
+      .then(done)
+      .catch(NotFound, gone);
   }
   getLastInstanceOperation(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
