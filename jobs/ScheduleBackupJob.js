@@ -43,6 +43,9 @@ class ScheduleBackupJob extends BaseJob {
           .tap(deleteStatus => instanceDeleted = deleteStatus)
           .then(() => {
             if (instanceDeleted) {
+              if (!_.get(job.attrs.data, 'instance_deletion_time')) {
+                job.attrs.data.instance_deletion_time = new Date(Date.now()).toISOString();
+              }
               return 'instance_deleted';
             }
             return this
@@ -90,9 +93,17 @@ class ScheduleBackupJob extends BaseJob {
       if (typeof oldBackups !== 'undefined' && oldBackups.length > 0) {
         // Older backups are sorted as latest at first
         let sortedBackups = _.sortBy(oldBackups, ['started_at']).reverse();
+        let deleteAllOlderBackups = false;
         const latestSuccessIndex = _.findIndex(sortedBackups,
           backup => backup.state === CONST.OPERATION.SUCCEEDED);
-        if (latestSuccessIndex === -1) {
+        if (_.get(job.attrs.data, 'instance_deletion_time')) {
+          const instanceDeletionTime = job.attrs.data.instance_deletion_time;
+          const instanceDeletedBefore = (new Date(Date.now()) - new Date(instanceDeletionTime)) / (24 * 60 * 60 * 1000); //in days
+          if (instanceDeletedBefore > config.backup.retention_period_in_days) {
+            deleteAllOlderBackups = true;
+          }
+        }
+        if (latestSuccessIndex === -1 || deleteAllOlderBackups) {
           //No successful backup beyond retention period.
           filteredOldBackups = sortedBackups;
           transactionLogsBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
@@ -109,9 +120,9 @@ class ScheduleBackupJob extends BaseJob {
     const options = _.omit(job.attrs.data, 'trigger', 'type');
     const serviceName = catalog.getService(job.attrs.data.service_id).name;
     const listOptions = {
-      prefix: `${serviceName}/logs/${job.attrs.data.instance_id}`
+      instance_id: job.attrs.data.instance_id,
+      service_name: serviceName
     };
-    const container = `${backupStore.containerPrefix}-${serviceName}`;
     return backupStore
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
       .then(oldBackups => filterOldBackups(oldBackups))
@@ -134,13 +145,8 @@ class ScheduleBackupJob extends BaseJob {
       })
       .then(deletedBackupGuids => {
         // Deleting transaction logs from service-container.
-        let deletedTransactionLogFilesCount = 0;
-        return backupStore.listFilesOlderThan(listOptions, transactionLogsBefore, container)
-          .map(transactionLogsFile => {
-            deletedTransactionLogFilesCount = deletedTransactionLogFilesCount + 1;
-            return backupStore.cloudProvider.remove(container, transactionLogsFile.name);
-          })
-          .then(() => {
+        return backupStore.deleteTransactionLogsOlderThan(listOptions, transactionLogsBefore)
+          .then(deletedTransactionLogFilesCount => {
             const deletedObjects = {
               deletedBackupGuids: deletedBackupGuids,
               deletedTransactionLogFilesCount: deletedTransactionLogFilesCount
@@ -164,7 +170,7 @@ class ScheduleBackupJob extends BaseJob {
         transactionLogsBefore = new Date().toISOString();
         return Promise.all([
             backupStore.listBackupFilenames(backupStartedBefore, options),
-            backupStore.listFilesOlderThan(listOptions, transactionLogsBefore, container)
+            backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsBefore)
           ])
           .spread((listOfBackups, listOfTransactionLogs) => {
             if (listOfBackups.length === 0 && listOfTransactionLogs.length === 0) {

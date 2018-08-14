@@ -275,9 +275,10 @@ class BackupStore {
       .then(isoDate => this.listBackupFiles(options, getPredicate(isoDate), iteratees));
   }
 
-  listFilesOlderThan(options, dateOlderThan, container) {
+  listTransactionLogsOlderThan(options, dateOlderThan) {
     const iteratees = ['lastModified'];
-    let prefix = options.prefix;
+    const prefix = `${options.service_name}/logs/${options.instance_id}`;
+    const container = `${this.containerPrefix}-${options.service_name}`;
 
     function getPredicate(isoDate) {
       return function predicate(filenameobject) {
@@ -285,10 +286,23 @@ class BackupStore {
         return _.lt(new Date(filenameobject.lastModified).toISOString(), isoDate);
       };
     }
-
     return Promise
       .try(() => this.filename.isoDate(dateOlderThan))
       .then(isoDate => this.listFilenames(prefix, getPredicate(isoDate), iteratees, container, true));
+  }
+
+  deleteTransactionLogsOlderThan(options, dateOlderThan) {
+    let deletedTransactionLogFilesCount = 0;
+    const container = `${this.containerPrefix}-${options.service_name}`;
+
+    return this.listTransactionLogsOlderThan(options, dateOlderThan)
+      .tap(transactionLogsFiles => {
+        if (!_.isEmpty(transactionLogsFiles)) {
+          deletedTransactionLogFilesCount = transactionLogsFiles.length;
+        }
+      })
+      .map(transactionLogsFile => this.cloudProvider.remove(container, transactionLogsFile.name))
+      .then(() => deletedTransactionLogFilesCount);
   }
 }
 
