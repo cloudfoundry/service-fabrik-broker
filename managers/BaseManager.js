@@ -11,15 +11,20 @@ const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Conflict = errors.Conflict;
 
 class BaseManager {
+
+  registerCrds(resourceGroup, resourceType) {
+    return eventmesh.apiServerClient.registerCrds(resourceGroup, resourceType);
+  }
+
   registerWatcher(resourceGroup, resourceType, queryString) {
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
     return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, this.handleResource.bind(this), queryString)
       .then(stream => {
-        logger.info(`Successfully set watcher with query string:`, queryString);
+        logger.debug(`Successfully set watcher with query string:`, queryString);
         return Promise
           .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
           .then(() => {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
             return this.registerWatcher(resourceGroup, resourceType, queryString);
           });

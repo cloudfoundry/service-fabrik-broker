@@ -118,7 +118,6 @@ describe('managers', function () {
             response: {}
           }
         }, 1, undefined, 404);
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {}, 1);
         return manager.startBackup(opts)
           .catch(err => {
             expect(err.status).to.eql(404);

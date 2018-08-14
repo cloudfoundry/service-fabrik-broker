@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
+const yaml = require('js-yaml');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -18,6 +19,8 @@ const InternalServerError = errors.InternalServerError;
 const apiserver = new kc.Client({
   config: {
     url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
+    cert: config.apiserver.certificate,
+    key: config.apiserver.private_key,
     insecureSkipTlsVerify: true
   },
   version: CONST.APISERVER.VERSION
@@ -64,7 +67,10 @@ class ApiServerClient {
   init() {
     return Promise.try(() => {
       if (!this.ready) {
-        return apiserver.loadSpec()
+        return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
+            apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+          })
+          .then(() => apiserver.loadSpec())
           .then(() => {
             this.ready = true;
             logger.debug('Successfully loaded ApiServer Spec');
@@ -96,7 +102,7 @@ class ApiServerClient {
         const state = resource.status.state;
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
-          logger.info(`Polling for ${opts.start_state} duration: ${duration} `);
+          logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
           if (duration > CONST.BACKUP.BACKUP_START_TIMEOUT_IN_SECS) {
             logger.error(`Backup with guid ${opts.resourceId} not picked up from the queue`);
             throw new Timeout(`Backup with guid ${opts.resourceId} not picked up from the queue`);
@@ -142,19 +148,20 @@ class ApiServerClient {
       .then(() => {
         const stream = apiserver
           .apis[resourceGroup][CONST.APISERVER.API_VERSION]
-          .watch.namespaces(CONST.APISERVER.NAMESPACE)[resourceType].getStream({
+          .watch[resourceType].getStream({
             qs: {
-              labelSelector: queryString ? queryString : ''
+              labelSelector: queryString ? queryString : '',
+              timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
             }
           });
-        const jsonStream = new JSONStream();
-        stream.pipe(jsonStream);
-        jsonStream.on('data', callback);
-        jsonStream.on('error', err => {
-          logger.error('Error occured during watching', err);
+        stream.on('error', err => {
+          logger.error(`Error occured during watching for resource ${resourceGroup}, ${resourceType}`, err);
           this.registerWatcher(resourceGroup, resourceType, callback, queryString);
           //throw err;
         });
+        const jsonStream = new JSONStream();
+        stream.pipe(jsonStream);
+        jsonStream.on('data', callback);
         return stream;
       })
       .catch(err => {
@@ -171,12 +178,43 @@ class ApiServerClient {
     };
   }
 
+  registerCrds(resourceGroup, resourceType) {
+    logger.info(`Registering CRDs for ${resourceGroup}, ${resourceType}`);
+    const crdJson = this.getCrdJson(resourceGroup, resourceType);
+    return Promise.try(() => this.init())
+      .then(() => {
+        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
+            body: crdJson,
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          })
+          .catch(err => {
+            return convertToHttpErrorAndThrow(err);
+          });
+      })
+      .catch(NotFound, () => {
+        logger.info('CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..');
+        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
+          body: crdJson
+        });
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  getCrdJson(resourceGroup, resourceType) {
+    const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
+    return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
+  }
+
   /**
    * @description Create Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
-   * @param {string} opts.parentResourceId - Id of parent resource to be put in label ex: instance_guid
+   * @param {string} opts.labels - to be put in label ex: instance_guid
    * @param {Object} opts.options - Value to set for spec.options field of resource
    * @param {string} opts.status - status of the resource
    */
@@ -189,40 +227,38 @@ class ApiServerClient {
     const metadata = {
       name: opts.resourceId
     };
-    if (opts.parentResourceId) {
+    if (opts.labels) {
       // TODO-PR: revisit key name instance_guid
-      metadata.labels = {
-        instance_guid: opts.parentResourceId
-      };
+      metadata.labels = opts.labels;
     }
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
     const resourceBody = {
+      apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+      kind: crdJson.spec.names.kind,
       metadata: metadata,
       spec: {
         'options': JSON.stringify(opts.options)
       },
     };
+
+    if (opts.status) {
+      const statusJson = {};
+      _.forEach(opts.status, (val, key) => {
+        if (key === 'state') {
+          resourceBody.metadata.labels = _.merge(resourceBody.metadata.labels, {
+            'state': val
+          });
+        }
+        statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+      });
+      resourceBody.status = statusJson;
+    }
     return Promise.try(() => this.init())
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
           body: resourceBody
         }))
-      .then(resource => {
-        if (opts.status) {
-          const statusJson = {};
-          _.forEach(opts.status, (val, key) => {
-            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
-          });
-          return Promise.try(() => this.init())
-            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-                body: {
-                  'status': statusJson
-                }
-              }));
-        }
-        return resource;
-      })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -244,39 +280,38 @@ class ApiServerClient {
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
     assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to update resource`);
     return Promise.try(() => {
-        if (opts.options || opts.metadata) {
-          const patchBody = {};
-          if (opts.metadata) {
-            patchBody.metadata = opts.metadata;
-          }
-          if (opts.options) {
-            patchBody.spec = {
-              'options': JSON.stringify(opts.options)
-            };
-          }
-          return Promise.try(() => this.init())
-            .then(() => apiserver
-              .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
-                body: patchBody
-              }));
+        const patchBody = {};
+        if (opts.metadata) {
+          patchBody.metadata = opts.metadata;
         }
-      })
-      .then(resource => {
+        if (opts.options) {
+          patchBody.spec = {
+            'options': JSON.stringify(opts.options)
+          };
+        }
         if (opts.status) {
           const statusJson = {};
           _.forEach(opts.status, (val, key) => {
+            if (key === 'state') {
+              patchBody.metadata = _.merge(patchBody.metadata, {
+                labels: {
+                  'state': val
+                }
+              });
+            }
             statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
-          return Promise.try(() => this.init())
-            .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-              .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).status.patch({
-                body: {
-                  'status': statusJson
-                }
-              }));
+          patchBody.status = statusJson;
         }
-        return resource;
+        return Promise.try(() => this.init())
+          .then(() => apiserver
+            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+              body: patchBody,
+              headers: {
+                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+              }
+            }));
       })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);

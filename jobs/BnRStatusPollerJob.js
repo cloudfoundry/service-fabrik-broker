@@ -85,7 +85,9 @@ class BnRStatusPollerJob extends BaseJob {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: instance_guid,
-              parentResourceId: instance_guid,
+              labels: {
+                instance_guid: instance_guid
+              },
               options: {},
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -105,7 +107,9 @@ class BnRStatusPollerJob extends BaseJob {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
               resourceId: backup_guid,
-              parentResourceId: instance_guid,
+              labels: {
+                instance_guid: instance_guid
+              },
               options: job_data.operation_details,
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,

@@ -190,11 +190,23 @@ defaults: &defaults
   # APISERVER SETTINGS #
   ##############################
   apiserver:
-    ip: '127.0.0.1'
-    port: 9443
+    ip: '10.244.14.252'
+    port: 8443
     encryption:
       key: 'ABCDEFGHABCDEFGHABCDEFGHABCDEFGH'
       initialization_vector: 'ABCDEFGHABCDEFGH'
+    certificate: <%= certificate('broker.crt') %>
+    private_key: <%= certificate('broker.key') %>
+    crds:
+      "deployment.servicefabrik.io_v1alpha1_directors.yaml": <%=base64_template('crds/deployment.servicefabrik.io_v1alpha1_directors.yaml') %>
+      "lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml": <%= base64_template('crds/lock.servicefabrik.io_v1alpha1_deploymentlocks.yaml') %>
+      "backup.servicefabrik.io_v1alpha1_defaultrestores.yaml": <%= base64_template('crds/backup.servicefabrik.io_v1alpha1_defaultrestores.yaml') %>
+      "bind.servicefabrik.io_v1alpha1_directorbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_directorbinds.yaml') %>
+      "bind.servicefabrik.io_v1alpha1_dockerbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_dockerbinds.yaml') %>
+      "backup.servicefabrik.io_v1alpha1_defaultbackups.yaml": <%= base64_template('crds/backup.servicefabrik.io_v1alpha1_defaultbackups.yaml') %>
+      "deployment.servicefabrik.io_v1alpha1_dockers.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_dockers.yaml') %>
+      "deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml') %>
+      "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

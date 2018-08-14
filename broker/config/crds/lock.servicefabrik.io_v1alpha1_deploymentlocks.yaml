@@ -1,0 +1,39 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: deploymentlocks.lock.servicefabrik.io
+spec:
+  group: lock.servicefabrik.io
+  names:
+    kind: DeploymentLock
+    plural: deploymentlocks
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            options:
+              type: string
+          type: object
+        status:
+          properties:
+            state:
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null

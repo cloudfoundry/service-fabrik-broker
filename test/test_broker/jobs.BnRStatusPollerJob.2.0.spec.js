@@ -115,9 +115,7 @@ describe('Jobs', function () {
 
       it('backup status check should be succesful and status is succeeded - when resource is not in apiserver', function () {
         mocks.apiServerEventMesh.nockCreateResource('backup', 'defaultbackup', {});
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
         mocks.apiServerEventMesh.nockCreateResource('deployment', 'director', {});
-        mocks.apiServerEventMesh.nockPatchResourceStatus('deployment', 'director', {});
         mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instanceInfo.instance_guid, {
           metadata: {
             labels: {
@@ -141,7 +139,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', SUCCEEDED_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
@@ -184,7 +182,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', SUCCEEDED_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
@@ -237,7 +235,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).not.to.be.called;
           expect(getDirectorConfigStub).to.be.calledOnce;
@@ -289,7 +287,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).to.be.calledOnce;
@@ -344,7 +342,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {});
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).not.to.be.called;
@@ -400,7 +398,7 @@ describe('Jobs', function () {
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResourceStatus('backup', 'defaultbackup', {}, 2);
+        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', ABORTING_BACKUP_GUID, {}, 2);
         return BnRStatusPollerJob.run(job, () => {
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).to.be.calledOnce;
