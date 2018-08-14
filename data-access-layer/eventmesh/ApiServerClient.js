@@ -67,10 +67,10 @@ class ApiServerClient {
   init() {
     return Promise.try(() => {
       if (!this.ready) {
-        _.forEach(config.apiserver.crds, crdTemplate => {
-          apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
-        });
-        return apiserver.loadSpec()
+        return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
+            apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+          })
+          .then(() => apiserver.loadSpec())
           .then(() => {
             this.ready = true;
             logger.debug('Successfully loaded ApiServer Spec');
