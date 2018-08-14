@@ -180,7 +180,7 @@ class BackupService extends BaseDirectorService {
             resourceId: result.backup_guid,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              error: err
+              error: utils.buildErrorJson(err)
             }
           }))
           .then(() => {
@@ -327,7 +327,7 @@ class BackupService extends BaseDirectorService {
             resourceId: options.backup_guid,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-              error: err
+              error: utils.buildErrorJson(err)
             }
           }));
       });

@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
+const utils = require('../../common/utils');
 const BaseManager = require('../BaseManager');
 const DockerService = require('./DockerService');
 const errors = require('../../common/errors');
@@ -37,14 +38,14 @@ class DockerManager extends BaseManager {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             description: err.message
           },
-          error: err
+          error: utils.buildErrorJson(err)
         }
       }));
   }
 
   _processCreate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Creating docker resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
@@ -61,7 +62,7 @@ class DockerManager extends BaseManager {
 
   _processUpdate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Updating docker resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
@@ -78,7 +79,7 @@ class DockerManager extends BaseManager {
 
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Deleting docker resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))

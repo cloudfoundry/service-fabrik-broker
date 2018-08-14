@@ -7,6 +7,7 @@ const CONST = require('../../common/constants');
 const BaseManager = require('../BaseManager');
 const DirectorService = require('./DirectorService');
 const errors = require('../../common/errors');
+const utils = require('../../common/utils');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
 class BOSHManager extends BaseManager {
@@ -36,14 +37,15 @@ class BOSHManager extends BaseManager {
           lastOperation: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             description: err.message
-          }
+          },
+          error: utils.buildErrorJson(err)
         }
       }));
   }
 
   _processCreate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Creating deployment resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.create(changedOptions))
@@ -60,7 +62,7 @@ class BOSHManager extends BaseManager {
 
   _processUpdate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Updating deployment resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.update(changedOptions))
@@ -77,7 +79,7 @@ class BOSHManager extends BaseManager {
 
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering backup with the following options:', changedOptions);
+    logger.info('Deleting deployment resource with the following options:', changedOptions);
     //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.delete(changedOptions))

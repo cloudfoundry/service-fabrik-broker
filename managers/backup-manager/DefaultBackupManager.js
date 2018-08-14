@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
+const utils = require('../../common/utils');
 const CONST = require('../../common/constants');
 const BackupService = require('./');
 const BaseManager = require('../BaseManager');
@@ -36,7 +37,7 @@ class DefaultBackupManager extends BaseManager {
       resourceId: requestObjectBody.metadata.name,
       status: {
         state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-        error: err
+        error: utils.buildErrorJson(err)
       }
     }));
   }

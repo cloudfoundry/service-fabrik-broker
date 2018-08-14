@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
+const utils = require('../../common/utils');
 const BaseManager = require('../BaseManager');
 const DirectorService = require('./DirectorService');
 
@@ -33,7 +34,7 @@ class BOSHBindManager extends BaseManager {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             description: err.message
           },
-          error: err
+          error: utils.buildErrorJson(err)
         }
       }));
   }

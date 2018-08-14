@@ -3,6 +3,7 @@
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
+const utils = require('../../common/utils');
 const CONST = require('../../common/constants');
 const BaseManager = require('../BaseManager');
 const VirtualHostService = require('./VirtualHostService');
@@ -34,10 +35,7 @@ class VirtualHostManager extends BaseManager {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             lastOperation: {},
             response: {},
-            error: {
-              message: err.message,
-              code: err.status
-            }
+            error: utils.buildErrorJson(err)
           }
         });
       });

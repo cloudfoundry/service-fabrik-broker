@@ -7,6 +7,7 @@ const CONST = require('../../common/constants');
 const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const config = require('../../common/config');
+const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
@@ -94,7 +95,7 @@ class BOSHTaskPoller {
                             description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
                           },
                           state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                          error: err
+                          error: utils.buildErrorJson(err)
                         }
                       });
                     }
@@ -113,7 +114,7 @@ class BOSHTaskPoller {
                           description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
                         },
                         state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                        error: err
+                        error: utils.buildErrorJson(err)
                       }
                     });
                   }))
