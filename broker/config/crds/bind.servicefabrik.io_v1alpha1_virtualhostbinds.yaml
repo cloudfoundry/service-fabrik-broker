@@ -8,7 +8,7 @@ metadata:
 spec:
   group: bind.servicefabrik.io
   names:
-    kind: VirtualhostBind
+    kind: VirtualHostBind
     plural: virtualhostbinds
   scope: Namespaced
   validation:

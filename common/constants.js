@@ -242,6 +242,7 @@ module.exports = Object.freeze({
     NAMESPACE: 'default',
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
+    PATCH_CONTENT_TYPE: 'application/merge-patch+json',
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',

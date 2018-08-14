@@ -58,7 +58,7 @@ class UnlockResourcePoller {
     }
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
       .then(stream => {
-        logger.debug(`Successfully set watcher on lock resources`);
+        logger.debug(`Successfully set watcher on resource group ${CONST.APISERVER.RESOURCE_GROUPS.LOCK} and resource ${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}`);
         return Promise
           .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
           .then(() => {

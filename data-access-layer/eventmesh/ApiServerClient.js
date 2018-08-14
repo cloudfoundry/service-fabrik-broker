@@ -186,7 +186,7 @@ class ApiServerClient {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
             body: crdJson,
             headers: {
-              'content-type': 'application/merge-patch+json'
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
             }
           })
           .catch(err => {
@@ -194,7 +194,7 @@ class ApiServerClient {
           });
       })
       .catch(NotFound, () => {
-        logger.info('CRD not yet registered, registering it now..');
+        logger.info('CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..');
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
           body: crdJson
         });
@@ -309,7 +309,7 @@ class ApiServerClient {
             .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
               body: patchBody,
               headers: {
-                'content-type': 'application/merge-patch+json'
+                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
               }
             }));
       })

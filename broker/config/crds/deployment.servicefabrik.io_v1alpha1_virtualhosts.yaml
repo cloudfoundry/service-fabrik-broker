@@ -8,7 +8,7 @@ metadata:
 spec:
   group: deployment.servicefabrik.io
   names:
-    kind: Virtualhost
+    kind: VirtualHost
     plural: virtualhosts
   scope: Namespaced
   validation:
