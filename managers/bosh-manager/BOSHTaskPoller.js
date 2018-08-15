@@ -17,10 +17,7 @@ const Conflict = errors.Conflict;
 
 class BOSHTaskPoller {
   static start() {
-    function poller(object, interval) {
-      const response = JSON.parse(object.status.response);
-      const changedOptions = JSON.parse(object.spec.options);
-      logger.info('Getting operation status with the following options and response:', changedOptions, response);
+    function poller(object, intervalId) {
       const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
       // If no lockedByPoller annotation then set annotation  with time
       // Else check timestamp if more than specific time than start polling and change lockedByPoller Ip
@@ -29,14 +26,15 @@ class BOSHTaskPoller {
           resourceType: resourceDetails.resourceType,
           resourceId: object.metadata.name,
         })
-        .then((resource) => {
-          const pollerAnnotation = resource.metadata.annotations.lockedByTaskPoller;
+        .then(resourceBody => {
+          const options = resourceBody.spec.options;
+          const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
           logger.info(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
             if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + 2000))) { // cahnge this to 5000
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
-              const patchBody = _.cloneDeep(resource);
+              const patchBody = _.cloneDeep(resourceBody);
               let metadata = patchBody.metadata;
               let currentAnnotations = metadata.annotations;
               let patchAnnotations = currentAnnotations ? currentAnnotations : {};
@@ -52,15 +50,14 @@ class BOSHTaskPoller {
                   resourceId: metadata.name,
                   metadata: metadata
                 })
-                .tap((resource) => logger.info(`Successfully acquired task poller lock for request with options: ${JSON.stringify(changedOptions)}\n` +
-                  `Updated resource with poller annotations is: `, resource))
-                .then(resource => {
-                  if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resource.body.status.state)) {
-                    BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                .tap((updatedResource) => logger.info(`Successfully acquired task poller lock for request with options: ${JSON.stringify(options)}\n` +
+                  `Updated resource with poller annotations is: `, updatedResource))
+                .then(() => {
+                  if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
+                    BOSHTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
-
-                    return DirectorService.createDirectorService(object.metadata.name, changedOptions)
-                      .then(boshService => boshService.lastOperation(response))
+                    return DirectorService.createDirectorService(metadata.name, options)
+                      .then(boshService => boshService.lastOperation(resourceBody.status.response))
                       .tap(lastOperationValue => logger.info('last operation value is ', lastOperationValue))
                       .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -73,21 +70,18 @@ class BOSHTaskPoller {
                       }), Promise.try(() => {
                         if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
                           // cancel the poller and clear the array
-                          BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+                          BOSHTaskPoller.clearPoller(metadata.name, intervalId);
                         }
                       })]))
                       .catch(ServiceInstanceNotFound, (err) => {
-                        BOSHTaskPoller.clearPoller(object.metadata.name, interval);
-                        if (response.type === 'delete') {
+                        BOSHTaskPoller.clearPoller(metadata.name, intervalId);
+                        if (resourceBody.status.response.type === 'delete') {
                           return eventmesh.apiServerClient.deleteResource({
                             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                            resourceId: object.metadata.name
+                            resourceId: metadata.name
                           });
                         } else {
-                          const action = response.type;
-                          const guid = metadata.name;
-                          const instanceType = 'deployment';
                           return eventmesh.apiServerClient.updateResource({
                             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -95,7 +89,7 @@ class BOSHTaskPoller {
                             status: {
                               lastOperation: {
                                 state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                                description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                                description: CONST.SERVICE_BROKER_ERR_MSG
                               },
                               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                               error: utils.buildErrorJson(err)
@@ -104,10 +98,7 @@ class BOSHTaskPoller {
                         }
                       })
                       .catch(AssertionError, err => {
-                        BOSHTaskPoller.clearPoller(object.metadata.name, interval);
-                        const action = response.type;
-                        const guid = metadata.name;
-                        const instanceType = 'deployment';
+                        BOSHTaskPoller.clearPoller(metadata.name, intervalId);
                         return eventmesh.apiServerClient.updateResource({
                           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -115,7 +106,7 @@ class BOSHTaskPoller {
                           status: {
                             lastOperation: {
                               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                              description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+                              description: CONST.SERVICE_BROKER_ERR_MSG
                             },
                             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                             error: utils.buildErrorJson(err)
@@ -126,52 +117,56 @@ class BOSHTaskPoller {
                 })
                 /* jshint unused:false */
                 .catch(Conflict => {
-                  logger.debug(`Not able to acquire poller processing lock, Request with is probably picked by other worker`);
+                  logger.debug(`Not able to acquire poller processing lock, Request is probably picked by other worker`);
                 });
             }
           });
         })
-        .catch((NotFound), () => {
-          logger.debug(`Resource not found, clearing interval`);
-          BOSHTaskPoller.clearPoller(object.metadata.name, interval);
+        .catch(err => {
+          logger.error(`Error occured while polling for last operation, clearing task poller interval now`, err);
+          BOSHTaskPoller.clearPoller(object.metadata.name, intervalId);
         });
     }
 
     function startPoller(event) {
       logger.debug('Received Director Event: ', event);
-      if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BOSHTaskPoller.pollers[event.object.metadata.name]) {
-        logger.info('starting poller for deployment ', event.object.metadata.name);
-        const interval = setInterval(() => poller(event.object, interval), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
-        BOSHTaskPoller.pollers[event.object.metadata.name] = true;
+      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) {
+        logger.info('starting bosh task poller for deployment ', event.object.metadata.name);
+        BOSHTaskPoller.clearPoller(event.object.metadata.name, BOSHTaskPoller.pollers[event.object.metadata.name]);
+        // Poller time should be little less than watch refresh interval as 
+        const intervalId = setInterval(() => poller(event.object, intervalId), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
+        BOSHTaskPoller.pollers[event.object.metadata.name] = intervalId;
       }
     }
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, startPoller, queryString)
       .then(stream => {
-        logger.debug(`Successfully set watcher on director resources`);
-        return setTimeout(() => {
-          try {
-            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+        logger.debug(`Successfully set watcher on director resources for task polling with query string:`, queryString);
+        return Promise
+          .delay(CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL)
+          .then(() => {
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
             return this.start();
-          } catch (err) {
-            logger.error('Error caught in the set timout callback for resource poller');
-            throw err;
-          }
-        }, CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+          });
       })
       .catch(e => {
-        logger.error('Failed registering watche on director resources with error:', e);
-        throw e;
+        logger.error(`Error occured in registering watch for bosh task poller:`, e);
+        return Promise
+          .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
+          .then(() => {
+            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            return this.start();
+          });
       });
   }
 
   static clearPoller(resourceId, intervalId) {
-    logger.info(`Clearing bosh task poller for deployment`, resourceId);
+    logger.info(`Clearing bosh task poller interval for deployment`, resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }
-    BOSHTaskPoller.pollers[resourceId] = false;
+    _.unset(BOSHTaskPoller.pollers, resourceId);
   }
 }
 

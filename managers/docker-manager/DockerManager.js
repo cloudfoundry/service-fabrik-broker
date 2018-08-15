@@ -34,10 +34,6 @@ class DockerManager extends BaseManager {
         resourceId: requestObjectBody.metadata.name,
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          lastOperation: {
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: err.message
-          },
           error: utils.buildErrorJson(err)
         }
       }));

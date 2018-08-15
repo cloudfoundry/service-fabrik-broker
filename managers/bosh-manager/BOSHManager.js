@@ -36,7 +36,7 @@ class BOSHManager extends BaseManager {
           state: CONST.APISERVER.RESOURCE_STATE.FAILED,
           lastOperation: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: err.message
+            description: CONST.SERVICE_BROKER_ERR_MSG
           },
           error: utils.buildErrorJson(err)
         }

@@ -31,7 +31,6 @@ class VirtualHostBindManager extends BaseManager {
           resourceId: requestObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            response: {},
             error: utils.buildErrorJson(err)
           }
         });

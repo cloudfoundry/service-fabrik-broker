@@ -33,8 +33,6 @@ class VirtualHostManager extends BaseManager {
           resourceId: requestObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            lastOperation: {},
-            response: {},
             error: utils.buildErrorJson(err)
           }
         });
