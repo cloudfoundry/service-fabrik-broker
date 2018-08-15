@@ -19,6 +19,7 @@ const bosh = require('../../data-access-layer/bosh');
 const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
+const backupStore = require('../../data-access-layer/iaas').backupStore;
 const boshOperationQueue = bosh.BoshOperationQueue;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
@@ -46,6 +47,7 @@ class DirectorService extends BaseDirectorService {
     this.director = bosh.director;
     this.networkSegmentIndex = undefined;
     this.platformManager = undefined;
+    this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
     this.prefix = CONST.SERVICE_FABRIK_PREFIX;
   }
