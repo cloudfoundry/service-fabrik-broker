@@ -75,7 +75,7 @@ class CloudProviderClient extends BaseCloudClient {
           list = listOfFiles;
         }
         const files = [];
-        _.each(list, file =>  files.push(_
+        _.each(list, file => files.push(_
           .chain(file)
           .pick('name', 'lastModified')
           .set('isTruncated', isTruncated)

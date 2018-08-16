@@ -391,6 +391,7 @@ defaults: &defaults
     num_of_allowed_restores: 10 # Number of allowed restores in restore_history_days
     restore_history_days: 30 # Max allowed restores  10 in 30 days
     reschedule_backup_delay_after_restore: 3 #(minute)
+    transaction_logs_delete_buffer_time: 10 #(minute)
 
     provider:
       name: openstack

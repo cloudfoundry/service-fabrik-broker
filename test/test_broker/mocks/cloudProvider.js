@@ -13,6 +13,7 @@ exports.upload = upload;
 exports.headObject = headObject;
 exports.getContainer = getContainer;
 exports.list = list;
+exports.listBlobs = listBlobs;
 exports.remove = remove;
 
 function auth(times) {
@@ -102,12 +103,13 @@ function getContainer(containerName) {
     });
 }
 
-function list(containerName, prefix, filenames, responseStatusCode, times) {
+function list(containerName, prefix, filenames, responseStatusCode, times, lastModifiedDate) {
+  const lastModifiedDateISO = lastModifiedDate ? new Date(lastModifiedDate).toISOString() : new Date().toISOString();
   const files = _
     .chain(filenames)
     .map(name => ({
       name: name,
-      lastModified: new Date().toISOString()
+      last_modified: lastModifiedDateISO
     }))
     .value();
   const qs = {
@@ -122,6 +124,30 @@ function list(containerName, prefix, filenames, responseStatusCode, times) {
     .query(qs)
     .times(times || 1)
     .reply(responseStatusCode || 200, files, {
+      'X-Container-Object-Count': '42'
+    });
+}
+
+function listBlobs(containerName, prefix, fileObjects, times) {
+  const files = _
+    .chain(fileObjects)
+    .map(fileObject => ({
+      name: fileObject.file_name,
+      last_modified: new Date(fileObject.last_modified).toISOString()
+    }))
+    .value();
+  const qs = {
+    format: 'json'
+  };
+  if (prefix) {
+    qs.prefix = prefix;
+  }
+  return nock(objectStoreUrl)
+    .replyContentLength()
+    .get(`/${containerName}`)
+    .query(qs)
+    .times(times || 1)
+    .reply(200, files, {
       'X-Container-Object-Count': '42'
     });
 }
