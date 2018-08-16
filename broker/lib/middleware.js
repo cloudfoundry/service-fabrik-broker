@@ -44,34 +44,6 @@ exports.validateCreateRequest = function () {
   };
 };
 
-exports.lock = function (operationType, lastOperationCall) {
-  return function (req, res, next) {
-    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
-      // Acquire lock for this instance
-      return lockManager.lock(req.params.instance_id, {
-          lockedResourceDetails: {
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: req.params.instance_id,
-            operation: operationType ? operationType : utils.decodeBase64(req.query.operation).type // This is for the last operation call
-          }
-        })
-        .then(() => next())
-        .catch((err) => {
-          logger.debug('[LOCK]: exception occurred; Need not worry as lock is probably set --', err);
-          //For last operation call, we ensure migration of locks through this
-          if (lastOperationCall && err instanceof DeploymentAlreadyLocked) {
-            logger.info(`Proceeding as lock is already acquired for the resource: ${req.params.instance_id}`);
-            next();
-          } else {
-            next(err);
-          }
-        });
-    }
-    next();
-  };
-};
-
 exports.checkBlockingOperationInProgress = function () {
   return function (req, res, next) {
     if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
