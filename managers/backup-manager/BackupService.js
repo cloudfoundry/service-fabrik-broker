@@ -381,7 +381,7 @@ class BackupService extends BaseDirectorService {
           resourceId: abortOptions.guid,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: e
+            error: utils.buildErrorJson(e)
           }
         });
       });
