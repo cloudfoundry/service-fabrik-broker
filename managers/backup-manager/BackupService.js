@@ -372,6 +372,17 @@ class BackupService extends BaseDirectorService {
         default:
           return _.pick(metadata, 'state');
         }
+      })
+      .catch(e => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: abortOptions.guid,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: e
+          }
+        });
       });
   }
 

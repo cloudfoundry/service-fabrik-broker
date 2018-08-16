@@ -318,7 +318,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               },
               options: {},
               status: {
-                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
                 lastOperation: {},
                 response: {}
               }
