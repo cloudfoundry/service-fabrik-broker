@@ -29,9 +29,10 @@ class BOSHTaskPoller {
         .then(resourceBody => {
           const options = resourceBody.spec.options;
           const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
-          logger.info(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
+          logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
-            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + 2000))) { // cahnge this to 5000
+            // If task is not picked by poller which has the lock on task for CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
+            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + CONST.DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resourceBody);
@@ -50,7 +51,7 @@ class BOSHTaskPoller {
                   resourceId: metadata.name,
                   metadata: metadata
                 })
-                .tap((updatedResource) => logger.info(`Successfully acquired task poller lock for request with options: ${JSON.stringify(options)}\n` +
+                .tap((updatedResource) => logger.debug(`Successfully acquired task poller lock for request with options: ${JSON.stringify(options)}\n` +
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
                   if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
@@ -58,7 +59,7 @@ class BOSHTaskPoller {
                   } else {
                     return DirectorService.createDirectorService(metadata.name, options)
                       .then(boshService => boshService.lastOperation(resourceBody.status.response))
-                      .tap(lastOperationValue => logger.info('last operation value is ', lastOperationValue))
+                      .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
                       .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
