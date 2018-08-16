@@ -448,6 +448,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (!backupGuid && !timeStamp) {
           throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
         } else if (timeStamp) {
+          const service = this.getService(serviceId);
+          const isPitrEnabled = _.get(service, 'pitr');
+          if (!isPitrEnabled) {
+            logger.debug(`Non pitr service : ${serviceId}`);
+            throw new BadRequest(`Time based recovery not supported for service ${_.get(service, 'name')}`);
+          }
           return this.validateRestoreTimeStamp(timeStamp);
         } else if (backupGuid) {
           return this.validateUuid(backupGuid, 'Backup GUID');

@@ -1005,7 +1005,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1081,7 +1081,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1141,7 +1141,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1311,7 +1311,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1725,7 +1725,7 @@ describe('service-fabrik-api-sf2.0', function () {
             getServiceStub.restore();
           });
 
-          it('should initiate a start-restore operation at cloud controller via a service instance update: Non PITR service', function () {
+          it('Bad Request at start-restore with time_stamp operation for non PITR service', function () {
             mocks.uaa.tokenKey();
             mocks.cloudController.getServiceInstance(instance_id, {
               space_guid: space_guid,
@@ -1733,24 +1733,18 @@ describe('service-fabrik-api-sf2.0', function () {
             });
             mocks.cloudController.findServicePlan(instance_id, plan_id);
             mocks.cloudController.getSpaceDevelopers(space_guid);
-            mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-            mocks.cloudProvider.download(backupPathname, backupMetadata);
-            mocks.cloudController.updateServiceInstance(instance_id, body => {
-              const token = _.get(body.parameters, 'service-fabrik-operation');
-              return support.jwt.verify(token, name, args);
-            });
             return chai
               .request(apps.external)
               .post(`${base_url}/service_instances/${instance_id}/restore`)
               .set('Authorization', authHeader)
               .send({
-                backup_guid: backup_guid
+                time_stamp: `${restoreAtEpoch}`
               })
               .catch(err => err.response)
               .then(res => {
-                expect(res).to.have.status(202);
-                expect(res.body).to.have.property('guid');
-                expect(getServiceStub).to.have.been.calledOnce;
+                expect(res).to.have.status(400);
+                expect(res.text).to.have.string('Time based recovery not supported for service blueprint');
+                expect(getServiceStub.callCount).to.be.eql(1);
                 mocks.verify();
               });
           });
