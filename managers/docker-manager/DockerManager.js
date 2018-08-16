@@ -28,15 +28,18 @@ class DockerManager extends BaseManager {
           return this._processDelete(requestObjectBody);
         }
       })
-      .catch(err => eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        resourceId: requestObjectBody.metadata.name,
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          error: utils.buildErrorJson(err)
-        }
-      }));
+      .catch(err => {
+        logger.error('Error occurred in processRequest', err);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
+          resourceId: requestObjectBody.metadata.name,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: utils.buildErrorJson(err)
+          }
+        });
+      });
   }
 
   _processCreate(changeObjectBody) {

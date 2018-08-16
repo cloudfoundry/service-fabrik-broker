@@ -27,6 +27,7 @@ class VirtualHostManager extends BaseManager {
         }
       })
       .catch(Error, (err) => {
+        logger.error('Error occurred in processRequest', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,

@@ -28,19 +28,22 @@ class BOSHManager extends BaseManager {
           return this._processDelete(requestObjectBody);
         }
       })
-      .catch(err => eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: requestObjectBody.metadata.name,
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          lastOperation: {
+      .catch(err => {
+        logger.error('Error occurred in processRequest', err);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: requestObjectBody.metadata.name,
+          status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: CONST.SERVICE_BROKER_ERR_MSG
-          },
-          error: utils.buildErrorJson(err)
-        }
-      }));
+            lastOperation: {
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              description: CONST.SERVICE_BROKER_ERR_MSG
+            },
+            error: utils.buildErrorJson(err)
+          }
+        });
+      });
   }
 
   _processCreate(changeObjectBody) {

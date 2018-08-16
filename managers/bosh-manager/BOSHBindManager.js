@@ -24,15 +24,18 @@ class BOSHBindManager extends BaseManager {
           return this._processUnbind(requestObjectBody);
         }
       })
-      .catch(err => eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: requestObjectBody.metadata.name,
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          error: utils.buildErrorJson(err)
-        }
-      }));
+      .catch(err => {
+        logger.error('Error occurred in processRequest', err);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: requestObjectBody.metadata.name,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: utils.buildErrorJson(err)
+          }
+        });
+      });
   }
 
   _processBind(changeObjectBody) {

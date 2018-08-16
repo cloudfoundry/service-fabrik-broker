@@ -25,6 +25,7 @@ class VirtualHostBindManager extends BaseManager {
         }
       })
       .catch(Error, (err) => {
+        logger.error('Error occurred in processRequest', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
