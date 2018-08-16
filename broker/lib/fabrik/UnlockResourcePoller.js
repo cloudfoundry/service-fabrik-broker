@@ -27,7 +27,8 @@ class UnlockResourcePoller {
           if (_.includes([
               CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
               CONST.APISERVER.RESOURCE_STATE.FAILED,
-              CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
+              CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+              CONST.APISERVER.RESOURCE_STATE.ABORTED
             ], resourceState)) {
             return lockManager.unlock(object.metadata.name)
               .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
