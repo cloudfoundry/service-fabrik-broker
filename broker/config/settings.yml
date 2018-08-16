@@ -697,7 +697,7 @@ defaults: &defaults
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
       free: false
-#      actions: ReserveIps
+      actions: ReserveIps
       manager: &manager_plan3
         name: 'director'
         async: true
