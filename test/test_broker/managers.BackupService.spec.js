@@ -30,17 +30,11 @@ describe('managers', function () {
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const BackupService = require('../../managers/backup-manager/BackupService');
     const started_at = '2015-11-18T11-28-42Z';
-    // const backupStartedAt = new Date()
-    //   .toISOString()
-    //   .replace(/\.\d*/, '')
-    //   .replace(/:/g, '-');
     const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);
     const prefix = `${space_guid}/backup`;
     const filename = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
     const pathname = `/${container}/${filename}`;
-    // const backupfilename = `${prefix}/${service_id}.${instance_id}.${backup_guid}.${backupStartedAt}.json`;
-    // const backuppathname = `/${container}/${backupfilename}`;
     const data = {
       backup_guid: backup_guid,
       instance_guid: instance_id,
@@ -145,12 +139,9 @@ describe('managers', function () {
           service_id: service_id,
           context: context
         };
-        // const type = 'online';
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
-        // mocks.cloudProvider.auth();
-        // mocks.cloudProvider.headObject(backuppathname);
         const putFileStub = sinon.stub(BackupStore.prototype, 'putFile');
         mocks.agent.startBackup();
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
