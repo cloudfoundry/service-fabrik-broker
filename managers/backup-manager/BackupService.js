@@ -153,9 +153,11 @@ class BackupService extends BaseDirectorService {
             return this.agent.startBackup(agent_ip, backup, vms);
           })
           .then(() => {
+            logger.debug('Writing data to iaas:', data)
             backupStarted = true;
-            let put_ret = this.backupStore.putFile(data);
-            logger.debug(put_ret);
+            return this.backupStore.putFile(data);
+          })
+          .then(() => {
             return data;
           });
       })
