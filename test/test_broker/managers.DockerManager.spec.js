@@ -78,7 +78,7 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
     });
 }
 
-describe.only('somemanagers', function () {
+describe('docker-manager', function () {
   describe('DockerManager', function () {
     let createDockerServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     before(function () {
