@@ -10,6 +10,8 @@ const logger = require('../../common/logger');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
+const utils = require('../../common/utils');
+const HttpClient = utils.HttpClient;
 const UaaClient = require('../../data-access-layer/cf/UaaClient');
 const TokenIssuer = require('../../data-access-layer/cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
@@ -947,6 +949,49 @@ describe('bosh', () => {
         mockBoshClient.populateUAAObjects(directorConfig);
         assert(mockBoshClient.uaaObjects[directorConfig.name] === undefined);
 
+      });
+    });
+
+    describe('#makeRequestWithConfigWithUAA', () => {
+      it.only('should make request with token based auth', (done) => {
+        let prevConfigDirectors = config.directors;
+        config.directors = [{
+          'name': 'bosh',
+          'uaa': {
+            'client_id': 'client_id',
+            'client_secret': 'client_secret',
+            'uaa_url': 'uaa_url',
+            'uaa_auth': true
+          }
+        }];
+
+        let directorConfig = {
+          'name': 'bosh',
+          'url': 'dummy',
+          'skip_ssl_validation': true,
+          'uaa': {
+            'client_id': 'client_id',
+            'client_secret': 'client_secret',
+            'uaa_auth': true,
+            'uaa_url': 'uaa_url'
+          },
+          'uaaEnabled': true
+        };
+        let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
+        //create actual boshDirectorClient
+        let dummyBoshDirectorClient = new BoshDirectorClient();
+        let sandbox = sinon.sandbox.create();
+        let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
+        let requestStub = sandbox.stub(HttpClient.prototype, 'request');
+        getAccessTokenBoshUAAStub.returns(tokenNotExpired);
+
+        dummyBoshDirectorClient.makeRequestWithConfig({},200,directorConfig)
+        .then(() => {
+          expect(requestStub).to.be.calledOnce;
+          sandbox.restore();
+          config.directors = prevConfigDirectors;
+          done();
+        });
       });
     });
   });
