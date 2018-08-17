@@ -139,10 +139,10 @@ describe('managers', function () {
           service_id: service_id,
           context: context
         };
-        // const type = 'online';
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
+        const putFileStub = sinon.stub(BackupStore.prototype, 'putFile');
         mocks.agent.startBackup();
         mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultbackup', {
           status: {
@@ -166,6 +166,8 @@ describe('managers', function () {
         return manager.startBackup(opts)
           .then(() => {
             expect(scheduleStub.callCount).to.eql(1);
+            expect(putFileStub.callCount).to.eql(1);
+            putFileStub.restore();
             mocks.verify();
           });
       });

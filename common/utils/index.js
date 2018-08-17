@@ -50,6 +50,7 @@ exports.hasChangesInForbiddenSections = hasChangesInForbiddenSections;
 exports.unifyDiffResult = unifyDiffResult;
 exports.getBrokerAgentCredsFromManifest = getBrokerAgentCredsFromManifest;
 exports.initializeEventListener = initializeEventListener;
+exports.buildErrorJson = buildErrorJson;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -491,4 +492,12 @@ function getBrokerAgentCredsFromManifest(manifest) {
     });
   });
   return authObject;
+}
+
+function buildErrorJson(err, message) {
+  return {
+    code: err.code,
+    status: err.status,
+    message: message ? message : err.message
+  };
 }

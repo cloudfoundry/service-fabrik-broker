@@ -8,8 +8,6 @@ const ScheduleManager = require('./ScheduleManager');
 const utils = require('../common/utils');
 const logger = require('../common/logger');
 const errors = require('../common/errors');
-const NotFound = errors.NotFound;
-const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const config = require('../common/config');
 const bosh = require('../data-access-layer/bosh');
 const cf = require('../data-access-layer/cf');
@@ -17,7 +15,6 @@ const catalog = require('../common/models').catalog;
 const retry = utils.retry;
 const BackupService = require('../managers/backup-manager');
 const eventmesh = require('../data-access-layer/eventmesh');
-const lockManager = eventmesh.lockManager;
 const EventLogInterceptor = require('../common/EventLogInterceptor');
 
 class BnRStatusPollerJob extends BaseJob {
@@ -69,85 +66,9 @@ class BnRStatusPollerJob extends BaseJob {
     const plan = catalog.getPlan(instanceInfo.plan_id);
     return Promise
       .try(() => {
-        logger.info(`Check if the backup resource ${backup_guid} and deployment resource ${instance_guid} already exists`);
-        // For transition of sf to sfv2 we need to create bakcup and deployment resource
-        // if they are not present
-        // Can be removed once SFv2 transition is over
-        return Promise
-          .try(() => eventmesh.apiServerClient.getResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: instance_guid
-          }))
-          .catch(NotFound, () => {
-            logger.info(`Creating missing operation resource for instance ${instance_guid}`);
-            return eventmesh.apiServerClient.createResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-              resourceId: instance_guid,
-              labels: {
-                instance_guid: instance_guid
-              },
-              options: {},
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-                lastOperation: {},
-                response: {}
-              }
-            });
-          })
-          .then(() => eventmesh.apiServerClient.getResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: backup_guid
-          }))
-          .catch(NotFound, () => {
-            logger.info(`Creating missing operation resource for backup ${backup_guid}`);
-            return eventmesh.apiServerClient.createResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-              resourceId: backup_guid,
-              labels: {
-                instance_guid: instance_guid
-              },
-              options: job_data.operation_details,
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-                lastOperation: {},
-                response: {}
-              }
-            });
-          })
-          .then(() => eventmesh.apiServerClient.updateLastOperationValue({
-            resourceId: instance_guid,
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            value: backup_guid
-          }));
-      })
-      .then(() => {
         if (operationName === CONST.OPERATION_TYPE.BACKUP) {
-          return lockManager.lock(instance_guid, {
-              lockedResourceDetails: {
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                resourceId: backup_guid,
-                operation: CONST.OPERATION_TYPE.BACKUP
-              }
-            })
-            .catch(err => {
-              if (err instanceof DeploymentAlreadyLocked) {
-                logger.info(`Proceeding as lock is already acquired for the resource: ${instance_guid}`);
-              } else {
-                throw err;
-              }
-            })
-            .then(() => {
-              return BackupService.createService(plan)
-                .then(backupService => backupService.getOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
-            });
+          return BackupService.createService(plan)
+            .then(backupService => backupService.getOperationState(CONST.OPERATION_TYPE.BACKUP, instanceInfo));
         }
       })
       .then(operationStatusResponse => {

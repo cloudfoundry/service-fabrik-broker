@@ -154,8 +154,9 @@ class BackupService extends BaseDirectorService {
           })
           .then(() => {
             backupStarted = true;
-            let put_ret = this.backupStore.putFile(data);
-            logger.debug(put_ret);
+            return this.backupStore.putFile(data);
+          })
+          .then(() => {
             return data;
           });
       })
@@ -372,6 +373,17 @@ class BackupService extends BaseDirectorService {
         default:
           return _.pick(metadata, 'state');
         }
+      })
+      .catch(e => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: abortOptions.guid,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: utils.buildErrorJson(e)
+          }
+        });
       });
   }
 
