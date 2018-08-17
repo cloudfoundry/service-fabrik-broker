@@ -953,7 +953,8 @@ describe('bosh', () => {
     });
 
     describe('#makeRequestWithConfigWithUAA', () => {
-      it.only('should make request with token based auth', (done) => {
+      it('should make request with token based auth', (done) => {
+        /* jshint expr:true */
         let prevConfigDirectors = config.directors;
         config.directors = [{
           'name': 'bosh',
@@ -985,13 +986,13 @@ describe('bosh', () => {
         let requestStub = sandbox.stub(HttpClient.prototype, 'request');
         getAccessTokenBoshUAAStub.returns(tokenNotExpired);
 
-        dummyBoshDirectorClient.makeRequestWithConfig({},200,directorConfig)
-        .then(() => {
-          expect(requestStub).to.be.calledOnce;
-          sandbox.restore();
-          config.directors = prevConfigDirectors;
-          done();
-        });
+        dummyBoshDirectorClient.makeRequestWithConfig({}, 200, directorConfig)
+          .then(() => {
+            expect(requestStub).to.be.calledOnce;
+            sandbox.restore();
+            config.directors = prevConfigDirectors;
+            done();
+          });
       });
     });
   });
