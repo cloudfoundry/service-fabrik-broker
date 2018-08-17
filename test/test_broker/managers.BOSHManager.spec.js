@@ -403,7 +403,7 @@ describe('managers', function () {
         });
     });
 
-    it.only('Should gracefully handle errors occured while releasing processing lock', () => {
+    it('Should gracefully handle errors occured while releasing processing lock', () => {
       const options = {
         plan_id: plan_id,
         service_id: service_id,
