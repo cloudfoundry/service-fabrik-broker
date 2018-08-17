@@ -115,7 +115,7 @@ class FabrikBaseController extends BaseController {
 
   validateRestoreTimeStamp(epochDateString) {
     // Here validating 
-    // 1. Requested time stamp should be an epoch.
+    // 1. Requested time stamp should be epoch millisecond.
     // 2. Requested time should not be older than 14(retention period) days
     const retentionMillis = config.backup.retention_period_in_days * 24 * 60 * 60 * 1000;
     const epochRequestDate = Number(epochDateString);
@@ -217,6 +217,10 @@ class FabrikBaseController extends BaseController {
 
   createInstance(instance_id, service_id, plan_id, context) {
     return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+  }
+
+  getService(service_id) {
+    return catalog.getService(service_id);
   }
 
   getPlan(plan_id) {

@@ -101,6 +101,10 @@ describe('utils', function () {
       expect(RegExp('[0-9]+ [0-9\,]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('9 hours', 2))).to.be.eql(true);
     });
 
+    it('should support every \'1 hours\' (24 non divisible) schedule', function () {
+      expect(RegExp('[0-9]+ [0-9\,]+ \* \* \*').test(utils.getCronWithIntervalAndAfterXminute('1 hours'))).to.be.eql(true);
+    });
+
     it('should not support invalid interval format', function () {
       expect(utils.getCronWithIntervalAndAfterXminute.bind(utils, 'random', 2)).to.throw(AssertionError);
     });

@@ -434,7 +434,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
-    const instanceId = req.params.instance_id;
+    const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     const serviceId = req.manager.service.id;
     const planId = req.manager.plan.id;
     const bearer = _
@@ -448,13 +448,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (!backupGuid && !timeStamp) {
           throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
         } else if (timeStamp) {
+          const service = this.getService(serviceId);
+          const isPitrEnabled = _.get(service, 'pitr');
+          if (!isPitrEnabled) {
+            logger.debug(`Non pitr service : ${serviceId}`);
+            throw new BadRequest(`Time based recovery not supported for service ${_.get(service, 'name')}`);
+          }
           return this.validateRestoreTimeStamp(timeStamp);
         } else if (backupGuid) {
           return this.validateUuid(backupGuid, 'Backup GUID');
         }
       })
       .then(() => this.validateRestoreQuota({
-        instance_guid: instanceId,
+        instance_guid: req.params.instance_id,
         service_id: serviceId,
         plan_id: planId,
         tenant_id: tenantId
@@ -463,7 +469,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
           tenant_id: tenantId,
-          instance_id: instanceId,
+          instance_id: sourceInstanceId,
           service_id: serviceId
         } : {
           backup_guid: backupGuid,
@@ -476,8 +482,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
               _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
             .then(successfulBackup => {
               if (_.isEmpty(successfulBackup)) {
-                logger.error(`No successful backup found for service instance '${instanceId}' before time_stamp ${new Date(timeStamp)}`);
-                throw new NotFound(`Cannot restore service instance '${instanceId}' as no successful backup found before time_stamp ${timeStamp}`);
+                logger.error(`No successful backup found for service instance '${sourceInstanceId}' before time_stamp ${new Date(timeStamp)}`);
+                throw new NotFound(`Cannot restore service instance '${sourceInstanceId}' as no successful backup found before time_stamp ${timeStamp}`);
               } else {
                 return successfulBackup;
               }
@@ -486,7 +492,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.backupStore.getBackupFile(backupFileOptions);
         }
       })
-      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space`))
+      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space.`))
       .then(metadata => {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);

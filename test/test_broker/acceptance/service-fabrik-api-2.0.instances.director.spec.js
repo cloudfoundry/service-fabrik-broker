@@ -8,6 +8,7 @@ const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
+const Service = require('../../../common/models').Service;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
@@ -42,6 +43,7 @@ describe('service-fabrik-api-sf2.0', function () {
       const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
       const plan = catalog.getPlan(plan_id);
       const instance_id = mocks.director.uuidByIndex(index);
+      const citr_instance_id = 'abcde437-7585-4d75-addf-aa4d46b49e3b';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const organization_guid = 'c84c8e58-eedc-4706-91fb-e8d97b333481';
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
@@ -839,10 +841,13 @@ describe('service-fabrik-api-sf2.0', function () {
         const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
         const backupPrefix = `${space_guid}/backup`;
         const backupPrefix1 = `${backupPrefix}/${service_id}.${instance_id}`;
+        const citrBackupPrefix1 = `${backupPrefix}/${service_id}.${citr_instance_id}`;
         const restoreFilename = `${restorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+        const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
+        const citrBackupPathname = `/${container}/${citrBackupFilename}`;
         const name = 'restore';
         const backupMetadata = {
           plan_id: plan_id,
@@ -1000,7 +1005,31 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+            });
+        });
+
+        it('should return 422 Unprocessable Entity (no backup found before given time_stamp - Cross instance restore)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, citrBackupPrefix1, []);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .send({
+              time_stamp: `${restoreAtEpoch}`,
+              source_instance_id: citr_instance_id
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1052,7 +1081,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1112,7 +1141,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .set('Authorization', authHeader)
             .catch(err => err.response)
@@ -1139,6 +1168,31 @@ describe('service-fabrik-api-sf2.0', function () {
             .set('Authorization', authHeader)
             .send({
               backup_guid: backup_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
+        it('should return 400 BadRequest : PITR (quota exceeded)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: getDateHistory(11)
+          }));
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1225,7 +1279,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1257,7 +1311,7 @@ describe('service-fabrik-api-sf2.0', function () {
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`
             })
             .catch(err => err.response)
             .then(res => {
@@ -1267,7 +1321,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 400 BadRequest : PITR (quota exceeded)', function () {
+        it('should initiate a start-restore operation at cloud controller via a service instance update: PITR - Cross Instance restore', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
             space_guid: space_guid,
@@ -1275,20 +1329,25 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
-            restore_dates: getDateHistory(11)
-          }));
+          mocks.cloudProvider.list(container, citrBackupPrefix1, [citrBackupFilename]);
+          mocks.cloudProvider.download(citrBackupPathname, backupMetadata);
+          mocks.cloudProvider.download(restorePathname, restoreMetadata);
+          mocks.cloudController.updateServiceInstance(instance_id, body => {
+            const token = _.get(body.parameters, 'service-fabrik-operation');
+            return support.jwt.verify(token, name, args);
+          });
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
             .send({
-              time_stamp: restoreAtEpoch
+              time_stamp: `${restoreAtEpoch}`,
+              source_instance_id: citr_instance_id
             })
             .catch(err => err.response)
             .then(res => {
-              expect(res).to.have.status(400);
-              //expect(res.body).to.have.property('guid');
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
               mocks.verify();
             });
         });
@@ -1606,6 +1665,114 @@ describe('service-fabrik-api-sf2.0', function () {
               expect(res.body).to.have.property('description');
               mocks.verify();
             });
+        });
+
+        describe('#non-pitr-services:', function () {
+          const indexOfService = _.findIndex(config.services, service => service.pitr === true);
+          const non_pitr_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
+          const non_pitr_service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
+          const nonPitrRestorePrefix = `${space_guid}/restore/${non_pitr_service_id}.${instance_id}`;
+          const nonPitrRestoreFilename = `${nonPitrRestorePrefix}.json`;
+          const nonPitrRestorePathname = `/${container}/${nonPitrRestoreFilename}`;
+          let getServiceStub;
+          before(function () {
+            config.services[indexOfService].pitr = false;
+            getServiceStub = sinon.stub(catalog, 'getService');
+            getServiceStub.withArgs(config.services[indexOfService].id).returns(new Service(config.services[indexOfService]));
+          });
+
+          after(function () {
+            config.services[indexOfService].pitr = true;
+          });
+
+          this.afterEach(function () {
+            getServiceStub.restore();
+          });
+
+          it('Bad Request at start-restore with time_stamp operation for non PITR service', function () {
+            mocks.uaa.tokenKey();
+            mocks.cloudController.getServiceInstance(instance_id, {
+              space_guid: space_guid,
+              service_plan_guid: plan_guid
+            });
+            mocks.cloudController.findServicePlan(instance_id, plan_id);
+            mocks.cloudController.getSpaceDevelopers(space_guid);
+            return chai
+              .request(apps.external)
+              .post(`${base_url}/service_instances/${instance_id}/restore`)
+              .set('Authorization', authHeader)
+              .send({
+                time_stamp: `${restoreAtEpoch}`
+              })
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(400);
+                expect(res.text).to.have.string('Time based recovery not supported for service blueprint');
+                expect(getServiceStub.callCount).to.be.eql(1);
+                mocks.verify();
+              });
+          });
+
+          it('should download the restore logs and update the metadata - and shouldn\'t schedule backup - Non PITR service', function () {
+            const state = 'succeeded';
+            const restoreState = {
+              state: state,
+              stage: 'Finished',
+              updated_at: new Date(Date.now())
+            };
+            const restoreLogs = [{
+              time: '2015-11-18T11:28:40+00:00',
+              level: 'info',
+              msg: 'Downloading tarball ...'
+            }, {
+              time: '2015-11-18T11:28:42+00:00',
+              level: 'info',
+              msg: 'Extracting tarball ...'
+            }];
+            const restoreLogsStream = _
+              .chain(restoreLogs)
+              .map(JSON.stringify)
+              .join('\n')
+              .value();
+            mocks.cloudProvider.download(nonPitrRestorePathname, {}, 2);
+            mocks.agent.lastRestoreOperation(restoreState);
+            mocks.agent.getRestoreLogs(restoreLogsStream);
+            mocks.cloudProvider.upload(nonPitrRestorePathname, body => {
+              expect(body.logs).to.eql(restoreLogs);
+              expect(body.state).to.equal(state);
+              expect(body.finished_at).to.not.be.undefined;
+              return true;
+            });
+            mocks.cloudProvider.headObject(nonPitrRestorePathname);
+            mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
+            mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+              spec: {
+                options: JSON.stringify({
+                  lockTTL: Infinity,
+                  lockTime: new Date(),
+                  lockedResourceDetails: {}
+                })
+              }
+            });
+            return chai
+              .request(apps.internal)
+              .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
+              .set('X-Broker-API-Version', broker_api_version)
+              .auth(config.username, config.password)
+              .query({
+                service_id: non_pitr_service_id,
+                plan_id: non_pitr_plan_id,
+                operation: utils.encodeBase64(restoreOperation)
+              })
+              .catch(err => err.response)
+              .then(res => {
+                expect(res).to.have.status(200);
+                expect(res.body.state).to.equal(state);
+                expect(res.body).to.have.property('description');
+                mocks.verify();
+              });
+          });
+
         });
 
       });
