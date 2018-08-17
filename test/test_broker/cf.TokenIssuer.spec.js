@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const TokenIssuer = proxyquire('../../data-access-layer/cf/TokenIssuer', {});
-
+const assert = require('assert');
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
@@ -168,6 +168,26 @@ describe('cf', () => {
         expect(setTimeoutStub).to.be.calledOnce;
         sandbox.restore();
       });
+
+      it('should make correct requests after timeout', () => {
+        let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
+        let tokenInfoSpecific = {
+          access_token: tokenExpiresSpecificDate,
+          refresh_token: tokenExpiresSpecificDate,
+          token_type: 'bearer'
+        };
+        tokenIssuer.updateTokenInfo(tokenInfoSpecific);
+        const delay = tokenIssuer.tokenInfo.accessTokenExpiresIn - tokenIssuer.bufferPeriodSeconds;
+        //setup stubs
+        this.clock = sinon.useFakeTimers(Date.now());
+        tokenIssuer.scheduleNextRequestAccessToken('dummy', 'dummy');
+        this.clock.tick(delay*1000);
+        this.clock.restore();
+
+        setTimeout(() => {
+          assert(tokenIssuer.tokenInfo.accessToken == tokenNotExpired);
+        }, 2000);
+      }).timeout(4000);
     });
   });
 });
