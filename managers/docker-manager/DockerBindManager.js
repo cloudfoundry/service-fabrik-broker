@@ -42,7 +42,6 @@ class DockerBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = changeObjectBody.metadata.labels.instance_guid;
     logger.info('Triggering bind with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(instance_guid, changedOptions)
       .then(dockerService => dockerService.bind(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
@@ -59,7 +58,6 @@ class DockerBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = changeObjectBody.metadata.labels.instance_guid;
     logger.info('Triggering unbind with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(instance_guid, changedOptions)
       .then(dockerService => dockerService.unbind(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({

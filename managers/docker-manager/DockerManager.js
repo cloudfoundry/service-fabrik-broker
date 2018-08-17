@@ -45,7 +45,6 @@ class DockerManager extends BaseManager {
   _processCreate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Creating docker resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
@@ -62,7 +61,6 @@ class DockerManager extends BaseManager {
   _processUpdate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Updating docker resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
@@ -79,7 +77,6 @@ class DockerManager extends BaseManager {
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Deleting docker resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
       .then(() => eventmesh.apiServerClient.deleteResource({

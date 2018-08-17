@@ -49,7 +49,6 @@ class BOSHManager extends BaseManager {
   _processCreate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Creating deployment resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.create(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
@@ -66,7 +65,6 @@ class BOSHManager extends BaseManager {
   _processUpdate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Updating deployment resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.update(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
@@ -83,7 +81,6 @@ class BOSHManager extends BaseManager {
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Deleting deployment resource with the following options:', changedOptions);
-    //const plan = catalog.getPlan(changedOptions.plan_id);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.delete(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({

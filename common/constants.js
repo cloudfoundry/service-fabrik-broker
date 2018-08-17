@@ -38,8 +38,8 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     PROCESSING: 'processing'
   },
-  DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // Change it to 50000 same as lastoperation frequency
-  DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000,
+  DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
+  DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000, // in ms
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -240,7 +240,7 @@ module.exports = Object.freeze({
     RETRY_DELAY: 2000,
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 60000, // in ms ( 1 minute )
-    POLLER_WATCHER_REFRESH_INTERVAL: 120000, // should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
+    POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
     NAMESPACE: 'default',

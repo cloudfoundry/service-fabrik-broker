@@ -21,13 +21,13 @@ const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager
 
 const DockerError = {
   NotFound: {
-    statusCode: 404
+    statusCode: CONST.HTTP_STATUS_CODE.NOT_FOUND
   },
   Conflict: {
-    statusCode: 409
+    statusCode: CONST.HTTP_STATUS_CODE.CONFLICT
   },
   ServerError: {
-    statusCode: 500
+    statusCode: CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
   }
 };
 
