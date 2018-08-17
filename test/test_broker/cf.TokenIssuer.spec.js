@@ -181,11 +181,11 @@ describe('cf', () => {
         //setup stubs
         this.clock = sinon.useFakeTimers(Date.now());
         tokenIssuer.scheduleNextRequestAccessToken('dummy', 'dummy');
-        this.clock.tick(delay*1000);
+        this.clock.tick(delay * 1000);
         this.clock.restore();
 
         setTimeout(() => {
-          assert(tokenIssuer.tokenInfo.accessToken == tokenNotExpired);
+          assert(tokenIssuer.tokenInfo.accessToken === tokenNotExpired);
         }, 2000);
       }).timeout(4000);
     });
