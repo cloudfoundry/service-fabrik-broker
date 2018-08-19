@@ -14,7 +14,6 @@ const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
 const UaaClient = require('../../data-access-layer/cf/UaaClient');
 const TokenIssuer = require('../../data-access-layer/cf/TokenIssuer');
-const HttpServer = require('../../common/HttpServer');
 const yaml = require('js-yaml');
 const assert = require('assert');
 const id = uuid.v4();
@@ -896,7 +895,6 @@ describe('bosh', () => {
           }
         }];
         let sandbox = sinon.sandbox.create();
-        //let immediateShutdownStub = sandbox.stub(HttpServer, 'immediateShutdown');
         let processExitStub = sandbox.stub(process, 'exit');
         let mock = new MockBoshDirectorClient();
         expect(processExitStub).to.be.calledOnce;
