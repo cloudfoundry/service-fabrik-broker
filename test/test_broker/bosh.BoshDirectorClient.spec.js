@@ -896,9 +896,10 @@ describe('bosh', () => {
           }
         }];
         let sandbox = sinon.sandbox.create();
-        let immediateShutdownStub = sandbox.stub(HttpServer, 'immediateShutdown');
+        //let immediateShutdownStub = sandbox.stub(HttpServer, 'immediateShutdown');
+        let processExitStub = sandbox.stub(process, 'exit');
         let mock = new MockBoshDirectorClient();
-        expect(immediateShutdownStub).to.be.calledOnce;
+        expect(processExitStub).to.be.calledOnce;
         config.directors = prevConfigDirectors;
         sandbox.restore();
       });
