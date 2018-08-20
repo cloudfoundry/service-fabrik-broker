@@ -33,6 +33,133 @@ describe('service-broker-api', function () {
       const username = 'user';
       const password = 'secret';
 
+      const payload = {
+        apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+        kind: 'Docker',
+        metadata: {
+          name: instance_id,
+          labels: {
+            state: 'in_queue'
+          }
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: {
+              foo: 'bar'
+            }
+          })
+        },
+        status: {
+          state: 'in_queue',
+          lastOperation: '{}',
+          response: '{}'
+        }
+      };
+
+      const payloadK8s = {
+        apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+        kind: 'Docker',
+        metadata: {
+          name: instance_id,
+          labels: {
+            state: 'in_queue'
+          }
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'kubernetes',
+              namespace: 'default'
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: {
+              foo: 'bar'
+            }
+          })
+        },
+        status: {
+          state: 'in_queue',
+          lastOperation: '{}',
+          response: '{}'
+        }
+      };
+
+
+      const payload2 = {
+        apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+        kind: 'Docker',
+        metadata: {
+          name: instance_id,
+          labels: {
+            state: 'in_queue'
+          }
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: {
+              foo: 'bar'
+            }
+          })
+        },
+        status: {
+          state: 'succeeded',
+          lastOperation: '{}',
+          response: '{}'
+        }
+      };
+
+      const payload2K8s = {
+        apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+        kind: 'Docker',
+        metadata: {
+          name: instance_id,
+          labels: {
+            state: 'in_queue'
+          }
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'kubernetes',
+              namespace: 'default'
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: {
+              foo: 'bar'
+            }
+          })
+        },
+        status: {
+          state: 'succeeded',
+          lastOperation: '{}',
+          response: '{}'
+        }
+      };
+
       before(function () {
         _.unset(fabrik.DockerManager, plan_id);
         mocks.docker.inspectImage();
@@ -55,12 +182,8 @@ describe('service-broker-api', function () {
 
       describe('#provision', function () {
         it('returns 201 Created', function () {
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.createSecurityGroup(instance_id);
-          }
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
+          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -87,15 +210,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 201 Created - start fails once internally', function () {
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.createSecurityGroup(instance_id);
-          }
-          mocks.docker.createContainer(instance_id, 2);
-          mocks.docker.startContainer(500);
-          mocks.docker.deleteContainer();
-          mocks.docker.getAllContainers(usedPorts);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
+          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -122,9 +238,8 @@ describe('service-broker-api', function () {
         });
 
         it('returns 201 Created: For K8S', function () {
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
+          mocks.apiServerEventMesh.nockCreateResource('deployment', 'docker', {}, 1, payloadK8s);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -153,11 +268,8 @@ describe('service-broker-api', function () {
 
       describe('#update', function () {
         it('returns 200 OK', function () {
-          mocks.docker.inspectContainer(instance_id);
-          mocks.docker.deleteContainer();
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -184,11 +296,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 200 OK : For K8S', function () {
-          mocks.docker.inspectContainer(instance_id);
-          mocks.docker.deleteContainer();
-          mocks.docker.createContainer(instance_id);
-          mocks.docker.startContainer();
-          mocks.docker.inspectContainer();
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
             .send({
@@ -217,18 +326,140 @@ describe('service-broker-api', function () {
       });
 
       describe('#deprovision', function () {
+        const payload = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Docker',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const payloadK8s = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Docker',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+
+        const payload2 = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Docker',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const payload2K8s = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Docker',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
         it('returns 200 OK', function () {
           mocks.docker.inspectContainer(instance_id, {
             Config: {
               Env: ['context={"platform":"cloudfoundry"}']
             }
           });
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.findSecurityGroupByName(instance_id);
-            mocks.cloudController.deleteSecurityGroup(instance_id);
-          }
-          mocks.docker.deleteContainer();
-          mocks.docker.deleteVolumes(instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -246,6 +477,8 @@ describe('service-broker-api', function () {
 
         it('returns 410 Gone', function () {
           mocks.docker.inspectContainer(instance_id, {}, 404);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -264,12 +497,8 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.docker.inspectContainer(instance_id);
-          if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-            mocks.cloudController.findSecurityGroupByName(instance_id);
-            mocks.cloudController.deleteSecurityGroup(instance_id);
-          }
-          mocks.docker.deleteContainer();
-          mocks.docker.deleteVolumes(instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -291,8 +520,8 @@ describe('service-broker-api', function () {
               Env: ['context={"platform":"kubernetes"}']
             }
           });
-          mocks.docker.deleteContainer();
-          mocks.docker.deleteVolumes(instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -311,8 +540,85 @@ describe('service-broker-api', function () {
       });
 
       describe('#bind', function () {
+        const bindPayload = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'in_queue',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const bindPayload2 = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: JSON.stringify({
+              hostname: docker_url.hostname,
+              username: username,
+              password: password,
+              ports: {
+                '12345/tcp': 12345
+              },
+              uri: `http://${username}:${password}@${docker_url.hostname}`
+            })
+          }
+        };
         it('returns 201 Created', function () {
-          mocks.docker.inspectContainer(instance_id);
+          mocks.apiServerEventMesh.nockCreateResource('bind', 'dockerbind', bindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, bindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, {
+            "status": {
+              "response": "{}"
+            }
+          }, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -349,12 +655,153 @@ describe('service-broker-api', function () {
       });
 
       describe('#unbind', function () {
+        const unbindPayload = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+        const unbindPayloadK8s = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+        const unbindPayload2 = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: JSON.stringify({
+              hostname: docker_url.hostname,
+              username: username,
+              password: password,
+              ports: {
+                '12345/tcp': 12345
+              },
+              uri: `http://${username}:${password}@${docker_url.hostname}`
+            })
+          }
+        };
+        const unbindPayload2K8s = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'kubernetes',
+                namespace: 'default'
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: JSON.stringify({
+              hostname: docker_url.hostname,
+              username: username,
+              password: password,
+              ports: {
+                '12345/tcp': 12345
+              },
+              uri: `http://${username}:${password}@${docker_url.hostname}`
+            })
+          }
+        };
         it('returns 200 OK', function () {
           mocks.docker.inspectContainer(instance_id, {
             Config: {
               Env: ['context={"platform":"cloudfoundry"}']
             }
           });
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -373,6 +820,9 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.docker.inspectContainer(instance_id);
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -395,6 +845,9 @@ describe('service-broker-api', function () {
               Env: ['context={"platform":"kubernetes"}']
             }
           });
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);
+          mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({

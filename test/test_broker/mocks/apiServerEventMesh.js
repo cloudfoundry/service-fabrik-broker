@@ -21,7 +21,15 @@ function nockLoadSpec(times) {
   nock(apiServerHost)
     .get('/swagger.json')
     .times(times || 1)
-    .reply(200, swagger);
+    .reply(200, {
+      paths: {
+        '/api/': {
+          get: {
+            operationId: 'getCoreAPIVersions'
+          }
+        }
+      }
+    });
 }
 
 function nockCreateCrd(resourceGroup, resourceType, response, times) {
