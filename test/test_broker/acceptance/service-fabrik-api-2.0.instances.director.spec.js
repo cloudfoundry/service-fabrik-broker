@@ -1745,15 +1745,6 @@ describe('service-fabrik-api-sf2.0', function () {
             });
             mocks.cloudProvider.headObject(nonPitrRestorePathname);
             mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-            mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-              spec: {
-                options: JSON.stringify({
-                  lockTTL: Infinity,
-                  lockTime: new Date(),
-                  lockedResourceDetails: {}
-                })
-              }
-            });
             return chai
               .request(apps.internal)
               .get(`${broker_api_base_url}/service_instances/${instance_id}/last_operation`)
