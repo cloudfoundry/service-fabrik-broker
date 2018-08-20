@@ -3,6 +3,7 @@
 const nock = require('nock');
 const swagger = require('../helper-files/apiserver-swagger.json');
 const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 
@@ -38,16 +39,20 @@ function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStat
 }
 
 
-function nockCreateResource(resourceGroup, resourceType, response, times, expectedStatusCode) {
+function nockCreateResource(resourceGroup, resourceType, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`)
+    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`, verifier)
     .times(times || 1)
     .reply(expectedStatusCode || 201, response);
 }
 
-function nockPatchResource(resourceGroup, resourceType, id, response, times) {
-  nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+function nockPatchResource(resourceGroup, resourceType, id, response, times, payload) {
+  nock(apiServerHost, {
+      reqheaders: {
+        'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+      }
+    })
+    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`, payload)
     .times(times || 1)
     .reply(200, response);
 }
