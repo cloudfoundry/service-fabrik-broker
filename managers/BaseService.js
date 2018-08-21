@@ -28,31 +28,10 @@ class BaseService {
     return this.plan.service;
   }
 
-  get name() {
-    return this.plan.manager.name;
-  }
-
-  get updatePredecessors() {
-    return this.settings.update_predecessors || [];
-  }
-
-  get restorePredecessors() {
-    return this.settings.restore_predecessors || this.updatePredecessors;
-  }
-
-  isRestorePossible(plan_id) {
-    const previousPlan = _.find(this.service.plans, ['id', plan_id]);
-    return this.plan === previousPlan || _.includes(this.restorePredecessors, previousPlan.id);
-  }
-
   verifyFeatureSupport(feature) {
     if (!_.includes(this.agent.features, feature)) {
       throw new NotImplemented(`Feature '${feature}' not supported`);
     }
-  }
-
-  get securityGroupName() {
-    return `${this.constructor.prefix}-${this.guid}`;
   }
 }
 

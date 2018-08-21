@@ -28,10 +28,6 @@ class BaseDirectorService extends BaseService {
     return this.director.getDeploymentIps(deploymentName);
   }
 
-  isAutoUpdatePossible() {
-    return true;
-  }
-
   get template() {
     return new Buffer(this.settings.template, 'base64').toString('utf8');
   }
@@ -56,22 +52,6 @@ class BaseDirectorService extends BaseService {
 
   get networkName() {
     return this.subnet || BoshDirectorClient.getInfrastructure().segmentation.network_name || 'default';
-  }
-
-  get resourcePools() {
-    const networkName = this.networkName;
-    const stemcell = this.stemcell;
-    return _.reduce(BoshDirectorClient.getInfrastructure().azs, (result, az) => {
-      _.forEach(BoshDirectorClient.getInfrastructure().vm_types, vm_type => {
-        result.push({
-          name: `${vm_type.name}_${az.name}`,
-          network: `${networkName}_${az.name}`,
-          stemcell: stemcell,
-          cloud_properties: _.assign({}, az.cloud_properties, vm_type.cloud_properties)
-        });
-      });
-      return result;
-    }, []);
   }
 
   getNetworks(index) {

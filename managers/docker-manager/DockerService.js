@@ -49,10 +49,6 @@ class DockerService extends BaseService {
     this.platformManager = platformManager;
   }
 
-  isAutoUpdatePossible() {
-    throw new NotImplemented(`Feature 'Update' not supported for selected service`);
-  }
-
   get imageName() {
     const image = _
       .chain(this.settings)
@@ -372,10 +368,6 @@ class DockerService extends BaseService {
 
   getEnvParameters(parameters) {
     return _.map(parameters, (value, key) => `${key}=${value}`);
-  }
-
-  static get typeDescription() {
-    return 'docker container';
   }
 
   get containerName() {

@@ -11,10 +11,6 @@ class DockerImageLoaderService {
     this.imageInfo = undefined;
   }
 
-  getImageInfo() {
-    return this.imageInfo;
-  }
-
   get imageName() {
     const image = _
       .chain(this.plan.manager.settings)

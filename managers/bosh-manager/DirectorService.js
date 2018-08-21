@@ -74,10 +74,6 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  static get typeDescription() {
-    return 'deployment';
-  }
-
   static get prefix() {
     return _
       .reduce(config.directors,
