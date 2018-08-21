@@ -14,7 +14,6 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const CONST = require('../../common/constants');
 const assert = require('assert');
 const config = require('../../common/config');
-const NotImplemented = errors.NotImplemented;
 const BaseService = require('../BaseService');
 const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager');
 const DockerImageLoaderService = require('./DockerImageLoaderService');
