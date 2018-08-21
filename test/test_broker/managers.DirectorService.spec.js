@@ -3,12 +3,10 @@
 const _ = require('lodash');
 const errors = require('../../common/errors');
 const Promise = require('bluebird');
-const utils = require('../../common/utils');
 const config = require('../../common/config');
 const catalog = require('../../common/models').catalog;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const cloudController = require('../../data-access-layer/cf').cloudController;
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const DirectorService = require('../../managers/bosh-manager/DirectorService');
@@ -18,14 +16,10 @@ describe('#DirectorService', function () {
   describe('instances', function () {
     /* jshint expr:true */
     describe('director', function () {
-      const base_url = '/cf/v2';
       const index = mocks.director.networkSegmentIndex;
-      const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-      const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
       const plan = catalog.getPlan(plan_id);
-      const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
@@ -80,9 +74,6 @@ describe('#DirectorService', function () {
         }
       };
       const accepts_incomplete = true;
-      const protocol = config.external.protocol;
-      const host = config.external.host;
-      const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
@@ -686,7 +677,6 @@ describe('#DirectorService', function () {
             timeZone: 'Asia/Kolkata'
           };
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
           const options = {
@@ -765,7 +755,6 @@ describe('#DirectorService', function () {
           };
           mocks.director.createDeploymentProperty('platform-context', context);
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
           const options = {
@@ -831,7 +820,6 @@ describe('#DirectorService', function () {
           };
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.findSecurityGroupByName(instance_id);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
           const options = {
@@ -893,7 +881,6 @@ describe('#DirectorService', function () {
           };
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.director.getDeploymentTask(task_id, 'done');
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
           const options = {
@@ -952,7 +939,7 @@ describe('#DirectorService', function () {
             bind_resource: {
               app_guid: app_guid
             }
-          }
+          };
           return DirectorService.createDirectorService(instance_id, options)
             .then(service => service.bind(options))
             .then(res => {
@@ -1005,7 +992,7 @@ describe('#DirectorService', function () {
             bind_resource: {
               app_guid: app_guid
             }
-          }
+          };
           return DirectorService.createDirectorService(instance_id, options)
             .then(service => service.bind(options))
             .then(res => {
@@ -1056,7 +1043,7 @@ describe('#DirectorService', function () {
             bind_resource: {
               app_guid: app_guid
             }
-          }
+          };
           return DirectorService.createDirectorService(instance_id, options)
             .then(service => service.unbind(options))
             .then(res => {
@@ -1092,7 +1079,7 @@ describe('#DirectorService', function () {
             bind_resource: {
               app_guid: app_guid
             }
-          }
+          };
           return DirectorService.createDirectorService(instance_id, options)
             .then(service => service.unbind(options))
             .then(res => {
