@@ -18,6 +18,7 @@ const NotImplemented = errors.NotImplemented;
 const dockerClient = docker.client;
 const BaseService = require('../BaseService');
 const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager');
+const DockerImageLoaderService = require('./DockerImageLoaderService');
 
 const DockerError = {
   NotFound: {
@@ -562,8 +563,7 @@ class DockerService extends BaseService {
       return Promise
         .try(() => {
           if (isNew && tries > 0) {
-            return self.manager
-              .createPortBindings(opts.ExposedPorts)
+            return self.createPortBindings(opts.ExposedPorts)
               .tap(portBindings => _.set(opts.HostConfig, 'PortBindings', portBindings));
           }
         })
@@ -788,12 +788,9 @@ class DockerService extends BaseService {
     const context = _.get(options, 'context');
     const dockerService = new DockerService(instanceId, plan);
 
-    return dockerClient
-      .getImage(dockerService.imageName)
-      .inspectAsync()
-      .tap(imageInfo => {
-        dockerService.imageInfo = imageInfo;
-        dockerService[plan.id] = dockerService;
+    return DockerImageLoaderService.load(plan)
+      .tap(manager => {
+        dockerService.imageInfo = manager.imageInfo;
       })
       .then(() => context ? context : dockerService.platformContext)
       .then(context => dockerService.assignPlatformManager(DockerService.getPlatformManager(context.platform)))
