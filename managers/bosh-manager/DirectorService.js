@@ -986,41 +986,41 @@ class DirectorService extends BaseDirectorService {
     });
   }
 
-  getInfo() {
-    const operation = {
-      type: 'get'
-    };
-    return Promise
-      .all([
-        this.cloudController.getServiceInstance(this.guid)
-        .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
-          .then(plan => {
-            return {
-              'instance': instance,
-              'plan': plan
-            };
-          })
-        ),
-        this.initialize(operation).then(() => this.getDeploymentInfo(this.deploymentName))
-      ])
-      .spread((instanceInfo, deploymentInfo) => {
-        let instance = instanceInfo.instance;
-        let planInfo = instanceInfo.plan;
-        let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
-        return {
-          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-          plan: currentPlan,
-          service: currentPlan.service,
-          instance: _.set(instance, 'task', deploymentInfo),
-          files: [{
-            id: 'status',
-            title: 'Status',
-            language: 'yaml',
-            content: yaml.dump(deploymentInfo)
-          }]
-        };
-      });
-  }
+  // getInfo() {
+  //   const operation = {
+  //     type: 'get'
+  //   };
+  //   return Promise
+  //     .all([
+  //       this.cloudController.getServiceInstance(this.guid)
+  //       .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
+  //         .then(plan => {
+  //           return {
+  //             'instance': instance,
+  //             'plan': plan
+  //           };
+  //         })
+  //       ),
+  //       this.initialize(operation).then(() => this.getDeploymentInfo(this.deploymentName))
+  //     ])
+  //     .spread((instanceInfo, deploymentInfo) => {
+  //       let instance = instanceInfo.instance;
+  //       let planInfo = instanceInfo.plan;
+  //       let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
+  //       return {
+  //         title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
+  //         plan: currentPlan,
+  //         service: currentPlan.service,
+  //         instance: _.set(instance, 'task', deploymentInfo),
+  //         files: [{
+  //           id: 'status',
+  //           title: 'Status',
+  //           language: 'yaml',
+  //           content: yaml.dump(deploymentInfo)
+  //         }]
+  //       };
+  //     });
+  // }
 
   scheduleBackUp() {
     const options = {
