@@ -110,7 +110,7 @@ describe('service-fabrik-admin', function () {
         mocks.director.getDeployment(deployment_name, true);
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
-        mocks.agent.getInfo();
+        mocks.agent.getInfo(2);
         mocks.agent.startBackup();
         const type = 'online';
         mocks.cloudProvider.upload(pathname, body => {

@@ -190,7 +190,7 @@ describe('manager', () => {
       'enable_bosh_rate_limit': false
     };
     let DirectorServiceSub;
-    let directorService, manager;
+    let directorService;
     let sandbox;
     let initializeSpy, codSpy, getTaskSpy, finalizeSpy, removeCachedTaskSpy;
     let lastOpTaskId;

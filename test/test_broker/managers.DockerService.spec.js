@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const nock = require('nock');
 const DockerService = require('../../managers/docker-manager/DockerService');
 const DockerImageLoaderService = require('../../managers/docker-manager/DockerImageLoaderService');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
@@ -68,14 +67,11 @@ describe('docker-manager', function () {
   });
 
   describe('#DockerService', function () {
-    const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
     const parameters = {
       foo: 'bar'
     };
     const usedPorts = [38782, 44635];
     const docker_url = parseUrl(config.docker.url);
-    const protocol = config.external.protocol;
-    const host = config.external.host;
     const username = 'user';
     const password = 'secret';
     const app_guid = 'app-guid';
@@ -165,7 +161,7 @@ describe('docker-manager', function () {
           organization_guid: organization_guid,
           space_guid: space_guid,
           parameters: parameters
-        }
+        };
         return DockerService.createDockerService(instance_id, options)
           .then(service => service.create(options))
           .then(res => {

@@ -1,7 +1,6 @@
 'use strict';
 
 const nock = require('nock');
-const swagger = require('../helper-files/apiserver-swagger.json');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;

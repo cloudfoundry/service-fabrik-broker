@@ -5,7 +5,6 @@ const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
-const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
 const apiserver = new eventmesh();
 

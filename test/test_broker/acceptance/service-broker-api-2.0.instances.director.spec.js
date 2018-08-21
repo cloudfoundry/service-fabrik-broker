@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const lib = require('../../../broker/lib');
-const errors = require('../../../common/errors');
+//const errors = require('../../../common/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
@@ -41,8 +41,8 @@ describe('service-broker-api-2.0', function () {
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const instance_id = mocks.director.uuidByIndex(index);
       const deployment_name = mocks.director.deploymentNameByIndex(index);
-      const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
-      const app_guid = 'app-guid';
+      //      const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
+      //      const app_guid = 'app-guid';
       const task_id = 4711;
       const parameters = {
         foo: 'bar'
@@ -461,7 +461,7 @@ describe('service-broker-api-2.0', function () {
         //     });
         // });
         it('returns 202 Accepted if resource is already present', function () {
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          //let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -511,7 +511,7 @@ describe('service-broker-api-2.0', function () {
           const payloadUpdate = _.cloneDeep(payload);
           payloadUpdate.apiVersion = 'deployment.servicefabrik.io/v1alpha1';
           payloadUpdate.kind = 'Director';
-          let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
+          //let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -853,165 +853,165 @@ describe('service-broker-api-2.0', function () {
 
 
       describe('#deprovision', function () {
-        const payload = {
-          metadata: {
-            labels: {
-              state: 'delete'
-            }
-          },
-          spec: {
-            options: JSON.stringify({
-              service_id: service_id,
-              plan_id: plan_id_update,
-              parameters: {
-                foo: 'bar'
-              },
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: organization_guid,
-                space_guid: space_guid
-              },
-              previous_values: {
-                plan_id: plan_id,
-                service_id: service_id
-              }
-            })
-          },
-          status: {
-            state: 'delete',
-            lastOperation: '{}',
-            response: '{}'
-          }
-        };
-        it('returns 202 Accepted', function () {
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {}, 1, payload);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              accepts_incomplete: accepts_incomplete
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('operation');
-              expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'delete',
-                context: {
-                  platform: 'cloudfoundry'
-                }
-              });
-              mocks.verify();
-            });
-        });
-        it('returns 202 Accepted : existing deployments having no platform-context', function () {
-          const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
-          const restorePathname = `/${container}/${restoreFilename}`;
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_DELETE;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.deprovision();
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
-          mocks.cloudController.findSecurityGroupByName(instance_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.deleteSecurityGroup(instance_id);
-          mocks.director.deleteDeployment(task_id);
-          mocks.cloudProvider.remove(restorePathname);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              accepts_incomplete: accepts_incomplete
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('operation');
-              expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'delete',
-                context: {
-                  platform: 'cloudfoundry'
-                }
-              });
-              mocks.verify();
-            });
-        });
-        it('returns 202 Accepted : In K8S Platform', function () {
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_DELETE;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'kubernetes',
-            namespace: 'default'
-          });
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+        // const payload = {
+        //   metadata: {
+        //     labels: {
+        //       state: 'delete'
+        //     }
+        //   },
+        //   spec: {
+        //     options: JSON.stringify({
+        //       service_id: service_id,
+        //       plan_id: plan_id_update,
+        //       parameters: {
+        //         foo: 'bar'
+        //       },
+        //       context: {
+        //         platform: 'cloudfoundry',
+        //         organization_guid: organization_guid,
+        //         space_guid: space_guid
+        //       },
+        //       previous_values: {
+        //         plan_id: plan_id,
+        //         service_id: service_id
+        //       }
+        //     })
+        //   },
+        //   status: {
+        //     state: 'delete',
+        //     lastOperation: '{}',
+        //     response: '{}'
+        //   }
+        // };
+        // it('returns 202 Accepted', function () {
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+        //   mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {}, 1, payload);
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       accepts_incomplete: accepts_incomplete
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(202);
+        //       expect(res.body).to.have.property('operation');
+        //       expect(utils.decodeBase64(res.body.operation)).to.eql({
+        //         task_id: `${deployment_name}_${task_id}`,
+        //         type: 'delete',
+        //         context: {
+        //           platform: 'cloudfoundry'
+        //         }
+        //       });
+        //       mocks.verify();
+        //     });
+        // });
+        // it('returns 202 Accepted : existing deployments having no platform-context', function () {
+        //   const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
+        //   const restorePathname = `/${container}/${restoreFilename}`;
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_DELETE;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', {
+        //     platform: 'cloudfoundry',
+        //     organization_guid: organization_guid,
+        //     space_guid: space_guid
+        //   });
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.deprovision();
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
+        //   mocks.cloudController.findSecurityGroupByName(instance_id);
+        //   mocks.cloudController.getServiceInstance(instance_id, {
+        //     space_guid: space_guid
+        //   });
+        //   mocks.cloudController.deleteSecurityGroup(instance_id);
+        //   mocks.director.deleteDeployment(task_id);
+        //   mocks.cloudProvider.remove(restorePathname);
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       accepts_incomplete: accepts_incomplete
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(202);
+        //       expect(res.body).to.have.property('operation');
+        //       expect(utils.decodeBase64(res.body.operation)).to.eql({
+        //         task_id: `${deployment_name}_${task_id}`,
+        //         type: 'delete',
+        //         context: {
+        //           platform: 'cloudfoundry'
+        //         }
+        //       });
+        //       mocks.verify();
+        //     });
+        // });
+        // it('returns 202 Accepted : In K8S Platform', function () {
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_DELETE;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+        //     platform: 'kubernetes',
+        //     namespace: 'default'
+        //   });
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, {});
 
-          mocks.director.deleteDeployment(task_id);
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              accepts_incomplete: accepts_incomplete
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('operation');
-              expect(utils.decodeBase64(res.body.operation)).to.eql({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'delete',
-                context: {
-                  platform: 'kubernetes'
-                }
-              });
-              mocks.verify();
-            });
-        });
+        //   mocks.director.deleteDeployment(task_id);
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       accepts_incomplete: accepts_incomplete
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(202);
+        //       expect(res.body).to.have.property('operation');
+        //       expect(utils.decodeBase64(res.body.operation)).to.eql({
+        //         task_id: `${deployment_name}_${task_id}`,
+        //         type: 'delete',
+        //         context: {
+        //           platform: 'kubernetes'
+        //         }
+        //       });
+        //       mocks.verify();
+        //     });
+        // });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is not in query', function () {
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
@@ -1436,311 +1436,311 @@ describe('service-broker-api-2.0', function () {
       });
 
       describe('#bind', function () {
-        it('no context : returns 201 Created', function (done) {
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .set('parameters', {})
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
-          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
-          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(binding_id);
-          mocks.serviceFabrikClient.scheduleBackup(instance_id, {
-            type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: '8 hours'
-          });
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              app_guid: app_guid,
-              bind_resource: {
-                app_guid: app_guid
-              }
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(201);
-              expect(res.body).to.eql({
-                credentials: mocks.agent.credentials
-              });
-              setTimeout(() => {
-                delete config.mongodb.provision.plan_id;
-                expect(getScheduleStub).to.be.calledOnce;
-                expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
-                expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
-                mocks.verify();
-                done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
-              }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
-            });
-        });
-        it('returns 201 Created', function (done) {
-          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
-          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .set('parameters', {})
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(binding_id);
-          mocks.serviceFabrikClient.scheduleBackup(instance_id, {
-            type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: '8 hours'
-          });
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              app_guid: app_guid,
-              bind_resource: {
-                app_guid: app_guid
-              },
-              context: context
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(201);
-              expect(res.body).to.eql({
-                credentials: mocks.agent.credentials
-              });
-              setTimeout(() => {
-                delete config.mongodb.provision.plan_id;
-                expect(getScheduleStub).to.be.calledOnce;
-                expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
-                expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
-                mocks.verify();
-                done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
-              }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
-            });
-        });
-        it('returns 201 Created: In K8S platform', function (done) {
-          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          deferred.reject(new errors.NotFound('Schedule not found'));
-          const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .set('parameters', {})
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(binding_id);
-          mocks.serviceFabrikClient.scheduleBackup(instance_id, {
-            type: CONST.BACKUP.TYPE.ONLINE,
-            repeatInterval: '8 hours'
-          });
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id,
-              app_guid: app_guid,
-              bind_resource: {
-                app_guid: app_guid
-              },
-              context: context
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(201);
-              expect(res.body).to.eql({
-                credentials: mocks.agent.credentials
-              });
-              setTimeout(() => {
-                delete config.mongodb.provision.plan_id;
-                expect(getScheduleStub).to.be.calledOnce;
-                expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
-                expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
-                mocks.verify();
-                done();
-                //Schedule operation is performed in background after response has been returned,
-                //hence added this delay of 500 ms which should work in all cases.
-                //In case asserts are failing, try increasing the timeout first & then debug. :-)
-              }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
-            });
-        });
+        // it('no context : returns 201 Created', function (done) {
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .set('parameters', {})
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+        //     platform: 'cloudfoundry'
+        //   });
+        //   config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        //   deferred.reject(new errors.NotFound('Schedule not found'));
+        //   const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.createCredentials();
+        //   mocks.director.createBindingProperty(binding_id);
+        //   mocks.serviceFabrikClient.scheduleBackup(instance_id, {
+        //     type: CONST.BACKUP.TYPE.ONLINE,
+        //     repeatInterval: '8 hours'
+        //   });
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .send({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       app_guid: app_guid,
+        //       bind_resource: {
+        //         app_guid: app_guid
+        //       }
+        //     })
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(201);
+        //       expect(res.body).to.eql({
+        //         credentials: mocks.agent.credentials
+        //       });
+        //       setTimeout(() => {
+        //         delete config.mongodb.provision.plan_id;
+        //         expect(getScheduleStub).to.be.calledOnce;
+        //         expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
+        //         expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+        //         mocks.verify();
+        //         done();
+        //         //Schedule operation is performed in background after response has been returned,
+        //         //hence added this delay of 500 ms which should work in all cases.
+        //         //In case asserts are failing, try increasing the timeout first & then debug. :-)
+        //       }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
+        //     });
+        // });
+        // it('returns 201 Created', function (done) {
+        //   config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        //   deferred.reject(new errors.NotFound('Schedule not found'));
+        //   const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+        //   const context = {
+        //     platform: 'cloudfoundry',
+        //     organization_guid: organization_guid,
+        //     space_guid: space_guid
+        //   };
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .set('parameters', {})
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.createCredentials();
+        //   mocks.director.createBindingProperty(binding_id);
+        //   mocks.serviceFabrikClient.scheduleBackup(instance_id, {
+        //     type: CONST.BACKUP.TYPE.ONLINE,
+        //     repeatInterval: '8 hours'
+        //   });
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .send({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       app_guid: app_guid,
+        //       bind_resource: {
+        //         app_guid: app_guid
+        //       },
+        //       context: context
+        //     })
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(201);
+        //       expect(res.body).to.eql({
+        //         credentials: mocks.agent.credentials
+        //       });
+        //       setTimeout(() => {
+        //         delete config.mongodb.provision.plan_id;
+        //         expect(getScheduleStub).to.be.calledOnce;
+        //         expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
+        //         expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+        //         mocks.verify();
+        //         done();
+        //         //Schedule operation is performed in background after response has been returned,
+        //         //hence added this delay of 500 ms which should work in all cases.
+        //         //In case asserts are failing, try increasing the timeout first & then debug. :-)
+        //       }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
+        //     });
+        // });
+        // it('returns 201 Created: In K8S platform', function (done) {
+        //   config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        //   deferred.reject(new errors.NotFound('Schedule not found'));
+        //   const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
+        //   const context = {
+        //     platform: 'kubernetes',
+        //     namespace: 'default'
+        //   };
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .set('parameters', {})
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.createCredentials();
+        //   mocks.director.createBindingProperty(binding_id);
+        //   mocks.serviceFabrikClient.scheduleBackup(instance_id, {
+        //     type: CONST.BACKUP.TYPE.ONLINE,
+        //     repeatInterval: '8 hours'
+        //   });
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .send({
+        //       service_id: service_id,
+        //       plan_id: plan_id,
+        //       app_guid: app_guid,
+        //       bind_resource: {
+        //         app_guid: app_guid
+        //       },
+        //       context: context
+        //     })
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(201);
+        //       expect(res.body).to.eql({
+        //         credentials: mocks.agent.credentials
+        //       });
+        //       setTimeout(() => {
+        //         delete config.mongodb.provision.plan_id;
+        //         expect(getScheduleStub).to.be.calledOnce;
+        //         expect(getScheduleStub.firstCall.args[0]).to.eql(instance_id);
+        //         expect(getScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+        //         mocks.verify();
+        //         done();
+        //         //Schedule operation is performed in background after response has been returned,
+        //         //hence added this delay of 500 ms which should work in all cases.
+        //         //In case asserts are failing, try increasing the timeout first & then debug. :-)
+        //       }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
+        //     });
+        // });
 
       });
 
 
 
       describe('#unbind', function () {
-        it('returns 200 OK', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.getBindingProperty(binding_id);
-          mocks.agent.getInfo();
-          mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-        it('returns 200 OK : for existing deployment having no platform-context', function () {
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.getBindingProperty(binding_id);
-          mocks.agent.getInfo();
-          mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
-        it('returns 200 OK: In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', binding_id)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.getBindingProperty(binding_id);
-          mocks.agent.getInfo();
-          mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(binding_id);
-          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
-            spec: {
-              options: '{}'
-            }
-          });
-          return chai.request(app)
-            .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({});
-              mocks.verify();
-            });
-        });
+        // it('returns 200 OK', function () {
+        //   const context = {
+        //     platform: 'cloudfoundry',
+        //     organization_guid: organization_guid,
+        //     space_guid: space_guid
+        //   };
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.director.getBindingProperty(binding_id);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.deleteCredentials();
+        //   mocks.director.deleteBindingProperty(binding_id);
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(200);
+        //       expect(res.body).to.eql({});
+        //       mocks.verify();
+        //     });
+        // });
+        // it('returns 200 OK : for existing deployment having no platform-context', function () {
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.director.getBindingProperty(binding_id);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.deleteCredentials();
+        //   mocks.director.deleteBindingProperty(binding_id);
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(200);
+        //       expect(res.body).to.eql({});
+        //       mocks.verify();
+        //     });
+        // });
+        // it('returns 200 OK: In K8S platform', function () {
+        //   const context = {
+        //     platform: 'kubernetes',
+        //     namespace: 'default'
+        //   };
+        //   const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+        //   expectedRequestBody.context = _.chain(expectedRequestBody.context)
+        //     .set('id', binding_id)
+        //     .omit('params')
+        //     .omit('sf_operations_args')
+        //     .value();
+        //   expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
+        //   mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+        //   mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
+        //   mocks.director.getDeploymentInstances(deployment_name);
+        //   mocks.director.getBindingProperty(binding_id);
+        //   mocks.agent.getInfo();
+        //   mocks.agent.deleteCredentials();
+        //   mocks.director.deleteBindingProperty(binding_id);
+        //   mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+        //     spec: {
+        //       options: '{}'
+        //     }
+        //   });
+        //   return chai.request(app)
+        //     .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
+        //     .query({
+        //       service_id: service_id,
+        //       plan_id: plan_id
+        //     })
+        //     .set('X-Broker-API-Version', api_version)
+        //     .auth(config.username, config.password)
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(200);
+        //       expect(res.body).to.eql({});
+        //       mocks.verify();
+        //     });
+        // });
       });
 
 

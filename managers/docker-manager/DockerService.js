@@ -15,7 +15,6 @@ const CONST = require('../../common/constants');
 const assert = require('assert');
 const config = require('../../common/config');
 const NotImplemented = errors.NotImplemented;
-const dockerClient = docker.client;
 const BaseService = require('../BaseService');
 const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager');
 const DockerImageLoaderService = require('./DockerImageLoaderService');

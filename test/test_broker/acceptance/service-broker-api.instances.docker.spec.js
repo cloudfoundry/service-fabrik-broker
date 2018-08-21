@@ -615,8 +615,8 @@ describe('service-broker-api', function () {
           mocks.apiServerEventMesh.nockCreateResource('bind', 'dockerbind', bindPayload, 1);
           mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, bindPayload2, 1);
           mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, {
-            "status": {
-              "response": "{}"
+            'status': {
+              'response': '{}'
             }
           }, 1);
           return chai.request(app)
