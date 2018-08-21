@@ -920,56 +920,57 @@ class DirectorService extends BaseDirectorService {
     }
   }
 
-  findDeploymentTask(deploymentName) {
-    return this.director
-      .getTasks({
-        deployment: deploymentName
-      }, true)
-      .then(tasks => _
-        .chain(tasks)
-        .sortBy('id')
-        .find(task => /^create\s+deployment/.test(task.description))
-        .value()
-      );
-  }
+  // findDeploymentTask(deploymentName) {
+  //   return this.director
+  //     .getTasks({
+  //       deployment: deploymentName
+  //     }, true)
+  //     .then(tasks => _
+  //       .chain(tasks)
+  //       .sortBy('id')
+  //       .find(task => /^create\s+deployment/.test(task.description))
+  //       .value()
+  //     );
+  // }
 
-  getDeploymentInfo(deploymentName) {
-    const events = {};
-    const info = {};
+  // getDeploymentInfo(deploymentName) {
+  //   const events = {};
+  //   const info = {};
 
-    function DeploymentDoesNotExist(err) {
-      return err.status === 404 && _.get(err, 'error.code') === 70000;
-    }
+  //   function DeploymentDoesNotExist(err) {
+  //     return err.status === 404 && _.get(err, 'error.code') === 70000;
+  //   }
 
-    function addInfoEvent(event) {
-      if (!_.has(events, event.stage)) {
-        events[event.stage] = {
-          tags: event.tags,
-          total: event.total,
-        };
-      }
-      if (!_.has(events[event.stage], event.task)) {
-        events[event.stage][event.task] = {
-          index: event.index,
-          time: event.time,
-          status: event.state
-        };
-      } else {
-        events[event.stage][event.task].status = event.state;
-        let seconds = event.time - events[event.stage][event.task].time;
-        delete events[event.stage][event.task].time;
-        events[event.stage][event.task].duration = `${seconds} sec`;
-      }
-    }
+  //   function addInfoEvent(event) {
+  //     if (!_.has(events, event.stage)) {
+  //       events[event.stage] = {
+  //         tags: event.tags,
+  //         total: event.total,
+  //       };
+  //     }
+  //     if (!_.has(events[event.stage], event.task)) {
+  //       events[event.stage][event.task] = {
+  //         index: event.index,
+  //         time: event.time,
+  //         status: event.state
+  //       };
+  //     } else {
+  //       events[event.stage][event.task].status = event.state;
+  //       let seconds = event.time - events[event.stage][event.task].time;
+  //       delete events[event.stage][event.task].time;
+  //       events[event.stage][event.task].duration = `${seconds} sec`;
+  //     }
+  //   }
 
-    return this
-      .findDeploymentTask(deploymentName)
-      .tap(task => _.assign(info, task))
-      .then(task => this.director.getTaskEvents(task.id))
-      .tap(events => _.each(events, addInfoEvent))
-      .return(_.set(info, 'events', events))
-      .catchReturn(DeploymentDoesNotExist, null);
-  }
+  //   return this
+  //     .findDeploymentTask(deploymentName)
+  //     .tap(task => _.assign(info, task))
+  //     .then(task => this.director.getTaskEvents(task.id))
+  //     .tap(events => _.each(events, addInfoEvent))
+  //     .return(_.set(info, 'events', events))
+  //     .catchReturn(DeploymentDoesNotExist, null);
+  // }
+
   getApplicationAccessPortsOfService() {
     let service = this.service.toJSON();
     return _.get(service, 'application_access_ports');
