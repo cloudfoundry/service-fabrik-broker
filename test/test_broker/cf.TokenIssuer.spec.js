@@ -169,7 +169,7 @@ describe('cf', () => {
         sandbox.restore();
       });
 
-      it('should make correct requests after timeout', () => {
+      it('should make correct requests after timeout', (done) => {
         let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
         let tokenInfoSpecific = {
           access_token: tokenExpiresSpecificDate,
@@ -186,6 +186,8 @@ describe('cf', () => {
 
         setTimeout(() => {
           assert(tokenIssuer.tokenInfo.accessToken === tokenNotExpired);
+          console.log('here');
+          done();
         }, 2000);
       }).timeout(4000);
     });

@@ -77,8 +77,7 @@ class TokenIssuer {
           .then(token => {
             this.tokenInfo.update(token);
             this.scheduleNextRequestAccessToken(clientId, clientSecret);
-          })
-          .catch(err => logger.error(err.message));
+          });
       }, delay * 1000);
     }
   }
