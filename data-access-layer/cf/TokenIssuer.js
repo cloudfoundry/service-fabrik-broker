@@ -11,6 +11,8 @@ class TokenIssuer {
   constructor(uaa) {
     this.uaa = uaa;
     this.tokenInfo = new TokenInfo();
+    this.bufferPeriodSeconds = 15;
+    this.maxDelaySeconds = 2147483647;
   }
 
   clearTimeoutObject() {
@@ -37,8 +39,8 @@ class TokenIssuer {
 
   updateTokenInfo(tokenInfo) {
     this.tokenInfo.update(tokenInfo);
-    const delay = this.tokenInfo.accessTokenExpiresIn - 15;
-    if (delay > 0 && delay < 2147483647) {
+    const delay = this.tokenInfo.accessTokenExpiresIn - this.bufferPeriodSeconds;
+    if (delay > 0 && delay < this.maxDelaySeconds) {
       this.clearTimeoutObject();
       this.timeoutObject = setTimeout(() => {
         return this.refreshToken()
@@ -62,6 +64,36 @@ class TokenIssuer {
       })
       .catch(() => this.login())
       .then(result => this.updateTokenInfo(result).accessToken);
+  }
+
+  scheduleNextRequestAccessToken(clientId, clientSecret) {
+    const delay = this.tokenInfo.accessTokenExpiresIn - this.bufferPeriodSeconds;
+    if (delay > 0 && delay < this.maxDelaySeconds) {
+      this.clearTimeoutObject();
+      logger.debug(`scheduling next request for access token after delay: ${delay * 1000} `);
+      this.timeoutObject = setTimeout(() => {
+        logger.debug(`requesting new access token with client id: ${clientId}`);
+        return this.uaa.accessWithClientCredentials(clientId, clientSecret)
+          .then(token => {
+            this.tokenInfo.update(token);
+            this.scheduleNextRequestAccessToken(clientId, clientSecret);
+          });
+      }, delay * 1000);
+    }
+  }
+
+  getAccessTokenBoshUAA(clientId, clientSecret) {
+    if (!this.tokenInfo.accessTokenExpiresSoon) {
+      logger.debug(`reusing access token.`);
+      return Promise.resolve(this.tokenInfo.accessToken);
+    }
+    logger.debug(`explicit request for access token being made to ${this.uaa.baseUrl}`);
+    return Promise.try(() => this.uaa.accessWithClientCredentials(clientId, clientSecret))
+      .then(result => {
+        this.tokenInfo.update(result);
+        this.scheduleNextRequestAccessToken(clientId, clientSecret);
+        return this.tokenInfo.accessToken;
+      });
   }
 }
 

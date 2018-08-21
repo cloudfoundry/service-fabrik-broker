@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const TokenIssuer = proxyquire('../../data-access-layer/cf/TokenIssuer', {});
-
+const assert = require('assert');
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
@@ -30,6 +30,12 @@ describe('cf', () => {
         } else {
           return Promise.reject(tokenInfoExpired);
         }
+      },
+      accessWithClientCredentials: function (client_id, client_secret) {
+        /* jshint unused:false */
+        return Promise.try(() => {
+          return tokenInfoNotExpired;
+        });
       }
     };
     let tokenIssuer = new TokenIssuer(uaa);
@@ -108,6 +114,7 @@ describe('cf', () => {
         tokenIssuer.updateTokenInfo(tokenInfoNotExpired);
         tokenIssuer.getAccessToken().then((content) => {
           expect(content).to.eql(expiredToken);
+          tokenInfoNotExpired.access_token = tokenNotExpired;
           done();
         }).catch(done);
       });
@@ -119,6 +126,70 @@ describe('cf', () => {
           done();
         }).catch(done);
       });
+    });
+
+    describe('getAccessTokenBoshUAA', () => {
+      it('should return existing access token (accessToken does not expire soon)', (done) => {
+        tokenIssuer.tokenInfo.update(tokenInfoNotExpired);
+        tokenIssuer.getAccessTokenBoshUAA().then(content => {
+          expect(content).to.eql(tokenNotExpired);
+          done();
+        }).catch(done);
+      });
+
+      it('should make explicit request for access token (access token expires soon)', (done) => {
+        /* jshint expr:true */
+        tokenIssuer.tokenInfo.update(tokenInfoExpired);
+        let sandbox = sinon.sandbox.create();
+        let scheduleAccessTokenStub = sandbox.stub(tokenIssuer, 'scheduleNextRequestAccessToken');
+        tokenIssuer.getAccessTokenBoshUAA().then(content => {
+          expect(content).to.eql(tokenNotExpired);
+          expect(scheduleAccessTokenStub).to.be.calledOnce;
+          sandbox.restore();
+          done();
+        }).catch(done);
+      });
+    });
+
+    describe('scheduleNextRequestAccessToken', () => {
+      it('should create a valid timeout object', () => {
+        /* jshint expr:true */
+        //IST: Sunday, August 25, 2086 3:36:08 AM. Delay < 2147483647, as per condition in this function.
+        let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
+        let tokenInfoSpecific = {
+          access_token: tokenExpiresSpecificDate,
+          refresh_token: tokenExpiresSpecificDate,
+          token_type: 'bearer'
+        };
+        tokenIssuer.updateTokenInfo(tokenInfoSpecific);
+        let sandbox = sinon.sandbox.create();
+        let setTimeoutStub = sandbox.stub(global, 'setTimeout');
+        tokenIssuer.scheduleNextRequestAccessToken();
+        expect(setTimeoutStub).to.be.calledOnce;
+        sandbox.restore();
+      });
+
+      it('should make correct requests after timeout', (done) => {
+        let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
+        let tokenInfoSpecific = {
+          access_token: tokenExpiresSpecificDate,
+          refresh_token: tokenExpiresSpecificDate,
+          token_type: 'bearer'
+        };
+        tokenIssuer.updateTokenInfo(tokenInfoSpecific);
+        const delay = tokenIssuer.tokenInfo.accessTokenExpiresIn - tokenIssuer.bufferPeriodSeconds;
+        //setup stubs
+        this.clock = sinon.useFakeTimers(Date.now());
+        tokenIssuer.scheduleNextRequestAccessToken('dummy', 'dummy');
+        this.clock.tick(delay * 1000);
+        this.clock.restore();
+
+        setTimeout(() => {
+          assert(tokenIssuer.tokenInfo.accessToken === tokenNotExpired);
+          console.log('here');
+          done();
+        }, 2000);
+      }).timeout(4000);
     });
   });
 });

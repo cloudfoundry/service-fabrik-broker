@@ -109,5 +109,18 @@ describe('cf', () => {
         }).catch(done);
       });
     });
+
+    describe('#accessWithClientCredentials', () => {
+      it('returns a JSON object', (done) => {
+        let body = {
+          uuid: uuid.v4()
+        };
+
+        new MockUaaClient(JSON.stringify(body), 200).accessWithClientCredentials('client_id', 'client_secret').then((content) => {
+          expect(content).to.eql(body);
+          done();
+        }).catch(done);
+      });
+    });
   });
 });

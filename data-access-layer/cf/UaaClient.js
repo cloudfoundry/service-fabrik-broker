@@ -6,14 +6,17 @@ const HttpClient = require('../../common/utils').HttpClient;
 const config = require('../../common/config');
 
 class UaaClient extends HttpClient {
-  constructor(options) {
+  constructor(options, baseUrl = '') {
+    if (!baseUrl) {
+      baseUrl = config.cf.token_endpoint;
+    }
     super(_.defaultsDeep({
       headers: {
         Accept: 'application/json'
       },
       followRedirect: false
     }, options, {
-      baseUrl: config.cf.token_endpoint,
+      baseUrl: baseUrl,
       rejectUnauthorized: !config.skip_ssl_validation
     }));
     this.clientId = config.cf.client_id || 'cf';
@@ -132,6 +135,23 @@ class UaaClient extends HttpClient {
       form: {
         grant_type: 'refresh_token',
         refresh_token: refreshToken
+      }
+    }, 200).then((res) => {
+      return JSON.parse(res.body);
+    });
+  }
+
+  accessWithClientCredentials(clientId, clientSecret) {
+    return this.request({
+      method: 'POST',
+      url: '/oauth/token',
+      auth: {
+        user: clientId,
+        pass: clientSecret
+      },
+      form: {
+        grant_type: 'client_credentials',
+        response_type: 'token'
       }
     }, 200).then((res) => {
       return JSON.parse(res.body);

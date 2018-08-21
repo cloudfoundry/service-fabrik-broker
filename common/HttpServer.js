@@ -67,6 +67,11 @@ class HttpServer {
       process.exit(2);
     }, 500);
   }
+
+  static immediateShutdown() {
+    logger.info('App shutting down now.');
+    process.exit(2);
+  }
 }
 module.exports = HttpServer;
 //https://github.com/nodejs/node-v0.x-archive/issues/5054
