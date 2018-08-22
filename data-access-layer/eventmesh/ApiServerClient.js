@@ -58,6 +58,7 @@ function convertToHttpErrorAndThrow(err) {
     newErr = new InternalServerError(message);
     break;
   }
+  logger.error('Apiserver request erred', newErr);
   throw newErr;
 }
 

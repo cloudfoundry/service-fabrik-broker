@@ -102,8 +102,8 @@ class DirectorService extends BaseDirectorService {
     return Promise
       .try(() => {
         this.operation = operation.type;
-        if (operation.type === 'create') {
-          return this.aquireNetworkSegmentIndex(this.guid);
+        if (operation.type === CONST.OPERATION_TYPE.CREATE) {
+          return this.acquireNetworkSegmentIndex(this.guid);
         }
         return this.findNetworkSegmentIndex(this.guid);
       })
@@ -124,7 +124,7 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  aquireNetworkSegmentIndex(guid) {
+  acquireNetworkSegmentIndex(guid) {
     logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
     const promises = [this.getDeploymentNames(true)];
     if (config.enable_bosh_rate_limit) {
@@ -151,8 +151,7 @@ class DirectorService extends BaseDirectorService {
         }))
         .then(tenant_id => tenant_id ? this.deleteRestoreFileFromObjectStore(tenant_id, this.guid) : Promise.resolve({}))
         .catch(err => {
-          logger.error(`Failed to delete restore file of instance '${this.guid}'`);
-          logger.error(err);
+          logger.error(`Failed to delete restore file of instance '${this.guid}'`, err);
           throw err;
         });
     }
@@ -187,7 +186,7 @@ class DirectorService extends BaseDirectorService {
               return this.director
                 .createDeploymentProperty(this.deploymentName, CONST.PLATFORM_CONTEXT_KEY, JSON.stringify(operation.context))
                 .catch(err => {
-                  logger.error(err);
+                  logger.error(`Error occured while trying to create deployment property for deployment ${this.deploymentName}`, err);
                   throw err;
                 });
             }, {
@@ -610,9 +609,9 @@ class DirectorService extends BaseDirectorService {
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
         this.plan.actions;
       if (serviceLevelActions || planLevelActions) {
-        const cumilativeActions = serviceLevelActions ? (planLevelActions ? `${serviceLevelActions},${planLevelActions}` : serviceLevelActions) :
+        const cumulativeActions = serviceLevelActions ? (planLevelActions ? `${serviceLevelActions},${planLevelActions}` : serviceLevelActions) :
           planLevelActions;
-        const actionsToPerform = _.chain(cumilativeActions)
+        const actionsToPerform = _.chain(cumulativeActions)
           .replace(/\s*/g, '')
           .split(',')
           .value();

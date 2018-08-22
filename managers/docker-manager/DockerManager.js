@@ -13,27 +13,27 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 class DockerManager extends BaseManager {
 
   init() {
-    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_QUEUE},${CONST.APISERVER.RESOURCE_STATE.UPDATE},${CONST.APISERVER.RESOURCE_STATE.DELETE})`;
+    const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER)
-      .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, queryString));
+      .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, validStateList));
   }
 
-  processRequest(requestObjectBody) {
+  processRequest(changeObjectBody) {
     return Promise.try(() => {
-        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return this._processCreate(requestObjectBody);
-        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
-          return this._processUpdate(requestObjectBody);
-        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-          return this._processDelete(requestObjectBody);
+        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+          return this._processCreate(changeObjectBody);
+        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+          return this._processUpdate(changeObjectBody);
+        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+          return this._processDelete(changeObjectBody);
         }
       })
       .catch(err => {
-        logger.error('Error occurred in processRequest', err);
+        logger.error('Error occurred in processing request by DockerManager', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-          resourceId: requestObjectBody.metadata.name,
+          resourceId: changeObjectBody.metadata.name,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             error: utils.buildErrorJson(err)

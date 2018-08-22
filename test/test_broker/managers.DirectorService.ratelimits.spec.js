@@ -460,7 +460,7 @@ describe('manager', () => {
       it('should return network segment index when there are deployment names in etcd', () => {
         getCachedDeploymentsSpy.returns([`service-fabrik-90-${used_guid2}`]);
         getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
-        return service.aquireNetworkSegmentIndex('guid')
+        return service.acquireNetworkSegmentIndex('guid')
           .then(index => {
             expect(index).to.eql(2);
           });

@@ -36,9 +36,9 @@ class BOSHTaskPoller {
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resourceBody);
-              let metadata = patchBody.metadata;
-              let currentAnnotations = metadata.annotations;
-              let patchAnnotations = currentAnnotations ? currentAnnotations : {};
+              const metadata = patchBody.metadata;
+              const currentAnnotations = metadata.annotations;
+              const patchAnnotations = currentAnnotations ? currentAnnotations : {};
               patchAnnotations.lockedByTaskPoller = JSON.stringify({
                 lockTime: new Date(),
                 ip: config.broker_ip
@@ -51,7 +51,7 @@ class BOSHTaskPoller {
                   resourceId: metadata.name,
                   metadata: metadata
                 })
-                .tap((updatedResource) => logger.debug(`Successfully acquired task poller lock for request with options: ${JSON.stringify(options)}\n` +
+                .tap((updatedResource) => logger.debug(`Successfully acquired bosh task poller lock for request with options: ${JSON.stringify(options)}\n` +
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
                   if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
@@ -118,13 +118,13 @@ class BOSHTaskPoller {
                 })
                 /* jshint unused:false */
                 .catch(Conflict => {
-                  logger.debug(`Not able to acquire poller processing lock, Request is probably picked by other worker`);
+                  logger.debug(`Not able to acquire bosh task poller processing lock, Request is probably picked by other worker`);
                 });
             }
           });
         })
         .catch(err => {
-          logger.error(`Error occured while polling for last operation, clearing task poller interval now`, err);
+          logger.error(`Error occured while polling for last operation, clearing bosh task poller interval now`, err);
           BOSHTaskPoller.clearPoller(object.metadata.name, intervalId);
         });
     }
@@ -151,8 +151,8 @@ class BOSHTaskPoller {
             return this.start();
           });
       })
-      .catch(e => {
-        logger.error(`Error occured in registering watch for bosh task poller:`, e);
+      .catch(err => {
+        logger.error(`Error occured in registering watch for bosh task poller:`, err);
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {

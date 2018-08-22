@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
+const CONST = require('../../common/constants');
 const catalog = require('../../common/models').catalog;
 const NotFound = errors.NotFound;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
@@ -31,7 +32,7 @@ class VirtualHostService extends BaseService {
   }
 
   initialize(operation) {
-    if (operation.type === 'create') {
+    if (operation.type === CONST.OPERATION_TYPE.CREATE) {
       return this.cloudController.getServiceInstanceByName(this.parameters.dedicated_rabbitmq_instance, this.spaceId)
         .then(serviceInstance => this.director.getDeploymentNameForInstanceId(serviceInstance.metadata.guid))
         .then(deploymentName => this.deploymentName = deploymentName);
@@ -43,7 +44,7 @@ class VirtualHostService extends BaseService {
 
   create() {
     const operation = {
-      type: 'create'
+      type: CONST.OPERATION_TYPE.CREATE
     };
     return this.initialize(operation)
       .tap(() => logger.info(`Creating virtual host '${this.guid}' for deployment '${this.deploymentName}'...`))

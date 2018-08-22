@@ -93,7 +93,7 @@ class DirectorManager extends BaseManager {
     return this.getNetworks(index)[this.networkName];
   }
 
-  aquireNetworkSegmentIndex(guid) {
+  acquireNetworkSegmentIndex(guid) {
     logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
     const promises = [this.getDeploymentNames(true)];
     if (config.enable_bosh_rate_limit) {
@@ -476,9 +476,9 @@ class DirectorManager extends BaseManager {
       const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
         this.plan.actions;
       if (serviceLevelActions || planLevelActions) {
-        const cumilativeActions = serviceLevelActions ? (planLevelActions ? `${serviceLevelActions},${planLevelActions}` : serviceLevelActions) :
+        const cumulativeActions = serviceLevelActions ? (planLevelActions ? `${serviceLevelActions},${planLevelActions}` : serviceLevelActions) :
           planLevelActions;
-        const actionsToPerform = _.chain(cumilativeActions)
+        const actionsToPerform = _.chain(cumulativeActions)
           .replace(/\s*/g, '')
           .split(',')
           .value();

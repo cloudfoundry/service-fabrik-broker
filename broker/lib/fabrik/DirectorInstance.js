@@ -57,8 +57,8 @@ class DirectorInstance extends BaseInstance {
     return Promise
       .try(() => {
         this.operation = operation.type;
-        if (operation.type === 'create') {
-          return this.manager.aquireNetworkSegmentIndex(this.guid);
+        if (operation.type === CONST.OPERATION_TYPE.CREATE) {
+          return this.manager.acquireNetworkSegmentIndex(this.guid);
         }
         return this.manager.findNetworkSegmentIndex(this.guid);
       })
@@ -129,7 +129,7 @@ class DirectorInstance extends BaseInstance {
         }
       })
       .catch(err => _.assign(operation, {
-        state: 'failed',
+        state: CONST.OPERATION.FAILED,
         description: `${action} deployment '${this.deploymentName}' not yet completely succeeded because "${err.message}"`
       }));
   }
@@ -233,7 +233,7 @@ class DirectorInstance extends BaseInstance {
         assert.ok(_.endsWith(task.deployment, this.guid), `Deployment '${task.deployment}' must end with '${this.guid}'`);
         this.networkSegmentIndex = this.manager.getNetworkSegmentIndex(task.deployment);
         this.setOperationState(operation, task);
-        if (operation.state !== 'in progress') {
+        if (operation.state !== CONST.OPERATION.IN_PROGRESS) {
           return Promise.try(() => {
               return this.manager.cleanupOperation(task.deployment);
             })
@@ -268,7 +268,7 @@ class DirectorInstance extends BaseInstance {
         if (isCached) {
           return _.assign(operation, {
             description: `${_.capitalize(operation.type)} deployment is still in progress`,
-            state: 'in progress'
+            state: CONST.OPERATION.IN_PROGRESS
           });
         } else {
           return this.getBoshTaskStatus(instanceId, operation, taskId);
@@ -284,19 +284,19 @@ class DirectorInstance extends BaseInstance {
     case 'done':
       return _.assign(operation, {
         description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
-        state: 'succeeded'
+        state: CONST.OPERATION.SUCCEEDED
       });
     case 'error':
     case 'cancelled':
     case 'timeout':
       return _.assign(operation, {
         description: `${action} deployment ${task.deployment} failed at ${timestamp} with Error "${task.result}"`,
-        state: 'failed'
+        state: CONST.OPERATION.FAILED
       });
     default:
       return _.assign(operation, {
         description: `${action} deployment ${task.deployment} is still in progress`,
-        state: 'in progress'
+        state: CONST.OPERATION.IN_PROGRESS
       });
     }
   }
