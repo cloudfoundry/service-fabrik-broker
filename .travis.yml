@@ -28,6 +28,7 @@ script:
        echo "No changes to the code formatting required.. "
      fi
   - "npm run -s jshint-ci"
+  - "set -x"
   - "npm run -s test-coverall"
   - "npm run -s jsdoc"
   - |
