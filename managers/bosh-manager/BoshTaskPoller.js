@@ -98,7 +98,7 @@ class BoshTaskPoller {
                         }
                       })
                       .catch(AssertionError, err => {
-                        logger.error(`Error occured while getting last operation`, err);
+                        logger.error(`Error occured while getting last operation for instance ${object.metadata.name}`, err);
                         BoshTaskPoller.clearPoller(metadata.name, intervalId);
                         return eventmesh.apiServerClient.updateResource({
                           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -117,22 +117,21 @@ class BoshTaskPoller {
                   }
                 })
                 .catch(Conflict, () => {
-                  logger.debug(`Not able to acquire bosh task poller processing lock, Request is probably picked by other worker`);
+                  logger.debug(`Not able to acquire bosh task poller processing lock for instance ${object.metadata.name}, Request is probably picked by other worker`);
                 });
             }
           });
         })
         .catch(err => {
-          logger.error(`Error occured while polling for last operation, clearing bosh task poller interval now`, err);
+          logger.error(`Error occured while polling for last operation for instance ${object.metadata.name}, clearing bosh task poller interval now`, err);
           BoshTaskPoller.clearPoller(object.metadata.name, intervalId);
         });
     }
 
     function startPoller(event) {
       logger.debug('Received Director Event: ', event);
-      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) {
+      if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BoshTaskPoller.pollers[event.object.metadata.name]) {
         logger.debug('starting bosh task poller for deployment ', event.object.metadata.name);
-        BoshTaskPoller.clearPoller(event.object.metadata.name, BoshTaskPoller.pollers[event.object.metadata.name]);
         // Poller time should be little less than watch refresh interval as 
         const intervalId = setInterval(() => poller(event.object, intervalId), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
         BoshTaskPoller.pollers[event.object.metadata.name] = intervalId;
