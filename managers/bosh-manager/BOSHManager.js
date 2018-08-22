@@ -91,7 +91,8 @@ class BoshManager extends BaseManager {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
         }
-      })).catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
+      }))
+      .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: changeObjectBody.metadata.name

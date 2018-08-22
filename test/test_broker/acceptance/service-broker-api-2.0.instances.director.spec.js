@@ -1527,7 +1527,6 @@ describe('service-broker-api-2.0', function () {
               response: JSON.stringify(mocks.agent.credentials)
             }
           });
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'directorbind', binding_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -1568,7 +1567,6 @@ describe('service-broker-api-2.0', function () {
               response: JSON.stringify(mocks.agent.credentials)
             }
           });
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'directorbind', binding_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -1609,7 +1607,6 @@ describe('service-broker-api-2.0', function () {
               response: JSON.stringify(mocks.agent.credentials)
             }
           });
-          mocks.apiServerEventMesh.nockPatchResource('bind', 'directorbind', binding_id, {});
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
