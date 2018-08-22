@@ -109,8 +109,8 @@ class ApiServerClient {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
           if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not picked up from the queue`);
-            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not picked up from the queue`);
+            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
           }
           return this.getResourceOperationStatus(opts);
         } else if (

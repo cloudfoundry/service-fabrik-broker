@@ -53,12 +53,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
 
-    function getDashboardUrl(serviceId, planId, instanceGuid) {
+    function getDashboardUrl(serviceId, planId, instanceId) {
       return formatUrl(_
         .chain(config.external)
         .pick('protocol', 'host')
         .set('slashes', true)
-        .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceGuid}`)
+        .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceId}`)
         .value()
       );
     }
@@ -122,7 +122,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(result) {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
-      const body = {};
+      let body = {};
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         if (isRestoreOperation) {
@@ -133,8 +133,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     function isUpdatePossible(previousPlanId) {
-      const planId = params.plan_id;
-      const plan = catalog.getPlan(planId);
       const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
@@ -297,10 +295,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     function notFound(err) {
-      if (operation && operation.type === 'delete') {
-        return gone();
-      } else if (!operation) { //TODO : for non delete case, check when notfound is thrown and handle. similarly for AssertionError
-        //      failed(err);
+      if (!operation || (operation && operation.type === 'delete')) {
         return gone();
       }
       failed(err);
