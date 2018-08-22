@@ -11,7 +11,6 @@ const utils = require('../../common/utils');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
 class BoshManager extends BaseManager {
-
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)

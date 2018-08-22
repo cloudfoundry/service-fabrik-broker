@@ -10,9 +10,7 @@ const config = require('../../common/config');
 const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const NotFound = errors.NotFound;
 const AssertionError = errors.AssertionError;
-/* jshint unused:false */
 const Conflict = errors.Conflict;
 
 class BoshTaskPoller {
@@ -118,8 +116,7 @@ class BoshTaskPoller {
                       });
                   }
                 })
-                /* jshint unused:false */
-                .catch(Conflict => {
+                .catch(Conflict, () => {
                   logger.debug(`Not able to acquire bosh task poller processing lock, Request is probably picked by other worker`);
                 });
             }

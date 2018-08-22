@@ -71,8 +71,6 @@ class BoshBindManager extends BaseManager {
         }
       }));
   }
-
-
 }
 
 module.exports = BoshBindManager;
