@@ -72,22 +72,6 @@ class DirectorManager extends BaseManager {
     return this.subnet || BoshDirectorClient.getInfrastructure().segmentation.network_name || 'default';
   }
 
-  get resourcePools() {
-    const networkName = this.networkName;
-    const stemcell = this.stemcell;
-    return _.reduce(BoshDirectorClient.getInfrastructure().azs, (result, az) => {
-      _.forEach(BoshDirectorClient.getInfrastructure().vm_types, vm_type => {
-        result.push({
-          name: `${vm_type.name}_${az.name}`,
-          network: `${networkName}_${az.name}`,
-          stemcell: stemcell,
-          cloud_properties: _.assign({}, az.cloud_properties, vm_type.cloud_properties)
-        });
-      });
-      return result;
-    }, []);
-  }
-
   getDeploymentName(guid, networkSegmentIndex) {
     let subnet = this.subnet ? `_${this.subnet}` : '';
     return `${DirectorManager.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
