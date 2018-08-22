@@ -47,36 +47,6 @@ class DockerManager extends BaseManager {
     return `${this.constructor.prefix}-${guid}`;
   }
 
-  createPortBindings(exposedPorts) {
-    function extractProtocol(key) {
-      return _.nth(key.split('/'), 1);
-    }
-
-    function getHostPortBinding(protocol) {
-      const binding = {};
-      if (config.docker.allocate_docker_host_ports) {
-        _.set(binding, 'HostPort', `${docker.acquirePort(protocol || 'tcp')}`);
-      }
-      return [binding];
-    }
-
-    const keys = _.keys(exposedPorts);
-    const updateRegistry = _
-      .chain(keys)
-      .map(key => docker.portsWillBeExhaustedSoon(extractProtocol(key)))
-      .some()
-      .value();
-
-    return Promise
-      .try(() => updateRegistry ? docker.updatePortRegistry() : null)
-      .then(() => _
-        .chain(keys)
-        .map(key => [key, getHostPortBinding(extractProtocol(key))])
-        .fromPairs()
-        .value()
-      );
-  }
-
   static get prefix() {
     return config.docker.prefix || super.prefix;
   }

@@ -13,7 +13,6 @@ const utils = require('../../../common/utils');
 const catalog = require('../../../common/models').catalog;
 const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 
@@ -57,41 +56,15 @@ class DirectorInstance extends BaseInstance {
     return Promise
       .try(() => {
         this.operation = operation.type;
-        if (operation.type === CONST.OPERATION_TYPE.CREATE) {
-          return this.manager.acquireNetworkSegmentIndex(this.guid);
-        }
+        // if (operation.type === 'create') {
+        //   return this.manager.aquireNetworkSegmentIndex(this.guid);
+        // }
         return this.manager.findNetworkSegmentIndex(this.guid);
       })
       .tap(networkSegmentIndex => {
         assert.ok(_.isInteger(networkSegmentIndex), `Network segment index '${networkSegmentIndex}' must be an integer`);
         this.networkSegmentIndex = networkSegmentIndex;
-      })
-      .tap(() => {
-        if (operation.type === 'delete') {
-          return Promise
-            .all([
-              this.platformManager.preInstanceDeleteOperations({
-                guid: this.guid
-              }),
-              this.deleteRestoreFile()
-            ]);
-        }
       });
-  }
-
-  deleteRestoreFile() {
-    if (_.includes(this.manager.agent.features, 'backup')) {
-      return Promise.try(() => this.platformManager.ensureTenantId({
-          context: this.platformContext,
-          guid: this.guid
-        }))
-        .then(tenant_id => tenant_id ? this.manager.deleteRestoreFile(tenant_id, this.guid) : Promise.resolve({}))
-        .catch(err => {
-          logger.error(`Failed to delete restore file of instance '${this.guid}'`);
-          logger.error(err);
-          throw err;
-        });
-    }
   }
 
   finalize(operation) {
@@ -134,25 +107,6 @@ class DirectorInstance extends BaseInstance {
       }));
   }
 
-  create(params) {
-    const operation = {
-      type: 'create'
-    };
-    return this
-      .initialize(operation)
-      .then(() => {
-        return this.manager
-          .createOrUpdateDeployment(this.deploymentName, params);
-      })
-      .then(op => _
-        .chain(operation)
-        .assign(_.pick(params, 'parameters', 'context'))
-        .set('task_id', op.task_id)
-        .set('cached', op.cached)
-        .value()
-      );
-  }
-
   update(params) {
     const operation = {
       type: 'update'
@@ -170,18 +124,18 @@ class DirectorInstance extends BaseInstance {
         logger.info('SF Operation input:', serviceFabrikOperation);
         this.operation = _.get(serviceFabrikOperation, 'name', 'update');
         // normal update operation
-        if (this.operation === 'update') {
-          const args = _.get(serviceFabrikOperation, 'arguments');
-          return this.manager
-            .createOrUpdateDeployment(this.deploymentName, params, args)
-            .then(op => _
-              .chain(operation)
-              .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', op.task_id)
-              .set('cached', op.cached)
-              .value()
-            );
-        }
+        // if (this.operation === 'update') {
+        //   const args = _.get(serviceFabrikOperation, 'arguments');
+        //   return this.manager
+        //     .createOrUpdateDeployment(this.deploymentName, params, args)
+        //     .then(op => _
+        //       .chain(operation)
+        //       .assign(_.pick(params, 'parameters', 'context'))
+        //       .set('task_id', op.task_id)
+        //       .set('cached', op.cached)
+        //       .value()
+        //     );
+        // }
         // service fabrik operation
         const previousValues = params.previous_values;
         const opts = _
@@ -203,23 +157,6 @@ class DirectorInstance extends BaseInstance {
             .value()
           );
       });
-  }
-
-  delete(params) {
-    const operation = {
-      type: 'delete'
-    };
-    return this
-      .initialize(operation)
-      .then(() => this.manager.deleteDeployment(this.deploymentName, params))
-      .then(taskId => _
-        .chain(operation)
-        .set('task_id', taskId)
-        .set('context', {
-          platform: this.platformManager.platform
-        })
-        .value()
-      );
   }
 
   getBoshTaskStatus(instanceId, operation, taskId) {
@@ -301,28 +238,6 @@ class DirectorInstance extends BaseInstance {
     }
   }
 
-  bind(params) {
-    return this
-      .initialize({
-        type: 'bind'
-      })
-      .then(() => this.manager.createBinding(this.deploymentName, {
-        id: params.binding_id,
-        parameters: params.parameters || {}
-      }))
-      .tap(() => this
-        .scheduleBackUp()
-        .catch(() => {}));
-  }
-
-  unbind(params) {
-    return this
-      .initialize({
-        type: 'unbind'
-      })
-      .then(() => this.manager.deleteBinding(this.deploymentName, params.binding_id));
-  }
-
   getApplicationAccessPortsOfService() {
     let service = this.manager.service.toJSON();
     return _.get(service, 'application_access_ports');
@@ -372,45 +287,6 @@ class DirectorInstance extends BaseInstance {
             content: yaml.dump(deploymentInfo)
           }]
         };
-      });
-  }
-
-  scheduleBackUp() {
-    const options = {
-      instance_id: this.guid,
-      repeatInterval: 'daily',
-      type: CONST.BACKUP.TYPE.ONLINE
-    };
-    logger.debug(`Scheduling backup for  instance : ${this.guid}`);
-    return Promise
-      .try(() => {
-        if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
-          try {
-            this.manager.verifyFeatureSupport('backup');
-            ScheduleManager
-              .getSchedule(this.guid, CONST.JOB.SCHEDULED_BACKUP)
-              .then(schedule => {
-                logger.info(`Backup Job : ${schedule.name} already scheduled for instance : ${this.guid} with interval ${schedule.repeatInterval}`);
-                return;
-              })
-              .catch((error) => {
-                if (typeof error !== errors.NotFound) {
-                  //NotFound is an expected error.
-                  logger.warn('error occurred while fetching schedule for existing job', error);
-                }
-                if (this.service.backup_interval) {
-                  options.repeatInterval = this.service.backup_interval;
-                }
-                logger.info(`Scheduling Backup for instance : ${this.guid} with backup interval of - ${options.repeatInterval}`);
-                //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
-                return this.serviceFabrikClient.scheduleBackup(options);
-              });
-          } catch (err) {
-            logger.error(`Error occurred while scheduling backup for instance: ${this.guid}. More info:`, err);
-          }
-        } else {
-          logger.info('Scheduled Backup feature not enabled');
-        }
       });
   }
 

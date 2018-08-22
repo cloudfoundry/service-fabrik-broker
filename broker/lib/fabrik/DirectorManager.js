@@ -25,7 +25,6 @@ const Addons = bosh.manifest.Addons;
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const NotImplemented = errors.NotImplemented;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
@@ -93,25 +92,6 @@ class DirectorManager extends BaseManager {
     return this.getNetworks(index)[this.networkName];
   }
 
-  acquireNetworkSegmentIndex(guid) {
-    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
-    const promises = [this.getDeploymentNames(true)];
-    if (config.enable_bosh_rate_limit) {
-      promises.push(this.getDeploymentNamesInCache());
-    }
-    return Promise.all(promises)
-      .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
-      .then(deploymentNames => {
-        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
-        if (deploymentName) {
-          logger.warn('+-> Deployment with this instance id already exists');
-          throw new ServiceInstanceAlreadyExists(guid);
-        }
-        return NetworkSegmentIndex.findFreeIndex(deploymentNames, this.subnet);
-      })
-      .tap(networkSegmentIndex => logger.info(`+-> Acquired network segment index '${networkSegmentIndex}'`));
-  }
-
   findDeploymentNameByInstanceId(guid) {
     logger.info(`Finding deployment name with instance id : '${guid}'`);
     return this.getDeploymentNames(false)
@@ -171,60 +151,6 @@ class DirectorManager extends BaseManager {
     return this.director.getDeploymentIps(deploymentName);
   }
 
-  executePolicy(scheduled, action, deploymentName) {
-    const runOutput = {
-      'shouldRunNow': false
-    };
-    let targetDirectorConfig;
-    return this.director.getDirectorForOperation(action, deploymentName)
-      .then(directorConfig => {
-        targetDirectorConfig = directorConfig;
-        return this.director.getCurrentTasks(action, targetDirectorConfig);
-      })
-      .then(tasksCount => {
-        let currentTasks, maxWorkers;
-        const allTasks = tasksCount.total;
-        const maxTasks = _.get(targetDirectorConfig, 'max_workers', 6);
-        if (allTasks >= maxTasks) {
-          //no slots left anyway
-          runOutput.shouldRunNow = false;
-          return runOutput;
-        }
-        if (scheduled) {
-          currentTasks = tasksCount.scheduled;
-          maxWorkers = _.get(targetDirectorConfig, 'policies.scheduled.max_workers', 3);
-        } else {
-          currentTasks = tasksCount[action];
-          maxWorkers = _.get(targetDirectorConfig, `policies.user.${action}.max_workers`, 3);
-        }
-        if (currentTasks < maxWorkers) {
-          //should run if the tasks count is lesser than the specified max workers for op type
-          runOutput.shouldRunNow = true;
-          return runOutput;
-        }
-        return runOutput;
-      }).catch(err => {
-        logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
-        //in case the director request returns an error, we queue it to avoid user experience issues
-        // return with shouldRunNow = false so that it is taken care of in processing
-        return runOutput;
-      });
-  }
-
-  _deleteEntity(action, opts) {
-    return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-        return action();
-      }, {
-        maxAttempts: opts.maxAttempts,
-        minDelay: opts.minDelay
-      })
-      .catch(err => {
-        logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
-        throw err;
-      });
-  }
-
   cleanupOperation(deploymentName) {
     return Promise.try(() => {
       if (!config.enable_bosh_rate_limit) {
@@ -247,51 +173,6 @@ class DirectorManager extends BaseManager {
       });
       return Promise.all([retryTaskDelete, retryDeploymentDelete]);
     });
-  }
-
-  getCurrentOperationState(serviceInstanceId) {
-    let output = {
-      'cached': false,
-      'task_id': null
-    };
-
-    return Promise.all([boshOperationQueue.containsServiceInstance(serviceInstanceId), boshOperationQueue.getBoshTask(serviceInstanceId)])
-      .spread((cached, taskId) => {
-        output.cached = cached;
-        output.task_id = taskId;
-      })
-      .return(output);
-  }
-
-  enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
-    const results = {
-      cached: false,
-      shouldRunNow: shouldRunNow,
-      enqueue: false
-    };
-    if (scheduled) {
-      if (shouldRunNow) {
-        //do not store in etcd for scheduled updates
-        results.shouldRunNow = shouldRunNow;
-        return results;
-      } else {
-        throw new errors.DeploymentAttemptRejected(deploymentName);
-      }
-    } else {
-      // user-triggered operations
-      if (shouldRunNow) {
-        //check if the deployment already exists in etcd (poller-run)
-        return boshOperationQueue.containsDeployment(deploymentName).then(enqueued => {
-          if (enqueued) {
-            results.cached = true;
-          }
-          return results;
-        });
-      } else {
-        results.enqueue = true;
-        return results;
-      }
-    }
   }
 
   createOrUpdateDeployment(deploymentName, params, args) {
@@ -509,32 +390,6 @@ class DirectorManager extends BaseManager {
     });
   }
 
-  deleteDeployment(deploymentName) {
-    logger.info(`Deleting deployment '${deploymentName}'...`);
-    let actionContext = {
-      'deployment_name': deploymentName
-    };
-    return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_DELETE, actionContext)
-      .then(() => {
-        if (_.includes(this.agent.features, 'lifecycle')) {
-          return this
-            .getDeploymentIps(deploymentName)
-            .then(ips => this.agent.deprovision(ips))
-            .catch(FeatureNotSupportedByAnyAgent, ServiceInstanceNotOperational, err => {
-              logger.debug('+-> Caught expected error of feature \'deprovision\':', err);
-              return;
-            });
-        }
-      })
-      .then(() => this.director.deleteDeployment(deploymentName))
-      .tap(taskId => logger.info(`+-> Scheduled delete deployment task '${taskId}'`))
-      .catch(err => {
-        logger.error('+-> Failed to delete deployment');
-        logger.error(err);
-        throw err;
-      });
-  }
-
   createBinding(deploymentName, binding) {
     this.verifyFeatureSupport('credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
@@ -561,31 +416,6 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  deleteBinding(deploymentName, id) {
-    this.verifyFeatureSupport('credentials');
-    logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
-    let actionContext = {
-      'deployment_name': deploymentName,
-      'id': id
-    };
-    return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
-      .then((preUnbindResponse) =>
-        Promise
-        .all([
-          Promise.resolve(preUnbindResponse),
-          this.getDeploymentIps(deploymentName),
-          this.getBindingProperty(deploymentName, id)
-        ]))
-      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
-      .then(() => this.deleteBindingProperty(deploymentName, id))
-      .tap(() => logger.info('+-> Deleted service binding'))
-      .catch(err => {
-        logger.error('+-> Failed to delete binding');
-        logger.error(err);
-        throw err;
-      });
-  }
-
   getBindingProperty(deploymentName, id) {
     return this.director
       .getDeploymentProperty(deploymentName, `binding-${id}`)
@@ -597,11 +427,6 @@ class DirectorManager extends BaseManager {
     return this.director
       .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
       .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
-  }
-
-  deleteBindingProperty(deploymentName, id) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
   }
 
   diffManifest(deploymentName, opts) {
@@ -978,23 +803,6 @@ class DirectorManager extends BaseManager {
           return _.pick(metadata, 'state');
         }
       });
-  }
-
-  deleteRestoreFile(tenant_id, instance_guid) {
-    const options = {
-      tenant_id: tenant_id,
-      service_id: this.service.id,
-      plan_id: this.plan.id,
-      instance_guid: instance_guid
-    };
-    return Promise.try(() => {
-      if (!_.includes(this.agent.features, 'backup')) {
-        return null;
-      } else {
-        return this.backupStore.deleteRestoreFile(options);
-      }
-
-    });
   }
 
   verifyFeatureSupport(feature) {
