@@ -7,6 +7,7 @@ const app = require('../support/apps').internal;
 const catalog = require('../../../common/models').catalog;
 const docker = require('../../../data-access-layer/docker');
 const config = require('../../../common/config');
+const utils = require('../../../common/utils');
 const fabrik = lib.fabrik;
 
 describe('service-broker-api', function () {
@@ -600,7 +601,7 @@ describe('service-broker-api', function () {
           status: {
             state: 'succeeded',
             lastOperation: '{}',
-            response: JSON.stringify({
+            response: utils.encodeBase64({
               hostname: docker_url.hostname,
               username: username,
               password: password,

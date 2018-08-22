@@ -50,7 +50,7 @@ class UnlockResourcePoller {
       const lockDetails = JSON.parse(event.object.spec.options);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
         UnlockResourcePoller.clearPoller(event.object.metadata.name, UnlockResourcePoller.pollers[event.object.metadata.name]);
-        logger.info('starting unlock resource poller for deployment', event.object.metadata.name);
+        logger.debug('starting unlock resource poller for deployment', event.object.metadata.name);
         //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
         // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
         const intervalId = setInterval(() => poller(event.object, intervalId), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
@@ -73,13 +73,13 @@ class UnlockResourcePoller {
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
             return this.start();
           });
       });
   }
   static clearPoller(resourceId, intervalId) {
-    logger.info(`Clearing unlock interval for deployment`, resourceId);
+    logger.debug(`Clearing unlock interval for deployment`, resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }

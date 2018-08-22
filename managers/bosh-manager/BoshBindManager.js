@@ -45,15 +45,18 @@ class BoshBindManager extends BaseManager {
     logger.info('Triggering bind with the following options:', changedOptions);
     return DirectorService.createDirectorService(instanceGuid, changedOptions)
       .then(boshService => boshService.bind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
-      }));
+      .then(response => {
+        const encodedResponse = utils.encodeBase64(response);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            response: encodedResponse,
+            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          }
+        });
+      });
   }
   _processUnbind(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);

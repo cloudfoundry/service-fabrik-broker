@@ -1524,7 +1524,7 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource('bind', 'directorbind', binding_id, {
             status: {
               state: 'succeeded',
-              response: JSON.stringify(mocks.agent.credentials)
+              response: utils.encodeBase64(mocks.agent.credentials)
             }
           });
           return chai.request(app)
@@ -1564,7 +1564,7 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource('bind', 'directorbind', binding_id, {
             status: {
               state: 'succeeded',
-              response: JSON.stringify(mocks.agent.credentials)
+              response: utils.encodeBase64(mocks.agent.credentials)
             }
           });
           return chai.request(app)
@@ -1604,7 +1604,7 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource('bind', 'directorbind', binding_id, {
             status: {
               state: 'succeeded',
-              response: JSON.stringify(mocks.agent.credentials)
+              response: utils.encodeBase64(mocks.agent.credentials)
             }
           });
           return chai.request(app)

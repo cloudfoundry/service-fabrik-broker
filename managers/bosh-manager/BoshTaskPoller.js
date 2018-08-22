@@ -131,7 +131,7 @@ class BoshTaskPoller {
     function startPoller(event) {
       logger.debug('Received Director Event: ', event);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) {
-        logger.info('starting bosh task poller for deployment ', event.object.metadata.name);
+        logger.debug('starting bosh task poller for deployment ', event.object.metadata.name);
         BoshTaskPoller.clearPoller(event.object.metadata.name, BoshTaskPoller.pollers[event.object.metadata.name]);
         // Poller time should be little less than watch refresh interval as 
         const intervalId = setInterval(() => poller(event.object, intervalId), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
@@ -155,14 +155,14 @@ class BoshTaskPoller {
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
-            logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
             return this.start();
           });
       });
   }
 
   static clearPoller(resourceId, intervalId) {
-    logger.info(`Clearing bosh task poller interval for deployment`, resourceId);
+    logger.debug(`Clearing bosh task poller interval for deployment`, resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }

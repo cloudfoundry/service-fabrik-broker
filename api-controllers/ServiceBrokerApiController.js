@@ -324,7 +324,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('binding_id', req.params.binding_id)
       .value();
 
-    function done(credentials) {
+    function done(encodedCredentials) {
+      const credentials = utils.decodeBase64(encodedCredentials);
       res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
         credentials: credentials
       });
