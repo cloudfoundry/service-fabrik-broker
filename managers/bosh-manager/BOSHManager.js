@@ -10,7 +10,7 @@ const errors = require('../../common/errors');
 const utils = require('../../common/utils');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
-class BOSHManager extends BaseManager {
+class BoshManager extends BaseManager {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -99,4 +99,4 @@ class BOSHManager extends BaseManager {
   }
 }
 
-module.exports = BOSHManager;
+module.exports = BoshManager;

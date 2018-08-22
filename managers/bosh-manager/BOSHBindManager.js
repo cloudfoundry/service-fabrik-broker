@@ -9,7 +9,7 @@ const utils = require('../../common/utils');
 const BaseManager = require('../BaseManager');
 const DirectorService = require('./DirectorService');
 
-class BOSHBindManager extends BaseManager {
+class BoshBindManager extends BaseManager {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -75,4 +75,4 @@ class BOSHBindManager extends BaseManager {
 
 }
 
-module.exports = BOSHBindManager;
+module.exports = BoshBindManager;

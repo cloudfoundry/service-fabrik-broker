@@ -15,7 +15,7 @@ const AssertionError = errors.AssertionError;
 /* jshint unused:false */
 const Conflict = errors.Conflict;
 
-class BOSHTaskPoller {
+class BoshTaskPoller {
   static start() {
     function poller(object, intervalId) {
       const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
@@ -55,7 +55,7 @@ class BOSHTaskPoller {
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
                   if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
-                    BOSHTaskPoller.clearPoller(metadata.name, intervalId);
+                    BoshTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
                     return DirectorService.createDirectorService(metadata.name, options)
                       .then(boshService => boshService.lastOperation(resourceBody.status.response))
@@ -71,11 +71,12 @@ class BOSHTaskPoller {
                       }), Promise.try(() => {
                         if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
                           // cancel the poller and clear the array
-                          BOSHTaskPoller.clearPoller(metadata.name, intervalId);
+                          BoshTaskPoller.clearPoller(metadata.name, intervalId);
                         }
                       })]))
-                      .catch(ServiceInstanceNotFound, (err) => {
-                        BOSHTaskPoller.clearPoller(metadata.name, intervalId);
+                      .catch(ServiceInstanceNotFound, err => {
+                        logger.error(`Error occured while getting last operation`, err);
+                        BoshTaskPoller.clearPoller(metadata.name, intervalId);
                         if (resourceBody.status.response.type === 'delete') {
                           return eventmesh.apiServerClient.deleteResource({
                             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -99,7 +100,8 @@ class BOSHTaskPoller {
                         }
                       })
                       .catch(AssertionError, err => {
-                        BOSHTaskPoller.clearPoller(metadata.name, intervalId);
+                        logger.error(`Error occured while getting last operation`, err);
+                        BoshTaskPoller.clearPoller(metadata.name, intervalId);
                         return eventmesh.apiServerClient.updateResource({
                           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -125,7 +127,7 @@ class BOSHTaskPoller {
         })
         .catch(err => {
           logger.error(`Error occured while polling for last operation, clearing bosh task poller interval now`, err);
-          BOSHTaskPoller.clearPoller(object.metadata.name, intervalId);
+          BoshTaskPoller.clearPoller(object.metadata.name, intervalId);
         });
     }
 
@@ -133,10 +135,10 @@ class BOSHTaskPoller {
       logger.debug('Received Director Event: ', event);
       if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) {
         logger.info('starting bosh task poller for deployment ', event.object.metadata.name);
-        BOSHTaskPoller.clearPoller(event.object.metadata.name, BOSHTaskPoller.pollers[event.object.metadata.name]);
+        BoshTaskPoller.clearPoller(event.object.metadata.name, BoshTaskPoller.pollers[event.object.metadata.name]);
         // Poller time should be little less than watch refresh interval as 
         const intervalId = setInterval(() => poller(event.object, intervalId), CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL);
-        BOSHTaskPoller.pollers[event.object.metadata.name] = intervalId;
+        BoshTaskPoller.pollers[event.object.metadata.name] = intervalId;
       }
     }
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;
@@ -167,9 +169,9 @@ class BOSHTaskPoller {
     if (intervalId) {
       clearInterval(intervalId);
     }
-    _.unset(BOSHTaskPoller.pollers, resourceId);
+    _.unset(BoshTaskPoller.pollers, resourceId);
   }
 }
 
-BOSHTaskPoller.pollers = [];
-module.exports = BOSHTaskPoller;
+BoshTaskPoller.pollers = [];
+module.exports = BoshTaskPoller;

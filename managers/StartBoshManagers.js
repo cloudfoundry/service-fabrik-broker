@@ -1,11 +1,11 @@
 'use strict';
 
-const BOSHManager = require('./bosh-manager/BOSHManager');
-const BOSHBindManager = require('./bosh-manager/BOSHBindManager');
-const BOSHTaskPoller = require('./bosh-manager/BOSHTaskPoller');
+const BoshManager = require('./bosh-manager/BoshManager');
+const BoshBindManager = require('./bosh-manager/BoshBindManager');
+const BoshTaskPoller = require('./bosh-manager/BoshTaskPoller');
 
-BOSHTaskPoller.start();
-const boshManager = new BOSHManager();
-const bindManager = new BOSHBindManager();
+BoshTaskPoller.start();
+const boshManager = new BoshManager();
+const bindManager = new BoshBindManager();
 boshManager.init();
 bindManager.init();
