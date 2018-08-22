@@ -1,6 +1,5 @@
 'use strict';
 
-const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
 const config = require('../../../common/config');
