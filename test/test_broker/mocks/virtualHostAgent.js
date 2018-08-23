@@ -16,6 +16,7 @@ exports.ip = agentIp;
 exports.url = agentUrl;
 exports.credentials = credentials;
 exports.createVirtualHost = createVirtualHost;
+exports.updateVirtualHost = updateVirtualHost;
 exports.deleteVirtualHost = deleteVirtualHost;
 exports.createCredentials = createCredentials;
 exports.deleteCredentials = deleteCredentials;
@@ -25,6 +26,13 @@ function createVirtualHost(instanceId) {
     .replyContentLength()
     .post(`/v1/tenants/${instanceId}`)
     .reply(200, {});
+}
+
+function updateVirtualHost(instanceId) {
+  return nock(agentUrl)
+    .replyContentLength()
+    .put(`/v1/tenants/${instanceId}`)
+    .reply(204, {});
 }
 
 function deleteVirtualHost(instanceId) {
