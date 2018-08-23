@@ -1,0 +1,24 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  User; Controller; Broker; APIServer; BOSHManager; Agent; Service;
+
+  # trigger service binding creation
+  User => Controller [label = "cf create-service-   binding or -key", return = "credentials"] {
+    Controller => Broker [label = "create binding", return = "credentials"] {
+      Broker => APIServer [label = "create bind resource with state in_queue and wait for state change", return = "credentials"]{
+        APIServer -> BOSHManager [label = "trigger watcher for new bind resource"]
+          BOSHManager => Agent [label = "create credentials", return = "credentials"] {
+            Agent => Service [label = "create user", return = "ok"]
+          }
+          BOSHManager => APIServer [label = "update the resource state as succeeded with response", return = "ok"]
+      }
+    }
+  }
+}

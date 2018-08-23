@@ -15,19 +15,16 @@ seqdiag {
   # trigger backup
   User -> FabrikApi [ label = "trigger backup"]
 
-  FabrikApi => UAA [label = "validate auth token", return = "true"]
+    FabrikApi => UAA [label = "validate auth token", return = "true"]
   
     # controller starts update
   
-    FabrikApi => APIServer [label = "create lock annotation on deployment", return = "true"];
+    FabrikApi => APIServer [label = "create lock resource on deployment", return = "true"];
 
-    FabrikApi -> APIServer [label = "Create a resource backup with state as in_queue"];
+    FabrikApi => APIServer [label = "Create a backup resource with state as in_queue", return = "true"];
 
-    FabrikApi -> FabrikApi [ label = "Start Poller" ];
-
-    FabrikApi => FabrikApi [ label = "check status" ]{
-      FabrikApi => APIServer [label = "backup resource state?", return = "in_queue"];
-    }
+  User <-- FabrikApi [ label = "backup triggered, backup guid is sent back", leftnote = 
+              "response returned back to user" ];
 
     APIServer -> BackupManager [label = "Trigger watcher for new backup request"];
     
@@ -37,17 +34,11 @@ seqdiag {
     BackupManager => IaaS [label = "create backup record",return = "true"];
     APIServer <-- BackupManager [ label = "Update backup status as in progress" ];
 
-    FabrikApi => FabrikApi [ label = "check status" ]{
-      FabrikApi => APIServer [label = "backup resource state?", return = "in_progress"];
-    }
-    User <-- FabrikApi [ label = "update triggered", leftnote = 
-              "response returned back to user" ];
-
 
     FabrikApi -> FabrikApi [ label = "Unlock Poller" ];
 
-    FabrikApi => FabrikApi [ label = "check resource status" ]{
-      FabrikApi => APIServer [label = "check resource state?", return = "in_progress"];
+    FabrikApi => FabrikApi [ label = "check backup resource status" ]{
+      FabrikApi => APIServer [label = "check backup resource state?", return = "in_progress"];
     }
     
     BackupManager -> BackupManager [ label = "Start Poller" ];
@@ -77,8 +68,8 @@ seqdiag {
       APIServer <-- BackupManager [ label = "Update backup status as succeeded" ];
     }
 
-    FabrikApi => FabrikApi [ label = "check resource status" ]{
-      FabrikApi => APIServer [label = "check resource state?", return = "succeeded"];
-      FabrikApi => APIServer [label = "remove lock annotation on deployment", return = "true"];
+    FabrikApi => FabrikApi [ label = "check backup resource status" ]{
+      FabrikApi => APIServer [label = "check backup resource state?", return = "succeeded"];
+      FabrikApi => APIServer [label = "remove lock resource on deployment", return = "true"];
     }
 }
