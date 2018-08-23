@@ -38,6 +38,8 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     PROCESSING: 'processing'
   },
+  DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
+  DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000, // in ms
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -199,6 +201,7 @@ module.exports = Object.freeze({
     CONTENT_TYPE: 'application/x-www-form-urlencoded',
     ACCEPT: 'application/json'
   },
+  SERVICE_BROKER_ERR_MSG: 'Service Broker Error: Something unexpected happened',
   ERR_CODES: {
     UNKNOWN: 'ERR-CODE-UNKNOWN',
     PRE_CONDITION_NOT_MET: 'PRE_CONDITION_NOT_MET',
@@ -237,6 +240,7 @@ module.exports = Object.freeze({
     RETRY_DELAY: 2000,
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
     WATCHER_REFRESH_INTERVAL: 60000, // in ms ( 1 minute )
+    POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
     NAMESPACE: 'default',
@@ -246,11 +250,17 @@ module.exports = Object.freeze({
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
+      BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
+      DOCKER: 'dockers',
+      VIRTUALHOST: 'virtualhosts',
+      DIRECTOR_BIND: 'directorbinds',
+      DOCKER_BIND: 'dockerbinds',
+      VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups'
     },
     RESOURCE_STATE: {
@@ -262,6 +272,7 @@ module.exports = Object.freeze({
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
       ABORTED: 'aborted',
+      UPDATE: 'update'
     },
     RESOURCE_KEYS: {
       STATE: 'state',

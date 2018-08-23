@@ -51,10 +51,14 @@ function convertToHttpErrorAndThrow(err) {
   case CONST.HTTP_STATUS_CODE.FORBIDDEN:
     newErr = new errors.Forbidden(message);
     break;
+  case CONST.HTTP_STATUS_CODE.GONE:
+    newErr = new errors.Gone(message);
+    break;
   default:
     newErr = new InternalServerError(message);
     break;
   }
+  logger.error('Apiserver request erred', newErr);
   throw newErr;
 }
 
@@ -85,6 +89,8 @@ class ApiServerClient {
   /**
    * Poll for Status until opts.start_state changes
    * @param {object} opts - Object containing options
+   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
+   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
@@ -94,8 +100,8 @@ class ApiServerClient {
     let finalState;
     return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
       .then(() => this.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceGroup: opts.resourceGroup,
+        resourceType: opts.resourceType,
         resourceId: opts.resourceId
       }))
       .then(resource => {
@@ -104,8 +110,8 @@ class ApiServerClient {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
           if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-            logger.error(`Backup with guid ${opts.resourceId} not picked up from the queue`);
-            throw new Timeout(`Backup with guid ${opts.resourceId} not picked up from the queue`);
+            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
           }
           return this.getResourceOperationStatus(opts);
         } else if (
@@ -194,7 +200,7 @@ class ApiServerClient {
           });
       })
       .catch(NotFound, () => {
-        logger.info('CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..');
+        logger.info(`CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..`);
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions.post({
           body: crdJson
         });
@@ -392,8 +398,6 @@ class ApiServerClient {
     return this.updateResource(options);
   }
 
-
-
   /**
    * @description Get Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Unique id of resource
@@ -483,6 +487,18 @@ class ApiServerClient {
     return this.getResource(opts)
       .then(resource => resource.status.state);
   }
+
+  /**
+   * @description Get resource last operation
+   * @param {string} opts.resourceGroup - Name of operation
+   * @param {string} opts.resourceType - Type of operation
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getLastOperation(opts) {
+    return this.getResource(opts)
+      .then(resource => resource.status.lastOperation);
+  }
+
 }
 
 module.exports = ApiServerClient;

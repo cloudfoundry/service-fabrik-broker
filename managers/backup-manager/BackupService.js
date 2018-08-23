@@ -24,17 +24,6 @@ class BackupService extends BaseDirectorService {
     this.agent = new Agent(this.settings.agent);
   }
 
-  getTenantGuid(context) {
-    if (context.platform === CONST.PLATFORM.CF) {
-      return context.space_guid;
-    } else if (context.platform === CONST.PLATFORM.K8S) {
-      return context.namespace;
-    }
-  }
-
-  getDeploymentIps(deploymentName) {
-    return this.director.getDeploymentIps(deploymentName);
-  }
   //TODO-PR - static method to non-static
   static registerBnRStatusPoller(opts, instanceInfo) {
     let deploymentName = _.get(instanceInfo, 'deployment');
@@ -191,7 +180,7 @@ class BackupService extends BaseDirectorService {
             resourceId: result.backup_guid,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              error: err
+              error: utils.buildErrorJson(err)
             }
           }))
           .then(() => {
@@ -338,7 +327,7 @@ class BackupService extends BaseDirectorService {
             resourceId: options.backup_guid,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-              error: err
+              error: utils.buildErrorJson(err)
             }
           }));
       });

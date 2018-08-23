@@ -1,24 +1,22 @@
 'use strict';
 
-const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
-const iaas = require('../../../data-access-layer/iaas');
-const virtualHostStore = iaas.virtualHostStore;
+const errors = require('../../../common/errors');
+const utils = require('../../../common/utils');
+const NotFound = errors.NotFound;
 
 describe('service-broker-api', function () {
   describe('instances', function () {
     /* jshint expr:true */
     describe('virtualHost', function () {
       const base_url = '/cf/v2';
-      const index = mocks.director.networkSegmentIndex;
       const api_version = '2.12';
       const service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
       const plan_id = 'd035f948-5d3a-43d7-9aec-954e134c3e9d';
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
-      const instance_id = mocks.director.uuidByIndex(index);
-      const deployment_name = mocks.director.deploymentNameByIndex(index);
+      const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
       const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
       const app_guid = 'app-guid';
       const instance_name = 'rmq';
@@ -29,43 +27,113 @@ describe('service-broker-api', function () {
       const protocol = config.external.protocol;
       const host = config.external.host;
       const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
-      const container = virtualHostStore.containerName;
-      const data = {
-        instance_guid: instance_id,
-        deployment_name: deployment_name
-      };
-      const filename = `virtual_hosts/${instance_id}/${instance_id}.json`;
-      const pathname = `/${container}/${filename}`;
       const context = {
         platform: 'cloudfoundry',
         organization_guid: organization_guid,
         space_guid: space_guid
       };
-      Promise.onPossiblyUnhandledRejection(() => {});
-
-      before(function () {
-        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
-        mocks.cloudProvider.auth();
-        mocks.cloudProvider.getContainer(container);
-        return mocks.setup([
-          virtualHostStore.cloudProvider.getContainer()
-        ]);
-      });
 
       afterEach(function () {
         mocks.reset();
       });
 
       describe('#provision', function () {
+        const payload = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHost',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                dedicated_rabbitmq_instance: `${instance_name}`
+              }
+            })
+          },
+          status: {
+            state: 'in_queue',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const payload2 = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHost',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                dedicated_rabbitmq_instance: `${instance_name}`
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+        const payload3 = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHost',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                dedicated_rabbitmq_instance: `${instance_name}`
+              }
+            })
+          },
+          status: {
+            state: 'failed',
+            error: utils.buildErrorJson(new NotFound(''))
+          }
+        };
         it('returns 201 created', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
-          mocks.agent.getInfo();
-          mocks.virtualHostAgent.createVirtualHost(instance_id);
-          mocks.cloudProvider.upload(pathname, () => {
-            return true;
-          });
-          mocks.cloudProvider.headObject(pathname);
+          mocks.apiServerEventMesh.nockCreateResource('deployment', 'virtualhost', {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload2, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -73,11 +141,14 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               organization_guid: organization_guid,
               space_guid: space_guid,
-              parameters: parameters,
-              context: context,
-              accepts_incomplete: accepts_incomplete
+              parameters: parameters
             })
             .then(res => {
               expect(res).to.have.status(201);
@@ -86,7 +157,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 404 not found when wrong service instance name is passed.', function () {
-          mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, false);
+          mocks.apiServerEventMesh.nockCreateResource('deployment', 'virtualhost', {}, 1, payload);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload3, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -94,11 +166,14 @@ describe('service-broker-api', function () {
             .send({
               service_id: service_id,
               plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
               organization_guid: organization_guid,
               space_guid: space_guid,
-              parameters: parameters,
-              accepts_incomplete: accepts_incomplete,
-              context: context
+              parameters: parameters
             })
             .catch(res => {
               expect(res).to.have.status(404);
@@ -108,12 +183,78 @@ describe('service-broker-api', function () {
       });
 
       describe('#bind', function () {
+        const bindPayload = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHostBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: utils.encodeBase64({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'in_queue',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const bindPayload2 = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHostBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: utils.encodeBase64(mocks.virtualHostAgent.credentials)
+          }
+        };
+
         it('returns 201 Created', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.virtualHostAgent.createCredentials(instance_id);
-          mocks.director.createBindingProperty(binding_id, {}, deployment_name, mocks.virtualHostAgent.credentials);
-          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockCreateResource('bind', 'virtualhostbind', bindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'virtualhostbind', binding_id, bindPayload2, 1);
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'virtualhostbind', binding_id, {
+            'status': {
+              'response': '{}'
+            }
+          }, 1);
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -138,12 +279,72 @@ describe('service-broker-api', function () {
       });
 
       describe('#unbind', function () {
+        const unbindPayload = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+        const unbindPayload2 = {
+          apiVersion: 'bind.servicefabrik.io/v1alpha1',
+          kind: 'DockerBind',
+          metadata: {
+            name: binding_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: JSON.stringify(mocks.virtualHostAgent.credentials)
+          }
+        };
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.virtualHostAgent.deleteCredentials(instance_id);
-          mocks.director.getBindingProperty(binding_id, {}, deployment_name, false, mocks.virtualHostAgent.credentials);
-          mocks.director.deleteBindingProperty(binding_id);
+          mocks.apiServerEventMesh.nockPatchResource('bind', 'virtualhostbind', binding_id, unbindPayload, 1);
+          mocks.apiServerEventMesh.nockGetResource('bind', 'virtualhostbind', binding_id, unbindPayload2, 1);
+          mocks.apiServerEventMesh.nockDeleteResource('bind', 'virtualhostbind', binding_id, unbindPayload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .query({
@@ -162,11 +363,72 @@ describe('service-broker-api', function () {
       });
 
       describe('#deprovision', function () {
+        const payload = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHost',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'delete'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'delete',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+
+        const payload2 = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'VirtualHost',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: {
+                foo: 'bar'
+              }
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
-          mocks.agent.getInfo();
-          mocks.virtualHostAgent.deleteVirtualHost(instance_id);
-          mocks.cloudProvider.remove(pathname);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'virtualhost', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -183,10 +445,8 @@ describe('service-broker-api', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
-          mocks.director.getDeploymentInstances(deployment_name, undefined, undefined, undefined, false);
-          mocks.director.getDeployment(deployment_name, false, undefined, 1);
-          mocks.cloudProvider.download(pathname, data);
-          mocks.cloudProvider.remove(pathname);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'virtualhost', instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'virtualhost', instance_id, {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({

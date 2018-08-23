@@ -38,7 +38,7 @@ instanceRouter.route('/')
   .delete([middleware.validateRequest(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .all(commonMiddleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE']));
 instanceRouter.route('/last_operation')
-  .get(controller.handler('getLastInstanceOperation')) //passing undefined as last operation operationType is part of the req
+  .get(controller.handler('getLastInstanceOperation'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
   .put([middleware.checkBlockingOperationInProgress(), controller.handler('putBinding')])

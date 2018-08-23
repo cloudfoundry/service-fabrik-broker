@@ -421,6 +421,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
             }
           })
           .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: backupGuid,
             start_state: CONST.OPERATION.ABORT,
             started_at: new Date()
@@ -479,7 +481,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.backupStore
             .listBackupsOlderThan(backupFileOptions, new Date(Number(timeStamp)))
             .then(sortedOldBackups =>
-              _.findLast(sortedOldBackups, backup => backup.state ===  CONST.OPERATION.SUCCEEDED))
+              _.findLast(sortedOldBackups, backup => backup.state === CONST.OPERATION.SUCCEEDED))
             .then(successfulBackup => {
               if (_.isEmpty(successfulBackup)) {
                 logger.error(`No successful backup found for service instance '${sourceInstanceId}' before time_stamp ${new Date(timeStamp)}`);
@@ -651,6 +653,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         return this.backupStore.deleteBackupFile(options);
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: req.params.backup_guid,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()

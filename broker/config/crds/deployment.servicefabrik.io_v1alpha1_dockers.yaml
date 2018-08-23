@@ -27,6 +27,8 @@ spec:
           type: object
         status:
           properties:
+            error:
+              type: string
             lastOperation:
               type: string
             response:
