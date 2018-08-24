@@ -51,7 +51,7 @@ nvm use node
 ### Installing Bosh Lite
 
 Boshlite on Virtual Box (recommended):
-[This](https://www.starkandwayne.com/blog/bosh-lite-on-virtualbox-with-bosh2/) article gives simple instructions on setting up boshlite env on virtual box, it can be followed to bring up boshlite locally.
+Follow [this](https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Bootstrap-BOSH-2.0-with-local-VirtualBox) article for setting up boshlite env on virtual box.
 
 Bosh Lite is a lightweight local development environment for BOSH using Warden/Garden containers in a Vagrant box.
 
@@ -63,7 +63,7 @@ Bosh Lite is a lightweight local development environment for BOSH using Warden/G
 
 Well, you know what Cloud Foundry is, otherwise you wouldn't be interested into a service broker to begin with.
 
-To run Cloud Foundry with bosh 2.0, instructions from [this](https://starkandwayne.com/blog/running-cloud-foundry-locally-on-bosh-lite-with-bosh2/) article can be followed.
+To run Cloud Foundry with bosh 2.0, instructions from [this](https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Running-Cloud-Foundry-with-BOSH-2.0) article can be followed.
 
 After you have set up cf api, sample orgs and spaces can be created to start using it.
 ```shell
