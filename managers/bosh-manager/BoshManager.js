@@ -18,7 +18,7 @@ class BoshManager extends BaseManager {
   }
 
   processRequest(changeObjectBody) {
-    return Promise.try(() => {
+    return Promise.try(() => {//TODO-JB - Use switch case
         if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
           return this._processCreate(changeObjectBody);
         } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
@@ -46,7 +46,7 @@ class BoshManager extends BaseManager {
   }
 
   _processCreate(changeObjectBody) {
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    const changedOptions = JSON.parse(changeObjectBody.spec.options); //TODO-JB add validations for mandatory params
     logger.info('Creating deployment resource with the following options:', changedOptions);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.create(changedOptions))
@@ -62,7 +62,7 @@ class BoshManager extends BaseManager {
   }
 
   _processUpdate(changeObjectBody) {
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);//TODO-JB add validations for mandatory params
     logger.info('Updating deployment resource with the following options:', changedOptions);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.update(changedOptions))
@@ -78,7 +78,7 @@ class BoshManager extends BaseManager {
   }
 
   _processDelete(changeObjectBody) {
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);//TODO-JB add validations for mandatory params
     logger.info('Deleting deployment resource with the following options:', changedOptions);
     return DirectorService.createDirectorService(changeObjectBody.metadata.name, changedOptions)
       .then(boshService => boshService.delete(changedOptions))

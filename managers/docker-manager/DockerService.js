@@ -773,7 +773,7 @@ class DockerService extends BaseService {
   //   return details;
   // }
 
-  static createDockerService(instanceId, options) {
+  static createDockerService(instanceId, options) { // TODO-JB rename as createInstance
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const context = _.get(options, 'context');

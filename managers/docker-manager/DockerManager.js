@@ -19,7 +19,7 @@ class DockerManager extends BaseManager {
   }
 
   processRequest(changeObjectBody) {
-    return Promise.try(() => {
+    return Promise.try(() => { //TODO-JB use switch case
         if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
           return this._processCreate(changeObjectBody);
         } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {

@@ -85,7 +85,7 @@ class DirectorService extends BaseDirectorService {
     return this.getDirectorDeploymentName(this.guid, this.networkSegmentIndex);
   }
 
-  getDirectorDeploymentName(guid, networkSegmentIndex) {
+  getDirectorDeploymentName(guid, networkSegmentIndex) { //TODO-JB - rename as getDeploymentName
     let subnet = this.subnet ? `_${this.subnet}` : '';
     return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
   }
@@ -125,7 +125,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   acquireNetworkSegmentIndex(guid) {
-    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
+    logger.debug(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
     const promises = [this.getDeploymentNames(true)];
     if (config.enable_bosh_rate_limit) {
       promises.push(this.getDeploymentNamesInCache());
@@ -264,7 +264,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   findNetworkSegmentIndex(guid) {
-    logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
+    logger.debug(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
     return this
       .director
       .getDeploymentNameForInstanceId(guid)
@@ -1088,7 +1088,7 @@ class DirectorService extends BaseDirectorService {
       .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
   }
 
-  static createDirectorService(instanceId, options) {
+  static createDirectorService(instanceId, options) { //TODO-JB rename it to createInstance
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const context = _.get(options, 'context');
