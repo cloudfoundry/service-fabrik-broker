@@ -20,23 +20,27 @@ seqdiag {
 
   # Consumer asks for last operation status
   Consumer => Broker [label = "last operation?", return = "in progress"] {
-    Broker => APIServer [label = "last operation of director resource?", return = "processing"]
+    Broker => APIServer [label = "last operation of resource?", return = "processing"]
   }
 
   Manager -> Manager [ label = "Start Poller" ];
 
   # Manager asks for last operation status
-  Manager => Service [label = "task state?", return = "in progress"]
+  Manager => Manager [ label = "check status" ]{	
+    Manager => Service [label = "task state?", return = "in progress"]
     Manager => APIServer [label = "sets last operation as in progress"]
-
+  }
 
   # Manager asks for last operation status
-  Manager => Service [label = "task state?", return = "succeeded"]
+  Manager => Manager [ label = "check status" ]{	
+    Manager => Service [label = "task state?", return = "succeeded"]
     Manager => APIServer [label = "sets last operation as succeeded"]
+  }
+
 
 
   # controller asks for last operation status
   Consumer => Broker [label = "last operation?", return = "succeeded"] {
-    Broker => APIServer [label = "last operation state of director resource??", return = "succeeded"]
+    Broker => APIServer [label = "last operation state of resource??", return = "succeeded"]
   }
 }

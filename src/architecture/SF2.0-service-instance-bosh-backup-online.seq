@@ -32,7 +32,7 @@ seqdiag {
 
     BackupManager ->> Agent [label = "trigger backup"];
     BackupManager => IaaS [label = "create backup record",return = "true"];
-    APIServer <-- BackupManager [ label = "Update backup status as in progress" ];
+    APIServer <- BackupManager [ label = "Update backup status as in progress" ];
 
 
     FabrikApi -> FabrikApi [ label = "Unlock Poller" ];

@@ -34,17 +34,20 @@ seqdiag {
   BOSHManager -> BOSHManager [ label = "Start Poller" ];
 
   # BOSHManager asks for last operation status
-  BOSHManager => Bosh [label = "task state?", return = "in progress"]
-  BOSHManager => APIServer [label = "sets last operation as in progress"]
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "in progress"]
+    BOSHManager => APIServer [label = "sets last operation as in progress"]
+  }
 
   # bosh continues deployment
   Bosh => Service [label = "monit start all"]
   BOSHManager <<-- Bosh [label = "deployment completed\nno actual callback"]
 
   # BOSHManager asks for last operation status
-  BOSHManager => Bosh [label = "task state?", return = "succeeded"]
-  BOSHManager => APIServer [label = "sets last operation as succeeded"]
-
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "succeeded"]
+    BOSHManager => APIServer [label = "sets last operation as succeeded"]
+  }
 
   # controller asks for last operation status
   Controller => Broker [label = "last operation?", return = "succeeded"] {

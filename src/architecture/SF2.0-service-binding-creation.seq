@@ -10,7 +10,7 @@ seqdiag {
   User; Controller; Broker; APIServer; BOSHManager; Agent; Service;
 
   # trigger service binding creation
-  User => Controller [label = "cf create-service-   binding or -key", return = "credentials"] {
+  User => Controller [label = "cf create-service-binding", return = "credentials"] {
     Controller => Broker [label = "create binding", return = "credentials"] {
       Broker => APIServer [label = "create bind resource with state in_queue and wait for state change", return = "credentials"]{
         APIServer -> BOSHManager [label = "trigger watcher for new bind resource"]

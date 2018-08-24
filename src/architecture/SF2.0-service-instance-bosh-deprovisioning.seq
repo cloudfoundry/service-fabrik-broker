@@ -30,19 +30,22 @@ seqdiag {
   BOSHManager -> BOSHManager [ label = "Start Poller" ];
 
   # BOSHManager asks for last operation status
-  BOSHManager => Bosh [label = "task state?", return = "in progress"]
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "in progress"]
     BOSHManager => APIServer [label = "sets last operation as in progress"]
+  }
 
   # bosh starts undeployment
   Bosh => Service [label = "monit stop all"]
   # bosh continues undeployment
   Bosh => IaaS [label = "release resources"]
-  Broker <<-- Bosh [label = "deletion completed\nno actual callback"]
+  BOSHManager <<-- Bosh [label = "deletion completed\nno actual callback"]
 
   # BOSHManager asks for last operation status
-  BOSHManager => Bosh [label = "task state?", return = "succeeded"]
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "succeeded"]
     BOSHManager => APIServer [label = "deletes the director resource"]
-
+  }
 
   # controller asks for last operation status
   Controller => Broker [label = "last operation?", return = "succeeded"] {
@@ -50,6 +53,6 @@ seqdiag {
     Broker => APIServer [label = "remove the lock resource", return = "succeeded"]
   }
 
-  User <<-- Controller [label = "creation completed\nno actual callback"]
+  User <<-- Controller [label = "deletion completed\nno actual callback"]
 
 }
