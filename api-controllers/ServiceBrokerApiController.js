@@ -111,7 +111,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
   patchInstance(req, res) {
     const params = _
       .chain(req.body)
-      // .omit('plan_id', 'service_id') //Not omiting even for restore. will that be a problem?
       .cloneDeep()
       .value();
     //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
@@ -206,7 +205,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
       if (plan.manager.async) {
-        // Delete resource from here
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
       }
       res.status(statusCode).send(body);

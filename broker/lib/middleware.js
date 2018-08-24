@@ -27,7 +27,8 @@ exports.isFeatureEnabled = function (featureName) {
 exports.validateRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
-    if (req.instance.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
+    const plan = getPlanFromRequest(req);
+    if (plan.manager.async && (_.get(req, 'query.accepts_incomplete', 'false') !== 'true')) {
       return next(new UnprocessableEntity('This request requires client support for asynchronous service operations.', 'AsyncRequired'));
     }
     next();
@@ -79,12 +80,13 @@ exports.checkQuota = function () {
         } else {
           return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
             .then(quotaValid => {
+              const plan = getPlanFromRequest(req);
               logger.debug(`quota api response : ${quotaValid}`);
               if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
-                logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', service '${req.instance.service.name}', plan '${req.instance.plan.name}'`);
+                logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
                 next(new Forbidden(`Not entitled to create service instance`));
               } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
-                logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', service '${req.instance.service.name}', plan '${req.instance.plan.name}'`);
+                logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
                 next(new Forbidden(`Quota is not sufficient for this request`));
               } else {
                 logger.debug('[Quota]: calling next handler..');
@@ -116,4 +118,9 @@ exports.isPlanDeprecated = function () {
 function checkIfPlanDeprecated(plan_id) {
   const plan_state = _.get(catalog.getPlan(plan_id), 'metadata.state', CONST.STATE.ACTIVE);
   return plan_state === CONST.STATE.DEPRECATED;
+}
+
+function getPlanFromRequest(req) {
+  const plan_id = req.body.plan_id || req.query.plan_id;
+  return catalog.getPlan(plan_id);
 }
