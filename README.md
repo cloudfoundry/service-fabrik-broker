@@ -125,8 +125,9 @@ The required files mentioned above can be found here: https://github.com/cloudfo
 ### Launch the Deployment Hooks Process
 This process executes action scripts provided by services in restricted environment.
 More information on how to configure action scripts is documented here: https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
+If you don't want any predeployment action to run please comment out `actions` property in [service](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L574) and [plan](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L685) from catalog.
 
-If predeployment actions are enabled in service catalog then deployment hook process has to be running.
+If predeployment actions are present in service catalog then deployment hook process has to be running.
 Before starting deployment hooks process, SETTINGS_PATH env variable has to be set.
 ```shell
 export SETTINGS_PATH=$(pwd)/deployment_hooks/config/settings.yml
