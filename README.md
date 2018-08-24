@@ -144,7 +144,7 @@ node $(pwd)/deployment_hooks/HookServer.js
 ### Launch the Broker
 Assuming that apiserver is already deployed on boshlite, to start provisioning, broker process has to be started.
 
-If apiserver is not deployed already, please follow [this](https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease#deploying-apiServer) guide.
+If apiserver is not deployed already, please follow [this](https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease#deploying-apiserver) guide.
 
 Useful prerequisites: When working with the broker, install `curl` (`sudo apt-get install curl`), [`jq`](https://stedolan.github.io/jq/download), and [`yaml2json`](https://github.com/bronze1man/yaml2json).
 
