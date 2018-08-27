@@ -1,5 +1,6 @@
 'use strict';
 
+const assert = require('assert');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
@@ -48,7 +49,10 @@ class DockerManager extends BaseManager {
   }
 
   _processCreate(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Creating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
@@ -64,7 +68,10 @@ class DockerManager extends BaseManager {
   }
 
   _processUpdate(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Updating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
@@ -80,7 +87,10 @@ class DockerManager extends BaseManager {
   }
 
   _processDelete(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Deleting docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))

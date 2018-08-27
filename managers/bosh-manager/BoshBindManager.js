@@ -2,6 +2,7 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
+const assert = require('assert');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -40,7 +41,11 @@ class BoshBindManager extends BaseManager {
   }
 
   _processBind(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bind with the following options:', changedOptions);
     return DirectorService.createInstance(instanceGuid, changedOptions)
@@ -59,7 +64,11 @@ class BoshBindManager extends BaseManager {
       });
   }
   _processUnbind(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bosh unbind with the following options:', changedOptions);
     return DirectorService.createInstance(instanceGuid, changedOptions)

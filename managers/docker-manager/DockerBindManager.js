@@ -8,6 +8,7 @@ const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
 const BaseManager = require('../BaseManager');
 const DockerService = require('./DockerService');
+const assert = require('assert');
 
 class DockerBindManager extends BaseManager {
 
@@ -40,7 +41,11 @@ class DockerBindManager extends BaseManager {
   }
 
   _processBind(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bind with the following options:', changedOptions);
     return DockerService.createInstance(instance_guid, changedOptions)
@@ -59,7 +64,11 @@ class DockerBindManager extends BaseManager {
       });
   }
   _processUnbind(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering docker unbind with the following options:', changedOptions);
     return DockerService.createInstance(instance_guid, changedOptions)
