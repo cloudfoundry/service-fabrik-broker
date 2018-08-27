@@ -915,57 +915,6 @@ class DirectorService extends BaseDirectorService {
     }
   }
 
-  // findDeploymentTask(deploymentName) {
-  //   return this.director
-  //     .getTasks({
-  //       deployment: deploymentName
-  //     }, true)
-  //     .then(tasks => _
-  //       .chain(tasks)
-  //       .sortBy('id')
-  //       .find(task => /^create\s+deployment/.test(task.description))
-  //       .value()
-  //     );
-  // }
-
-  // getDeploymentInfo(deploymentName) {
-  //   const events = {};
-  //   const info = {};
-
-  //   function DeploymentDoesNotExist(err) {
-  //     return err.status === 404 && _.get(err, 'error.code') === 70000;
-  //   }
-
-  //   function addInfoEvent(event) {
-  //     if (!_.has(events, event.stage)) {
-  //       events[event.stage] = {
-  //         tags: event.tags,
-  //         total: event.total,
-  //       };
-  //     }
-  //     if (!_.has(events[event.stage], event.task)) {
-  //       events[event.stage][event.task] = {
-  //         index: event.index,
-  //         time: event.time,
-  //         status: event.state
-  //       };
-  //     } else {
-  //       events[event.stage][event.task].status = event.state;
-  //       let seconds = event.time - events[event.stage][event.task].time;
-  //       delete events[event.stage][event.task].time;
-  //       events[event.stage][event.task].duration = `${seconds} sec`;
-  //     }
-  //   }
-
-  //   return this
-  //     .findDeploymentTask(deploymentName)
-  //     .tap(task => _.assign(info, task))
-  //     .then(task => this.director.getTaskEvents(task.id))
-  //     .tap(events => _.each(events, addInfoEvent))
-  //     .return(_.set(info, 'events', events))
-  //     .catchReturn(DeploymentDoesNotExist, null);
-  // }
-
   getApplicationAccessPortsOfService() {
     let service = this.service.toJSON();
     return _.get(service, 'application_access_ports');
@@ -981,42 +930,6 @@ class DirectorService extends BaseDirectorService {
       };
     });
   }
-
-  // getInfo() {
-  //   const operation = {
-  //     type: 'get'
-  //   };
-  //   return Promise
-  //     .all([
-  //       this.cloudController.getServiceInstance(this.guid)
-  //       .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
-  //         .then(plan => {
-  //           return {
-  //             'instance': instance,
-  //             'plan': plan
-  //           };
-  //         })
-  //       ),
-  //       this.initialize(operation).then(() => this.getDeploymentInfo(this.deploymentName))
-  //     ])
-  //     .spread((instanceInfo, deploymentInfo) => {
-  //       let instance = instanceInfo.instance;
-  //       let planInfo = instanceInfo.plan;
-  //       let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
-  //       return {
-  //         title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-  //         plan: currentPlan,
-  //         service: currentPlan.service,
-  //         instance: _.set(instance, 'task', deploymentInfo),
-  //         files: [{
-  //           id: 'status',
-  //           title: 'Status',
-  //           language: 'yaml',
-  //           content: yaml.dump(deploymentInfo)
-  //         }]
-  //       };
-  //     });
-  // }
 
   scheduleBackUp() {
     const options = {
