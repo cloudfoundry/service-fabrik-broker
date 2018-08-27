@@ -454,8 +454,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: backupGuid,
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             start_state: CONST.OPERATION.ABORT,
             started_at: new Date()
           }));
@@ -793,8 +791,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: req.params.backup_guid,
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))

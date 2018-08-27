@@ -257,12 +257,18 @@ module.exports = Object.freeze({
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
+      BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
       RESTORE: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
+      DOCKER: 'dockers',
+      VIRTUALHOST: 'virtualhosts',
+      DIRECTOR_BIND: 'directorbinds',
+      DOCKER_BIND: 'dockerbinds',
+      VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores'
     },

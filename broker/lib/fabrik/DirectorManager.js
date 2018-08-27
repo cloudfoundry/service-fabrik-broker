@@ -229,9 +229,9 @@ class DirectorManager extends BaseManager {
 
   _deleteEntity(action, opts) {
     return utils.retry(tries => {
-      logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-      return action();
-    }, {
+        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
+        return action();
+      }, {
         maxAttempts: opts.maxAttempts,
         minDelay: opts.minDelay
       })
@@ -250,17 +250,17 @@ class DirectorManager extends BaseManager {
       let retryTaskDelete = this._deleteEntity(() => {
         return boshOperationQueue.deleteBoshTask(serviceInstanceId);
       }, {
-          actionName: `delete bosh task for instance ${serviceInstanceId}`,
-          maxAttempts: 5,
-          minDelay: 1000
-        });
+        actionName: `delete bosh task for instance ${serviceInstanceId}`,
+        maxAttempts: 5,
+        minDelay: 1000
+      });
       let retryDeploymentDelete = this._deleteEntity(() => {
         return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
       }, {
-          actionName: `delete bosh deployment ${deploymentName}`,
-          maxAttempts: 5,
-          minDelay: 1000
-        });
+        actionName: `delete bosh deployment ${deploymentName}`,
+        maxAttempts: 5,
+        minDelay: 1000
+      });
       return Promise.all([retryTaskDelete, retryDeploymentDelete]);
     });
   }
@@ -403,45 +403,45 @@ class DirectorManager extends BaseManager {
     return Promise
       .try(() => {
         switch (action) {
-          case CONST.OPERATION_TYPE.UPDATE:
-            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-            if (_.get(params, 'parameters.bosh_director_name') ||
-              username || password) {
-              throw new BadRequest(`Update cannot be done on custom BOSH`);
-            }
-            return this
-              .getDeploymentManifest(deploymentName)
-              .then(manifest => {
-                _.assign(actionContext.params, {
-                  'previous_manifest': manifest
-                });
-                _.assign(opts, {
-                  previous_manifest: manifest
-                }, opts.context);
-                return;
-              })
-              .then(() => {
-                let preUpdateContext = _.cloneDeep(actionContext);
-                return this.executePreUpdate(deploymentName, preUpdateContext);
-              })
-              .tap(response => {
-                logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
-                preUpdateAgentResponse = response;
+        case CONST.OPERATION_TYPE.UPDATE:
+          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+          if (_.get(params, 'parameters.bosh_director_name') ||
+            username || password) {
+            throw new BadRequest(`Update cannot be done on custom BOSH`);
+          }
+          return this
+            .getDeploymentManifest(deploymentName)
+            .then(manifest => {
+              _.assign(actionContext.params, {
+                'previous_manifest': manifest
               });
-          case CONST.OPERATION_TYPE.CREATE:
-            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
-            if (_.get(params, 'parameters.bosh_director_name')) {
-              return cf
-                .uaa
-                .getScope(username, password)
-                .then(scopes => {
-                  const isAdmin = _.includes(scopes, 'cloud_controller.admin');
-                  if (!isAdmin) {
-                    throw new errors.Forbidden('Token has insufficient scope');
-                  }
-                });
-            }
-            return;
+              _.assign(opts, {
+                previous_manifest: manifest
+              }, opts.context);
+              return;
+            })
+            .then(() => {
+              let preUpdateContext = _.cloneDeep(actionContext);
+              return this.executePreUpdate(deploymentName, preUpdateContext);
+            })
+            .tap(response => {
+              logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
+              preUpdateAgentResponse = response;
+            });
+        case CONST.OPERATION_TYPE.CREATE:
+          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
+          if (_.get(params, 'parameters.bosh_director_name')) {
+            return cf
+              .uaa
+              .getScope(username, password)
+              .then(scopes => {
+                const isAdmin = _.includes(scopes, 'cloud_controller.admin');
+                if (!isAdmin) {
+                  throw new errors.Forbidden('Token has insufficient scope');
+                }
+              });
+          }
+          return;
         }
       })
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
@@ -560,10 +560,10 @@ class DirectorManager extends BaseManager {
     };
     _.assign(actionContext, binding);
     return Promise.join(
-      this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
-      this.getDeploymentIps(deploymentName),
-      (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
-    )
+        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
+        this.getDeploymentIps(deploymentName),
+        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
+      )
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -587,11 +587,11 @@ class DirectorManager extends BaseManager {
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
       .then((preUnbindResponse) =>
         Promise
-          .all([
-            Promise.resolve(preUnbindResponse),
-            this.getDeploymentIps(deploymentName),
-            this.getBindingProperty(deploymentName, id)
-          ]))
+        .all([
+          Promise.resolve(preUnbindResponse),
+          this.getDeploymentIps(deploymentName),
+          this.getBindingProperty(deploymentName, id)
+        ]))
       .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
@@ -775,8 +775,8 @@ class DirectorManager extends BaseManager {
   static get prefix() {
     return _
       .reduce(config.directors,
-      (prefix, director) => director.primary === true ? director.prefix : prefix,
-      null) || super.prefix;
+        (prefix, director) => director.primary === true ? director.prefix : prefix,
+        null) || super.prefix;
   }
 
   static get instanceConstructor() {

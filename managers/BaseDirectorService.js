@@ -16,14 +16,6 @@ class BaseDirectorService extends BaseService {
     this.agent = new Agent(this.settings.agent);
   }
 
-  getTenantGuid(context) {
-    if (context.platform === CONST.PLATFORM.CF) {
-      return context.space_guid;
-    } else if (context.platform === CONST.PLATFORM.K8S) {
-      return context.namespace;
-    }
-  }
-
   getDeploymentIps(deploymentName) {
     return this.director.getDeploymentIps(deploymentName);
   }
@@ -34,10 +26,6 @@ class BaseDirectorService extends BaseService {
       .slice(1)
       .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
       .value();
-  }
-
-  getDeploymentIps(deploymentName) {
-    return this.director.getDeploymentIps(deploymentName);
   }
 
   get template() {

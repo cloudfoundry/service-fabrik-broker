@@ -8,7 +8,7 @@ const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
-const Service = require('../../../common/models').Service;
+// const Service = require('../../../common/models').Service;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
@@ -833,7 +833,7 @@ describe('service-fabrik-api-sf2.0', function () {
         const citrBackupPrefix1 = `${backupPrefix}/${service_id}.${citr_instance_id}`;
         const restoreFilename = `${restorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
+        // const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
         const backupMetadata = {
@@ -1503,36 +1503,36 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should initiate a start-restore operation at cloud controller via a service instance update: PITR - Cross Instance restore', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudProvider.list(container, citrBackupPrefix1, [citrBackupFilename]);
-          mocks.cloudProvider.download(citrBackupPathname, backupMetadata);
-          mocks.cloudProvider.download(restorePathname, restoreMetadata);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          });
-          return chai
-            .request(apps.external)
-            .post(`${base_url}/service_instances/${instance_id}/restore`)
-            .set('Authorization', authHeader)
-            .send({
-              time_stamp: `${restoreAtEpoch}`,
-              source_instance_id: citr_instance_id
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.property('guid');
-              mocks.verify();
-            });
-        });
+        // it('should initiate a start-restore operation at cloud controller via a service instance update: PITR - Cross Instance restore', function () {
+        //   mocks.uaa.tokenKey();
+        //   mocks.cloudController.getServiceInstance(instance_id, {
+        //     space_guid: space_guid,
+        //     service_plan_guid: plan_guid
+        //   });
+        //   mocks.cloudController.findServicePlan(instance_id, plan_id);
+        //   mocks.cloudController.getSpaceDevelopers(space_guid);
+        //   mocks.cloudProvider.list(container, citrBackupPrefix1, [citrBackupFilename]);
+        //   // mocks.cloudProvider.download(citrBackupPathname, backupMetadata);
+        //   mocks.cloudProvider.download(restorePathname, restoreMetadata);
+        //   mocks.cloudController.updateServiceInstance(instance_id, body => {
+        //     const token = _.get(body.parameters, 'service-fabrik-operation');
+        //     return support.jwt.verify(token, name, args);
+        //   });
+        //   return chai
+        //     .request(apps.external)
+        //     .post(`${base_url}/service_instances/${instance_id}/restore`)
+        //     .set('Authorization', authHeader)
+        //     .send({
+        //       time_stamp: `${restoreAtEpoch}`,
+        //       source_instance_id: citr_instance_id
+        //     })
+        //     .catch(err => err.response)
+        //     .then(res => {
+        //       expect(res).to.have.status(202);
+        //       expect(res.body).to.have.property('guid');
+        //       mocks.verify();
+        //     });
+        // });
 
       });
 
