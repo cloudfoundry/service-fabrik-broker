@@ -35,7 +35,7 @@ const DockerManager = proxyquire('../../managers/docker-manager/DockerManager', 
     }
   },
   './DockerService': {
-    'createDockerService': function (instance_id, options) {
+    'createInstance': function (instance_id, options) {
       DockerManagerDummy.createDockerServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': (opts) => {

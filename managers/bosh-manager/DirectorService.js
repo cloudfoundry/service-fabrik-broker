@@ -82,12 +82,8 @@ class DirectorService extends BaseDirectorService {
   }
 
   get deploymentName() {
-    return this.getDirectorDeploymentName(this.guid, this.networkSegmentIndex);
-  }
-
-  getDirectorDeploymentName(guid, networkSegmentIndex) { //TODO-JB - rename as getDeploymentName
     let subnet = this.subnet ? `_${this.subnet}` : '';
-    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(this.networkSegmentIndex)}-${this.guid}`;
   }
 
   getNetworkSegmentIndex(deploymentName) {
@@ -1088,7 +1084,7 @@ class DirectorService extends BaseDirectorService {
       .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
   }
 
-  static createDirectorService(instanceId, options) { //TODO-JB rename it to createInstance
+  static createInstance(instanceId, options) {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const context = _.get(options, 'context');

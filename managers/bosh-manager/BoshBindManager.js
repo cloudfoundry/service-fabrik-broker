@@ -43,7 +43,7 @@ class BoshBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bind with the following options:', changedOptions);
-    return DirectorService.createDirectorService(instanceGuid, changedOptions)
+    return DirectorService.createInstance(instanceGuid, changedOptions)
       .then(boshService => boshService.bind(changedOptions))
       .then(response => {
         const encodedResponse = utils.encodeBase64(response);
@@ -62,7 +62,7 @@ class BoshBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bosh unbind with the following options:', changedOptions);
-    return DirectorService.createDirectorService(instanceGuid, changedOptions)
+    return DirectorService.createInstance(instanceGuid, changedOptions)
       .then(boshService => boshService.unbind(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,

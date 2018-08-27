@@ -19,13 +19,18 @@ class DockerManager extends BaseManager {
   }
 
   processRequest(changeObjectBody) {
-    return Promise.try(() => { //TODO-JB use switch case
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+
+    return Promise.try(() => {
+        switch (changeObjectBody.status.state) {
+        case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+        case CONST.APISERVER.RESOURCE_STATE.UPDATE:
           return this._processUpdate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        case CONST.APISERVER.RESOURCE_STATE.DELETE:
           return this._processDelete(changeObjectBody);
+        default:
+          logger.error('Ideally it should never come to default state! There must be some error as the state is ', changeObjectBody.status.state);
+          break;
         }
       })
       .catch(err => {
@@ -45,7 +50,7 @@ class DockerManager extends BaseManager {
   _processCreate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Creating docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -61,7 +66,7 @@ class DockerManager extends BaseManager {
   _processUpdate(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Updating docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -77,7 +82,7 @@ class DockerManager extends BaseManager {
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Deleting docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
       .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

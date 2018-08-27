@@ -43,7 +43,7 @@ class DockerBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bind with the following options:', changedOptions);
-    return DockerService.createDockerService(instance_guid, changedOptions)
+    return DockerService.createInstance(instance_guid, changedOptions)
       .then(dockerService => dockerService.bind(changedOptions))
       .then(response => {
         const encodedResponse = utils.encodeBase64(response);
@@ -62,7 +62,7 @@ class DockerBindManager extends BaseManager {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering docker unbind with the following options:', changedOptions);
-    return DockerService.createDockerService(instance_guid, changedOptions)
+    return DockerService.createInstance(instance_guid, changedOptions)
       .then(dockerService => dockerService.unbind(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
