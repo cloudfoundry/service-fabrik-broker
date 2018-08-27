@@ -206,20 +206,6 @@ class ScheduleBackupJob extends BaseJob {
         // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
         jobData.attempt = 0;
         return Promise.try(() => {
-            return ScheduleManager.schedule(
-              jobData.instance_id,
-              CONST.JOB.SCHEDULED_BACKUP,
-              repeatInterval,
-              jobData,
-              CONST.SYSTEM_USER);
-          })
-          .then(() => {
-            throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
-          });
-        logger.error(`Scheduled backup for instance  ${jobData.instance_id} has exceeded max configured attempts : ${MAX_ATTEMPTS} - ${jobData.attempt}}. Initial attempt was done @: ${jobData.firstAttemptAt}.`);
-        // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
-        jobData.attempt = 0;
-        return Promise.try(() => {
             ScheduleManager.schedule(
               jobData.instance_id,
               CONST.JOB.SCHEDULED_BACKUP,
