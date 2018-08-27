@@ -45,28 +45,5 @@ describe('fabrik', function () {
           });
       });
     });
-
-    describe('#createPortBindings', function () {
-      it('should return port bindings', function () {
-        const exposedPorts = {
-          '314/tcp': {},
-          '2718/tcp': {}
-        };
-        return manager
-          .createPortBindings(exposedPorts)
-          .then(portBindings => {
-            expect(willBeExhaustedSoonSpy).to.be.calledTwice;
-            expect(sampleStub).to.be.calledTwice.and.calledWith('tcp');
-            expect(portBindings).to.eql({
-              '314/tcp': [{
-                HostPort: '32768'
-              }],
-              '2718/tcp': [{
-                HostPort: '32769'
-              }]
-            });
-          });
-      });
-    });
   });
 });

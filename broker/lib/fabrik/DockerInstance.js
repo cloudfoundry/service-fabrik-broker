@@ -3,15 +3,10 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const logger = require('../../../common/logger');
-const errors = require('../../../common/errors');
 const utils = require('../../../common/utils');
 const docker = require('../../../data-access-layer/docker');
 const BaseInstance = require('./BaseInstance');
 const catalog = require('../../../common/models').catalog;
-const Timeout = errors.Timeout;
-const ContainerStartError = errors.ContainerStartError;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const CONST = require('../../../common/constants');
 
 const DockerError = {
@@ -34,16 +29,8 @@ class DockerInstance extends BaseInstance {
     this.containerInfo = undefined;
   }
 
-  static get typeDescription() {
-    return 'docker container';
-  }
-
   get containerName() {
     return this.manager.getContainerName(this.guid);
-  }
-
-  getVolumeName(volume) {
-    return this.manager.getVolumeName(this.guid, volume);
   }
 
   get platformContext() {
@@ -70,109 +57,6 @@ class DockerInstance extends BaseInstance {
       });
   }
 
-  create(params) {
-    const parameters = params.parameters;
-    const exposedPorts = this.manager.exposedPorts;
-    const options = {
-      context: params.context
-    };
-    return this
-      .buildContainerOptions(parameters, exposedPorts, options)
-      .then(opts => this.createAndStartContainer(opts, true))
-      .catchThrow(DockerError.Conflict, new ServiceInstanceAlreadyExists(this.guid))
-      .then(() => this.ensureContainerIsRunning(true))
-      .then(() => this.platformManager.postInstanceProvisionOperations({
-        ipRuleOptions: this.buildIpRules(),
-        guid: this.guid,
-        context: params.context
-      }));
-  }
-
-  update(params) {
-    const parameters = params.parameters;
-    let exposedPorts;
-    const options = {};
-    return this
-      .inspectContainer()
-      .tap(containerInfo => {
-        exposedPorts = containerInfo.Config.ExposedPorts;
-        options.portBindings = containerInfo.HostConfig.PortBindings;
-        options.environment = this.getEnvironment();
-      })
-      .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(() => this.removeContainer())
-      .then(() => this.buildContainerOptions(parameters, exposedPorts, options))
-      .then(opts => this.createAndStartContainer(opts, false))
-      .then(() => this.ensureContainerIsRunning(false));
-  }
-
-  delete(params) {
-    /* jshint unused:false */
-    return Promise.try(() => this
-        .platformManager.preInstanceDeleteOperations({
-          guid: this.guid
-        })
-      )
-      .then(() => this.removeContainer())
-      .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(() => this.removeVolumes());
-  }
-
-  bind(params) {
-    /* jshint unused:false */
-    return this
-      .inspectContainer()
-      .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(() => this.createCredentials());
-  }
-
-  unbind(params) {
-    /* jshint unused:false */
-  }
-
-  buildIpRules() {
-    const hostIp = this.manager.hostIp;
-
-    function createRule(protocol, address) {
-      const ip = address.HostIp;
-      const port = address.HostPort;
-      return {
-        protocol: protocol,
-        ips: [ip && ip !== '0.0.0.0' ? ip : hostIp],
-        ports: [port]
-      };
-    }
-
-    return _
-      .chain(this.containerInfo)
-      .get('NetworkSettings.Ports')
-      .map((addresses, portAndProtocol) => {
-        const protocol = _(portAndProtocol).split('/').nth(1);
-        return _.map(addresses, address => createRule(protocol, address));
-      })
-      .flatten()
-      .uniq()
-      .value();
-  }
-
-  createCredentials() {
-    const networkInfo = this.getNetworkInfo(this.containerInfo);
-    return this.manager.credentials.create(this.getEnvironment(), networkInfo.ip, networkInfo.ports);
-  }
-
-  ensureContainerIsRunning(removeVolumes) {
-    if (this.containerInfo.State.Running) {
-      return undefined;
-    }
-    const err = new ContainerStartError(`Failed to start docker container '${this.containerName}'`);
-    return this
-      .removeContainer()
-      .catchReturn()
-      .then(() => removeVolumes ? this.removeVolumes() : undefined)
-      .catchReturn()
-      .throw(err);
-  }
-
   inspectContainer() {
     logger.info(`Inspecting docker container '${this.container.id}'...`);
     return this.container
@@ -189,121 +73,6 @@ class DockerInstance extends BaseInstance {
         logger.error(err);
         throw err;
       });
-  }
-
-  createContainer(opts) {
-    logger.info(`Creating docker container with options '${opts.name}'...`);
-    logger.info('+-> Create options:', opts);
-    return this.docker
-      .createContainerAsync(opts)
-      .tap(container => {
-        this.container = container;
-        logger.info(`+-> docker container has been created with id '${container.id}' for options '${opts.name}' `);
-      })
-      .catch(err => {
-        logger.error(`+-> Failed to create docker container '${opts.name}'...`);
-        logger.error(err);
-        throw err;
-      });
-  }
-
-  startContainer() {
-    logger.info(`Starting docker container '${this.container.id}'...`);
-    return this.container
-      .startAsync()
-      .tap(() => logger.info(`+-> docker container has been started with id - '${this.container.id}' `))
-      .catch(err => {
-        logger.error(`+-> Failed to start docker container with id - '${this.container.id}' `);
-        logger.error(err);
-        throw err;
-      });
-  }
-
-  buildContainerOptions(parameters, exposedPorts, options) {
-    return this.manager.buildContainerOptions(this.guid, parameters, exposedPorts, options);
-  }
-
-  createAndStartContainer(opts, isNew) {
-    const self = this;
-
-    function attempt(tries) {
-      return Promise
-        .try(() => {
-          if (isNew && tries > 0) {
-            return self.manager
-              .createPortBindings(opts.ExposedPorts)
-              .tap(portBindings => _.set(opts.HostConfig, 'PortBindings', portBindings));
-          }
-        })
-        .then(() => self
-          .createContainer(opts)
-        )
-        .then(() => self
-          .startContainer()
-          .catch(DockerError.ServerError, err => self
-            .removeContainer()
-            .then(() => docker.updatePortRegistry())
-            .throw(new ContainerStartError(err.message))
-          )
-        );
-    }
-
-    function throwTimeoutError(err) {
-      throw err.error;
-    }
-
-    return utils
-      .retry(attempt, {
-        predicate: ContainerStartError,
-        maxAttempts: 3,
-        minDelay: 50
-      })
-      .catch(Timeout, throwTimeoutError)
-      .then(() => this.inspectContainer());
-  }
-
-  removeContainer() {
-    logger.info(`Removing docker container '${this.container.id}'...`);
-    return this.container
-      .removeAsync({
-        v: true,
-        force: true
-      })
-      .tap(() => logger.info(`+-> docker container has been removed with id '${this.container.id}' `))
-      .catch(err => {
-        logger.error(`+-> Failed to remove docker container with id '${this.container.id}' `);
-        logger.error(err);
-        throw err;
-      });
-  }
-
-  removeVolume(volumeName) {
-    logger.info(`Removing Docker volume '${volumeName}'...`);
-    return this.docker
-      .getVolume(volumeName)
-      .removeAsync()
-      .tap(() => logger.info(`+-> Docker volume has been removed with volume name - '${volumeName}' `))
-      .catch(DockerError.NotFound, () => logger.warn(`+-> Docker volume not found with volume name '${volumeName}' `))
-      .catch(err => {
-        logger.error(`+-> Failed to remove Docker volume with name '${volumeName}' `);
-        logger.error(err);
-        throw err;
-      });
-  }
-
-  removeVolumes() {
-    return this.docker
-      .listVolumesAsync({
-        filters: '{"dangling":{"true":true}}'
-      })
-      .then(result => _
-        .chain(result)
-        .get('Volumes')
-        .filter(volume => _.startsWith(volume.Name, this.containerName))
-        .value()
-      )
-      .map(volume => this.removeVolume(volume.Name))
-      .return();
   }
 
   getNetworkInfo(containerInfo) {
