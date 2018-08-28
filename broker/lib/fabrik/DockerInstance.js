@@ -46,10 +46,6 @@ class DockerInstance extends BaseInstance {
     return this.manager.getVolumeName(this.guid, volume);
   }
 
-  get async() {
-    return false;
-  }
-
   get platformContext() {
     return this.inspectContainer()
       .then(() => {

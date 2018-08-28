@@ -14,10 +14,6 @@ class VirtualHostInstance extends BaseInstance {
     this.mapper = mapper.VirtualHostRelationMapper;
   }
 
-  get async() {
-    return false;
-  }
-
   initialize() {
     /** Here optimization ca be made by checking if this.deploymentName is present
      *  then only make call getDeploymentNameForInstanceId*/

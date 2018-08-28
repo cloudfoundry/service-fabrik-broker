@@ -39,10 +39,6 @@ class BaseInstance {
     return this.manager.isUpdatePossible(plan_id);
   }
 
-  get async() {
-    throw new NotImplementedBySubclass('async');
-  }
-
   get platformContext() {
     throw new NotImplementedBySubclass('platformContext');
   }

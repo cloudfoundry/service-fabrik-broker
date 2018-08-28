@@ -78,9 +78,9 @@ describe('#checkQuota', () => {
   const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f'; // name: 'v1.0-xsmall'
   const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'; // name: 'v1.0-large'
   const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-  const notEntitledPlanId = 'notEntitledPlanId';
-  const validQuotaPlanId = 'validQuotaPlanId';
-  const invalidQuotaPlanId = 'invalidQuotaPlanId';
+  const notEntitledPlanId = 'bc158c9a-7934-401e-94ab-057082a5073e';
+  const validQuotaPlanId = 'bc158c9a-7934-401e-94ab-057082a5073f';
+  const invalidQuotaPlanId = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
   const errQuotaPlanId = 'errQuotaPlanId';
   const err = 'Error in calculating quota';
   const operationParameters = {
@@ -182,14 +182,8 @@ describe('#checkQuota', () => {
       name: 'user',
       pass: 'secret'
     },
-    body: {},
-    instance: {
-      plan: {
-        name: 'some-plan-name'
-      },
-      service: {
-        name: 'some-service-name'
-      }
+    body: {
+      plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f'
     }
   };
   beforeEach(function () {
