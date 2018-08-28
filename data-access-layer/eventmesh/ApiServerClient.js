@@ -105,7 +105,7 @@ class ApiServerClient {
         resourceId: opts.resourceId
       }))
       .then(resource => {
-        const state = resource.status.state;
+        const state = _.get(resource, 'status.state');
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
@@ -119,18 +119,18 @@ class ApiServerClient {
           state === CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED
         ) {
           finalState = state;
-          if (resource.status.error) {
-            const errorResponse = resource.status.error;
+          if (_.get(resource, 'status.error')) {
+            const errorResponse = _.get(resource, 'status.error');
             logger.info('Operation manager reported error', errorResponse);
             return convertToHttpErrorAndThrow(errorResponse);
           }
         } else {
           finalState = state;
-          return resource.status.response;
+          return _.get(resource, 'status.response');
         }
       })
       .then(result => {
-        if (result.state) {
+        if (_.get(result, 'state')) {
           return result;
         }
         return {

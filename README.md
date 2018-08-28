@@ -142,6 +142,8 @@ node $(pwd)/deployment_hooks/HookServer.js
 ```
 
 ### Launch the Broker
+[APIServer](https://kubernetes.io/docs/concepts/overview/kubernetes-api/) is a prerequisite for the Service Fabrik. To get more details about the APIs, [this](https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md) can be looked into.
+
 Assuming that apiserver is already deployed on boshlite, to start provisioning, broker process has to be started.
 
 If apiserver is not deployed already, please follow [this](https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease#deploying-apiserver) guide.
