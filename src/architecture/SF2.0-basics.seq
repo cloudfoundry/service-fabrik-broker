@@ -1,0 +1,46 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  Consumer; Broker; APIServer; Manager; Service;
+
+  # trigger provisioning of service instance
+  Consumer => Broker [label = "Create/Update/Delete", return = "ok"] {
+    Broker => APIServer [label = "Create resource with state as in_queue/update/delete", return = "true"];
+  }
+
+  APIServer -> Manager [label = "Trigger watcher for the request"]
+  Manager ->> Service [label = "service deploy/update/delete"]
+  Manager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+
+  # Consumer asks for last operation status
+  Consumer => Broker [label = "last operation?", return = "in progress"] {
+    Broker => APIServer [label = "last operation of resource?", return = "processing"]
+  }
+
+  Manager -> Manager [ label = "Start Poller" ];
+
+  # Manager asks for last operation status
+  Manager => Manager [ label = "check status" ]{	
+    Manager => Service [label = "task state?", return = "in progress"]
+    Manager => APIServer [label = "sets last operation as in progress"]
+  }
+
+  # Manager asks for last operation status
+  Manager => Manager [ label = "check status" ]{	
+    Manager => Service [label = "task state?", return = "succeeded"]
+    Manager => APIServer [label = "sets last operation as succeeded"]
+  }
+
+
+
+  # controller asks for last operation status
+  Consumer => Broker [label = "last operation?", return = "succeeded"] {
+    Broker => APIServer [label = "last operation state of resource??", return = "succeeded"]
+  }
+}

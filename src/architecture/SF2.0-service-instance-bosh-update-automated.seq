@@ -1,0 +1,72 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  Admin; Controller; Broker; APIServer; BOSHManager; Bosh; Service; IaaS;
+
+  # trigger update of outdated service instances
+  Admin ->> Broker [label = "trigger update of outdated deployments"] {
+    Broker => Bosh [label = "download manifest(s)"]
+    Broker ->> Controller [label = "trigger update", leftnote =
+      "done to shift work away from broker
+       and onto controller; controller will
+       now do heavy-lifting like polling
+       and preventing parallel operations", rightnote =
+      "if a downloaded manifest differs from the computed manifest
+       (incorporating the current settings like stemcells, releases
+       and properties), but doesn't touch critical sections (disks),
+       updates will be triggered automatically"]
+  }
+  Admin <<-- Broker [label = "ok"]
+
+  # trigger provisioning of service instance
+  Controller => Broker [label = "run provisioning", return = "ok"] {
+    Broker => APIServer [label = "create lock resource on deployment", return = "true"];
+    Broker => APIServer [label = "Update the director resource with state as update", return = "true"];
+  }
+
+  APIServer -> BOSHManager [label = "Trigger watcher for new update request"]
+  BOSHManager ->> Bosh [label = "bosh deploy"]
+  BOSHManager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+        
+  
+  # bosh starts deployment
+  Bosh => Service [label = "monit stop all"]
+  Bosh => IaaS [label = "request/release resources"]
+
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "in progress"] {
+    Broker => APIServer [label = "last operation of director resource?", return = "processing"]
+  }
+
+  BOSHManager -> BOSHManager [ label = "Start Poller" ];
+
+  # BOSHManager asks for last operation status
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "in progress"]
+    BOSHManager => APIServer [label = "sets last operation as in progress"]
+  }
+
+  # bosh continues deployment
+  Bosh => Service [label = "monit start all"]
+  BOSHManager <<-- Bosh [label = "deployment completed\nno actual callback"]
+
+  # BOSHManager asks for last operation status
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "succeeded"]
+    BOSHManager => APIServer [label = "sets last operation as succeeded"]
+  }
+
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "succeeded"] {
+    Broker => APIServer [label = "last operation state of director resource??", return = "succeeded"]
+    Broker => APIServer [label = "remove the lock resource", return = "succeeded"]
+  }
+
+  Broker <<-- Controller [label = "update completed\nno actual callback"]
+}

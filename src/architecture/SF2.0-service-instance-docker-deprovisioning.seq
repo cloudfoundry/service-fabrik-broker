@@ -1,0 +1,32 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  User; Controller; Broker; APIServer; DockerManager; Swarm; Docker; Driver; Service;
+
+  # trigger deprovisioning of service instance
+  User => Controller [label = "cf delete-service"] {
+    Controller => Broker [label = "run deprovisioning"] {
+      Broker => APIServer [label = "update docker resource with state delete and wait for deletion"]{
+        APIServer -> DockerManager [label = "trigger watcher for updated docker resource"]
+        DockerManager => Controller [label = "delete security-group", leftnote = "Done only if needed"]
+        DockerManager => Swarm [label = "remove container"] {
+          Swarm => Docker [label = "remove container"] {
+            Docker => Service [label = "send SIGTERM"]
+          }
+        }
+        DockerManager => Swarm [label = "remove volume"] {
+          Swarm => Docker [label = "remove volume"] {
+            Docker => Driver [label = "remove volume"]
+          }
+        }
+        DockerManager -> APIServer [label = "removes the resource"]
+      }
+    }
+  }
+}

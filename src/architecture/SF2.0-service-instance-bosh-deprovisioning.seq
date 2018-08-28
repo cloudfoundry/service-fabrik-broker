@@ -1,0 +1,58 @@
+seqdiag {
+  # Change edge metrics
+  edge_length = 150; // default value is 192
+  span_height = 0;   // default value is 40
+
+  # Change note color
+  default_note_color = lightblue;
+
+  # actors (in order left to right)
+  User; Controller; Broker; APIServer; BOSHManager; Bosh; Service; IaaS;
+
+    # trigger deprovisioning of service instance
+  User ->> Controller [label = "cf delete-service"] {
+    Controller => Broker [label = "run deprovisioning", return = "ok"] {
+      Broker => APIServer [label = "create lock resource on deployment", return = "true"];
+      Broker => APIServer [label = "Create a director resource with state as delete", return = "true"];
+    }
+  }
+
+  APIServer -> BOSHManager [label = "Trigger watcher for new delete request"]
+  BOSHManager => Controller [label = "delete security-group", return = "ok", leftnote = "will be done if needed"]
+  BOSHManager ->> Bosh [label = "bosh delete"]        
+  BOSHManager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+  
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "in progress"] {
+    Broker => APIServer [label = "last operation of director resource?", return = "processing"]
+  }
+
+  BOSHManager -> BOSHManager [ label = "Start Poller" ];
+
+  # BOSHManager asks for last operation status
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "in progress"]
+    BOSHManager => APIServer [label = "sets last operation as in progress"]
+  }
+
+  # bosh starts undeployment
+  Bosh => Service [label = "monit stop all"]
+  # bosh continues undeployment
+  Bosh => IaaS [label = "release resources"]
+  BOSHManager <<-- Bosh [label = "deletion completed\nno actual callback"]
+
+  # BOSHManager asks for last operation status
+  BOSHManager => BOSHManager [ label = "check status" ]{
+    BOSHManager => Bosh [label = "task state?", return = "succeeded"]
+    BOSHManager => APIServer [label = "deletes the director resource"]
+  }
+
+  # controller asks for last operation status
+  Controller => Broker [label = "last operation?", return = "succeeded"] {
+    Broker => APIServer [label = "last operation state of director resource??", return = "resource removed"]
+    Broker => APIServer [label = "remove the lock resource", return = "succeeded"]
+  }
+
+  User <<-- Controller [label = "deletion completed\nno actual callback"]
+
+}
