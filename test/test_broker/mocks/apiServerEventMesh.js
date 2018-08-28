@@ -9,7 +9,6 @@ const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 exports.nockLoadSpec = nockLoadSpec;
 exports.nockCreateResource = nockCreateResource;
 exports.nockPatchResourceStatus = nockPatchResourceStatus;
-exports.nockPatchResourceStatus1 = nockPatchResourceStatus1;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
 exports.nockGetResourceRegex = nockGetResourceRegex;
@@ -53,16 +52,6 @@ function nockPatchResourceStatus(resourceGroup, resourceType, response, times, v
     .patch(/status$/, verifier)
     .times(times || 1)
     .reply(200, response);
-}
-
-
-function nockPatchResourceStatus1(resourceGroup, resourceType, guid, response, times, verifier, expectedStatusCode) {
-  nock(apiServerHost)
-    .patch(
-      new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${guid}`),
-      verifier)
-    .times(times || 1)
-    .reply(expectedStatusCode || 200, response);
 }
 
 
