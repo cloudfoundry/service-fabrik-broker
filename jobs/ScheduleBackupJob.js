@@ -57,13 +57,15 @@ class ScheduleBackupJob extends BaseJob {
           .tap(deleteResponse => backupRunStatus.delete_backup_status = deleteResponse)
           .then(() => this.runSucceeded(backupRunStatus, job, done))
           .catch((error) => {
-            this.runFailed(error, backupRunStatus, job, done);
-            if (error instanceof errors.Conflict || error instanceof errors.UnprocessableEntity) {
-              retry(() => this.reScheduleBackup(job.attrs.data, job.attrs.repeatInterval), {
-                maxAttempts: 3,
-                minDelay: 500
+            return this.runFailed(error, backupRunStatus, job, done)
+              .then(() => {
+                if (error instanceof errors.Conflict || error instanceof errors.UnprocessableEntity) {
+                  return retry(() => this.reScheduleBackup(job.attrs.data, job.attrs.repeatInterval), {
+                    maxAttempts: 3,
+                    minDelay: 500
+                  });
+                }
               });
-            }
           });
       })
       .catch(error => {
@@ -205,14 +207,12 @@ class ScheduleBackupJob extends BaseJob {
         logger.error(`Scheduled backup for instance  ${jobData.instance_id} has exceeded max configured attempts : ${MAX_ATTEMPTS} - ${jobData.attempt}}. Initial attempt was done @: ${jobData.firstAttemptAt}.`);
         // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
         jobData.attempt = 0;
-        return Promise.try(() => {
-            ScheduleManager.schedule(
-              jobData.instance_id,
-              CONST.JOB.SCHEDULED_BACKUP,
-              repeatInterval,
-              jobData,
-              CONST.SYSTEM_USER);
-          })
+        return ScheduleManager.schedule(
+            jobData.instance_id,
+            CONST.JOB.SCHEDULED_BACKUP,
+            repeatInterval,
+            jobData,
+            CONST.SYSTEM_USER)
           .then(() => {
             throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
           });

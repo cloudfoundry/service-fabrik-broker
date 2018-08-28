@@ -468,28 +468,29 @@ describe('Jobs', function () {
           status: 409
         });
         mocks.cloudController.findServicePlanByInstanceId(instance_id);
-        return ScheduleBackupJob.run(job, () => {
-          mocks.verify();
-          const errStatusCode = 409;
-          const backupRunStatus = {
-            start_backup_status: 'failed',
-            delete_backup_status: 'failed'
-          };
-          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(scheduleStub).to.be.calledOnce;
-          expect(scheduleStub.firstCall.args[0]).to.eql(instance_id);
-          expect(scheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
-          expect(RegExp('[0-9]+ [0-9]+[\,]{1}[0-9]+[\,]{1}[0-9]+ \* \* \*').test(scheduleStub.firstCall.args[2])).to.be.eql(true);
-          const expectedJobData = _.clone(job.attrs.data);
-          expectedJobData.attempt = 2;
-          expect(scheduleStub.firstCall.args[3]).to.eql(expectedJobData);
-          expect(scheduleStub.firstCall.args[4]).to.eql(CONST.SYSTEM_USER);
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(errStatusCode);
-          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
-          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
-          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
-        });
+        return ScheduleBackupJob.run(job, () => {})
+          .then(() => {
+            mocks.verify();
+            const errStatusCode = 409;
+            const backupRunStatus = {
+              start_backup_status: 'failed',
+              delete_backup_status: 'failed'
+            };
+            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+            expect(scheduleStub).to.be.calledOnce;
+            expect(scheduleStub.firstCall.args[0]).to.eql(instance_id);
+            expect(scheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+            expect(RegExp('[0-9]+ [0-9]+[\,]{1}[0-9]+[\,]{1}[0-9]+ \* \* \*').test(scheduleStub.firstCall.args[2])).to.be.eql(true);
+            const expectedJobData = _.clone(job.attrs.data);
+            expectedJobData.attempt = 2;
+            expect(scheduleStub.firstCall.args[3]).to.eql(expectedJobData);
+            expect(scheduleStub.firstCall.args[4]).to.eql(CONST.SYSTEM_USER);
+            expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
+            expect(baseJobLogRunHistoryStub.firstCall.args[0].status).to.eql(errStatusCode);
+            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
+            expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+            expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          });
       });
       it(`If a backup fails for more than ${config.scheduler.jobs.scheduled_backup.max_attempts} attempts, then the scheduler should throw and error and then gracefully exit`, function () {
         job.attrs.data.instance_id = failed_instance_id;
@@ -501,20 +502,21 @@ describe('Jobs', function () {
           status: 409
         });
         mocks.cloudController.findServicePlan(failed_instance_id, plan_id);
-        return ScheduleBackupJob.run(_.chain(_.cloneDeep(job)).set('attrs.data.attempt', max_attmpts).value(), () => {
-          mocks.verify();
-          const backupRunStatus = {
-            start_backup_status: 'failed',
-            delete_backup_status: 'failed'
-          };
-          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(cancelScheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
-          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
-          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(_.chain(_.cloneDeep(job.attrs)).set('data.attempt', max_attmpts).value());
-          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
-          config.scheduler.jobs.scheduled_backup.max_attempts = max_attmpts;
-        });
+        return ScheduleBackupJob.run(_.chain(_.cloneDeep(job)).set('attrs.data.attempt', max_attmpts).value(), () => {})
+          .then(() => {
+            mocks.verify();
+            const backupRunStatus = {
+              start_backup_status: 'failed',
+              delete_backup_status: 'failed'
+            };
+            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+            expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+            expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
+            expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(_.chain(_.cloneDeep(job.attrs)).set('data.attempt', max_attmpts).value());
+            expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+            config.scheduler.jobs.scheduled_backup.max_attempts = max_attmpts;
+          });
       });
       it('If error occurs while rescheduling job due to a backup run, same must be retried and then gracefully exit', function () {
         job.attrs.data.instance_id = failed_instance_id;
@@ -526,20 +528,21 @@ describe('Jobs', function () {
           status: 409
         });
         mocks.cloudController.findServicePlan(failed_instance_id, plan_id);
-        return ScheduleBackupJob.run(job, () => {
-          mocks.verify();
-          const backupRunStatus = {
-            start_backup_status: 'failed',
-            delete_backup_status: 'failed'
-          };
-          expect(baseJobLogRunHistoryStub).to.be.calledOnce;
-          expect(cancelScheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
-          expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Timeout');
-          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
-          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
-          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
-          config.scheduler.jobs.scheduled_backup.max_attempts = max_attmpts;
-        });
+        return ScheduleBackupJob.run(job, () => {})
+          .then(() => {
+            mocks.verify();
+            const backupRunStatus = {
+              start_backup_status: 'failed',
+              delete_backup_status: 'failed'
+            };
+            expect(baseJobLogRunHistoryStub).to.be.calledOnce;
+            expect(scheduleStub.callCount).to.be.eql(3); //Retry mechanism to schedule runAt is 3 times on error
+            expect(baseJobLogRunHistoryStub.firstCall.args[0].name).to.eql('Conflict');
+            expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(backupRunStatus);
+            expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+            expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+            config.scheduler.jobs.scheduled_backup.max_attempts = max_attmpts;
+          });
       });
       it('should log delete backup as failed', function () {
         const backupResponse = {
