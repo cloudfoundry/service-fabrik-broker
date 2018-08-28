@@ -49,10 +49,6 @@ class DirectorInstance extends BaseInstance {
     return this.manager.getDeploymentName(this.guid, this.networkSegmentIndex);
   }
 
-  get async() {
-    return true;
-  }
-
   initialize(operation) {
     return Promise
       .try(() => {
