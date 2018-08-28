@@ -1159,6 +1159,31 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
+        it('should return 400 BadRequest : PITR (quota exceeded)', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
+            restore_dates: getDateHistory(11)
+          }));
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: `${restoreAtEpoch}`
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              mocks.verify();
+            });
+        });
+
         it('should initiate a start-restore operation via apiserver', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
