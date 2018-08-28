@@ -19,7 +19,7 @@ seqdiag {
 
   APIServer -> BOSHManager [label = "Trigger watcher for new create request"]
   BOSHManager ->> Bosh [label = "bosh deploy"]
-  BOSHManager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+  BOSHManager -> APIServer [label = "sets director resource state as in_progress", return = "true"];
         
   
   # bosh starts deployment
