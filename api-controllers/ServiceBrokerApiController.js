@@ -404,7 +404,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
               },
               options: params,
               status: {
-                state: CONST.APISERVER.RESOURCE_STATE.DELETE
+                state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+                response: {}
               }
             });
           });
