@@ -49,20 +49,20 @@ class AzureClient extends BaseCloudClient {
     //TODO : maxResult is 5000 
     //https://azure.github.io/azure-storage-node/BlobService.html#listBlobsSegmentedWithPrefix__anchor
     //If want to fetch more use 'continuationToken' returned in result
-    return this.storage  
-      .listBlobsSegmentedWithPrefixAsync(container, prefix, continuationToken)  
+    return this.storage
+      .listBlobsSegmentedWithPrefixAsync(container, prefix, continuationToken)
       .then(result => {
         const listOfFiles = result.entries;
         continuationToken = result.continuationToken;
-        let isTruncated = continuationToken ? true : false;         
-        const files = [];     
-        _.each(listOfFiles, file => files.push(_       
-          .chain(file)       
-          .pick('name', 'lastModified')       
-          .set('isTruncated', isTruncated)       
-          .value()          
-        ));      
-        return files;    
+        let isTruncated = continuationToken ? true : false;
+        const files = [];
+        _.each(listOfFiles, file => files.push(_
+          .chain(file)
+          .pick('name', 'lastModified')
+          .set('isTruncated', isTruncated)
+          .value()
+        ));
+        return files;
       });
   }
 
