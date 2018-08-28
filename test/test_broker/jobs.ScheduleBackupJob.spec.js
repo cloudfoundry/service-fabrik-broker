@@ -59,6 +59,8 @@ describe('Jobs', function () {
       const transactionLogsPathname19 = `/${serviceContainer}/${transactionLogsFileName19Daysprior}`;
       const transactionLogsPathname16 = `/${serviceContainer}/${transactionLogsFileName16DaysPrior}`;
       const transactionLogsPathname18 = `/${serviceContainer}/${transactionLogsFileName18DaysPrior}`;
+      const transactionLogsPathname14 = `/${serviceContainer}/${transactionLogsFileName14DaysPrior}`;
+      const transactionLogsPathname1 = `/${serviceContainer}/${transactionLogsFileName1Daysprior}`;
       const scheduled_data = {
         trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
         type: 'online',
@@ -425,6 +427,62 @@ describe('Jobs', function () {
             },
             delete_backup_status: {
               deleted_guids: [backup_guid, backup_guid16, backup_guid2],
+              deleted_transaction_log_files_count: 3,
+              job_cancelled: false,
+              instance_deleted: false
+            }
+          };
+          expect(baseJobLogRunHistoryStub).to.be.calledTwice;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.deep.equal(expectedBackupResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+        });
+      });
+      it('delete transaction logs older than 15 days if no successful backups are present', function () {
+        const backupResponse = {
+          backup_guid: backup_guid
+        };
+        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.serviceFabrikClient.startBackup(instance_id, {
+          type: 'online',
+          trigger: CONST.BACKUP.TRIGGER.SCHEDULED
+        }, backupResponse);
+        mocks.cloudProvider.list(container, prefix, []);
+        mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefix, [{
+            file_name: transactionLogsFileName1Daysprior,
+            last_modified: Date.now() - 1 * 60 * 60 * 24 * 1000
+          },
+          {
+            file_name: transactionLogsFileName19Daysprior,
+            last_modified: Date.now() - 19 * 60 * 60 * 24 * 1000
+          },
+          {
+            file_name: transactionLogsFileName16DaysPrior,
+            last_modified: Date.now() - 16 * 60 * 60 * 24 * 1000 - 30 * 60 * 1000 //30 mins = buffer time
+          },
+          {
+            file_name: transactionLogsFileName14DaysPrior,
+            last_modified: Date.now() - 14 * 60 * 60 * 24 * 1000
+          },
+          {
+            file_name: transactionLogsFileName18DaysPrior,
+            last_modified: Date.now() - 18 * 60 * 60 * 24 * 1000
+          }
+        ]);
+        //Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
+        mocks.cloudProvider.remove(transactionLogsPathname19);
+        mocks.cloudProvider.remove(transactionLogsPathname18);
+        mocks.cloudProvider.remove(transactionLogsPathname16);
+        return ScheduleBackupJob.run(job, () => {
+          mocks.verify();
+          const expectedBackupResponse = {
+            start_backup_status: {
+              name: 'backup',
+              guid: backupResponse.backup_guid
+            },
+            delete_backup_status: {
+              deleted_guids: [],
               deleted_transaction_log_files_count: 3,
               job_cancelled: false,
               instance_deleted: false

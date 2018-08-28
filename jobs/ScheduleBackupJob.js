@@ -114,6 +114,8 @@ class ScheduleBackupJob extends BaseJob {
           let backupStartedMillis = new Date(_.get(sortedBackups[latestSuccessIndex], 'started_at')).getTime();
           transactionLogsBefore = new Date(backupStartedMillis - config.backup.transaction_logs_delete_buffer_time * 60 * 1000).toISOString();
         }
+      } else {
+        transactionLogsBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
       }
       return filteredOldBackups;
     }
