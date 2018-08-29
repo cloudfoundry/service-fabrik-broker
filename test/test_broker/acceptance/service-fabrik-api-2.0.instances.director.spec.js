@@ -838,6 +838,7 @@ describe('service-fabrik-api-sf2.0', function () {
         const backupPathname = `/${container}/${backupFilename}`;
         const backupMetadata = {
           plan_id: plan_id,
+          service_id: service_id,
           state: 'succeeded',
           type: 'online',
           secret: 'hugo',
@@ -872,6 +873,7 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai
             .request(apps.external)
@@ -891,6 +893,7 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai
             .request(apps.external)
@@ -913,6 +916,7 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai
             .request(apps.external)
@@ -935,6 +939,7 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           const requestTimeStamp = `${Date.now() - (config.backup.retention_period_in_days + 2) * 60 * 60 * 24 * 1000}`;
           return chai
@@ -958,6 +963,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, []);
@@ -981,6 +987,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, []);
@@ -1004,6 +1011,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, citrBackupPrefix1, []);
@@ -1028,6 +1036,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
@@ -1054,6 +1063,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
@@ -1080,6 +1090,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
@@ -1110,6 +1121,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
@@ -1140,6 +1152,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.download(restorePathname, _.chain(_.cloneDeep(restoreMetadata))
@@ -1165,6 +1178,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.download(restorePathname, _.assign(_.cloneDeep(restoreMetadata), {
@@ -1190,6 +1204,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
@@ -1242,7 +1257,6 @@ describe('service-fabrik-api-sf2.0', function () {
               })
             }
           };
-          mocks.director.getDeployments();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1275,6 +1289,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
@@ -1327,7 +1342,6 @@ describe('service-fabrik-api-sf2.0', function () {
               })
             }
           };
-          mocks.director.getDeployments();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1360,6 +1374,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
@@ -1413,7 +1428,6 @@ describe('service-fabrik-api-sf2.0', function () {
               })
             }
           };
-          mocks.director.getDeployments();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1446,6 +1460,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
@@ -1501,7 +1516,6 @@ describe('service-fabrik-api-sf2.0', function () {
               })
             }
           };
-          mocks.director.getDeployments();
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'

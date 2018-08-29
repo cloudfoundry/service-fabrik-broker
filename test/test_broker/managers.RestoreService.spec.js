@@ -126,9 +126,11 @@ describe('managers', function () {
       it('should start restore', function () {
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
+        mocks.director.getDeployments();
         mocks.agent.getInfo();
-        mocks.agent.startRestore();
+        // mocks.agent.getInfo();
         // mocks.cloudProvider.auth();
+        mocks.agent.startRestore();
         mocks.cloudProvider.upload(restorePathname, body => {
           expect(body.state).to.equal(CONST.RESTORE_OPERATION.PROCESSING);
           expect(body.finished_at).to.not.be.undefined; // jshint ignore:line
@@ -195,13 +197,15 @@ describe('managers', function () {
           stage: 'Restoring ...',
           updated_at: started_at
         };
+        mocks.director.getDeployments();
         getRestoreOperationStateStub = sandbox.stub(RestoreService.prototype,
           'getRestoreOperationState',
           () => Promise.resolve(restoreState)
         );
         return RestoreService.createService(plan)
           .then(rs => rs.getOperationState('restore', get_restore_opts))
-          .then(result => expect(result.state).to.eql(CONST.RESTORE_OPERATION.PROCESSING));
+          .then(result => expect(result.state).to.eql(CONST.RESTORE_OPERATION.PROCESSING))
+          .then(() => mocks.verify());
       });
       it('Should get restore state - succeeded', function () {
         const restoreState = {
@@ -211,12 +215,14 @@ describe('managers', function () {
           'getRestoreOperationState',
           () => Promise.resolve(restoreState)
         );
+        mocks.director.getDeployments();
         return RestoreService.createService(plan)
           .then(rs => rs.getOperationState('restore', get_restore_opts))
           .then(result => {
             expect(result.state).to.eql(CONST.RESTORE_OPERATION.SUCCEEDED);
             expect(getRestoreOperationStateStub.callCount).to.equal(1);
-          });
+          })
+          .then(() => mocks.verify());
       });
       it('Should get restore state - aborted', function () {
         const restoreState = {
@@ -226,11 +232,13 @@ describe('managers', function () {
           'getRestoreOperationState',
           () => Promise.resolve(restoreState)
         );
+        mocks.director.getDeployments();
         return RestoreService.createService(plan)
           .then(rs => rs.getOperationState('restore', get_restore_opts))
           .then(result => {
             expect(result.state).to.eql(CONST.RESTORE_OPERATION.FAILED);
-          });
+          })
+          .then(() => mocks.verify());
       });
       it('Should get restore state - failed', function () {
         const restoreState = {
@@ -240,11 +248,13 @@ describe('managers', function () {
           'getRestoreOperationState',
           () => Promise.resolve(restoreState)
         );
+        mocks.director.getDeployments();
         return RestoreService.createService(plan)
           .then(rs => rs.getOperationState('restore', get_restore_opts))
           .then(result => {
             expect(result.state).to.eql(CONST.RESTORE_OPERATION.FAILED);
-          });
+          })
+          .then(() => mocks.verify());
       });
     });
 

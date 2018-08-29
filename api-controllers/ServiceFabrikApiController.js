@@ -260,20 +260,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getRestoreOptions(req, metadata) {
     return Promise
       .try(() => {
-        // TODO : remove
-        return req.manager.findDeploymentNameByInstanceId(req.params.instance_id);
-      })
-      .then(deploymentName => {
         const restoreOptions = {
-          plan_id: req.manager.plan.id,
-          service_id: req.manager.service.id,
+          plan_id: metadata.plan_id,
+          service_id: metadata.service_id,
           context: req.body.context || {
             space_guid: req.entity.tenant_id,
             platform: CONST.PLATFORM.CF
           },
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
-          deployment: deploymentName,
           arguments: _.assign({
               backup: _.pick(metadata, 'type', 'secret')
             },
@@ -465,16 +460,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport('restore');
-    let restoreGuid;
+    let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
-    const serviceId = req.manager.service.id;
-    const planId = req.manager.plan.id;
     return Promise
-      .try(() => utils.uuidV4())
-      .then(guid => {
+      .all([
+        utils.uuidV4(),
+        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id)
+      ])
+      .spread((guid, planDetails) => {
+        serviceId = this.getPlan(planDetails.entity.unique_id).service.id;
+        planId = planDetails.entity.unique_id;
         restoreGuid = guid;
         logger.debug(`Restore options: backupGuid ${backupGuid} at ${timeStamp}`);
         if (!backupGuid && !timeStamp) {
@@ -581,7 +579,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         });
       })
       .catch(err => {
-        logger.error('Handling error :', err);
+        logger.error('Handling error while starting restore:', err);
         if (err instanceof DeploymentAlreadyLocked) {
           throw err;
         }

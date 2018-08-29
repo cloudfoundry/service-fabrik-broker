@@ -44,36 +44,39 @@ class RestoreService extends BaseDirectorService {
 
   getOperationState(name, opts) {
     logger.info(`Retrieving state of last Restore with:`, opts);
-    return this.getRestoreOperationState(opts)
-      .then(result => {
-        logger.info('Restore operation state', result);
-        const deploymentName = opts.deployment;
-        const action = _.capitalize(name);
-        const timestamp = result.updated_at;
-        //TODO-PR - Try to move to BaseService
-        switch (result.state) {
-        case CONST.RESTORE_OPERATION.SUCCEEDED:
-          return {
-            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: CONST.RESTORE_OPERATION.SUCCEEDED
-          };
-        case CONST.RESTORE_OPERATION.ABORTED:
-          return {
-            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: CONST.RESTORE_OPERATION.FAILED
-          };
-        case CONST.RESTORE_OPERATION.FAILED:
-          return {
-            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: CONST.RESTORE_OPERATION.FAILED
-          };
-        default:
-          return {
-            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: CONST.RESTORE_OPERATION.PROCESSING
-          };
-        }
-      });
+    return Promise
+      .try(() => this.findDeploymentNameByInstanceId(opts.instance_guid))
+      .then(deploymentName =>
+        this.getRestoreOperationState(opts)
+        .then(result => {
+          logger.info('Restore operation state', result);
+          const action = _.capitalize(name);
+          const timestamp = result.updated_at;
+          //TODO-PR - Try to move to BaseService
+          switch (result.state) {
+          case CONST.RESTORE_OPERATION.SUCCEEDED:
+            return {
+              description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
+              state: CONST.RESTORE_OPERATION.SUCCEEDED
+            };
+          case CONST.RESTORE_OPERATION.ABORTED:
+            return {
+              description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
+              state: CONST.RESTORE_OPERATION.FAILED
+            };
+          case CONST.RESTORE_OPERATION.FAILED:
+            return {
+              description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
+              state: CONST.RESTORE_OPERATION.FAILED
+            };
+          default:
+            return {
+              description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
+              state: CONST.RESTORE_OPERATION.PROCESSING
+            };
+          }
+        })
+      );
   }
 
   getRestoreOperationState(opts) {
@@ -177,7 +180,6 @@ class RestoreService extends BaseDirectorService {
 
   startRestore(opts) {
     logger.debug('Starting restore with options:', opts);
-    const deploymentName = opts.deployment;
     const args = opts.arguments;
     const backupMetadata = _.get(args, 'backup');
 
@@ -210,25 +212,28 @@ class RestoreService extends BaseDirectorService {
     }
 
     return Promise
-      .all([
-        this.getDeploymentIps(deploymentName),
-        this.director.getDeploymentVms(deploymentName).map(normalizeVm)
-      ])
-      .spread((ips, vms) => this.agent
-        .startRestore(ips, backup, vms)
-        .tap(agent_ip => {
-          data.agent_ip = agent_ip;
-          return this.backupStore
-            .getRestoreFile(data)
-            .catch(errors.NotFound, (err) => {
-              logger.debug('Not found any restore data. May be first time.', err);
-              //Restore file might not be found, first time restore.
-              return;
-            })
-            .then(restoreMetadata => this.backupStore.putFile(_.assign(data, {
-              restore_dates: _.get(restoreMetadata, 'restore_dates')
-            })));
-        }))
+      .try(() => this.findDeploymentNameByInstanceId(opts.instance_guid))
+      .then(deploymentName => Promise
+        .all([
+          this.getDeploymentIps(deploymentName),
+          this.director.getDeploymentVms(deploymentName).map(normalizeVm)
+        ])
+        .spread((ips, vms) => this.agent
+          .startRestore(ips, backup, vms)
+          .tap(agent_ip => {
+            data.agent_ip = agent_ip;
+            return this.backupStore
+              .getRestoreFile(data)
+              .catch(errors.NotFound, (err) => {
+                logger.debug('Not found any restore data. May be first time.', err);
+                //Restore file might not be found, first time restore.
+                return;
+              })
+              .then(restoreMetadata => this.backupStore.putFile(_.assign(data, {
+                restore_dates: _.get(restoreMetadata, 'restore_dates')
+              })));
+          }))
+      )
       .then(() => {
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,

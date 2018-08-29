@@ -18,7 +18,6 @@ class RestoreTaskPoller {
       const response = JSON.parse(object.status.response);
       const changedOptions = JSON.parse(object.spec.options);
       logger.info('Getting operation status with the following options and response:', changedOptions, response);
-      // const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
       const plan = catalog.getPlan(changedOptions.plan_id);
       return RestoreService.createService(plan)
         .then(restoreService => restoreService
@@ -47,9 +46,6 @@ class RestoreTaskPoller {
             });
           })
         );
-      //check restore state
-      //updated restore api resource 
-      //if uscceeded cancel interval
     }
 
     function startPoller(event) {
@@ -58,8 +54,6 @@ class RestoreTaskPoller {
         logger.info(`Starting poller for restore: ${event.object.metadata.name} with interval ${CONST.RESTORE_RESOURCE_POLLER_INTERVAL}`);
         const interval = setInterval(() => poller(event.object, interval), CONST.RESTORE_RESOURCE_POLLER_INTERVAL);
         RestoreTaskPoller.pollers[event.object.metadata.name] = true;
-      } else if (event.type === CONST.API_SERVER.WATCH_EVENT.DELETED) {
-        // logger.info('GETTING DELETE EVENT!!!!!!!!!!!!!!!!!!!! ', event.object);
       }
     }
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;

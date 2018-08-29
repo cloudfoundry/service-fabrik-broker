@@ -105,7 +105,6 @@ class ApiServerClient {
         resourceId: opts.resourceId
       }))
       .then(resource => {
-        logger.debug(`New resource for ${opts.resourceId}`, resource);
         const state = resource.status.state;
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
