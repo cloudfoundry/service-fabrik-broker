@@ -260,6 +260,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getRestoreOptions(req, metadata) {
     return Promise
       .try(() => {
+        // TODO : remove
         return req.manager.findDeploymentNameByInstanceId(req.params.instance_id);
       })
       .then(deploymentName => {
@@ -270,7 +271,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             space_guid: req.entity.tenant_id,
             platform: CONST.PLATFORM.CF
           },
-          restore_guid: metadata.restoreGuid,
+          restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           deployment: deploymentName,
           arguments: _.assign({
@@ -525,7 +526,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space.`))
       .then(metadata => {
-        metadata.restoreGuid = restoreGuid;
+        metadata.restore_guid = restoreGuid;
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
         }
@@ -540,8 +541,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
           logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
           return lockManager.lock(req.params.instance_id, {
               lockedResourceDetails: {
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                 resourceId: restoreGuid,
                 operation: CONST.OPERATION_TYPE.RESTORE
               }
@@ -580,7 +581,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         });
       })
       .catch(err => {
-        logger.info('Handling error :', err);
+        logger.error('Handling error :', err);
         if (err instanceof DeploymentAlreadyLocked) {
           throw err;
         }
@@ -625,15 +626,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
       )
       // .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
       .catch(e => {
-        logger.info('Caught error while getting last restore', e); // TODO fix this
+        logger.error('Caught error while getting last restore', e); // TODO fix this
         throw new NotFound(`No restore found for service instance '${instanceId}'`);
       });
   }
 
   abortLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    // const instanceId = req.params.instance_id;
-    // const tenantId = req.entity.tenant_id;
     return eventmesh
       .apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

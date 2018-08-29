@@ -92,8 +92,6 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
-   * @param {string} opts.resourceGroup - Group of the operation
-   * @param {string} opts.resourceType - Type of the operation
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
    */
@@ -215,7 +213,7 @@ class ApiServerClient {
 
   getCrdJson(resourceGroup, resourceType) {
     const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
-    logger.info(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
+    logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
     return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
 

@@ -39,7 +39,7 @@ describe('service-fabrik-api-sf2.0', function () {
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const organization_guid = 'c84c8e58-eedc-4706-91fb-e8d97b333481';
       const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
-      const restoreGuid = '2ed8d561-9eb5-11e8-a55f-784f43900dff';
+      const restore_guid = '2ed8d561-9eb5-11e8-a55f-784f43900dff';
       const time = Date.now();
       const started_at = isoDate(time);
       const timeAfter = moment(time).add(1, 'seconds').toDate();
@@ -1585,7 +1585,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.getSpaceDevelopers(space_guid);
           // mocks.cloudProvider.download(pathname, data);
           // mocks.agent.lastRestoreOperation(restoreState);
-          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultrestore', restoreGuid, {
+          mocks.apiServerEventMesh.nockGetResource('backup', 'defaultrestore', restore_guid, {
             status: {
               response: JSON.stringify(restoreState)
             }
@@ -1593,7 +1593,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
-                last_restore_defaultrestores: restoreGuid
+                last_restore_defaultrestores: restore_guid
               }
             }
           });
@@ -1634,7 +1634,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           // mocks.cloudProvider.download(pathname, new NotFound('not found'));
-          // mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', restoreGuid, {
+          // mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', restore_guid, {
           //   status: {
           //     response: JSON.stringify(restoreState)
           //   }
@@ -1642,7 +1642,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             metadata: {
               labels: {
-                last_restore_defaultrestores: restoreGuid
+                last_restore_defaultrestores: restore_guid
               }
             }
           });
@@ -1680,7 +1680,7 @@ describe('service-fabrik-api-sf2.0', function () {
               labels: {}
             }
           };
-          directorResource.metadata.labels[`last_${CONST.OPERATION_TYPE.RESTORE}_${CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE}`] = restoreGuid;
+          directorResource.metadata.labels[`last_${CONST.OPERATION_TYPE.RESTORE}_${CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE}`] = restore_guid;
           mocks.apiServerEventMesh.nockGetResource(
             'deployment',
             'director',
@@ -1729,7 +1729,7 @@ describe('service-fabrik-api-sf2.0', function () {
               labels: {}
             }
           };
-          directorResource.metadata.labels[`last_${CONST.OPERATION_TYPE.RESTORE}_${CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE}`] = restoreGuid;
+          directorResource.metadata.labels[`last_${CONST.OPERATION_TYPE.RESTORE}_${CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE}`] = restore_guid;
           mocks.apiServerEventMesh.nockGetResource(
             'deployment',
             'director',
