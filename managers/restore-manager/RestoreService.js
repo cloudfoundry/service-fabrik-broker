@@ -204,16 +204,6 @@ class RestoreService extends BaseDirectorService {
       })
       .value();
 
-    const result = _
-      .chain(opts)
-      .pick('deployment')
-      .assign({
-        subtype: 'restore',
-        agent_ip: undefined,
-        tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
-      })
-      .value();
-
     function normalizeVm(vm) {
       let vmParams = _.pick(vm, 'cid', 'agent_id', 'job', 'index');
       return _.set(vmParams, 'iaas_vm_metadata.vm_id', config.backup.provider.name === CONST.IAAS.AZURE ? vmParams.agent_id : vmParams.cid);
@@ -227,8 +217,7 @@ class RestoreService extends BaseDirectorService {
       .spread((ips, vms) => this.agent
         .startRestore(ips, backup, vms)
         .tap(agent_ip => {
-          // set data and result agent ip
-          data.agent_ip = result.agent_ip = agent_ip;
+          data.agent_ip = agent_ip;
           return this.backupStore
             .getRestoreFile(data)
             .catch(errors.NotFound, (err) => {
@@ -247,7 +236,7 @@ class RestoreService extends BaseDirectorService {
           resourceId: opts.restore_guid,
           status: {
             'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-            'response': result
+            'response': data
           }
         });
       });

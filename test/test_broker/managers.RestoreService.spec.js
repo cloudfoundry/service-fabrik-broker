@@ -21,11 +21,11 @@ describe('managers', function () {
     const restoreGuid = '2ed8d561-9eb5-11e8-a55f-784f43900dff';
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
-    // const tenant_id = space_guid;
     const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-    // const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
+    const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
     const time = Date.now();
+    const agent_ip = '10.244.10.160';
     const username = 'fakeUsername';
     const started_at = isoDate(time);
     const restorePrefix = `${space_guid}/restore/${service_id}.${instance_id}`;
@@ -40,7 +40,10 @@ describe('managers', function () {
       started_at: started_at,
       trigger: 'online',
       restore_dates: {
-        succeeded: [moment(time).subtract(2, 'days').toDate().toISOString(), moment(time).subtract(40, 'days').toDate().toISOString()]
+        succeeded: [
+          moment(time).subtract(2, 'days').toDate().toISOString(),
+          moment(time).subtract(40, 'days').toDate().toISOString()
+        ]
       }
     };
     const get_restore_opts = {
@@ -51,7 +54,7 @@ describe('managers', function () {
         organization_guid: 'c84c8e58-eedc-4706-91fb-e8d97b333481',
         space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
       },
-      agent_ip: '10.244.10.160',
+      agent_ip: agent_ip,
       instance_guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
       restore_guid: restoreGuid,
     };
@@ -67,7 +70,7 @@ describe('managers', function () {
       instance_guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
       deployment: deployment_name,
       arguments: {
-        backup_guid: '071acb05-66a3-471b-af3c-8bbf1e4180be',
+        backup_guid: backup_guid,
         backup: {
           type: 'online',
           secret: 'fakeSecret'
@@ -116,6 +119,43 @@ describe('managers', function () {
         // mocks.cloudProvider.auth();
         return RestoreService.createService(plan)
           .then(rs => rs.abortLastRestore(restore_options))
+          .then(() => mocks.verify());
+      });
+    });
+
+    describe.only('#startRestore', function () {
+      it('should start restore', function () {
+        mocks.director.getDeploymentVms(deployment_name);
+        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.agent.getInfo();
+        mocks.agent.getInfo();
+        mocks.agent.startRestore();
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.upload(restorePathname, body => {
+          expect(body.state).to.equal(CONST.RESTORE_OPERATION.PROCESSING);
+          expect(body.finished_at).to.not.be.undefined; // jshint ignore:line
+          return true;
+        });
+        mocks.cloudProvider.headObject(restorePathname);
+        mocks.apiServerEventMesh.nockPatchResourceRegex('backup', 'defaultrestore', {}, 1, body => {
+          const responseObj = JSON.parse(body.status.response);
+          expect(responseObj.service_id).to.eql(service_id);
+          expect(responseObj.plan_id).to.eql(plan_id);
+          expect(responseObj.instance_guid).to.eql(instance_id);
+          expect(responseObj.username).to.eql(username);
+          expect(responseObj.operation).to.eql(CONST.OPERATION_TYPE.RESTORE);
+          expect(responseObj.backup_guid).to.eql(backup_guid);
+          expect(responseObj.state).to.eql(CONST.RESTORE_OPERATION.PROCESSING);
+          expect(responseObj.agent_ip).to.eql(agent_ip);
+          // expect(responseObj.started_at).to.eql(started_at);
+          expect(responseObj.finished_at).to.eql(null);
+          expect(responseObj.tenant_id).to.eql(space_guid);
+          // expect(responseObj.restore_dates).to.eql('fillin');
+          // expect(responseObj.stage).to.eql('fillin');
+          return true;
+        });
+        return RestoreService.createService(plan)
+          .then(rs => rs.startRestore(restore_options))
           .then(() => mocks.verify());
       });
     });
