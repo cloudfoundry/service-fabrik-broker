@@ -121,6 +121,7 @@ module.exports = Object.freeze({
     SHUTDOWN_WAIT_TIME: 5000
   },
   BACKUP: {
+    RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE: 3,
     TYPE: {
       ONLINE: 'online'
     },

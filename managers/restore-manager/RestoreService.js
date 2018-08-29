@@ -144,7 +144,7 @@ class RestoreService extends BaseDirectorService {
                 !statusAlreadyChecked) {
                 return this.reScheduleBackup({
                   instance_id: options.instance_guid,
-                  afterXminute: config.backup.reschedule_backup_delay_after_restore || 3
+                  afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
                 });
               } else {
                 logger.debug(`Not re-scheduling backup for ${options.instance_guid} as current restore state check is not first time.`);

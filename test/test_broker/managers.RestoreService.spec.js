@@ -5,7 +5,6 @@ const catalog = require('../../common/models/catalog');
 const RestoreService = require('../../managers/restore-manager/RestoreService');
 const moment = require('moment');
 const CONST = require('../../common/constants');
-// const logger = require('../../common/logger');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
@@ -123,14 +122,13 @@ describe('managers', function () {
       });
     });
 
-    describe.only('#startRestore', function () {
+    describe('#startRestore', function () {
       it('should start restore', function () {
         mocks.director.getDeploymentVms(deployment_name);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
-        mocks.agent.getInfo();
         mocks.agent.startRestore();
-        mocks.cloudProvider.auth();
+        // mocks.cloudProvider.auth();
         mocks.cloudProvider.upload(restorePathname, body => {
           expect(body.state).to.equal(CONST.RESTORE_OPERATION.PROCESSING);
           expect(body.finished_at).to.not.be.undefined; // jshint ignore:line
