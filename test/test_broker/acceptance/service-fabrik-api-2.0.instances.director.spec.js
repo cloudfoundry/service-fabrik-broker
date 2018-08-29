@@ -676,6 +676,31 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
+        it('should return 200 Ok - should check blobstore if last backup label is not set in deployment resource', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.findServicePlan(instance_id, plan_id, 2);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {});
+          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
+          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
+          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
+          const pathname = `/${container}/${backupFilename}`;
+          mocks.cloudProvider.download(pathname, data);
+          // mocks.agent.lastBackupOperation(backupState);
+          return chai.request(apps.external)
+            .get(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .query({
+              space_guid: space_guid,
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql(_.omit(data, 'agent_ip'));
+              mocks.verify();
+            });
+        });
+
         it('should return 404 if Not Found in blobstore and apiserver', function () {
           const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
           const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;

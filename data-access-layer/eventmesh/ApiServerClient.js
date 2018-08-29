@@ -338,13 +338,13 @@ class ApiServerClient {
     assert.ok(opts.metadata || opts.options || opts.status, `Property 'metadata' or 'options' or 'status' is required to patch resource`);
     return this.getResource(opts)
       .then(resource => {
-        if (opts.status && opts.status.response && resource.status) {
-          const oldResponse = resource.status.response;
+        if (_.get(opts, 'status.response') && resource.status) {
+          const oldResponse = _.get(resource, 'status.response');
           const response = _.merge(oldResponse, opts.status.response);
           _.set(opts.status, 'response', response);
         }
         if (opts.options && resource.spec) {
-          const oldOptions = resource.spec.options;
+          const oldOptions = _.get(resource, 'spec.options');
           const options = _.merge(oldOptions, opts.options);
           _.set(opts, 'options', options);
         }
@@ -452,7 +452,7 @@ class ApiServerClient {
       .omit('operationName', 'operationType')
       .value();
     return this.getResource(options)
-      .then(json => json.metadata.labels[`last_${opts.operationName}_${opts.operationType}`]);
+      .then(json => _.get(json.metadata, `labels.last_${opts.operationName}_${opts.operationType}`));
   }
 
   /**
@@ -463,7 +463,7 @@ class ApiServerClient {
    */
   getOptions(opts) {
     return this.getResource(opts)
-      .then(resource => resource.spec.options);
+      .then(resource => _.get(resource, 'spec.options'));
   }
 
   /**
@@ -474,7 +474,7 @@ class ApiServerClient {
    */
   getResponse(opts) {
     return this.getResource(opts)
-      .then(resource => resource.status.response);
+      .then(resource => _.get(resource, 'status.response'));
   }
 
   /**
@@ -485,7 +485,7 @@ class ApiServerClient {
    */
   getResourceState(opts) {
     return this.getResource(opts)
-      .then(resource => resource.status.state);
+      .then(resource => _.get(resource, 'status.state'));
   }
 
   /**
@@ -496,7 +496,7 @@ class ApiServerClient {
    */
   getLastOperation(opts) {
     return this.getResource(opts)
-      .then(resource => resource.status.lastOperation);
+      .then(resource => _.get(resource, 'status.lastOperation'));
   }
 
 }
