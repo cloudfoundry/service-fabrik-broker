@@ -23,6 +23,7 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const AssertionError = assert.AssertionError;
 const ScheduleManager = require('../jobs');
 const config = require('../common/config');
 const CONST = require('../common/constants');
@@ -369,7 +370,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: backupGuid
         })
       )
-      .catch(NotFound, (err) => {
+      .catch(NotFound, AssertionError, err => {
         // This code block is specifically for the transition of Service Fabrik to v2
         // Here we reffer to BackupService to get the lastBackup status
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
