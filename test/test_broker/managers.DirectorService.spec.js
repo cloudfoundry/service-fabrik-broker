@@ -119,7 +119,7 @@ describe('#DirectorService', function () {
             space_guid: space_guid,
             parameters: parameters
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -153,7 +153,7 @@ describe('#DirectorService', function () {
             space_guid: space_guid,
             parameters: parameters
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -189,7 +189,7 @@ describe('#DirectorService', function () {
             space_guid: space_guid,
             parameters: parameters
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -246,7 +246,7 @@ describe('#DirectorService', function () {
             },
             accepts_incomplete: accepts_incomplete
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -304,7 +304,7 @@ describe('#DirectorService', function () {
               service_id: service_id
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -350,7 +350,7 @@ describe('#DirectorService', function () {
               service_id: service_id
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -398,7 +398,7 @@ describe('#DirectorService', function () {
               service_id: service_id
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -445,7 +445,7 @@ describe('#DirectorService', function () {
               service_id: service_id
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -489,7 +489,7 @@ describe('#DirectorService', function () {
               service_id: service_id
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -536,7 +536,7 @@ describe('#DirectorService', function () {
             plan_id: plan_id,
             accepts_incomplete: accepts_incomplete
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -579,7 +579,7 @@ describe('#DirectorService', function () {
             plan_id: plan_id,
             accepts_incomplete: accepts_incomplete
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -611,7 +611,7 @@ describe('#DirectorService', function () {
             plan_id: plan_id,
             accepts_incomplete: accepts_incomplete
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
               expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
@@ -652,7 +652,7 @@ describe('#DirectorService', function () {
               space_guid: space_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -700,7 +700,7 @@ describe('#DirectorService', function () {
               space_guid: space_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -732,7 +732,7 @@ describe('#DirectorService', function () {
               namespace: 'default'
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -770,7 +770,7 @@ describe('#DirectorService', function () {
             type: 'create',
             context: context
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -801,7 +801,7 @@ describe('#DirectorService', function () {
             type: 'update',
             context: context
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -835,7 +835,7 @@ describe('#DirectorService', function () {
             type: 'update',
             context: context
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -864,7 +864,7 @@ describe('#DirectorService', function () {
             task_id: `${deployment_name}_${task_id}`,
             type: 'delete'
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -894,7 +894,7 @@ describe('#DirectorService', function () {
             task_id: `${deployment_name}_${task_id}`,
             type: 'delete'
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state'])).to.eql({
@@ -940,7 +940,7 @@ describe('#DirectorService', function () {
               app_guid: app_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.bind(options))
             .then(res => {
               expect(res).to.eql(mocks.agent.credentials);
@@ -993,7 +993,7 @@ describe('#DirectorService', function () {
               app_guid: app_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.bind(options))
             .then(res => {
               expect(res).to.eql(mocks.agent.credentials);
@@ -1044,7 +1044,7 @@ describe('#DirectorService', function () {
               app_guid: app_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.unbind(options))
             .then(res => {
               expect(res).to.eql({
@@ -1080,7 +1080,7 @@ describe('#DirectorService', function () {
               app_guid: app_guid
             }
           };
-          return DirectorService.createDirectorService(instance_id, options)
+          return DirectorService.createInstance(instance_id, options)
             .then(service => service.unbind(options))
             .then(res => {
               expect(res).to.eql({

@@ -1,5 +1,6 @@
 'use strict';
 
+const assert = require('assert');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
@@ -19,13 +20,18 @@ class DockerManager extends BaseManager {
   }
 
   processRequest(changeObjectBody) {
+
     return Promise.try(() => {
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        switch (changeObjectBody.status.state) {
+        case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+        case CONST.APISERVER.RESOURCE_STATE.UPDATE:
           return this._processUpdate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        case CONST.APISERVER.RESOURCE_STATE.DELETE:
           return this._processDelete(changeObjectBody);
+        default:
+          logger.error('Ideally it should never come to default state! There must be some error as the state is ', changeObjectBody.status.state);
+          break;
         }
       })
       .catch(err => {
@@ -43,9 +49,12 @@ class DockerManager extends BaseManager {
   }
 
   _processCreate(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Creating docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -59,9 +68,12 @@ class DockerManager extends BaseManager {
   }
 
   _processUpdate(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Updating docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -75,9 +87,12 @@ class DockerManager extends BaseManager {
   }
 
   _processDelete(changeObjectBody) {
+    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
+    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Deleting docker resource with the following options:', changedOptions);
-    return DockerService.createDockerService(changeObjectBody.metadata.name, changedOptions)
+    return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))
       .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

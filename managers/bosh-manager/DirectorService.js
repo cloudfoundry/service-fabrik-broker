@@ -82,12 +82,8 @@ class DirectorService extends BaseDirectorService {
   }
 
   get deploymentName() {
-    return this.getDirectorDeploymentName(this.guid, this.networkSegmentIndex);
-  }
-
-  getDirectorDeploymentName(guid, networkSegmentIndex) {
     let subnet = this.subnet ? `_${this.subnet}` : '';
-    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(this.networkSegmentIndex)}-${this.guid}`;
   }
 
   getNetworkSegmentIndex(deploymentName) {
@@ -125,7 +121,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   acquireNetworkSegmentIndex(guid) {
-    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
+    logger.debug(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
     const promises = [this.getDeploymentNames(true)];
     if (config.enable_bosh_rate_limit) {
       promises.push(this.getDeploymentNamesInCache());
@@ -264,7 +260,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   findNetworkSegmentIndex(guid) {
-    logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
+    logger.debug(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
     return this
       .director
       .getDeploymentNameForInstanceId(guid)
@@ -919,57 +915,6 @@ class DirectorService extends BaseDirectorService {
     }
   }
 
-  // findDeploymentTask(deploymentName) {
-  //   return this.director
-  //     .getTasks({
-  //       deployment: deploymentName
-  //     }, true)
-  //     .then(tasks => _
-  //       .chain(tasks)
-  //       .sortBy('id')
-  //       .find(task => /^create\s+deployment/.test(task.description))
-  //       .value()
-  //     );
-  // }
-
-  // getDeploymentInfo(deploymentName) {
-  //   const events = {};
-  //   const info = {};
-
-  //   function DeploymentDoesNotExist(err) {
-  //     return err.status === 404 && _.get(err, 'error.code') === 70000;
-  //   }
-
-  //   function addInfoEvent(event) {
-  //     if (!_.has(events, event.stage)) {
-  //       events[event.stage] = {
-  //         tags: event.tags,
-  //         total: event.total,
-  //       };
-  //     }
-  //     if (!_.has(events[event.stage], event.task)) {
-  //       events[event.stage][event.task] = {
-  //         index: event.index,
-  //         time: event.time,
-  //         status: event.state
-  //       };
-  //     } else {
-  //       events[event.stage][event.task].status = event.state;
-  //       let seconds = event.time - events[event.stage][event.task].time;
-  //       delete events[event.stage][event.task].time;
-  //       events[event.stage][event.task].duration = `${seconds} sec`;
-  //     }
-  //   }
-
-  //   return this
-  //     .findDeploymentTask(deploymentName)
-  //     .tap(task => _.assign(info, task))
-  //     .then(task => this.director.getTaskEvents(task.id))
-  //     .tap(events => _.each(events, addInfoEvent))
-  //     .return(_.set(info, 'events', events))
-  //     .catchReturn(DeploymentDoesNotExist, null);
-  // }
-
   getApplicationAccessPortsOfService() {
     let service = this.service.toJSON();
     return _.get(service, 'application_access_ports');
@@ -985,42 +930,6 @@ class DirectorService extends BaseDirectorService {
       };
     });
   }
-
-  // getInfo() {
-  //   const operation = {
-  //     type: 'get'
-  //   };
-  //   return Promise
-  //     .all([
-  //       this.cloudController.getServiceInstance(this.guid)
-  //       .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
-  //         .then(plan => {
-  //           return {
-  //             'instance': instance,
-  //             'plan': plan
-  //           };
-  //         })
-  //       ),
-  //       this.initialize(operation).then(() => this.getDeploymentInfo(this.deploymentName))
-  //     ])
-  //     .spread((instanceInfo, deploymentInfo) => {
-  //       let instance = instanceInfo.instance;
-  //       let planInfo = instanceInfo.plan;
-  //       let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
-  //       return {
-  //         title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-  //         plan: currentPlan,
-  //         service: currentPlan.service,
-  //         instance: _.set(instance, 'task', deploymentInfo),
-  //         files: [{
-  //           id: 'status',
-  //           title: 'Status',
-  //           language: 'yaml',
-  //           content: yaml.dump(deploymentInfo)
-  //         }]
-  //       };
-  //     });
-  // }
 
   scheduleBackUp() {
     const options = {
@@ -1088,7 +997,7 @@ class DirectorService extends BaseDirectorService {
       .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
   }
 
-  static createDirectorService(instanceId, options) {
+  static createInstance(instanceId, options) {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const context = _.get(options, 'context');

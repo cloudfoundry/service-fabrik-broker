@@ -55,8 +55,8 @@ class BoshTaskPoller {
                   if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
                     BoshTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
-                    return DirectorService.createDirectorService(metadata.name, options)
-                      .then(boshService => boshService.lastOperation(resourceBody.status.response))
+                    return DirectorService.createInstance(metadata.name, options)
+                      .then(directorService => directorService.lastOperation(resourceBody.status.response))
                       .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
                       .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

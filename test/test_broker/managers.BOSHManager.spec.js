@@ -35,7 +35,7 @@ const BOSHManager = proxyquire('../../managers/bosh-manager/BoshManager', {
     }
   },
   './DirectorService': {
-    'createDirectorService': function (instance_id, options) {
+    'createInstance': function (instance_id, options) {
       BOSHManagerDummy.createDirectorServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': (opts) => {

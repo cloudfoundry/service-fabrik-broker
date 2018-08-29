@@ -273,7 +273,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const body = _.pick(result, 'state', 'description');
       // Unlock resource if state is succeeded or failed
       if (result.state === CONST.OPERATION.SUCCEEDED || result.state === CONST.OPERATION.FAILED) {
-        return lockManager.unlock(req.params.instance_id)
+        return lockManager.unlock(req.params.instance_id) //TODO-JB - to be migrated as all unlock would happen via unlock resource poller.
           .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
       }
       res.status(CONST.HTTP_STATUS_CODE.OK).send(body);

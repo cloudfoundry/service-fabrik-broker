@@ -109,7 +109,7 @@ describe('docker-manager', function () {
           space_guid: space_guid,
           parameters: parameters
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.create(options))
           .then(res => {
             expect(res).to.eql(instance_id);
@@ -139,7 +139,7 @@ describe('docker-manager', function () {
           space_guid: space_guid,
           parameters: parameters
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.create(options))
           .then(res => {
             expect(res).to.eql(instance_id);
@@ -162,7 +162,7 @@ describe('docker-manager', function () {
           space_guid: space_guid,
           parameters: parameters
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.create(options))
           .then(res => {
             expect(res).to.eql(undefined); //as no post provisioning is done
@@ -193,7 +193,7 @@ describe('docker-manager', function () {
             service_id: service_id
           }
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.update(options))
           .then(res => {
             expect(res).to.eql(undefined); //as ensurecontainerisrunning returns undefined if everything goes well
@@ -219,7 +219,7 @@ describe('docker-manager', function () {
             service_id: service_id
           }
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.update(options))
           .then(res => {
             expect(res).to.eql(undefined); //as ensurecontainerisrunning returns undefined if everything goes well
@@ -246,7 +246,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
             expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
@@ -260,7 +260,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .catch(ServiceInstanceNotFound, () => {
             mocks.verify();
@@ -279,7 +279,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
             expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
@@ -299,7 +299,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.delete(options))
           .then(res => {
             expect(res).to.eql(undefined); //as deleteVolumes returns undefined if everything goes well
@@ -325,7 +325,7 @@ describe('docker-manager', function () {
             space_guid: space_guid
           }
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.bind(options))
           .then(res => {
             expect(res).to.eql({
@@ -354,7 +354,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.unbind(options))
           .then(res => {
             expect(res).to.eql(undefined);
@@ -368,7 +368,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.unbind(options))
           .then(res => {
             expect(res).to.eql(undefined);
@@ -386,7 +386,7 @@ describe('docker-manager', function () {
           service_id: service_id,
           plan_id: plan_id
         };
-        return DockerService.createDockerService(instance_id, options)
+        return DockerService.createInstance(instance_id, options)
           .then(service => service.unbind(options))
           .then(res => {
             expect(res).to.eql(undefined);
