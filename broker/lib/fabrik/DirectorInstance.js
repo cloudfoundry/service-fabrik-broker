@@ -178,26 +178,6 @@ class DirectorInstance extends BaseInstance {
               .value()
             );
         }
-        // service fabrik operation
-        const previousValues = params.previous_values;
-        const opts = _
-          .chain(previousValues)
-          .pick('plan_id', 'service_id')
-          .set('context', params.context)
-          .set('instance_guid', this.guid)
-          .set('deployment', this.deploymentName)
-          .assign(_.omit(serviceFabrikOperation, 'name'))
-          .value();
-        return this.manager
-          .invokeServiceFabrikOperation(this.operation, opts)
-          .then(result => _
-            .chain(operation)
-            .assign(result)
-            .set('username', serviceFabrikOperation.username)
-            .set('useremail', serviceFabrikOperation.useremail)
-            .set('context', params.context)
-            .value()
-          );
       });
   }
 
@@ -240,16 +220,6 @@ class DirectorInstance extends BaseInstance {
   }
 
   lastOperation(operation) {
-    if (operation.type === 'update' && _.has(operation, 'subtype')) {
-      logger.info('Fetching state of last service fabrik operation', operation);
-      return this.manager
-        .getServiceFabrikOperationState(operation.subtype, _
-          .chain(operation)
-          .omit('subtype')
-          .set('instance_guid', this.guid)
-          .value()
-        );
-    }
     logger.info('Fetching state of last operation', operation);
     const instanceId = this.guid;
 

@@ -32,6 +32,13 @@ module.exports = Object.freeze({
   },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
+  RESTORE_RESOURCE_POLLER_INTERVAL: 3000,
+  RESTORE_OPERATION: {
+    SUCCEEDED: 'succeeded',
+    FAILED: 'failed',
+    ABORTED: 'aborted',
+    PROCESSING: 'processing'
+  },
   BACKUP_OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -114,6 +121,7 @@ module.exports = Object.freeze({
     SHUTDOWN_WAIT_TIME: 5000
   },
   BACKUP: {
+    RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE: 3,
     TYPE: {
       ONLINE: 'online'
     },
@@ -251,7 +259,8 @@ module.exports = Object.freeze({
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BIND: 'bind.servicefabrik.io',
-      BACKUP: 'backup.servicefabrik.io'
+      BACKUP: 'backup.servicefabrik.io',
+      RESTORE: 'backup.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -261,7 +270,8 @@ module.exports = Object.freeze({
       DIRECTOR_BIND: 'directorbinds',
       DOCKER_BIND: 'dockerbinds',
       VIRTUALHOST_BIND: 'virtualhostbinds',
-      DEFAULT_BACKUP: 'defaultbackups'
+      DEFAULT_BACKUP: 'defaultbackups',
+      DEFAULT_RESTORE: 'defaultrestores'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
@@ -271,6 +281,7 @@ module.exports = Object.freeze({
       SUCCEEDED: 'succeeded',
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
+      ABORT: 'abort',
       ABORTED: 'aborted',
       UPDATE: 'update'
     },

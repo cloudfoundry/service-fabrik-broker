@@ -4,6 +4,9 @@ const _ = require('lodash');
 const utils = require('../common/utils');
 const bosh = require('../data-access-layer/bosh');
 const Agent = require('../data-access-layer/service-agent');
+const logger = require('../common/logger');
+const errors = require('../common/errors');
+const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const Networks = bosh.manifest.Networks;
 const BaseService = require('./BaseService');
@@ -30,6 +33,24 @@ class BaseDirectorService extends BaseService {
 
   get template() {
     return new Buffer(this.settings.template, 'base64').toString('utf8');
+  }
+
+  findDeploymentNameByInstanceId(guid) {
+    logger.info(`Finding deployment name with instance id : '${guid}'`);
+    return this.getDeploymentNames(false)
+      .then(deploymentNames => {
+        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
+        if (!deploymentName) {
+          logger.warn(`+-> Could not find a matching deployment for guid: ${guid}`);
+          throw new ServiceInstanceNotFound(guid);
+        }
+        return deploymentName;
+      })
+      .tap(deploymentName => logger.info(`+-> Found deployment '${deploymentName}' for '${guid}'`));
+  }
+
+  getDeploymentNames(queued) {
+    return this.director.getDeploymentNames(queued);
   }
 
   get stemcell() {

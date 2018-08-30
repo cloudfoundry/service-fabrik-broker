@@ -48,7 +48,7 @@ class UnlockResourcePoller {
     function startPoller(event) {
       logger.debug('Received Lock Event: ', event);
       const lockDetails = JSON.parse(event.object.spec.options);
-      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && lockDetails.lockedResourceDetails.resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.BACKUP) {
+      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && _.includes([CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_GROUPS.RESTORE], lockDetails.lockedResourceDetails.resourceGroup)) {
         UnlockResourcePoller.clearPoller(event.object.metadata.name, UnlockResourcePoller.pollers[event.object.metadata.name]);
         logger.debug('starting unlock resource poller for deployment', event.object.metadata.name);
         //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.

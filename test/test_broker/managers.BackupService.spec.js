@@ -93,7 +93,7 @@ describe('managers', function () {
     });
 
     describe('#startBackup', function () {
-      it('Should cancel staus poller if backup fails', function () {
+      it('Should cancel status poller if backup fails', function () {
         const context = {
           platform: 'cloudfoundry',
           organization_guid: organization_guid,

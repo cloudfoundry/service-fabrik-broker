@@ -11,6 +11,7 @@ const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const errors = require('../common/errors');
 const BackupService = require('../managers/backup-manager');
+const RestoreService = require('../managers/restore-manager');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
@@ -257,6 +258,31 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  getRestoreOptions(req, metadata) {
+    return Promise
+      .try(() => {
+        const restoreOptions = {
+          plan_id: metadata.plan_id,
+          service_id: metadata.service_id,
+          context: req.body.context || {
+            space_guid: req.entity.tenant_id,
+            platform: CONST.PLATFORM.CF
+          },
+          restore_guid: metadata.restore_guid,
+          instance_guid: req.params.instance_id,
+          arguments: _.assign({
+              backup: _.pick(metadata, 'type', 'secret')
+            },
+            req.body, {
+              backup_guid: _.get(metadata, 'backup_guid')
+            }),
+          username: req.user.name
+        };
+        logger.debug('Restore options:', restoreOptions);
+        return restoreOptions;
+      });
+  }
+
   startBackup(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
@@ -433,21 +459,24 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   startRestore(req, res) {
+    let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
+    // TODO move verifyFeatureSupport out of manager
     req.manager.verifyFeatureSupport('restore');
+    let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
-    const serviceId = req.manager.service.id;
-    const planId = req.manager.plan.id;
-    const bearer = _
-      .chain(req.headers)
-      .get('authorization')
-      .split(' ')
-      .nth(1)
-      .value();
     return Promise
-      .try(() => {
+      .all([
+        utils.uuidV4(),
+        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id)
+      ])
+      .spread((guid, planDetails) => {
+        serviceId = this.getPlan(planDetails.entity.unique_id).service.id;
+        planId = planDetails.entity.unique_id;
+        restoreGuid = guid;
+        logger.debug(`Restore options: backupGuid ${backupGuid} at ${timeStamp}`);
         if (!backupGuid && !timeStamp) {
           throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
         } else if (timeStamp) {
@@ -497,6 +526,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space.`))
       .then(metadata => {
+        metadata.restore_guid = restoreGuid;
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
         }
@@ -505,41 +535,145 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         return metadata;
       })
-      .then(metadata => this.fabrik
-        .createOperation('restore', {
-          instance_id: req.params.instance_id,
-          bearer: bearer,
-          arguments: _.assign({
-            backup: _.pick(metadata, 'type', 'secret')
-          }, req.body, {
-            backup_guid: backupGuid || _.get(metadata, 'backup_guid')
-          })
+      .then(metadata => this
+        .getRestoreOptions(req, metadata)
+        .then(restoreOptions => {
+          logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
+          return lockManager.lock(req.params.instance_id, {
+              lockedResourceDetails: {
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: restoreGuid,
+                operation: CONST.OPERATION_TYPE.RESTORE
+              }
+            })
+            .then(() => {
+              lockedDeployment = true;
+              return eventmesh.apiServerClient.createResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                //TODO read from plan details
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: restoreGuid,
+                options: restoreOptions,
+                status: {
+                  state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                  lastOperation: {},
+                  response: {}
+                }
+              });
+            });
         })
-        .handle(req, res)
-      );
+      )
+      .then(() => {
+        //check if resource exist, else create and then update
+        return eventmesh.apiServerClient.updateLastOperationValue({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          operationName: CONST.OPERATION_TYPE.RESTORE,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          resourceId: req.params.instance_id,
+          value: restoreGuid
+        });
+      })
+      .then(() => {
+        return res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
+          name: CONST.OPERATION_TYPE.RESTORE,
+          guid: restoreGuid
+        });
+      })
+      .catch(err => {
+        logger.error('Handling error while starting restore:', err);
+        if (err instanceof DeploymentAlreadyLocked) {
+          throw err;
+        }
+        if (lockedDeployment) {
+          return lockManager.unlock(req.params.instance_id)
+            .throw(err);
+        }
+        throw err;
+      });
   }
 
   getLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
     const instanceId = req.params.instance_id;
     const tenantId = req.entity.tenant_id;
-    return req.manager
-      .getLastRestore(tenantId, instanceId)
+
+    return eventmesh.apiServerClient.getLastOperationValue({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        operationName: CONST.OPERATION_TYPE.RESTORE,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+        resourceId: req.params.instance_id
+      })
+      .then(restoreGuid =>
+        eventmesh.apiServerClient.getResponse({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          resourceId: restoreGuid
+        })
+      )
+      .catch(NotFound, AssertionError, (err) => {
+        // This code block is specifically for the transition of Service Fabrik to v2
+        // Here we reffer to RestoreService to get the lastRestore status
+        logger.info('Restore metadata not found in apiserver, checking blobstore. Error message:', err.message);
+        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
+          .then(plan_id => RestoreService.createService(catalog.getPlan(plan_id)))
+          .then(restoreService => restoreService.getLastRestore(tenantId, req.params.instance_id));
+      })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)
       )
-      .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
+      // .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
+      .catch(e => {
+        logger.error('Caught error while getting last restore', e); // TODO fix this
+        throw new NotFound(`No restore found for service instance '${instanceId}'`);
+      });
   }
 
   abortLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
-    const instanceId = req.params.instance_id;
-    const tenantId = req.entity.tenant_id;
-    return req.manager
-      .abortLastRestore(tenantId, instanceId)
+    return eventmesh
+      .apiServerClient.getLastOperationValue({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        operationName: CONST.OPERATION_TYPE.RESTORE,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+        resourceId: req.params.instance_id
+      })
+      .then(restoreGuid => {
+        return eventmesh
+          .apiServerClient.getResourceState({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            resourceId: restoreGuid
+          })
+          .then(state => {
+            // abort only if the state is in progress
+            if (_.includes([CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, CONST.RESTORE_OPERATION.PROCESSING], state)) {
+              return eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: restoreGuid,
+                status: {
+                  'state': CONST.OPERATION.ABORT
+                }
+              });
+            } else {
+              logger.info(`Skipping abort for ${restoreGuid} as state is : ${state}`);
+            }
+          })
+          .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+            resourceId: restoreGuid,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+            start_state: CONST.OPERATION.ABORT,
+            started_at: new Date()
+          }));
+      })
       .then(result => res
-        .status(result.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
+        .status(result.state === CONST.OPERATION.ABORTING ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK)
         .send({})
       );
   }

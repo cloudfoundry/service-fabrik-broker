@@ -1,6 +1,8 @@
 'use strict';
 
+// const _ = require('lodash');
 const BaseDirectorService = require('../../managers/BaseDirectorService');
+// const CONST = require('../../common/constants');
 
 describe('managers', function () {
   describe('BaseDirectorService', function () {
@@ -24,5 +26,26 @@ describe('managers', function () {
         ]);
       });
     });
+    // describe('getTenantGuid', function () {
+    //   const bds = new BaseDirectorService('fake-plan');
+    //   const context = {
+    //     space_guid: 'fake-space-guid',
+    //     namespace: 'fake-namespace'
+    //   };
+    //   it('should return space_guid from context when platform is cf', function () {
+    //     expect(bds.getTenantGuid(_
+    //       .assign({
+    //         'platform': CONST.PLATFORM.CF
+    //       }, context)
+    //     )).to.eql('fake-space-guid');
+    //   });
+    //   it('should return namespace from context when platform is K8S', function () {
+    //     expect(bds.getTenantGuid(_
+    //       .assign({
+    //         'platform': CONST.PLATFORM.K8S
+    //       }, context)
+    //     )).to.eql('fake-namespace');
+    //   });
+    // });
   });
 });
