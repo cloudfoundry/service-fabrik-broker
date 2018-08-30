@@ -651,7 +651,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           })
           .then(state => {
             // abort only if the state is in progress
-            if (state === CONST.RESTORE_OPERATION.PROCESSING) {
+            if (_.includes([CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, CONST.RESTORE_OPERATION.PROCESSING], state)) {
               return eventmesh.apiServerClient.updateResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
