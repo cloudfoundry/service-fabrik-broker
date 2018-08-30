@@ -89,7 +89,11 @@ class RestoreService extends BaseDirectorService {
     }, opts);
 
     function isFinished(state) {
-      return _.includes(['succeeded', 'failed', 'aborted'], state);
+      return _.includes([
+        CONST.RESTORE_OPERATION.SUCCEEDED,
+        CONST.RESTORE_OPERATION.FAILED,
+        CONST.RESTORE_OPERATION.ABORTED
+      ], state);
     }
 
     let statusAlreadyChecked = false;
@@ -104,7 +108,11 @@ class RestoreService extends BaseDirectorService {
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
               // following restoreDates will have structure
-              // 'restore_dates' : {'succeeded':[<dateISOString>], 'failed':[<dateISOString>],'aborted':[<dateISOString>]}
+              // 'restore_dates' : {
+              //  'succeeded':[<dateISOString>],
+              //  'failed':[<dateISOString>],
+              //  'aborted':[<dateISOString>]
+              // }
               let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
               let restoreDatesByState = _.get(restoreDates, lastOperation.state) || [];
               //status check to prevent

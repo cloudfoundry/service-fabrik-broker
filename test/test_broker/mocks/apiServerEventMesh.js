@@ -48,7 +48,6 @@ function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStat
 
 function nockPatchResourceStatus(resourceGroup, resourceType, response, times, verifier) {
   nock(apiServerHost)
-    //.patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s$`)
     .patch(/status$/, verifier)
     .times(times || 1)
     .reply(200, response);

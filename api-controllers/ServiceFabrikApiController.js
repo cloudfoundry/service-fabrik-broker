@@ -549,6 +549,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               lockedDeployment = true;
               return eventmesh.apiServerClient.createResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                //TODO read from plan details
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                 resourceId: restoreGuid,
                 options: restoreOptions,
@@ -648,7 +649,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           })
           .then(state => {
             // abort only if the state is in progress
-            if (state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+            if (state === CONST.RESTORE_OPERATION.PROCESSING) {
               return eventmesh.apiServerClient.updateResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,

@@ -833,9 +833,10 @@ describe('service-fabrik-api-sf2.0', function () {
         const citrBackupPrefix1 = `${backupPrefix}/${service_id}.${citr_instance_id}`;
         const restoreFilename = `${restorePrefix}.json`;
         const backupFilename = `${backupPrefix}/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-        // const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
+        const citrBackupFilename = `${backupPrefix}/${service_id}.${citr_instance_id}.${backup_guid}.${started_at}.json`;
         const restorePathname = `/${container}/${restoreFilename}`;
         const backupPathname = `/${container}/${backupFilename}`;
+        const citrBackupPathname = `/${container}/${citrBackupFilename}`;
         const backupMetadata = {
           plan_id: plan_id,
           service_id: service_id,
@@ -1542,36 +1543,93 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        // it('should initiate a start-restore operation at cloud controller via a service instance update: PITR - Cross Instance restore', function () {
-        //   mocks.uaa.tokenKey();
-        //   mocks.cloudController.getServiceInstance(instance_id, {
-        //     space_guid: space_guid,
-        //     service_plan_guid: plan_guid
-        //   });
-        //   mocks.cloudController.findServicePlan(instance_id, plan_id);
-        //   mocks.cloudController.getSpaceDevelopers(space_guid);
-        //   mocks.cloudProvider.list(container, citrBackupPrefix1, [citrBackupFilename]);
-        //   // mocks.cloudProvider.download(citrBackupPathname, backupMetadata);
-        //   mocks.cloudProvider.download(restorePathname, restoreMetadata);
-        //   mocks.cloudController.updateServiceInstance(instance_id, body => {
-        //     const token = _.get(body.parameters, 'service-fabrik-operation');
-        //     return support.jwt.verify(token, name, args);
-        //   });
-        //   return chai
-        //     .request(apps.external)
-        //     .post(`${base_url}/service_instances/${instance_id}/restore`)
-        //     .set('Authorization', authHeader)
-        //     .send({
-        //       time_stamp: `${restoreAtEpoch}`,
-        //       source_instance_id: citr_instance_id
-        //     })
-        //     .catch(err => err.response)
-        //     .then(res => {
-        //       expect(res).to.have.status(202);
-        //       expect(res.body).to.have.property('guid');
-        //       mocks.verify();
-        //     });
-        // });
+        it('should initiate a start-restore operation at cloud controller via a service instance update: PITR - Cross Instance restore', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, citrBackupPrefix1, [citrBackupFilename]);
+          mocks.cloudProvider.download(citrBackupPathname, backupMetadata);
+          mocks.cloudProvider.download(restorePathname, restoreMetadata);
+          // fill in
+          const change_body = {
+            'metadata': {
+              'name': backup_guid
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'plan_id': plan_id,
+                'service_id': service_id,
+                'context': {
+                  'space_guid': space_guid,
+                  'platform': 'cloudfoundry'
+                },
+                'instance_guid': instance_id,
+                'deployment': {
+                  'isFulfilled': false,
+                  'isRejected': false
+                },
+                'arguments': {
+                  'backup': {
+                    'type': 'online',
+                    'secret': 'hugo'
+                  }
+                }
+              })
+            }
+          };
+          const lock_body = {
+            'metadata': {
+              'name': instance_id
+            },
+            'spec': {
+              'options': JSON.stringify({
+                'lockedResourceDetails': {
+                  'resourceGroup': 'backup.servicefabrik.io',
+                  'resourceType': 'defaultbackups',
+                  'resourceId': {
+                    'isFulfilled': true,
+                    'isRejected': false,
+                    'fulfillmentValue': 'eeb83f57-ee6b-4c46-a4da-a06741dc0436'
+                  },
+                  'operation': 'restore'
+                },
+                'lockType': 'WRITE',
+                'lockTTL': null,
+                'lockTime': '2018-08-12T14:51:27.510Z'
+              })
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
+            spec: {
+              options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource('lock', 'deploymentlock', instance_id, lock_body);
+          mocks.apiServerEventMesh.nockCreateResource(
+            'backup',
+            'defaultrestore',
+            change_body);
+          mocks.apiServerEventMesh.nockPatchResource('deployment', 'director', instance_id, {});
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: `${restoreAtEpoch}`,
+              source_instance_id: citr_instance_id
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body).to.have.property('guid');
+              mocks.verify();
+            });
+        });
 
       });
 
@@ -1703,7 +1761,7 @@ describe('service-fabrik-api-sf2.0', function () {
             'backup',
             'defaultrestore', {
               status: {
-                state: 'in_progress',
+                state: CONST.RESTORE_OPERATION.PROCESSING,
                 response: '{"guid": "some_guid"}'
               }
             });
