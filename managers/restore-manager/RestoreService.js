@@ -42,43 +42,6 @@ class RestoreService extends BaseDirectorService {
       });
   }
 
-  getOperationState(name, opts) {
-    logger.info(`Retrieving state of last Restore with:`, opts);
-    return Promise
-      .try(() => this.findDeploymentNameByInstanceId(opts.instance_guid))
-      .then(deploymentName =>
-        this.getRestoreOperationState(opts)
-        .then(result => {
-          logger.info('Restore operation state', result);
-          const action = _.capitalize(name);
-          const timestamp = result.updated_at;
-          //TODO-PR - Try to move to BaseService
-          switch (result.state) {
-          case CONST.RESTORE_OPERATION.SUCCEEDED:
-            return {
-              description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-              state: CONST.RESTORE_OPERATION.SUCCEEDED
-            };
-          case CONST.RESTORE_OPERATION.ABORTED:
-            return {
-              description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-              state: CONST.RESTORE_OPERATION.FAILED
-            };
-          case CONST.RESTORE_OPERATION.FAILED:
-            return {
-              description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-              state: CONST.RESTORE_OPERATION.FAILED
-            };
-          default:
-            return {
-              description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-              state: CONST.RESTORE_OPERATION.PROCESSING
-            };
-          }
-        })
-      );
-  }
-
   getRestoreOperationState(opts) {
     logger.debug('Getting Restore operation State for:', opts);
     const agent_ip = opts.agent_ip;

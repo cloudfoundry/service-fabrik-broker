@@ -15,6 +15,7 @@ const RestoreService = require('../managers/restore-manager');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
+const AssertionError = require('assert').AssertionError;
 const Gone = errors.Gone;
 const cf = require('../data-access-layer/cf');
 const Forbidden = errors.Forbidden;
@@ -459,6 +460,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
+    // TODO move verifyFeatureSupport out of manager
     req.manager.verifyFeatureSupport('restore');
     let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
@@ -611,7 +613,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: restoreGuid
         })
       )
-      .catch(NotFound, (err) => {
+      .catch(NotFound, AssertionError, (err) => {
         // This code block is specifically for the transition of Service Fabrik to v2
         // Here we reffer to RestoreService to get the lastRestore status
         logger.info('Restore metadata not found in apiserver, checking blobstore. Error message:', err.message);

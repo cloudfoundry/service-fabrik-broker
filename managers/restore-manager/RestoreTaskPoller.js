@@ -1,12 +1,10 @@
 'use strict';
+// TODO abstract to a base poller
 
 const _ = require('lodash');
-// const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
-// const errors = require('../../common/errors');
 const logger = require('../../common/logger');
-// const config = require('../../common/config');
 const catalog = require('../../common/models').catalog;
 const RestoreService = require('./');
 
@@ -15,13 +13,14 @@ class RestoreTaskPoller {
 
   static start() {
     function poller(object, interval) {
-      const response = JSON.parse(object.status.response);
+      // TODO handle HA scenario
+      const response = JSON.parse(_.get(object.status,'response'));
       const changedOptions = JSON.parse(object.spec.options);
       logger.info('Getting operation status with the following options and response:', changedOptions, response);
       const plan = catalog.getPlan(changedOptions.plan_id);
       return RestoreService.createService(plan)
         .then(restoreService => restoreService
-          .getOperationState(CONST.OPERATION_TYPE.RESTORE, {
+          .getRestoreOperationState({
             context: changedOptions.context,
             agent_ip: response.agent_ip,
             instance_guid: changedOptions.instance_guid,
