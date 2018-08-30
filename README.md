@@ -6,6 +6,8 @@ This broker was inspired  by the [cf-containers-broker](https://github.com/cloud
 
 # Architecture
 
+![Missing](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/img/SF2.0-tam-block-diagram-overview.png?raw=true)
+Above is the component diagram of Service Fabrik.
 Service Fabrik has been re-designed to a model which is event driven and based on decoupled components which participate and communicate via an [APIServer](https://kubernetes.io/docs/concepts/overview/kubernetes-api/) managed by Service Fabrik. 
 
 The concept is based on Event Sourcing where the Event Store is point of coordination for different components. This facilitates easy onboarding of external components and modules into the service Fabrik eco-system.
