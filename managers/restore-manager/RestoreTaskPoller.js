@@ -18,7 +18,7 @@ class RestoreTaskPoller {
       // TODO handle HA scenario
       const response = JSON.parse(_.get(object.status, 'response'));
       const changedOptions = JSON.parse(object.spec.options);
-      logger.info('Getting operation status with the following options and response:', changedOptions, response);
+      logger.info('Getting restore status with the following options and response:', changedOptions, response);
       const plan = catalog.getPlan(changedOptions.plan_id);
       const restore_opts = {
         context: changedOptions.context,
@@ -31,7 +31,7 @@ class RestoreTaskPoller {
           .getRestoreOperationState(restore_opts)
           .catch(e => logger.error('Caught error in poller', e))
           .then(operationStatusResponse => {
-            logger.info('Got restore operation response', operationStatusResponse);
+            logger.info(`Got restore operation response for guid ${changedOptions.restore_guid}`, operationStatusResponse);
             if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], operationStatusResponse.state)) {
               // cancel the poller and clear the array
               clearInterval(interval);
