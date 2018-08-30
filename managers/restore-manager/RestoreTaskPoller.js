@@ -51,7 +51,7 @@ class RestoreTaskPoller {
               })
               .then(() => {
                 if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                  _.set(restore_opts,'user.name', changedOptions.username);
+                  _.set(restore_opts, 'user.name', changedOptions.username);
                   return RestoreTaskPoller._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
                 }
               });
