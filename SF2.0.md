@@ -2,7 +2,7 @@
 
 Basic principle of how a manager can be brought in SF2.0 is depicted in the below picture.
 
-[Missing](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-basics.png?raw=true)
+![Missing](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-basics.png?raw=true)
 
 To bring in a new provisioner, one has to bring in their own [CRD](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/)
 
@@ -16,4 +16,8 @@ plans similar to [this](https://github.com/cloudfoundry-incubator/service-fabrik
 
 2. Make sure the resource mappings are added properly in the plan metadata, simialr to [this](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/broker/config/settings.yml#L704-L712).
 
-3. Start your manager, 
+3. Start your manager and do the following:
+
+   1. Register the CRD with Service Fabrik APIServer.
+   2. Start watching on the CRD for state change.
+   3. Process create/update/delete depending  on the state change.
