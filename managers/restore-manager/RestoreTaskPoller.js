@@ -2,6 +2,7 @@
 // TODO abstract to a base poller
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
@@ -42,15 +43,15 @@ class RestoreTaskPoller {
                 }
               }))
               .then(() => {
-                if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], operationStatusResponse.state)) {
-                  // cancel the poller and clear the array
+                if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.ABORTED], operationStatusResponse.state)) {
+                  logger.debug('Cancel the poller:', object.metadata.name);
                   clearInterval(interval);
                   RestoreTaskPoller.pollers[object.metadata.name] = false;
                 }
               })
               .then(() => {
                 if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                  return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
+                  return RestoreTaskPoller._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
                 }
               });
           })
