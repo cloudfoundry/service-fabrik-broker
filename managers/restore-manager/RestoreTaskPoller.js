@@ -6,10 +6,11 @@ const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
 const catalog = require('../../common/models').catalog;
-const config = require('../common/config');
+const config = require('../../common/config');
 const RestoreService = require('./');
-const utils = require('../common/utils');
-const EventLogInterceptor = require('../common/EventLogInterceptor');
+const config = require('../../common/config');
+const utils = require('../../common/utils');
+const EventLogInterceptor = require('../../common/EventLogInterceptor');
 
 class RestoreTaskPoller {
 
