@@ -43,8 +43,8 @@ class RestoreTaskPoller {
                 }
               }))
               .then(() => {
-                if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.ABORTED], operationStatusResponse.state)) {
-                  logger.debug('Cancel the poller:', object.metadata.name);
+                if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+                  logger.debug('Clearing Restore Task Poller:', object.metadata.name);
                   clearInterval(interval);
                   RestoreTaskPoller.pollers[object.metadata.name] = false;
                 }
