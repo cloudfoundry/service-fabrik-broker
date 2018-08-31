@@ -2,6 +2,7 @@
 // TODO abstract to a base poller
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
@@ -29,21 +30,10 @@ class RestoreTaskPoller {
       return RestoreService.createService(plan)
         .then(restoreService => restoreService
           .getRestoreOperationState(restore_opts)
-          .catch(e => logger.error('Caught error in poller', e))
           .then(operationStatusResponse => {
             logger.info(`Got restore operation response for guid ${changedOptions.restore_guid}`, operationStatusResponse);
-            if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], operationStatusResponse.state)) {
-              // cancel the poller and clear the array
-              clearInterval(interval);
-              RestoreTaskPoller.pollers[object.metadata.name] = false;
-            }
             return Promise
-              .try(() => {
-                if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                  return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
-                }
-              })
-              .then(() => eventmesh.apiServerClient.patchResource({
+              .try(() => eventmesh.apiServerClient.patchResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                 resourceId: changedOptions.restore_guid,
@@ -51,8 +41,18 @@ class RestoreTaskPoller {
                   'state': operationStatusResponse.state,
                   response: operationStatusResponse
                 }
-              }));
+              }))
+              .then(() => {
+                if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+                  logger.debug('Clearing Restore Task Poller:', object.metadata.name);
+                  clearInterval(interval);
+                  RestoreTaskPoller.pollers[object.metadata.name] = false;
+                  _.set(restore_opts, 'user.name', changedOptions.username);
+                  return RestoreTaskPoller._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
+                }
+              });
           })
+          .catch(e => logger.error('Caught error in poller', e))
         );
     }
 
