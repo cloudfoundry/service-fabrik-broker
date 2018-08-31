@@ -47,10 +47,6 @@ class RestoreTaskPoller {
                   logger.debug('Clearing Restore Task Poller:', object.metadata.name);
                   clearInterval(interval);
                   RestoreTaskPoller.pollers[object.metadata.name] = false;
-                }
-              })
-              .then(() => {
-                if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
                   _.set(restore_opts, 'user.name', changedOptions.username);
                   return RestoreTaskPoller._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
                 }
