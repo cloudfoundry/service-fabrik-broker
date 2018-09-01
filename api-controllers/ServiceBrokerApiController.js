@@ -113,20 +113,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .chain(req.body)
       .cloneDeep()
       .value();
-    //cloning here so that the DirectorInstance.update does not unset the 'service-fabrik-operation' from original req.body object
-    const isRestoreOperation = _.get(params.parameters, 'service-fabrik-operation', null) ? true : false;
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
 
-    function done(result) {
+    function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       let body = {};
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        if (isRestoreOperation) {
-          body.operation = utils.encodeBase64(result);
-        }
       }
       res.status(statusCode).send(body);
     }
@@ -135,65 +130,52 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
-
-    if (isRestoreOperation) {
-      return Promise
-        .try(() => {
-          if (!req.manager.isUpdatePossible(params.previous_values.plan_id)) { //ideally this can also use the local function but not changing as this piece of code anyways go away once restore manager in place.
-            throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+    return Promise
+      .try(() => {
+        if (!isUpdatePossible(params.previous_values.plan_id)) {
+          throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+        }
+      })
+      .then(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: plan.manager.resource_mappings.resource_group,
+          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceId: req.params.instance_id,
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+            lastOperation: {},
+            response: {}
           }
-          return req.instance.update(params);
-        })
-        .then(done);
-    } else {
-      return Promise
-        .try(() => {
-          if (!isUpdatePossible(params.previous_values.plan_id)) {
-            throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+        });
+      })
+      .catch(NotFound, () => {
+        logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
+          `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+        return eventmesh.apiServerClient.createResource({
+          resourceGroup: plan.manager.resource_mappings.resource_group,
+          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceId: req.params.instance_id,
+          options: params,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+            lastOperation: {},
+            response: {}
           }
-        })
-        //TODO : handle existing cases
-        .then(() => {
-          return eventmesh.apiServerClient.updateResource({
+        });
+      })
+      .then(() => {
+        if (!plan.manager.async) {
+          return eventmesh.apiServerClient.getResourceOperationStatus({
             resourceGroup: plan.manager.resource_mappings.resource_group,
             resourceType: plan.manager.resource_mappings.resource_type,
             resourceId: req.params.instance_id,
-            options: params,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-              lastOperation: {},
-              response: {}
-            }
+            start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+            started_at: new Date()
           });
-        })
-        .catch(NotFound, () => {
-          logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
-            `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
-          return eventmesh.apiServerClient.createResource({
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
-            resourceId: req.params.instance_id,
-            options: params,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-              lastOperation: {},
-              response: {}
-            }
-          });
-        })
-        .then(() => {
-          if (!plan.manager.async) {
-            return eventmesh.apiServerClient.getResourceOperationStatus({
-              resourceGroup: plan.manager.resource_mappings.resource_group,
-              resourceType: plan.manager.resource_mappings.resource_type,
-              resourceId: req.params.instance_id,
-              start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-              started_at: new Date()
-            });
-          }
-        })
-        .then(done);
-    }
+        }
+      })
+      .then(done);
   }
 
   deleteInstance(req, res) {
