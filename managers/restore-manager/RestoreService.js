@@ -114,7 +114,8 @@ class RestoreService extends BaseDirectorService {
               // if by chance restore state (this function called) two times
               // for any reason after agent restores successfully,
               // on seceond time also it would trigger schedule backup (which is incorrect).
-              if (lastOperation.state === CONST.OPERATION.SUCCEEDED &&
+              if (this.service.pitr === true &&
+                lastOperation.state === CONST.OPERATION.SUCCEEDED &&
                 !statusAlreadyChecked) {
                 return this.reScheduleBackup({
                   instance_id: options.instance_guid,
