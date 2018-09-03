@@ -253,11 +253,14 @@ class Scheduler {
         data = data ? _.omit(data, CONST.JOB_NAME_ATTRIB) : {};
         const uniqueCriteria = {};
         if (avoidDupJobWithSameData) {
-          _.each(data, (attrValue, attr) => uniqueCriteria[`data.${attr}`] = attrValue);
+          _.each(data, (attrValue, attr) => {
+            uniqueCriteria[`data.${attr}`] = attrValue;
+            return true;
+          });
         } else {
           uniqueCriteria['data._n_a_m_e_'] = jobName;
         }
-        logger.info(`Setting Job with Unique Criteria : ${JSON.stringify(uniqueCriteria)}`);
+        logger.info('Setting Job with Unique Criteria : ', uniqueCriteria);
         data[CONST.JOB_NAME_ATTRIB] = jobName;
         const job = this.agenda.create(jobType, data);
         job.unique(uniqueCriteria);
