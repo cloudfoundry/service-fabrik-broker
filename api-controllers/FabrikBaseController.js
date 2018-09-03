@@ -50,8 +50,10 @@ class FabrikBaseController extends BaseController {
   }
 
   _lockResource(req, operationType) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const plan = catalog.getPlan(plan_id);
     return Promise.try(() => {
-      if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+      if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
         // Acquire lock for this instance
         return lockManager.lock(req.params.instance_id, {
           lockedResourceDetails: {
@@ -66,11 +68,13 @@ class FabrikBaseController extends BaseController {
   }
 
   _unlockIfReqfailed(operationType, processedRequest, req, res, next, err) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const plan = catalog.getPlan(plan_id);
     // If processed request
     return Promise
       .try(() => {
         _.set(req, 'params_copy', req.params);
-        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+        if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
           if (processedRequest) {
             // if sf20 is enabled Check res status and unlock based on the request and status        
             if (

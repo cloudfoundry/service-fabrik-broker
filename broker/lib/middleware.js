@@ -47,7 +47,9 @@ exports.validateCreateRequest = function () {
 
 exports.checkBlockingOperationInProgress = function () {
   return function (req, res, next) {
-    if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const plan = catalog.getPlan(plan_id);
+    if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance
       return lockManager.checkWriteLockStatus(req.params.instance_id)
         .then(writeLockStatus => {

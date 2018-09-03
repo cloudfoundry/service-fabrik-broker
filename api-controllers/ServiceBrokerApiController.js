@@ -1,6 +1,5 @@
 'use strict';
 
-const assert = require('assert');
 const _ = require('lodash');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
@@ -9,11 +8,9 @@ const utils = require('../common/utils');
 const catalog = require('../common/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
 const lockManager = require('../data-access-layer/eventmesh').lockManager;
-const AssertionError = assert.AssertionError;
 const BadRequest = errors.BadRequest;
 const PreconditionFailed = errors.PreconditionFailed;
 const NotFound = errors.NotFound;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ContinueWithNext = errors.ContinueWithNext;
 const Conflict = errors.Conflict;
@@ -133,7 +130,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         if (!isUpdatePossible(params.previous_values.plan_id)) {
-          throw new BadRequest(`Update to plan '${req.manager.plan.name}' is not possible`);
+          throw new BadRequest(`Update to plan '${plan.name}' is not possible`);
         }
       })
       .then(() => {
@@ -246,10 +243,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
     const guid = req.params.instance_id;
     let action, instanceType;
-    if (operation) {
-      action = _.capitalize(operation.type);
-      instanceType = req.instance.constructor.typeDescription;
-    }
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
@@ -280,23 +273,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       failed(err);
     }
-
-    if (operation) { // keeping it to support last operation for the restore and for any ongoing update, delete?
-      return req.instance.lastOperation(operation)
-        .then(done)
-        .catch(AssertionError, failed)
-        .catch(ServiceInstanceNotFound, notFound);
-    } else {
-      const planId = req.query.plan_id;
-      const plan = catalog.getPlan(planId);
-      return eventmesh.apiServerClient.getLastOperation({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
-          resourceId: req.params.instance_id
-        })
-        .then(done)
-        .catch(NotFound, notFound);
-    }
+    const planId = req.query.plan_id;
+    const plan = catalog.getPlan(planId);
+    return eventmesh.apiServerClient.getLastOperation({
+        resourceGroup: plan.manager.resource_mappings.resource_group,
+        resourceType: plan.manager.resource_mappings.resource_type,
+        resourceId: req.params.instance_id
+      })
+      .then(done)
+      .catch(NotFound, notFound);
   }
 
   putBinding(req, res) {

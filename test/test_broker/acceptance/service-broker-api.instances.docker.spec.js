@@ -454,11 +454,6 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"cloudfoundry"}']
-            }
-          });
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
@@ -477,7 +472,6 @@ describe('service-broker-api', function () {
         });
 
         it('returns 410 Gone', function () {
-          mocks.docker.inspectContainer(instance_id, {}, 404);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, {}, 1, 404);
           return chai.request(app)
@@ -497,7 +491,6 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id);
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payload, 1);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2, 1);
           return chai.request(app)
@@ -516,11 +509,6 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: In K8S platform', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"kubernetes"}']
-            }
-          });
           mocks.apiServerEventMesh.nockPatchResource('deployment', 'docker', instance_id, payloadK8s, 1);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'docker', instance_id, payload2K8s, 1);
           return chai.request(app)
@@ -790,11 +778,6 @@ describe('service-broker-api', function () {
           }
         };
         it('returns 200 OK', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"cloudfoundry"}']
-            }
-          });
           mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
           mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
           mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
@@ -815,7 +798,6 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
-          mocks.docker.inspectContainer(instance_id);
           mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayload, 1);
           mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
           mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2, 1);
@@ -836,11 +818,6 @@ describe('service-broker-api', function () {
         });
 
         it('returns 200 OK: In K8S Platform', function () {
-          mocks.docker.inspectContainer(instance_id, {
-            Config: {
-              Env: ['context={"platform":"kubernetes"}']
-            }
-          });
           mocks.apiServerEventMesh.nockPatchResource('bind', 'dockerbind', binding_id, unbindPayloadK8s, 1);
           mocks.apiServerEventMesh.nockGetResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);
           mocks.apiServerEventMesh.nockDeleteResource('bind', 'dockerbind', binding_id, unbindPayload2K8s, 1);

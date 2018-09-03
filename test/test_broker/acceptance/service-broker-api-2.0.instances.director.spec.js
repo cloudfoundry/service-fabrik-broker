@@ -43,7 +43,6 @@ describe('service-broker-api-2.0', function () {
       const deployment_name = mocks.director.deploymentNameByIndex(index);
       const binding_id = 'd336b15c-37d6-4249-b3c7-430d5153a0d8';
       const app_guid = 'app-guid';
-      const task_id = 4711;
       const parameters = {
         foo: 'bar'
       };
@@ -429,9 +428,6 @@ describe('service-broker-api-2.0', function () {
               response: '{}'
             }
           };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -634,11 +630,6 @@ describe('service-broker-api-2.0', function () {
 
       describe('#deprovision', function () {
         it('returns 202 Accepted if resource exists', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -664,11 +655,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 202 Accepted if resource does not exist', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -694,11 +680,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 202 Accepted : existing deployments having no platform-context', function () {
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -723,10 +704,6 @@ describe('service-broker-api-2.0', function () {
             });
         });
         it('returns 202 Accepted : In K8S Platform', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'kubernetes',
-            namespace: 'default'
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -752,11 +729,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is not in query', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -775,11 +747,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is undefined', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -799,11 +766,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 422 Unprocessable Entity when accepts_incomplete is not true', function () {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          });
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -827,43 +789,7 @@ describe('service-broker-api-2.0', function () {
 
 
       describe('#lastOperation', function () {
-        it('create: returns 200 OK (state = in progress)', function () {
-          mocks.director.getDeploymentTask(task_id, 'processing');
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'create',
-                context: {
-                  platform: 'cloudfoundry',
-                  organization_guid: organization_guid,
-                  space_guid: space_guid
-                }
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
-              });
-              mocks.verify();
-            });
-        });
-
         it('create-sf20: returns 200 OK (state = in progress)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -890,60 +816,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('create: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.director.createDeploymentProperty('platform-context', context);
-          mocks.cloudController.createSecurityGroup(instance_id);
-          const payload = {
-            repeatInterval: CONST.SCHEDULE.RANDOM,
-            timeZone: 'Asia/Kolkata'
-          };
-          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
-          const randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
-          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
-          config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'create',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              randomIntStub.restore();
-              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
-              });
-              mocks.verify();
-            });
-        });
-
         it('create-sf20: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -971,42 +844,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('create: returns 200 OK (state = in progress): In K8S platform', function () {
-          mocks.director.getDeploymentTask(task_id, 'processing');
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'create',
-                context: {
-                  platform: 'kubernetes',
-                  namespace: 'default'
-                }
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
-              });
-              mocks.verify();
-            });
-        });
-
         it('create-sf20: returns 200 OK (state = in progress): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1033,55 +871,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('create: returns 200 OK (state = succeeded): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentTask(task_id, 'done');
-          const payload = {
-            repeatInterval: CONST.SCHEDULE.RANDOM,
-            timeZone: 'Asia/Kolkata'
-          };
-          mocks.director.createDeploymentProperty('platform-context', context);
-          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
-          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
-          config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'create',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
-              });
-              mocks.verify();
-            });
-        });
-
         it('create-sf20: returns 200 OK (state = succeeded): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1105,48 +895,11 @@ describe('service-broker-api-2.0', function () {
               expect(res.body).to.eql({
                 description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
                 state: 'succeeded'
-              });
-              mocks.verify();
-            });
-        });
-
-        it('update: returns 200 OK (state = in progress)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentTask(task_id, 'processing');
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'update',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Update deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
               });
               mocks.verify();
             });
         });
         it('update-sf20: returns 200 OK (state = in progress)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1169,55 +922,11 @@ describe('service-broker-api-2.0', function () {
               expect(res.body).to.eql({
                 description: `Update deployment ${deployment_name} is still in progress`,
                 state: 'in progress'
-              });
-              mocks.verify();
-            });
-        });
-
-        it('update: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.cloudController.findSecurityGroupByName(instance_id);
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
-          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
-          config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'update',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
               });
               mocks.verify();
             });
         });
         it('update-sf20: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1245,43 +954,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('update: returns 200 OK (state = in progress): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentTask(task_id, 'processing');
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'update',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Update deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
-              });
-              mocks.verify();
-            });
-        });
-
         it('update-sf20: returns 200 OK (state = in progress): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1308,49 +981,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('update: returns 200 OK (state = succeeded): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentTask(task_id, 'done');
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
-          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
-          config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'update',
-                context: context
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
-              });
-              mocks.verify();
-            });
-        });
-
         it('update-sf20: returns 200 OK (state = succeeded): In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1378,41 +1009,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('delete: returns 200 OK (state = in progress)', function () {
-          const context = {
-            platform: 'cloudfoundry'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
-          mocks.director.getDeploymentTask(task_id, 'processing');
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'delete'
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Delete deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
-              });
-              mocks.verify();
-            });
-        });
-
         it('delete-sf20: returns 200 OK (state = in progress)', function () {
-          const context = {
-            platform: 'cloudfoundry'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1439,47 +1036,7 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
-
-        it('delete: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
-          mocks.director.getDeploymentTask(task_id, 'done');
-          const old = config.scheduler.jobs.service_instance_update.run_every_xdays;
-          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
-          config.mongodb.provision.plan_id = 'TEST';
-          mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', instance_id);
-          return chai.request(app)
-            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .query({
-              service_id: service_id,
-              plan_id: plan_id,
-              operation: utils.encodeBase64({
-                task_id: `${deployment_name}_${task_id}`,
-                type: 'delete'
-              })
-            })
-            .catch(err => err.response)
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              config.scheduler.jobs.service_instance_update.run_every_xdays = old;
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql({
-                description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
-              });
-              mocks.verify();
-            });
-        });
-
         it('delete-sf20: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('deployment', 'director', instance_id, {
             status: {
               lastOperation: JSON.stringify({
@@ -1512,9 +1069,6 @@ describe('service-broker-api-2.0', function () {
 
       describe('#bind', function () {
         it('no context : returns 201 Created', function (done) {
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1637,12 +1191,6 @@ describe('service-broker-api-2.0', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1673,12 +1221,6 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 200 OK if resource does not exist', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1708,7 +1250,6 @@ describe('service-broker-api-2.0', function () {
             });
         });
         it('returns 200 OK : for existing deployment having no platform-context', function () {
-          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
@@ -1738,11 +1279,6 @@ describe('service-broker-api-2.0', function () {
             });
         });
         it('returns 200 OK: In K8S platform', function () {
-          const context = {
-            platform: 'kubernetes',
-            namespace: 'default'
-          };
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', context);
           mocks.apiServerEventMesh.nockGetResource('lock', 'deploymentlock', instance_id, {
             spec: {
               options: '{}'
