@@ -8,7 +8,7 @@ const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
-// const Service = require('../../../common/models').Service;
+const Service = require('../../../common/models').Service;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
@@ -833,6 +833,46 @@ describe('service-fabrik-api-sf2.0', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.be.empty;
+              mocks.verify();
+            });
+        });
+      });
+
+      describe('#non-pitr-services:', function () {
+        const indexOfService = _.findIndex(config.services, service => service.pitr === true);
+        let getServiceStub;
+        before(function () {
+          config.services[indexOfService].pitr = false;
+          getServiceStub = sinon.stub(catalog, 'getService');
+          getServiceStub.withArgs(config.services[indexOfService].id).returns(new Service(config.services[indexOfService]));
+        });
+        after(function () {
+          config.services[indexOfService].pitr = true;
+        });
+        this.afterEach(function () {
+          getServiceStub.restore();
+        });
+        it('Bad Request at start-restore with time_stamp operation for non PITR service', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getServiceInstance(instance_id, {
+            space_guid: space_guid,
+            service_plan_guid: plan_guid
+          });
+          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/restore`)
+            .set('Authorization', authHeader)
+            .send({
+              time_stamp: `${restoreAtEpoch}`
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res.text).to.have.string('Time based recovery not supported for service blueprint');
+              expect(getServiceStub.callCount).to.be.eql(1);
               mocks.verify();
             });
         });

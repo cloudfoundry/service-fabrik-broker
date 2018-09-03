@@ -4,6 +4,8 @@ const _ = require('lodash');
 const catalog = require('../../common/models/catalog');
 const RestoreService = require('../../managers/restore-manager/RestoreService');
 const moment = require('moment');
+const config = require('../../common/config');
+const Service = require('../../common/models').Service;
 const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
@@ -246,6 +248,7 @@ describe('managers', function () {
           .then(() => mocks.verify());
       });
 
+
       it('should download the restore logs and update the metadata - shoudn\'t schedule backup (duplicate check)  ', function () {
         const state = 'succeeded';
         const restoreState = {
@@ -306,6 +309,7 @@ describe('managers', function () {
           .then(() => mocks.verify());
       });
 
+
       it('should download the restore logs and update the metadata but don\'t schedule backup (failed restore)', function () {
         const state = 'failed';
         const restoreState = {
@@ -351,6 +355,82 @@ describe('managers', function () {
         return RestoreService.createService(plan)
           .then(rs => rs.getRestoreOperationState(get_restore_opts))
           .then(() => mocks.verify());
+      });
+
+      describe('#non-pitr-services:', function () {
+        const indexOfService = _.findIndex(config.services, service => service.pitr === true);
+        const non_pitr_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
+        const non_pitr_service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
+        const nonPitrRestorePrefix = `${space_guid}/restore/${non_pitr_service_id}.${instance_id}`;
+        console.log(nonPitrRestorePrefix);
+        const nonPitrRestoreFilename = `${nonPitrRestorePrefix}.json`;
+        const nonPitrRestorePathname = `/${container}/${nonPitrRestoreFilename}`;
+        let getServiceStub;
+        before(function () {
+          config.services[indexOfService].pitr = false;
+          getServiceStub = sinon.stub(catalog, 'getService');
+          getServiceStub.withArgs(config.services[indexOfService].id).returns(new Service(config.services[indexOfService]));
+        });
+        after(function () {
+          config.services[indexOfService].pitr = true;
+        });
+        this.afterEach(function () {
+          getServiceStub.restore();
+        });
+        it('should download the restore logs and update the metadata - and shouldn\'t schedule backup - Non PITR service', function () {
+          const state = 'succeeded';
+          const restoreState = {
+            state: state,
+            stage: 'Finished',
+            updated_at: new Date(Date.now())
+          };
+          const restoreLogs = [{
+            time: '2015-11-18T11:28:40+00:00',
+            level: 'info',
+            msg: 'Downloading tarball ...'
+          }, {
+            time: '2015-11-18T11:28:42+00:00',
+            level: 'info',
+            msg: 'Extracting tarball ...'
+          }];
+          const restoreLogsStream = _
+            .chain(restoreLogs)
+            .map(JSON.stringify)
+            .join('\n')
+            .value();
+          // mocks.cloudProvider.auth();
+          // mocks.agent.getInfo();
+          mocks.cloudProvider.download(nonPitrRestorePathname, {}, 2);
+          mocks.agent.lastRestoreOperation(restoreState);
+          mocks.agent.getRestoreLogs(restoreLogsStream);
+          mocks.cloudProvider.upload(nonPitrRestorePathname, body => {
+            expect(body.logs).to.eql(restoreLogs);
+            expect(body.state).to.equal(state);
+            expect(body.finished_at).to.not.be.undefined; // jshint ignore:line
+            return true;
+          });
+          mocks.cloudProvider.headObject(nonPitrRestorePathname);
+          let non_pitr_plan = catalog.getPlan(non_pitr_plan_id);
+          mocks.apiServerEventMesh.nockPatchResourceRegex(
+            'backup',
+            'defaultrestore', {});
+          mocks.apiServerEventMesh.nockGetResourceRegex(
+            'backup',
+            'defaultrestore', {
+              status: {
+                state: CONST.OPERATION.IN_PROGRESS,
+                response: '{"guid": "some_guid"}'
+              }
+            });
+          return RestoreService.createService(non_pitr_plan)
+            .then(rs => rs.getRestoreOperationState(get_restore_opts))
+            .then(res => {
+              expect(res.state).to.equal(state);
+              expect(res).to.have.property('stage');
+              mocks.verify();
+            })
+            .then(() => mocks.verify());
+        });
       });
 
       it('#getRestoreOperationState Should get restore state - succeeded', function () {
