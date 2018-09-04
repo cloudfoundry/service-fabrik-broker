@@ -4,8 +4,6 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
-const catalog = require('../../../common/models').catalog;
-const docker = require('../../../data-access-layer/docker');
 const fabrik = lib.fabrik;
 
 
@@ -17,7 +15,6 @@ describe('dashboard', function () {
     const instance_id = 'b4719e7c-e8d3-4f7f-c51c-769ad1c3ebfa';
     const deployment_name = 'service-fabrik-0028-b4719e7c-e8d3-4f7f-c51c-769ad1c3ebfa';
     const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
-    const plan = catalog.getPlan(plan_id);
 
     before(function () {
       _.unset(fabrik.DirectorManager, plan_id);
