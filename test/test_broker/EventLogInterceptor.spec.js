@@ -203,7 +203,7 @@ describe('EventLogInterceptor', function () {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
       };
       const query = {
-        plan_id: 'c2dcbfd0-9ac5-4c70-bc2a-df11dab95741'
+        plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       };
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
       const route = '/api/v1/service_instances/:instance_id';
@@ -221,7 +221,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          expect(testResult.request.plan_id).to.eql('c2dcbfd0-9ac5-4c70-bc2a-df11dab95741');
+          expect(testResult.request.plan_id).to.eql('bc158c9a-7934-401e-94ab-057082a5073f');
           const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.service_instance_info`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });

@@ -40,11 +40,6 @@ class DirectorInstance extends BaseInstance {
         return context;
       });
   }
-
-  static get typeDescription() {
-    return 'deployment';
-  }
-
   get deploymentName() {
     return this.manager.getDeploymentName(this.guid, this.networkSegmentIndex);
   }

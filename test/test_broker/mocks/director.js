@@ -67,6 +67,7 @@ exports.getDeploymentNames = getDeploymentNames;
 exports.createOrUpdateDeployment = createOrUpdateDeployment;
 exports.createOrUpdateDeploymentOp = createOrUpdateDeploymentOp;
 exports.getCurrentTasks = getCurrentTasks;
+exports.getCurrentTaskEvents = getCurrentTaskEvents;
 exports.deleteDeployment = deleteDeployment;
 exports.getDeploymentTask = getDeploymentTask;
 exports.getDeploymentManifest = getDeploymentManifest;
@@ -167,11 +168,24 @@ function createOrUpdateDeployment(taskId) {
     });
 }
 
-function getCurrentTasks(taskResponse) {
+function getCurrentTasks(deploymentName, taskResponse) {
   return nock(directorUrl)
     .replyContentLength()
     .get(`/tasks`)
-    .query(() => true)
+    .query({
+      limit: 1000,
+      deployment: deploymentName
+    })
+    .reply(200, taskResponse);
+}
+
+function getCurrentTaskEvents(taskId, taskResponse) {
+  return nock(directorUrl)
+    .replyContentLength()
+    .get(`/tasks/${taskId}/output`)
+    .query({
+      type: 'event'
+    })
     .reply(200, taskResponse);
 }
 
