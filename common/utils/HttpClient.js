@@ -124,7 +124,7 @@ class HttpClient {
 
   invoke(options, expectedStatusCode) {
     expectedStatusCode = expectedStatusCode || options.expectedStatusCode;
-    logger.info('Sending HTTP request:', options);
+    logger.debug('Sending HTTP request:', options);
     return this.defaultRequest(options).spread((res, body) => {
       const result = {
         statusCode: res.statusCode,
@@ -132,7 +132,7 @@ class HttpClient {
         headers: res.headers,
         body: body
       };
-      logger.info('Received HTTP response:', result);
+      logger.debug('Received HTTP response:', result);
       if (expectedStatusCode && res.statusCode !== expectedStatusCode) {
         let message = `Got HTTP Status Code ${res.statusCode} expected ${expectedStatusCode}`;
         if ((res.body && res.body.message) || res.statusMessage) {
@@ -155,11 +155,17 @@ class HttpClient {
           err = new NotFound(message);
           break;
         case CONST.HTTP_STATUS_CODE.CONFLICT:
-          logger.debug(message);
+          logger.info(message, {
+            request: options,
+            response: result
+          });
           err = new Conflict(message);
           break;
         case CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY:
-          logger.debug(message);
+          logger.info(message, {
+            request: options,
+            response: result
+          });
           err = new UnprocessableEntity(message);
           break;
         default:
