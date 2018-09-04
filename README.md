@@ -4,6 +4,31 @@
 
 This broker was inspired  by the [cf-containers-broker](https://github.com/cloudfoundry-community/cf-containers-broker). It supports Docker and Bosh-based service deployments. More details on the implemented Cloud Foundry contract can be found [here](http://docs.cloudfoundry.org/services/api.html). Read the [Big Picture](https://github.com/SAP/service-fabrik-broker/wiki/Big-Picture) behind Service Fabrik Broker.
 
+# Architecture
+
+![Missing](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/gh-pages/img/SF2.0-tam-block-diagram-overview.png?raw=true)
+Above is the component diagram of Service Fabrik.
+Service Fabrik has been re-designed to a model which is event driven and based on decoupled components which participate and communicate via an [APIServer](https://kubernetes.io/docs/concepts/overview/kubernetes-api/) managed by Service Fabrik. 
+
+The concept is based on Event Sourcing where the Event Store is point of coordination for different components. This facilitates easy onboarding of external components and modules into the service Fabrik eco-system.
+
+To facilitate plugging in external components, we intend to model service Fabrik on a resource and control loop based programming model.
+
+This allows capabilities like provisioning and operations on provisioned instances to be built independently and plugged into the Service Fabrik APIServer based on specific requirements.
+
+Steps to Integrate new provisioners are mentioned in [here](https://github.com/subhankarc/service-fabrik-broker/blob/master/SF2.0.md)
+
+# Capabilities
+
+1. Bringing in a new provisioner is easier.
+
+2. Bringing in new Backup and Restore approach and plugging in the existing framework is easier now.
+
+3. New Monitoring and Logging endpoint can be plugged in where the events generated while resource change and operations change can be watched by custom managers.
+
+4. State of the service instances are managed in the API Server, so Cloud Controller and BOSH dependency can be something we can get rid of for state information. Hence, BOSH and Cloud Controller overload can be reduced.
+
+
 # Table of Contents
 1. [Local Development Setup](#local-development-setup-ubuntu)
 2. [Installing Docker](#installing-docker)

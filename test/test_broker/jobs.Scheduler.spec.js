@@ -527,6 +527,38 @@ describe('Jobs', function () {
           });
         });
       });
+      it('should schedule a job to be run once at the given time and must create unique job criteria based on jobdata ', function () {
+        const scheduler = new Scheduler();
+        scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
+          mongoose: mongooseConnectionStub
+        });
+        return scheduler.startScheduler().then(() => {
+          expect(agendaSpy.define).to.be.calledTwice;
+          //The above count is for the two job types defined in config
+          expect(agendaSpy.start).to.be.calledOnce;
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          resetSpies();
+          const runAt = '10 minutes from now';
+          return scheduler.runAt('NONAME', CONST.JOB.SCHEDULED_BACKUP, runAt, {
+            instance_id: '888888888',
+            type: 'Online',
+            trigger: 'User_Scheduled',
+            _n_a_m_e_: `NONAME_${CONST.JOB.SCHEDULED_BACKUP}_${runAt.replace(/\s*/g, '')}_${new Date().getTime()}`
+          }, CONST.SYSTEM_USER, true).then(() => {
+            expect(agendaSpy.create).to.be.calledOnce;
+            expect(jobSpy.unique).to.be.calledOnce;
+            expect(jobSpy.unique.firstCall.args[0]).to.eql({
+              'data.instance_id': '888888888',
+              'data.type': 'Online',
+              'data.trigger': 'User_Scheduled'
+            });
+            expect(jobSpy.schedule).to.be.calledOnce;
+            expect(jobSpy.schedule.firstCall.args[0]).to.eql(runAt);
+            expect(jobSpy.saveAsync).to.be.calledOnce;
+            scheduler.shutDownHook();
+          });
+        });
+      });
       it('should schedule a job to be run once at the given time with undefined job data', function () {
         const scheduler = new Scheduler();
         scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
