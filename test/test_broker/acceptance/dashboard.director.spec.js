@@ -82,6 +82,51 @@ describe('dashboard', function () {
           });
       });
 
+      it.only('should redirect to authorization server(in case of no context)', function () {
+        const agent = chai.request.agent(app);
+        agent.app.listen(0);
+        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
+        mocks.uaa.getAccessToken();
+        mocks.uaa.getUserInfo();
+        mocks.cloudController.getServiceInstancePermissions(instance_id);
+        mocks.cloudController.getServiceInstance(instance_id);
+        mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
+        return agent
+          .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
+          .set('Accept', 'application/json')
+          .set('X-Forwarded-Proto', 'https')
+          .redirects(2)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(302);
+            const location = parseUrl(res.headers.location);
+            expect(location.pathname).to.equal('/manage/auth/cf/callback');
+            expect(_
+              .chain(res.redirects)
+              .map(parseUrl)
+              .map(url => url.pathname)
+              .value()
+            ).to.eql([
+              '/manage/auth/cf',
+              '/oauth/authorize'
+            ]);
+            return location;
+          })
+          .then(location => agent
+            .get(location.path)
+            .set('Accept', 'application/json')
+            .set('X-Forwarded-Proto', 'https')
+          )
+          .then(res => {
+            expect(res.body.userId).to.equal('me');
+            expect(res.body.instance.metadata.guid).to.equal(instance_id);
+            expect(res.body.instance.task.id).to.eql(`${deployment_name}_324`);
+            mocks.verify();
+          });
+      });
+
     });
   });
 });
