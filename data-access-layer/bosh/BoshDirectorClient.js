@@ -840,7 +840,7 @@ class BoshDirectorClient extends HttpClient {
         qs: {
           'state': expectedState
         }
-      }, 302, directorConfig)
+      }, HttpStatus.MOVED_TEMPORARILY, directorConfig)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
