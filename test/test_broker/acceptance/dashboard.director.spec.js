@@ -82,7 +82,7 @@ describe('dashboard', function () {
           });
       });
 
-      it.only('should redirect to authorization server(in case of no context)', function () {
+      it('should redirect to authorization server(in case of no context)', function () {
         const agent = chai.request.agent(app);
         agent.app.listen(0);
         mocks.uaa.getAuthorizationCode(service_id);
