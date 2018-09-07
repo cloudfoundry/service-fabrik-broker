@@ -4,6 +4,7 @@ const parseUrl = require('url').parse;
 const Promise = require('bluebird');
 const _ = require('lodash');
 const yaml = require('js-yaml');
+const HttpStatus = require('http-status-codes');
 const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
 const logger = require('../../common/logger');
@@ -274,7 +275,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequestWithConfig({
         method: 'GET',
         url: '/info'
-      }, 200, _.sample(this.activePrimary))
+      }, HttpStatus.OK, _.sample(this.activePrimary))
       .then(res => JSON.parse(res.body));
   }
 
@@ -285,7 +286,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequestWithConfig({
         method: 'GET',
         url: '/deployments'
-      }, 200, config)
+      }, HttpStatus.OK, config)
       .then(res => JSON.parse(res.body));
   }
 
@@ -295,7 +296,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequestWithConfig({
         method: 'GET',
         url: `/deployments/${deploymentName}`
-      }, 200, config)
+      }, HttpStatus.OK, config)
       .then(res => JSON.parse(res.body));
   }
 
@@ -359,7 +360,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/deployments/${deploymentName}`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -375,7 +376,7 @@ class BoshDirectorClient extends HttpClient {
           redact: 'false'
         },
         body: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -424,7 +425,7 @@ class BoshDirectorClient extends HttpClient {
         method: 'GET',
         url: '/tasks',
         qs: query
-      }, 200, directorConfig)
+      }, HttpStatus.OK, directorConfig)
       .then(res => JSON.parse(res.body))
       .then(out => {
         // out is the array of currently running tasks
@@ -489,7 +490,7 @@ class BoshDirectorClient extends HttpClient {
             headers: reqHeaders,
             qs: query,
             body: _.isObject(manifest) ? yaml.safeDump(manifest) : manifest
-          }, 302, config)
+          }, HttpStatus.MOVED_TEMPORARILY, config)
           .tap(() => {
             logger.info(`Cached ${deploymentName} at director: ${config.name} ${config.url}`);
             this.boshConfigCache[deploymentName] = config;
@@ -504,7 +505,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'DELETE',
         url: `/deployments/${deploymentName}`
-      }, 302, deploymentName)
+      }, HttpStatus.MOVED_TEMPORARILY, deploymentName)
       .then(res => this.prefixTaskId(deploymentName, res));
   }
 
@@ -514,7 +515,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/deployments/${deploymentName}/vms`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -523,7 +524,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/deployments/${deploymentName}/instances`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -533,7 +534,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/deployments/${deploymentName}/properties`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -597,7 +598,7 @@ class BoshDirectorClient extends HttpClient {
           qs: {
             format: 'full'
           }
-        }, 302)
+        }, HttpStatus.MOVED_TEMPORARILY)
         .then(res => this.prefixTaskId(deploymentName, res));
     }
 
@@ -684,7 +685,7 @@ class BoshDirectorClient extends HttpClient {
           name: propertyName,
           value: propertyValue
         }
-      }, 204, deploymentName);
+      }, HttpStatus.NO_CONTENT, deploymentName);
   }
 
   updateDeploymentProperty(deploymentName, propertyName, propertyValue) {
@@ -696,7 +697,7 @@ class BoshDirectorClient extends HttpClient {
         body: {
           value: propertyValue
         }
-      }, 204, deploymentName);
+      }, HttpStatus.NO_CONTENT, deploymentName);
   }
 
   createOrUpdateDeploymentProperty(deploymentName, propertyName, propertyValue) {
@@ -722,7 +723,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/deployments/${deploymentName}/properties/${propertyName}`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body).value);
   }
 
@@ -731,7 +732,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'DELETE',
         url: `/deployments/${deploymentName}/properties/${propertyName}`
-      }, 204, deploymentName);
+      }, HttpStatus.NO_CONTENT, deploymentName);
   }
 
   /*  Task operations */
@@ -748,7 +749,7 @@ class BoshDirectorClient extends HttpClient {
             method: 'GET',
             url: '/tasks',
             qs: _.pick(query, ['limit', 'state', 'deployment'])
-          }, 200, directorConfig)
+          }, HttpStatus.OK, directorConfig)
           .then(res => JSON.parse(res.body))
           .map(task => {
             task.id = `${options.deployment}_${task.id}`;
@@ -765,7 +766,7 @@ class BoshDirectorClient extends HttpClient {
         .makeRequestWithConfig({
           method: 'GET',
           url: `/tasks/${taskId}`
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
+        }, HttpStatus.OK, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
         .then(res => JSON.parse(res.body));
     }
     const deploymentName = splitArray[1];
@@ -774,7 +775,7 @@ class BoshDirectorClient extends HttpClient {
       .makeRequest({
         method: 'GET',
         url: `/tasks/${taskIdAlone}`
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -788,7 +789,7 @@ class BoshDirectorClient extends HttpClient {
           qs: {
             type: 'result'
           }
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
+        }, HttpStatus.OK, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
         .then(res => _
           .chain(res.body)
           .split('\n')
@@ -806,7 +807,7 @@ class BoshDirectorClient extends HttpClient {
         qs: {
           type: 'result'
         }
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => _
         .chain(res.body)
         .split('\n')
@@ -826,7 +827,7 @@ class BoshDirectorClient extends HttpClient {
           qs: {
             type: 'event'
           }
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
+        }, HttpStatus.OK, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
         .then(res => {
           let events = [];
           _.trim(res.body).split('\n').forEach((event) => {
@@ -848,7 +849,7 @@ class BoshDirectorClient extends HttpClient {
         qs: {
           type: 'event'
         }
-      }, 200, deploymentName)
+      }, HttpStatus.OK, deploymentName)
       .then(res => {
         let events = [];
         _.trim(res.body).split('\n').forEach((event) => {
