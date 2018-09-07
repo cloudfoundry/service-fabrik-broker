@@ -816,6 +816,37 @@ class BoshDirectorClient extends HttpClient {
       );
   }
 
+  startDeployment(deploymentName) {
+    return this
+      .getDirectorConfig(deploymentName)
+      .then(config => this.invokeDeploymentJobAction(config, deploymentName, CONST.BOSH_DEPLOYMENT_ACTIONS.STARTED));
+  }
+
+  stopDeployment(deploymentName) {
+    return this
+      .getDirectorConfig(deploymentName)
+      .then(config => this.invokeDeploymentJobAction(config, deploymentName, CONST.BOSH_DEPLOYMENT_ACTIONS.STOPPED));
+  }
+
+  invokeDeploymentJobAction(directorConfig, deploymentName, expectedState) {
+    return this
+      .makeRequestWithConfig({
+        method: 'PUT',
+        url: `/deployments/${deploymentName}/jobs/*`,
+        headers: {
+          'content-type': 'text/yaml'
+        },
+        qs: {
+          'state': expectedState
+        }
+      }, 302, directorConfig)
+      .then(res => {
+        const taskId = this.lastSegment(res.headers.location);
+        logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
+        return taskId;
+      });
+  }
+
   getTaskEvents(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
