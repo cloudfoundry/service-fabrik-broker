@@ -3,6 +3,13 @@
 module.exports = Object.freeze({
   NETWORK_SEGMENT_LENGTH: 4,
   BOSH_POLL_MAX_ATTEMPTS: 3,
+  BOSH_DEPLOYMENT_ACTIONS: {
+    STOPPED: 'stopped',
+    STARTED: 'started',
+    DETACHED: 'detached',
+    RESTART: 'restart',
+    RECREATE: 'recreate'
+  },
   BOSH_RATE_LIMITS: {
     BOSH_CONTEXT_ID: 'X-Bosh-Context-Id',
     BOSH_FABRIK_OP: 'Fabrik::Operation::',
