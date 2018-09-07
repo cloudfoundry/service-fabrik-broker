@@ -817,18 +817,14 @@ class BoshDirectorClient extends HttpClient {
   }
 
   startDeployment(deploymentName) {
-    return Promise.try(() => {
-        return this
-          .getDirectorConfig(deploymentName);
-      })
+    return this
+      .getDirectorConfig(deploymentName)
       .then(config => this.invokeDeploymentJobAction(config, deploymentName, CONST.BOSH_DEPLOYMENT_ACTIONS.STARTED));
   }
 
   stopDeployment(deploymentName) {
-    return Promise.try(() => {
-        return this
-          .getDirectorConfig(deploymentName);
-      })
+    return this
+      .getDirectorConfig(deploymentName)
       .then(config => this.invokeDeploymentJobAction(config, deploymentName, CONST.BOSH_DEPLOYMENT_ACTIONS.STOPPED));
   }
 
