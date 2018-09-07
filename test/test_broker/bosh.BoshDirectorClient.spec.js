@@ -606,6 +606,84 @@ describe('bosh', () => {
       });
     });
 
+    describe('#stopDeployment', () => {
+      let sandbox, getDirectorConfigStub, request, response;
+      let mockBoshDirectorClient;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        request = {
+          method: 'PUT',
+          url: `/deployments/${deployment_name}/jobs/*`,
+          qs: {
+            state: 'stopped'
+          },
+          headers: {
+            'content-type': 'text/yaml'
+          }
+        };
+        response = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        mockBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        getDirectorConfigStub = sandbox.stub(mockBoshDirectorClient, 'getDirectorConfig');
+        getDirectorConfigStub
+          .withArgs(deployment_name)
+          .returns(Promise.try(() => {
+            return {
+              key: 1234
+            };
+          }));
+      });
+      it('sends start signal for deployment', () => {
+        return mockBoshDirectorClient.stopDeployment(id)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+    });
+
+    describe('#startDeployment', () => {
+      let sandbox, getDirectorConfigStub, request, response;
+      let mockBoshDirectorClient;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        request = {
+          method: 'PUT',
+          url: `/deployments/${deployment_name}/jobs/*`,
+          qs: {
+            state: 'started'
+          },
+          headers: {
+            'content-type': 'text/yaml'
+          }
+        };
+        response = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        mockBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        getDirectorConfigStub = sandbox.stub(mockBoshDirectorClient, 'getDirectorConfig');
+        getDirectorConfigStub
+          .withArgs(deployment_name)
+          .returns(Promise.try(() => {
+            return {
+              key: 1234
+            };
+          }));
+      });
+      it('sends start signal for deployment', () => {
+        return mockBoshDirectorClient.startDeployment(id)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+    });
+
     describe('#createOrUpdateDeploymentProperty', () => {
       it('returns correct status code', (done) => {
         let request = {
