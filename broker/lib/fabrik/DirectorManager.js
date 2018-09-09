@@ -24,7 +24,6 @@ const Addons = bosh.manifest.Addons;
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const NotImplemented = errors.NotImplemented;
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
@@ -92,25 +91,6 @@ class DirectorManager extends BaseManager {
     return this.getNetworks(index)[this.networkName];
   }
 
-  aquireNetworkSegmentIndex(guid) {
-    logger.info(`Acquiring network segment index for a new deployment with instance id '${guid}'...`);
-    const promises = [this.getDeploymentNames(true)];
-    if (config.enable_bosh_rate_limit) {
-      promises.push(this.getDeploymentNamesInCache());
-    }
-    return Promise.all(promises)
-      .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
-      .then(deploymentNames => {
-        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
-        if (deploymentName) {
-          logger.warn('+-> Deployment with this instance id already exists');
-          throw new ServiceInstanceAlreadyExists(guid);
-        }
-        return NetworkSegmentIndex.findFreeIndex(deploymentNames, this.subnet);
-      })
-      .tap(networkSegmentIndex => logger.info(`+-> Acquired network segment index '${networkSegmentIndex}'`));
-  }
-
   findDeploymentNameByInstanceId(guid) {
     logger.info(`Finding deployment name with instance id : '${guid}'`);
     return this.getDeploymentNames(false)
@@ -136,22 +116,6 @@ class DirectorManager extends BaseManager {
 
   getDeploymentNames(queued) {
     return this.director.getDeploymentNames(queued);
-  }
-
-  getDeploymentNamesInCache() {
-    return boshOperationQueue.getDeploymentNames();
-  }
-
-  getTask(taskId) {
-    logger.info(`Fetching task '${taskId}'...`);
-    return this.director
-      .getTask(taskId)
-      .tap(task => logger.info(`+-> Fetched task for deployment '${task.deployment}' has state '${task.state}'`))
-      .catch(err => {
-        logger.error('+-> Failed to fetch task');
-        logger.error(err);
-        throw err;
-      });
   }
 
   getDeploymentManifest(deploymentName) {
@@ -222,44 +186,6 @@ class DirectorManager extends BaseManager {
         logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
         throw err;
       });
-  }
-
-  cleanupOperation(deploymentName) {
-    return Promise.try(() => {
-      if (!config.enable_bosh_rate_limit) {
-        return;
-      }
-      const serviceInstanceId = this.getInstanceGuid(deploymentName);
-      let retryTaskDelete = this._deleteEntity(() => {
-        return boshOperationQueue.deleteBoshTask(serviceInstanceId);
-      }, {
-        actionName: `delete bosh task for instance ${serviceInstanceId}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
-      let retryDeploymentDelete = this._deleteEntity(() => {
-        return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
-      }, {
-        actionName: `delete bosh deployment ${deploymentName}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
-      return Promise.all([retryTaskDelete, retryDeploymentDelete]);
-    });
-  }
-
-  getCurrentOperationState(serviceInstanceId) {
-    let output = {
-      'cached': false,
-      'task_id': null
-    };
-
-    return Promise.all([boshOperationQueue.containsServiceInstance(serviceInstanceId), boshOperationQueue.getBoshTask(serviceInstanceId)])
-      .spread((cached, taskId) => {
-        output.cached = cached;
-        output.task_id = taskId;
-      })
-      .return(output);
   }
 
   enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
@@ -508,32 +434,6 @@ class DirectorManager extends BaseManager {
     });
   }
 
-  deleteDeployment(deploymentName) {
-    logger.info(`Deleting deployment '${deploymentName}'...`);
-    let actionContext = {
-      'deployment_name': deploymentName
-    };
-    return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_DELETE, actionContext)
-      .then(() => {
-        if (_.includes(this.agent.features, 'lifecycle')) {
-          return this
-            .getDeploymentIps(deploymentName)
-            .then(ips => this.agent.deprovision(ips))
-            .catch(FeatureNotSupportedByAnyAgent, ServiceInstanceNotOperational, err => {
-              logger.debug('+-> Caught expected error of feature \'deprovision\':', err);
-              return;
-            });
-        }
-      })
-      .then(() => this.director.deleteDeployment(deploymentName))
-      .tap(taskId => logger.info(`+-> Scheduled delete deployment task '${taskId}'`))
-      .catch(err => {
-        logger.error('+-> Failed to delete deployment');
-        logger.error(err);
-        throw err;
-      });
-  }
-
   createBinding(deploymentName, binding) {
     this.verifyFeatureSupport('credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
@@ -560,31 +460,6 @@ class DirectorManager extends BaseManager {
       });
   }
 
-  deleteBinding(deploymentName, id) {
-    this.verifyFeatureSupport('credentials');
-    logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
-    let actionContext = {
-      'deployment_name': deploymentName,
-      'id': id
-    };
-    return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
-      .then((preUnbindResponse) =>
-        Promise
-        .all([
-          Promise.resolve(preUnbindResponse),
-          this.getDeploymentIps(deploymentName),
-          this.getBindingProperty(deploymentName, id)
-        ]))
-      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
-      .then(() => this.deleteBindingProperty(deploymentName, id))
-      .tap(() => logger.info('+-> Deleted service binding'))
-      .catch(err => {
-        logger.error('+-> Failed to delete binding');
-        logger.error(err);
-        throw err;
-      });
-  }
-
   getBindingProperty(deploymentName, id) {
     return this.director
       .getDeploymentProperty(deploymentName, `binding-${id}`)
@@ -596,11 +471,6 @@ class DirectorManager extends BaseManager {
     return this.director
       .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
       .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
-  }
-
-  deleteBindingProperty(deploymentName, id) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
   }
 
   diffManifest(deploymentName, opts) {
@@ -730,23 +600,6 @@ class DirectorManager extends BaseManager {
       .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
       .then(deploymentName => this.getDeploymentIps(deploymentName))
       .then(ips => this.agent.getState(ips));
-  }
-
-  deleteRestoreFile(tenant_id, instance_guid) {
-    const options = {
-      tenant_id: tenant_id,
-      service_id: this.service.id,
-      plan_id: this.plan.id,
-      instance_guid: instance_guid
-    };
-    return Promise.try(() => {
-      if (!_.includes(this.agent.features, 'backup')) {
-        return null;
-      } else {
-        return this.backupStore.deleteRestoreFile(options);
-      }
-
-    });
   }
 
   verifyFeatureSupport(feature) {
