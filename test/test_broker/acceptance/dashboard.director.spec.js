@@ -18,14 +18,6 @@ describe('dashboard', function () {
 
     before(function () {
       _.unset(fabrik.DirectorManager, plan_id);
-      mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-        platform: 'cloudfoundry'
-      });
-      mocks.director.getCurrentTasks(deployment_name, [{
-        'id': 324,
-        'description': 'create deployment succeeded'
-      }]);
-      mocks.director.getCurrentTaskEvents(324, {});
     });
 
     afterEach(function () {
@@ -45,6 +37,14 @@ describe('dashboard', function () {
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
         mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+          platform: 'cloudfoundry'
+        });
+        mocks.director.getCurrentTasks(deployment_name, [{
+          'id': 324,
+          'description': 'create deployment succeeded'
+        }]);
+        mocks.director.getCurrentTaskEvents(324, {});
         mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
           platform: 'cloudfoundry'
         });
@@ -87,12 +87,19 @@ describe('dashboard', function () {
         agent.app.listen(0);
         mocks.uaa.getAuthorizationCode(service_id);
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
-        mocks.uaa.getAccessToken();
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
         mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.director.getCurrentTasks(deployment_name, [{
+          'id': 324,
+          'description': 'create deployment succeeded'
+        }]);
+        mocks.director.getCurrentTaskEvents(324, {});
         mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
+        mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+          platform: 'cloudfoundry'
+        });
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
           .set('Accept', 'application/json')
