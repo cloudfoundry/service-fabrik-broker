@@ -110,8 +110,15 @@ class ServiceInstanceUpdateJob extends BaseJob {
             if (err instanceof errors.DeploymentAlreadyLocked) {
               //If deployment locked then backup is in progress. So reschedule update job,
               //Retry attempts dont count when deployment is locked for backup.
-              trackAttempts = false;
-              err.statusMessage = 'Backup in-progress. Update cannot be initiated';
+              // Only if locked for backup operation
+              // Message example: 
+              // Service Instance abcdefgh-abcd-abcd-abcd-abcdefghijkl __Locked__ at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup
+              const errMessage = err.message || '';
+              const operation = errMessage.split(' ').splice(-1)[0];
+              if (operation === CONST.OPERATION_TYPE.BACKUP) {
+                trackAttempts = false;
+                err.statusMessage = 'Backup in-progress. Update cannot be initiated';
+              }
             }
             //Bubble error and make current run as a failure
             throw err;

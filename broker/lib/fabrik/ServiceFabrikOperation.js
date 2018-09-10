@@ -96,16 +96,17 @@ class ServiceFabrikOperation {
         throw new DeploymentAttemptRejected(this.deployment || this.instanceId);
       })
       .catch(DeploymentLocked, err => {
+        // Sample error description is 
+        // Service broker error: Service Instance abcdefgh-abcd-abcd-abcd-abcdefghijkl __Locked__ at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup
         const description = _.get(err, 'error.description', '');
-        const lookupString = '"message":';
+        const lookupString = 'error: ';
         const startIdx = description.indexOf(lookupString);
         let lockMsg;
         if (startIdx !== -1) {
-          const endIdx = description.indexOf('"}', startIdx + 1);
-          lockMsg = endIdx !== -1 ? description.substring(startIdx + lookupString.length + 1, endIdx) : undefined;
+          lockMsg = description.substring(startIdx + lookupString.length);
         }
         logger.info(`Lock message : ${lockMsg}`);
-        throw new DeploymentAlreadyLocked(this.deployment || this.instanceId, undefined, lockMsg);
+        throw new DeploymentAlreadyLocked(this.instanceId, undefined, lockMsg);
       });
   }
 
