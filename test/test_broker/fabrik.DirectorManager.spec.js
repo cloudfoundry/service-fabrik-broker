@@ -7,13 +7,9 @@ const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
-const assert = require('assert');
-const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
-var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
-var free_guid = '87599704-adc9-1acd-0be9-795e6a3bc803';
 var deployment_name = `service-fabrik-0021-${used_guid}`;
 var boshStub = {
   NetworkSegmentIndex: {
@@ -50,20 +46,6 @@ describe('fabrik', function () {
     });
     afterEach(function () {
       mocks.reset();
-    });
-    describe('#cleanupOperation', function () {
-      it('should not clean up if bosh rate limit is disabled', function () {
-        return manager.cleanupOperation(deployment_name);
-      });
-    });
-    describe('#getDeploymentName', function () {
-      it('should append guid and network segment index to deployment name', function () {
-        expect(manager.plan.id).to.eql(plan_id);
-        expect(manager.getDeploymentName(used_guid, '90')).to.eql(`service-fabrik-90-${used_guid}`);
-        manager.aquireNetworkSegmentIndex(used_guid)
-          .catch(err => expect(err).to.be.instanceof(ServiceInstanceAlreadyExists));
-        manager.aquireNetworkSegmentIndex(free_guid).then(index => expect(index).to.eql(2));
-      });
     });
     describe('#findNetworkSegmentIndex', function () {
       it('should append guid and network segment index to deployment name', function () {
@@ -173,7 +155,6 @@ describe('fabrik', function () {
     };
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const task_id = 'task_id';
-    const instance_id = 'guid';
     const deploymentName = 'deploymentName';
     let manager;
     let sandbox, directorOpSpy, currentTasksSpy, containsInstanceSpy;
@@ -234,45 +215,6 @@ describe('fabrik', function () {
       sandbox.restore();
       mocks.reset();
     });
-    describe('#acquireNetworkSegmentIndex', () => {
-      it('should return network segment index when there are deployment names in etcd', () => {
-        getCachedDeploymentsSpy.returns([`service-fabrik-90-${used_guid2}`]);
-        getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
-        return manager.aquireNetworkSegmentIndex('guid')
-          .then(index => {
-            expect(index).to.eql(2);
-          });
-      });
-    });
-
-    describe('#cleanupOperation', function () {
-      it('should clean up an existing operation properly', () => {
-        getInstanceGuidSpy.returns(used_guid);
-        deleteTaskSpy.returns(Promise.resolve(true));
-        deleteDeploymentSpy.returns(Promise.resolve(true));
-        return manager.cleanupOperation(deploymentName)
-          .then(() => {
-            expect(deleteTaskSpy.calledOnce).to.eql(true);
-            assert(deleteTaskSpy.calledWith(used_guid));
-            expect(deleteDeploymentSpy.calledOnce).to.eql(true);
-            assert(deleteDeploymentSpy.calledWith(deploymentName));
-          });
-      });
-      it('should not clean up an existing operation in case of repeated errors', function () {
-        this.timeout(20000);
-        getInstanceGuidSpy.returns(used_guid);
-        deleteTaskSpy.returns(Promise.reject(new Error('delete_task_error')));
-        deleteDeploymentSpy.returns(Promise.resolve(true));
-        return manager.cleanupOperation(deploymentName).catch(err => {
-          expect(err.code).to.eql('ETIMEDOUT');
-          expect(deleteTaskSpy.callCount).to.eql(5);
-          assert(deleteTaskSpy.calledWith(used_guid));
-          expect(deleteDeploymentSpy.callCount).to.eql(1);
-          assert(deleteDeploymentSpy.calledWith(deploymentName));
-        });
-      });
-    });
-
     describe('#createOrUpdateDeployment', () => {
       let params = {
         previous_values: {}
@@ -491,28 +433,6 @@ describe('fabrik', function () {
               expect(deploymentSpy.notCalled).to.eql(true);
             });
         });
-      });
-    });
-    describe('#getCurrentOperationState', () => {
-      it('should return operation state based on inputs- cached + task_id', () => {
-        getBoshTaskSpy.returns(Promise.resolve(task_id));
-        containsInstanceSpy.returns(Promise.resolve(true));
-
-        return manager.getCurrentOperationState(instance_id)
-          .then(output => {
-            expect(output.cached).to.eql(true);
-            expect(output.task_id).to.eql(task_id);
-          });
-      });
-      it('should return operation state based on inputs- not cached + no task_id', () => {
-        getBoshTaskSpy.returns(Promise.resolve(null));
-        containsInstanceSpy.returns(Promise.resolve(false));
-
-        return manager.getCurrentOperationState(instance_id)
-          .then(output => {
-            expect(output.cached).to.eql(false);
-            expect(output.task_id).to.eql(null);
-          });
       });
     });
     describe('#executePolicy', () => {

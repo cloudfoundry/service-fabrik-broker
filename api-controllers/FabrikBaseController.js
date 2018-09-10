@@ -5,7 +5,6 @@ const assert = require('assert');
 const Promise = require('bluebird');
 const BaseController = require('../common/controllers/BaseController');
 const config = require('../common/config');
-const utils = require('../common/utils');
 const logger = require('../common/logger');
 const errors = require('../common/errors');
 const cf = require('../data-access-layer/cf');
@@ -50,8 +49,10 @@ class FabrikBaseController extends BaseController {
   }
 
   _lockResource(req, operationType) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const plan = catalog.getPlan(plan_id);
     return Promise.try(() => {
-      if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+      if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
         // Acquire lock for this instance
         return lockManager.lock(req.params.instance_id, {
           lockedResourceDetails: {
@@ -66,11 +67,13 @@ class FabrikBaseController extends BaseController {
   }
 
   _unlockIfReqfailed(operationType, processedRequest, req, res, next, err) {
+    const plan_id = req.body.plan_id || req.query.plan_id;
+    const plan = catalog.getPlan(plan_id);
     // If processed request
     return Promise
       .try(() => {
         _.set(req, 'params_copy', req.params);
-        if (req.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
+        if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
           if (processedRequest) {
             // if sf20 is enabled Check res status and unlock based on the request and status        
             if (
@@ -165,28 +168,6 @@ class FabrikBaseController extends BaseController {
       .throw(new ContinueWithNext());
   }
 
-  assignInstance(req, res) {
-    /* jshint unused:false */
-    const instance_id = req.params.instance_id;
-    const service_id = req.body.service_id || req.query.service_id;
-    const plan_id = req.body.plan_id || req.query.plan_id;
-    this.validateUuid(instance_id, 'Service Instance ID');
-    this.validateUuid(service_id, 'Service ID');
-    this.validateUuid(plan_id, 'Plan ID');
-    const encodedOp = _.get(req, 'query.operation', undefined);
-    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
-    const context = _.get(req, 'body.context') || _.get(operation, 'context');
-    return this
-      .createInstance(instance_id, service_id, plan_id, context)
-      .tap(instance => _
-        .chain(req)
-        .set('instance', instance)
-        .set('manager', instance.manager)
-        .commit()
-      )
-      .throw(new ContinueWithNext());
-  }
-
   assignManager(req, res) {
     /* jshint unused:false */
     return Promise
@@ -213,10 +194,6 @@ class FabrikBaseController extends BaseController {
 
   createManager(plan_id) {
     return this.fabrik.createManager(this.getPlan(plan_id));
-  }
-
-  createInstance(instance_id, service_id, plan_id, context) {
-    return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
   }
 
   getService(service_id) {

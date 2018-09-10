@@ -31,7 +31,6 @@ router.use(commonMiddleware.error({
 
 /* Service Instance Router */
 instanceRouter.use(controller.handler('ensurePlatformContext'));
-instanceRouter.use(controller.handler('assignInstance'));
 instanceRouter.route('/')
   .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
   .patch([middleware.checkQuota(), middleware.validateRequest(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])

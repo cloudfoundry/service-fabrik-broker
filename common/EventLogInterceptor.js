@@ -63,7 +63,8 @@ class EventLogInterceptor {
       //This check is specifically for enpoints like last_operation, :operation(backup/restore),
       //For operations which can be determined at HTTP verb, below is checked in execute() method itself
     }
-    const serviceInstanceType = req.manager ? `${req.manager.name}.` : '';
+    const planId = _.get(req, 'body.plan_id') || _.get(req, 'query.plan_id');
+    const serviceInstanceType = planId ? `${require('./models/catalog').getPlan(planId).manager.name}.` : (req.manager ? `${req.manager.name}.` : '');
     const response = _.cloneDeep(resBody);
     utils.maskSensitiveInfo(response);
     const info = this.getEventInfo(serviceInstanceType,
