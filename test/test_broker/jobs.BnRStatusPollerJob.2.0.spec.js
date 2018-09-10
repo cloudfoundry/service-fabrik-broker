@@ -121,7 +121,7 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: SUCCEEDED_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', SUCCEEDED_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, SUCCEEDED_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
@@ -146,7 +146,7 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: SUCCEEDED_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', SUCCEEDED_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, SUCCEEDED_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).to.be.calledOnce;
           expect(cancelScheduleStub.firstCall.args[0]).to.eql(`${deploymentName}_backup_${SUCCEEDED_BACKUP_GUID}`);
@@ -174,14 +174,14 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {
           'status': {
             'response': JSON.stringify({
               'fakeKey': 'fakeValue'
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).not.to.be.called;
           expect(getDirectorConfigStub).to.be.calledOnce;
@@ -208,14 +208,14 @@ describe('Jobs', function () {
         const job = getJobBasedOnOperation('backup', {
           backup_guid: IN_PROGRESS_BACKUP_GUID
         });
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {
           'status': {
             'response': JSON.stringify({
               'fakeKey': 'fakeValue'
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(cancelScheduleStub).not.to.be.called;
           expect(abortLastBackupStub).to.be.calledOnce;
@@ -245,14 +245,14 @@ describe('Jobs', function () {
           state: CONST.OPERATION.IN_PROGRESS,
           description: 'Backup operation in-progress'
         }));
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {
           'status': {
             'response': JSON.stringify({
               'fakeKey': 'fakeValue'
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', IN_PROGRESS_BACKUP_GUID, {});
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {});
         return BnRStatusPollerJob.run(job, () => {
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).not.to.be.called;
@@ -283,14 +283,14 @@ describe('Jobs', function () {
           state: CONST.OPERATION.ABORTING,
           description: 'Backup operation abort in-progress'
         }));
-        mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', ABORTING_BACKUP_GUID, {
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, ABORTING_BACKUP_GUID, {
           'status': {
             'response': JSON.stringify({
               'fakeKey': 'fakeValue'
             })
           }
         });
-        mocks.apiServerEventMesh.nockPatchResource('backup', 'defaultbackup', ABORTING_BACKUP_GUID, {}, 2);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, ABORTING_BACKUP_GUID, {}, 2);
         return BnRStatusPollerJob.run(job, () => {
           expect(getDirectorConfigStub).to.be.calledOnce;
           expect(cancelScheduleStub).to.be.calledOnce;

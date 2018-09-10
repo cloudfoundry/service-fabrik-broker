@@ -9,7 +9,7 @@ const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
 const catalog = require('../../common/models/catalog');
-const lockManager = require('../../data-access-layer/eventmesh').lockManager;
+const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('./../../common/constants');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
 const UnprocessableEntity = errors.UnprocessableEntity;
@@ -51,7 +51,7 @@ exports.checkBlockingOperationInProgress = function () {
     const plan = catalog.getPlan(plan_id);
     if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance
-      return lockManager.checkWriteLockStatus(req.params.instance_id)
+      return eventmesh.lockManager.checkWriteLockStatus(req.params.instance_id)
         .then(writeLockStatus => {
           if (writeLockStatus.isWriteLocked) {
             next(new DeploymentAlreadyLocked(req.params.instance_id, undefined, `Resource ${req.params.instance_id} is write locked for ${writeLockStatus.lockDetails.lockedResourceDetails.operation} at ${writeLockStatus.lockDetails.lockTime}`));

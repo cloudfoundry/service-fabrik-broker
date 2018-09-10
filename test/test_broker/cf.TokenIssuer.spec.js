@@ -186,7 +186,6 @@ describe('cf', () => {
 
         setTimeout(() => {
           assert(tokenIssuer.tokenInfo.accessToken === tokenNotExpired);
-          console.log('here');
           done();
         }, 2000);
       }).timeout(4000);

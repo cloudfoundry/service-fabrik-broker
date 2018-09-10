@@ -20,23 +20,23 @@ class UnlockResourcePoller {
           resourceType: lockDetails.lockedResourceDetails.resourceType,
           resourceId: lockDetails.lockedResourceDetails.resourceId
         })
-        .then((resourceState) => {
+        .then(resourceState => {
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state of ${lockDetails.lockedResourceDetails.operation}` +
             ` operation for deployment ${object.metadata.name} as`, resourceState);
-          //TODO-PR - reuse util method is operationCompleted.
+          //TODO-PR - re use util method is operationCompleted.
           if (_.includes([
               CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
               CONST.APISERVER.RESOURCE_STATE.FAILED,
               CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
               CONST.APISERVER.RESOURCE_STATE.ABORTED
             ], resourceState)) {
-            return lockManager.unlock(object.metadata.name)
+            return lockManager.unlock(object.metadata.name, object.metadata.resourceVersion)
               .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
           }
         })
         .catch(NotFound, err => {
           logger.info('Resource not found : ', err);
-          return lockManager.unlock(object.metadata.name)
+          return lockManager.unlock(object.metadata.name, object.metadata.resourceVersion)
             .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
         });
     }
@@ -47,17 +47,25 @@ class UnlockResourcePoller {
 
     function startPoller(event) {
       logger.debug('Received Lock Event: ', event);
-      const lockDetails = JSON.parse(event.object.spec.options);
-      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED && _.includes([CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_GROUPS.RESTORE], lockDetails.lockedResourceDetails.resourceGroup)) {
+      if (event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) {
         UnlockResourcePoller.clearPoller(event.object.metadata.name, UnlockResourcePoller.pollers[event.object.metadata.name]);
-        logger.debug('starting unlock resource poller for deployment', event.object.metadata.name);
-        //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
-        // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
-        const intervalId = setInterval(() => poller(event.object, intervalId), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
-        UnlockResourcePoller.pollers[event.object.metadata.name] = intervalId;
+        // Start poller only if lockTTL is not expired
+        const lockDetails = JSON.parse(_.get(event.object, 'spec.options'));
+        const currentTime = new Date();
+        const lockTTL = lockManager.getLockTTL(lockDetails.lockedResourceDetails.operation);
+        const lockTime = new Date(lockDetails.lockTime);
+        if ((currentTime - lockTime) < lockTTL) {
+          logger.debug('starting unlock resource poller for deployment', event.object.metadata.name);
+          //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
+          // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
+          const intervalId = setInterval(() => poller(event.object, intervalId), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
+          UnlockResourcePoller.pollers[event.object.metadata.name] = intervalId;
+        }
       }
     }
-    return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller)
+    // Get events for all the resource changes which have state as either undefined or locked (ie. state != unlocked)
+    const queryString = `state notin (${CONST.APISERVER.RESOURCE_STATE.UNLOCKED})`;
+    return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, startPoller, queryString)
       .then(stream => {
         logger.debug(`Successfully set watcher on resource group ${CONST.APISERVER.RESOURCE_GROUPS.LOCK} and resource ${CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS}`);
         return Promise

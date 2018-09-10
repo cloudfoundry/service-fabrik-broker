@@ -140,7 +140,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -186,7 +186,7 @@ describe('managers', function () {
         }
       };
       parameters = null;
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -231,7 +231,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -276,7 +276,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -362,7 +362,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: ''
         }
@@ -405,7 +405,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: ''
         }
@@ -492,12 +492,12 @@ describe('managers', function () {
       parameters = {
         dedicated_rabbitmq_instance: 'rmq'
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }
       });
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'virtualhost', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
         metadata: {
           annotations: config.broker_ip
         }

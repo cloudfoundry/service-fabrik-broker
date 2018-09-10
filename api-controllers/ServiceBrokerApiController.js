@@ -7,7 +7,6 @@ const logger = require('../common/logger');
 const utils = require('../common/utils');
 const catalog = require('../common/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
-const lockManager = require('../data-access-layer/eventmesh').lockManager;
 const BadRequest = errors.BadRequest;
 const PreconditionFailed = errors.PreconditionFailed;
 const NotFound = errors.NotFound;
@@ -246,25 +245,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
-      // Unlock resource if state is succeeded or failed
-      if (result.state === CONST.OPERATION.SUCCEEDED || result.state === CONST.OPERATION.FAILED) {
-        return lockManager.unlock(req.params.instance_id) //TODO-JB - to be migrated as all unlock would happen via unlock resource poller.
-          .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
-      }
       res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
     }
 
     function failed(err) {
-      return lockManager.unlock(req.params.instance_id)
-        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({
-          state: CONST.OPERATION.FAILED,
-          description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
-        }));
+      res.status(CONST.HTTP_STATUS_CODE.OK).send({
+        state: CONST.OPERATION.FAILED,
+        description: `${action} ${instanceType} '${guid}' failed because "${err.message}"`
+      });
     }
 
     function gone() {
-      return lockManager.unlock(req.params.instance_id)
-        .then(() => res.status(CONST.HTTP_STATUS_CODE.GONE).send({}));
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
 
     function notFound(err) {

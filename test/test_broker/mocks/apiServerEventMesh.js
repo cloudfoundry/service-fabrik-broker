@@ -8,7 +8,6 @@ const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 exports.nockLoadSpec = nockLoadSpec;
 exports.nockCreateResource = nockCreateResource;
-exports.nockPatchResourceStatus = nockPatchResourceStatus;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
 exports.nockGetResourceRegex = nockGetResourceRegex;
@@ -46,35 +45,28 @@ function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStat
     .reply(expectedStatusCode || 200, response);
 }
 
-function nockPatchResourceStatus(resourceGroup, resourceType, response, times, verifier) {
-  nock(apiServerHost)
-    .patch(/status$/, verifier)
-    .times(times || 1)
-    .reply(200, response);
-}
-
 
 function nockCreateResource(resourceGroup, resourceType, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
-    .post(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s`, verifier)
+    .post(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`, verifier)
     .times(times || 1)
     .reply(expectedStatusCode || 201, response);
 }
 
-function nockPatchResource(resourceGroup, resourceType, id, response, times, payload) {
+function nockPatchResource(resourceGroup, resourceType, id, response, times, payload, expectedStatusCode) {
   nock(apiServerHost, {
       reqheaders: {
         'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
       }
     })
-    .patch(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`, payload)
+    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, payload)
     .times(times || 1)
-    .reply(200, response);
+    .reply(expectedStatusCode || 200, response);
 }
 
 function nockGetResourceRegex(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    .get(new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`))
+    .get(new RegExp(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`))
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
@@ -82,7 +74,7 @@ function nockGetResourceRegex(resourceGroup, resourceType, response, times, expe
 function nockPatchResourceRegex(resourceGroup, resourceType, response, times, verifier, expectedStatusCode) {
   nock(apiServerHost)
     .patch(
-      new RegExp(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`),
+      new RegExp(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})`),
       verifier)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
@@ -90,14 +82,14 @@ function nockPatchResourceRegex(resourceGroup, resourceType, response, times, ve
 
 function nockDeleteResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    .delete(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+    .delete(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockGetResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/apis/${resourceGroup}.servicefabrik.io/v1alpha1/namespaces/default/${resourceType}s/${id}`)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }

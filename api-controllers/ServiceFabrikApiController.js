@@ -285,6 +285,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   startBackup(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
+    let lockId;
     req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
     let backupGuid;
@@ -306,8 +307,9 @@ class ServiceFabrikApiController extends FabrikBaseController {
                   operation: CONST.OPERATION_TYPE.BACKUP
                 }
               })
-              .then(() => {
+              .then(lockResourceId => {
                 lockedDeployment = true;
+                lockId = lockResourceId;
                 return eventmesh.apiServerClient.createResource({
                   resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                   resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -372,7 +374,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           throw err;
         }
         if (lockedDeployment) {
-          return lockManager.unlock(req.params.instance_id)
+          return lockManager.unlock(req.params.instance_id, lockId)
             .throw(err);
         }
         throw err;

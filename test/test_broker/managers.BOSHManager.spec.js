@@ -122,7 +122,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -168,7 +168,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -214,7 +214,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
@@ -301,7 +301,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: ''
         }
@@ -344,7 +344,7 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: ''
         }
@@ -428,12 +428,12 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       });
-      mocks.apiServerEventMesh.nockPatchResourceRegex('deployment', 'director', {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }

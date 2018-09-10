@@ -36,15 +36,17 @@ class FabrikBaseController extends BaseController {
     return (req, res, next) => {
       let resourceLocked = false;
       let processedRequest = false;
+      let lockId;
       return this._lockResource(req, operationType)
         .tap(() => resourceLocked = true)
-        .then(() => {
+        .then(lockResourceId => {
+          lockId = lockResourceId;
           const fn = _.isString(func) ? this[func] : func;
           return fn.call(this, req, res);
         })
         .tap(() => processedRequest = true)
-        .then(() => this._unlockIfReqfailed(operationType, processedRequest, req, res, next))
-        .catch(err => resourceLocked ? this._unlockIfReqfailed(operationType, processedRequest, req, res, next, err) : next(err));
+        .then(() => this._unlockIfReqfailed(operationType, processedRequest, lockId, req, res, next))
+        .catch(err => resourceLocked ? this._unlockIfReqfailed(operationType, processedRequest, lockId, req, res, next, err) : next(err));
     };
   }
 
@@ -59,14 +61,14 @@ class FabrikBaseController extends BaseController {
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: req.params.instance_id,
-            operation: operationType ? operationType : req.query.operation.type // This is for the last operation call
+            operation: operationType
           }
         });
       }
     });
   }
 
-  _unlockIfReqfailed(operationType, processedRequest, req, res, next, err) {
+  _unlockIfReqfailed(operationType, processedRequest, lockId, req, res, next, err) {
     const plan_id = req.body.plan_id || req.query.plan_id;
     const plan = catalog.getPlan(plan_id);
     // If processed request
@@ -80,11 +82,11 @@ class FabrikBaseController extends BaseController {
               operationType === CONST.OPERATION_TYPE.CREATE && res.statusCode === CONST.HTTP_STATUS_CODE.CONFLICT || // PutInstance => unlock in case of 409
               operationType === CONST.OPERATION_TYPE.DELETE && res.statusCode === CONST.HTTP_STATUS_CODE.GONE // DeleteInstance => unlock in case of 410
             ) {
-              return lockManager.unlock(req.params.instance_id)
+              return lockManager.unlock(req.params.instance_id, lockId)
                 .catch(unlockErr => next(unlockErr));
             }
           } else {
-            return lockManager.unlock(req.params.instance_id)
+            return lockManager.unlock(req.params.instance_id, lockId)
               .then(() => {
                 if (err) {
                   if (err instanceof ContinueWithNext) {

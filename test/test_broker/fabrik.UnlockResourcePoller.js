@@ -25,6 +25,8 @@ const CONSTANTS = {
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
       ABORTED: 'aborted',
+      UNLOCKED: 'unlocked',
+      LOCKED: 'locked'
     },
     WATCHER_REFRESH_INTERVAL: 1200000,
     WATCHER_ERROR_DELAY: 1200000
@@ -58,6 +60,7 @@ describe('fabrik', function () {
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
       expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
+      expect(registerWatcherStub.firstCall.args[3]).to.eql(`state notin (${CONST.APISERVER.RESOURCE_STATE.UNLOCKED})`);
       expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
       registerWatcherStub.reset();
       registerWatcherStub.restore();
@@ -66,6 +69,7 @@ describe('fabrik', function () {
 
     it('Should finish polling for lock if operation succeeded after receiving event', (done) => {
       const options = {
+        lockTime: new Date(),
         lockedResourceDetails: {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -77,19 +81,28 @@ describe('fabrik', function () {
         type: 'ADDED',
         object: {
           metadata: {
-            name: 'lockid1'
+            name: 'lockid1',
+            resourceVersion: 10
           },
           spec: {
             options: JSON.stringify(options)
           }
         }
       };
-      mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', 'backup1', {
+      const payload1 = {
+        metadata: {
+          resourceVersion: changeObject.object.metadata.resourceVersion
+        },
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.UNLOCKED
+        }
+      };
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, 'backup1', {
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
       });
-      mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', 'lockid1');
+      mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'lockid1', changeObject.object, 1, payload1);
       const jsonStream = new JSONStream();
       const registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -105,6 +118,7 @@ describe('fabrik', function () {
           expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
           expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
           expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
+          expect(registerWatcherStub.firstCall.args[3]).to.eql(`state notin (${CONST.APISERVER.RESOURCE_STATE.UNLOCKED})`);
           mocks.verify();
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
           registerWatcherStub.reset();
@@ -115,6 +129,7 @@ describe('fabrik', function () {
 
     it('Should continue polling for lock if operation not finished after receiving event', (done) => {
       const options = {
+        lockTime: new Date(),
         lockedResourceDetails: {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -133,7 +148,7 @@ describe('fabrik', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', 'backup1', {
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, 'backup1', {
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
         }
@@ -162,8 +177,9 @@ describe('fabrik', function () {
         });
     });
 
-    it('Should finish polling for lock if operation resource is not found after receiving event', (done) => {
+    it('Should clear poller for lock if operation not finished but lock is expired', (done) => {
       const options = {
+        lockTime: new Date(new Date() - 100000000),
         lockedResourceDetails: {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -182,8 +198,61 @@ describe('fabrik', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', 'backup1', {}, 1, 404);
-      mocks.apiServerEventMesh.nockDeleteResource('lock', 'deploymentlock', 'lockid1');
+      const jsonStream = new JSONStream();
+      const registerWatcherFake = function (resourceGroup, resourceType, callback) {
+        return Promise.try(() => {
+          jsonStream.on('data', callback);
+          return jsonStream;
+        });
+      };
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      UnlockResourcePoller.start();
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(500).then(() => {
+          expect(registerWatcherStub.callCount).to.equal(1);
+          expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
+          expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
+          expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
+          mocks.verify();
+          expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
+          registerWatcherStub.reset();
+          registerWatcherStub.restore();
+          done();
+        });
+    });
+
+    it('Should finish polling for lock if operation resource is not found after receiving event', (done) => {
+      const options = {
+        lockTime: new Date(),
+        lockedResourceDetails: {
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: 'backup1',
+          operation: 'backup'
+        }
+      };
+      const changeObject = {
+        type: 'ADDED',
+        object: {
+          metadata: {
+            name: 'lockid1',
+            resourceVersion: 10
+          },
+          spec: {
+            options: JSON.stringify(options)
+          }
+        }
+      };
+      const payload1 = {
+        metadata: {
+          resourceVersion: changeObject.object.metadata.resourceVersion
+        },
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.UNLOCKED
+        }
+      };
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, 'backup1', {}, 1, 404);
+      mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, 'lockid1', changeObject.object, 1, payload1);
       const jsonStream = new JSONStream();
       const registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -215,6 +284,9 @@ describe('fabrik', function () {
           },
           RESOURCE_TYPES: {
             DEPLOYMENT_LOCKS: 'deploymentlocks',
+          },
+          RESOURCE_STATE: {
+            UNLOCKED: 'unlocked'
           },
           WATCHER_REFRESH_INTERVAL: 1200000,
           WATCHER_ERROR_DELAY: 300
