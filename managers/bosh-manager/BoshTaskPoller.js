@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
@@ -10,7 +11,7 @@ const config = require('../../common/config');
 const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const AssertionError = errors.AssertionError;
+const AssertionError = assert.AssertionError;
 const Conflict = errors.Conflict;
 
 class BoshTaskPoller {
