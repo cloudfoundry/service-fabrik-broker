@@ -612,9 +612,7 @@ describe('EventLogInterceptor', function () {
         description: `create deployment 234 succeeded at ${timestamp}`
       };
       const op = {
-        type: 'create',
-        parameters: {},
-        task_id: 234
+        type: 'create'
       };
       const query = {
         operation: utils.encodeBase64(op)
@@ -653,9 +651,7 @@ describe('EventLogInterceptor', function () {
         description: `update deployment 244 succeeded at ${timestamp}`
       };
       const op = {
-        type: 'update',
-        parameters: {},
-        task_id: 244
+        type: 'update'
       };
       const query = {
         operation: utils.encodeBase64(op)
@@ -694,9 +690,7 @@ describe('EventLogInterceptor', function () {
         description: `create deployment 254 failed at ${timestamp}`
       };
       const op = {
-        type: 'create',
-        parameters: {},
-        task_id: 254
+        type: 'create'
       };
       const query = {
         operation: utils.encodeBase64(op)
@@ -735,9 +729,7 @@ describe('EventLogInterceptor', function () {
         description: `update deployment 244 failed at ${timestamp}`
       };
       const op = {
-        type: 'update',
-        parameters: {},
-        task_id: 244
+        type: 'update'
       };
       const query = {
         operation: utils.encodeBase64(op)
@@ -776,9 +768,7 @@ describe('EventLogInterceptor', function () {
         description: `Delete deployment 245 succeeded at ${timestamp}`
       };
       const op = {
-        type: 'delete',
-        parameters: {},
-        task_id: 245
+        type: 'delete'
       };
       const query = {
         operation: utils.encodeBase64(op)
@@ -817,9 +807,7 @@ describe('EventLogInterceptor', function () {
         description: `Delete deployment 245 failed at ${timestamp}`
       };
       const op = {
-        type: 'delete',
-        parameters: {},
-        task_id: 245
+        type: 'delete'
       };
       const query = {
         operation: utils.encodeBase64(op)

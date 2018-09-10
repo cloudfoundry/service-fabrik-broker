@@ -468,7 +468,9 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'update'
+              }));
               mocks.verify();
             });
         });
@@ -510,7 +512,9 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'update'
+              }));
               mocks.verify();
             });
         });
@@ -568,7 +572,9 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'update'
+              }));
               mocks.verify();
             });
         });
@@ -689,7 +695,9 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'delete'
+              }));
               mocks.verify();
             });
         });
@@ -722,7 +730,9 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'delete'
+              }));
               mocks.verify();
             });
         });
@@ -755,7 +765,9 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'delete'
+              }));
               mocks.verify();
             });
         });
@@ -787,7 +799,9 @@ describe('service-broker-api-2.0', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body).to.deep.equal({});
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'delete'
+              }));
               mocks.verify();
             });
         });
