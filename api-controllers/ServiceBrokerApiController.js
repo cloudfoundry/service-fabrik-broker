@@ -66,6 +66,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+        body.operation = utils.encodeBase64({
+          'type': 'create'
+        });
       }
       res.status(statusCode).send(body);
     }
@@ -118,6 +121,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       let body = {};
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+        body.operation = utils.encodeBase64({
+          'type': 'update'
+        });
       }
       res.status(statusCode).send(body);
     }
@@ -184,6 +190,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const body = {};
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+        body.operation = utils.encodeBase64({
+          'type': 'delete'
+        });
       }
       res.status(statusCode).send(body);
     }
