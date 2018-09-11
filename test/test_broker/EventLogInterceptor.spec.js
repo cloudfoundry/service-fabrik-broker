@@ -795,6 +795,42 @@ describe('EventLogInterceptor', function () {
         });
     });
 
+    it('should log the director service instance deletion status as successful(410)', () => {
+      const pathParams = {
+        instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
+      };
+      const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15/last_operation';
+      const route = '/:platform(cf|k8s)/v2/service_instances/:instance_id/last_operation';
+      const timestamp = new Date();
+      const respBody = {};
+      const op = {
+        type: 'delete'
+      };
+      const query = {
+        operation: utils.encodeBase64(op)
+      };
+      const reqBody = {
+        plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
+        service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+      };
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 410);
+      return Promise
+        .try(() => {
+          internalAppEventLogInterceptor.execute(request, response, respBody);
+        })
+        .then(() => {
+          expect(pubSubSpy).to.be.called;
+          const testResponse = pubSubSpy.firstCall.args[0];
+          expect(testResponse).to.be.an('object');
+          const testResult = testResponse.event;
+          expect(testResult.state).to.eql(config.monitoring.success_state);
+          expect(testResult.metric).to.eql(config.monitoring.success_metric);
+          expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_instance`;
+          expect(testResult.eventName).to.eql(expectedEvtName);
+        });
+    });
+
     it('should log the director service instance deletion status as failed', () => {
       const pathParams = {
         instance_id: '4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15'
