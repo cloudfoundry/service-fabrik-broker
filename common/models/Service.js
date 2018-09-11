@@ -2,23 +2,13 @@
 
 const _ = require('lodash');
 const Plan = require('./Plan');
-const config = require('../config');
-const CONST = require('../constants');
 
 class Service {
   constructor(options) {
     _(this)
       .chain()
       .assign({
-        plans: _.map(options.plans, plan => {
-          if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR && config.cred_provider &&
-            _.get(plan, 'manager.settings.context.agent.provider.credhub_key', undefined) !== undefined) {
-            //Inject credhub config into agent properties in case credhub is configured for the service
-            _.assign(_.get(plan, 'manager.settings.context.agent.provider'),
-              _.omit(config.cred_provider, 'credhub_username', 'credhub_user_password'));
-          }
-          return new Plan(this, plan);
-        })
+        plans: _.map(options.plans, plan => new Plan(this, plan))
       })
       .defaults(options, {
         bindable: true,

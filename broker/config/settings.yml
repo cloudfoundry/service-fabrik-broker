@@ -436,76 +436,7 @@ defaults: &defaults
     username: admin
     password: admin
   
-  #############################
-  # CREDHUB SETTINGS #
-  #############################
-  cred_provider:
-    credhub_url: https://10.0.3.11:8443/api/
-    credhub_uaa_url: https://10.0.3.11:8443
-    credhub_client_id:  credhub-admin
-    credhub_client_secret: 
-    credhub_username: admin
-    credhub_user_password: admin
-
-  ###################
-  # DOCKER SETTINGS #
-  ###################
-  docker: &docker
-    url: unix:///var/run/docker.sock # how to connect the broker to docker
-    allocate_docker_host_ports: true # if true the broker will allocate fixed port mappings for the containers
-    volume_driver: local
-  
-  #List of add on jobs that are to be added onto each service vm
-  service_addon_jobs:
-  - iptables-manager
-  
-  #####################
-  # DIRECTOR SETTINGS #
-  #####################
-  directors:
-  - &director
-    primary: true
-    support_create: false
-    name: bosh
-    cpi: warden_cpi
-    url: https://192.168.50.4:25555
-    username: admin
-    password: admin
-    skip_ssl_validation: true
-    default_task_poll_interval: 10000
-    lock_deployment_max_duration:  86400 # lock ttl for deployments in seconds. Its kept at 24 hrs - 60 * 60 * 24
-    max_workers: 24
-    policies:
-      user:
-        create:
-          max_workers: 5
-        update:
-          max_workers: 7
-      scheduled:
-        max_workers: 12
-    infrastructure: &director_infrastructure
-      stemcell:
-        alias: ubuntu-trusty
-        name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-        version: latest
-      segmentation:
-        network_name: default
-        # calculate capacity based on the network range
-        capacity: -1
-        offset: 1
-        size: 8
-      networks:
-      - &default_network
-        name: default
-        type: manual
-        subnets:
-        - { range: 10.244.10.0/24, az: z1, cloud_properties: { name: random } }
-        - { range: 10.244.11.0/24, az: z2, cloud_properties: { name: random } }
-        - { range: 10.244.12.0/24, az: z3, cloud_properties: { name: random } }
-    uaa:
-      uaa_auth: false #make it true if bosh uses UAA for authentication
-      uaa_url: '' #provide complete uaa url here.,e.g., https://192.168.48.6:8443
-      client_id: '' #Assuming client credential grant being used, provide client id here
+  credential grant being used, provide client id here
       client_secret: '' #provide corrsponding client secret 
   - cpi: warden_cpi
     url: https://192.168.50.4:25555
@@ -538,9 +469,6 @@ defaults: &defaults
       provider: &provider_blueprint
         name: boshlite
         container: blueprint_backup
-        credhub_key: '/service-fabrik/iaas/blueprint'
-        credhub_username: blueprint-admin
-        credhub_user_password: blueprint-secret
     rabbitmq: &agent_rabbitmq
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
