@@ -7,13 +7,13 @@ const Service = require('../../common/models/Service');
 
 describe('models', () => {
   describe('Service', () => {
-    let options = {	
-      id: 42,	
-      name: 'sample',	
-      description: 'sample description',	
-      bindable: false	
-    };	
-    let service = new Service(options);	
+    let options = {
+      id: 42,
+      name: 'sample',
+      description: 'sample description',
+      bindable: false
+    };
+    let service = new Service(options);
     describe('constructor', () => {
       it('returns an initialized BaseModel object with defaults', () => {
 
