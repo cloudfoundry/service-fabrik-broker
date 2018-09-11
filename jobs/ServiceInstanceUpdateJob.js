@@ -183,13 +183,28 @@ class ServiceInstanceUpdateJob extends BaseJob {
         }
       }
       const RUN_AFTER = _.get(instanceDetails, 'reschedule_delay', config.scheduler.jobs.reschedule_delay);
+      let retryDelayInMinutes = 0;
+      if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+        retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+      }
+      if (retryDelayInMinutes > 0) {
+        const NUM_MINS_IN_HR = 60;
+        const numberOfRunsPerDay = (NUM_MINS_IN_HR / retryDelayInMinutes) * 24;
+        const maxRunsInXDays = numberOfRunsPerDay * _.get(config, 'scheduler.jobs.service_instance_update.run_every_xdays', 15);
+        if (jobData.attempt >= maxRunsInXDays) {
+          logger.info(`Number of retries(${jobData.attempt}) are spilling over to next update cycle (max runs:${maxRunsInXDays}). Retry of update for ${instanceDetails.instance_id} will stop now.`);
+          return;
+        }
+      }
       logger.info(`Schedulding InstanceUpdate Job for ${instanceDetails.instance_name}:${instanceDetails.instance_id} @ ${RUN_AFTER} - Track : ${trackAttempts} - Attempt - ${instanceDetails.attempt}`);
+      const AVOID_DUPLICATE_JOB_WITH_SAME_JOBDATA = true;
       return ScheduleManager
         .runAt(instanceDetails.instance_id,
           CONST.JOB.SERVICE_INSTANCE_UPDATE,
           RUN_AFTER,
           jobData,
-          CONST.SYSTEM_USER
+          CONST.SYSTEM_USER,
+          AVOID_DUPLICATE_JOB_WITH_SAME_JOBDATA
         );
     });
   }

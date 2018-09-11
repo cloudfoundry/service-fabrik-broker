@@ -239,7 +239,7 @@ class Scheduler {
       });
   }
 
-  runAt(name, jobType, runAt, data) {
+  runAt(name, jobType, runAt, data, avoidDupJobWithSameData) {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
@@ -249,13 +249,21 @@ class Scheduler {
         }
         this.isJobTypeEnabled(jobType);
         const jobName = `${name}_${jobType}_${runAt.replace(/\s*/g, '')}_${new Date().getTime()}`;
-        logger.info(`Scheduled Job : ${jobName} to Run @ ${runAt}`);
-        data = data ? data : {};
+        logger.info(`Scheduling Job : ${jobName} to Run @ ${runAt}`);
+        data = data ? _.omit(data, CONST.JOB_NAME_ATTRIB) : {};
+        const uniqueCriteria = {};
+        if (avoidDupJobWithSameData) {
+          _.each(data, (attrValue, attr) => {
+            uniqueCriteria[`data.${attr}`] = attrValue;
+            return true;
+          });
+        } else {
+          uniqueCriteria['data._n_a_m_e_'] = jobName;
+        }
+        logger.info('Setting Job with Unique Criteria : ', uniqueCriteria);
         data[CONST.JOB_NAME_ATTRIB] = jobName;
         const job = this.agenda.create(jobType, data);
-        job.unique({
-          'data._n_a_m_e_': jobName
-        });
+        job.unique(uniqueCriteria);
         job.schedule(runAt);
         return job
           .saveAsync()
@@ -382,8 +390,7 @@ class Scheduler {
         .runAt(jobName,
           type,
           config.scheduler.jobs.reschedule_delay,
-          jobData,
-          CONST.SYSTEM_USER
+          jobData
         );
     });
   }

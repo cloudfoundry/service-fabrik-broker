@@ -561,6 +561,56 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
+    it(`if instance is outdated, update initiation attempt fails due to backup  then it must not schedule itself if update will run beyond current update window`, function (done) {
+      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.cloudController.getServiceInstance(instance_id, {
+        space_guid: space_guid
+      });
+      mocks.cloudController.getSpace(space_guid, {
+        organization_guid: organization_guid
+      });
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      mocks.cloudController.updateServiceInstance(instance_id, body => {
+        const token = _.get(body.parameters, 'service-fabrik-operation');
+        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      }, 500);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.FAILED,
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
+      };
+      const oldMaxAttempts = config.scheduler.jobs.service_instance_update.max_attempts;
+      config.scheduler.jobs.service_instance_update.max_attempts = 5000;
+      let retryDelayInMinutes = 1;
+      if ((config.scheduler.jobs.reschedule_delay.toLowerCase()).indexOf('minutes') !== -1) {
+        retryDelayInMinutes = parseInt(/^[0-9]+/.exec(config.scheduler.jobs.reschedule_delay)[0]);
+      }
+      job.attrs.data.attempt = config.scheduler.jobs.service_instance_update.run_every_xdays * 24 * (60 / retryDelayInMinutes) + 1;
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.InternalServerError).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).not.to.be.called;
+          done();
+        }).catch(done);
+    });
     it(`if instance is outdated & if update initiation attempt fails due to bosh rate limits exceeded then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
       mocks.cloudController.findServicePlan(instance_id, plan_id);
       mocks.cloudController.getServiceInstance(instance_id, {
