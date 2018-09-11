@@ -769,7 +769,14 @@ class DirectorService extends BaseDirectorService {
     return Promise.join(
         this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
         this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
+        (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
+          maxAttempts: 3,
+          timeout: Math.floor(config.http_timeout * 2 / 3)
+        })
+        .catch(errors.Timeout, err => {
+          logger.error(`Timeout Error for deployment "${deploymentName}" in binding with id ${binding.id} after multiple attempts`, err);
+          throw err;
+        })
       )
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
@@ -807,7 +814,15 @@ class DirectorService extends BaseDirectorService {
           this.getDeploymentIps(deploymentName),
           this.getBindingProperty(deploymentName, id)
         ]))
-      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
+      .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
+          maxAttempts: 3,
+          timeout: Math.floor(config.http_timeout * 2 / 3)
+        })
+        .catch(errors.Timeout, err => {
+          logger.error(`Timeout Error for deployment "${deploymentName}" in un-binding with id ${id} after multiple attempts`, err);
+          throw err;
+        })
+      )
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catch(err => {
