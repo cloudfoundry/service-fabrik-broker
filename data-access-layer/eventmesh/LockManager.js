@@ -94,14 +94,14 @@ class LockManager {
    * @param {string} [lockDetails.lockedResourceDetails.operation] - Operation type who is acquiring the lock. ex: backup
    */
 
-  lock(resourceId, lockDetails) {
+  lock(resourceId, lockDetails, supportedOperations) {
     assert.ok(lockDetails, `Parameter 'lockDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails, `'lockedResourceDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails.operation, `'operation' is required to acquire lock`);
 
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'));
+    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'), supportedOperations);
     opts.lockTTL = this.getLockTTL(_.get(opts, 'lockedResourceDetails.operation'));
     _.extend(opts, {
       'lockTime': opts.lockTime ? opts.lockTime : currentTime
@@ -214,8 +214,16 @@ class LockManager {
     });
   }
 
-  _getLockType(operation) {
-    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, operation)) {
+  _getLockType(requestedOperation, supportedOperations) {
+    if (supportedOperations) {
+      if (_.includes(_.get(supportedOperations, 'write'), requestedOperation)) {
+        return CONST.APISERVER.LOCK_TYPE.WRITE;
+      } else if (_.includes(_.get(supportedOperations, 'read'), requestedOperation)) {
+        return CONST.APISERVER.LOCK_TYPE.READ;
+      }
+    }
+
+    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, requestedOperation)) {
       return CONST.APISERVER.LOCK_TYPE.WRITE;
     } else {
       return CONST.APISERVER.LOCK_TYPE.READ;

@@ -7,7 +7,6 @@ const yaml = require('js-yaml');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
-const jwt = require('../../broker/lib/jwt');
 const utils = require('../../common/utils');
 const catalog = require('../../common/models').catalog;
 const NotFound = errors.NotFound;
@@ -232,22 +231,14 @@ class DirectorService extends BaseDirectorService {
     const operation = {
       type: 'update'
     };
-    // service fabrik operation token
-    const token = _.get(params.parameters, 'service-fabrik-operation', null);
-    if (token) {
-      _.unset(params.parameters, 'service-fabrik-operation');
-      _.set(params, 'scheduled', true);
-    }
     return this
       .initialize(operation)
-      .then(() => token ? jwt.verify(token, config.password) : null)
-      .then(serviceFabrikOperation => {
-        logger.info('SF Operation input:', serviceFabrikOperation);
-        this.operation = _.get(serviceFabrikOperation, 'name', 'update');
+      .then(() => {
+        logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         // normal update operation
+        this.operation = this.operation || 'update';
         if (this.operation === 'update') {
-          const args = _.get(serviceFabrikOperation, 'arguments');
-          return this.createOrUpdateDeployment(this.deploymentName, params, args)
+          return this.createOrUpdateDeployment(this.deploymentName, params)
             .then(op => _
               .chain(operation)
               .assign(_.pick(params, 'parameters', 'context'))
@@ -427,9 +418,9 @@ class DirectorService extends BaseDirectorService {
     logger.info(`Checking rate limits against bosh for deployment `);
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
-    const scheduled = _.get(params, 'scheduled') || false;
+    const scheduled = _.get(params, 'parameters.scheduled') || false;
     const runImmediately = _.get(params, 'parameters._runImmediately') || false;
-    _.omit(params, 'scheduled');
+    _.omit(params, 'parameters.scheduled');
     _.omit(params, 'parameters._runImmediately');
 
     if (!config.enable_bosh_rate_limit || runImmediately) {

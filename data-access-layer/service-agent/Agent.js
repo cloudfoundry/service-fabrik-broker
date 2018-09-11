@@ -204,9 +204,11 @@ class Agent extends HttpClient {
       parameters: parameters,
       actions: preBindResponse
     };
-    return this
-      .getHost(ips, 'credentials')
-      .then(ip => this.post(ip, 'credentials/create', body, 200));
+    return Promise
+      .any(_.map(ips, ip => this
+        .getHost([ip], 'credentials')
+        .then(ip => this.post(ip, 'credentials/create', body, 200))
+      ));
   }
 
   deleteCredentials(ips, credentials, preUnbindResponse) {
@@ -214,9 +216,11 @@ class Agent extends HttpClient {
       credentials: credentials,
       actions: preUnbindResponse
     };
-    return this
-      .getHost(ips, 'credentials')
-      .then(ip => this.post(ip, 'credentials/delete', body, 200));
+    return Promise
+      .any(_.map(ips, ip => this
+        .getHost([ip], 'credentials')
+        .then(ip => this.post(ip, 'credentials/delete', body, 200))
+      ));
   }
 
   startBackup(ip, backup, vms) {

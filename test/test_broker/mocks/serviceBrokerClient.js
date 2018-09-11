@@ -10,6 +10,7 @@ const backupGuid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
 exports.getDeploymentRestoreStatus = getDeploymentRestoreStatus;
 exports.startDeploymentBackup = startDeploymentBackup;
 exports.getDeploymentBackupStatus = getDeploymentBackupStatus;
+exports.updateServiceInstance = updateServiceInstance;
 
 function isoDate(time) {
   return new Date(time).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
@@ -66,4 +67,14 @@ function getDeploymentRestoreStatus(name, token, state, responseStatus) {
     .get(`/admin/deployments/${name}/restore/status`)
     .query(queryParams)
     .reply(responseStatus || 200, restoreState);
+}
+
+function updateServiceInstance(instace_id, payload, response) {
+  return nock(serviceBrokerUrl)
+    .replyContentLength()
+    .patch(`/v2/service_instances/${instace_id}`, payload)
+    .query({
+      accepts_incomplete: true
+    })
+    .reply(response.status || 202, response.body || {});
 }
