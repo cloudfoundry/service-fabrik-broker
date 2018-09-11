@@ -528,7 +528,7 @@ describe('Jobs', function () {
       }, 502, {
         error_code: 'CF-ServiceBrokerRequestRejected',
         status: 502,
-        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.OPERATION_TYPE.LOCK} by`,
+        description: `Service broker error: Service Instance ${job.attrs.data.instance_id} ${CONST.OPERATION_TYPE.LOCK} at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup`,
         http: {
           status: 422
         }
