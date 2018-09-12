@@ -168,6 +168,9 @@ class EventLogInterceptor {
         //the reason which caused the internal server error might get fixed by the cloud controller timeout time,
         //at which time CC will stop polling for status and will mark the operation as failed.
         //Hence keeping in-progress as default state if it is not conclusively success/failure state.
+        if (res.statusCode === 410 && eventConfig.event_name === 'delete_instance') {
+          return this.successState(eventConfig);
+        }
         return this.inProgressState(eventConfig);
       }
     } else if (_.includes(eventConfig.http_success_codes, res.statusCode)) {

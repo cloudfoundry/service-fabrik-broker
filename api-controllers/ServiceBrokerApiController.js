@@ -269,7 +269,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     function notFound(err) {
-      if (!operation || (operation && operation.type === 'delete')) {
+      if (_.get(operation, 'type') === 'delete') {
         return gone();
       }
       failed(err);

@@ -1146,7 +1146,10 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .query({
               service_id: service_id,
-              plan_id: plan_id
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                'type': 'delete'
+              })
             })
             .catch(err => err.response)
             .then(res => {
