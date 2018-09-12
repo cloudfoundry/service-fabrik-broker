@@ -436,17 +436,6 @@ defaults: &defaults
     username: admin
     password: admin
   
-  #############################
-  # CREDHUB SETTINGS #
-  #############################
-  cred_provider:
-    credhub_url: https://10.0.3.11:8443/api/
-    credhub_uaa_url: https://10.0.3.11:8443
-    credhub_client_id:  credhub-admin
-    credhub_client_secret: 
-    credhub_username: admin
-    credhub_user_password: admin
-
   ###################
   # DOCKER SETTINGS #
   ###################
