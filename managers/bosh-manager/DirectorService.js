@@ -770,8 +770,7 @@ class DirectorService extends BaseDirectorService {
         this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
         this.getDeploymentIps(deploymentName),
         (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
-          maxAttempts: 3,
-          timeout: Math.floor(config.http_timeout * 2 / 3)
+          maxAttempts: 3
         })
         .catch(errors.Timeout, err => {
           logger.error(`Timeout Error for deployment "${deploymentName}" in binding with id ${binding.id} after multiple attempts`, err);
@@ -815,8 +814,7 @@ class DirectorService extends BaseDirectorService {
           this.getBindingProperty(deploymentName, id)
         ]))
       .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
-          maxAttempts: 3,
-          timeout: Math.floor(config.http_timeout * 2 / 3)
+          maxAttempts: 3
         })
         .catch(errors.Timeout, err => {
           logger.error(`Timeout Error for deployment "${deploymentName}" in un-binding with id ${id} after multiple attempts`, err);

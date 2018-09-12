@@ -205,9 +205,16 @@ class Agent extends HttpClient {
       actions: preBindResponse
     };
     return Promise
-      .any(_.map(ips, ip => this
-        .getHost([ip], 'credentials')
-        .then(ip => this.post(ip, 'credentials/create', body, 200))
+      .any(_.map(ips, ip => utils.retry(() => this
+          .getHost([ip], 'credentials')
+          .then(ip => this.post(ip, 'credentials/create', body, 200)), {
+            maxAttempts: 2,
+            timeout: 30000
+          })
+        .catch(errors.Timeout, err => {
+          logger.error(`Timeout error happened during bind on "${ip}"`, err);
+          throw err;
+        })
       ));
   }
 
@@ -217,9 +224,16 @@ class Agent extends HttpClient {
       actions: preUnbindResponse
     };
     return Promise
-      .any(_.map(ips, ip => this
-        .getHost([ip], 'credentials')
-        .then(ip => this.post(ip, 'credentials/delete', body, 200))
+      .any(_.map(ips, ip => utils.retry(() => this
+          .getHost([ip], 'credentials')
+          .then(ip => this.post(ip, 'credentials/delete', body, 200)), {
+            maxAttempts: 2,
+            timeout: 30000
+          })
+        .catch(errors.Timeout, err => {
+          logger.error(`Timeout error happened during unbind on "${ip}"`, err);
+          throw err;
+        })
       ));
   }
 

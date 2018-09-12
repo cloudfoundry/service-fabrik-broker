@@ -63,7 +63,7 @@ class FabrikBaseController extends BaseController {
             resourceId: req.params.instance_id,
             operation: operationType
           }
-        }, _.get(plan, 'supported_operations'));
+        }, plan);
       }
     });
   }

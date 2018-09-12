@@ -94,14 +94,14 @@ class LockManager {
    * @param {string} [lockDetails.lockedResourceDetails.operation] - Operation type who is acquiring the lock. ex: backup
    */
 
-  lock(resourceId, lockDetails, supportedOperations) {
+  lock(resourceId, lockDetails, plan) {
     assert.ok(lockDetails, `Parameter 'lockDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails, `'lockedResourceDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails.operation, `'operation' is required to acquire lock`);
 
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'), supportedOperations);
+    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'), plan);
     opts.lockTTL = this.getLockTTL(_.get(opts, 'lockedResourceDetails.operation'));
     _.extend(opts, {
       'lockTime': opts.lockTime ? opts.lockTime : currentTime
@@ -214,7 +214,8 @@ class LockManager {
     });
   }
 
-  _getLockType(requestedOperation, supportedOperations) {
+  _getLockType(requestedOperation, plan) {
+    const supportedOperations = _.get(plan, 'supported_operations');
     if (supportedOperations) {
       if (_.includes(_.get(supportedOperations, 'write'), requestedOperation)) {
         return CONST.APISERVER.LOCK_TYPE.WRITE;

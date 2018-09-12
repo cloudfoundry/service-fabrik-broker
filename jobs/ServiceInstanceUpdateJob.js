@@ -8,12 +8,12 @@ const BaseJob = require('./BaseJob');
 const errors = require('../common/errors');
 const utils = require('../common/utils');
 const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
-const cloudController = require('../data-access-layer/cf').cloudController;
-const Fabrik = require('../broker/lib/fabrik');
 const catalog = require('../common/models/catalog');
 const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const Repository = require('..//common/db').Repository;
+const DirectorService = require('../managers/bosh-manager/DirectorService');
+const eventmesh = require('../data-access-layer/eventmesh');
+const Repository = require('../common/db').Repository;
 //NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {
@@ -40,23 +40,21 @@ class ServiceInstanceUpdateJob extends BaseJob {
         logger.error(msg);
         return this.runFailed(new errors.ServiceUnavailable(msg), operationResponse, job, done);
       }
-      return this
-        .getServicePlanIdForInstanceId(instanceDetails.instance_id)
-        .then((planId) => (planId === undefined ?
+      return eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: instanceDetails.instance_id
+        })
+        .catch(errors.NotFound, () => undefined)
+        .then(resource => _.get(resource, 'spec.options'))
+        .then((resourceDetails) => (resourceDetails === undefined ?
           this.handleInstanceDeletion(instanceDetails, operationResponse, done) :
-          this.updateInstanceIfOutdated(instanceDetails, planId, operationResponse)))
+          this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse)))
         .then(opResponse => this.runSucceeded(opResponse, job, done))
         .catch((error) => {
           this.runFailed(error, operationResponse, job, done);
         });
     });
-  }
-
-  static getServicePlanIdForInstanceId(instanceId) {
-    return cloudController
-      .findServicePlanByInstanceId(instanceId)
-      .then(body => body.entity.unique_id)
-      .catch(errors.ServiceInstanceNotFound, () => undefined);
   }
 
   static handleInstanceDeletion(instanceDetails, operationResponse) {
@@ -71,20 +69,13 @@ class ServiceInstanceUpdateJob extends BaseJob {
       });
   }
 
-  static updateInstanceIfOutdated(instanceDetails, planId, operationResponse) {
+  static updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse) {
+    const planId = _.get(resourceDetails, 'plan_id');
     const plan = catalog.getPlan(planId);
-    let context;
     logger.info(`Instance Id: ${instanceDetails.instance_id} - manager : ${plan.manager.name} - Force Update: ${plan.service.force_update}`);
-    return cloudController.getOrgAndSpaceGuid(instanceDetails.instance_id)
-      .then(tenantInfo => {
-        context = {
-          platform: CONST.PLATFORM.CF,
-          organization_guid: tenantInfo.organization_guid,
-          space_guid: tenantInfo.space_guid
-        };
-        tenantInfo.context = context;
-        return this.getOutdatedDiff(instanceDetails.deployment_name, tenantInfo, plan);
-      })
+    const tenantInfo = _.pick(resourceDetails, ['context', 'organization_guid', 'space_guid']);
+    return this
+      .getOutdatedDiff(instanceDetails, tenantInfo, plan)
       .then(diffResults => {
         const outdated = _.get(diffResults, 'diff', false) && diffResults.diff.length !== 0;
         operationResponse.deployment_outdated = outdated;
@@ -102,7 +93,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
             plan.service.force_update,
             instanceDetails.run_immediately,
             plan,
-            context
+            _.get(resourceDetails, 'context')
           )
           .then(result => {
             operationResponse.update_init = CONST.OPERATION.SUCCEEDED;
@@ -140,8 +131,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
             //Even in case of successful initiation the job is rescheduled so that after the reschedule delay,
             //when this job comes up it must see itself as updated.
             //This is to handle any Infra errors that could happen post successful initiation of update. (its a retry mechanism)
-            this
-              .rescheduleUpdateJob(instanceDetails, trackAttempts);
+            this.rescheduleUpdateJob(instanceDetails, trackAttempts);
           });
       });
   }
@@ -158,10 +148,12 @@ class ServiceInstanceUpdateJob extends BaseJob {
     return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0;
   }
 
-  static getOutdatedDiff(deploymentName, tenantInfo, plan) {
-    return Fabrik
-      .createManager(plan)
-      .then(directorManager => directorManager.diffManifest(deploymentName, tenantInfo));
+  static getOutdatedDiff(instanceDetails, tenantInfo, plan) {
+    return DirectorService.createInstance(instanceDetails.instance_id, {
+        plan_id: plan.id,
+        context: tenantInfo.context
+      })
+      .then(directorInstance => directorInstance.diffManifest(instanceDetails.deployment_name, tenantInfo));
   }
 
   static updateServiceInstance(instance_id, diff, skipForbiddenCheck, runImmediately, plan, context) {
@@ -185,7 +177,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
           },
           parameters: {
             scheduled: true,
-            _runImmediately: runImmediately || false
+            _runImmediately: runImmediately || false,
+            'service-fabrik-operation': true
           }
         })
       );
