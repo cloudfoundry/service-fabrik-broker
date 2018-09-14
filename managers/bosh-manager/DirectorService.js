@@ -235,7 +235,6 @@ class DirectorService extends BaseDirectorService {
       .initialize(operation)
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
-        // normal update operation
         this.operation = this.operation || 'update';
         if (this.operation === 'update') {
           return this.createOrUpdateDeployment(this.deploymentName, params)

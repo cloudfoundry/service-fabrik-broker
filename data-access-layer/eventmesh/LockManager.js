@@ -215,11 +215,9 @@ class LockManager {
   }
 
   _getLockType(requestedOperation, plan) {
-    const supportedOperations = _.get(plan, 'supported_operations');
+    const supportedOperations = _.get(plan, 'async_ops_supporting_parallel_sync_ops');
     if (supportedOperations) {
-      if (_.includes(_.get(supportedOperations, 'write'), requestedOperation)) {
-        return CONST.APISERVER.LOCK_TYPE.WRITE;
-      } else if (_.includes(_.get(supportedOperations, 'read'), requestedOperation)) {
+      if (_.includes(supportedOperations, requestedOperation)) {
         return CONST.APISERVER.LOCK_TYPE.READ;
       }
     }

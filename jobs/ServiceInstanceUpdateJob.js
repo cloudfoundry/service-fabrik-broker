@@ -145,7 +145,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
   static deploymentLocked(err) {
     const response = _.get(err, 'error', {});
     const description = _.get(response, 'description', '');
-    return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0;
+    return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0 &&
+      _.includes([_.get(err, 'status'), _.get(err, 'statusCode'), _.get(response, 'status')], CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
   }
 
   static getOutdatedDiff(instanceDetails, tenantInfo, plan) {
