@@ -444,9 +444,11 @@ function hasChangesInForbiddenSections(diff) {
     .value();
 
   if (!_.isEmpty(forbiddenSections) && !_.includes(forbiddenSections, 'director_uuid')) {
+    const boshLinks = _.filter(diff, element => _.includes(element[0], 'consumes'));
     const forbiddenSectionsDiff = _.filter(diff, element => _.includes(element[0], 'instances') || _.includes(element[0], 'persistent_disk_type'));
     const removedJobName = findRemovedJob();
-    if (!_.isEmpty(forbiddenSectionsDiff) || removedJobName) {
+    const isDiffForbidden = _.isEmpty(boshLinks) && !_.isEmpty(forbiddenSectionsDiff);
+    if (isDiffForbidden || removedJobName) {
       throw new errors.Forbidden(`Automatic update not possible. ${!_.isEmpty(forbiddenSectionsDiff) ? 'Detected changes in forbidden sections:' + forbiddenSectionsDiff.join(',') : `Job definition removed: ${removedJobName[0]}`}`);
     }
   }
