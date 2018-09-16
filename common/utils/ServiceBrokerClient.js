@@ -79,7 +79,7 @@ class ServiceBrokerClient extends HttpClient {
     return this
       .request({
         method: 'PATCH',
-        url: `/v2/service_instances/${options.instance_id}`,
+        url: `/cf/v2/service_instances/${options.instance_id}`,
         auth: {
           user: config.username,
           pass: config.password

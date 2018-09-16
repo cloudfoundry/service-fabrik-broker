@@ -72,7 +72,7 @@ function getDeploymentRestoreStatus(name, token, state, responseStatus) {
 function updateServiceInstance(instace_id, payload, response) {
   return nock(serviceBrokerUrl)
     .replyContentLength()
-    .patch(`/v2/service_instances/${instace_id}`, payload)
+    .patch(`/cf/v2/service_instances/${instace_id}`, payload)
     .query({
       accepts_incomplete: true
     })
