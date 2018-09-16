@@ -135,10 +135,7 @@ class BoshDirectorClient extends HttpClient {
           this.updateCache(directorConfig, deployments);
           logger.info('Updated deployment cache for config - ', directorConfig.name);
         }))
-      .then(() => {
-        this.populateDeploymentIpCache();
-        logger.info('Updated deployment ip cache for all directors');
-      })
+      .then(() => this.populateDeploymentIpCache())
       .finally(() => {
         this.cacheLoadInProgress = false;
         logger.info('Clearing cacheLoadInProgress flag. Bosh DeploymentName cache is loaded.');
@@ -590,7 +587,9 @@ class BoshDirectorClient extends HttpClient {
           .then(directorConfig => this.getDeploymentStaticIps(deploymentName, directorConfig))
           .tap(response => {
             logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
-            this.deploymentIpsCache[deploymentName] = response;
+            if (!_.isEmpty(response)) {
+              this.deploymentIpsCache[deploymentName] = response;
+            }
           });
       }
     });
