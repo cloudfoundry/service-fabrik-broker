@@ -133,8 +133,12 @@ class BoshDirectorClient extends HttpClient {
         this.getDeploymentsByConfig(directorConfig)
         .then(deployments => {
           this.updateCache(directorConfig, deployments);
-          logger.info('Updated cache for config - ', directorConfig.name);
+          logger.info('Updated deployment cache for config - ', directorConfig.name);
         }))
+      .then(() => {
+        this.populateDeploymentIpCache();
+        logger.info('Updated deployment ip cache for all directors');
+      })
       .finally(() => {
         this.cacheLoadInProgress = false;
         logger.info('Clearing cacheLoadInProgress flag. Bosh DeploymentName cache is loaded.');
@@ -155,6 +159,26 @@ class BoshDirectorClient extends HttpClient {
         delete this.cacheLoadInProgressForDeployment[deploymentName];
         logger.info(`Cache updated for - ${deploymentName}, found in director - ${_.get(this.boshConfigCache[deploymentName], 'name')}`);
       });
+  }
+
+  populateDeploymentIpCache() {
+    let loadCount = 0;
+    const deployments = _.keys(this.boshConfigCache);
+    return Promise.map(deployments, deploymentName => {
+      return this.getDeploymentStaticIps(deploymentName)
+        .then(ips => {
+          if (_.isEmpty(ips)) {
+            throw new Error('No static IPs found');
+          }
+          this.deploymentIpsCache[deploymentName] = ips;
+          loadCount++;
+        })
+        .catch(err => logger.error(`Error loading manifest / retrieving list of static IPs for ${deploymentName}`, err));
+    }, {
+      concurrency: 10
+    }).then(() => {
+      logger.info(`Cache for static IPs for all deployments loaded. Successfully loaded: ${loadCount}, Errors: ${deployments.length - loadCount}`);
+    });
   }
 
   getDeploymentNamesFromCache(boshName, attempt) {
@@ -493,6 +517,7 @@ class BoshDirectorClient extends HttpClient {
           .tap(() => {
             logger.info(`Cached ${deploymentName} at director: ${config.name} ${config.url}`);
             this.boshConfigCache[deploymentName] = config;
+            this.deploymentIpsCache[deploymentName] = this.getStaticIpAddresses(manifest);
           })
           .then(res => this.prefixTaskId(deploymentName, res));
       });
@@ -537,21 +562,38 @@ class BoshDirectorClient extends HttpClient {
       .then(res => JSON.parse(res.body));
   }
 
+  getDeploymentStaticIps(deploymentName) {
+    return this.getDeploymentManifest(deploymentName)
+      .then(manifest => this.getStaticIpAddresses(manifest));
+  }
+
+  getStaticIpAddresses(manifest) {
+    let staticIps = [];
+    if (manifest === null) {
+      return staticIps;
+    }
+    manifest = _.isString(manifest) ? yaml.safeLoad(manifest) : manifest;
+    if (_.isArray(manifest.instance_groups)) {
+      _.each(manifest.instance_groups, ig => {
+        _.each(ig.networks, snet => staticIps = staticIps.concat(snet.static_ips));
+      });
+    }
+    return _.uniq(staticIps);
+  }
+
   getDeploymentIps(deploymentName) {
     return Promise.try(() => {
       if (this.deploymentIpsCache[deploymentName] !== undefined) {
         return this.deploymentIpsCache[deploymentName];
       } else {
-        return this
-          .getDeploymentInstances(deploymentName)
-          .reduce((ipList, instance) => ipList.concat(instance.ips), [])
+        return this.getDirectorConfig(deploymentName)
+          .then(directorConfig => this.getDeploymentStaticIps(deploymentName, directorConfig))
           .tap(response => {
             logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
             this.deploymentIpsCache[deploymentName] = response;
           });
       }
     });
-
   }
 
   getAgentPropertiesFromManifest(deploymentName) {
