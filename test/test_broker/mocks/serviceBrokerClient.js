@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const nock = require('nock');
+const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const serviceBrokerUrl = `${config.internal.protocol}://${config.internal.host}`;
@@ -70,7 +71,16 @@ function getDeploymentRestoreStatus(name, token, state, responseStatus) {
 }
 
 function updateServiceInstance(instace_id, payload, response) {
-  return nock(serviceBrokerUrl)
+  return nock(serviceBrokerUrl, {
+      reqheaders: {
+        'X-Broker-API-Version': function (headerValue) {
+          if (headerValue === CONST.SF_BROKER_API_VERSION_MIN) {
+            return true;
+          }
+          return false;
+        }
+      }
+    })
     .replyContentLength()
     .patch(`/cf/v2/service_instances/${instace_id}`, payload)
     .query({
