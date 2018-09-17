@@ -769,10 +769,10 @@ class DirectorService extends BaseDirectorService {
         this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
         this.getDeploymentIps(deploymentName),
         (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
-          maxAttempts: 3
+          maxAttempts: 3,
+          timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
         .catch(errors.Timeout, err => {
-          logger.error(`Timeout Error for deployment "${deploymentName}" in binding with id ${binding.id} after multiple attempts`, err);
           throw err;
         })
       )
@@ -783,7 +783,7 @@ class DirectorService extends BaseDirectorService {
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
       .catch(err => {
-        logger.error('+-> Failed to create binding');
+        logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`);
         logger.error(err);
         throw err;
       });
@@ -813,17 +813,17 @@ class DirectorService extends BaseDirectorService {
           this.getBindingProperty(deploymentName, id)
         ]))
       .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
-          maxAttempts: 3
+          maxAttempts: 3,
+          timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
         .catch(errors.Timeout, err => {
-          logger.error(`Timeout Error for deployment "${deploymentName}" in un-binding with id ${id} after multiple attempts`, err);
           throw err;
         })
       )
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catch(err => {
-        logger.error('+-> Failed to delete binding');
+        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
         logger.error(err);
         throw err;
       });

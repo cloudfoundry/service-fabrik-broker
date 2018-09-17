@@ -92,6 +92,7 @@ class LockManager {
    * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Name of resource for which lock is being acquired. ex: defaultbackup
    * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
    * @param {string} [lockDetails.lockedResourceDetails.operation] - Operation type who is acquiring the lock. ex: backup
+   * @param {object} plan - Plan details of instance_id
    */
 
   lock(resourceId, lockDetails, plan) {

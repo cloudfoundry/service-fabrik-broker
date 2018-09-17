@@ -205,18 +205,9 @@ class Agent extends HttpClient {
       parameters: parameters,
       actions: preBindResponse
     };
-    return Promise
-      .any(_.map(ips, ip => utils.retry(() => this
-          .getHost([ip], 'credentials')
-          .then(ip => this.post(ip, 'credentials/create', body, CONST.HTTP_STATUS_CODE.OK)), {
-            maxAttempts: 2,
-            timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-          })
-        .catch(errors.Timeout, err => {
-          logger.error(`Timeout error happened during bind on "${ip}"`, err);
-          throw err;
-        })
-      ));
+    return this
+      .getHost(ips, 'credentials')
+      .then(ip => this.post(ip, 'credentials/create', body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   deleteCredentials(ips, credentials, preUnbindResponse) {
@@ -224,18 +215,9 @@ class Agent extends HttpClient {
       credentials: credentials,
       actions: preUnbindResponse
     };
-    return Promise
-      .any(_.map(ips, ip => utils.retry(() => this
-          .getHost([ip], 'credentials')
-          .then(ip => this.post(ip, 'credentials/delete', body, CONST.HTTP_STATUS_CODE.OK)), {
-            maxAttempts: 2,
-            timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-          })
-        .catch(errors.Timeout, err => {
-          logger.error(`Timeout error happened during unbind on "${ip}"`, err);
-          throw err;
-        })
-      ));
+    return this
+      .getHost(ips, 'credentials')
+      .then(ip => this.post(ip, 'credentials/delete', body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   startBackup(ip, backup, vms) {

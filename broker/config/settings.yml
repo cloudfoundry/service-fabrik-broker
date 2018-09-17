@@ -703,6 +703,8 @@ defaults: &defaults
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
       free: false
+      # Asynch operations which supports parallel synch operations
+      # e.g. bind and unbind (sync) supported during update and backup (async)
       async_ops_supporting_parallel_sync_ops: &async_ops_supporting_parallel_sync_ops
       - 'update'
       - 'backup'
@@ -912,6 +914,8 @@ defaults: &defaults
       id: 'b715f834-2048-11e7-a560-080027afc1e6'
       name: 'v3.6-xsmall'
       free: false
+      # Asynch operations which supports parallel synch operations
+      # e.g. bind and unbind (sync) supported during update and backup (async)
       supported_operations: *async_ops_supporting_parallel_sync_ops
       manager: &manager_plan9
         name: 'director'
