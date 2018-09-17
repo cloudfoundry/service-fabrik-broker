@@ -159,6 +159,10 @@ class BoshDirectorClient extends HttpClient {
   }
 
   populateDeploymentIpCache() {
+    return this._loadIpCache();
+  }
+
+  _loadIpCache() {
     let loadCount = 0;
     const deployments = _.keys(this.boshConfigCache);
     return Promise.map(deployments, deploymentName => {

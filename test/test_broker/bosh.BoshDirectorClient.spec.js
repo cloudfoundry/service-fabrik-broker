@@ -2,6 +2,8 @@
 
 const Promise = require('bluebird');
 const uuid = require('uuid');
+const path = require('path');
+const fs = require('fs');
 const _ = require('lodash');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
@@ -21,9 +23,11 @@ const deployment_name = id;
 const taskId = Math.floor(Math.random() * 123456789);
 const bosh_taskId = `bosh_${taskId}`;
 let populateConfigCacheInProgress = false;
+let ips = ['1.2.3.4', '2.3.4.5'];
 const manifest = yaml.safeDump({
   name: id
 });
+const manifest_multi = fs.readFileSync(path.join(__dirname, '/helper-files/manifest_multi_ig.yml'), 'utf8');
 let primary_config = _.sample(_
   .filter(config.directors, function (director) {
     return director.support_create && director.primary;
@@ -86,6 +90,10 @@ class MockBoshDirectorClient extends BoshDirectorClient {
     logger.info(`Stubbed populate cache - cache load in-progress : ${populateConfigCacheInProgress}`);
     this.boshConfigCache[deployment_name] = primary_config;
   }
+
+  populateDeploymentIpCache() {
+    this.deploymentIpsCache[deployment_name] = ips;
+  }
 }
 
 describe('bosh', () => {
@@ -95,6 +103,28 @@ describe('bosh', () => {
       it('initializes variables', () => {
         const dc = new MockBoshDirectorClient();
         expect(dc.boshConfigCache).to.be.an('object');
+        expect(dc.deploymentIpsCache).to.be.an('object');
+      });
+    });
+
+    describe('#populateIpCache', function () {
+      let req, res;
+      beforeEach(() => {
+        req = {
+          method: 'GET',
+          url: `/deployments/${deployment_name}`
+        };
+        res = {
+          body: manifest_multi,
+          statusCode: 200
+        };
+      });
+      it('should call getDeploymentStaticIps for all deployments', () => {
+        return new MockBoshDirectorClient(req, res)._loadIpCache()
+          .then(() => {
+            expect(this.deploymentIpsCache[deployment_name]).to.be.an('array');
+            expect(this.deploymentIpsCache[deployment_name].length).to.equal(2);
+          });
       });
     });
 

@@ -109,7 +109,8 @@ describe('managers', function () {
         };
         // const type = 'online';
         mocks.director.getDeploymentVms(deployment_name);
-        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.director.getDeployment(deployment_name, true);
+        //mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         mocks.agent.startBackup();
         mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
@@ -140,7 +141,8 @@ describe('managers', function () {
           context: context
         };
         mocks.director.getDeploymentVms(deployment_name);
-        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.director.getDeployment(deployment_name, true);
+        //mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         const putFileStub = sinon.stub(BackupStore.prototype, 'putFile');
         mocks.agent.startBackup();

@@ -105,8 +105,8 @@ describe('service-fabrik-admin', function () {
         mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
         mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
-        mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 2);
-        mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
+        mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 3);
+        //mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         mocks.agent.getInfo();
@@ -158,10 +158,11 @@ describe('service-fabrik-admin', function () {
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);
+        mocks.director.getDeployment(config.mongodb.deployment_name, true);
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         config.directors[0].default_task_poll_interval = 10;
-        mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
+        //mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
         mocks.agent.getInfo();
         mocks.agent.preUpdate();
         return chai

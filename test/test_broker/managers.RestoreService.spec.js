@@ -127,7 +127,8 @@ describe('managers', function () {
     describe('#startRestore', function () {
       it('should start restore', function () {
         mocks.director.getDeploymentVms(deployment_name);
-        mocks.director.getDeploymentInstances(deployment_name);
+        mocks.director.getDeployment(deployment_name, true);
+        //mocks.director.getDeploymentInstances(deployment_name);
         mocks.director.getDeployments();
         mocks.agent.getInfo();
         // mocks.agent.getInfo();

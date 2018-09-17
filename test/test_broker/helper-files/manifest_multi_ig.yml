@@ -1,0 +1,13 @@
+---
+instance_groups:
+- name: instance_group1
+  networks:
+  - name: network1
+    static_ips:
+    - 10.20.30.40
+- name: instance_group2
+  networks:
+  - name: network2
+    static_ips:
+    - 1.2.3.4
+    - 10.20.30.40

@@ -55,7 +55,8 @@ describe('#VirtualHostService', function () {
 
       describe('#provision', function () {
         it('returns 201 created', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createVirtualHost(instance_id);
@@ -112,7 +113,8 @@ describe('#VirtualHostService', function () {
 
       describe('#update', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.updateVirtualHost(instance_id);
           const options = {
@@ -135,7 +137,8 @@ describe('#VirtualHostService', function () {
 
       describe('#bind', function () {
         it('returns 201 Created', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
           mocks.director.createBindingProperty(binding_id, {}, deployment_name, mocks.virtualHostAgent.credentials);
@@ -160,7 +163,8 @@ describe('#VirtualHostService', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
           mocks.director.getBindingProperty(binding_id, {}, deployment_name, false, mocks.virtualHostAgent.credentials);
@@ -186,7 +190,8 @@ describe('#VirtualHostService', function () {
 
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);
           mocks.cloudProvider.remove(pathname);
@@ -202,8 +207,8 @@ describe('#VirtualHostService', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
-          mocks.director.getDeploymentInstances(deployment_name, undefined, undefined, undefined, false);
-          mocks.director.getDeployment(deployment_name, false, undefined, 1);
+          //mocks.director.getDeploymentInstances(deployment_name, undefined, undefined, undefined, false);
+          mocks.director.getDeployment(deployment_name, false, undefined, 2);
           mocks.cloudProvider.download(pathname, data);
           const options = {
             service_id: service_id,

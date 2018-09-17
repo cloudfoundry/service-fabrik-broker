@@ -291,7 +291,7 @@ describe('#DirectorService', function () {
           });
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeploymentInstances(deploymentName);
+          //mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           mocks.agent.preUpdate();
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
@@ -336,9 +336,9 @@ describe('#DirectorService', function () {
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.getDeployment(deploymentName, true, undefined, 2);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeploymentInstances(deploymentName);
+          //mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           const options = {
             service_id: service_id,
@@ -383,9 +383,9 @@ describe('#DirectorService', function () {
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.getDeployment(deploymentName, true, undefined, 2);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeploymentInstances(deploymentName);
+          //mocks.director.getDeploymentInstances(deploymentName);
           //mocks.agent.preUpdate();
           mocks.agent.getInfo();
           const options = {
@@ -431,9 +431,9 @@ describe('#DirectorService', function () {
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry'
           });
-          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.getDeployment(deploymentName, true, undefined, 2);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeploymentInstances(deploymentName);
+          //mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
           //mocks.agent.preUpdate();
           const options = {
@@ -476,9 +476,9 @@ describe('#DirectorService', function () {
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeployment(deploymentName, true, undefined);
+          mocks.director.getDeployment(deploymentName, true, undefined, 2);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.director.getDeploymentInstances(deploymentName);
+          //mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo(1, 'preupdate');
           const options = {
             service_id: service_id,
@@ -521,7 +521,8 @@ describe('#DirectorService', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.cloudController.findSecurityGroupByName(instance_id);
@@ -564,7 +565,8 @@ describe('#DirectorService', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.deprovision();
           mocks.cloudController.findSecurityGroupByName(instance_id);
@@ -604,7 +606,8 @@ describe('#DirectorService', function () {
             platform: 'kubernetes',
             namespace: 'default'
           });
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.deleteDeployment(task_id);
           const options = {
             service_id: service_id,
@@ -923,7 +926,8 @@ describe('#DirectorService', function () {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
           mocks.director.createBindingProperty(binding_id);
@@ -975,7 +979,8 @@ describe('#DirectorService', function () {
             .value();
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
           mocks.director.createBindingProperty(binding_id);
@@ -1029,7 +1034,8 @@ describe('#DirectorService', function () {
             .value();
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
@@ -1066,7 +1072,8 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment(deployment_name, true);
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();

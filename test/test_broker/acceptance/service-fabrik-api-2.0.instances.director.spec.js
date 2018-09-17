@@ -120,7 +120,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.director.getDeployment();
+          //mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
           return chai.request(apps.external)
