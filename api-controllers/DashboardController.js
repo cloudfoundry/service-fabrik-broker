@@ -120,13 +120,16 @@ class DashboardController extends FabrikBaseController {
     const instance_id = req.params.instance_id;
     const service_id = req.params.service_id;
     const plan_id = req.params.plan_id;
-    logger.info(`Validating service '${service_id}' and plan '${plan_id}'`);
     const encodedOp = _.get(req, 'query.operation', undefined);
     const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
     const context = _.get(req, 'body.context') || _.get(operation, 'context');
-    return this.fabrik
-      .createInstance(instance_id, service_id, plan_id, context)
-      .tap(instance => {
+    logger.info(`Validating service '${service_id}' and plan '${plan_id}'`);
+    return this.cloudController.getPlanIdFromInstanceId(instance_id)
+      .then(current_plan_id => {
+        logger.info(`plan_id in Dashboard URL was ${plan_id} and actual plan_id is ${current_plan_id}`);
+        return this.fabrik.createInstance(instance_id, service_id, current_plan_id, context);
+      })
+      .then(instance => {
         req.instance = instance;
         req.manager = instance.manager;
       })
