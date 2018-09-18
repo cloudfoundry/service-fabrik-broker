@@ -40,6 +40,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
         logger.error(msg);
         return this.runFailed(new errors.ServiceUnavailable(msg), operationResponse, job, done);
       }
+      /* In case of instance provisioned by other than bosh director.
+       * Need to chnage resource group / type. Better to save plan name in job data.
+       * Otherwise need to look for instance_id with all possible provisioners.
+       */
       return eventmesh.apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,

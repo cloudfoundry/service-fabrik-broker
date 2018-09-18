@@ -236,16 +236,14 @@ class DirectorService extends BaseDirectorService {
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
-        if (this.operation === 'update') {
-          return this.createOrUpdateDeployment(this.deploymentName, params)
-            .then(op => _
-              .chain(operation)
-              .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', op.task_id)
-              .set('cached', op.cached)
-              .value()
-            );
-        }
+        return this.createOrUpdateDeployment(this.deploymentName, params)
+          .then(op => _
+            .chain(operation)
+            .assign(_.pick(params, 'parameters', 'context'))
+            .set('task_id', op.task_id)
+            .set('cached', op.cached)
+            .value()
+          );
       });
   }
 
