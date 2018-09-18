@@ -36,7 +36,7 @@ describe('dashboard', function () {
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
-        mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id, service_plan_guid, plan_id, undefined, 2);
         mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
           platform: 'cloudfoundry'
         });
@@ -90,7 +90,7 @@ describe('dashboard', function () {
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
-        mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id, service_plan_guid, plan_id, undefined, 2);
         mocks.director.getCurrentTasks(deployment_name, [{
           'id': 324,
           'description': 'create deployment succeeded'
