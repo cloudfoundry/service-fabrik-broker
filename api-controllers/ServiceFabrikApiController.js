@@ -327,41 +327,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
               });
           });
       })
-      .then(() => {
-        //check if resource exist, else create and then update
-        return eventmesh.apiServerClient.getResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: req.params.instance_id
-          })
-          /* jshint unused:false */
-          .catch(NotFound, () => {
-            logger.debug(`Resource resourceGroup: ${CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT},` +
-              `resourceType: ${CONST.APISERVER.RESOURCE_TYPES.DIRECTOR}, resourceId: ${req.params.instance_id} not found, Creating now...`);
-            return eventmesh.apiServerClient.createResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-              resourceId: req.params.instance_id,
-              labels: {
-                instance_guid: req.params.instance_id
-              },
-              options: {},
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-                lastOperation: {},
-                response: {}
-              }
-            });
-          })
-          .then(() => eventmesh.apiServerClient.updateLastOperationValue({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            operationName: CONST.OPERATION_TYPE.BACKUP,
-            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: req.params.instance_id,
-            value: backupGuid
-          }));
-      })
+      .then(() => eventmesh.apiServerClient.updateLastOperationValue({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        operationName: CONST.OPERATION_TYPE.BACKUP,
+        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: req.params.instance_id,
+        value: backupGuid
+      }))
       .then(() => {
         res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
           name: CONST.OPERATION_TYPE.BACKUP,
