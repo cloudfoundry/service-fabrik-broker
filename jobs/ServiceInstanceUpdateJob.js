@@ -103,14 +103,14 @@ class ServiceInstanceUpdateJob extends BaseJob {
           .catch(err => {
             operationResponse.update_init = CONST.OPERATION.FAILED;
             logger.error('Error occurred while updating service instance job :', err);
-            if (this.deploymentStaggered(err)) {
+            if (utils.deploymentStaggered(err)) {
               //If deployment was staggered due to exhaustion of workers, reschedule update job
               //Retry attempts do not count when deployment is staggered
               //TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
               trackAttempts = false;
               err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
             }
-            if (this.deploymentLocked(err)) {
+            if (utils.deploymentLocked(err)) {
               //If deployment locked then backup is in progress. So reschedule update job,
               //Retry attempts dont count when deployment is locked for backup.
               // Only if locked for backup operation
@@ -134,19 +134,6 @@ class ServiceInstanceUpdateJob extends BaseJob {
             this.rescheduleUpdateJob(instanceDetails, trackAttempts);
           });
       });
-  }
-
-  static deploymentStaggered(err) {
-    const response = _.get(err, 'error', {});
-    const description = _.get(response, 'description', '');
-    return description.indexOf(CONST.FABRIK_OPERATION_STAGGERED) > 0 && description.indexOf(CONST.FABRIK_OPERATION_COUNT_EXCEEDED) > 0;
-  }
-
-  static deploymentLocked(err) {
-    const response = _.get(err, 'error', {});
-    const description = _.get(response, 'description', '');
-    return description.indexOf(CONST.OPERATION_TYPE.LOCK) > 0 &&
-      _.includes([_.get(err, 'status'), _.get(err, 'statusCode'), _.get(response, 'status')], CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
   }
 
   static getOutdatedDiff(instanceDetails, tenantInfo, plan) {
