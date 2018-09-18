@@ -6,7 +6,6 @@ const logger = require('../../../common/logger');
 const utils = require('../../../common/utils');
 const docker = require('../../../data-access-layer/docker');
 const BaseInstance = require('./BaseInstance');
-const catalog = require('../../../common/models').catalog;
 const CONST = require('../../../common/constants');
 
 const DockerError = {
@@ -126,16 +125,14 @@ class DockerInstance extends BaseInstance {
           instance,
           this.getDetails(),
           this.getProcesses(),
-          this.getLogs(),
-          this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
+          this.getLogs()
         ]);
       })
-      .spread((instance, details, processes, logs, planInfo) => {
-        var currentPlan = catalog.getPlan(planInfo.entity.unique_id);
+      .spread((instance, details, processes, logs) => {
         return {
-          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-          plan: currentPlan,
-          service: currentPlan.service,
+          title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: this.plan,
+          service: this.plan.service,
           instance: instance,
           details: details,
           processes: processes,
