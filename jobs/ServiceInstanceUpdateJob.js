@@ -51,7 +51,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
         })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'spec.options'))
-        .then((resourceDetails) => (resourceDetails === undefined ?
+        .then(resourceDetails => (resourceDetails === undefined ?
           this.handleInstanceDeletion(instanceDetails, operationResponse, done) :
           this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse)))
         .then(opResponse => this.runSucceeded(opResponse, job, done))

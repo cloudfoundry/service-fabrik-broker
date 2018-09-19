@@ -768,7 +768,7 @@ class DirectorService extends BaseDirectorService {
         this.getDeploymentIps(deploymentName),
         (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
           maxAttempts: 3,
-          timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
         .catch(errors.Timeout, err => {
           throw err;
@@ -812,7 +812,7 @@ class DirectorService extends BaseDirectorService {
         ]))
       .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
           maxAttempts: 3,
-          timeout: CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
         .catch(errors.Timeout, err => {
           throw err;

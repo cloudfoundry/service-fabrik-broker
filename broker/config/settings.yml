@@ -152,6 +152,8 @@ defaults: &defaults
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
   http_timeout: 175000
   deployment_action_timeout: 80000
+  # (milliseconds) this time out can be used any operation done on broker agent
+  agent_operation_timeout: 35000
   multi_az_enabled: false
   broker_drain_message: 'BROKER_DRAIN_INITIATED'
   ##############################
