@@ -18,8 +18,7 @@ describe('Jobs', function () {
   const instance_id = mocks.director.uuidByIndex(index);
   /* jshint expr:true */
   describe('ServiceInstanceUpdateJob', function () {
-    const sf_operation_name = 'update';
-    const sf_operation_args = {};
+    const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const plan_id_forced_update = 'fc158c9a-7934-401e-94ab-057082a5073f';
     const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180be';
@@ -45,6 +44,48 @@ describe('Jobs', function () {
       save: () => undefined,
       touch: () => undefined
     };
+    const resourceDetails = function (planId) {
+      return {
+        apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+        kind: 'Director',
+        metadata: {
+          annotations: {
+            lockedByManager: '',
+            lockedByTaskPoller: '{\"lockTime\":\"2018-09-06T16:38:34.919Z\",\"ip\":\"10.0.2.2\"}'
+          },
+          creationTimestamp: '2018-09-06T16:01:28Z',
+          generation: 1,
+          labels: {
+            state: 'succeeded'
+          },
+          name: instance_id,
+          namespace: 'default',
+          resourceVersion: '3364',
+          selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+          uid: '1d48b3f3-b1ee-11e8-ac2a-06c007f8352b'
+
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: planId || plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          })
+        },
+        status: {
+          state: 'succeeded',
+          lastOperation: '{}',
+          response: '{}'
+        }
+      };
+    };
+
     let sandbox, baseJobLogRunHistoryStub, cancelScheduleStub, scheduleRunAtStub, uuidv4Stub, catalogStub;
 
     before(function () {
@@ -141,7 +182,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it('if service instance is not found, should cancel itself', function (done) {
-      mocks.cloudController.findServicePlan(instance_id);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
       return ServiceInstanceUpdateJob
         .run(job, () => {})
         .then(() => {
@@ -153,13 +194,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, []);
       const expectedResponse = {
@@ -172,7 +207,6 @@ describe('Jobs', function () {
       return ServiceInstanceUpdateJob
         .run(job, () => {})
         .then(() => {
-          mocks.verify();
           expect(cancelScheduleStub).not.to.be.called;
           expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
@@ -182,13 +216,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -197,21 +225,21 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const isRunNow = _.get(body.parameters, '_runImmediately');
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return isRunNow === undefined && support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
-        update_operation_guid: backup_guid,
+        update_response: {},
         diff: utils.unifyDiffResult({
           diff: diff
         })
       };
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 202
+      });
       return ServiceInstanceUpdateJob
         .run(job, () => {})
         .then(() => {
@@ -230,13 +258,7 @@ describe('Jobs', function () {
     });
 
     it(`if instance is outdated and job was created with run_immediately flag set, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       job.attrs.data.run_immediately = true;
       const diff = [
         ['releases:', null],
@@ -246,21 +268,21 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const isRunNow = _.get(body.parameters, '_runImmediately');
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return isRunNow === true && support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
-        update_operation_guid: backup_guid,
+        update_response: {},
         diff: utils.unifyDiffResult({
           diff: diff
         })
       };
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 202
+      });
       return ServiceInstanceUpdateJob
         .run(job, () => {})
         .then(() => {
@@ -278,13 +300,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it('if instance is outdated, and changes are in forbidden section trying to increase/decrease # of instances then update must not be initiated', function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['instance_groups:', null],
         ['- name: blueprint', null],
@@ -323,13 +339,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it('if instance is outdated, and changes are in forbidden section trying to remove a job, then update must not be initiated', function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['instance_groups:', null],
         ['- name: blueprint', null],
@@ -369,13 +379,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated with changes in forbidden section and if service force_update is set to true, then update must be initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id_forced_update);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails(plan_id_forced_update));
       const diff = [
         ['jobs:', null],
         ['- name: blueprint_z1', null],
@@ -384,17 +388,17 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const isRunNow = _.get(body.parameters, '_runImmediately');
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return isRunNow === undefined && support.jwt.verify(token, sf_operation_name, sf_operation_args);
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 202
       });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
         deployment_outdated: true,
         update_init: CONST.OPERATION.SUCCEEDED,
-        update_operation_guid: backup_guid,
+        update_response: {},
         diff: utils.unifyDiffResult({
           diff: diff
         })
@@ -416,13 +420,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated, update initiation attempt fails and then schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -431,10 +429,11 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 500);
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 500
+      });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
@@ -461,13 +460,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated, update initiation attempt fails and then it must not schedule itself if max re-try attempts are exceeded`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -476,10 +469,11 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 500);
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 500
+      });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
@@ -507,13 +501,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated & if update initiation attempt fails due to a backup run then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -522,15 +510,14 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 502, {
-        error_code: 'CF-ServiceBrokerRequestRejected',
-        status: 502,
-        description: `Service broker error: Service Instance ${job.attrs.data.instance_id} ${CONST.OPERATION_TYPE.LOCK} at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup`,
-        http: {
-          status: 422
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 422,
+        body: {
+          error: 'Unprocessable Entity',
+          status: 422,
+          description: `Service Instance ${job.attrs.data.instance_id} ${CONST.OPERATION_TYPE.LOCK} at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup`,
         }
       });
       const expectedResponse = {
@@ -550,7 +537,8 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.DeploymentAlreadyLocked).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.UnprocessableEntity).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql('Backup in-progress. Update cannot be initiated');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
@@ -562,13 +550,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated, update initiation attempt fails due to backup  then it must not schedule itself if update will run beyond current update window`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -577,10 +559,11 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 500);
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 500
+      });
       const expectedResponse = {
         instance_deleted: false,
         job_cancelled: false,
@@ -612,13 +595,7 @@ describe('Jobs', function () {
         }).catch(done);
     });
     it(`if instance is outdated & if update initiation attempt fails due to bosh rate limits exceeded then it must Schedule itself even if max re-try attempts are exceeded`, function (done) {
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
-      mocks.cloudController.getServiceInstance(instance_id, {
-        space_guid: space_guid
-      });
-      mocks.cloudController.getSpace(space_guid, {
-        organization_guid: organization_guid
-      });
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
@@ -627,15 +604,13 @@ describe('Jobs', function () {
       ];
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
-      mocks.cloudController.updateServiceInstance(instance_id, body => {
-        const token = _.get(body.parameters, 'service-fabrik-operation');
-        return support.jwt.verify(token, sf_operation_name, sf_operation_args);
-      }, 502, {
-        error_code: 'CF-ServiceBrokerRequestRejected',
-        status: 502,
-        description: `Deployment ${job.attrs.data.deployment_name} ${CONST.FABRIK_OPERATION_STAGGERED}: reason- ${CONST.FABRIK_OPERATION_COUNT_EXCEEDED}`,
-        http: {
-          status: 422
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 422,
+        body: {
+          status: 422,
+          description: `Deployment ${job.attrs.data.deployment_name} ${CONST.FABRIK_OPERATION_STAGGERED}, Reason: ${CONST.FABRIK_OPERATION_COUNT_EXCEEDED}`
         }
       });
       const expectedResponse = {
@@ -655,7 +630,8 @@ describe('Jobs', function () {
           mocks.verify();
           config.scheduler.jobs.service_instance_update.max_attempts = oldMaxAttempts;
           expect(cancelScheduleStub).not.to.be.called;
-          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.DeploymentAttemptRejected).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0] instanceof errors.UnprocessableEntity).to.eql(true);
+          expect(baseJobLogRunHistoryStub.firstCall.args[0].statusMessage).to.eql('Deployment attempt rejected due to BOSH overload. Update cannot be initiated');
           expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
           expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
           expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);

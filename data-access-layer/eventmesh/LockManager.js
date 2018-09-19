@@ -92,16 +92,17 @@ class LockManager {
    * @param {string} [lockDetails.lockedResourceDetails.resourceType] - Name of resource for which lock is being acquired. ex: defaultbackup
    * @param {string} [lockDetails.lockedResourceDetails.resourceId] - Id of resource for which lock is being acquired. ex: <backup_guid>
    * @param {string} [lockDetails.lockedResourceDetails.operation] - Operation type who is acquiring the lock. ex: backup
+   * @param {object} plan - Plan details of instance_id
    */
 
-  lock(resourceId, lockDetails) {
+  lock(resourceId, lockDetails, plan) {
     assert.ok(lockDetails, `Parameter 'lockDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails, `'lockedResourceDetails' is required to acquire lock`);
     assert.ok(lockDetails.lockedResourceDetails.operation, `'operation' is required to acquire lock`);
 
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
-    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'));
+    opts.lockType = this._getLockType(_.get(opts, 'lockedResourceDetails.operation'), plan);
     opts.lockTTL = this.getLockTTL(_.get(opts, 'lockedResourceDetails.operation'));
     _.extend(opts, {
       'lockTime': opts.lockTime ? opts.lockTime : currentTime
@@ -214,8 +215,15 @@ class LockManager {
     });
   }
 
-  _getLockType(operation) {
-    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, operation)) {
+  _getLockType(requestedOperation, plan) {
+    const supportedOperations = _.get(plan, 'async_ops_supporting_parallel_sync_ops');
+    if (supportedOperations) {
+      if (_.includes(supportedOperations, requestedOperation)) {
+        return CONST.APISERVER.LOCK_TYPE.READ;
+      }
+    }
+
+    if (_.includes(CONST.APISERVER.WRITE_OPERATIONS, requestedOperation)) {
       return CONST.APISERVER.LOCK_TYPE.WRITE;
     } else {
       return CONST.APISERVER.LOCK_TYPE.READ;

@@ -7,12 +7,13 @@ const config = require('../common/config');
 const BaseJob = require('./BaseJob');
 const errors = require('../common/errors');
 const utils = require('../common/utils');
-const cloudController = require('../data-access-layer/cf').cloudController;
-const Fabrik = require('../broker/lib/fabrik');
+const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 const catalog = require('../common/models/catalog');
 const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const Repository = require('..//common/db').Repository;
+const DirectorService = require('../managers/bosh-manager/DirectorService');
+const eventmesh = require('../data-access-layer/eventmesh');
+const Repository = require('../common/db').Repository;
 //NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {
@@ -39,23 +40,25 @@ class ServiceInstanceUpdateJob extends BaseJob {
         logger.error(msg);
         return this.runFailed(new errors.ServiceUnavailable(msg), operationResponse, job, done);
       }
-      return this
-        .getServicePlanIdForInstanceId(instanceDetails.instance_id)
-        .then((planId) => (planId === undefined ?
+      /* In case of instance provisioned by other than bosh director.
+       * Need to chnage resource group / type. Better to save plan name in job data.
+       * Otherwise need to look for instance_id with all possible provisioners.
+       */
+      return eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: instanceDetails.instance_id
+        })
+        .catch(errors.NotFound, () => undefined)
+        .then(resource => _.get(resource, 'spec.options'))
+        .then(resourceDetails => (resourceDetails === undefined ?
           this.handleInstanceDeletion(instanceDetails, operationResponse, done) :
-          this.updateInstanceIfOutdated(instanceDetails, planId, operationResponse)))
+          this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse)))
         .then(opResponse => this.runSucceeded(opResponse, job, done))
         .catch((error) => {
           this.runFailed(error, operationResponse, job, done);
         });
     });
-  }
-
-  static getServicePlanIdForInstanceId(instanceId) {
-    return cloudController
-      .findServicePlanByInstanceId(instanceId)
-      .then(body => body.entity.unique_id)
-      .catch(errors.ServiceInstanceNotFound, () => undefined);
   }
 
   static handleInstanceDeletion(instanceDetails, operationResponse) {
@@ -70,11 +73,13 @@ class ServiceInstanceUpdateJob extends BaseJob {
       });
   }
 
-  static updateInstanceIfOutdated(instanceDetails, planId, operationResponse) {
+  static updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse) {
+    const planId = _.get(resourceDetails, 'plan_id');
     const plan = catalog.getPlan(planId);
     logger.info(`Instance Id: ${instanceDetails.instance_id} - manager : ${plan.manager.name} - Force Update: ${plan.service.force_update}`);
+    const tenantInfo = _.pick(resourceDetails, ['context', 'organization_guid', 'space_guid']);
     return this
-      .getOutdatedDiff(instanceDetails.deployment_name, instanceDetails.instance_id, plan)
+      .getOutdatedDiff(instanceDetails, tenantInfo, plan)
       .then(diffResults => {
         const outdated = _.get(diffResults, 'diff', false) && diffResults.diff.length !== 0;
         operationResponse.deployment_outdated = outdated;
@@ -86,34 +91,36 @@ class ServiceInstanceUpdateJob extends BaseJob {
         }
         let trackAttempts = true;
         return this
-          .updateDeployment(
-            instanceDetails.deployment_name,
+          .updateServiceInstance(
+            instanceDetails.instance_id,
             diffResults.diff,
             plan.service.force_update,
-            instanceDetails.run_immediately
+            instanceDetails.run_immediately,
+            plan,
+            _.get(resourceDetails, 'context')
           )
           .then(result => {
             operationResponse.update_init = CONST.OPERATION.SUCCEEDED;
-            operationResponse.update_operation_guid = result.guid;
+            operationResponse.update_response = result;
             return operationResponse;
           })
           .catch(err => {
             operationResponse.update_init = CONST.OPERATION.FAILED;
             logger.error('Error occurred while updating service instance job :', err);
-            if (err instanceof errors.DeploymentAttemptRejected) {
+            if (utils.deploymentStaggered(err)) {
               //If deployment was staggered due to exhaustion of workers, reschedule update job
               //Retry attempts do not count when deployment is staggered
               //TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
               trackAttempts = false;
               err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
             }
-            if (err instanceof errors.DeploymentAlreadyLocked) {
+            if (utils.deploymentLocked(err)) {
               //If deployment locked then backup is in progress. So reschedule update job,
               //Retry attempts dont count when deployment is locked for backup.
               // Only if locked for backup operation
               // Message example: 
               // Service Instance abcdefgh-abcd-abcd-abcd-abcdefghijkl __Locked__ at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup
-              const errMessage = err.message || '';
+              const errMessage = _.get(err, 'error.description') || '';
               const operation = errMessage.split(' ').splice(-1)[0];
               if (operation === CONST.OPERATION_TYPE.BACKUP) {
                 trackAttempts = false;
@@ -128,47 +135,45 @@ class ServiceInstanceUpdateJob extends BaseJob {
             //Even in case of successful initiation the job is rescheduled so that after the reschedule delay,
             //when this job comes up it must see itself as updated.
             //This is to handle any Infra errors that could happen post successful initiation of update. (its a retry mechanism)
-            this
-              .rescheduleUpdateJob(instanceDetails, trackAttempts);
+            this.rescheduleUpdateJob(instanceDetails, trackAttempts);
           });
       });
   }
 
-  static getOutdatedDiff(deploymentName, instanceId, plan) {
-    return Fabrik
-      .createManager(plan)
-      .then((directorManager) => cloudController.getOrgAndSpaceGuid(instanceId)
-        .then(opts => {
-          const context = {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: opts.organization_guid,
-            space_guid: opts.space_guid
-          };
-          opts.context = context;
-          return directorManager
-            .diffManifest(deploymentName, opts);
-        })
-      );
+  static getOutdatedDiff(instanceDetails, tenantInfo, plan) {
+    return DirectorService.createInstance(instanceDetails.instance_id, {
+        plan_id: plan.id,
+        context: tenantInfo.context
+      })
+      .then(directorInstance => directorInstance.diffManifest(instanceDetails.deployment_name, tenantInfo));
   }
 
-  static updateDeployment(deploymentName, diff, skipForbiddenCheck, runImmediately) {
+  static updateServiceInstance(instance_id, diff, skipForbiddenCheck, runImmediately, plan, context) {
     return Promise
       .try(() => {
         if (!skipForbiddenCheck) {
           utils.hasChangesInForbiddenSections(diff);
         }
       })
-      .then(() => Fabrik
-        .createOperation('update', {
-          deployment: deploymentName,
-          username: 'Auto_Update_Job',
-          arguments: {},
-          runImmediately: runImmediately || false
+      .then(() => serviceBrokerClient
+        .updateServiceInstance({
+          instance_id: instance_id,
+          context: context,
+          service_id: plan.service.id,
+          plan_id: plan.id,
+          previous_values: {
+            service_id: plan.service.id,
+            plan_id: plan.id,
+            organization_id: context.organization_id,
+            space_id: context.space_guid
+          },
+          parameters: {
+            scheduled: true,
+            _runImmediately: runImmediately || false,
+            'service-fabrik-operation': true
+          }
         })
-        .invoke())
-      .then(result => ({
-        guid: result.guid
-      }));
+      );
   }
 
   static rescheduleUpdateJob(instanceDetails, trackAttempts) {

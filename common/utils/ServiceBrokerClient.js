@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const CONST = require('../constants');
 const config = require('../config');
 const HttpClient = require('./HttpClient');
 const logger = require('../logger');
@@ -70,6 +71,31 @@ class ServiceBrokerClient extends HttpClient {
         },
         json: true
       }, 200)
+      .then(res => res.body);
+  }
+
+  updateServiceInstance(options) {
+    logger.info(`-> Updating instance -  name: ${options.instance_id}`);
+    const body = _.omit(options, 'instance_id');
+    return this
+      .request({
+        method: 'PATCH',
+        url: `/cf/v2/service_instances/${options.instance_id}`,
+        auth: {
+          user: config.username,
+          pass: config.password
+        },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Broker-API-Version': CONST.SF_BROKER_API_VERSION_MIN
+        },
+        qs: {
+          accepts_incomplete: true
+        },
+        body: body,
+        json: true
+      }, 202)
       .then(res => res.body);
   }
 }

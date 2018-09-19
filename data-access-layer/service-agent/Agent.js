@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const CONST = require('../../common/constants');
 const formatUrl = require('url').format;
 const path = require('path');
 const Promise = require('bluebird');
@@ -45,7 +46,7 @@ class Agent extends HttpClient {
       .request({
         method: 'GET',
         url: url
-      }, 200)
+      }, CONST.HTTP_STATUS_CODE.OK)
       .then(res => {
         if (_.isPlainObject(res.body)) {
           return res.body;
@@ -106,7 +107,7 @@ class Agent extends HttpClient {
           url: url,
           auth: (authObject ? authObject : this.auth),
           body: body
-        }, expectedStatusCode || 200)
+        }, expectedStatusCode || CONST.HTTP_STATUS_CODE.OK)
         .then(res => res.body));
   }
 
@@ -141,7 +142,7 @@ class Agent extends HttpClient {
         .request({
           method: 'GET',
           url: url
-        }, 200))
+        }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => {
         if (_.isPlainObject(res.body)) {
           return res.body;
@@ -179,7 +180,7 @@ class Agent extends HttpClient {
         method: 'GET',
         url: url,
         auth: this.auth
-      }, 200))
+      }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => res.body);
   }
 
@@ -187,7 +188,7 @@ class Agent extends HttpClient {
     const body = {};
     return this
       .getHost(ips, 'lifecycle')
-      .then(ip => this.post(ip, 'lifecycle/deprovision', body, 200));
+      .then(ip => this.post(ip, 'lifecycle/deprovision', body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   preUpdate(ips, context) {
@@ -196,7 +197,7 @@ class Agent extends HttpClient {
     // In case agent passwords are being updated as part of this update
     return this
       .getHost(ips, 'lifecycle.preupdate')
-      .then(ip => this.post(ip, 'lifecycle/preupdate', context, 200, agentCredsBeforeUpdate));
+      .then(ip => this.post(ip, 'lifecycle/preupdate', context, CONST.HTTP_STATUS_CODE.OK, agentCredsBeforeUpdate));
   }
 
   createCredentials(ips, parameters, preBindResponse) {
@@ -206,7 +207,7 @@ class Agent extends HttpClient {
     };
     return this
       .getHost(ips, 'credentials')
-      .then(ip => this.post(ip, 'credentials/create', body, 200));
+      .then(ip => this.post(ip, 'credentials/create', body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   deleteCredentials(ips, credentials, preUnbindResponse) {
@@ -216,7 +217,7 @@ class Agent extends HttpClient {
     };
     return this
       .getHost(ips, 'credentials')
-      .then(ip => this.post(ip, 'credentials/delete', body, 200));
+      .then(ip => this.post(ip, 'credentials/delete', body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   startBackup(ip, backup, vms) {
@@ -225,13 +226,13 @@ class Agent extends HttpClient {
       vms: vms
     };
     return this
-      .post(ip, 'backup/start', body, 202);
+      .post(ip, 'backup/start', body, CONST.HTTP_STATUS_CODE.ACCEPTED);
   }
 
   abortBackup(ip) {
     const body = {};
     return this
-      .post(ip, 'backup/abort', body, 202);
+      .post(ip, 'backup/abort', body, CONST.HTTP_STATUS_CODE.ACCEPTED);
   }
 
   getBackupLastOperation(ip) {
@@ -242,7 +243,7 @@ class Agent extends HttpClient {
           method: 'GET',
           url: url,
           auth: this.auth
-        }, 200))
+        }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => res.body);
   }
 
@@ -255,7 +256,7 @@ class Agent extends HttpClient {
           url: url,
           auth: this.auth,
           json: false
-        }, 200))
+        }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => _
         .chain(res.body)
         .split('\n')
@@ -271,13 +272,13 @@ class Agent extends HttpClient {
     };
     return this
       .getHost(ips, 'restore')
-      .tap(ip => this.post(ip, 'restore/start', body, 202));
+      .tap(ip => this.post(ip, 'restore/start', body, CONST.HTTP_STATUS_CODE.ACCEPTED));
   }
 
   abortRestore(ip) {
     const body = {};
     return this
-      .post(ip, 'restore/abort', body, 202);
+      .post(ip, 'restore/abort', body, CONST.HTTP_STATUS_CODE.ACCEPTED);
   }
 
   getRestoreLastOperation(ip) {
@@ -287,7 +288,7 @@ class Agent extends HttpClient {
         method: 'GET',
         url: url,
         auth: this.auth
-      }, 200))
+      }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => res.body);
   }
 
@@ -300,7 +301,7 @@ class Agent extends HttpClient {
           url: url,
           auth: this.auth,
           json: false
-        }, 200))
+        }, CONST.HTTP_STATUS_CODE.OK))
       .then(res => _
         .chain(res.body)
         .split('\n')

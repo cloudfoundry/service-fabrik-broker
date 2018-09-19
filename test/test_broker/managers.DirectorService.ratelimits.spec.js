@@ -23,7 +23,7 @@ const params = {
 const internal_params = {
   parameters: {
     key: 'v1',
-    'service-fabrik-operation': mocks.uaa.jwtToken
+    scheduled: true
   },
   context: {}
 };
@@ -105,7 +105,7 @@ describe('manager', () => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams, undefined]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
       });
     });
     it('should update with rate limits - internal operation [staggers]', () => {
@@ -120,7 +120,7 @@ describe('manager', () => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams, undefined]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
       });
     });
     it('should invoke last operation: op in progress - cached', () => {
@@ -255,13 +255,17 @@ describe('manager', () => {
     });
     it('should update without rate limits - internal operation', () => {
       return directorService.update(internal_params).then(out => {
-        let expectedParams = params;
-        expectedParams.scheduled = true;
+        let expectedParams = _.cloneDeep(params);
+        _.set(expectedParams, 'parameters', _.assign(_.cloneDeep(params.parameters), {
+          scheduled: true
+        }));
         expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
-        expect(out.parameters).to.eql(params.parameters);
+        expect(out.parameters).to.eql(_.assign(_.cloneDeep(params.parameters), {
+          scheduled: true
+        }));
         expect(out.context).to.eql(params.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams, undefined]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
       });
     });
     it('should invoke last operation: op in progress', () => {
@@ -645,7 +649,9 @@ describe('manager', () => {
       });
       describe('scheduled operations', () => {
         let params = {
-          scheduled: true
+          parameters: {
+            scheduled: true
+          }
         };
         it('should not store operation in etcd and throw error when bosh is down', () => {
           storeSpy.returns(Promise.resolve());

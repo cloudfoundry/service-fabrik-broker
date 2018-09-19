@@ -7,7 +7,6 @@ const yaml = require('js-yaml');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
-const jwt = require('../../broker/lib/jwt');
 const utils = require('../../common/utils');
 const catalog = require('../../common/models').catalog;
 const NotFound = errors.NotFound;
@@ -232,30 +231,19 @@ class DirectorService extends BaseDirectorService {
     const operation = {
       type: 'update'
     };
-    // service fabrik operation token
-    const token = _.get(params.parameters, 'service-fabrik-operation', null);
-    if (token) {
-      _.unset(params.parameters, 'service-fabrik-operation');
-      _.set(params, 'scheduled', true);
-    }
     return this
       .initialize(operation)
-      .then(() => token ? jwt.verify(token, config.password) : null)
-      .then(serviceFabrikOperation => {
-        logger.info('SF Operation input:', serviceFabrikOperation);
-        this.operation = _.get(serviceFabrikOperation, 'name', 'update');
-        // normal update operation
-        if (this.operation === 'update') {
-          const args = _.get(serviceFabrikOperation, 'arguments');
-          return this.createOrUpdateDeployment(this.deploymentName, params, args)
-            .then(op => _
-              .chain(operation)
-              .assign(_.pick(params, 'parameters', 'context'))
-              .set('task_id', op.task_id)
-              .set('cached', op.cached)
-              .value()
-            );
-        }
+      .then(() => {
+        logger.info('Parameters for update operation:', _.get(params, 'parameters'));
+        this.operation = this.operation || 'update';
+        return this.createOrUpdateDeployment(this.deploymentName, params)
+          .then(op => _
+            .chain(operation)
+            .assign(_.pick(params, 'parameters', 'context'))
+            .set('task_id', op.task_id)
+            .set('cached', op.cached)
+            .value()
+          );
       });
   }
 
@@ -427,9 +415,9 @@ class DirectorService extends BaseDirectorService {
     logger.info(`Checking rate limits against bosh for deployment `);
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
-    const scheduled = _.get(params, 'scheduled') || false;
+    const scheduled = _.get(params, 'parameters.scheduled') || false;
     const runImmediately = _.get(params, 'parameters._runImmediately') || false;
-    _.omit(params, 'scheduled');
+    _.omit(params, 'parameters.scheduled');
     _.omit(params, 'parameters._runImmediately');
 
     if (!config.enable_bosh_rate_limit || runImmediately) {
@@ -778,7 +766,13 @@ class DirectorService extends BaseDirectorService {
     return Promise.join(
         this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
         this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
+        (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
+          maxAttempts: 3,
+          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+        })
+        .catch(errors.Timeout, err => {
+          throw err;
+        })
       )
       .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
       .tap(() => {
@@ -787,7 +781,7 @@ class DirectorService extends BaseDirectorService {
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
       .catch(err => {
-        logger.error('+-> Failed to create binding');
+        logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`);
         logger.error(err);
         throw err;
       });
@@ -816,11 +810,18 @@ class DirectorService extends BaseDirectorService {
           this.getDeploymentIps(deploymentName),
           this.getBindingProperty(deploymentName, id)
         ]))
-      .spread((preUnbindResponse, ips, binding) => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse))
+      .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
+          maxAttempts: 3,
+          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+        })
+        .catch(errors.Timeout, err => {
+          throw err;
+        })
+      )
       .then(() => this.deleteBindingProperty(deploymentName, id))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catch(err => {
-        logger.error('+-> Failed to delete binding');
+        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
         logger.error(err);
         throw err;
       });
