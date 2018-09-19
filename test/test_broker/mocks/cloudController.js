@@ -311,7 +311,7 @@ function getServiceInstancesInSpaceWithName(instance_name, space_guid, present) 
     });
 }
 
-function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, resources) {
+function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, resources, times) {
   const defaultResources = [{
     metadata: {
       guid: plan_guid
@@ -325,6 +325,7 @@ function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, res
     .query({
       q: `service_instance_guid:${instance_id}`
     })
+    .times(times || 1)
     .reply(200, {
       resources: resources ? resources : defaultResources
     });

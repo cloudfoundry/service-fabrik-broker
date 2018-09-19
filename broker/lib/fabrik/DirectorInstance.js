@@ -7,7 +7,6 @@ const yaml = require('js-yaml');
 const BaseInstance = require('./BaseInstance');
 const logger = require('../../../common/logger');
 const errors = require('../../../common/errors');
-const catalog = require('../../../common/models').catalog;
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
 
@@ -56,25 +55,14 @@ class DirectorInstance extends BaseInstance {
     };
     return Promise
       .all([
-        this.cloudController.getServiceInstance(this.guid)
-        .then(instance => this.cloudController.getServicePlan(instance.entity.service_plan_guid, {})
-          .then(plan => {
-            return {
-              'instance': instance,
-              'plan': plan
-            };
-          })
-        ),
+        this.cloudController.getServiceInstance(this.guid),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
-      .spread((instanceInfo, deploymentInfo) => {
-        let instance = instanceInfo.instance;
-        let planInfo = instanceInfo.plan;
-        let currentPlan = catalog.getPlan(planInfo.entity.unique_id);
+      .spread((instance, deploymentInfo) => {
         return {
-          title: `${currentPlan.service.metadata.displayName || 'Service'} Dashboard`,
-          plan: currentPlan,
-          service: currentPlan.service,
+          title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: this.plan,
+          service: this.plan.service,
           instance: _.set(instance, 'task', deploymentInfo),
           files: [{
             id: 'status',

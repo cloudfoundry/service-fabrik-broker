@@ -43,7 +43,7 @@ describe('dashboard', function () {
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
-        mocks.cloudController.getServicePlan(service_plan_guid, plan_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id, service_plan_guid, plan_id, undefined, 2);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer();

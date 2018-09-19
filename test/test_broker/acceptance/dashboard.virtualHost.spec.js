@@ -51,7 +51,7 @@ describe('dashboard', function () {
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.cloudController.getServiceInstance(instance_id);
         mocks.cloudController.getServiceInstance(parent_instance_id);
-        mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
+        mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id, undefined, 3);
         mocks.cloudProvider.download(pathname, data);
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
