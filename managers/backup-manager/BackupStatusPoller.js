@@ -96,7 +96,7 @@ class BackupStatusPoller {
             });
         }
       })
-      .then(operationStatusResponse => operationStatusResponse.operationFinished ?
+      .then(operationStatusResponse => utils.isServiceFabrikOperationFinished(operationStatusResponse.state) ?
         this.doPostFinishOperation(operationStatusResponse, operationName, opts)
         .tap(() => {
           const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
@@ -175,7 +175,7 @@ class BackupStatusPoller {
           logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
             // If task is not picked by poller which has the lock on task for CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
-            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + CONST.DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
+            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (config.backup.backup_restore_status_check_every + CONST.DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resourceBody);

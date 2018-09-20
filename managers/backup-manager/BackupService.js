@@ -138,6 +138,7 @@ class BackupService extends BaseDirectorService {
           //     .return(agent_ip);
           // })
           .then(agent_ip => {
+            data.agent_ip = agent_ip;
             // registeredStatusPoller = true;
             return this.agent.startBackup(agent_ip, backup, vms);
           })
