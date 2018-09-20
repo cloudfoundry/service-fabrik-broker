@@ -22,11 +22,11 @@ class JobFabrik {
         OperationStatusPollerJob = require('./OperationStatusPollerJob');
       }
       return OperationStatusPollerJob;
-    case CONST.JOB.BNR_STATUS_POLLER:
-      if (BnRStatusPollerJob === undefined) {
-        BnRStatusPollerJob = require('./BnRStatusPollerJob');
-      }
-      return BnRStatusPollerJob;
+      // case CONST.JOB.BNR_STATUS_POLLER:
+      //   if (BnRStatusPollerJob === undefined) {
+      //     BnRStatusPollerJob = require('./BnRStatusPollerJob');
+      //   }
+      //   return BnRStatusPollerJob;
     case CONST.JOB.BLUEPRINT_JOB:
       if (BluePrintJob === undefined) {
         BluePrintJob = require('./BluePrintJob');

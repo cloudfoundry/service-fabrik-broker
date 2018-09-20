@@ -102,8 +102,8 @@ class BackupService extends BaseDirectorService {
     }
 
     let metaUpdated = false,
-      backupStarted = false,
-      registeredStatusPoller = false;
+      backupStarted = false
+    // registeredStatusPoller = false;
 
     let deploymentName;
     return bosh
@@ -123,22 +123,22 @@ class BackupService extends BaseDirectorService {
         data.secret = backup.secret = secret;
         return this.agent
           .getHost(ips, 'backup')
+          // .then(agent_ip => {
+          //   data.agent_ip = result.agent_ip = agent_ip;
+          //   instanceInfo = _.chain(data)
+          //     .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id')
+          //     .set('deployment', deploymentName)
+          //     .set('started_at', backupStartedAt)
+          //     .value();
+          //   return BackupService.registerBnRStatusPoller({
+          //       operation: CONST.OPERATION_TYPE.BACKUP,
+          //       type: backup.type,
+          //       trigger: backup.trigger
+          //     }, instanceInfo)
+          //     .return(agent_ip);
+          // })
           .then(agent_ip => {
-            data.agent_ip = result.agent_ip = agent_ip;
-            instanceInfo = _.chain(data)
-              .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id')
-              .set('deployment', deploymentName)
-              .set('started_at', backupStartedAt)
-              .value();
-            return BackupService.registerBnRStatusPoller({
-                operation: CONST.OPERATION_TYPE.BACKUP,
-                type: backup.type,
-                trigger: backup.trigger
-              }, instanceInfo)
-              .return(agent_ip);
-          })
-          .then(agent_ip => {
-            registeredStatusPoller = true;
+            // registeredStatusPoller = true;
             return this.agent.startBackup(agent_ip, backup, vms);
           })
           .then(() => {
@@ -168,15 +168,15 @@ class BackupService extends BaseDirectorService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
-          .tap(() => {
-            if (registeredStatusPoller) {
-              logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${backup.guid}`);
-              return ScheduleManager
-                .cancelSchedule(`${deploymentName}_backup_${backup.guid}`,
-                  CONST.JOB.BNR_STATUS_POLLER)
-                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
-            }
-          })
+          // .tap(() => {
+          //   if (registeredStatusPoller) {
+          //     logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${backup.guid}`);
+          //     return ScheduleManager
+          //       .cancelSchedule(`${deploymentName}_backup_${backup.guid}`,
+          //         CONST.JOB.BNR_STATUS_POLLER)
+          //       .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+          //   }
+          // })
           .then(() => eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
