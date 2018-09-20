@@ -296,6 +296,7 @@ module.exports = Object.freeze({
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
       ABORT: 'abort',
+      ABORTING: 'aborting',
       ABORTED: 'aborted',
       UPDATE: 'update',
       LOCKED: 'locked',

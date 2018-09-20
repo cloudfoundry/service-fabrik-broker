@@ -4,64 +4,38 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
+const cf = require('../../data-access-layer/cf');
 const CONST = require('../../common/constants');
 const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
-const DirectorService = require('./DirectorService');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
+const retry = utils.retry;
+const catalog = require('../../common/models').catalog;
+const EventLogInterceptor = require('../../common/EventLogInterceptor');
+const BackupService = require('./BackupService');
 const AssertionError = assert.AssertionError;
 const Conflict = errors.Conflict;
 
 class BackupStatusPoller {
-  static run(job, done) {
-    job.__started_At = new Date();
-    const options = job.attrs.data;
-    logger.info(`-> Starting BnRStatusPollerJob -  name: ${options[CONST.JOB_NAME_ATTRIB]}
-              - operation: ${options.operation} - with options: ${JSON.stringify(options)} `);
-    if (!_.get(options, 'operation_details.instance_guid') || !_.get(options, 'type') ||
-      !_.get(options, 'operation') || !_.get(options, 'operation_details.backup_guid') ||
-      !_.get(options, 'operation_details.tenant_id') || !_.get(options, 'operation_details.plan_id') ||
-      !_.get(options, 'operation_details.agent_ip') || !_.get(options, 'operation_details.started_at') ||
-      !_.get(options, 'operation_details.deployment') || !_.get(options, 'operation_details.service_id')) {
-      const msg = `BnR status poller cannot be initiated as the required mandatory params 
-            (instance_guid | type | operation | backup_guid | tenant_id | plan_id | agent_ip | 
-              started_at | deployment | service_id) is empty : ${JSON.stringify(options)}`;
-      logger.error(msg);
-      return this.runFailed(new errors.BadRequest(msg), {}, job, done);
-    } else if (_.get(options, 'operation') !== CONST.OPERATION_TYPE.BACKUP) {
-      const msg = `Operation polling not supported for operation - ${options.operation}`;
-      logger.error(msg);
-      const err = {
-        statusCode: `ERR_${options.operation.toUpperCase()}_NOT_SUPPORTED`,
-        statusMessage: msg
-      };
-      return this.runFailed(err, {}, job, done);
-    } else {
-      //modify the first argument here based on implementation of the function
-      return this.checkOperationCompletionStatus(job.attrs.data)
-        .then(operationStatusResponse => this.runSucceeded(operationStatusResponse, job, done))
-        .catch(err => {
-          logger.error(`Error occurred while running operation ${options.operation} status poller for instance ${_.get(options, 'instance_guid')}.`, err);
-          return this.runFailed(err, {}, job, done);
-        });
-    }
-  }
 
   static checkOperationCompletionStatus(opts) {
+    assert.ok(opts.operation, `Argument 'opts.operation' is required to start polling for backup`);
+    assert.ok(opts.instance_guid, `Argument 'opts.instance_guid' is required to start polling for backup`);
+    assert.ok(opts.backup_guid, `Argument 'opts.backup_guid' is required to start polling for backup`);
+    assert.ok(opts.plan_id, `Argument 'opts.plan_id' is required to start polling for backup`);
+    assert.ok(opts.started_at, `Argument 'opts.started_at' is required to start polling for backup`);
+    assert.ok(opts.deployment, `Argument 'opts.deployment' is required to start polling for backup`);
+
     logger.info('Checking Operation Completion Status for :', opts);
     const operationName = opts.operation;
     const instance_guid = opts.instance_guid;
     const backup_guid = opts.backup_guid;
     const plan = catalog.getPlan(opts.plan_id);
-    return Promise
-      .try(() => {
-        if (operationName === CONST.OPERATION_TYPE.BACKUP) {
-          return BackupService.createService(plan)
-            .then(backupService => backupService.getOperationState(CONST.OPERATION_TYPE.BACKUP, opts));
-        }
-      })
+    const deployment = opts.deployment;
+
+    return BackupService.createService(plan)
+      .then(backupService => backupService.getOperationState(CONST.OPERATION_TYPE.BACKUP, opts))
       .then(operationStatusResponse => {
         if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
           return operationStatusResponse;
@@ -84,14 +58,20 @@ class BackupStatusPoller {
               const lockDeploymentMaxDuration = eventmesh.lockManager.getLockTTL(operationName);
               if (backupTriggeredDuration > lockDeploymentMaxDuration) {
                 //Operation timed out
-                if (!instanceInfo.abortStartTime) {
+                if (!opts.abort_start_time) {
                   //Operation not aborted. Aborting operation and with abort start time
-                  // re-registering statupoller job
                   let abortStartTime = new Date().toISOString();
-                  instanceInfo.abortStartTime = abortStartTime;
-                  return BackupService.createService(plan)
-                    .then(backupService => backupService.abortLastBackup(instanceInfo, true))
-                    .then(() => BackupService.registerBnRStatusPoller(job_data, instanceInfo))
+                  return eventmesh.apiServerClient.patchResource({
+                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                      resourceId: opts.backup_guid,
+                      status: {
+                        state: CONST.APISERVER.RESOURCE_STATE.ABORT,
+                        response: {
+                          abort_start_time: abortStartTime
+                        }
+                      }
+                    })
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;
                       return operationStatusResponse;
@@ -99,15 +79,13 @@ class BackupStatusPoller {
                 } else {
                   // Operation aborted
                   const currentTime = new Date();
-                  const abortDuration = (currentTime - new Date(instanceInfo.abortStartTime));
+                  const abortDuration = (currentTime - new Date(opts.abort_start_time));
                   if (abortDuration < config.backup.abort_time_out) {
                     logger.info(`${operationName} abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
                     operationStatusResponse.state = CONST.OPERATION.ABORTING;
                   } else {
                     operationStatusResponse.state = CONST.OPERATION.ABORTED;
                     logger.info(`Abort ${operationName} timed out on : ${deployment} for guid : ${backup_guid}. Flagging ${operationName} operation as complete`);
-                    operationStatusResponse.operationTimedOut = true;
-                    operationStatusResponse.operationFinished = true;
                   }
                   return operationStatusResponse;
                 }
@@ -119,7 +97,7 @@ class BackupStatusPoller {
         }
       })
       .then(operationStatusResponse => operationStatusResponse.operationFinished ?
-        this.doPostFinishOperation(operationStatusResponse, operationName, instanceInfo)
+        this.doPostFinishOperation(operationStatusResponse, operationName, opts)
         .tap(() => {
           const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
           let retryDelayInMinutes;
@@ -145,32 +123,30 @@ class BackupStatusPoller {
         throw err;
       });
   }
-  static doPostFinishOperation(operationStatusResponse, operationName, instanceInfo) {
+  static doPostFinishOperation(operationStatusResponse, operationName, opts) {
     return Promise
       .try(() => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: instanceInfo.backup_guid,
+        resourceId: opts.backup_guid,
         status: {
           'state': operationStatusResponse.state
         }
       }))
-      .then(() => this._logEvent(instanceInfo, operationName, operationStatusResponse))
-      .then(() => ScheduleManager.cancelSchedule(`${instanceInfo.deployment}_${operationName}_${instanceInfo.backup_guid}`, CONST.JOB.BNR_STATUS_POLLER))
+      .then(() => this._logEvent(opts, operationName, operationStatusResponse))
       .then(() => {
         if (operationStatusResponse.operationTimedOut) {
-          const msg = `Deployment ${instanceInfo.instance_guid} ${operationName} with backup guid ${instanceInfo.backup_guid} exceeding timeout time
+          const msg = `Deployment ${opts.instance_guid} ${operationName} with backup guid ${opts.backup_guid} exceeding timeout time
         ${config.backup.backup_restore_status_poller_timeout / 1000 / 60} (mins). Stopping status check`;
           logger.error(msg);
         } else {
-          logger.info(`Instance ${instanceInfo.instance_guid} ${operationName} for backup guid ${instanceInfo.backup_guid} completed -`, operationStatusResponse);
+          logger.info(`Instance ${opts.instance_guid} ${operationName} for backup guid ${opts.backup_guid} completed -`, operationStatusResponse);
         }
-        operationStatusResponse.jobCancelled = true;
         return operationStatusResponse;
       });
   }
 
-  static _logEvent(instanceInfo, operation, operationStatusResponse) {
+  static _logEvent(opts, operation, operationStatusResponse) {
     const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
     const check_res_body = true;
     const resp = {
@@ -178,7 +154,7 @@ class BackupStatusPoller {
       body: operationStatusResponse
     };
     if (CONST.URL[operation]) {
-      return eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, instanceInfo, resp, check_res_body);
+      return eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, opts, resp, check_res_body);
     }
   }
 
@@ -225,6 +201,18 @@ class BackupStatusPoller {
                     return BackupStatusPoller.checkOperationCompletionStatus(response);
                   }
                 })
+                .catch(AssertionError, err => {
+                  logger.error(`Error occured while polling for backup, marking backup as failed`, err);
+                  return eventmesh.apiServerClient.updateResource({
+                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                    resourceId: metadata.name,
+                    status: {
+                      state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                      error: utils.buildErrorJson(err)
+                    }
+                  });
+                })
                 .catch(Conflict, () => {
                   logger.debug(`Not able to acquire backup task poller processing lock for backup with guid ${object.metadata.name}, Request is probably picked by other worker`);
                 });
@@ -243,7 +231,7 @@ class BackupStatusPoller {
         }
       });
     }
-    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`;
+    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`;
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, startPoller, queryString)
       .then(stream => {
         logger.debug(`Successfully set watcher on director resources for task polling with query string:`, queryString);
@@ -267,7 +255,7 @@ class BackupStatusPoller {
   }
 
   static clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing bosh task poller interval for deployment`, resourceId);
+    logger.debug(`Clearing bosh task poller interval for backup`, resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }

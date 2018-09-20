@@ -151,13 +151,16 @@ class BackupService extends BaseDirectorService {
       })
       //TODO-PR - Break it into multiple methods
       .then(backupInfo => {
+        const response = _.extend(backupInfo, {
+          deployment: deploymentName
+        });
         return eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: result.backup_guid,
             status: {
               'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-              'response': backupInfo
+              'response': response
             }
           })
           .then(() => backupInfo);
