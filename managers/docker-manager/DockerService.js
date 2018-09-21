@@ -284,8 +284,6 @@ class DockerService extends BaseService {
       RestartPolicy: this.restartPolicy,
       Devices: [],
       Ulimits: [],
-      PidsLimit: CONST.DOCKER_HOST_CONFIG.PIDS_LIMIT,
-      NanoCpus: CONST.DOCKER_HOST_CONFIG.CPU_QUOTA,
       VolumeDriver: _.size(volumeBindings) ? volumeDriver : ''
     };
   }
