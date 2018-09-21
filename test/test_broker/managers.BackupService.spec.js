@@ -93,38 +93,6 @@ describe('managers', function () {
     });
 
     describe('#startBackup', function () {
-      it('Should cancel status poller if backup fails', function () {
-        const context = {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        };
-        const opts = {
-          guid: backup_guid,
-          deployment: deployment_name,
-          instance_guid: instance_id,
-          plan_id: plan_id,
-          service_id: service_id,
-          context: context
-        };
-        // const type = 'online';
-        mocks.director.getDeploymentVms(deployment_name);
-        mocks.director.getDeploymentInstances(deployment_name);
-        mocks.agent.getInfo();
-        mocks.agent.startBackup();
-        mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
-          status: {
-            state: 'in_progress',
-            response: {}
-          }
-        }, 1, undefined, 404);
-        return manager.startBackup(opts)
-          .catch(err => {
-            expect(err.status).to.eql(404);
-            expect(cancelScheduleStub.callCount).to.eql(1);
-            mocks.verify();
-          });
-      });
       it('Should start backup successfully', function () {
         const context = {
           platform: 'cloudfoundry',
@@ -165,7 +133,6 @@ describe('managers', function () {
         });
         return manager.startBackup(opts)
           .then(() => {
-            expect(scheduleStub.callCount).to.eql(1);
             expect(putFileStub.callCount).to.eql(1);
             putFileStub.restore();
             mocks.verify();
