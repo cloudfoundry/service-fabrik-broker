@@ -11,7 +11,7 @@ const BaseManager = require('../BaseManager');
 const DBManager = require('../../broker/lib/fabrik/DBManager');
 
 /* jshint nonew:false */
-new DBManager(); //to start the BnRStatusPoller
+new DBManager(); //to log events
 
 class DefaultBackupManager extends BaseManager {
 
