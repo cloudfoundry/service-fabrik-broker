@@ -4,8 +4,9 @@
 <%
 const path = require('path');
 const os = require('os');
-
-const log_path = path.join(__dirname, '../..', 'logs', `${process.env.NODE_ENV}.log`)
+const exePath = process.argv[1];
+const exeName = exePath.substring(exePath.lastIndexOf('/')+1, exePath.indexOf('.js'));
+const log_path = path.join(__dirname, '../..', 'logs', `${exeName}-${process.env.NODE_ENV}.log`)
 
 const broker_name = 'service-fabrik-broker';
 const ip = '10.0.2.2';
