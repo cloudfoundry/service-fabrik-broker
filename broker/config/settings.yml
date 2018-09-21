@@ -9,7 +9,7 @@ let filePrefix = '';
 if(process && process.argv[1] && process.argv[1].indexOf('.js') !== -1){
   const exeName = process.argv[1].substring(process.argv[1].lastIndexOf('/')+1, process.argv[1].indexOf('.js'));
   if(exeName && exeName !== ''){
-    filePrefix = `${blah}-`;
+    filePrefix = `${exeName}-`;
   }
 }
 const log_path = path.join(__dirname, '../..', 'logs', `${filePrefix}${process.env.NODE_ENV}.log`)
