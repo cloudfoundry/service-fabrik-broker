@@ -13,6 +13,7 @@ const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
 const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
 const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
+const jsonWriteDelay = 50;
 
 const DockerManagerDummy = {
   registerWatcherDummy: () => {},
@@ -56,13 +57,6 @@ const DockerManager = proxyquire('../../managers/docker-manager/DockerManager', 
 });
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
-  const registerWatcherFake = function (resourceGroup, resourceType, callback) {
-    return Promise.try(() => {
-      jsonStream.on('data', callback);
-      return jsonStream;
-    });
-  };
-  registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
   /* jshint unused:false */
   const bm = new DockerManager();
   bm.init();
@@ -80,20 +74,34 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
 describe('docker-manager', function () {
   describe('DockerManager', function () {
     let createDockerServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
-    before(function () {
+    let jsonStream;
+    let registerWatcherFake;
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       createDockerServiceSpy = sinon.spy(DockerManagerDummy, 'createDockerServiceDummy');
       createSpy = sinon.spy(DockerManagerDummy, 'createDummy');
       updateSpy = sinon.spy(DockerManagerDummy, 'updateDummy');
       deleteSpy = sinon.spy(DockerManagerDummy, 'deleteDummy');
       getOperationOptionsSpy = sinon.spy(DockerManagerDummy, 'getOperationOptionsDummy');
+      jsonStream = new JSONStream();
+      registerWatcherFake = function (resourceGroup, resourceType, callback) {
+        return Promise.try(() => {
+          jsonStream.on('data', callback);
+          return jsonStream;
+        });
+      };
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
     afterEach(function () {
-      createDockerServiceSpy.reset();
-      createSpy.reset();
-      updateSpy.reset();
-      deleteSpy.reset();
+      sandbox.restore();
+      createDockerServiceSpy.restore();
+      createSpy.restore();
+      updateSpy.restore();
+      deleteSpy.restore();
+      getOperationOptionsSpy.restore();
+      registerWatcherStub.restore();
     });
 
     it('Should process create request successfully', () => {
@@ -129,11 +137,8 @@ describe('docker-manager', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-
-      const jsonStream = new JSONStream();
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
@@ -175,10 +180,8 @@ describe('docker-manager', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      const jsonStream = new JSONStream();
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(1);
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
@@ -219,12 +222,10 @@ describe('docker-manager', function () {
           annotations: config.broker_ip
         }
       }, 2);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(1);
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDockerServiceSpy.firstCall.args[1]).to.eql(options);
@@ -263,12 +264,10 @@ describe('docker-manager', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -306,12 +305,10 @@ describe('docker-manager', function () {
           annotations: ''
         }
       }, 1, undefined, 409);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -349,12 +346,10 @@ describe('docker-manager', function () {
           annotations: ''
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -390,12 +385,10 @@ describe('docker-manager', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -438,12 +431,10 @@ describe('docker-manager', function () {
           annotations: config.broker_ip
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDockerServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
           expect(createSpy.firstCall.args[0]).to.eql(options);

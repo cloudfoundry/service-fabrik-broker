@@ -801,6 +801,15 @@ describe('service-fabrik-api-sf2.0', function () {
       });
 
       describe('#backup-abort', function () {
+        let sandbox, delayStub;
+        before(function () {
+          sandbox = sinon.sandbox.create();
+          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        });
+
+        after(function () {
+          delayStub.restore();
+        });
         it('should return 202 Accepted', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1663,7 +1672,15 @@ describe('service-fabrik-api-sf2.0', function () {
         //   state: 'processing',
         //   agent_ip: mocks.agent.ip
         // };
+        let sandbox, delayStub;
+        before(function () {
+          sandbox = sinon.sandbox.create();
+          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        });
 
+        after(function () {
+          delayStub.restore();
+        });
         it('should return 202 Accepted', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getServiceInstance(instance_id, {
@@ -1836,7 +1853,15 @@ describe('service-fabrik-api-sf2.0', function () {
           agent_ip: mocks.agent.ip,
           service_id: service_id
         };
+        let sandbox, delayStub;
+        before(function () {
+          sandbox = sinon.sandbox.create();
+          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        });
 
+        after(function () {
+          delayStub.restore();
+        });
         it('should return 200 for an on-demand backup', function () {
           mocks.uaa.tokenKey();
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
