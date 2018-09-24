@@ -95,7 +95,7 @@ describe('docker-manager', function () {
     });
 
     afterEach(function () {
-      sandbox.restore()
+      sandbox.restore();
       createDockerServiceSpy.restore();
       createSpy.restore();
       updateSpy.restore();

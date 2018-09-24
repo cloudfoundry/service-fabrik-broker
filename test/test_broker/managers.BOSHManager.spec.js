@@ -73,7 +73,7 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
 
 describe('managers', function () {
   describe('BOSHManager', function () {
-    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox, delayStub;
+    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
 
@@ -93,18 +93,16 @@ describe('managers', function () {
       };
       registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
-      //delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
     });
 
     afterEach(function () {
-      sandbox.restore()
+      sandbox.restore();
       createDirectorServiceSpy.restore();
       createSpy.restore();
       updateSpy.restore();
       deleteSpy.restore();
       getOperationOptionsSpy.restore();
       registerWatcherStub.restore();
-      //delayStub.restore();
     });
 
     it('Should process create request successfully', () => {
