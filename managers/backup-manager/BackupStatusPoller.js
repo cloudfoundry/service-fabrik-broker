@@ -20,15 +20,14 @@ const Conflict = errors.Conflict;
 class BackupStatusPoller {
 
   static checkOperationCompletionStatus(opts) {
-    assert.ok(opts.operation, `Argument 'opts.operation' is required to start polling for backup`);
-    assert.ok(opts.instance_guid, `Argument 'opts.instance_guid' is required to start polling for backup`);
-    assert.ok(opts.backup_guid, `Argument 'opts.backup_guid' is required to start polling for backup`);
-    assert.ok(opts.plan_id, `Argument 'opts.plan_id' is required to start polling for backup`);
-    assert.ok(opts.started_at, `Argument 'opts.started_at' is required to start polling for backup`);
-    assert.ok(opts.deployment, `Argument 'opts.deployment' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'instance_guid'), `Argument 'opts.instance_guid' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'backup_guid'), `Argument 'opts.backup_guid' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'plan_id'), `Argument 'opts.plan_id' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'started_at'), `Argument 'opts.started_at' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'deployment'), `Argument 'opts.deployment' is required to start polling for backup`);
 
     logger.info('Checking Operation Completion Status for :', opts);
-    const operationName = opts.operation;
+    const operationName = CONST.OPERATION_TYPE.BACKUP;
     const instance_guid = opts.instance_guid;
     const backup_guid = opts.backup_guid;
     const plan = catalog.getPlan(opts.plan_id);
@@ -119,7 +118,7 @@ class BackupStatusPoller {
         }) : operationStatusResponse
       )
       .catch(err => {
-        logger.error(`Caught error while checking for operation completion status:`, err);
+        logger.error(`Caught error while checking for backup operation completion status:`, err);
         throw err;
       });
   }
@@ -172,7 +171,7 @@ class BackupStatusPoller {
           const options = resourceBody.spec.options;
           const response = resourceBody.status.response;
           const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
-          logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
+          logger.debug(`Backup status pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
             // If task is not picked by poller which has the lock on task for config.backup.backup_restore_status_check_every + BACKUP_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
             if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (config.backup.backup_restore_status_check_every + CONST.BACKUP_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
@@ -194,7 +193,7 @@ class BackupStatusPoller {
                   resourceId: metadata.name,
                   metadata: metadata
                 })
-                .tap((updatedResource) => logger.debug(`Successfully acquired bosh task poller lock for request with options: ${JSON.stringify(options)}\n` +
+                .tap(updatedResource => logger.debug(`Successfully acquired backup status poller lock for request with options: ${JSON.stringify(options)}\n` +
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
                   if (!utils.isServiceFabrikOperationFinished(resourceBody.status.state)) {
@@ -241,7 +240,7 @@ class BackupStatusPoller {
         return Promise
           .delay(config.backup.backup_restore_status_check_every)
           .then(() => {
-            logger.debug(`Refreshing stream after ${config.backup.backup_restore_status_check_every}`);
+            logger.debug(`Refreshing backup stream after ${config.backup.backup_restore_status_check_every}`);
             stream.abort();
             return this.start();
           });
@@ -251,7 +250,7 @@ class BackupStatusPoller {
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
-            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
+            logger.debug(`Refreshing backup stream on error after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
             return this.start();
           });
       });
