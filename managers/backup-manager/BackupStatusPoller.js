@@ -58,7 +58,7 @@ class BackupStatusPoller {
               const lockDeploymentMaxDuration = eventmesh.lockManager.getLockTTL(operationName);
               if (backupTriggeredDuration > lockDeploymentMaxDuration) {
                 //Operation timed out
-                if (!opts.abort_start_time) {
+                if (!opts.abortStartTime) {
                   //Operation not aborted. Aborting operation and with abort start time
                   let abortStartTime = new Date().toISOString();
                   return eventmesh.apiServerClient.patchResource({
@@ -68,7 +68,7 @@ class BackupStatusPoller {
                       status: {
                         state: CONST.APISERVER.RESOURCE_STATE.ABORT,
                         response: {
-                          abort_start_time: abortStartTime
+                          abortStartTime: abortStartTime
                         }
                       }
                     })
@@ -79,7 +79,7 @@ class BackupStatusPoller {
                 } else {
                   // Operation aborted
                   const currentTime = new Date();
-                  const abortDuration = (currentTime - new Date(opts.abort_start_time));
+                  const abortDuration = (currentTime - new Date(opts.abortStartTime));
                   if (abortDuration < config.backup.abort_time_out) {
                     logger.info(`${operationName} abort is still in progress on : ${deployment} for guid : ${backup_guid}`);
                     operationStatusResponse.state = CONST.OPERATION.ABORTING;
@@ -174,8 +174,8 @@ class BackupStatusPoller {
           const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
           logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
-            // If task is not picked by poller which has the lock on task for CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
-            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (config.backup.backup_restore_status_check_every + CONST.DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
+            // If task is not picked by poller which has the lock on task for config.backup.backup_restore_status_check_every + BACKUP_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
+            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (config.backup.backup_restore_status_check_every + CONST.BACKUP_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resourceBody);
@@ -198,7 +198,10 @@ class BackupStatusPoller {
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
                   if (!utils.isServiceFabrikOperationFinished(resourceBody.status.state)) {
-                    return BackupStatusPoller.checkOperationCompletionStatus(response);
+                    const instanceInfo = _.chain(response)
+                      .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment', 'started_at', 'abortStartTime')
+                      .value();
+                    return BackupStatusPoller.checkOperationCompletionStatus(instanceInfo);
                   }
                 })
                 .catch(AssertionError, err => {
@@ -214,7 +217,7 @@ class BackupStatusPoller {
                   });
                 })
                 .catch(Conflict, () => {
-                  logger.debug(`Not able to acquire backup task poller processing lock for backup with guid ${object.metadata.name}, Request is probably picked by other worker`);
+                  logger.debug(`Not able to acquire backup status poller processing lock for backup with guid ${object.metadata.name}, Request is probably picked by other worker`);
                 });
             }
           });
@@ -234,7 +237,7 @@ class BackupStatusPoller {
     const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`;
     return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, startPoller, queryString)
       .then(stream => {
-        logger.debug(`Successfully set watcher on director resources for task polling with query string:`, queryString);
+        logger.debug(`Successfully set watcher on backup resources for backup status polling with query string:`, queryString);
         return Promise
           .delay(config.backup.backup_restore_status_check_every)
           .then(() => {
@@ -244,7 +247,7 @@ class BackupStatusPoller {
           });
       })
       .catch(err => {
-        logger.error(`Error occured in registering watch for bosh task poller:`, err);
+        logger.error(`Error occured in registering watch for backup status poller:`, err);
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
@@ -252,14 +255,6 @@ class BackupStatusPoller {
             return this.start();
           });
       });
-  }
-
-  static clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing bosh task poller interval for backup`, resourceId);
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-    _.unset(BackupStatusPoller.pollers, resourceId);
   }
 }
 

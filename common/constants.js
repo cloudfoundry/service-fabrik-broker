@@ -54,6 +54,7 @@ module.exports = Object.freeze({
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000, // in ms
+  BACKUP_RESOURCE_POLLER_RELAXATION_TIME: 5000, //in ms
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
