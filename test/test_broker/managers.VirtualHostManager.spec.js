@@ -72,15 +72,9 @@ const VirtualHostManager = proxyquire('../../managers/virtualhost-manager/Virtua
     }
   }
 });
+const jsonWriteDelay = 50;
 
 function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
-  const registerWatcherFake = function (resourceGroup, resourceType, callback) {
-    return Promise.try(() => {
-      jsonStream.on('data', callback);
-      return jsonStream;
-    });
-  };
-  registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
   /* jshint unused:false */
   const vm = new VirtualHostManager();
   vm.init();
@@ -98,20 +92,34 @@ function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
 describe('managers', function () {
   describe('VirtualHostManager', function () {
     let createVirtualHostServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
-    before(function () {
+    let jsonStream;
+    let registerWatcherFake;
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       createVirtualHostServiceSpy = sinon.spy(VirtualHostManagerDummy, 'createVirtualHostServiceDummy');
       createSpy = sinon.spy(VirtualHostManagerDummy, 'createDummy');
       updateSpy = sinon.spy(VirtualHostManagerDummy, 'updateDummy');
       deleteSpy = sinon.spy(VirtualHostManagerDummy, 'deleteDummy');
       getOperationOptionsSpy = sinon.spy(VirtualHostManagerDummy, 'getOperationOptionsDummy');
+      jsonStream = new JSONStream();
+      registerWatcherFake = function (resourceGroup, resourceType, callback) {
+        return Promise.try(() => {
+          jsonStream.on('data', callback);
+          return jsonStream;
+        });
+      };
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
     afterEach(function () {
-      createVirtualHostServiceSpy.reset();
-      createSpy.reset();
-      updateSpy.reset();
-      deleteSpy.reset();
+      sandbox.restore();
+      createVirtualHostServiceSpy.restore();
+      createSpy.restore();
+      updateSpy.restore();
+      deleteSpy.restore();
+      getOperationOptionsSpy.restore();
+      registerWatcherStub.restore();
     });
 
     it('Should process create request successfully', () => {
@@ -147,11 +155,8 @@ describe('managers', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-
-      const jsonStream = new JSONStream();
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
@@ -193,11 +198,8 @@ describe('managers', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-
-      const jsonStream = new JSONStream();
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
@@ -238,10 +240,8 @@ describe('managers', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      const jsonStream = new JSONStream();
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(1);
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
@@ -281,12 +281,10 @@ describe('managers', function () {
           annotations: config.broker_ip
         }
       }, 2);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(1);
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
@@ -324,12 +322,10 @@ describe('managers', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -367,12 +363,10 @@ describe('managers', function () {
           annotations: ''
         }
       }, 1, undefined, 409);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -410,12 +404,10 @@ describe('managers', function () {
           annotations: ''
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -451,12 +443,10 @@ describe('managers', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -502,12 +492,10 @@ describe('managers', function () {
           annotations: config.broker_ip
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
           mocks.verify();

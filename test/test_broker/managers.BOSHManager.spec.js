@@ -13,6 +13,7 @@ const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
 const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
 const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
+const jsonWriteDelay = 50;
 
 const BOSHManagerDummy = {
   registerWatcherDummy: () => {},
@@ -56,13 +57,6 @@ const BOSHManager = proxyquire('../../managers/bosh-manager/BoshManager', {
 });
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
-  const registerWatcherFake = function (resourceGroup, resourceType, callback) {
-    return Promise.try(() => {
-      jsonStream.on('data', callback);
-      return jsonStream;
-    });
-  };
-  registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
   /* jshint unused:false */
   const bm = new BOSHManager();
   bm.init();
@@ -79,21 +73,38 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
 
 describe('managers', function () {
   describe('BOSHManager', function () {
-    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
-    before(function () {
+    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox, delayStub;
+    let jsonStream;
+    let registerWatcherFake;
+
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       createDirectorServiceSpy = sinon.spy(BOSHManagerDummy, 'createDirectorServiceDummy');
       createSpy = sinon.spy(BOSHManagerDummy, 'createDummy');
       updateSpy = sinon.spy(BOSHManagerDummy, 'updateDummy');
       deleteSpy = sinon.spy(BOSHManagerDummy, 'deleteDummy');
       getOperationOptionsSpy = sinon.spy(BOSHManagerDummy, 'getOperationOptionsDummy');
+      jsonStream = new JSONStream();
+      registerWatcherFake = function (resourceGroup, resourceType, callback) {
+        return Promise.try(() => {
+          jsonStream.on('data', callback);
+          return jsonStream;
+        });
+      };
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
+      //delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
     });
 
     afterEach(function () {
-      createDirectorServiceSpy.reset();
-      createSpy.reset();
-      updateSpy.reset();
-      deleteSpy.reset();
+      sandbox.restore()
+      createDirectorServiceSpy.restore();
+      createSpy.restore();
+      updateSpy.restore();
+      deleteSpy.restore();
+      getOperationOptionsSpy.restore();
+      registerWatcherStub.restore();
+      //delayStub.restore();
     });
 
     it('Should process create request successfully', () => {
@@ -130,10 +141,9 @@ describe('managers', function () {
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
 
-      const jsonStream = new JSONStream();
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
+
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
@@ -175,10 +185,9 @@ describe('managers', function () {
       }, 2);
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      const jsonStream = new JSONStream();
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
+
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(1);
           expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
@@ -219,12 +228,11 @@ describe('managers', function () {
           annotations: config.broker_ip
         }
       }, 2);
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(1);
           expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
@@ -263,12 +271,11 @@ describe('managers', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -306,12 +313,11 @@ describe('managers', function () {
           annotations: ''
         }
       }, 1, undefined, 409);
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -349,12 +355,11 @@ describe('managers', function () {
           annotations: ''
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -390,12 +395,11 @@ describe('managers', function () {
           }
         }
       };
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
@@ -438,12 +442,11 @@ describe('managers', function () {
           annotations: config.broker_ip
         }
       }, 1, undefined, 404);
-      const jsonStream = new JSONStream();
+
       const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(500).then(() => {
+        .delay(jsonWriteDelay).then(() => {
           expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
           expect(createSpy.firstCall.args[0]).to.eql(options);
