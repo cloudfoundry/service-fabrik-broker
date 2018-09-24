@@ -38,6 +38,16 @@ describe('service-broker-api', function () {
         mocks.reset();
       });
 
+      let sandbox, delayStub;
+      before(function () {
+        sandbox = sinon.sandbox.create();
+        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+      });
+
+      after(function () {
+        delayStub.restore();
+      });
+
       describe('#provision', function () {
         const payload = {
           apiVersion: 'deployment.servicefabrik.io/v1alpha1',

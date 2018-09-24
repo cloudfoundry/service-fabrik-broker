@@ -161,11 +161,14 @@ describe('service-broker-api', function () {
           response: '{}'
         }
       };
+      let sandbox, delayStub;
 
       before(function () {
         _.unset(fabrik.DockerManager, plan_id);
         mocks.docker.inspectImage();
         mocks.docker.getAllContainers(usedPorts);
+        sandbox = sinon.sandbox.create();
+        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
           fabrik.DockerManager.load(plan),
           docker.updatePortRegistry()
@@ -174,6 +177,10 @@ describe('service-broker-api', function () {
 
       afterEach(function () {
         mocks.reset();
+      });
+
+      after(function () {
+        delayStub.restore();
       });
 
       describe('#updatePortRegistry', function () {
