@@ -77,6 +77,7 @@ describe('service-broker-api-2.0', function () {
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
       let getScheduleStub;
+      let sandbox, delayStub;
 
       before(function () {
         enableServiceFabrikV2();
@@ -87,6 +88,8 @@ describe('service-broker-api-2.0', function () {
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
+        sandbox = sinon.sandbox.create();
+        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
           fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
@@ -101,6 +104,7 @@ describe('service-broker-api-2.0', function () {
       after(function () {
         disableServiceFabrikV2();
         getScheduleStub.restore();
+        delayStub.restore();
       });
 
       describe('#provision', function () {

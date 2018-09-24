@@ -267,6 +267,16 @@ describe('service-fabrik-api-2.0', function () {
       });
 
       describe('#deleteBackup', function () {
+        let sandbox, delayStub;
+        before(function () {
+          sandbox = sinon.sandbox.create();
+          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        });
+
+        after(function () {
+          delayStub.restore();
+        });
+
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
