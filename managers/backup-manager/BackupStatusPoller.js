@@ -158,7 +158,7 @@ class BackupStatusPoller {
   }
 
   static start() {
-    function poller(object) {
+    function poller(object, intervalId) {
       const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
       // If no lockedByPoller annotation then set annotation  with time
       // Else check timestamp if more than specific time than start polling and change lockedByPoller Ip
@@ -200,11 +200,19 @@ class BackupStatusPoller {
                     const instanceInfo = _.chain(response)
                       .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment', 'started_at', 'abortStartTime')
                       .value();
-                    return BackupStatusPoller.checkOperationCompletionStatus(instanceInfo);
+                    return BackupStatusPoller.checkOperationCompletionStatus(instanceInfo)
+                      .then(operationStatusResponse => {
+                        if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+                          BackupStatusPoller.clearPoller(metadata.name, intervalId);
+                        }
+                      });
+                  } else {
+                    BackupStatusPoller.clearPoller(metadata.name, intervalId);
                   }
                 })
                 .catch(AssertionError, err => {
                   logger.error(`Error occured while polling for backup, marking backup as failed`, err);
+                  BackupStatusPoller.clearPoller(metadata.name, intervalId);
                   return eventmesh.apiServerClient.updateResource({
                     resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
                     resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -227,9 +235,10 @@ class BackupStatusPoller {
       logger.debug('Received Backup Event: ', event);
       return Promise.try(() => {
         if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BackupStatusPoller.pollers[event.object.metadata.name]) {
-          BackupStatusPoller.pollers[event.object.metadata.name] = true;
-          return poller(event.object)
-            .finally(() => BackupStatusPoller.pollers[event.object.metadata.name] = false);
+          logger.debug('starting backup status poller for backup with guid ', event.object.metadata.name);
+          // Poller time should be little less than watch refresh interval as 
+          const intervalId = setInterval(() => poller(event.object, intervalId), config.backup.backup_restore_status_check_every);
+          BackupStatusPoller.pollers[event.object.metadata.name] = intervalId;
         }
       });
     }
@@ -238,9 +247,9 @@ class BackupStatusPoller {
       .then(stream => {
         logger.debug(`Successfully set watcher on backup resources for backup status polling with query string:`, queryString);
         return Promise
-          .delay(config.backup.backup_restore_status_check_every)
+          .delay(CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL)
           .then(() => {
-            logger.debug(`Refreshing backup stream after ${config.backup.backup_restore_status_check_every}`);
+            logger.debug(`Refreshing backup stream after ${CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
             return this.start();
           });
@@ -254,6 +263,13 @@ class BackupStatusPoller {
             return this.start();
           });
       });
+  }
+  static clearPoller(resourceId, intervalId) {
+    logger.debug(`Clearing backup status poller interval for backup with guid`, resourceId);
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+    _.unset(BackupStatusPoller.pollers, resourceId);
   }
 }
 
