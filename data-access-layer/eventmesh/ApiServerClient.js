@@ -159,11 +159,12 @@ class ApiServerClient {
               timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
             }
           });
-        stream.on('error', err => {
-          logger.error(`Error occured during watching for resource ${resourceGroup}, ${resourceType}`, err);
-          this.registerWatcher(resourceGroup, resourceType, callback, queryString);
-          //throw err;
-        });
+        // Removed this piece of code as watch is being refreshed every WATCHER_REFRESH_INTERVAL: 60000 (1 minute)
+        // stream.on('error', err => {
+        //   logger.error(`Error occured during watching for resource ${resourceGroup}, ${resourceType}`, err);
+        //   this.registerWatcher(resourceGroup, resourceType, callback, queryString);
+        //   //throw err;
+        // });
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
