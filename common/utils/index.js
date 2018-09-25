@@ -346,7 +346,7 @@ function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
 
 /**
  * Create a weekly cron
- * @param {Object} options                          - Various options
+ * @param {Object} options                          - Various options for weekly cron
  * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron
  * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron
  * @param {string} [options.start_after_hr=0]       - bound of the hour to start the cron
