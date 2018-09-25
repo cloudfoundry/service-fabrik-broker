@@ -356,21 +356,21 @@ function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
  */
 function getRandomCronForOnceEveryXDaysWeekly(options) {
   const dayInterval = _.get(options, 'day_interval', 0);
-
+  // Get random hour
   const startAfterHour = _.get(options, 'start_after_hr', 0);
   const startBeforeHour = _.get(options, 'start_before_hr', 23);
   const hr = exports.getRandomInt(startAfterHour, startBeforeHour);
-
+  // Get random minute
   const startAfterMin = _.get(options, 'start_after_min', 0);
   const startBeforeMin = _.get(options, 'start_before_min', 59);
   const min = exports.getRandomInt(startAfterMin, startBeforeMin);
-
+  // Get Weekday bounds
   const startAfterWeekday = _.get(options, 'start_after_weekday', 0);
   const startBeforeWeekday = _.get(options, 'start_before_weekday', 7);
-
+  // Validate the bounds
   assert.ok((startAfterWeekday >= 0 && startAfterWeekday <= 6), 'Start day should be between 0-6');
   assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
-
+  // Get weekday cron based on interval
   let weeklyInterval;
   if (dayInterval === 0) {
     weeklyInterval = `${min} ${hr} * * ${startAfterWeekday}`;
