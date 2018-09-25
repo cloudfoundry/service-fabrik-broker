@@ -152,7 +152,7 @@ describe('service-fabrik-admin', function () {
       });
 
       describe('#updateDeployment', function () {
-        it('should initiate a service-fabrik-operation via an update at cloud controller', function () {
+        it('should initiate a service-fabrik-operation via an update at broker', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
           mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
             return body.plan_id === plan_unique_id;
@@ -192,6 +192,19 @@ describe('service-fabrik-admin', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('should fail to initiate update at broker : NotFound Error', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
+          return chai
+            .request(apps.internal)
+            .post(`${base_url}/deployments/${deployment_name}/update`)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(404);
               mocks.verify();
             });
         });

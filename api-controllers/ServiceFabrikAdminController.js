@@ -87,7 +87,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
             plan = catalog.getPlan(planId);
             context = _.get(resourceDetails, 'context');
             if (allowForbiddenManifestChanges === false) {
-              const tenantInfo = _.pick(resourceDetails, ['context', 'organization_guid', 'space_guid']);
+              const tenantInfo = _.pick(resourceDetails, ['context']);
               return this
                 .getOutdatedDiff({
                   instance_id: instanceId,
