@@ -39,6 +39,7 @@ exports.deploymentNamesRegExp = deploymentNamesRegExp;
 exports.deploymentNameRegExp = deploymentNameRegExp;
 exports.getRandomInt = getRandomInt;
 exports.getRandomCronForOnceEveryXDays = getRandomCronForOnceEveryXDays;
+exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWeekly;
 exports.getRandomCronForEveryDayAtXHoursInterval = getRandomCronForEveryDayAtXHoursInterval;
 exports.getCronWithIntervalAndAfterXminute = getCronWithIntervalAndAfterXminute;
 exports.isDBConfigured = isDBConfigured;
@@ -341,6 +342,43 @@ function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
     hoursApplicable = `${hoursApplicable},${nthHour}`;
   }
   return `${min} ${hoursApplicable} * * *`;
+}
+
+/**
+ * Create a weekly cron
+ * @param {Object} options                          - Various options
+ * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron
+ * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron
+ * @param {string} [options.start_after_hr=0]       - bound of the hour to start the cron
+ * @param {string} [options.start_before_hr=23]     - bound of the hour to end the cron
+ * @param {string} [options.start_after_min=0]      - bound of the minute to start the cron
+ * @param {string} [options.start_before_min=59]    - bound of the minute to end the cron
+ */
+function getRandomCronForOnceEveryXDaysWeekly(options) {
+  const dayInterval = _.get(options, 'day_interval', 0);
+
+  const startAfterHour = _.get(options, 'start_after_hr', 0);
+  const startBeforeHour = _.get(options, 'start_before_hr', 23);
+  const hr = exports.getRandomInt(startAfterHour, startBeforeHour);
+
+  const startAfterMin = _.get(options, 'start_after_min', 0);
+  const startBeforeMin = _.get(options, 'start_before_min', 59);
+  const min = exports.getRandomInt(startAfterMin, startBeforeMin);
+
+  const startAfterWeekday = _.get(options, 'start_after_weekday', 0);
+  const startBeforeWeekday = _.get(options, 'start_before_weekday', 7);
+
+  assert.ok((startAfterWeekday >= 0 && startAfterWeekday <= 6), 'Start day should be between 0-6');
+  assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
+
+  let weeklyInterval;
+  if (dayInterval === 0) {
+    weeklyInterval = `${min} ${hr} * * ${startAfterWeekday}`;
+  } else {
+    const weekdays = _.toString(_.range(startAfterWeekday, startBeforeWeekday, dayInterval));
+    weeklyInterval = `${min} ${hr} * * ${weekdays}`;
+  }
+  return weeklyInterval;
 }
 
 function getRandomCronForOnceEveryXDays(days, options) {

@@ -83,6 +83,97 @@ describe('utils', function () {
       expect(utils.isServiceFabrikOperation(queryParams)).to.be.true;
     });
   });
+
+  describe.only('#getRandomCronForOnceEveryXDaysWeekly', function () {
+    const AssertionError = require('assert').AssertionError;
+    it('should create a weekly schedule - no options given', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly()
+        )).to.be.eql(true);
+    });
+    it('should create a weekly schedule with exact day given', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 3', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'start_after_weekday': 3,
+          })
+        )).to.be.eql(true);
+    });
+    it('should create a weekly schedule when interval given', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0,1,2,3,4,5,6', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'day_interval': 1,
+          })
+        )).to.be.eql(true);
+    });
+    it('should create a weekly schedule when interval and bounds are given', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 3,4', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'start_after_weekday': 3,
+            'start_before_weekday': 5,
+            'day_interval': 1,
+          })
+        )).to.be.eql(true);
+    });
+    it('should support throw error if bounds are same', function () {
+      expect(utils
+        .getRandomCronForOnceEveryXDaysWeekly
+        .bind(utils, {
+          'start_after_weekday': 0,
+          'start_before_weekday': 0,
+          'day_interval': 1,
+        })
+      ).to.throw(AssertionError);
+    });
+    it('should create weekly cron within bounds', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0,1,2', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'start_after_weekday': 0,
+            'start_before_weekday': 3,
+            'day_interval': 1,
+          })
+        )).to.be.eql(true);
+    });
+    it('should create valid weekly cron when interval set to zero', function () {
+      // interval 0
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'day_interval': 0,
+          })
+        )
+      ).to.be.eql(true);
+    });
+
+    it('should create weekly cron when interval greter than weekdays, start day given', function () {
+      // interval > 6, start_after_weekday provided
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 3', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'start_after_weekday': 3,
+            'day_interval': 7,
+          })
+        )
+      ).to.be.eql(true);
+    });
+
+    it('should create weekly cron when interal greter than weekdays', function () {
+      // interval > 6
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'day_interval': 7,
+          })
+        )
+      ).to.be.eql(true);
+
+    });
+  });
+
   describe('#getCronWithIntervalAndAfterXminute', function () {
     const AssertionError = require('assert').AssertionError;
     it('should support daily schedule', function () {
