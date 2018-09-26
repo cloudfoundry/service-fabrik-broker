@@ -168,9 +168,9 @@ class BackupStatusPoller {
           resourceId: object.metadata.name,
         })
         .then(resourceBody => {
-          const options = resourceBody.spec.options;
-          const response = resourceBody.status.response;
-          const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
+          const options = _.get(resourceBody, 'spec.options');
+          const response = _.get(resourceBody, 'status.response');
+          const pollerAnnotation = _.get(resourceBody, 'metadata.annotations.lockedByTaskPoller');
           logger.debug(`Backup status pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
             // If task is not picked by poller which has the lock on task for config.backup.backup_restore_status_check_every + BACKUP_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
@@ -178,8 +178,8 @@ class BackupStatusPoller {
               logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
             } else {
               const patchBody = _.cloneDeep(resourceBody);
-              const metadata = patchBody.metadata;
-              const currentAnnotations = metadata.annotations;
+              const metadata = _.get(patchBody, 'metadata');
+              const currentAnnotations = _.get(metadata, 'annotations');
               const patchAnnotations = currentAnnotations ? currentAnnotations : {};
               patchAnnotations.lockedByTaskPoller = JSON.stringify({
                 lockTime: new Date(),
@@ -211,7 +211,7 @@ class BackupStatusPoller {
                   }
                 })
                 .catch(AssertionError, err => {
-                  logger.error(`Error occured while polling for backup, marking backup as failed`, err);
+                  logger.error('Error occured while polling for backup, marking backup as failed', err);
                   BackupStatusPoller.clearPoller(metadata.name, intervalId);
                   return eventmesh.apiServerClient.updateResource({
                     resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
@@ -228,17 +228,20 @@ class BackupStatusPoller {
                 });
             }
           });
+        }).catch(err => {
+          logger.error(`Error occured while polling for backup state with guid ${object.metadata.name}`, err);
         });
     }
 
     function startPoller(event) {
       logger.debug('Received Backup Event: ', event);
       return Promise.try(() => {
-        if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BackupStatusPoller.pollers[event.object.metadata.name]) {
-          logger.debug('starting backup status poller for backup with guid ', event.object.metadata.name);
+        const backupGuid = _.get(event, 'object.metadata.name');
+        if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BackupStatusPoller.pollers[backupGuid]) {
+          logger.debug('starting backup status poller for backup with guid ', backupGuid);
           // Poller time should be little less than watch refresh interval as 
           const intervalId = setInterval(() => poller(event.object, intervalId), config.backup.backup_restore_status_check_every);
-          BackupStatusPoller.pollers[event.object.metadata.name] = intervalId;
+          BackupStatusPoller.pollers[backupGuid] = intervalId;
         }
       });
     }
@@ -255,7 +258,7 @@ class BackupStatusPoller {
           });
       })
       .catch(err => {
-        logger.error(`Error occured in registering watch for backup status poller:`, err);
+        logger.error('Error occured in registering watch for backup status poller:', err);
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {

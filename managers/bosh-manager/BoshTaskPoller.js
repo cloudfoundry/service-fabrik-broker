@@ -26,8 +26,8 @@ class BoshTaskPoller {
           resourceId: object.metadata.name,
         })
         .then(resourceBody => {
-          const options = resourceBody.spec.options;
-          const pollerAnnotation = resourceBody.metadata.annotations.lockedByTaskPoller;
+          const options = _.get(resourceBody, 'spec.options');
+          const pollerAnnotation = _.get(resourceBody, 'metadata.annotations.lockedByTaskPoller');
           logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
           return Promise.try(() => {
             // If task is not picked by poller which has the lock on task for CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
@@ -57,7 +57,7 @@ class BoshTaskPoller {
                     BoshTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
                     return DirectorService.createInstance(metadata.name, options)
-                      .then(directorService => directorService.lastOperation(resourceBody.status.response))
+                      .then(directorService => directorService.lastOperation(_.get(resourceBody, 'status.response')))
                       .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
                       .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
