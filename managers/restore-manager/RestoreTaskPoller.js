@@ -19,7 +19,7 @@ class RestoreTaskPoller {
       // TODO handle HA scenario
       const response = JSON.parse(_.get(object.status, 'response'));
       const changedOptions = JSON.parse(object.spec.options);
-      logger.info('Getting restore status with the following options and response:', changedOptions, response);
+      logger.debug('Getting restore status with the following options and response:', changedOptions, response);
       const plan = catalog.getPlan(changedOptions.plan_id);
       const restore_opts = {
         context: changedOptions.context,
@@ -31,7 +31,7 @@ class RestoreTaskPoller {
         .then(restoreService => restoreService
           .getRestoreOperationState(restore_opts)
           .then(operationStatusResponse => {
-            logger.info(`Got restore operation response for guid ${changedOptions.restore_guid}`, operationStatusResponse);
+            logger.debug(`Got restore operation response for guid ${changedOptions.restore_guid}`, operationStatusResponse);
             return Promise
               .try(() => eventmesh.apiServerClient.patchResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,

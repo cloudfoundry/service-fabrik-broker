@@ -54,6 +54,7 @@ module.exports = Object.freeze({
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000, // in ms
+  BACKUP_RESOURCE_POLLER_RELAXATION_TIME: 5000, //in ms
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -115,7 +116,6 @@ module.exports = Object.freeze({
     SERVICE_FABRIK_BACKUP: 'ServiceFabrikBackup',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
     OPERATION_STATUS_POLLER: 'OperationStatusPoller',
-    BNR_STATUS_POLLER: 'BnRStatusPoller',
     BLUEPRINT_JOB: 'BluePrintJob',
     BACKUP_REAPER: 'BackupReaper',
     SERVICE_INSTANCE_UPDATE: 'ServiceInstanceAutoUpdate',
@@ -296,6 +296,7 @@ module.exports = Object.freeze({
       FAILED: 'failed',
       DELETE_FAILED: 'delete_failed',
       ABORT: 'abort',
+      ABORTING: 'aborting',
       ABORTED: 'aborted',
       UPDATE: 'update',
       LOCKED: 'locked',

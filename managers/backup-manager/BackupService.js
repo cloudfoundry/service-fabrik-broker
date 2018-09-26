@@ -10,7 +10,6 @@ const backupStore = require('../../data-access-layer/iaas').backupStore;
 const utils = require('../../common/utils');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
-const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
 const BaseDirectorService = require('../BaseDirectorService');
 const Forbidden = errors.Forbidden;
@@ -22,30 +21,6 @@ class BackupService extends BaseDirectorService {
     this.director = bosh.director;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
-  }
-
-  //TODO-PR - static method to non-static
-  static registerBnRStatusPoller(opts, instanceInfo) {
-    let deploymentName = _.get(instanceInfo, 'deployment');
-    const checkStatusInEveryThisMinute = config.backup.backup_restore_status_check_every / 60000;
-    logger.debug(`Scheduling deployment ${deploymentName} ${opts.operation} for backup guid ${instanceInfo.backup_guid}
-          ${CONST.JOB.BNR_STATUS_POLLER} for every ${checkStatusInEveryThisMinute}`);
-    const repeatInterval = `*/${checkStatusInEveryThisMinute} * * * *`;
-    const data = {
-      operation: opts.operation,
-      type: opts.type,
-      trigger: opts.trigger,
-      operation_details: instanceInfo
-    };
-    return ScheduleManager
-      .schedule(
-        `${deploymentName}_${opts.operation}_${instanceInfo.backup_guid}`,
-        CONST.JOB.BNR_STATUS_POLLER,
-        repeatInterval,
-        data, {
-          name: config.cf.username
-        }
-      );
   }
 
   startBackup(opts) {
@@ -76,8 +51,6 @@ class BackupService extends BaseDirectorService {
         tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
       })
       .value();
-
-    let instanceInfo;
     const result = _
       .chain(opts)
       .pick('deployment')
@@ -102,8 +75,7 @@ class BackupService extends BaseDirectorService {
     }
 
     let metaUpdated = false,
-      backupStarted = false,
-      registeredStatusPoller = false;
+      backupStarted = false;
 
     let deploymentName;
     return bosh
@@ -124,21 +96,7 @@ class BackupService extends BaseDirectorService {
         return this.agent
           .getHost(ips, 'backup')
           .then(agent_ip => {
-            data.agent_ip = result.agent_ip = agent_ip;
-            instanceInfo = _.chain(data)
-              .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id')
-              .set('deployment', deploymentName)
-              .set('started_at', backupStartedAt)
-              .value();
-            return BackupService.registerBnRStatusPoller({
-                operation: CONST.OPERATION_TYPE.BACKUP,
-                type: backup.type,
-                trigger: backup.trigger
-              }, instanceInfo)
-              .return(agent_ip);
-          })
-          .then(agent_ip => {
-            registeredStatusPoller = true;
+            data.agent_ip = agent_ip;
             return this.agent.startBackup(agent_ip, backup, vms);
           })
           .then(() => {
@@ -151,13 +109,16 @@ class BackupService extends BaseDirectorService {
       })
       //TODO-PR - Break it into multiple methods
       .then(backupInfo => {
+        const response = _.extend(backupInfo, {
+          deployment: deploymentName
+        });
         return eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
             resourceId: result.backup_guid,
             status: {
               'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-              'response': backupInfo
+              'response': response
             }
           })
           .then(() => backupInfo);
@@ -165,15 +126,6 @@ class BackupService extends BaseDirectorService {
       .catch(err => {
         return Promise
           .try(() => logger.error(`Error during start of backup - backup to be aborted : ${backupStarted} - backup to be deleted: ${metaUpdated} `, err))
-          .tap(() => {
-            if (registeredStatusPoller) {
-              logger.error(`Error occurred during backup process. Cancelling status poller for deployment : ${deploymentName} and backup_guid: ${backup.guid}`);
-              return ScheduleManager
-                .cancelSchedule(`${deploymentName}_backup_${backup.guid}`,
-                  CONST.JOB.BNR_STATUS_POLLER)
-                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
-            }
-          })
           .then(() => eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
