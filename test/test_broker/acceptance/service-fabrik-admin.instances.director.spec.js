@@ -4,6 +4,7 @@ const _ = require('lodash');
 const Repository = require('../../../common/db').Repository;
 const apps = require('../support/apps');
 const config = require('../../../common/config');
+const CONST = require('../../../common/constants');
 
 describe('service-fabrik-admin', function () {
   describe('instances', function () {
@@ -15,6 +16,7 @@ describe('service-fabrik-admin', function () {
       const args = {};
       const broker_guid = 'eb3303c3-f373-4339-8562-113d1451a6ef';
       const broker_name = config.broker_name;
+      const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
       const plan_unique_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const index = 0;
@@ -30,6 +32,48 @@ describe('service-fabrik-admin', function () {
       afterEach(function () {
         mocks.reset();
       });
+
+      const resourceDetails = function (planId) {
+        return {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Director',
+          metadata: {
+            annotations: {
+              lockedByManager: '',
+              lockedByTaskPoller: '{\"lockTime\":\"2018-09-06T16:38:34.919Z\",\"ip\":\"10.0.2.2\"}'
+            },
+            creationTimestamp: '2018-09-06T16:01:28Z',
+            generation: 1,
+            labels: {
+              state: 'succeeded'
+            },
+            name: instance_id,
+            namespace: 'default',
+            resourceVersion: '3364',
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            uid: '1d48b3f3-b1ee-11e8-ac2a-06c007f8352b'
+
+          },
+          spec: {
+            options: JSON.stringify({
+              service_id: service_id,
+              plan_id: planId || plan_unique_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: org_guid,
+                space_guid: space_guid
+              },
+              organization_guid: org_guid,
+              space_guid: space_guid
+            })
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+      };
 
       describe('#getOutdatedDeployments', function () {
         it('should return 200 Ok', function () {
@@ -108,12 +152,13 @@ describe('service-fabrik-admin', function () {
       });
 
       describe('#updateDeployment', function () {
-        it('should initiate a service-fabrik-operation via an update at cloud controller', function () {
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
+        it('should initiate a service-fabrik-operation via an update at broker', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+            return body.plan_id === plan_unique_id;
+          }, {
+            status: 202
           });
-
           return chai
             .request(apps.internal)
             .post(`${base_url}/deployments/${deployment_name}/update`)
@@ -122,25 +167,19 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(200);
-              expect(res.body.name).to.equal(name);
-              expect(res.body).to.have.property('guid');
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });
         it('should initiate a service-fabrik-(update)operation with forbidden manifest changes disable', function () {
-          mocks.cloudController.findServicePlan(instance_id, plan_unique_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+            return body.plan_id === plan_unique_id;
+          }, {
+            status: 202
+          });
           mocks.director.getDeploymentManifest();
           mocks.director.diffDeploymentManifest();
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          });
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: org_guid
-          });
           return chai
             .request(apps.internal)
             .post(`${base_url}/deployments/${deployment_name}/update`)
@@ -152,8 +191,20 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(200);
-              expect(res.body.name).to.equal(name);
-              expect(res.body).to.have.property('guid');
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('should fail to initiate update at broker : NotFound Error', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
+          return chai
+            .request(apps.internal)
+            .post(`${base_url}/deployments/${deployment_name}/update`)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(404);
               mocks.verify();
             });
         });

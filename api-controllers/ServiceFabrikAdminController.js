@@ -17,6 +17,9 @@ const ScheduleManager = require('../jobs');
 const BackupReportManager = require('../reports');
 const CONST = require('../common/constants');
 const maintenanceManager = require('../maintenance').maintenanceManager;
+const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
+const eventmesh = require('../data-access-layer/eventmesh');
+const DirectorService = require('../managers/bosh-manager/DirectorService');
 const Conflict = errors.Conflict;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
@@ -27,21 +30,34 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   updateDeployment(req, res) {
-    const self = this;
     const redirect_uri = _.get(req.query, 'redirect_uri', '/admin/deployments/outdated');
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
+    const instanceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
     const runImmediately = (req.body.run_immediately === 'true' ? true : false);
+    let resourceDetails;
+    let plan;
+    let context;
 
     function updateDeployment() {
-      return self.fabrik
-        .createOperation('update', {
-          deployment: deploymentName,
-          username: req.user.name,
-          arguments: req.body,
-          runImmediately: runImmediately
-        }).invoke()
+      return serviceBrokerClient
+        .updateServiceInstance({
+          instance_id: instanceId,
+          context: context,
+          service_id: plan.service.id,
+          plan_id: plan.id,
+          previous_values: {
+            service_id: plan.service.id,
+            plan_id: plan.id,
+            organization_id: context.organization_id,
+            space_id: context.space_guid
+          },
+          parameters: {
+            _runImmediately: runImmediately || false,
+            'service-fabrik-operation': true
+          }
+        })
         .then(body => {
           res.format({
             html: () => res
@@ -52,19 +68,41 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           });
         });
     }
-    logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
-    if (allowForbiddenManifestChanges === false) {
-      const instanceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
-      return this
-        .getServicePlanIdForInstanceId(instanceId)
-        .then(planId => this.getOutdatedDiff(deploymentName, catalog.getPlan(planId)))
-        .then(diff => utils.hasChangesInForbiddenSections(diff))
-        .tap(() => logger.info(`Doing update for ${deploymentName} as there is no forbidden changes in manifest`))
-        .then(() => updateDeployment());
-    } else {
-      logger.info(`Doing update for ${deploymentName} even if forbidden changes exist in manifest`);
-      return updateDeployment();
-    }
+
+    return Promise.try(() => {
+      logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
+      return eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: instanceId
+        })
+        .catch(errors.NotFound, () => undefined)
+        .then(resource => _.get(resource, 'spec.options'))
+        .then(resource => {
+          resourceDetails = resource;
+          if (resourceDetails === undefined) {
+            throw new errors.NotFound(`Resource details of service instance ${instanceId} not found in api server.`);
+          } else {
+            const planId = _.get(resourceDetails, 'plan_id');
+            plan = catalog.getPlan(planId);
+            context = _.get(resourceDetails, 'context');
+            if (allowForbiddenManifestChanges === false) {
+              const tenantInfo = _.pick(resourceDetails, ['context']);
+              return this
+                .getOutdatedDiff({
+                  instance_id: instanceId,
+                  deployment_name: deploymentName
+                }, tenantInfo, plan)
+                .then(diff => utils.hasChangesInForbiddenSections(diff))
+                .tap(() => logger.info(`Doing update for ${deploymentName} as there is no forbidden changes in manifest`))
+                .then(() => updateDeployment());
+            } else {
+              logger.info(`Doing update for ${deploymentName} even if forbidden changes exist in manifest`);
+              return updateDeployment();
+            }
+          }
+        });
+    });
   }
 
   updateOutdatedDeployments(req, res) {
@@ -110,32 +148,16 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return deploymentName;
   }
 
-  getServicePlanIdForInstanceId(instanceId) {
-    logger.debug(`Fetching service plan id for instance id :  ${instanceId}`);
-    return this.cloudController
-      .findServicePlanByInstanceId(instanceId)
-      .then(body => body.entity.unique_id)
-      .catch(errors.ServiceInstanceNotFound, () => undefined);
-  }
-
-  getOutdatedDiff(deploymentName, plan) {
+  getOutdatedDiff(instanceDetails, tenantInfo, plan) {
+    const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
-    return this.fabrik
-      .createManager(plan)
-      .then((directorManager) => this.cloudController.getOrgAndSpaceGuid(this.getInstanceId(deploymentName))
-        .then(opts => {
-          const context = {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: opts.organization_guid,
-            space_guid: opts.space_guid
-          };
-          opts.context = context;
-          return directorManager
-            .diffManifest(deploymentName, opts)
-            .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
-            .then(result => result.diff);
-        })
-      );
+    return DirectorService.createInstance(instanceDetails.instance_id, {
+        plan_id: plan.id,
+        context: tenantInfo.context
+      })
+      .then(directorInstance => directorInstance.diffManifest(deploymentName, tenantInfo))
+      .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
+      .then(result => result.diff);
   }
 
   getDeployments(req, res, onlySummary) {
