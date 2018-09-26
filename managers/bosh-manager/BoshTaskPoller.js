@@ -53,7 +53,7 @@ class BoshTaskPoller {
                 .tap((updatedResource) => logger.debug(`Successfully acquired bosh task poller lock for request with options: ${JSON.stringify(options)}\n` +
                   `Updated resource with poller annotations is: `, updatedResource))
                 .then(() => {
-                  if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], resourceBody.status.state)) {
+                  if (resourceBody.status.state !== CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
                     BoshTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
                     return DirectorService.createInstance(metadata.name, options)
