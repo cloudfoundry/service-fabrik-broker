@@ -159,11 +159,6 @@ class ApiServerClient {
               timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
             }
           });
-        stream.on('error', err => {
-          logger.error(`Error occured during watching for resource ${resourceGroup}, ${resourceType}`, err);
-          this.registerWatcher(resourceGroup, resourceType, callback, queryString);
-          //throw err;
-        });
         const jsonStream = new JSONStream();
         stream.pipe(jsonStream);
         jsonStream.on('data', callback);
