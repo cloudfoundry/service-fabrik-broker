@@ -105,6 +105,97 @@ describe('managers', function () {
       registerWatcherStub.restore();
     });
 
+    it('Should not process create request if already being processed', () => {
+      const options = {
+        plan_id: plan_id,
+        service_id: service_id,
+        organization_guid: organization_guid,
+        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        }
+      };
+      const changeObject = {
+        object: {
+          metadata: {
+            name: instance_id,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            annotations: {
+              lockedByManager: '10.0.2.2',
+              processingStartedAt: new Date()
+            }
+          },
+          spec: {
+            options: JSON.stringify(options)
+          },
+          status: {
+            state: 'in_progress'
+          }
+        }
+      };
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
+
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(jsonWriteDelay).then(() => {
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createSpy.callCount).to.equal(0);
+          mocks.verify();
+        });
+    });
+
+    it('Should process create request successfully if processing time expired', () => {
+      const options = {
+        plan_id: plan_id,
+        service_id: service_id,
+        organization_guid: organization_guid,
+        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        }
+      };
+      const changeObject = {
+        object: {
+          metadata: {
+            name: instance_id,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            annotations: {
+              lockedByManager: '10.0.2.2',
+              processingStartedAt: new Date(new Date() - 600000)
+            }
+          },
+          spec: {
+            options: JSON.stringify(options)
+          },
+          status: {
+            state: 'in_queue'
+          }
+        }
+      };
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
+        metadata: {
+          annotations: config.broker_ip
+        }
+      }, 2);
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
+
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(jsonWriteDelay).then(() => {
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createSpy.callCount).to.equal(1);
+          expect(createSpy.firstCall.args[0]).to.eql(options);
+          mocks.verify();
+        });
+    });
+
     it('Should process create request successfully', () => {
       const options = {
         plan_id: plan_id,
