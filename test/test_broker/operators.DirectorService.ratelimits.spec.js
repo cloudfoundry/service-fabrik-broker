@@ -150,13 +150,12 @@ describe('manager', () => {
         expect(out.state).to.eql('in progress');
         expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(undefined);
-        expect(out.description).to.eql(`Create deployment deployment-${guid} is still in progress`);
+        expect(out.description).to.eql(`Create deployment is still in progress`);
         expect(removeCachedTaskSpy.calledOnce).to.eql(false);
       });
     });
     it('should invoke last operation: op done- task succeeded', () => {
       finalizeSpy.returns(Promise.resolve());
-      removeCachedTaskSpy.returns(Promise.resolve());
       getOpStateSpy.returns({
         cached: false,
         task_id: task_id
@@ -166,12 +165,13 @@ describe('manager', () => {
         timestamp: (new Date().getTime()) / 1000,
         state: 'done'
       }));
-      return directorService.lastOperation(lastOpWithoutTaskId).then((out) => {
+      return directorService.lastOperation(_.assign(_.cloneDeep(lastOpWithoutTaskId), {
+        task_id: task_id
+      })).then((out) => {
         expect(out.state).to.eql('succeeded');
         expect(out.cached).to.eql(undefined);
-        expect(out.task_id).to.eql(undefined);
+        expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
-        expect(removeCachedTaskSpy.calledOnce).to.eql(true);
       });
     });
     it('should invoke last operation: op done- task succeeded [remove from etcd failed]', function () {
@@ -282,7 +282,6 @@ describe('manager', () => {
       });
     });
     it('should invoke last operation: op succeeded', () => {
-      removeCachedTaskSpy.returns(Promise.resolve());
       finalizeSpy.returns(Promise.resolve());
       getTaskSpy.returns(Promise.resolve({
         deployment: `deployment-${guid}`,
@@ -294,7 +293,6 @@ describe('manager', () => {
         expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
-        expect(removeCachedTaskSpy.calledOnce).to.eql(true);
       });
     });
   });
@@ -309,11 +307,7 @@ describe('manager', () => {
     afterEach(function () {
       mocks.reset();
     });
-    describe('#cleanupOperation', function () {
-      it('should not clean up if bosh rate limit is disabled', function () {
-        return directorService.cleanupOperation(deployment_name);
-      });
-    });
+
     describe('#findNetworkSegmentIndex', function () {
       it('should append guid and network segment index to deployment name', function () {
         directorService.findNetworkSegmentIndex(used_guid).then(res => expect(res).to.eql(21));
@@ -471,44 +465,12 @@ describe('manager', () => {
       });
     });
 
-    describe('#cleanupOperation', function () {
-      it('should clean up an existing operation properly', () => {
-        getInstanceGuidSpy.returns(used_guid);
-        deleteTaskSpy.returns(Promise.resolve(true));
-        deleteDeploymentSpy.returns(Promise.resolve(true));
-        return service.cleanupOperation(deploymentName)
-          .then(() => {
-            expect(deleteTaskSpy.calledOnce).to.eql(true);
-            assert(deleteTaskSpy.calledWith(used_guid));
-            expect(deleteDeploymentSpy.calledOnce).to.eql(true);
-            assert(deleteDeploymentSpy.calledWith(deploymentName));
-          });
-      });
-      it('should not clean up an existing operation in case of repeated errors', function () {
-        this.timeout(20000);
-        getInstanceGuidSpy.returns(used_guid);
-        deleteTaskSpy.returns(Promise.reject(new Error('delete_task_error')));
-        deleteDeploymentSpy.returns(Promise.resolve(true));
-        return service.cleanupOperation(deploymentName).catch(err => {
-          expect(err.code).to.eql('ETIMEDOUT');
-          expect(deleteTaskSpy.callCount).to.eql(5);
-          assert(deleteTaskSpy.calledWith(used_guid));
-          expect(deleteDeploymentSpy.callCount).to.eql(1);
-          assert(deleteDeploymentSpy.calledWith(deploymentName));
-        });
-      });
-    });
-
     describe('#createOrUpdateDeployment', () => {
       let params = {
         previous_values: {}
       };
       describe('user operations', () => {
         it('should run operation from etcd when policy applied, slots available and in cache previously', () => {
-          storeSpy.returns(Promise.resolve());
-          storeBoshSpy.returns(Promise.resolve());
-          containsDeploymentSpy.returns(Promise.resolve(true));
-          deleteDeploymentSpy.returns(Promise.resolve());
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -525,18 +487,13 @@ describe('manager', () => {
           }));
           return service.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
-              expect(out.cached).to.eql(true);
+              expect(out.cached).to.eql(false);
               expect(out.task_id).to.eql(task_id);
-              expect(storeSpy.calledOnce).to.eql(false);
-              expect(deleteDeploymentSpy.calledOnce).to.eql(true);
-              expect(containsDeploymentSpy.calledOnce).to.eql(true);
-              expect(storeBoshSpy.calledOnce).to.eql(true);
+              expect(directorOpSpy.calledOnce).to.eql(true);
+              expect(currentTasksSpy.calledOnce).to.eql(true);
             });
         });
-        it('should store operation in etcd when policy applied but no slots available and in cache previously', () => {
-          storeSpy.returns(Promise.resolve());
-          containsDeploymentSpy.returns(Promise.resolve(true));
-          deleteDeploymentSpy.returns(Promise.resolve());
+        it('should cache when policy applied but no slots available', () => {
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -555,41 +512,11 @@ describe('manager', () => {
             .then(out => {
               expect(out.cached).to.eql(true);
               expect(out.task_id).to.eql(undefined);
-              expect(storeSpy.calledOnce).to.eql(true);
-              expect(deleteDeploymentSpy.notCalled).to.eql(true);
-              expect(containsDeploymentSpy.notCalled).to.eql(true);
-            });
-        });
-        it('should store operation in etcd when policy applied but no slots available and not in cache previously', () => {
-          storeSpy.returns(Promise.resolve());
-          containsDeploymentSpy.returns(Promise.resolve(false));
-          deleteDeploymentSpy.returns(Promise.resolve());
-          directorOpSpy.returns(Promise.resolve({
-            max_workers: 6,
-            policies: {
-              user: {
-                update: {
-                  max_workers: 3
-                }
-              }
-            }
-          }));
-          currentTasksSpy.returns(Promise.resolve({
-            total: 5,
-            update: 3
-          }));
-          return service.createOrUpdateDeployment(deploymentName, params)
-            .then(out => {
-              expect(out.cached).to.eql(true);
-              expect(out.task_id).to.eql(undefined);
-              expect(storeSpy.calledOnce).to.eql(true);
-              expect(deleteDeploymentSpy.notCalled).to.eql(true);
-              expect(containsDeploymentSpy.notCalled).to.eql(true);
+              expect(directorOpSpy.calledOnce).to.eql(true);
+              expect(currentTasksSpy.calledOnce).to.eql(true);
             });
         });
         it('should store operation in etcd when bosh is down', () => {
-          storeSpy.returns(Promise.resolve());
-          deleteDeploymentSpy.returns(Promise.resolve());
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -604,9 +531,8 @@ describe('manager', () => {
           return service.createOrUpdateDeployment(deploymentName)
             .then(out => {
               expect(out.cached).to.eql(true);
-              expect(storeSpy.calledOnce).to.eql(true);
-              expect(deleteDeploymentSpy.notCalled).to.eql(true);
-              expect(deploymentSpy.notCalled).to.eql(true);
+              expect(directorOpSpy.calledOnce).to.be.eql(true);
+              expect(currentTasksSpy.calledOnce).to.eql(true);
             });
         });
       });
@@ -641,7 +567,6 @@ describe('manager', () => {
             .then(out => {
               expect(out.cached).to.eql(false);
               expect(out.task_id).to.eql(task_id);
-              expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.calledOnce).to.eql(true);
             });
@@ -654,7 +579,6 @@ describe('manager', () => {
           }
         };
         it('should not store operation in etcd and throw error when bosh is down', () => {
-          storeSpy.returns(Promise.resolve());
           deleteDeploymentSpy.returns(Promise.resolve());
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
@@ -669,7 +593,6 @@ describe('manager', () => {
           currentTasksSpy.returns(Promise.reject(new Error('Bosh unavailable')));
           return service.createOrUpdateDeployment(deploymentName, params)
             .catch(DeploymentAttemptRejected, () => {
-              expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.notCalled).to.eql(true);
             });
@@ -693,9 +616,6 @@ describe('manager', () => {
               expect(out.task_id).to.eql(task_id);
               expect(out.cached).to.eql(false);
               expect(deploymentSpy.callCount).to.eql(1);
-              expect(containsDeploymentSpy.notCalled).to.eql(true);
-              expect(storeSpy.notCalled).to.eql(true);
-              expect(deleteDeploymentSpy.notCalled).to.eql(true);
             });
         });
         it('should reject deployment when policy is applied + slots unavailable', () => {
@@ -714,35 +634,13 @@ describe('manager', () => {
           }));
           return service.createOrUpdateDeployment(deploymentName, params)
             .catch(DeploymentAttemptRejected, () => {
-              expect(storeSpy.notCalled).to.eql(true);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.notCalled).to.eql(true);
             });
         });
       });
     });
-    describe('#getCurrentOperationState', () => {
-      it('should return operation state based on inputs- cached + task_id', () => {
-        getBoshTaskSpy.returns(Promise.resolve(task_id));
-        containsInstanceSpy.returns(Promise.resolve(true));
 
-        return service.getCurrentOperationState(instance_id)
-          .then(output => {
-            expect(output.cached).to.eql(true);
-            expect(output.task_id).to.eql(task_id);
-          });
-      });
-      it('should return operation state based on inputs- not cached + no task_id', () => {
-        getBoshTaskSpy.returns(Promise.resolve(null));
-        containsInstanceSpy.returns(Promise.resolve(false));
-
-        return service.getCurrentOperationState(instance_id)
-          .then(output => {
-            expect(output.cached).to.eql(false);
-            expect(output.task_id).to.eql(null);
-          });
-      });
-    });
     describe('#executePolicy', () => {
       it('should not run now when all slots exhausted in bosh', () => {
         directorOpSpy.returns(Promise.resolve({

@@ -1,51 +1,75 @@
 'use strict';
 
-const bosh = require('../../../data-access-layer/bosh');
-const DirectorManager = require('./DirectorManager');
+const _ = require('lodash');
+const DirectorService = require('../../../managers/bosh-manager/DirectorService');
 const logger = require('../../../common/logger');
-const catalog = require('../../../common/models/catalog');
-const pubsub = require('pubsub-js');
 const CONST = require('../../../common/constants');
-const config = require('../../../common/config');
-const boshCache = bosh.BoshOperationQueue;
+const eventmesh = require('../../../data-access-layer/eventmesh');
 const TIME_POLL = 1 * 60 * 1000;
-const LockStatusPoller = require('./LockStatusPoller');
-const Promise = require('bluebird');
 
-class DirectorTaskPoller extends LockStatusPoller {
-  constructor() {
-    super({
-      time_interval: TIME_POLL
-    });
+class DirectorTaskPoller {
+  constructor(opts) {
+    this.timeInterval = opts.time_interval || TIME_POLL;
   }
 
-  action() {
-    return boshCache.getDeploymentNames().mapSeries(deploymentName => {
-        return Promise.try(() => {
-            return boshCache.getDeploymentByName(deploymentName);
-          })
-          .then(cached => {
-            let catalogPlan = catalog.getPlan(cached.plan_id);
-            return DirectorManager.load(catalogPlan)
-              .then(manager => manager.createOrUpdateDeployment(deploymentName, cached.params, cached.args));
-          })
-          .catch(err => {
-            logger.error(`Error in scheduled deployment operation for ${deploymentName}`, err);
-          });
+  start() {
+    if (this.interval) {
+      throw new Error('Timer already started for DirectorTaskPoller');
+    }
+    this.interval = setInterval(() => {
+      return this.triggerStaggeredDeployments();
+    }, this.timeInterval);
+  }
+
+  triggerStaggeredDeployments() {
+
+    return eventmesh.apiServerClient
+      .getResourceListByState({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        state: CONST.APISERVER.RESOURCE_STATE.WAITING
       })
-      .catch(err => logger.error('error in processing deployments', err));
+      .mapSeries(resource => {
+        let deploymentName;
+        let directorService;
+        const resourceOptions = _.get(resource, 'spec.options');
+        const instanceId = _.get(resource, 'metadata.name');
+        return DirectorService
+          .createInstance(instanceId, resourceOptions)
+          .tap(directorInstance => directorService = directorInstance)
+          .then(() => directorService.findDeploymentNameByInstanceId(instanceId))
+          .tap(deployment_name => deploymentName = deployment_name)
+          .then(() => directorService.createOrUpdateDeployment(deploymentName, resourceOptions))
+          .then(directorResponse => eventmesh.apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: resource.metadata.name,
+            status: {
+              response: _.assign(resource.status.response, directorResponse),
+              state: _.get(directorResponse, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
+            }
+          }))
+          .catch(e => logger.error(`Error in scheduled deployment operation for ${deploymentName}`, e));
+      })
+      .catch(e => logger.error('Error in processing deployments', e));
+  }
+
+  /**
+   * Gets the interval object created by the NodeJS engine for the interval timer
+   */
+  get timer() {
+    return this.interval;
+  }
+
+  /**
+   * Stops the timer
+   */
+  stop() {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = undefined;
+    }
   }
 }
 
-const pollerInstance = new DirectorTaskPoller();
-
-pubsub.subscribe(CONST.TOPIC.APP_STARTUP, (eventName, eventInfo) => {
-  logger.debug('-> Received event ->', eventName);
-  if (eventInfo.type === 'internal' && config.enable_bosh_rate_limit && config.etcd) {
-    pollerInstance.start();
-  } else {
-    logger.debug('Bosh Rate Limiting is not enabled');
-  }
-});
-
-module.exports = pollerInstance;
+module.exports = DirectorTaskPoller;

@@ -430,6 +430,47 @@ class ApiServerClient {
   }
 
   /**
+   * @description Get Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Unique id of resource
+   * @param {string} opts.resourceType - Name of operation
+   * @param {string} opts.state - State of resorce
+   */
+  getResourceListByState(opts) {
+    logger.debug('Get resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
+    assert.ok(opts.state, `Property 'state' is required to fetch resource list`);
+    return Promise.try(() => this.init())
+      .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].get({
+          qs: {
+            labelSelector: `state=${opts.state}`
+          }
+        }))
+      .map(resource => {
+        _.forEach(resource.body.spec, (val, key) => {
+          try {
+            resource.body.spec[key] = JSON.parse(val);
+          } catch (err) {
+            resource.body.spec[key] = val;
+          }
+        });
+        _.forEach(resource.body.status, (val, key) => {
+          try {
+            resource.body.status[key] = JSON.parse(val);
+          } catch (err) {
+            resource.body.status[key] = val;
+          }
+        });
+        return resource.body;
+      })
+      .catch(err => {
+        console.log(err);
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  /**
    * @description Gets Last Operation
    * @param {string} opts.resourceId - Unique id of resource
    * @param {string} opts.resourceGroup - Name of operation
