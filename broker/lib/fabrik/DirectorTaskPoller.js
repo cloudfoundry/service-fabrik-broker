@@ -27,7 +27,7 @@ class DirectorTaskPoller {
       .getResourceListByState({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        state: CONST.APISERVER.RESOURCE_STATE.WAITING
+        state: CONST.APISERVER.RESOURCE_STATE.IN_CACHE
       })
       .mapSeries(resource => {
         let deploymentName;
@@ -46,7 +46,7 @@ class DirectorTaskPoller {
             resourceId: resource.metadata.name,
             status: {
               response: _.assign(resource.status.response, directorResponse),
-              state: _.get(directorResponse, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
+              state: _.get(directorResponse, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.IN_CACHE
             }
           }))
           .catch(e => logger.error(`Error in scheduled deployment operation for ${deploymentName}`, e));

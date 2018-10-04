@@ -97,7 +97,7 @@
 
 //     it.only('should consume any error thrown from the action handler: getDeploymentNames', () => {
 //       mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-//         CONST.APISERVER.RESOURCE_STATE.WAITING, payload, 1, 200);
+//         CONST.APISERVER.RESOURCE_STATE.IN_CACHE, payload, 1, 200);
 //       getNamesSpy.returns(Promise.reject(new Error('get_error')));
 //       getDeploymentSpy.returns(Promise.resolve({
 //         plan_id: 'plan',

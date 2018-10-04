@@ -614,7 +614,7 @@ class DirectorService extends BaseDirectorService {
         return _.assign(operation, {
           description: `${_.capitalize(operation.type)} deployment is still in progress`,
           state: 'in progress',
-          resourceState: CONST.APISERVER.RESOURCE_STATE.WAITING
+          resourceState: CONST.APISERVER.RESOURCE_STATE.IN_CACHE
         });
       });
     }
