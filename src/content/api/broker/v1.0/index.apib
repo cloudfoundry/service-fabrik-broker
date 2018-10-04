@@ -152,9 +152,13 @@ Endpoint for triggering a restore (manually only) on a BOSH service instance.
 
 + Parameters
     + instance_guid - the guid of the service instance
-    + BODY.backup_guid - the guid of the backup to be restored
+    + BODY.time_stamp (optional) - the restore point (epoch in milliseconds). 
+                                   Required when backup_guid not provided.
+    + BODY.backup_guid (optional) - the guid of the backup to be restored. 
+                                    Required when time_stamp not provided.
     + BODY.space_guid (optional) - the space guid of the service instance
     + BODY.plan_id (optional) - the unique service plan id
+    + BODY.source_instance_id (optional) - source instance id for cross instance restore
 
 + Request
 <!-- include(requests/POST_service_instances_instanceGuid_restore.apib) -->
