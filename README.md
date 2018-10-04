@@ -16,7 +16,7 @@ To facilitate plugging in external components, we intend to model service Fabrik
 
 This allows capabilities like provisioning and operations on provisioned instances to be built independently and plugged into the Service Fabrik APIServer based on specific requirements.
 
-Steps to Integrate new provisioners are mentioned in [here](https://github.com/subhankarc/service-fabrik-broker/blob/master/SF2.0.md)
+Steps to Integrate new provisioners are mentioned in [here](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/master/SF2.0.md)
 
 # Capabilities
 
