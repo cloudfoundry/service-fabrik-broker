@@ -52,7 +52,7 @@ class RestoreTaskPoller {
                 }
               });
           })
-          .catch(e => logger.error('Caught error in poller', e))
+          .catch(e => logger.error(`Caught error in restore task poller for guid ${changedOptions.restore_guid}`, e))
         );
     }
 
@@ -77,13 +77,13 @@ class RestoreTaskPoller {
             stream.abort();
             return this.start();
           } catch (err) {
-            logger.error('Error caught in the set timout callback for resource poller');
+            logger.error('Error caught in the set timout callback for restore task poller');
             throw err;
           }
         }, CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
       })
       .catch(e => {
-        logger.error('Failed registering watcher on restore resources with error:', e);
+        logger.error('Failed registering watcher on restore resources for restore task poller with error:', e);
         throw e;
       });
   }

@@ -118,7 +118,7 @@ class BackupStatusPoller {
         }) : operationStatusResponse
       )
       .catch(err => {
-        logger.error(`Caught error while checking for backup operation completion status:`, err);
+        logger.error(`Caught error while checking for backup operation completion status for guid ${backup_guid}:`, err);
         throw err;
       });
   }
