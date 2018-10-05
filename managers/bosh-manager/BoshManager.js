@@ -1,6 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
+const _ = require('lodash');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -20,7 +21,7 @@ class BoshManager extends BaseManager {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        switch (changeObjectBody.status.state) {
+        switch (_.get(changeObjectBody, 'status.state')) {
         case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
         case CONST.APISERVER.RESOURCE_STATE.UPDATE:
@@ -28,7 +29,7 @@ class BoshManager extends BaseManager {
         case CONST.APISERVER.RESOURCE_STATE.DELETE:
           return this._processDelete(changeObjectBody);
         default:
-          logger.error('Ideally it should never come to default state! There must be some error as the state is ', changeObjectBody.status.state);
+          logger.error('Ideally it should never come to default state! There must be some error as the state is ', _.get(changeObjectBody, 'status.state'));
           break;
         }
       })
@@ -37,7 +38,7 @@ class BoshManager extends BaseManager {
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: changeObjectBody.metadata.name,
+          resourceId: _.get(changeObjectBody, 'metadata.name'),
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             lastOperation: {
@@ -51,17 +52,17 @@ class BoshManager extends BaseManager {
   }
 
   _processCreate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
     assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Creating deployment resource with the following options:', changedOptions);
-    return DirectorService.createInstance(changeObjectBody.metadata.name, changedOptions)
+    return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.create(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: changeObjectBody.metadata.name,
+        resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
@@ -70,17 +71,17 @@ class BoshManager extends BaseManager {
   }
 
   _processUpdate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
     assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Updating deployment resource with the following options:', changedOptions);
-    return DirectorService.createInstance(changeObjectBody.metadata.name, changedOptions)
+    return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.update(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: changeObjectBody.metadata.name,
+        resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
@@ -89,17 +90,17 @@ class BoshManager extends BaseManager {
   }
 
   _processDelete(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
     assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
     logger.info('Deleting deployment resource with the following options:', changedOptions);
-    return DirectorService.createInstance(changeObjectBody.metadata.name, changedOptions)
+    return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.delete(changedOptions))
       .then(response => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: changeObjectBody.metadata.name,
+        resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
@@ -108,7 +109,7 @@ class BoshManager extends BaseManager {
       .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: changeObjectBody.metadata.name
+        resourceId: _.get(changeObjectBody, 'metadata.name')
       }));
   }
 }

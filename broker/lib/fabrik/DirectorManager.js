@@ -124,8 +124,7 @@ class DirectorManager extends BaseManager {
       .getDeploymentManifest(deploymentName)
       .tap(() => logger.info('+-> Fetched deployment manifest'))
       .catch(err => {
-        logger.error('+-> Failed to fetch deployment manifest');
-        logger.error(err);
+        logger.error('+-> Failed to fetch deployment manifest', err);
         throw err;
       });
   }
@@ -359,8 +358,7 @@ class DirectorManager extends BaseManager {
       .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
       .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
       .catch(err => {
-        logger.error(`+-> Failed to ${action} deployment`);
-        logger.error(err);
+        logger.error(`+-> Failed to ${action} deployment`, err);
         throw err;
       });
   }
@@ -454,8 +452,7 @@ class DirectorManager extends BaseManager {
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
       .catch(err => {
-        logger.error('+-> Failed to create binding');
-        logger.error(err);
+        logger.error('+-> Failed to create binding', err);
         throw err;
       });
   }

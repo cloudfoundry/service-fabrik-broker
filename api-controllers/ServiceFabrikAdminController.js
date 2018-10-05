@@ -463,8 +463,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         });
       })
       .catch(err => {
-        logger.error('Error occurred while fetching list of Backup List file info');
-        logger.error(err);
+        logger.error('Error occurred while fetching list of Backup List file info', err);
         throw err;
       })
       .catchThrow(RangeError, new BadRequest('Parameter \'before\' is not a valid Date'));

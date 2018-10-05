@@ -68,8 +68,7 @@ class DockerInstance extends BaseInstance {
         this.containerInfo = info;
       })
       .catch(err => {
-        logger.error(`+-> Failed to inspect docker container '${this.container.id}'`);
-        logger.error(err);
+        logger.error(`+-> Failed to inspect docker container '${this.container.id}'`, err);
         throw err;
       });
   }
