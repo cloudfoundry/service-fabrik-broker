@@ -291,17 +291,34 @@ The response body will always be an empty JSON object.</p>
 <div id="restore-start-restore" class="resource"><div id="restore-start-restore-post" class="action post"><h4 class="action-heading"><div class="name">Start Restore</div><a href="#restore-start-restore-post" class="method post">POST</a><code class="uri">/service_instances/{instance_guid}/restore</code></h4><p>Endpoint for triggering a restore (manually only) on a BOSH service instance.</p>
 <div class="title"><strong>URI Parameters</strong></div><dl class="inner"><dt>instance_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the service instance</p>
 </dd></dl><hr><div class="title"><strong style="font-size: 18px">Request</strong></div><div class="description"><p>The request body must be a JSON object containing the guid of the backup data set to be restored, and may optionally contain the space_guid and the unique service plan id.</p>
-</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>backup_guid</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>the guid of the backup to be restored</p>
+</div><div class="title"><strong>Body Parameters</strong></div><dl class="inner"><!--dt= self.urldec(param.name.substr(5))--><dt>time_stamp</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the restore point (epoch in milliseconds).
+Required when backup_guid not provided.</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>backup_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the guid of the backup to be restored.
+Required when time_stamp not provided.</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>space_guid</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the space guid of the service instance</p>
 </dd><!--dt= self.urldec(param.name.substr(5))--><dt>plan_id</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>the unique service plan id</p>
+</dd><!--dt= self.urldec(param.name.substr(5))--><dt>source_instance_id</dt><dd><code>string</code>&nbsp;<span>(optional)</span>&nbsp;<p>source instance id for cross instance restore</p>
 </dd></dl><h4>Example</h4><pre><code>{
-  "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value"><span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span></span>,
-  "<span class="hljs-attribute">space_guid</span>": <span class="hljs-value"><span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span></span>,
-  "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value"><span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span>
-</span>}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
+  <span class="hljs-string">"backup_guid"</span>: <span class="hljs-string">"44444444-4444-4444-4444-444444444444"</span>,
+  <span class="hljs-string">"space_guid"</span>: <span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span>,
+  <span class="hljs-string">"plan_id"</span>: <span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span>
+
+}
+
+or
+
+{
+  <span class="hljs-string">"time_stamp"</span>: <span class="hljs-string">"1535089180000"</span>,
+  <span class="hljs-string">"space_guid"</span>: <span class="hljs-string">"11111111-1111-1111-1111-111111111111"</span>,
+  <span class="hljs-string">"plan_id"</span>: <span class="hljs-string">"22222222-2222-2222-2222-222222222222"</span>
+}</code></pre><div style="height: 1px;"></div><div><div class="inner"><h4>Schema<div class="collapse-button"><span style="font-weight: normal; float: right;" class="close">Hide</span><span style="font-weight: normal; float: right;" class="open">Show</span></div></h4><div class="collapse-content"><div class="inner"><pre><code>{
   "<span class="hljs-attribute">$schema</span>": <span class="hljs-value"><span class="hljs-string">"http://json-schema.org/draft-04/schema#"</span></span>,
   "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
   "<span class="hljs-attribute">properties</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">time_stamp</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Epoch milliseconds"</span>
+    </span>}</span>,
     "<span class="hljs-attribute">backup_guid</span>": <span class="hljs-value">{
       "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
       "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"GUID of the backup data set to be restored"</span>
@@ -313,6 +330,10 @@ The response body will always be an empty JSON object.</p>
     "<span class="hljs-attribute">plan_id</span>": <span class="hljs-value">{
       "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
       "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Unique service plan id of the service instance"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">source_instance_id</span>":<span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"string"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"source instance id for cross instance restore"</span>
     </span>}
   </span>}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>202</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>401</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unauthorized</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>409</code>&nbsp;<span style="font-weight: normal;">-&nbsp;another operation is already in progress for the service instance</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>422</code>&nbsp;<span style="font-weight: normal;">-&nbsp;unable to process the request due to unmet preconditions</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of success, the restore request was accepted and started.
