@@ -132,6 +132,10 @@ class BackupService extends BaseDirectorService {
             resourceId: result.backup_guid,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              response: {
+                state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                description: err.message
+              },
               error: utils.buildErrorJson(err)
             }
           }))
