@@ -57,32 +57,73 @@ class BoshTaskPoller {
                     BoshTaskPoller.clearPoller(metadata.name, intervalId);
                   } else {
                     return DirectorService.createInstance(metadata.name, options)
-                      .then(directorService => directorService.lastOperation(_.get(resourceBody, 'status.response')))
-                      .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
-                      .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
-                        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                        resourceId: metadata.name,
-                        status: {
-                          lastOperation: lastOperationValue,
-                          state: lastOperationValue.resourceState
-                        }
-                      }), Promise.try(() => {
-                        if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
-                          // cancel the poller and clear the array
+                      .then(directorService => directorService.lastOperation(_.get(resourceBody, 'status.response'))
+                        .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
+                        .then(lastOperationValue => Promise.all([
+                          Promise.try(() => {
+                            if(lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED && (lastOperationValue.type === 'create' || lastOperationValue.type === 'update')) {
+                              return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
+                              .then(deploymentName => directorService.getDeploymentIps(deploymentName))
+                              .then(ips => eventmesh.apiServerClient.updateResource({
+                                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                                resourceId: metadata.name,
+                                status: {
+                                  lastOperation: lastOperationValue,
+                                  state: lastOperationValue.resourceState
+                                },
+                                metadata: {
+                                  annotations:{
+                                    deploymentIps:JSON.stringify(ips)
+                                  }
+                                }
+                              })
+                            );
+                            } else {
+                              return eventmesh.apiServerClient.updateResource({
+                              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                              resourceId: metadata.name,
+                              status: {
+                                lastOperation: lastOperationValue,
+                                state: lastOperationValue.resourceState
+                              }});
+                            }
+                          }),
+                          Promise.try(() => {
+                          if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
+                            // cancel the poller and clear the array
+                            BoshTaskPoller.clearPoller(metadata.name, intervalId);
+                          }
+                        })]))
+                        .catch(ServiceInstanceNotFound, err => {
+                          logger.error(`Error occured while getting last operation`, err);
                           BoshTaskPoller.clearPoller(metadata.name, intervalId);
-                        }
-                      })]))
-                      .catch(ServiceInstanceNotFound, err => {
-                        logger.error(`Error occured while getting last operation`, err);
-                        BoshTaskPoller.clearPoller(metadata.name, intervalId);
-                        if (resourceBody.status.response.type === 'delete') {
-                          return eventmesh.apiServerClient.deleteResource({
-                            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                            resourceId: metadata.name
-                          });
-                        } else {
+                          if (resourceBody.status.response.type === 'delete') {
+                            return eventmesh.apiServerClient.deleteResource({
+                              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                              resourceId: metadata.name
+                            });
+                          } else {
+                            return eventmesh.apiServerClient.updateResource({
+                              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                              resourceId: metadata.name,
+                              status: {
+                                lastOperation: {
+                                  state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                                  description: CONST.SERVICE_BROKER_ERR_MSG
+                                },
+                                state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                                error: utils.buildErrorJson(err)
+                              }
+                            });
+                          }
+                        })
+                        .catch(AssertionError, err => {
+                          logger.error(`Error occured while getting last operation for instance ${object.metadata.name}`, err);
+                          BoshTaskPoller.clearPoller(metadata.name, intervalId);
                           return eventmesh.apiServerClient.updateResource({
                             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -94,27 +135,10 @@ class BoshTaskPoller {
                               },
                               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                               error: utils.buildErrorJson(err)
-                            }
+                           }
                           });
-                        }
-                      })
-                      .catch(AssertionError, err => {
-                        logger.error(`Error occured while getting last operation for instance ${object.metadata.name}`, err);
-                        BoshTaskPoller.clearPoller(metadata.name, intervalId);
-                        return eventmesh.apiServerClient.updateResource({
-                          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                          resourceId: metadata.name,
-                          status: {
-                            lastOperation: {
-                              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                              description: CONST.SERVICE_BROKER_ERR_MSG
-                            },
-                            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                            error: utils.buildErrorJson(err)
-                          }
-                        });
-                      });
+                        })
+                      );
                   }
                 })
                 .catch(Conflict, () => {
