@@ -347,8 +347,8 @@ function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
 /**
  * Create a weekly cron
  * @param {Object} options                          - Various options for weekly cron
- * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron
- * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron
+ * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron (inclusive)
+ * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron (excluded)
  * @param {string} [options.start_after_hr=0]       - bound of the hour to start the cron
  * @param {string} [options.start_before_hr=23]     - bound of the hour to end the cron
  * @param {string} [options.start_after_min=0]      - bound of the minute to start the cron
@@ -367,13 +367,14 @@ function getRandomCronForOnceEveryXDaysWeekly(options) {
   // Get Weekday bounds
   const startAfterWeekday = _.get(options, 'start_after_weekday', 0);
   const startBeforeWeekday = _.get(options, 'start_before_weekday', 7);
+  const day = exports.getRandomInt(startAfterWeekday, startBeforeWeekday);
   // Validate the bounds
   assert.ok((startAfterWeekday >= 0 && startAfterWeekday <= 6), 'Start day should be between 0-6');
   assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
   // Get weekday cron based on interval
   let weeklyCron;
   if (dayInterval === 0) {
-    weeklyCron = `${min} ${hr} * * ${startAfterWeekday}`;
+    weeklyCron = `${min} ${hr} * * ${day}`;
   } else {
     const weekdays = _.toString(_.range(startAfterWeekday, startBeforeWeekday, dayInterval));
     weeklyCron = `${min} ${hr} * * ${weekdays}`;

@@ -84,16 +84,16 @@ describe('utils', function () {
     });
   });
 
-  describe.only('#getRandomCronForOnceEveryXDaysWeekly', function () {
+  describe('#getRandomCronForOnceEveryXDaysWeekly', function () {
     const AssertionError = require('assert').AssertionError;
-    it('should create a weekly schedule - no options given', function () {
-      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+    it('should create a weekly random schedule - no options given', function () {
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* [0-6]', 'g')
         .test(utils
           .getRandomCronForOnceEveryXDaysWeekly()
         )).to.be.eql(true);
     });
-    it('should create a weekly schedule with exact day given', function () {
-      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 3', 'g')
+    it('should create a weekly schedule in the given range', function () {
+      expect(RegExp(`[0-9]+ [0-9]+ \\* \\* [3-6]`, 'g')
         .test(utils
           .getRandomCronForOnceEveryXDaysWeekly({
             'start_after_weekday': 3,
@@ -140,7 +140,7 @@ describe('utils', function () {
     });
     it('should create valid weekly cron when interval set to zero', function () {
       // interval 0
-      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* [0-6]', 'g')
         .test(utils
           .getRandomCronForOnceEveryXDaysWeekly({
             'day_interval': 0,
