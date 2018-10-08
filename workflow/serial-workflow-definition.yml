@@ -1,0 +1,14 @@
+---
+defaults:
+upgrade_to_multi_az:
+  tasks: 
+  - task_type: ServiceInstanceUpdateTask
+    task_description: 'Deployment update for multi-az. Phase: scale up'
+    task_data: 
+      order: 1
+      vms_scale: upgrade
+  - task_type: ServiceInstanceUpdateTask
+    task_description: 'Deployment update for multi-az. Phase: scale down'
+    task_data:
+      order: 2
+      vms_scale: downgrade

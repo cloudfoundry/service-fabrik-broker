@@ -275,7 +275,8 @@ module.exports = Object.freeze({
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
-      RESTORE: 'backup.servicefabrik.io'
+      RESTORE: 'backup.servicefabrik.io',
+      WORK_FLOW: 'workflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -286,7 +287,9 @@ module.exports = Object.freeze({
       DOCKER_BIND: 'dockerbinds',
       VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups',
-      DEFAULT_RESTORE: 'defaultrestores'
+      DEFAULT_RESTORE: 'defaultrestores',
+      SERIAL_WORK_FLOW: 'serialworkflows',
+      TASK: 'tasks'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
@@ -302,6 +305,11 @@ module.exports = Object.freeze({
       UPDATE: 'update',
       LOCKED: 'locked',
       UNLOCKED: 'unlocked'
+    },
+    TASK_STATE: {
+      DONE: 'DONE',
+      RELAYED: 'RELAYED',
+      FLOW_COMPLETE: 'FLOW_COMPLETE'
     },
     RESOURCE_KEYS: {
       STATE: 'state',

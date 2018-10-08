@@ -170,11 +170,14 @@ class ApiServerClient {
   }
   parseResourceDetailsFromSelfLink(selfLink) {
     // self links are typically: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/d-7
-    const resourceType = _.split(selfLink, '/')[6];
-    const resourceGroup = _.split(selfLink, '/')[2];
+    const linkParts = _.split(selfLink, '/');
+    const resourceType = linkParts[6];
+    const resourceGroup = linkParts[2];
+    const resourceId = linkParts[7];
     return {
       resourceGroup: resourceGroup,
-      resourceType: resourceType
+      resourceType: resourceType,
+      resourceId: resourceId
     };
   }
 

@@ -17,18 +17,18 @@ class BaseManager {
     return eventmesh.apiServerClient.registerCrds(resourceGroup, resourceType);
   }
 
-  registerWatcher(resourceGroup, resourceType, validStateList) {
+  registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval) {
     const queryString = `state in (${_.join(validStateList, ',')})`;
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
-    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, this.handleResource.bind(this), queryString)
+    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, (resource) => this.handleResource(resource, handler), queryString)
       .then(stream => {
         logger.debug(`Successfully set watcher with query string:`, queryString);
         return Promise
-          .delay(CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
+          .delay(watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
           .then(() => {
-            logger.debug(`Refreshing stream after ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            logger.debug(`Refreshing stream after ${watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
-            return this.registerWatcher(resourceGroup, resourceType, validStateList);
+            return this.registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval);
           });
       })
       .catch(e => {
@@ -139,7 +139,7 @@ class BaseManager {
     throw new NotImplementedBySubclass('processRequest');
   }
 
-  handleResource(changeObject) {
+  handleResource(changeObject, handler) {
     logger.debug('Changed Resource:', changeObject);
     logger.debug('Changed resource options:', changeObject.object.spec.options);
     const changeObjectBody = changeObject.object;
@@ -151,6 +151,9 @@ class BaseManager {
     return this._preProcessRequest(changeObjectBody, processingLockStatus)
       .then(() => {
         if (!processingLockStatus.conflict) {
+          if (handler) {
+            return handler(changeObjectBody);
+          }
           return this.processRequest(changeObjectBody);
         }
       })
