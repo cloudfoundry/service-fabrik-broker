@@ -10,6 +10,7 @@ const logger = require('../../common/logger');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
+const serviceBrokerClient = require('../../common/utils/ServiceBrokerClient');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const AssertionError = assert.AssertionError;
 const Conflict = errors.Conflict;
@@ -119,6 +120,20 @@ class BoshTaskPoller {
                 })
                 .catch(Conflict, () => {
                   logger.debug(`Not able to acquire bosh task poller processing lock for instance ${object.metadata.name}, Request is probably picked by other worker`);
+                })
+                .finally(() => {
+                  if (_.get(resourceBody.status.response, 'type') === 'update' &&
+                    _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
+                    _.get(resourceBody.status.response, 'parameters.scheduled') === true) {
+                    return serviceBrokerClient.getLastOperationOfServiceInstance({
+                      instance_id: metadata.name,
+                      service_id: options.service_id,
+                      plan_id: options.plan_id,
+                      operation: utils.encodeBase64({
+                        'type': 'update'
+                      })
+                    });
+                  }
                 });
             }
           });
