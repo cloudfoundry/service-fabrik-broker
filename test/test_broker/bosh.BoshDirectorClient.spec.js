@@ -1076,11 +1076,12 @@ describe('bosh', () => {
 
     describe('#getDeploymentIpsFromResource', () => {
       it('should return deployment IPs if present in resource', (done) => {
+        /* jshint expr:true */
         let dummyResource = {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703',
           metadata: {
             annotations: {
-              deploymentIps: JSON.stringify(['10.244.10.216','10.244.10.217'])
+              deploymentIps: JSON.stringify(['10.244.10.216', '10.244.10.217'])
             }
           }
         };
@@ -1090,32 +1091,32 @@ describe('bosh', () => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
         dummyBoshDirectorClient.getDeploymentIpsFromResource(deploymentName)
-        .then(ips => {
-          assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
-          expect(getResourceStub).to.be.calledOnce;
-          sandbox.restore();
-          done();
-        })
+          .then(ips => {
+            assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
+            expect(getResourceStub).to.be.calledOnce;
+            sandbox.restore();
+            done();
+          });
       });
     });
-    
+
     describe('#getDeploymentIps', () => {
       it('should return from cache if entry exists', (done) => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
-        dummyBoshDirectorClient.deploymentIpsCache[deploymentName] = ['10.244.10.216','10.244.10.217'];
+        dummyBoshDirectorClient.deploymentIpsCache[deploymentName] = ['10.244.10.216', '10.244.10.217'];
         let sandbox = sinon.sandbox.create();
         let getDeploymentIpsFromResourceStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentIpsFromResource');
         let getDeploymentIpsFromDirectorStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentIpsFromDirector');
 
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
-        .then(ips => {
-          assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
-          assert(getDeploymentIpsFromResourceStub.notCalled);
-          assert(getDeploymentIpsFromDirectorStub.notCalled);        
-          sandbox.restore();
-          done();
-        });
+          .then(ips => {
+            assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
+            assert(getDeploymentIpsFromResourceStub.notCalled);
+            assert(getDeploymentIpsFromDirectorStub.notCalled);
+            sandbox.restore();
+            done();
+          });
       });
 
       it('should make call to ApiServer if entry doesn\'t exist in cache', (done) => {
@@ -1127,20 +1128,20 @@ describe('bosh', () => {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703',
           metadata: {
             annotations: {
-              deploymentIps: JSON.stringify(['10.244.10.216','10.244.10.217'])
+              deploymentIps: JSON.stringify(['10.244.10.216', '10.244.10.217'])
             }
           }
         };
         let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
-        .then(ips => {
-          assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
-          assert(getDeploymentIpsFromDirectorStub.notCalled);
-          assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
-          sandbox.restore();
-          done();
-        });
+          .then(ips => {
+            assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
+            assert(getDeploymentIpsFromDirectorStub.notCalled);
+            assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
+            sandbox.restore();
+            done();
+          });
       });
 
       it('should make call to director if entry not found in ApiServer', (done) => {
@@ -1150,22 +1151,26 @@ describe('bosh', () => {
         let dummyResource = {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703'
         };
-        let dummyInstance = [{'ips':['10.244.10.216', '10.244.10.217']}];
+        let dummyInstance = [{
+          'ips': ['10.244.10.216', '10.244.10.217']
+        }];
         let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
-        let getDeploymentInstancesStub = sandbox.stub(dummyBoshDirectorClient,'getDeploymentInstances');
+        let getDeploymentInstancesStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentInstances');
         getDeploymentInstancesStub.returns(Promise.resolve(dummyInstance));
         let putDeploymentIpsInResourceStub = sandbox.stub(dummyBoshDirectorClient, 'putDeploymentIpsInResource');
-        putDeploymentIpsInResourceStub.returns(Promise.resolve({dummy: 'dummy'}));
+        putDeploymentIpsInResourceStub.returns(Promise.resolve({
+          dummy: 'dummy'
+        }));
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
-        .then(ips => {
-          console.log(ips);
-          assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
-          assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
-          expect(putDeploymentIpsInResourceStub).to.have.been.calledWith(deploymentName, ips);
-          sandbox.restore();
-          done();
-        });
+          .then(ips => {
+            console.log(ips);
+            assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
+            assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
+            expect(putDeploymentIpsInResourceStub).to.have.been.calledWith(deploymentName, ips);
+            sandbox.restore();
+            done();
+          });
       });
     });
   });
