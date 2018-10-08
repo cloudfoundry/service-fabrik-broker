@@ -226,7 +226,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
       start_after_min: afterMin,
       start_before_min: beforeMin
     };
-    return utils.getRandomCronForOnceEveryXDays(runOnceEvery, opts);
+    return utils.getRandomCronForOnceEveryXDaysWeekly(opts);
   }
 
   static getLastRunStatus(name) {
