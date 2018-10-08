@@ -6,7 +6,6 @@ const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const cf = require('../../data-access-layer/cf');
 const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
@@ -14,12 +13,21 @@ const retry = utils.retry;
 const catalog = require('../../common/models').catalog;
 const EventLogInterceptor = require('../../common/EventLogInterceptor');
 const BackupService = require('./BackupService');
+const BaseStatusPoller = require('../BaseStatusPoller');
 const AssertionError = assert.AssertionError;
-const Conflict = errors.Conflict;
 
-class BackupStatusPoller {
+class BackupStatusPoller extends BaseStatusPoller {
+  constructor() {
+    super({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      validStateList: [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, CONST.APISERVER.RESOURCE_STATE.ABORTING],
+      validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
+      pollInterval: config.backup.backup_restore_status_check_every
+    });
+  }
 
-  static checkOperationCompletionStatus(opts) {
+  checkOperationCompletionStatus(opts) {
     assert.ok(_.get(opts, 'instance_guid'), `Argument 'opts.instance_guid' is required to start polling for backup`);
     assert.ok(_.get(opts, 'backup_guid'), `Argument 'opts.backup_guid' is required to start polling for backup`);
     assert.ok(_.get(opts, 'plan_id'), `Argument 'opts.plan_id' is required to start polling for backup`);
@@ -122,7 +130,7 @@ class BackupStatusPoller {
         throw err;
       });
   }
-  static doPostFinishOperation(operationStatusResponse, operationName, opts) {
+  doPostFinishOperation(operationStatusResponse, operationName, opts) {
     return Promise
       .try(() => eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
@@ -145,7 +153,7 @@ class BackupStatusPoller {
       });
   }
 
-  static _logEvent(opts, operation, operationStatusResponse) {
+  _logEvent(opts, operation, operationStatusResponse) {
     const eventLogger = EventLogInterceptor.getInstance(config.external.event_type, 'external');
     const check_res_body = true;
     const resp = {
@@ -156,125 +164,32 @@ class BackupStatusPoller {
       return eventLogger.publishAndAuditLogEvent(CONST.URL[operation], CONST.HTTP_METHOD.POST, opts, resp, check_res_body);
     }
   }
-
-  static start() {
-    function poller(object, intervalId) {
-      const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
-      // If no lockedByPoller annotation then set annotation  with time
-      // Else check timestamp if more than specific time than start polling and change lockedByPoller Ip
-      return eventmesh.apiServerClient.getResource({
-          resourceGroup: resourceDetails.resourceGroup,
-          resourceType: resourceDetails.resourceType,
-          resourceId: object.metadata.name,
-        })
-        .then(resourceBody => {
-          const options = _.get(resourceBody, 'spec.options');
-          const response = _.get(resourceBody, 'status.response');
-          const pollerAnnotation = _.get(resourceBody, 'metadata.annotations.lockedByTaskPoller');
-          logger.debug(`Backup status pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
-          return Promise.try(() => {
-            // If task is not picked by poller which has the lock on task for config.backup.backup_restore_status_check_every + BACKUP_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
-            if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (config.backup.backup_restore_status_check_every + CONST.BACKUP_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
-              logger.debug(`Process with ip ${JSON.parse(pollerAnnotation).ip} is already polling for task`);
-            } else {
-              const patchBody = _.cloneDeep(resourceBody);
-              const metadata = _.get(patchBody, 'metadata');
-              const currentAnnotations = _.get(metadata, 'annotations');
-              const patchAnnotations = currentAnnotations ? currentAnnotations : {};
-              patchAnnotations.lockedByTaskPoller = JSON.stringify({
-                lockTime: new Date(),
-                ip: config.broker_ip
-              });
-              metadata.annotations = patchAnnotations;
-              // Handle conflict also
-              return eventmesh.apiServerClient.updateResource({
-                  resourceGroup: resourceDetails.resourceGroup,
-                  resourceType: resourceDetails.resourceType,
-                  resourceId: metadata.name,
-                  metadata: metadata
-                })
-                .tap(updatedResource => logger.debug(`Successfully acquired backup status poller lock for request with options: ${JSON.stringify(options)}\n` +
-                  `Updated resource with poller annotations is: `, updatedResource))
-                .then(() => {
-                  if (!utils.isServiceFabrikOperationFinished(resourceBody.status.state)) {
-                    const instanceInfo = _.chain(response)
-                      .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment', 'started_at', 'abortStartTime')
-                      .value();
-                    return BackupStatusPoller.checkOperationCompletionStatus(instanceInfo)
-                      .then(operationStatusResponse => {
-                        if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                          BackupStatusPoller.clearPoller(metadata.name, intervalId);
-                        }
-                      });
-                  } else {
-                    BackupStatusPoller.clearPoller(metadata.name, intervalId);
-                  }
-                })
-                .catch(AssertionError, err => {
-                  logger.error('Error occured while polling for backup, marking backup as failed', err);
-                  BackupStatusPoller.clearPoller(metadata.name, intervalId);
-                  return eventmesh.apiServerClient.updateResource({
-                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                    resourceId: metadata.name,
-                    status: {
-                      state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                      error: utils.buildErrorJson(err)
-                    }
-                  });
-                })
-                .catch(Conflict, () => {
-                  logger.debug(`Not able to acquire backup status poller processing lock for backup with guid ${object.metadata.name}, Request is probably picked by other worker`);
-                });
-            }
-          });
-        }).catch(err => {
-          logger.error(`Error occured while polling for backup state with guid ${object.metadata.name}`, err);
-        });
-    }
-
-    function startPoller(event) {
-      logger.debug('Received Backup Event: ', event);
-      return Promise.try(() => {
-        const backupGuid = _.get(event, 'object.metadata.name');
-        if ((event.type === CONST.API_SERVER.WATCH_EVENT.ADDED || event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED) && !BackupStatusPoller.pollers[backupGuid]) {
-          logger.debug('starting backup status poller for backup with guid ', backupGuid);
-          // Poller time should be little less than watch refresh interval as 
-          const intervalId = setInterval(() => poller(event.object, intervalId), config.backup.backup_restore_status_check_every);
-          BackupStatusPoller.pollers[backupGuid] = intervalId;
+  getStatus(resourceBody, intervalId) {
+    const response = _.get(resourceBody, 'status.response');
+    const backupGuid = resourceBody.metadata.name;
+    const instanceInfo = _.chain(response)
+      .pick('tenant_id', 'backup_guid', 'instance_guid', 'agent_ip', 'service_id', 'plan_id', 'deployment', 'started_at', 'abortStartTime')
+      .value();
+    return this.checkOperationCompletionStatus(instanceInfo)
+      .then(operationStatusResponse => {
+        if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+          this.clearPoller(backupGuid, intervalId);
         }
-      });
-    }
-    const queryString = `state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`;
-    return eventmesh.apiServerClient.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, startPoller, queryString)
-      .then(stream => {
-        logger.debug(`Successfully set watcher on backup resources for backup status polling with query string:`, queryString);
-        return Promise
-          .delay(CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL)
-          .then(() => {
-            logger.debug(`Refreshing backup stream after ${CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL}`);
-            stream.abort();
-            return this.start();
-          });
       })
-      .catch(err => {
-        logger.error('Error occured in registering watch for backup status poller:', err);
-        return Promise
-          .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
-          .then(() => {
-            logger.debug(`Refreshing backup stream on error after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
-            return this.start();
-          });
+      .catch(AssertionError, err => {
+        logger.error('Error occured while polling for backup, marking backup as failed', err);
+        this.clearPoller(backupGuid, intervalId);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: backupGuid,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            error: utils.buildErrorJson(err)
+          }
+        });
       });
-  }
-  static clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing backup status poller interval for backup with guid`, resourceId);
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-    _.unset(BackupStatusPoller.pollers, resourceId);
   }
 }
 
-BackupStatusPoller.pollers = [];
 module.exports = BackupStatusPoller;
