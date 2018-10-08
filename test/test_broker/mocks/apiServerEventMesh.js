@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const nock = require('nock');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
@@ -95,13 +96,14 @@ function nockGetResource(resourceGroup, resourceType, id, response, times, expec
     .reply(expectedStatusCode || 200, response);
 }
 
-function nockGetResourceListByState(resourceGroup, resourceType, state, response, times, expectedStatusCode) {
-  console.log(response);
+function nockGetResourceListByState(resourceGroup, resourceType, stateList, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`)
     .query({
-      labelSelector: `state=${state}`
+      labelSelector: `state in (${_.join(stateList, ',')})`
     })
     .times(times || 1)
-    .reply(expectedStatusCode || 200, response);
+    .reply(expectedStatusCode || 200, {
+      items: response
+    });
 }

@@ -433,41 +433,39 @@ class ApiServerClient {
    * @description Get Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
-   * @param {string} opts.state - State of resorce
+   * @param {string} opts.stateList - State of resorce
    */
   getResourceListByState(opts) {
     logger.debug('Get resource with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
-    assert.ok(opts.state, `Property 'state' is required to fetch resource list`);
+    assert.ok(opts.stateList, `Property 'stateList' is required to fetch resource list`);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].get({
           qs: {
-            labelSelector: `state=${opts.state}`
+            labelSelector: `state in (${_.join(opts.stateList, ',')})`
           }
         }))
+      .then(resources => _.get(resources.body, 'items'))
       .map(resource => {
-        _.forEach(resource.body.spec, (val, key) => {
+        _.forEach(resource.spec, (val, key) => {
           try {
-            resource.body.spec[key] = JSON.parse(val);
+            resource.spec[key] = JSON.parse(val);
           } catch (err) {
-            resource.body.spec[key] = val;
+            resource.spec[key] = val;
           }
         });
-        _.forEach(resource.body.status, (val, key) => {
+        _.forEach(resource.status, (val, key) => {
           try {
-            resource.body.status[key] = JSON.parse(val);
+            resource.status[key] = JSON.parse(val);
           } catch (err) {
-            resource.body.status[key] = val;
+            resource.status[key] = val;
           }
         });
-        return resource.body;
+        return resource;
       })
-      .catch(err => {
-        console.log(err);
-        return convertToHttpErrorAndThrow(err);
-      });
+      .catch(err => convertToHttpErrorAndThrow(err));
   }
 
   /**

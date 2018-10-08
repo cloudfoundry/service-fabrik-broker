@@ -27,7 +27,7 @@ class DirectorTaskPoller {
       .getResourceListByState({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        state: CONST.APISERVER.RESOURCE_STATE.IN_CACHE
+        stateList: [CONST.APISERVER.RESOURCE_STATE.IN_CACHE]
       })
       .mapSeries(resource => {
         let deploymentName;

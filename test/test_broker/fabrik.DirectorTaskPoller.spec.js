@@ -96,8 +96,9 @@
 
 
 //     it.only('should consume any error thrown from the action handler: getDeploymentNames', () => {
-//       mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-//         CONST.APISERVER.RESOURCE_STATE.IN_CACHE, payload, 1, 200);
+//       mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+//         CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+//         [CONST.APISERVER.RESOURCE_STATE.IN_CACHE], payload, 1, 200);
 //       getNamesSpy.returns(Promise.reject(new Error('get_error')));
 //       getDeploymentSpy.returns(Promise.resolve({
 //         plan_id: 'plan',
@@ -105,8 +106,7 @@
 //         args: args
 //       }));
 //       codSpy.returns(Promise.resolve());
-//       directorTaskPoller.triggerStaggeredDeployments().then((out) => {
-//         console.log('.......', out);
+//       directorTaskPoller.triggerStaggeredDeployments().then(() => {
 //         expect(getNamesSpy.callCount).to.eql(1);
 //         expect(getDeploymentSpy.callCount).to.eql(0);
 //         expect(getPlanSpy.callCount).to.eql(0);
