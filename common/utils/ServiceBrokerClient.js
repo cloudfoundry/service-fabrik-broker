@@ -98,30 +98,6 @@ class ServiceBrokerClient extends HttpClient {
       }, 202)
       .then(res => res.body);
   }
-
-  getLastOperationOfServiceInstance(options) {
-    logger.info(`-> Updating instance -  name: ${options.instance_id}`);
-    return this
-      .request({
-        method: 'GET',
-        url: `/cf/v2/service_instances/${options.instance_id}/last_operation`,
-        auth: {
-          user: config.username,
-          pass: config.password
-        },
-        headers: {
-          Accept: 'application/json',
-          'X-Broker-API-Version': CONST.SF_BROKER_API_VERSION_MIN
-        },
-        qs: {
-          service_id: options.service_id,
-          plan_id: options.plan_id,
-          operation: options.operation
-        },
-        json: true
-      }, 200)
-      .then(res => res.body);
-  }
 }
 
 module.exports = new ServiceBrokerClient();
