@@ -373,7 +373,7 @@ function getRandomCronForOnceEveryXDaysWeekly(options) {
   assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
   // Get weekday cron based on interval
   let weeklyCron;
-  if (dayInterval === 0 || dayInterval >= 4 ) {
+  if (dayInterval === 0 || dayInterval >= 4) {
     weeklyCron = `${min} ${hr} * * ${day}`;
   } else {
     const weekdays = _.toString(_.range(startAfterWeekday, startBeforeWeekday, dayInterval));
