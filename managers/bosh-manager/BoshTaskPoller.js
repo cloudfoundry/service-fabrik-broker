@@ -132,7 +132,9 @@ class BoshTaskPoller {
                   if (_.get(resourceBody.status.response, 'type') === CONST.OPERATION_TYPE.UPDATE &&
                     _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
                     _.includes([CONST.APISERVER.RESOURCE_STATE.FAILED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationOfInstance.state)) {
-                    return _logEvent(options, lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
+                    return _logEvent(_.assign(options, {
+                      instance_id: metadata.name
+                    }), lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
                   }
                 });
             }
