@@ -34,7 +34,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
-    const instanceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
+    const instanceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     const runImmediately = (req.body.run_immediately === 'true' ? true : false);
     let resourceDetails;
     let plan;
@@ -138,14 +138,6 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .status(202)
         .send(body)
       );
-  }
-
-  parseServiceInstanceIdFromDeployment(deploymentName) {
-    const deploymentNameArray = utils.deploymentNameRegExp().exec(deploymentName);
-    if (deploymentNameArray !== undefined && deploymentNameArray.length === 4) {
-      return deploymentNameArray[3];
-    }
-    return deploymentName;
   }
 
   getOutdatedDiff(instanceDetails, tenantInfo, plan) {

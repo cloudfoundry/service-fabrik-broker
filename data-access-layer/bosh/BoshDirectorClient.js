@@ -563,20 +563,12 @@ class BoshDirectorClient extends HttpClient {
     });
   }
 
-  parseServiceInstanceIdFromDeployment(deploymentName) {
-    const deploymentNameArray = utils.deploymentNameRegExp().exec(deploymentName);
-    if (Array.isArray(deploymentNameArray) && deploymentNameArray.length === 4) {
-      return deploymentNameArray[3];
-    }
-    return deploymentName;
-  }
-
   getDeploymentIpsFromResource(deploymentName) {
     logger.info(`[getDeploymentIps] making request to ApiServer for deployment - ${deploymentName}`);
-    let resourceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
+    let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     if (deploymentName === resourceId) {
       //don't contact to ApiServer if not a service-fabrik deployment
-      return Promise.try(() => {});
+      return Promise.resolve();
     }
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -586,15 +578,15 @@ class BoshDirectorClient extends HttpClient {
       .then(resource => JSON.parse(_.get(resource, 'metadata.annotations.deploymentIps', '{}')))
       .catch(err => {
         logger.error(`[getDeploymentIps] Error occurred while getting deployment Ips for ${deploymentName} from ApiServer`, err);
-        return {};
+        return;
       });
   }
 
   putDeploymentIpsInResource(deploymentName, ips) {
-    let resourceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
+    let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     if (deploymentName === resourceId) {
       //don't contact to ApiServer if not a service-fabrik deployment
-      return Promise.try(() => {});
+      return Promise.resolve();
     }
     return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -608,7 +600,7 @@ class BoshDirectorClient extends HttpClient {
       })
       .catch(err => {
         logger.error(`[getDeploymentIps] Error occured while updating resource for ${deploymentName} on ApiServer`, err);
-        return {};
+        return;
       });
   }
 
