@@ -129,9 +129,8 @@ class BoshTaskPoller {
                   logger.debug(`Not able to acquire bosh task poller processing lock for instance ${object.metadata.name}, Request is probably picked by other worker`);
                 })
                 .finally(() => {
-                  if (_.get(resourceBody.status.response, 'type') === 'update' &&
+                  if (_.get(resourceBody.status.response, 'type') === CONST.OPERATION_TYPE.UPDATE &&
                     _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
-                    _.get(resourceBody.status.response, 'parameters.scheduled') === true &&
                     _.includes([CONST.APISERVER.RESOURCE_STATE.FAILED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationOfInstance.state)) {
                     return _logEvent(options, lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
                   }
