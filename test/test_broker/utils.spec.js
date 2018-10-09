@@ -149,13 +149,25 @@ describe('utils', function () {
       ).to.be.eql(true);
     });
 
-    it('should create weekly cron when interval greter than weekdays, start day given', function () {
+    it('should create weekly cron when interval greter than 4, start day given', function () {
       // interval > 6, start_after_weekday provided
-      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 3', 'g')
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* [3-6]', 'g')
         .test(utils
           .getRandomCronForOnceEveryXDaysWeekly({
             'start_after_weekday': 3,
             'day_interval': 7,
+          })
+        )
+      ).to.be.eql(true);
+    });
+
+    it('should create weekly cron when interval less than 4, start day given', function () {
+      // interval > 6, start_after_weekday provided
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0,2,4,6', 'g')
+        .test(utils
+          .getRandomCronForOnceEveryXDaysWeekly({
+            'start_after_weekday': 0,
+            'day_interval': 2,
           })
         )
       ).to.be.eql(true);
