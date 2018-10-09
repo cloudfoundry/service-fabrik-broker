@@ -175,7 +175,7 @@ describe('utils', function () {
 
     it('should create weekly cron when interal greter than weekdays', function () {
       // interval > 6
-      expect(RegExp('[0-9]+ [0-9]+ \\* \\* 0', 'g')
+      expect(RegExp('[0-9]+ [0-9]+ \\* \\* [0-6]', 'g')
         .test(utils
           .getRandomCronForOnceEveryXDaysWeekly({
             'day_interval': 7,
