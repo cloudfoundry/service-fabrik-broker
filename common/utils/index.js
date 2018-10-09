@@ -380,6 +380,7 @@ function getRandomCronForOnceEveryXDaysWeekly(options) {
   // for running multiple times in a week provide a interval between 0 and 4
   // For and interval of 2 and start day of 3, cron:
   // 34 11 * * 3,5
+  // the above cron runs at “At 11:34 on Wednesday and Friday.”
   if (dayInterval === 0 || dayInterval >= 4) {
     weeklyCron = `${min} ${hr} * * ${day}`;
   } else {
