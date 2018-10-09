@@ -224,7 +224,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
       start_after_hr: afterHr,
       start_before_hr: beforeHr,
       start_after_min: afterMin,
-      start_before_min: beforeMin
+      start_before_min: beforeMin,
+      dayInterval: runOnceEvery
     };
     return utils.getRandomCronForOnceEveryXDaysWeekly(opts);
   }
