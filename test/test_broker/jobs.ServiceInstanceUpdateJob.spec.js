@@ -790,7 +790,7 @@ describe('Jobs', function () {
       const oldRun = config.scheduler.jobs.service_instance_update.run_every_xdays;
       config.scheduler.jobs.service_instance_update.run_every_xdays = 7;
       const repeatInterval = ServiceInstanceUpdateJob.getRandomRepeatInterval();
-      expect(repeatInterval).to.equal('1 1 1,8,15,22 * *');
+      expect(repeatInterval).to.equal('1 1 * * 1');
       config.scheduler.jobs.service_instance_update.run_every_xdays = oldRun;
     });
     it(`Returns random schedule between the defined start end times`, function () {

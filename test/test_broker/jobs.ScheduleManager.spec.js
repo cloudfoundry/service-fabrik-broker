@@ -361,7 +361,7 @@ describe('Jobs', function () {
         return ScheduleManager
           .schedule(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, CONST.SCHEDULE.RANDOM, jobData, user)
           .then((jobResponse) => {
-            const expectedRandomInterval = '0 0 0,7,14,21,28 * *';
+            const expectedRandomInterval = '0 0 * * 0';
             const mergedJobServInsUpd = _.clone(mergedJob);
             mergedJobServInsUpd.name = `${instance_id}_${CONST.JOB.SERVICE_INSTANCE_UPDATE}`;
             mergedJobServInsUpd.lastRunAt = dbStartedAt;
