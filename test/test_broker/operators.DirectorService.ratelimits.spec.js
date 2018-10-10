@@ -7,7 +7,6 @@ const catalog = require('../../common/models/catalog');
 const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
-const assert = require('assert');
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
 
@@ -30,7 +29,6 @@ const internal_params = {
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
-var deployment_name = `service-fabrik-0021-${used_guid}`;
 
 describe('manager', () => {
   describe('DirectorService - with ratelimits', function () {
@@ -391,7 +389,6 @@ describe('manager', () => {
       'enable_bosh_rate_limit': true
     };
     const task_id = 'task_id';
-    const instance_id = 'guid';
     const deploymentName = 'deploymentName';
     let service;
     let sandbox, directorOpSpy, currentTasksSpy, containsInstanceSpy;
