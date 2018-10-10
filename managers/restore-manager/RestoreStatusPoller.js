@@ -19,7 +19,7 @@ class RestoreStatusPoller extends BaseStatusPoller {
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
       validStateList: [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, CONST.APISERVER.RESOURCE_STATE.ABORTING],
       validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
-      pollInterval: CONST.RESTORE_RESOURCE_POLLER_INTERVAL
+      pollInterval: config.backup.backup_restore_status_check_every
     });
   }
   getStatus(resourceBody, intervalId) {
