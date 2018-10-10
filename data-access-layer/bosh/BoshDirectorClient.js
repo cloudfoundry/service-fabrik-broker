@@ -567,7 +567,7 @@ class BoshDirectorClient extends HttpClient {
     logger.info(`[getDeploymentIps] making request to ApiServer for deployment - ${deploymentName}`);
     let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     if (deploymentName === resourceId) {
-      //don't contact to ApiServer if not a service-fabrik deployment
+      //don't contact to ApiServer if it is out-of-band deployment
       return Promise.resolve();
     }
     return eventmesh.apiServerClient.getResource({
@@ -585,7 +585,7 @@ class BoshDirectorClient extends HttpClient {
   putDeploymentIpsInResource(deploymentName, ips) {
     let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     if (deploymentName === resourceId) {
-      //don't contact to ApiServer if not a service-fabrik deployment
+      //don't contact to ApiServer if it is out-of-band deployment
       return Promise.resolve();
     }
     return eventmesh.apiServerClient.updateResource({
