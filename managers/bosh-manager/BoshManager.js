@@ -9,11 +9,17 @@ const BaseManager = require('../BaseManager');
 const DirectorService = require('./DirectorService');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
+const config = require('../../common/config');
+const DBManager = require('../../broker/lib/fabrik/DBManager');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const assert = require('assert');
 
+/* jshint nonew:false */
+new DBManager(); //to log events
+
 class BoshManager extends BaseManager {
   init() {
+    utils.initializeEventListener(config.internal, 'internal');
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, validStateList));

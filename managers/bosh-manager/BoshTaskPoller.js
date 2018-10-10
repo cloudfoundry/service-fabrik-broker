@@ -10,6 +10,7 @@ const logger = require('../../common/logger');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
+const EventLogInterceptor = require('../../common/EventLogInterceptor');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const AssertionError = assert.AssertionError;
 const Conflict = errors.Conflict;
@@ -29,6 +30,10 @@ class BoshTaskPoller {
           const options = _.get(resourceBody, 'spec.options');
           const pollerAnnotation = _.get(resourceBody, 'metadata.annotations.lockedByTaskPoller');
           logger.debug(`pollerAnnotation is ${pollerAnnotation} current time is: ${new Date()}`);
+          let lastOperationOfInstance = {
+            state: 'in progress',
+            description: 'Update deployment is still in progress'
+          };
           return Promise.try(() => {
             // If task is not picked by poller which has the lock on task for CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME then try to acquire lock
             if (pollerAnnotation && (JSON.parse(pollerAnnotation).ip !== config.broker_ip) && (new Date() - new Date(JSON.parse(pollerAnnotation).lockTime) < (CONST.DIRECTOR_RESOURCE_POLLER_INTERVAL + CONST.DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME))) { // cahnge this to 5000
@@ -59,6 +64,7 @@ class BoshTaskPoller {
                     return DirectorService.createInstance(metadata.name, options)
                       .then(directorService => directorService.lastOperation(_.get(resourceBody, 'status.response')))
                       .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
+                      .tap(lastOperationValue => lastOperationOfInstance = lastOperationValue)
                       .then(lastOperationValue => Promise.all([eventmesh.apiServerClient.updateResource({
                         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -83,15 +89,16 @@ class BoshTaskPoller {
                             resourceId: metadata.name
                           });
                         } else {
+                          lastOperationOfInstance = {
+                            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                            description: CONST.SERVICE_BROKER_ERR_MSG
+                          };
                           return eventmesh.apiServerClient.updateResource({
                             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                             resourceId: metadata.name,
                             status: {
-                              lastOperation: {
-                                state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                                description: CONST.SERVICE_BROKER_ERR_MSG
-                              },
+                              lastOperation: lastOperationOfInstance,
                               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                               error: utils.buildErrorJson(err)
                             }
@@ -101,15 +108,16 @@ class BoshTaskPoller {
                       .catch(AssertionError, err => {
                         logger.error(`Error occured while getting last operation for instance ${object.metadata.name}`, err);
                         BoshTaskPoller.clearPoller(metadata.name, intervalId);
+                        lastOperationOfInstance = {
+                          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+                          description: CONST.SERVICE_BROKER_ERR_MSG
+                        };
                         return eventmesh.apiServerClient.updateResource({
                           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                           resourceId: metadata.name,
                           status: {
-                            lastOperation: {
-                              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-                              description: CONST.SERVICE_BROKER_ERR_MSG
-                            },
+                            lastOperation: lastOperationOfInstance,
                             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                             error: utils.buildErrorJson(err)
                           }
@@ -119,6 +127,15 @@ class BoshTaskPoller {
                 })
                 .catch(Conflict, () => {
                   logger.debug(`Not able to acquire bosh task poller processing lock for instance ${object.metadata.name}, Request is probably picked by other worker`);
+                })
+                .finally(() => {
+                  if (_.get(resourceBody.status.response, 'type') === CONST.OPERATION_TYPE.UPDATE &&
+                    _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
+                    _.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationOfInstance.state)) {
+                    return _logEvent(_.assign(options, {
+                      instance_id: metadata.name
+                    }), lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
+                  }
                 });
             }
           });
@@ -127,6 +144,18 @@ class BoshTaskPoller {
           logger.error(`Error occured while polling for last operation for instance ${object.metadata.name}, clearing bosh task poller interval now`, err);
           BoshTaskPoller.clearPoller(object.metadata.name, intervalId);
         });
+
+      function _logEvent(opts, operationStatusResponse, method) {
+        const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+        const check_res_body = true;
+        const resp = {
+          statusCode: 200,
+          body: operationStatusResponse
+        };
+        if (CONST.URL.instance) {
+          return eventLogger.publishAndAuditLogEvent(CONST.URL.instance, method, opts, resp, check_res_body);
+        }
+      }
     }
 
     function startPoller(event) {
