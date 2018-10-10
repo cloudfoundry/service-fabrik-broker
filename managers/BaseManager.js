@@ -20,11 +20,13 @@ class BaseManager {
   registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval) {
     const queryString = `state in (${_.join(validStateList, ',')})`;
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
-    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, (resource) => this.handleResource(resource, handler), queryString)
+    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, (resource) => this.handleResource(resource, handler, resourceGroup, resourceType, queryString), queryString)
       .then(stream => {
         logger.debug(`Successfully set watcher with query string:`, queryString);
+        watchRefreshInterval = watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL;
+        logger.info(`Refreshing stream for resourceGroup ${resourceGroup} of type ${resourceType} with queryString  ${queryString} at interval of ${watchRefreshInterval}`);
         return Promise
-          .delay(watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL)
+          .delay(watchRefreshInterval)
           .then(() => {
             logger.debug(`Refreshing stream after ${watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
             stream.abort();
@@ -37,7 +39,7 @@ class BaseManager {
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
             logger.info(`Refreshing stream after ${CONST.APISERVER.WATCHER_ERROR_DELAY}`);
-            return this.registerWatcher(resourceGroup, resourceType, validStateList);
+            return this.registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval);
           });
       });
   }
@@ -47,7 +49,7 @@ class BaseManager {
    */
   _acquireProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Trying to acquire processing lock for request with options: ', changedOptions);
+    logger.silly('Trying to acquire processing lock for request with options: ', changedOptions);
     // Set lockedManager annotations to true
     const patchBody = _.cloneDeep(changeObjectBody);
     const metadata = patchBody.metadata;
@@ -62,7 +64,7 @@ class BaseManager {
         resourceId: metadata.name,
         metadata: metadata
       })
-      .tap((resource) => logger.info(`Successfully acquired processing lock for request with options: ${JSON.stringify(changedOptions)}\n\
+      .tap((resource) => logger.silly(`Successfully acquired processing lock for request with options: ${JSON.stringify(changedOptions)}\n\
         Updated resource with annotations is:`, resource));
   }
 
@@ -72,7 +74,7 @@ class BaseManager {
 
   _releaseProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Trying to release processing lock for request with options: ', changedOptions);
+    logger.silly('Trying to release processing lock for request with options: ', changedOptions);
     const metadata = {
       annotations: {
         lockedByManager: '',
@@ -86,11 +88,11 @@ class BaseManager {
         resourceId: changeObjectBody.metadata.name,
         metadata: metadata
       })
-      .tap((resource) => logger.info(`Successfully released processing lock for the request with options: ${JSON.stringify(changedOptions)} \n` +
+      .tap((resource) => logger.silly(`Successfully released processing lock for the request with options: ${JSON.stringify(changedOptions)} \n` +
         `Updated resource with annotations is: `, resource));
   }
 
-  _preProcessRequest(objectBody, processingLockStatus) {
+  _preProcessRequest(objectBody, processingLockStatus, resourceGroup, resourceType, queryString) {
     const options = JSON.parse(objectBody.spec.options);
     // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
     return Promise.try(() => {
@@ -122,7 +124,7 @@ class BaseManager {
           });
       } else {
         processingLockStatus.conflict = true;
-        logger.info(`Request with options ${JSON.stringify(options)} is picked by process with ip ${lockedByManager} at ${processingStartedAt}`);
+        logger.debug(`Resource ${objectBody.metadata.name}  ${resourceGroup}, ${resourceType}, ${queryString} - is picked by process with ip ${lockedByManager} at ${processingStartedAt}`);
       }
     });
   }
@@ -139,16 +141,22 @@ class BaseManager {
     throw new NotImplementedBySubclass('processRequest');
   }
 
-  handleResource(changeObject, handler) {
-    logger.debug('Changed Resource:', changeObject);
-    logger.debug('Changed resource options:', changeObject.object.spec.options);
+  continueToHoldLock(resourceBody) {
+    return this._acquireProcessingLock(resourceBody);
+  }
+
+  handleResource(changeObject, handler, resourceGroup, resourceType, queryString) {
+    logger.debug(`Handling Resource:-, ${changeObject.object.metadata.name}, ${resourceGroup}, ${resourceType}, ${queryString}`);
+    logger.debug('Changed resource:', changeObject);
     const changeObjectBody = changeObject.object;
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.debug('Changed resource options(parsed):', changedOptions);
+    logger.silly('Changed resource options(parsed):', changedOptions);
     const processingLockStatus = {
       conflict: false
     };
-    return this._preProcessRequest(changeObjectBody, processingLockStatus)
+    let releaseProcessingLock = true;
+    return this
+      ._preProcessRequest(changeObjectBody, processingLockStatus, resourceGroup, resourceType, queryString)
       .then(() => {
         if (!processingLockStatus.conflict) {
           if (handler) {
@@ -157,13 +165,17 @@ class BaseManager {
           return this.processRequest(changeObjectBody);
         }
       })
+      .tap((releaseLock) => releaseProcessingLock = releaseLock !== 'HOLD_PROCESSING_LOCK')
       .catch(err => {
         if (!processingLockStatus.conflict) {
           logger.error(`Caught error while processing request with options ${JSON.stringify(changedOptions)} `, err);
         }
       })
       .finally(() => {
-        if (!processingLockStatus.conflict) {
+        if (!releaseProcessingLock) {
+          logger.info(`${changeObject.object.metadata.name} is requesting lock not to be released! Continue to hold lock!!!`);
+        }
+        if (!processingLockStatus.conflict && releaseProcessingLock) {
           return this._postProcessRequest(changeObjectBody);
         }
       });

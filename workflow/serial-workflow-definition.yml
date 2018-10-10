@@ -1,5 +1,15 @@
 ---
 defaults:
+blueprint_workflow:
+  tasks:
+  - task_type: BlueprintTask
+    task_description: 'Void blueprint task'
+    task_data: 
+      sample: 'InputDataFrom Task1'
+  - task_type: BlueprintTask
+    task_description: 'Void blueprint task2'
+    task_data: 
+      sample: 'InputDataFrom Task2 ----'
 upgrade_to_multi_az:
   tasks: 
   - task_type: ServiceInstanceUpdateTask

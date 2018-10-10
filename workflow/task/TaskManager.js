@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const Promise = require('bluebird');
 const assert = require('assert');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
@@ -15,16 +16,20 @@ class TaskManager extends BaseManager {
     const statesToWatchForTaskStatus = [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS];
     this.pollers = {};
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK)
-      .then(() => this.registerWatcher(
-        CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-        CONST.APISERVER.RESOURCE_TYPES.TASK,
-        statesToWatchForTaskRun))
-      .then(() => this.registerWatcher(
-        CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-        CONST.APISERVER.RESOURCE_TYPES.TASK,
-        statesToWatchForTaskStatus,
-        (event) => this.startTaskStatusPoller(event),
-        CONST.POLLER_WATCHER_REFRESH_INTERVAL));
+      .then(() => {
+        this.registerWatcher(
+          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          CONST.APISERVER.RESOURCE_TYPES.TASK,
+          statesToWatchForTaskRun);
+        this.registerWatcher(
+          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          CONST.APISERVER.RESOURCE_TYPES.TASK,
+          statesToWatchForTaskStatus,
+          (event) => this.startTaskStatusPoller(event),
+          CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
+        logger.info('registered both watchers for tasks!');
+        // 
+      });
   }
 
   processRequest(resource) {
@@ -33,44 +38,71 @@ class TaskManager extends BaseManager {
       assert.ok(resource.spec.options, `Argument 'spec.options' is required to run the task`);
       const taskDetails = JSON.parse(resource.spec.options);
       const task = TaskFabrik.getTask(taskDetails.task_type);
-      return task.run(taskDetails);
+      return task
+        .run(resource.metadata.name, taskDetails)
+        .tap(() => logger.info(`${taskDetails.task_type} for ${resource.metadata.name} run completed.`))
+        .then(patchBody => apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
+          resourceId: resource.metadata.name,
+          options: patchBody,
+          status: {
+            response: taskDetails.response,
+            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+          }
+        }))
+        .tap(() => logger.info(`Status of task ${taskDetails.task_type} for ${resource.metadata.name} is now set to in-progress.`));
     });
   }
 
   startTaskStatusPoller(event) {
     logger.debug('Received Task Event: ', event);
-    if (event.type === CONST.API_SERVER.WATCH_EVENT.MODIFIED &&
-      !this.pollers[event.object.metadata.name]) {
-      logger.debug('starting task status poller for : ', event.object.metadata.name);
-      const taskDetails = JSON.parse(event.object.spec.options);
+    if (!this.pollers[event.metadata.name]) {
+      logger.debug(`Starting task status poller for : ${event.metadata.name} with interval of ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+      const taskDetails = JSON.parse(event.spec.options);
       const task = TaskFabrik.getTask(taskDetails.task_type);
-      const intervalId = setInterval(() => this.pollTaskStatus(event.object, intervalId, task, taskDetails), CONST.WATCHER_REFRESH_INTERVAL);
-      this.pollers[event.object.metadata.name] = task;
+      const intervalId = setInterval(() => this.pollTaskStatus(event, intervalId, task, taskDetails), CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+      this.pollers[event.metadata.name] = task;
+      return Promise.resolve('HOLD_PROCESSING_LOCK');
+    } else {
+      logger.debug(`Poller already set for : ${event.metadata.name}`);
     }
+    return Promise.resolve('');
   }
 
   pollTaskStatus(object, intervalId, task, taskDetails) {
+    logger.info(`Polling task status for ${object.metadata.name}`);
     const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(object.metadata.selfLink);
-    return task.getStatus(taskDetails.resource).then((status) => {
-      const state = _.get(status, 'state');
-      if (utils.isServiceFabrikOperationFinished(state)) {
-        logger.info(`Task ${taskDetails.type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)} - COMPLETE - on resource - ${JSON.stringify(taskDetails.resource)}`);
-        status.state = CONST.APISERVER.TASK_STATE.DONE;
-        return task.updateStatus(resourceDetails, status)
-          .then(() => this.clearPoller(object.metadata.name, intervalId))
-          .return(true);
-      }
-      return false;
-    });
+    return task
+      .getStatus(object.metadata.name, taskDetails)
+      .then(operationStatus => {
+        const state = _.get(operationStatus, 'state');
+        if (utils.isServiceFabrikOperationFinished(state)) {
+          logger.info(`Task ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)} - COMPLETE - on resource - ${JSON.stringify(taskDetails.resource)}`);
+          const status = {
+            operation_response: operationStatus,
+            state: CONST.APISERVER.TASK_STATE.DONE
+          };
+          return task
+            .updateStatus(resourceDetails, status)
+            .then(() => this.clearPoller(object, intervalId))
+            .then(() => this._releaseProcessingLock(object))
+            .return(true);
+        } else {
+          this.continueToHoldLock(object);
+        }
+        return false;
+      });
   }
 
-  clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing poller interval for task ${resourceId}`);
-    if (intervalId) {
+  clearPoller(object, intervalId) {
+    logger.debug(`Clearing poller interval for task ${object.metadata.name}`);
+    if (object.metadata.name) {
       clearInterval(intervalId);
     }
-    _.unset(this.pollers, resourceId);
+    this._postProcessRequest(object);
+    _.unset(this.pollers, object.metadata.name);
   }
 }
 
-module.exports = new TaskManager();
+module.exports = TaskManager;
