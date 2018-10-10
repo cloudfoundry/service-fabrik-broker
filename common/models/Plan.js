@@ -63,6 +63,7 @@ class Plan {
       'name',
       'description',
       'metadata',
+      'schemas',
       'free'
     ];
   }
