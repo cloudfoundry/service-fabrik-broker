@@ -4,6 +4,7 @@ const _ = require('lodash');
 const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
 const BackupService = require('../../managers/backup-manager');
+const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
 
 describe('managers', function () {
   describe('BackupStatusPoller', function () {
@@ -28,6 +29,7 @@ describe('managers', function () {
     const config = {
       enable_service_fabrik_v2: true,
       backup: {
+        backup_restore_status_check_every: 10000,
         status_check_every: 10,
         abort_time_out: 180000,
         retry_delay_on_error: 10,
@@ -70,13 +72,23 @@ describe('managers', function () {
       return job;
     }
 
-    let sandbox, backupOperationStub;
+    let sandbox, backupOperationStub, registerWatcherStub;
     before(function () {
       sandbox = sinon.sandbox.create();
+      const registerWatcherFake = function () {
+        return Promise.resolve(true);
+      };
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
       backupOperationStub = sandbox.stub(BackupService.prototype, 'getOperationState');
     });
 
     afterEach(function () {
+      expect(registerWatcherStub.callCount).to.equal(1);
+      expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.BACKUP);
+      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
+      expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound startPoller');
+      expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`);
+      registerWatcherStub.reset();
       backupOperationStub.reset();
     });
 
@@ -85,7 +97,8 @@ describe('managers', function () {
     });
 
     describe('#checkOperationCompletionStatus', function () {
-      it('backup status check should be succesful and status is succeeded', function () {
+      it('backup status check should be succesful and status is succeeded', function (done) {
+        const backupStatusPoller = new BackupStatusPoller();
         backupOperationStub.withArgs('backup', instanceInfo_Succeeded).onCall(0).returns(Promise.resolve({
           state: CONST.OPERATION.SUCCEEDED,
           description: 'Backup operation successful'
@@ -93,7 +106,7 @@ describe('managers', function () {
         const opts = _.cloneDeep(instanceInfo_Succeeded);
         opts.backup_guid = SUCCEEDED_BACKUP_GUID;
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, SUCCEEDED_BACKUP_GUID, {});
-        return BackupStatusPoller.checkOperationCompletionStatus(opts)
+        return backupStatusPoller.checkOperationCompletionStatus(opts)
           .then(res => {
             expect(res).to.eql({
               state: CONST.OPERATION.SUCCEEDED,
@@ -101,10 +114,12 @@ describe('managers', function () {
             });
             expect(backupOperationStub).to.be.calledOnce;
             mocks.verify();
+            done();
           });
       });
 
       it('backup status check should be succesful and status is processing', function () {
+        const backupStatusPoller = new BackupStatusPoller();
         backupOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           description: 'Backup operation in-progress'
@@ -119,7 +134,7 @@ describe('managers', function () {
           }
         });
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {});
-        return BackupStatusPoller.checkOperationCompletionStatus(opts)
+        return backupStatusPoller.checkOperationCompletionStatus(opts)
           .then(res => {
             expect(res).to.eql({
               state: CONST.OPERATION.IN_PROGRESS,
@@ -131,6 +146,7 @@ describe('managers', function () {
       });
 
       it('backup is processing - exceeded deployment lock timeout', function () {
+        const backupStatusPoller = new BackupStatusPoller();
         backupOperationStub.withArgs('backup', instanceInfo_InProgress).returns(Promise.resolve({
           state: CONST.OPERATION.IN_PROGRESS,
           description: 'Backup operation in-progress'
@@ -147,7 +163,7 @@ describe('managers', function () {
           }
         }, 2);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {}, 2);
-        return BackupStatusPoller.checkOperationCompletionStatus(opts)
+        return backupStatusPoller.checkOperationCompletionStatus(opts)
           .then(res => {
             expect(res).to.eql({
               state: CONST.APISERVER.RESOURCE_STATE.ABORTING,
@@ -160,6 +176,7 @@ describe('managers', function () {
       });
 
       it('backup is aborting - within abort timeout', function () {
+        const backupStatusPoller = new BackupStatusPoller();
         const oldTTLConfig = config.lockttl.backup;
         config.lockttl.backup = 0;
         const job = getJobBasedOnOperation('backup', {
@@ -180,7 +197,7 @@ describe('managers', function () {
           }
         });
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, IN_PROGRESS_BACKUP_GUID, {});
-        return BackupStatusPoller.checkOperationCompletionStatus(opts)
+        return backupStatusPoller.checkOperationCompletionStatus(opts)
           .then(res => {
             expect(res).to.eql({
               state: CONST.APISERVER.RESOURCE_STATE.ABORTING,
@@ -193,6 +210,7 @@ describe('managers', function () {
       });
 
       it('backup is aborting - abort timeout exceeded', function () {
+        const backupStatusPoller = new BackupStatusPoller();
         const oldAbortTimeConfig = config.backup.abort_time_out;
         const oldTTLConfig = config.lockttl.backup;
         config.backup.abort_time_out = 0;
@@ -215,7 +233,7 @@ describe('managers', function () {
           }
         });
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, ABORTING_BACKUP_GUID, {}, 2);
-        return BackupStatusPoller.checkOperationCompletionStatus(opts)
+        return backupStatusPoller.checkOperationCompletionStatus(opts)
           .then(res => {
             expect(res).to.eql({
               state: CONST.APISERVER.RESOURCE_STATE.ABORTED,
