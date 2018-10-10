@@ -17,7 +17,7 @@ class RestoreStatusPoller extends BaseStatusPoller {
     super({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-      validStateList: [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS],
+      validStateList: [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS, CONST.APISERVER.RESOURCE_STATE.ABORTING],
       validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
       pollInterval: CONST.RESTORE_RESOURCE_POLLER_INTERVAL
     });
@@ -44,16 +44,25 @@ class RestoreStatusPoller extends BaseStatusPoller {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
               resourceId: changedOptions.restore_guid,
               status: {
-                state: operationStatusResponse.state,
                 response: operationStatusResponse
               }
             }))
             .then(() => {
               if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                logger.debug('Clearing Restore Task Poller:', resourceBody.metadata.name);
-                this.clearPoller(resourceBody.metadata.name, intervalId);
-                _.set(restore_opts, 'user.name', changedOptions.username);
-                return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
+                return eventmesh.apiServerClient.patchResource({
+                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                    resourceId: changedOptions.restore_guid,
+                    status: {
+                      state: operationStatusResponse.state
+                    }
+                  })
+                  .then(() => {
+                    logger.debug('Clearing Restore Task Poller:', resourceBody.metadata.name);
+                    this.clearPoller(resourceBody.metadata.name, intervalId);
+                    _.set(restore_opts, 'user.name', changedOptions.username);
+                    return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
+                  });
               }
             });
         })
