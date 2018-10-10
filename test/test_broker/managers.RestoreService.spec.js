@@ -79,6 +79,13 @@ describe('managers', function () {
       },
       username: username
     };
+    const dummyDeploymentResource = {
+      metadata:{
+        annotations: {
+          labels: 'dummy'
+        }
+      }
+    };
 
     beforeEach(function () {
       plan = catalog.getPlan(plan_id);
@@ -127,6 +134,8 @@ describe('managers', function () {
     describe('#startRestore', function () {
       it('should start restore', function () {
         mocks.director.getDeploymentVms(deployment_name);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.director.getDeployments();
         mocks.agent.getInfo();
