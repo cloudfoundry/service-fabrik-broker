@@ -15,6 +15,7 @@ const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 const bosh = require('../../data-access-layer/bosh');
+const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
@@ -808,9 +809,9 @@ class DirectorService extends BaseDirectorService {
         .all([
           Promise.resolve(preUnbindResponse),
           this.getDeploymentIps(deploymentName),
-          this.getBindingProperty(deploymentName, id)
+          this.getCredentials(deploymentName, id)
         ]))
-      .spread((preUnbindResponse, ips, binding) => utils.retry(() => this.agent.deleteCredentials(ips, binding.credentials, preUnbindResponse), {
+      .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
           maxAttempts: 3,
           timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
         })
@@ -827,6 +828,36 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
+  getCredentials(deploymentName, id) {
+    return this.getCredentialsFromResource(id)
+      .then(credentials => {
+        if (credentials) {
+          return credentials;
+        }
+        logger.info(`[getCredentials] Fetching property from bosh for binding ${id}`);
+        return this.getBindingProperty(deploymentName, id)
+          .then(binding => binding.credentials);
+      });
+  }
+
+  getCredentialsFromResource(id) {
+    logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceId: id
+      })
+      .then(resource => {
+        let response = _.get(resource, 'status.response', undefined);
+        if (response) {
+          return utils.decodeBase64(response);
+        }
+      })
+      .catch(err => {
+        logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
+        return;
+      });
+  }
 
   getBindingProperty(deploymentName, id) {
     return this.director

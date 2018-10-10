@@ -10,7 +10,7 @@ const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const DirectorService = require('../../managers/bosh-manager/DirectorService');
-
+const utils = require('../../common/utils');
 
 describe('#DirectorService', function () {
   describe('instances', function () {
@@ -1015,7 +1015,55 @@ describe('#DirectorService', function () {
 
 
       describe('#unbind', function () {
-        it('returns 200 OK', function () {
+        it('returns 200 OK: credentials fetched from ApiServer', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
+          expectedRequestBody.context = _.chain(expectedRequestBody.context)
+            .set('id', binding_id)
+            .omit('params')
+            .omit('sf_operations_args')
+            .value();
+          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
+
+          let dummyResource = {
+            status: {
+              response: utils.encodeBase64(mocks.agent.credentials),
+              state: 'succeeded'
+            }
+          };
+          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyResource, 1, 200);
+          mocks.agent.getInfo();
+          mocks.agent.deleteCredentials();
+          mocks.director.deleteBindingProperty(binding_id);
+          const options = {
+            binding_id: binding_id,
+            service_id: service_id,
+            plan_id: plan_id,
+            app_guid: app_guid,
+            context: context,
+            bind_resource: {
+              app_guid: app_guid
+            }
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.unbind(options))
+            .then(res => {
+              expect(res).to.eql({
+                'body': '',
+                'headers': {},
+                'statusCode': 204,
+                'statusMessage': null
+              });
+              mocks.verify();
+            });
+        });
+        it('returns 200 OK: bind resource not found on ApiServer', function () {
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -1030,6 +1078,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentInstances(deployment_name);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, {}, 1, 404);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
