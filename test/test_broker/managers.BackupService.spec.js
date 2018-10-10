@@ -44,7 +44,7 @@ describe('managers', function () {
     };
     const manager = new BackupService(plan);
     const dummyDeploymentResource = {
-      metadata:{
+      metadata: {
         annotations: {
           labels: 'dummy'
         }

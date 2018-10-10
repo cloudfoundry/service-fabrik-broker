@@ -79,7 +79,7 @@ describe('#DirectorService', function () {
       Promise.onPossiblyUnhandledRejection(() => {});
       let getScheduleStub;
       const dummyDeploymentResource = {
-        metadata:{
+        metadata: {
           annotations: {
             labels: 'dummy'
           }

@@ -80,7 +80,7 @@ describe('managers', function () {
       username: username
     };
     const dummyDeploymentResource = {
-      metadata:{
+      metadata: {
         annotations: {
           labels: 'dummy'
         }

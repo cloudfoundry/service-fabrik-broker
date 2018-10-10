@@ -40,12 +40,12 @@ describe('#VirtualHostService', function () {
         space_guid: space_guid
       };
       const dummyDeploymentResource = {
-        metadata:{
+        metadata: {
           annotations: {
             labels: 'dummy'
           }
         }
-      };  
+      };
       Promise.onPossiblyUnhandledRejection(() => {});
 
       before(function () {
@@ -65,7 +65,7 @@ describe('#VirtualHostService', function () {
         it('returns 201 created', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);  
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createVirtualHost(instance_id);
@@ -123,7 +123,7 @@ describe('#VirtualHostService', function () {
       describe('#update', function () {
         it('returns 200 OK', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);  
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.updateVirtualHost(instance_id);
@@ -148,7 +148,7 @@ describe('#VirtualHostService', function () {
       describe('#bind', function () {
         it('returns 201 Created', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);  
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
@@ -175,7 +175,7 @@ describe('#VirtualHostService', function () {
       describe('#unbind', function () {
         it('returns 200 OK', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);  
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
@@ -200,11 +200,11 @@ describe('#VirtualHostService', function () {
         });
       });
 
-  
+
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);  
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);

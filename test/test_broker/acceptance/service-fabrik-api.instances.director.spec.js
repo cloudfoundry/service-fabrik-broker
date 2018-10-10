@@ -42,7 +42,7 @@ describe('service-fabrik-api', function () {
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
       const dummyDeploymentResource = {
-        metadata:{
+        metadata: {
           annotations: {
             labels: 'dummy'
           }
