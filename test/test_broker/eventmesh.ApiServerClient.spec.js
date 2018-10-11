@@ -684,11 +684,11 @@ describe('eventmesh', () => {
       it('Gets resource list by state', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.IN_CACHE], [expectedGetDeploymentResponse], 1, 200);
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
         return apiserver.getResourceListByState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            stateList: [CONST.APISERVER.RESOURCE_STATE.IN_CACHE]
+            stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
           })
           .then(res => {
             expect(res).to.eql([sampleDeploymentResource]);
@@ -699,11 +699,11 @@ describe('eventmesh', () => {
       it('Gets resource list by state: error', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.IN_CACHE], [expectedGetDeploymentResponse], 1, 404);
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 404);
         return apiserver.getResourceListByState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            stateList: [CONST.APISERVER.RESOURCE_STATE.IN_CACHE]
+            stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
           })
           .catch(err => {
             expect(err.status).to.eql(404);

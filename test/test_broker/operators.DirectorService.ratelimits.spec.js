@@ -393,7 +393,7 @@ describe('manager', () => {
     let service;
     let sandbox, directorOpSpy, currentTasksSpy, containsInstanceSpy;
     let deleteDeploymentSpy, getBoshTaskSpy, containsDeploymentSpy, deploymentSpy, storeSpy, storeBoshSpy;
-    let getCachedDeploymentsSpy, getDirectorDeploymentsSpy, deleteTaskSpy, getInstanceGuidSpy;
+    let getDeploymentNamesInCacheSpy, getCachedDeploymentsSpy, getDirectorDeploymentsSpy, deleteTaskSpy, getInstanceGuidSpy;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -410,17 +410,8 @@ describe('manager', () => {
       getDirectorDeploymentsSpy = sandbox.stub();
       getInstanceGuidSpy = sandbox.stub();
       deleteTaskSpy = sandbox.stub();
+      getDeploymentNamesInCacheSpy = sandbox.stub();
       var boshStub = {
-        BoshOperationQueue: {
-          containsServiceInstance: containsInstanceSpy,
-          getBoshTask: getBoshTaskSpy,
-          containsDeployment: containsDeploymentSpy,
-          saveDeployment: storeSpy,
-          deleteDeploymentFromCache: deleteDeploymentSpy,
-          saveBoshTask: storeBoshSpy,
-          getDeploymentNames: getCachedDeploymentsSpy,
-          deleteBoshTask: deleteTaskSpy
-        },
         NetworkSegmentIndex: {
           adjust: function (num) {
             return num;
@@ -445,6 +436,7 @@ describe('manager', () => {
       };
       service._createOrUpdateDeployment = deploymentSpy;
       service.getInstanceGuid = getInstanceGuidSpy;
+      service.getDeploymentNamesInCache = getDeploymentNamesInCacheSpy;
     });
 
     afterEach(function () {
@@ -453,7 +445,7 @@ describe('manager', () => {
     });
     describe('#acquireNetworkSegmentIndex', () => {
       it('should return network segment index when there are deployment names in etcd', () => {
-        getCachedDeploymentsSpy.returns([`service-fabrik-90-${used_guid2}`]);
+        getDeploymentNamesInCacheSpy.returns([`service-fabrik-90-${used_guid2}`]);
         getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
         return service.acquireNetworkSegmentIndex('guid')
           .then(index => {

@@ -26,16 +26,12 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
   }
 
   getStatus(resourceBody, intervalId) {
-    let deploymentName;
-    let directorService;
     const instanceId = resourceBody.metadata.name;
     const resourceOptions = _.get(resourceBody, 'spec.options');
+    const deploymentName = _.get(resourceBody, 'status.response.deployment_name');
     return DirectorService
       .createInstance(instanceId, resourceOptions)
-      .tap(directorInstance => directorService = directorInstance)
-      .then(() => directorService.findDeploymentNameByInstanceId(instanceId))
-      .tap(deployment_name => deploymentName = deployment_name)
-      .then(() => directorService.createOrUpdateDeployment(deploymentName, resourceOptions))
+      .then((directorService) => directorService.createOrUpdateDeployment(deploymentName, resourceOptions))
       .then(directorResponse => {
         if (_.get(directorResponse, 'task_id')) {
           return Promise.all([eventmesh.apiServerClient.updateResource({

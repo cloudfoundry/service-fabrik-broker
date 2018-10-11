@@ -19,7 +19,6 @@ const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
-const boshOperationQueue = bosh.BoshOperationQueue;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
@@ -228,6 +227,7 @@ class DirectorService extends BaseDirectorService {
         .assign(_.pick(params, 'parameters', 'context'))
         .set('task_id', _.get(op, 'task_id'))
         .set('cached', _.get(op, 'cached'))
+        .set('deployment_name', this.deploymentName)
         .value()
       );
   }
@@ -247,6 +247,7 @@ class DirectorService extends BaseDirectorService {
             .assign(_.pick(params, 'parameters', 'context'))
             .set('task_id', _.get(op, 'task_id'))
             .set('cached', _.get(op, 'cached'))
+            .set('deployment_name', this.deploymentName)
             .value()
           );
       });
@@ -266,7 +267,19 @@ class DirectorService extends BaseDirectorService {
   }
 
   getDeploymentNamesInCache() {
-    return boshOperationQueue.getDeploymentNames();
+    return eventmesh.apiServerClient.getResourceListByState({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+      })
+      .map(resource => _.get(resource, 'status.response.deployment_name'))
+      .then(deploymentNames => _
+        .chain(deploymentNames)
+        .flatten()
+        .compact()
+        .uniq()
+        .value()
+      );
   }
 
   getTask(taskId) {
