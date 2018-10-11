@@ -12,7 +12,7 @@ const apiserver = new eventmesh();
 const backup_guid = '071acb05-66a3-471b-af3c-8bbf1e4180bc';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
 const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-const DefaultBackupManagerDummy = {
+const DefaultBackupOperatorDummy = {
   registerWatcherDummy: () => {},
   createServiceDummy: () => {},
   startBackupDummy: () => {},
@@ -23,29 +23,29 @@ const DefaultBackupManagerDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DefaultBackupManager = proxyquire('../../managers/backup-manager/DefaultBackupManager', {
+const DefaultBackupOperator = proxyquire('../../managers/backup-manager/DefaultBackupOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        DefaultBackupManagerDummy.getOperationOptionsDummy(opts);
+        DefaultBackupOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
   './': {
     'createService': function (plan) {
-      DefaultBackupManagerDummy.createServiceDummy(plan);
+      DefaultBackupOperatorDummy.createServiceDummy(plan);
       return Promise.resolve({
         'startBackup': (opts) => {
-          DefaultBackupManagerDummy.startBackupDummy(opts);
+          DefaultBackupOperatorDummy.startBackupDummy(opts);
           return Promise.resolve({});
         },
         'abortLastBackup': (opts) => {
-          DefaultBackupManagerDummy.abortBackupDummy(opts);
+          DefaultBackupOperatorDummy.abortBackupDummy(opts);
           return Promise.resolve({});
         },
         'deleteBackup': (opts) => {
-          DefaultBackupManagerDummy.deleteBackupDummy(opts);
+          DefaultBackupOperatorDummy.deleteBackupDummy(opts);
           return Promise.resolve({});
         },
       });
@@ -57,7 +57,7 @@ const jsonWriteDelay = 50;
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const bm = new DefaultBackupManager();
+  const bm = new DefaultBackupOperator();
   bm.init();
   return Promise.delay(100)
     .then(() => {
@@ -71,17 +71,17 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
 }
 
 describe('managers', function () {
-  describe('DefaultBackupManager', function () {
+  describe('DefaultBackupOperator', function () {
     let createServiceSpy, startBackupSpy, abortBackupSpy, deleteBackupSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      createServiceSpy = sinon.spy(DefaultBackupManagerDummy, 'createServiceDummy');
-      startBackupSpy = sinon.spy(DefaultBackupManagerDummy, 'startBackupDummy');
-      abortBackupSpy = sinon.spy(DefaultBackupManagerDummy, 'abortBackupDummy');
-      deleteBackupSpy = sinon.spy(DefaultBackupManagerDummy, 'deleteBackupDummy');
-      getOperationOptionsSpy = sinon.spy(DefaultBackupManagerDummy, 'getOperationOptionsDummy');
+      createServiceSpy = sinon.spy(DefaultBackupOperatorDummy, 'createServiceDummy');
+      startBackupSpy = sinon.spy(DefaultBackupOperatorDummy, 'startBackupDummy');
+      abortBackupSpy = sinon.spy(DefaultBackupOperatorDummy, 'abortBackupDummy');
+      deleteBackupSpy = sinon.spy(DefaultBackupOperatorDummy, 'deleteBackupDummy');
+      getOperationOptionsSpy = sinon.spy(DefaultBackupOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {

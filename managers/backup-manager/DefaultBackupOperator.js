@@ -14,7 +14,7 @@ const DBManager = require('../../broker/lib/fabrik/DBManager');
 /* jshint nonew:false */
 new DBManager(); //to log events
 
-class DefaultBackupManager extends BaseOperator {
+class DefaultBackupOperator extends BaseOperator {
 
   init() {
     utils.initializeEventListener(config.external, 'external');
@@ -27,14 +27,14 @@ class DefaultBackupManager extends BaseOperator {
   processRequest(changeObjectBody) {
     return Promise.try(() => {
       if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        return DefaultBackupManager._processBackup(changeObjectBody);
+        return DefaultBackupOperator._processBackup(changeObjectBody);
       } else if (changeObjectBody.status.state === CONST.OPERATION.ABORT) {
-        return DefaultBackupManager._processAbort(changeObjectBody);
+        return DefaultBackupOperator._processAbort(changeObjectBody);
       } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-        return DefaultBackupManager._processDelete(changeObjectBody);
+        return DefaultBackupOperator._processDelete(changeObjectBody);
       }
     }).catch(err => {
-      logger.error('Error occurred in processing request by DefaultBackupManager', err);
+      logger.error('Error occurred in processing request by DefaultBackupOperator', err);
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -86,4 +86,4 @@ class DefaultBackupManager extends BaseOperator {
   }
 }
 
-module.exports = DefaultBackupManager;
+module.exports = DefaultBackupOperator;
