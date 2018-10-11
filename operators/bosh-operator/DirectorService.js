@@ -333,20 +333,6 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  _deleteEntity(action, opts) {
-    return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-        return action();
-      }, {
-        maxAttempts: opts.maxAttempts,
-        minDelay: opts.minDelay
-      })
-      .catch(err => {
-        logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
-        throw err;
-      });
-  }
-
   createOrUpdateDeployment(deploymentName, params, args) {
     logger.info(`Checking rate limits against bosh for deployment `);
     const previousValues = _.get(params, 'previous_values');

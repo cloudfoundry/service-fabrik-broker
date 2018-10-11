@@ -680,6 +680,22 @@ describe('eventmesh', () => {
             verify();
           });
       });
+
+      it('Gets resource list by state', () => {
+        mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [CONST.APISERVER.RESOURCE_STATE.IN_CACHE], [expectedGetDeploymentResponse], 1, 200);
+        return apiserver.getResourceListByState({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            stateList: [CONST.APISERVER.RESOURCE_STATE.IN_CACHE]
+          })
+          .then(res => {
+            expect(res).to.eql([sampleDeploymentResource]);
+            verify();
+          });
+      });
+
     });
 
     describe('getLastOperation', () => {
