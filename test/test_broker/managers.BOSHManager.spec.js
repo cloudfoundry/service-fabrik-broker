@@ -26,7 +26,7 @@ const BoshOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const BoshOperator = proxyquire('../../managers/bosh-manager/BoshOperator', {
+const BoshOperator = proxyquire('../../managers/bosh-operator/BoshOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {

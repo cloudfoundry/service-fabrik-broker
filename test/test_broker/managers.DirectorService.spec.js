@@ -9,7 +9,7 @@ const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
-const DirectorService = require('../../managers/bosh-manager/DirectorService');
+const DirectorService = require('../../managers/bosh-operator/DirectorService');
 const utils = require('../../common/utils');
 
 describe('#DirectorService', function () {
