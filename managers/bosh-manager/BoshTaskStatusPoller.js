@@ -38,37 +38,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
         .tap(lastOperationValue => logger.debug('last operation value is ', lastOperationValue))
         .tap(lastOperationValue => lastOperationOfInstance = lastOperationValue)
         .then(lastOperationValue => Promise.all([
-          Promise.try(() => {
-            if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED &&
-              (lastOperationValue.type === 'create' || lastOperationValue.type === 'update')) {
-              return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
-                .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
-                .then(ips => eventmesh.apiServerClient.updateResource({
-                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                  resourceId: instanceId,
-                  status: {
-                    lastOperation: lastOperationValue,
-                    state: lastOperationValue.resourceState
-                  },
-                  metadata: {
-                    annotations: {
-                      deploymentIps: JSON.stringify(ips)
-                    }
-                  }
-                }));
-            } else {
-              return eventmesh.apiServerClient.updateResource({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                resourceId: instanceId,
-                status: {
-                  lastOperation: lastOperationValue,
-                  state: lastOperationValue.resourceState
-                }
-              });
-            }
-          }),
+          this._updateLastOperationStateInResource(instanceId, lastOperationValue, directorService),
           Promise.try(() => {
             if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
               // cancel the poller and clear the array
@@ -98,6 +68,11 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
                 lastOperation: lastOperationOfInstance,
                 state: CONST.APISERVER.RESOURCE_STATE.FAILED,
                 error: utils.buildErrorJson(err)
+              },
+              metadata: {
+                annotations: {
+                  deploymentIps: '{}'
+                }
               }
             });
           }
@@ -117,19 +92,24 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               lastOperation: lastOperationOfInstance,
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
               error: utils.buildErrorJson(err)
+            },
+            metadata: {
+              annotations: {
+                deploymentIps: '{}'
+              }
             }
           });
         })
-      )
-      .finally(() => {
-        if (_.get(resourceBody.status.response, 'type') === CONST.OPERATION_TYPE.UPDATE &&
-          _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
-          _.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationOfInstance.state)) {
-          return this._logEvent(_.assign(options, {
-            instance_id: instanceId
-          }), lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
-        }
-      });
+        .finally(() => {
+          if (_.get(resourceBody.status.response, 'type') === CONST.OPERATION_TYPE.UPDATE &&
+            _.get(resourceBody.status.response, 'parameters.service-fabrik-operation') === true &&
+            _.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationOfInstance.state)) {
+            return this._logEvent(_.assign(options, {
+              instance_id: instanceId
+            }), lastOperationOfInstance, CONST.HTTP_METHOD.PATCH);
+          }
+        })
+      );
   }
 
   _logEvent(opts, operationStatusResponse, method) {
@@ -142,6 +122,57 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
     if (CONST.URL.instance) {
       return eventLogger.publishAndAuditLogEvent(CONST.URL.instance, method, opts, resp, check_res_body);
     }
+  }
+
+  _updateLastOperationStateInResource(instanceId, lastOperationValue, directorService) {
+    return Promise.try(() => {
+      if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED &&
+        (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE || lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE)) {
+        return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
+          .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
+          .then(ips => eventmesh.apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: instanceId,
+            status: {
+              lastOperation: lastOperationValue,
+              state: lastOperationValue.resourceState
+            },
+            metadata: {
+              annotations: {
+                deploymentIps: JSON.stringify(ips)
+              }
+            }
+          }))
+          .catch(err => {
+            logger.error(`Error occurred while updating deployment IPs in etcd for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
+            return eventmesh.apiServerClient.updateResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: instanceId,
+              status: {
+                lastOperation: lastOperationValue,
+                state: lastOperationValue.resourceState
+              },
+              metadata: {
+                annotations: {
+                  deploymentIps: '{}'
+                }
+              }
+            });
+          });
+      } else {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: instanceId,
+          status: {
+            lastOperation: lastOperationValue,
+            state: lastOperationValue.resourceState
+          }
+        });
+      }
+    });
   }
 }
 
