@@ -71,7 +71,7 @@ class BoshOperator extends BaseOperator {
         resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
-          state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.IN_CACHE
+          state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
         }
       }));
   }
@@ -90,7 +90,7 @@ class BoshOperator extends BaseOperator {
         resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
-          state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.IN_CACHE
+          state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
         }
       }));
   }

@@ -365,15 +365,12 @@ class DirectorService extends BaseDirectorService {
           };
         });
     }
-    return this.executePolicy(scheduled, action, deploymentName)
-      .then(checkResults => {
-        if (scheduled && !checkResults.shouldRunNow) {
-          throw new errors.DeploymentAttemptRejected(deploymentName);
-        } else {
-          return checkResults;
-        }
-      })
+    return this
+      .executePolicy(scheduled, action, deploymentName)
       .then(res => {
+        if (scheduled && !res.shouldRunNow) {
+          throw new errors.DeploymentAttemptRejected(deploymentName);
+        }
         if (!res.shouldRunNow) {
           // stagger here by putting it into waiting return promise
           throw new DeploymentDelayed(deploymentName);
@@ -614,7 +611,7 @@ class DirectorService extends BaseDirectorService {
         return _.assign(operation, {
           description: `${_.capitalize(operation.type)} deployment is still in progress`,
           state: 'in progress',
-          resourceState: CONST.APISERVER.RESOURCE_STATE.IN_CACHE
+          resourceState: CONST.APISERVER.RESOURCE_STATE.WAITING
         });
       });
     }
