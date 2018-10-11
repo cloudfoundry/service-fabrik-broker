@@ -1,7 +1,7 @@
 'use strict';
 
-const DefaultRestoreOperator = require('../../managers/restore-manager/DefaultRestoreOperator');
-const RestoreService = require('../../managers/restore-manager/RestoreService');
+const DefaultRestoreOperator = require('../../managers/restore-operator/DefaultRestoreOperator');
+const RestoreService = require('../../managers/restore-operator/RestoreService');
 const BaseOperator = require('../../managers/BaseOperator');
 const CONST = require('../../common/constants');
 // const logger = require('../../common/logger');
