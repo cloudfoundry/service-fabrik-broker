@@ -10,7 +10,7 @@ const utils = require('../../common/utils');
 const BaseOperator = require('../BaseOperator');
 const DirectorService = require('./DirectorService');
 
-class BoshBindManager extends BaseOperator {
+class BoshBindOperator extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -27,7 +27,7 @@ class BoshBindManager extends BaseOperator {
         }
       })
       .catch(err => {
-        logger.error('Error occurred in processing request by BoshBindManager', err);
+        logger.error('Error occurred in processing request by BoshBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
@@ -85,4 +85,4 @@ class BoshBindManager extends BaseOperator {
   }
 }
 
-module.exports = BoshBindManager;
+module.exports = BoshBindOperator;
