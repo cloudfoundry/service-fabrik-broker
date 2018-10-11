@@ -156,8 +156,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
         if (workflow !== undefined) {
           lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW;
           lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW;
-          params.workflow_name = workflow;
-          params.instance_id = req.params.instance_id;
+          const workFlowOptions = {
+            workflow_name: workflow,
+            instance_id: req.params.instance_id,
+            operation_params: params
+          };
           return utils
             .uuidV4()
             .tap(workId => workflowId = workId)
@@ -165,7 +168,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
               resourceId: workflowId,
-              options: params,
+              options: workFlowOptions,
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
                 lastOperation: {},

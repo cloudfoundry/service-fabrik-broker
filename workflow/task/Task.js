@@ -26,6 +26,7 @@ class Task {
         resourceId: task.resourceId,
         status: {
           lastOperation: status,
+          response: status.response,
           state: status.state
         }
       })

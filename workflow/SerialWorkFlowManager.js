@@ -35,7 +35,7 @@ class SerialWorkFlowManager extends BaseManager {
           statesToWatchForTaskRelay,
           (event) => this.relayTask(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
-        logger.debug('Registered watcher for Workflow Tasks!.')
+        logger.debug('Registered watcher for Workflow Tasks!.');
       });
   }
 
@@ -105,6 +105,7 @@ class SerialWorkFlowManager extends BaseManager {
       };
       const relayedStatus = {
         state: CONST.APISERVER.TASK_STATE.RELAYED,
+        response: previousTaskResponse,
         message: `Last Task complete.`
       };
       logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in workflow ${workflow.tasks.length}`);
@@ -163,7 +164,7 @@ class SerialWorkFlowManager extends BaseManager {
   workflowComplete(taskDetails, message, failed) {
     const status = {
       state: failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED,
-      description: `Workflow ${taskDetails.workflow_name} completed @ ${new Date()}. ${message}`
+      description: `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}. ${message}`
     };
     return this.updateWorkflowStatus(taskDetails, status);
   }

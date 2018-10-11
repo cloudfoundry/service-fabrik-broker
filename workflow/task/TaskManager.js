@@ -39,18 +39,22 @@ class TaskManager extends BaseManager {
       const taskDetails = JSON.parse(resource.spec.options);
       const task = TaskFabrik.getTask(taskDetails.task_type);
       return task
-        .run(resource.metadata.name, taskDetails)
+        .run(resource.metadata.name, _.cloneDeep(taskDetails))
         .tap(() => logger.info(`${taskDetails.task_type} for ${resource.metadata.name} run completed.`))
-        .then(patchBody => apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-          resourceId: resource.metadata.name,
-          options: patchBody,
-          status: {
-            response: taskDetails.response,
-            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
-          }
-        }))
+        .then(taskResponse => {
+          taskDetails.resource = taskResponse.resource;
+          taskDetails.response = taskResponse.response;
+          return apiServerClient.updateResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
+            resourceId: resource.metadata.name,
+            options: taskDetails,
+            status: {
+              response: taskDetails.response,
+              state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+            }
+          });
+        })
         .tap(() => logger.info(`Status of task ${taskDetails.task_type} for ${resource.metadata.name} is now set to in-progress.`));
     });
   }
@@ -78,15 +82,16 @@ class TaskManager extends BaseManager {
       .then(operationStatus => {
         const state = _.get(operationStatus, 'state');
         if (utils.isServiceFabrikOperationFinished(state)) {
-          logger.info(`Task ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)} - COMPLETE - on resource - ${JSON.stringify(taskDetails.resource)}`);
+          logger.info(`TASK COMPLETE - on resource - ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)}  - ${JSON.stringify(taskDetails.resource)}`);
           const status = {
-            operation_response: operationStatus,
+            response: operationStatus,
             state: CONST.APISERVER.TASK_STATE.DONE
           };
           return task
             .updateStatus(resourceDetails, status)
             .then(() => this.clearPoller(object, intervalId))
             .then(() => this._releaseProcessingLock(object))
+            .tap(() => logger.info('Released processing lock!!!'))
             .return(true);
         } else {
           this.continueToHoldLock(object);
@@ -96,12 +101,14 @@ class TaskManager extends BaseManager {
   }
 
   clearPoller(object, intervalId) {
-    logger.debug(`Clearing poller interval for task ${object.metadata.name}`);
-    if (object.metadata.name) {
-      clearInterval(intervalId);
-    }
-    this._postProcessRequest(object);
-    _.unset(this.pollers, object.metadata.name);
+    return Promise.try(() => {
+      logger.debug(`Clearing poller interval for task ${object.metadata.name}`);
+      if (object.metadata.name) {
+        clearInterval(intervalId);
+      }
+      this._postProcessRequest(object);
+      _.unset(this.pollers, object.metadata.name);
+    });
   }
 }
 

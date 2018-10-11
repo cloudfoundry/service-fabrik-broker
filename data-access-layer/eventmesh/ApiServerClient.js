@@ -307,6 +307,7 @@ class ApiServerClient {
           });
           patchBody.status = statusJson;
         }
+        logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
         return Promise.try(() => this.init())
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]

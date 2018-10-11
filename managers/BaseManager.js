@@ -64,7 +64,7 @@ class BaseManager {
         resourceId: metadata.name,
         metadata: metadata
       })
-      .tap((resource) => logger.silly(`Successfully acquired processing lock for request with options: ${JSON.stringify(changedOptions)}\n\
+      .tap((resource) => logger.debug(`Successfully acquired processing lock for request with options: ${metadata.name}\n\
         Updated resource with annotations is:`, resource));
   }
 
@@ -74,7 +74,7 @@ class BaseManager {
 
   _releaseProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.silly('Trying to release processing lock for request with options: ', changedOptions);
+    logger.debug(`Trying to release processing lock for resource: ${changeObjectBody.metadata.name}`);
     const metadata = {
       annotations: {
         lockedByManager: '',
@@ -88,8 +88,7 @@ class BaseManager {
         resourceId: changeObjectBody.metadata.name,
         metadata: metadata
       })
-      .tap((resource) => logger.silly(`Successfully released processing lock for the request with options: ${JSON.stringify(changedOptions)} \n` +
-        `Updated resource with annotations is: `, resource));
+      .tap(() => logger.debug(`Successfully released processing lock for the resource: ${changeObjectBody.metadata.name} with options: ${JSON.stringify(changedOptions)}`));
   }
 
   _preProcessRequest(objectBody, processingLockStatus, resourceGroup, resourceType, queryString) {
@@ -101,16 +100,19 @@ class BaseManager {
       const processingStartedAt = _.get(objectBody, 'metadata.annotations.processingStartedAt');
       // To handle already existing resources
       // For already existing resources lockedByManager value is either '' or '<ip>' or undefined
+      const currentTime = new Date();
       if (
         lockedByManager &&
         (lockedByManager !== '') &&
         processingStartedAt &&
         (processingStartedAt !== '') &&
-        (new Date() - new Date(processingStartedAt) < CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)
+        (currentTime - new Date(processingStartedAt) < CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)
       ) {
         processingConflict = true;
       }
-
+      if ((currentTime - new Date(processingStartedAt) >= CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)) {
+        logger.info(`Lock is expired on ${objectBody.metadata.name} - acquiring the lock.`);
+      }
       if (!processingConflict) {
         return this._acquireProcessingLock(objectBody)
           .catch(err => {
@@ -172,11 +174,13 @@ class BaseManager {
         }
       })
       .finally(() => {
-        if (!releaseProcessingLock) {
-          logger.info(`${changeObject.object.metadata.name} is requesting lock not to be released! Continue to hold lock!!!`);
-        }
         if (!processingLockStatus.conflict && releaseProcessingLock) {
+          logger.info(`Will be releasing lock.. for ${changeObject.object.metadata.name}, ${resourceGroup}, ${resourceType}`);
           return this._postProcessRequest(changeObjectBody);
+        } else {
+          const reason = processingLockStatus.conflict ? 'is locked by other processor' : ' is under polling and needs to hold lock.';
+          logger.info(`Will not try to release lock as resource ${changeObject.object.metadata.name} ${reason}`);
+          //return 'HOLD_PROCESSING_LOCK';
         }
       });
   }
