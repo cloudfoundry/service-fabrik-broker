@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const DockerService = require('../../managers/docker-operator/DockerService');
-const DockerImageLoaderService = require('../../managers/docker-operator/DockerImageLoaderService');
+const DockerService = require('../../operators/docker-operator/DockerService');
+const DockerImageLoaderService = require('../../operators/docker-operator/DockerImageLoaderService');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
 const catalog = require('../../common/models').catalog;
 const parseUrl = require('url').parse;

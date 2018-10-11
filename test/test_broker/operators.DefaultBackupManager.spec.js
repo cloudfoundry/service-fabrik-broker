@@ -23,7 +23,7 @@ const DefaultBackupOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DefaultBackupOperator = proxyquire('../../managers/backup-operator/DefaultBackupOperator', {
+const DefaultBackupOperator = proxyquire('../../operators/backup-operator/DefaultBackupOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
@@ -70,7 +70,7 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
     });
 }
 
-describe('managers', function () {
+describe('operators', function () {
   describe('DefaultBackupOperator', function () {
     let createServiceSpy, startBackupSpy, abortBackupSpy, deleteBackupSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;

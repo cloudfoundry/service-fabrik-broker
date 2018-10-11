@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const catalog = require('../../common/models/catalog');
-const RestoreService = require('../../managers/restore-operator/RestoreService');
+const RestoreService = require('../../operators/restore-operator/RestoreService');
 const moment = require('moment');
 const config = require('../../common/config');
 const Service = require('../../common/models').Service;
@@ -10,7 +10,7 @@ const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
-describe('managers', function () {
+describe('operators', function () {
   describe('RestoreService', function () {
 
     function isoDate(time) {

@@ -9,7 +9,7 @@ const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 
-describe('managers', function () {
+describe('operators', function () {
   describe('BackupService', function () {
     const finishDate = new Date().toISOString();
     const backup_state = {
@@ -28,7 +28,7 @@ describe('managers', function () {
     const deployment_name = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
-    const BackupService = require('../../managers/backup-operator/BackupService');
+    const BackupService = require('../../operators/backup-operator/BackupService');
     const started_at = '2015-11-18T11-28-42Z';
     const container = backupStore.containerName;
     const plan = catalog.getPlan(plan_id);

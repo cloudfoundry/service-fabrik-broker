@@ -1,8 +1,8 @@
 'use strict';
 
-const DefaultRestoreOperator = require('../../managers/restore-operator/DefaultRestoreOperator');
-const RestoreService = require('../../managers/restore-operator/RestoreService');
-const BaseOperator = require('../../managers/BaseOperator');
+const DefaultRestoreOperator = require('../../operators/restore-operator/DefaultRestoreOperator');
+const RestoreService = require('../../operators/restore-operator/RestoreService');
+const BaseOperator = require('../../operators/BaseOperator');
 const CONST = require('../../common/constants');
 // const logger = require('../../common/logger');
 // const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
@@ -11,7 +11,7 @@ const restore_guid = 'd2e0a44a-9c6f-11e8-acf5-784f43900dff';
 const restore_crd_prefix = '/apis/restore.servicefabrik.io/v1alpha1/namespaces/default/defaultrestore';
 
 
-describe('managers', function () {
+describe('operators', function () {
   describe('DefaultRestoreOperator', function () {
 
     const defaultRestoreOperator = new DefaultRestoreOperator();

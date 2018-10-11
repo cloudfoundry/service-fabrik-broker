@@ -29,11 +29,11 @@ const CONSTANTS = {
   }
 };
 
-const BaseStatusPoller = proxyquire('../../managers/BaseStatusPoller', {
+const BaseStatusPoller = proxyquire('../../operators/BaseStatusPoller', {
   '../common/constants': CONSTANTS
 });
 
-describe('managers', function () {
+describe('operators', function () {
   describe('BaseStatusPoller', function () {
 
     let sandbox, registerWatcherStub;
@@ -90,7 +90,7 @@ describe('managers', function () {
           WATCHER_ERROR_DELAY: 10
         }
       };
-      const BaseStatusPollerNew = proxyquire('../../managers/BaseStatusPoller', {
+      const BaseStatusPollerNew = proxyquire('../../operators/BaseStatusPoller', {
         '../common/constants': NEWCONST
       });
 

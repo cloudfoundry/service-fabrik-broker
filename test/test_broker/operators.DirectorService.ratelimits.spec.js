@@ -9,7 +9,7 @@ const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const assert = require('assert');
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
-const DirectorService = require('../../managers/bosh-operator/DirectorService');
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
 
 const guid = 'guid';
 const task_id = 'task_id';
@@ -61,7 +61,7 @@ describe('manager', () => {
         cached: true
       }));
       getOpStateSpy = sandbox.stub();
-      DirectorServiceSub = proxyquire('../../managers/bosh-operator/DirectorService', {
+      DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
       directorService = new DirectorServiceSub(guid, plan);
@@ -220,7 +220,7 @@ describe('manager', () => {
         task_id: task_id
       }));
       getTaskSpy = sandbox.stub();
-      DirectorServiceSub = proxyquire('../../managers/bosh-operator/DirectorService', {
+      DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
       directorService = new DirectorServiceSub(guid, plan);
@@ -442,7 +442,7 @@ describe('manager', () => {
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan = catalog.getPlan(plan_id);
       deploymentSpy.returns(Promise.resolve(task_id));
-      var DirectorServiceSub = proxyquire('../../managers/bosh-operator/DirectorService', {
+      var DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../common/config': configStub,
         '../../data-access-layer/bosh': boshStub
       });

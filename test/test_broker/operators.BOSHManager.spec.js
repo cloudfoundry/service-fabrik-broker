@@ -7,22 +7,17 @@ const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
 const apiserver = new eventmesh();
-const errors = require('../../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
 const service_id = '3c266123-8e6e-4034-a2aa-e48e13fbf893';
 const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
 const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-const parent_instance_id = '312eb96a-5fba-4f62-be43-053c8624cd84';
 const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
-let parameters = {
-  dedicated_rabbitmq_instance: 'rmq'
-};
+const jsonWriteDelay = 50;
 
-const VirtualHostOperatorDummy = {
+const BoshOperatorDummy = {
   registerWatcherDummy: () => {},
-  createVirtualHostServiceDummy: () => {},
+  createDirectorServiceDummy: () => {},
   createDummy: () => {},
   updateDummy: () => {},
   deleteDummy: () => {},
@@ -31,76 +26,64 @@ const VirtualHostOperatorDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const VirtualHostOperator = proxyquire('../../managers/virtualhost-operator/VirtualHostOperator', {
+const BoshOperator = proxyquire('../../operators/bosh-operator/BoshOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        VirtualHostOperatorDummy.getOperationOptionsDummy(opts);
-        return Promise.resolve(resultOptions);
-      },
-      'updateResource': function (opts) {
-        VirtualHostOperatorDummy.updateDummy(opts);
-        return Promise.resolve(resultOptions);
-      },
-      'deleteResource': function (opts) {
-        VirtualHostOperatorDummy.deleteDummy(opts);
+        BoshOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
-  './VirtualHostService': {
-    'createVirtualHostService': function (instance_id, options) {
-      VirtualHostOperatorDummy.createVirtualHostServiceDummy(instance_id, options);
+  './DirectorService': {
+    'createInstance': function (instance_id, options) {
+      BoshOperatorDummy.createDirectorServiceDummy(instance_id, options);
       return Promise.resolve({
-        'create': () => {
-          VirtualHostOperatorDummy.createDummy();
-          if (parameters !== null) {
-            return Promise.resolve({});
-          } else {
-            throw new ServiceInstanceNotFound(parent_instance_id);
-          }
-        },
-        'update': () => {
-          VirtualHostOperatorDummy.updateDummy();
+        'create': (opts) => {
+          BoshOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
-        'delete': () => {
-          VirtualHostOperatorDummy.deleteDummy();
+        'update': (opts) => {
+          BoshOperatorDummy.updateDummy(opts);
+          return Promise.resolve({});
+        },
+        'delete': (opts) => {
+          BoshOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
         },
       });
     }
   }
 });
-const jsonWriteDelay = 50;
 
-function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
+function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const vm = new VirtualHostOperator();
-  vm.init();
+  const bm = new BoshOperator();
+  bm.init();
   return Promise.delay(100)
     .then(() => {
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT);
-      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound handleResource');
       expect(registerWatcherStub.firstCall.args[3]).to.eql('state in (in_queue,update,delete)');
       registerWatcherStub.restore();
     });
 }
 
-describe('managers', function () {
-  describe('VirtualHostOperator', function () {
-    let createVirtualHostServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
+describe('operators', function () {
+  describe('BoshOperator', function () {
+    let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
+
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      createVirtualHostServiceSpy = sinon.spy(VirtualHostOperatorDummy, 'createVirtualHostServiceDummy');
-      createSpy = sinon.spy(VirtualHostOperatorDummy, 'createDummy');
-      updateSpy = sinon.spy(VirtualHostOperatorDummy, 'updateDummy');
-      deleteSpy = sinon.spy(VirtualHostOperatorDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(VirtualHostOperatorDummy, 'getOperationOptionsDummy');
+      createDirectorServiceSpy = sinon.spy(BoshOperatorDummy, 'createDirectorServiceDummy');
+      createSpy = sinon.spy(BoshOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(BoshOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(BoshOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(BoshOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
@@ -109,17 +92,108 @@ describe('managers', function () {
         });
       };
       registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
-      initDefaultVMTest(jsonStream, sandbox, registerWatcherStub);
+      initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 
     afterEach(function () {
       sandbox.restore();
-      createVirtualHostServiceSpy.restore();
+      createDirectorServiceSpy.restore();
       createSpy.restore();
       updateSpy.restore();
       deleteSpy.restore();
       getOperationOptionsSpy.restore();
       registerWatcherStub.restore();
+    });
+
+    it('Should not process create request if already being processed', () => {
+      const options = {
+        plan_id: plan_id,
+        service_id: service_id,
+        organization_guid: organization_guid,
+        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        }
+      };
+      const changeObject = {
+        object: {
+          metadata: {
+            name: instance_id,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            annotations: {
+              lockedByManager: '10.0.2.2',
+              processingStartedAt: new Date()
+            }
+          },
+          spec: {
+            options: JSON.stringify(options)
+          },
+          status: {
+            state: 'in_progress'
+          }
+        }
+      };
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
+
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(jsonWriteDelay).then(() => {
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
+          expect(createSpy.callCount).to.equal(0);
+          mocks.verify();
+        });
+    });
+
+    it('Should process create request successfully if processing time expired', () => {
+      const options = {
+        plan_id: plan_id,
+        service_id: service_id,
+        organization_guid: organization_guid,
+        space_guid: space_guid,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        }
+      };
+      const changeObject = {
+        object: {
+          metadata: {
+            name: instance_id,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
+            annotations: {
+              lockedByManager: '10.0.2.2',
+              processingStartedAt: new Date(new Date() - 600000)
+            }
+          },
+          spec: {
+            options: JSON.stringify(options)
+          },
+          status: {
+            state: 'in_queue'
+          }
+        }
+      };
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
+        metadata: {
+          annotations: config.broker_ip
+        }
+      }, 2);
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
+
+      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
+        .delay(jsonWriteDelay).then(() => {
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createSpy.callCount).to.equal(1);
+          expect(createSpy.firstCall.args[0]).to.eql(options);
+          mocks.verify();
+        });
     });
 
     it('Should process create request successfully', () => {
@@ -138,7 +212,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -148,61 +222,21 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       }, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
-      return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
-        .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(createSpy.callCount).to.equal(1);
-          mocks.verify();
-        });
-    });
 
-    it('Should process any error in create request successfully', () => {
-      const options = {
-        plan_id: plan_id,
-        service_id: service_id,
-        organization_guid: organization_guid,
-        space_guid: space_guid,
-        context: {
-          platform: 'cloudfoundry',
-          organization_guid: organization_guid,
-          space_guid: space_guid
-        }
-      };
-      const changeObject = {
-        object: {
-          metadata: {
-            name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
-          },
-          spec: {
-            options: JSON.stringify(options)
-          },
-          status: {
-            state: 'in_queue'
-          }
-        }
-      };
-      parameters = null;
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
-        metadata: {
-          annotations: config.broker_ip
-        }
-      }, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
-      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
           expect(createSpy.callCount).to.equal(1);
+          expect(createSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
         });
     });
@@ -223,7 +257,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -233,19 +267,21 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       }, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
+
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(1);
-          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(updateSpy.callCount).to.equal(2);
+          expect(createDirectorServiceSpy.callCount).to.equal(1);
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(updateSpy.callCount).to.equal(1);
+          expect(updateSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
         });
     });
@@ -266,7 +302,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -276,19 +312,21 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       }, 2);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(1);
-          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
-          expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
+          expect(createDirectorServiceSpy.callCount).to.equal(1);
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[1]).to.eql(options);
           expect(deleteSpy.callCount).to.equal(1);
+          expect(deleteSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
         });
     });
@@ -309,7 +347,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
             annotations: {
               lockedByManager: config.broker_ip
             }
@@ -322,11 +360,12 @@ describe('managers', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -348,7 +387,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -358,16 +397,17 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: ''
         }
       }, 1, undefined, 409);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -389,7 +429,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -399,16 +439,17 @@ describe('managers', function () {
           }
         }
       };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: ''
         }
       }, 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -430,7 +471,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`,
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`,
             annotations: {
               lockedByManager: '10.12.12.12'
             }
@@ -443,11 +484,12 @@ describe('managers', function () {
           }
         }
       };
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.callCount).to.equal(0);
+          expect(createDirectorServiceSpy.callCount).to.equal(0);
           expect(createSpy.callCount).to.equal(0);
           mocks.verify();
         });
@@ -469,7 +511,7 @@ describe('managers', function () {
         object: {
           metadata: {
             name: instance_id,
-            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/virtualhosts/${instance_id}`
+            selfLink: `/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/${instance_id}`
           },
           spec: {
             options: JSON.stringify(options)
@@ -479,25 +521,24 @@ describe('managers', function () {
           }
         }
       };
-      parameters = {
-        dedicated_rabbitmq_instance: 'rmq'
-      };
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       });
-      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, {
+      mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {
         metadata: {
           annotations: config.broker_ip
         }
       }, 1, undefined, 404);
-      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST);
+
+      const crdJsonDeployment = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
       mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, crdJsonDeployment.metadata.name, {}, crdJsonDeployment);
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(jsonWriteDelay).then(() => {
-          expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
+          expect(createDirectorServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createSpy.callCount).to.equal(1);
+          expect(createSpy.firstCall.args[0]).to.eql(options);
           mocks.verify();
         });
     });

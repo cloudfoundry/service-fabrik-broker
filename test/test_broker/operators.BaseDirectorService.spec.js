@@ -1,10 +1,10 @@
 'use strict';
 
 // const _ = require('lodash');
-const BaseDirectorService = require('../../managers/BaseDirectorService');
+const BaseDirectorService = require('../../operators/BaseDirectorService');
 // const CONST = require('../../common/constants');
 
-describe('managers', function () {
+describe('operators', function () {
   describe('BaseDirectorService', function () {
     describe('parseDeploymentName', function () {
       it('should parse the deployment name', function () {

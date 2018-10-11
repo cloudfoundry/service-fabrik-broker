@@ -3,10 +3,10 @@
 const _ = require('lodash');
 const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
-const BackupService = require('../../managers/backup-operator');
+const BackupService = require('../../operators/backup-operator');
 const eventmesh = require('../../data-access-layer/eventmesh/ApiServerClient');
 
-describe('managers', function () {
+describe('operators', function () {
   describe('BackupStatusPoller', function () {
 
     /* jshint expr:true */
@@ -36,7 +36,7 @@ describe('managers', function () {
         lock_check_delay_on_restart: 0
       }
     };
-    const BackupStatusPoller = proxyquire('../../managers/backup-operator/BackupStatusPoller.js', {
+    const BackupStatusPoller = proxyquire('../../operators/backup-operator/BackupStatusPoller.js', {
       '../../common/config': config
     });
     const instanceInfo_InProgress = _.clone(instanceInfo);
