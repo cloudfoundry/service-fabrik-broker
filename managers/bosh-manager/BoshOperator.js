@@ -17,7 +17,7 @@ const assert = require('assert');
 /* jshint nonew:false */
 new DBManager(); //to log events
 
-class BoshManager extends BaseOperator {
+class BoshOperator extends BaseOperator {
   init() {
     utils.initializeEventListener(config.internal, 'internal');
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -40,7 +40,7 @@ class BoshManager extends BaseOperator {
         }
       })
       .catch(err => {
-        logger.error('Error occurred in processing request by BoshManager', err);
+        logger.error('Error occurred in processing request by BoshOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -120,4 +120,4 @@ class BoshManager extends BaseOperator {
   }
 }
 
-module.exports = BoshManager;
+module.exports = BoshOperator;

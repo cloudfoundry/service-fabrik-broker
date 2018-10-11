@@ -15,7 +15,7 @@ const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
 const jsonWriteDelay = 50;
 
-const BOSHManagerDummy = {
+const BoshOperatorDummy = {
   registerWatcherDummy: () => {},
   createDirectorServiceDummy: () => {},
   createDummy: () => {},
@@ -26,29 +26,29 @@ const BOSHManagerDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const BOSHManager = proxyquire('../../managers/bosh-manager/BoshManager', {
+const BoshOperator = proxyquire('../../managers/bosh-manager/BoshOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        BOSHManagerDummy.getOperationOptionsDummy(opts);
+        BoshOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
   './DirectorService': {
     'createInstance': function (instance_id, options) {
-      BOSHManagerDummy.createDirectorServiceDummy(instance_id, options);
+      BoshOperatorDummy.createDirectorServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': (opts) => {
-          BOSHManagerDummy.createDummy(opts);
+          BoshOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
         'update': (opts) => {
-          BOSHManagerDummy.updateDummy(opts);
+          BoshOperatorDummy.updateDummy(opts);
           return Promise.resolve({});
         },
         'delete': (opts) => {
-          BOSHManagerDummy.deleteDummy(opts);
+          BoshOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
         },
       });
@@ -58,7 +58,7 @@ const BOSHManager = proxyquire('../../managers/bosh-manager/BoshManager', {
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const bm = new BOSHManager();
+  const bm = new BoshOperator();
   bm.init();
   return Promise.delay(100)
     .then(() => {
@@ -72,18 +72,18 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
 }
 
 describe('managers', function () {
-  describe('BOSHManager', function () {
+  describe('BoshOperator', function () {
     let createDirectorServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      createDirectorServiceSpy = sinon.spy(BOSHManagerDummy, 'createDirectorServiceDummy');
-      createSpy = sinon.spy(BOSHManagerDummy, 'createDummy');
-      updateSpy = sinon.spy(BOSHManagerDummy, 'updateDummy');
-      deleteSpy = sinon.spy(BOSHManagerDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(BOSHManagerDummy, 'getOperationOptionsDummy');
+      createDirectorServiceSpy = sinon.spy(BoshOperatorDummy, 'createDirectorServiceDummy');
+      createSpy = sinon.spy(BoshOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(BoshOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(BoshOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(BoshOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {
