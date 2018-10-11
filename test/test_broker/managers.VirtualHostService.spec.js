@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const config = require('../../common/config');
+const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const virtualHostStore = iaas.virtualHostStore;
 const VirtualHostService = require('../../managers/virtualhost-manager/VirtualHostService');
@@ -38,6 +39,13 @@ describe('#VirtualHostService', function () {
         organization_guid: organization_guid,
         space_guid: space_guid
       };
+      const dummyDeploymentResource = {
+        metadata: {
+          annotations: {
+            labels: 'dummy'
+          }
+        }
+      };
       Promise.onPossiblyUnhandledRejection(() => {});
 
       before(function () {
@@ -56,6 +64,8 @@ describe('#VirtualHostService', function () {
       describe('#provision', function () {
         it('returns 201 created', function () {
           mocks.director.getDeploymentInstances(deployment_name);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.cloudController.getServiceInstancesInSpaceWithName(instance_name, space_guid, true);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createVirtualHost(instance_id);
@@ -112,6 +122,8 @@ describe('#VirtualHostService', function () {
 
       describe('#update', function () {
         it('returns 200 OK', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.updateVirtualHost(instance_id);
@@ -135,6 +147,8 @@ describe('#VirtualHostService', function () {
 
       describe('#bind', function () {
         it('returns 201 Created', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
@@ -160,6 +174,8 @@ describe('#VirtualHostService', function () {
 
       describe('#unbind', function () {
         it('returns 200 OK', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
@@ -184,8 +200,11 @@ describe('#VirtualHostService', function () {
         });
       });
 
+
       describe('#deprovision', function () {
         it('returns 200 OK', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteVirtualHost(instance_id);
@@ -202,6 +221,7 @@ describe('#VirtualHostService', function () {
             });
         });
         it('returns 410 Gone when parent service instance is deleted', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.director.getDeploymentInstances(deployment_name, undefined, undefined, undefined, false);
           mocks.director.getDeployment(deployment_name, false, undefined, 1);
           mocks.cloudProvider.download(pathname, data);

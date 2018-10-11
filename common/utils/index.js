@@ -54,6 +54,7 @@ exports.initializeEventListener = initializeEventListener;
 exports.buildErrorJson = buildErrorJson;
 exports.deploymentLocked = deploymentLocked;
 exports.deploymentStaggered = deploymentStaggered;
+exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeployment;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -321,6 +322,14 @@ function deploymentNameRegExp(service_subnet) {
 
 function taskIdRegExp() {
   return new RegExp(`^([0-9a-z-]+)_([0-9]+)$`);
+}
+
+function parseServiceInstanceIdFromDeployment(deploymentName) {
+  const deploymentNameArray = deploymentNameRegExp().exec(deploymentName);
+  if (Array.isArray(deploymentNameArray) && deploymentNameArray.length === 4) {
+    return deploymentNameArray[3];
+  }
+  return deploymentName;
 }
 
 function getRandomInt(min, max) {

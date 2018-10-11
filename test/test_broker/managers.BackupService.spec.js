@@ -43,6 +43,14 @@ describe('managers', function () {
       logs: []
     };
     const manager = new BackupService(plan);
+    const dummyDeploymentResource = {
+      metadata: {
+        annotations: {
+          labels: 'dummy'
+        }
+      }
+    };
+
 
     before(function () {
       sandbox = sinon.sandbox.create();
@@ -108,6 +116,8 @@ describe('managers', function () {
           context: context
         };
         mocks.director.getDeploymentVms(deployment_name);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
         mocks.director.getDeploymentInstances(deployment_name);
         mocks.agent.getInfo();
         const putFileStub = sinon.stub(BackupStore.prototype, 'putFile');
