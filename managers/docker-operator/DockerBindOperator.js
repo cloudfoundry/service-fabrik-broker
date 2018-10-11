@@ -10,7 +10,7 @@ const BaseOperator = require('../BaseOperator');
 const DockerService = require('./DockerService');
 const assert = require('assert');
 
-class DockerBindManager extends BaseOperator {
+class DockerBindOperator extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -27,7 +27,7 @@ class DockerBindManager extends BaseOperator {
         }
       })
       .catch(err => {
-        logger.error('Error occurred in processing request by DockerBindManager', err);
+        logger.error('Error occurred in processing request by DockerBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
@@ -85,4 +85,4 @@ class DockerBindManager extends BaseOperator {
   }
 }
 
-module.exports = DockerBindManager;
+module.exports = DockerBindOperator;

@@ -1,9 +1,9 @@
 'use strict';
 
-const DockerManager = require('./docker-manager/DockerManager');
-const DockerBindManager = require('./docker-manager/DockerBindManager');
+const DockerOperator = require('./docker-operator/DockerOperator');
+const DockerBindOperator = require('./docker-operator/DockerBindOperator');
 
-const dockerManager = new DockerManager();
-const dockerBindManager = new DockerBindManager();
-dockerManager.init();
-dockerBindManager.init();
+const dockerOperator = new DockerOperator();
+const dockerBindOperator = new DockerBindOperator();
+dockerOperator.init();
+dockerBindOperator.init();

@@ -212,7 +212,7 @@ For running lifecycle operations, corresponding manager processes have to be sta
 Assuming that all required env variables (SETTINGS_PATH, NODE_ENV) are already set. Both bosh manager and docker manager can be launched.
 ```shell
 node managers/StartBoshOperators.js #to start bosh manager
-node managers/StartDockerManagers.js #to start docker manager
+node managers/StartDockerOperators.js #to start docker manager
 ```
 
 ### Upload Bosh Director Based Service Releases

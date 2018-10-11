@@ -15,7 +15,7 @@ const space_guid = 'fe171a35-3107-4cee-bc6b-0051617f892e';
 const organization_guid = '00060d60-067d-41ee-bd28-3bd34f220036';
 const jsonWriteDelay = 50;
 
-const DockerManagerDummy = {
+const DockerOperatorDummy = {
   registerWatcherDummy: () => {},
   createDockerServiceDummy: () => {},
   createDummy: () => {},
@@ -26,29 +26,29 @@ const DockerManagerDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const DockerManager = proxyquire('../../managers/docker-manager/DockerManager', {
+const DockerOperator = proxyquire('../../managers/docker-operator/DockerOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        DockerManagerDummy.getOperationOptionsDummy(opts);
+        DockerOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
   './DockerService': {
     'createInstance': function (instance_id, options) {
-      DockerManagerDummy.createDockerServiceDummy(instance_id, options);
+      DockerOperatorDummy.createDockerServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': (opts) => {
-          DockerManagerDummy.createDummy(opts);
+          DockerOperatorDummy.createDummy(opts);
           return Promise.resolve({});
         },
         'update': (opts) => {
-          DockerManagerDummy.updateDummy(opts);
+          DockerOperatorDummy.updateDummy(opts);
           return Promise.resolve({});
         },
         'delete': (opts) => {
-          DockerManagerDummy.deleteDummy(opts);
+          DockerOperatorDummy.deleteDummy(opts);
           return Promise.resolve({});
         },
       });
@@ -58,7 +58,7 @@ const DockerManager = proxyquire('../../managers/docker-manager/DockerManager', 
 
 function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const bm = new DockerManager();
+  const bm = new DockerOperator();
   bm.init();
   return Promise.delay(100)
     .then(() => {
@@ -71,18 +71,18 @@ function initDefaultBMTest(jsonStream, sandbox, registerWatcherStub) {
     });
 }
 
-describe('docker-manager', function () {
-  describe('DockerManager', function () {
+describe('docker-operator', function () {
+  describe('DockerOperator', function () {
     let createDockerServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      createDockerServiceSpy = sinon.spy(DockerManagerDummy, 'createDockerServiceDummy');
-      createSpy = sinon.spy(DockerManagerDummy, 'createDummy');
-      updateSpy = sinon.spy(DockerManagerDummy, 'updateDummy');
-      deleteSpy = sinon.spy(DockerManagerDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(DockerManagerDummy, 'getOperationOptionsDummy');
+      createDockerServiceSpy = sinon.spy(DockerOperatorDummy, 'createDockerServiceDummy');
+      createSpy = sinon.spy(DockerOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(DockerOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(DockerOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(DockerOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {

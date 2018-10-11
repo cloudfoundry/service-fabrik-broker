@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const DockerService = require('../../managers/docker-manager/DockerService');
-const DockerImageLoaderService = require('../../managers/docker-manager/DockerImageLoaderService');
+const DockerService = require('../../managers/docker-operator/DockerService');
+const DockerImageLoaderService = require('../../managers/docker-operator/DockerImageLoaderService');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
 const catalog = require('../../common/models').catalog;
 const parseUrl = require('url').parse;
@@ -11,7 +11,7 @@ const config = require('../../common/config');
 const errors = require('../../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
-describe('docker-manager', function () {
+describe('docker-operator', function () {
   const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
   const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
   const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';

@@ -11,7 +11,7 @@ const DockerService = require('./DockerService');
 const errors = require('../../common/errors');
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 
-class DockerManager extends BaseOperator {
+class DockerOperator extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -35,7 +35,7 @@ class DockerManager extends BaseOperator {
         }
       })
       .catch(err => {
-        logger.error('Error occurred in processing request by DockerManager', err);
+        logger.error('Error occurred in processing request by DockerOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
@@ -107,4 +107,4 @@ class DockerManager extends BaseOperator {
   }
 }
 
-module.exports = DockerManager;
+module.exports = DockerOperator;
