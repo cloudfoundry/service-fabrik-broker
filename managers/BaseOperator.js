@@ -92,7 +92,7 @@ class BaseOperator {
 
   _preProcessRequest(objectBody, processingLockStatus) {
     const options = JSON.parse(objectBody.spec.options);
-    // Acquire processing lock so that in HA scenerio, only one backup-manager process processes the request
+    // Acquire processing lock so that in HA scenerio, only one backup-operator process processes the request
     return Promise.try(() => {
       let processingConflict = false;
       const lockedByManager = _.get(objectBody, 'metadata.annotations.lockedByManager');
