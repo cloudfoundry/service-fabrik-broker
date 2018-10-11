@@ -1,6 +1,6 @@
 'use strict';
 
-const DefaultRestoreManager = require('../../managers/restore-manager/DefaultRestoreManager');
+const DefaultRestoreOperator = require('../../managers/restore-manager/DefaultRestoreOperator');
 const RestoreService = require('../../managers/restore-manager/RestoreService');
 const BaseOperator = require('../../managers/BaseOperator');
 const CONST = require('../../common/constants');
@@ -12,9 +12,9 @@ const restore_crd_prefix = '/apis/restore.servicefabrik.io/v1alpha1/namespaces/d
 
 
 describe('managers', function () {
-  describe('DefaultRestoreManager', function () {
+  describe('DefaultRestoreOperator', function () {
 
-    const defaultRestoreManager = new DefaultRestoreManager();
+    const defaultRestoreOperator = new DefaultRestoreOperator();
     const restore_options = {
       plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
       service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
@@ -64,7 +64,7 @@ describe('managers', function () {
 
     describe('#init', function () {
       it('should register watcher for restore resource', function () {
-        defaultRestoreManager.init()
+        defaultRestoreOperator.init()
           .then(() => {
             expect(registerCrdsStub.callCount).to.equal(1);
             expect(registerCrdsStub.calledWithExactly(
@@ -83,13 +83,13 @@ describe('managers', function () {
 
     describe('#processRequest', function () {
       it('should start restore if state is in queue', () => {
-        _processRestoreStub = sandbox.stub(DefaultRestoreManager, '_processRestore');
+        _processRestoreStub = sandbox.stub(DefaultRestoreOperator, '_processRestore');
         const fakeRequestObjectBody = {
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
           }
         };
-        defaultRestoreManager.processRequest(fakeRequestObjectBody);
+        defaultRestoreOperator.processRequest(fakeRequestObjectBody);
         expect(_processRestoreStub.callCount).to.equal(1);
         expect(_processRestoreStub.calledWithExactly(fakeRequestObjectBody)).to.equal(true);
         _processRestoreStub.restore();
@@ -100,8 +100,8 @@ describe('managers', function () {
             state: CONST.APISERVER.RESOURCE_STATE.ABORT
           }
         };
-        _processAbortStub = sandbox.stub(DefaultRestoreManager, '_processAbort');
-        defaultRestoreManager.processRequest(fakeRequestObjectBody);
+        _processAbortStub = sandbox.stub(DefaultRestoreOperator, '_processAbort');
+        defaultRestoreOperator.processRequest(fakeRequestObjectBody);
         expect(_processAbortStub.callCount).to.equal(1);
         expect(_processAbortStub.calledWithExactly(fakeRequestObjectBody)).to.equal(true);
         _processAbortStub.restore();
@@ -111,7 +111,7 @@ describe('managers', function () {
     describe('#_processRestore', function () {
       it('should create manager and invoke startRestore', function () {
         startRestoreStub = sandbox.stub(RestoreService.prototype, 'startRestore');
-        return DefaultRestoreManager
+        return DefaultRestoreOperator
           ._processRestore(changeObject)
           .then(() => {
             expect(startRestoreStub.callCount).to.equal(1);
@@ -124,7 +124,7 @@ describe('managers', function () {
 
     describe('#_processAbort', function () {
       it('should create manager and invoke abortLastRestore', function () {
-        return DefaultRestoreManager
+        return DefaultRestoreOperator
           ._processAbort(changeObject)
           .then(() => {
             expect(abortLastRestoreStub.callCount).to.equal(1);
