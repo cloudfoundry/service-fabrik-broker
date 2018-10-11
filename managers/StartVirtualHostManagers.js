@@ -1,9 +1,9 @@
 'use strict';
 
-const VirtualHostManager = require('./virtualhost-manager/VirtualHostManager');
-const VirtualHostBindManager = require('./virtualhost-manager/VirtualHostBindManager');
+const VirtualHostOperator = require('./virtualhost-operator/VirtualHostOperator');
+const VirtualHostBindOperator = require('./virtualhost-operator/VirtualHostBindOperator');
 
-const virtualHostManager = new VirtualHostManager();
-const virtualHostBindManager = new VirtualHostBindManager();
-virtualHostManager.init();
-virtualHostBindManager.init();
+const virtualHostOperator = new VirtualHostOperator();
+const virtualHostBindOperator = new VirtualHostBindOperator();
+virtualHostOperator.init();
+virtualHostBindOperator.init();

@@ -6,7 +6,7 @@ const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const iaas = require('../../data-access-layer/iaas');
 const virtualHostStore = iaas.virtualHostStore;
-const VirtualHostService = require('../../managers/virtualhost-manager/VirtualHostService');
+const VirtualHostService = require('../../managers/virtualhost-operator/VirtualHostService');
 
 
 describe('#VirtualHostService', function () {

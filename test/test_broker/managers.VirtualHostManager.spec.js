@@ -20,7 +20,7 @@ let parameters = {
   dedicated_rabbitmq_instance: 'rmq'
 };
 
-const VirtualHostManagerDummy = {
+const VirtualHostOperatorDummy = {
   registerWatcherDummy: () => {},
   createVirtualHostServiceDummy: () => {},
   createDummy: () => {},
@@ -31,29 +31,29 @@ const VirtualHostManagerDummy = {
 const resultOptions = {
   plan_id: plan_id
 };
-const VirtualHostManager = proxyquire('../../managers/virtualhost-manager/VirtualHostManager', {
+const VirtualHostOperator = proxyquire('../../managers/virtualhost-operator/VirtualHostOperator', {
   '../../data-access-layer/eventmesh': {
     'apiServerClient': {
       'getOptions': function (opts) {
-        VirtualHostManagerDummy.getOperationOptionsDummy(opts);
+        VirtualHostOperatorDummy.getOperationOptionsDummy(opts);
         return Promise.resolve(resultOptions);
       },
       'updateResource': function (opts) {
-        VirtualHostManagerDummy.updateDummy(opts);
+        VirtualHostOperatorDummy.updateDummy(opts);
         return Promise.resolve(resultOptions);
       },
       'deleteResource': function (opts) {
-        VirtualHostManagerDummy.deleteDummy(opts);
+        VirtualHostOperatorDummy.deleteDummy(opts);
         return Promise.resolve(resultOptions);
       }
     }
   },
   './VirtualHostService': {
     'createVirtualHostService': function (instance_id, options) {
-      VirtualHostManagerDummy.createVirtualHostServiceDummy(instance_id, options);
+      VirtualHostOperatorDummy.createVirtualHostServiceDummy(instance_id, options);
       return Promise.resolve({
         'create': () => {
-          VirtualHostManagerDummy.createDummy();
+          VirtualHostOperatorDummy.createDummy();
           if (parameters !== null) {
             return Promise.resolve({});
           } else {
@@ -61,11 +61,11 @@ const VirtualHostManager = proxyquire('../../managers/virtualhost-manager/Virtua
           }
         },
         'update': () => {
-          VirtualHostManagerDummy.updateDummy();
+          VirtualHostOperatorDummy.updateDummy();
           return Promise.resolve({});
         },
         'delete': () => {
-          VirtualHostManagerDummy.deleteDummy();
+          VirtualHostOperatorDummy.deleteDummy();
           return Promise.resolve({});
         },
       });
@@ -76,7 +76,7 @@ const jsonWriteDelay = 50;
 
 function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
   /* jshint unused:false */
-  const vm = new VirtualHostManager();
+  const vm = new VirtualHostOperator();
   vm.init();
   return Promise.delay(100)
     .then(() => {
@@ -90,17 +90,17 @@ function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
 }
 
 describe('managers', function () {
-  describe('VirtualHostManager', function () {
+  describe('VirtualHostOperator', function () {
     let createVirtualHostServiceSpy, createSpy, updateSpy, deleteSpy, getOperationOptionsSpy, registerWatcherStub, sandbox;
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      createVirtualHostServiceSpy = sinon.spy(VirtualHostManagerDummy, 'createVirtualHostServiceDummy');
-      createSpy = sinon.spy(VirtualHostManagerDummy, 'createDummy');
-      updateSpy = sinon.spy(VirtualHostManagerDummy, 'updateDummy');
-      deleteSpy = sinon.spy(VirtualHostManagerDummy, 'deleteDummy');
-      getOperationOptionsSpy = sinon.spy(VirtualHostManagerDummy, 'getOperationOptionsDummy');
+      createVirtualHostServiceSpy = sinon.spy(VirtualHostOperatorDummy, 'createVirtualHostServiceDummy');
+      createSpy = sinon.spy(VirtualHostOperatorDummy, 'createDummy');
+      updateSpy = sinon.spy(VirtualHostOperatorDummy, 'updateDummy');
+      deleteSpy = sinon.spy(VirtualHostOperatorDummy, 'deleteDummy');
+      getOperationOptionsSpy = sinon.spy(VirtualHostOperatorDummy, 'getOperationOptionsDummy');
       jsonStream = new JSONStream();
       registerWatcherFake = function (resourceGroup, resourceType, callback) {
         return Promise.try(() => {

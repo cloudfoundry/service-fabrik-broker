@@ -8,7 +8,7 @@ const CONST = require('../../common/constants');
 const BaseOperator = require('../BaseOperator');
 const VirtualHostService = require('./VirtualHostService');
 
-class VirtualHostManager extends BaseOperator {
+class VirtualHostOperator extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -27,7 +27,7 @@ class VirtualHostManager extends BaseOperator {
         }
       })
       .catch(Error, (err) => {
-        logger.error('Error occurred in processing request by VirtualHostManager', err);
+        logger.error('Error occurred in processing request by VirtualHostOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
@@ -91,4 +91,4 @@ class VirtualHostManager extends BaseOperator {
 
 }
 
-module.exports = VirtualHostManager;
+module.exports = VirtualHostOperator;

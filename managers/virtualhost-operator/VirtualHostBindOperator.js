@@ -9,7 +9,7 @@ const CONST = require('../../common/constants');
 const BaseOperator = require('../BaseOperator');
 const VirtualHostService = require('./VirtualHostService');
 
-class VirtualHostBindManager extends BaseOperator {
+class VirtualHostBindOperator extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.DELETE];
@@ -26,7 +26,7 @@ class VirtualHostBindManager extends BaseOperator {
         }
       })
       .catch(Error, (err) => {
-        logger.error('Error occurred in processing request by VirtualHostBindManager', err);
+        logger.error('Error occurred in processing request by VirtualHostBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
@@ -76,4 +76,4 @@ class VirtualHostBindManager extends BaseOperator {
   }
 }
 
-module.exports = VirtualHostBindManager;
+module.exports = VirtualHostBindOperator;
