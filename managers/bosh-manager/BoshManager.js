@@ -5,7 +5,7 @@ const _ = require('lodash');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
-const BaseManager = require('../BaseManager');
+const BaseOperator = require('../BaseOperator');
 const DirectorService = require('./DirectorService');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
@@ -17,7 +17,7 @@ const assert = require('assert');
 /* jshint nonew:false */
 new DBManager(); //to log events
 
-class BoshManager extends BaseManager {
+class BoshManager extends BaseOperator {
   init() {
     utils.initializeEventListener(config.internal, 'internal');
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.UPDATE, CONST.APISERVER.RESOURCE_STATE.DELETE];

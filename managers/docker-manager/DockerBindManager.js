@@ -6,11 +6,11 @@ const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
-const BaseManager = require('../BaseManager');
+const BaseOperator = require('../BaseOperator');
 const DockerService = require('./DockerService');
 const assert = require('assert');
 
-class DockerBindManager extends BaseManager {
+class DockerBindManager extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.APISERVER.RESOURCE_STATE.DELETE];

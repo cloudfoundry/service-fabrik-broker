@@ -11,7 +11,7 @@ const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const Conflict = errors.Conflict;
 const NotFound = errors.NotFound;
 
-class BaseManager {
+class BaseOperator {
 
   registerCrds(resourceGroup, resourceType) {
     return eventmesh.apiServerClient.registerCrds(resourceGroup, resourceType);
@@ -168,4 +168,4 @@ class BaseManager {
 
 }
 
-module.exports = BaseManager;
+module.exports = BaseOperator;

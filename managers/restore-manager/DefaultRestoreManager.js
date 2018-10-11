@@ -6,10 +6,10 @@ const eventmesh = require('../../data-access-layer/eventmesh');
 const catalog = require('../../common/models/catalog');
 const utils = require('../../common/utils');
 const CONST = require('../../common/constants');
-const BaseManager = require('../BaseManager');
+const BaseOperator = require('../BaseOperator');
 const RestoreService = require('./');
 
-class DefaultRestoreManager extends BaseManager {
+class DefaultRestoreManager extends BaseOperator {
 
   init() {
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.OPERATION.ABORT, CONST.APISERVER.RESOURCE_STATE.DELETE];

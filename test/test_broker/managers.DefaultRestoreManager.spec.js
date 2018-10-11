@@ -2,7 +2,7 @@
 
 const DefaultRestoreManager = require('../../managers/restore-manager/DefaultRestoreManager');
 const RestoreService = require('../../managers/restore-manager/RestoreService');
-const BaseManager = require('../../managers/BaseManager');
+const BaseOperator = require('../../managers/BaseOperator');
 const CONST = require('../../common/constants');
 // const logger = require('../../common/logger');
 // const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
@@ -53,8 +53,8 @@ describe('managers', function () {
 
     before(function () {
       sandbox = sinon.sandbox.create();
-      registerWatcherStub = sandbox.stub(BaseManager.prototype, 'registerWatcher');
-      registerCrdsStub = sandbox.stub(BaseManager.prototype, 'registerCrds', () => Promise.resolve({}));
+      registerWatcherStub = sandbox.stub(BaseOperator.prototype, 'registerWatcher');
+      registerCrdsStub = sandbox.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve({}));
       abortLastRestoreStub = sandbox.stub(RestoreService.prototype, 'abortLastRestore', () => Promise.resolve({}));
     });
 

@@ -8,13 +8,13 @@ const utils = require('../../common/utils');
 const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const BackupService = require('./');
-const BaseManager = require('../BaseManager');
+const BaseOperator = require('../BaseOperator');
 const DBManager = require('../../broker/lib/fabrik/DBManager');
 
 /* jshint nonew:false */
 new DBManager(); //to log events
 
-class DefaultBackupManager extends BaseManager {
+class DefaultBackupManager extends BaseOperator {
 
   init() {
     utils.initializeEventListener(config.external, 'external');
