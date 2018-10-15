@@ -1,18 +1,13 @@
 'use strict';
 
 const _ = require('lodash');
-const assert = require('assert');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
-const errors = require('../../common/errors');
 const logger = require('../../common/logger');
 const utils = require('../../common/utils');
 const DirectorService = require('./DirectorService');
 const BaseStatusPoller = require('../BaseStatusPoller');
-const DeploymentDelayed = errors.DeploymentDelayed;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const AssertionError = assert.AssertionError;
 
 class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
   constructor() {
@@ -31,7 +26,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
     const deploymentName = _.get(resourceBody, 'status.response.deployment_name');
     return DirectorService
       .createInstance(instanceId, resourceOptions)
-      .then((directorService) => directorService.createOrUpdateDeployment(deploymentName, resourceOptions))
+      .then(directorService => directorService.createOrUpdateDeployment(deploymentName, resourceOptions))
       .then(directorResponse => {
         if (_.get(directorResponse, 'task_id')) {
           return Promise.all([eventmesh.apiServerClient.updateResource({
@@ -48,8 +43,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
           })]);
         }
       })
-      .catch(DeploymentDelayed, err => logger.warn(`Deployment further delayed for instance ${instanceId}`, err))
-      .catch(AssertionError, ServiceInstanceNotFound, err => {
+      .catch(err => {
         logger.error(`Error occured while triggering deployment for instance ${instanceId}`, err);
         this.clearPoller(instanceId, intervalId);
         return eventmesh.apiServerClient.updateResource({
@@ -61,10 +55,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
             error: utils.buildErrorJson(err)
           }
         });
-      })
-      //DeploymentDelayed is also captured below and no operation required from this poller
-      // again it would be picked up by this poller.
-      .catch(e => logger.error(`Error in scheduled of cached deployment ${deploymentName}`, e));
+      });
   }
 }
 
