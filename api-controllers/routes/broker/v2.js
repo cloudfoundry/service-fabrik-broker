@@ -30,6 +30,9 @@ router.use(commonMiddleware.error({
 }));
 
 /* Service Instance Router */
+// Enriching context object for temporary purposes
+// This will be done by SM when CIS component in integrated
+instanceRouter.use(controller.handler('enrichContext'));
 instanceRouter.use(controller.handler('ensurePlatformContext'));
 instanceRouter.route('/')
   .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])

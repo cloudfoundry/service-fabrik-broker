@@ -75,7 +75,10 @@ exports.checkQuota = function () {
       next();
     } else {
       const platform = _.get(req, 'body.context.platform');
-      if (platform === CONST.PLATFORM.CF) {
+      const origin = _.get(req, 'body.context.origin');
+      if (platform === CONST.PLATFORM.CF ||
+        (platform === CONST.PLATFORM.SM &&
+          origin === CONST.PLATFORM.CF)) {
         const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
         if (orgId === undefined) {
           next(new BadRequest(`organization_id is undefined`));
@@ -100,7 +103,7 @@ exports.checkQuota = function () {
             });
         }
       } else {
-        logger.debug(`[Quota]: Platform: ${platform}. Not ${CONST.PLATFORM.CF}. Skipping quota check : calling next handler..`);
+        logger.debug(`[Quota]: Platform/Origin can be either ${CONST.PLATFORM.CF} or ${CONST.PLATFORM.SM}/${CONST.PLATFORM.CF}. Skipping quota check : calling next handler..`);
         next();
       }
     }

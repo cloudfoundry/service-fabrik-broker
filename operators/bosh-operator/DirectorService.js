@@ -921,11 +921,15 @@ class DirectorService extends BaseDirectorService {
     const directorService = new DirectorService(plan, instanceId);
     return Promise
       .try(() => context ? context : directorService.platformContext)
-      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context.platform)))
+      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context)))
       .return(directorService);
   }
 
-  static getPlatformManager(platform) {
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = platform.origin;
+    }
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);
