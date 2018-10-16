@@ -11,7 +11,7 @@ const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 const catalog = require('../common/models/catalog');
 const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const DirectorService = require('../managers/bosh-manager/DirectorService');
+const DirectorService = require('../operators/bosh-operator/DirectorService');
 const eventmesh = require('../data-access-layer/eventmesh');
 const Repository = require('../common/db').Repository;
 //NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
