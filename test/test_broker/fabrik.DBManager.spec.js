@@ -77,7 +77,7 @@ const proxyLibs = {
     getConnectionStatus: () => dbConnectionState,
     shutDown: () => Promise.resolve({})
   },
-  '../../../managers/bosh-manager/DirectorService': DirectorServiceStub,
+  '../../../operators/bosh-operator/DirectorService': DirectorServiceStub,
   '../../../common/models/Catalog': {
     getPlan: () => {}
   }

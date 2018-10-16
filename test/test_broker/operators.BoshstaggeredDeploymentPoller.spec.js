@@ -3,9 +3,9 @@
 const _ = require('lodash');
 const CONST = require('../../common/constants');
 const proxyquire = require('proxyquire');
-const BaseStatusPoller = require('../../managers/BaseStatusPoller');
+const BaseStatusPoller = require('../../operators/BaseStatusPoller');
 
-describe('managers', function () {
+describe('operators', function () {
   describe('BoshStaggeredDeploymentPoller', function () {
 
     const index = mocks.director.networkSegmentIndex;
@@ -82,7 +82,7 @@ describe('managers', function () {
       it('cached deployment status check should be succesful and status is in_progress', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../managers/bosh-manager/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           './DirectorService': {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
@@ -117,7 +117,7 @@ describe('managers', function () {
       it('cached deployment status check should be succesful and status is waiting', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns(Promise.resolve());
-        const BoshStaggeredDeploymentPoller = proxyquire('../../managers/bosh-manager/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           './DirectorService': {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
@@ -145,7 +145,7 @@ describe('managers', function () {
       it('cached deployment status check should be unsuccessful', function (done) {
         initStub.returns(Promise.resolve());
         clearPollerStub.returns();
-        const BoshStaggeredDeploymentPoller = proxyquire('../../managers/bosh-manager/BoshStaggeredDeploymentPoller.js', {
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
           './DirectorService': {
             'createInstance': function (instance_id, options) {
               /* jshint unused:false */
