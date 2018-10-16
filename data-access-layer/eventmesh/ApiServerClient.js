@@ -433,10 +433,10 @@ class ApiServerClient {
    * @description Get Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
-   * @param {string} opts.stateList - State of resorce
+   * @param {array} opts.stateList - Array of states of resorces
    */
   getResourceListByState(opts) {
-    logger.debug('Get resource with opts: ', opts);
+    logger.debug('Get resource list with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
     assert.ok(opts.stateList, `Property 'stateList' is required to fetch resource list`);

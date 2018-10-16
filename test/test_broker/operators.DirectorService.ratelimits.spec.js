@@ -40,7 +40,7 @@ describe('manager', () => {
     let DirectorServiceSub;
     let directorService;
     let sandbox;
-    let initializeSpy, codSpy, finalizeSpy, getTaskSpy, getOpStateSpy, removeCachedTaskSpy;
+    let initializeSpy, codSpy, finalizeSpy, getTaskSpy, getOpStateSpy;
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const plan = catalog.getPlan(plan_id);
 
@@ -53,7 +53,6 @@ describe('manager', () => {
       initializeSpy.returns(Promise.resolve());
       finalizeSpy = sandbox.stub();
       getTaskSpy = sandbox.stub();
-      removeCachedTaskSpy = sandbox.stub();
       codSpy = sandbox.stub();
       codSpy.returns(Promise.resolve({
         cached: true
@@ -66,7 +65,6 @@ describe('manager', () => {
       directorService.createOrUpdateDeployment = codSpy;
       directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
-      directorService.cleanupOperation = removeCachedTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
     });
@@ -134,7 +132,6 @@ describe('manager', () => {
       });
     });
     it('should invoke last operation: op in progress- task available', () => {
-      removeCachedTaskSpy.returns(Promise.resolve());
       getOpStateSpy.returns({
         cached: false,
         task_id: task_id
@@ -149,7 +146,6 @@ describe('manager', () => {
         expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(undefined);
         expect(out.description).to.eql(`Create deployment is still in progress`);
-        expect(removeCachedTaskSpy.calledOnce).to.eql(false);
       });
     });
     it('should invoke last operation: op done- task succeeded', () => {
@@ -172,24 +168,6 @@ describe('manager', () => {
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
       });
     });
-    it('should invoke last operation: op done- task succeeded [remove from etcd failed]', function () {
-      this.timeout(20000);
-      finalizeSpy.returns(Promise.resolve());
-      removeCachedTaskSpy.returns(Promise.reject(new Error('etcd_error')));
-      getOpStateSpy.returns({
-        cached: false,
-        task_id: task_id
-      });
-      getTaskSpy.returns(Promise.resolve({
-        deployment: `deployment-${guid}`,
-        timestamp: (new Date().getTime()) / 1000,
-        state: 'done'
-      }));
-      return directorService.lastOperation(lastOpWithoutTaskId).catch(err => {
-        expect(err.message).to.eql('etcd_error');
-        expect(removeCachedTaskSpy.calledOnce).to.eql(true);
-      });
-    });
   });
   describe('DirectorInstance- without ratelimits', () => {
     let configStub = {
@@ -198,7 +176,7 @@ describe('manager', () => {
     let DirectorServiceSub;
     let directorService;
     let sandbox;
-    let initializeSpy, codSpy, getTaskSpy, finalizeSpy, removeCachedTaskSpy;
+    let initializeSpy, codSpy, getTaskSpy, finalizeSpy;
     let lastOpTaskId;
 
     beforeEach(() => {
@@ -207,7 +185,6 @@ describe('manager', () => {
         type: 'create'
       };
       sandbox = sinon.sandbox.create();
-      removeCachedTaskSpy = sandbox.stub();
       initializeSpy = sandbox.stub();
       initializeSpy.returns(Promise.resolve());
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -225,7 +202,6 @@ describe('manager', () => {
       directorService.createOrUpdateDeployment = codSpy;
       //directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
-      directorService.cleanupOperation = removeCachedTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
     });
@@ -391,25 +367,19 @@ describe('manager', () => {
     const task_id = 'task_id';
     const deploymentName = 'deploymentName';
     let service;
-    let sandbox, directorOpSpy, currentTasksSpy, containsInstanceSpy;
-    let deleteDeploymentSpy, getBoshTaskSpy, containsDeploymentSpy, deploymentSpy, storeSpy, storeBoshSpy;
-    let getDeploymentNamesInCacheSpy, getCachedDeploymentsSpy, getDirectorDeploymentsSpy, deleteTaskSpy, getInstanceGuidSpy;
+    let sandbox, directorOpSpy, currentTasksSpy;
+    let deleteDeploymentSpy, containsDeploymentSpy, deploymentSpy;
+    let getDeploymentNamesInCacheSpy, getDirectorDeploymentsSpy, getInstanceGuidSpy;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
       directorOpSpy = sandbox.stub();
       currentTasksSpy = sandbox.stub();
-      containsInstanceSpy = sandbox.stub();
-      getBoshTaskSpy = sandbox.stub();
       containsDeploymentSpy = sandbox.stub();
       deploymentSpy = sandbox.stub();
       deleteDeploymentSpy = sandbox.stub();
-      storeSpy = sandbox.stub();
-      storeBoshSpy = sandbox.stub();
-      getCachedDeploymentsSpy = sandbox.stub();
       getDirectorDeploymentsSpy = sandbox.stub();
       getInstanceGuidSpy = sandbox.stub();
-      deleteTaskSpy = sandbox.stub();
       getDeploymentNamesInCacheSpy = sandbox.stub();
       var boshStub = {
         NetworkSegmentIndex: {
@@ -444,7 +414,7 @@ describe('manager', () => {
       mocks.reset();
     });
     describe('#acquireNetworkSegmentIndex', () => {
-      it('should return network segment index when there are deployment names in etcd', () => {
+      it('should return network segment index when there are deployment names in cache', () => {
         getDeploymentNamesInCacheSpy.returns([`service-fabrik-90-${used_guid2}`]);
         getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
         return service.acquireNetworkSegmentIndex('guid')
@@ -459,7 +429,7 @@ describe('manager', () => {
         previous_values: {}
       };
       describe('user operations', () => {
-        it('should run operation from etcd when policy applied, slots available and in cache previously', () => {
+        it('should run operation when policy applied, slots available and in cache previously', () => {
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -505,7 +475,7 @@ describe('manager', () => {
               expect(currentTasksSpy.calledOnce).to.eql(true);
             });
         });
-        it('should store operation in etcd when bosh is down', () => {
+        it('should store operation in cache when bosh is down', () => {
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {
@@ -567,7 +537,7 @@ describe('manager', () => {
             scheduled: true
           }
         };
-        it('should not store operation in etcd and throw error when bosh is down', () => {
+        it('should not store operation in cache and throw error when bosh is down', () => {
           deleteDeploymentSpy.returns(Promise.resolve());
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
@@ -587,7 +557,6 @@ describe('manager', () => {
             });
         });
         it('should run scheduled operation successfully', () => {
-          containsDeploymentSpy.returns(Promise.reject(new Error('etcd connect error')));
           directorOpSpy.returns(Promise.resolve({
             max_workers: 6,
             policies: {

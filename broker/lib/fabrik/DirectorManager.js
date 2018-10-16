@@ -7,7 +7,6 @@ const config = require('../../../common/config');
 const logger = require('../../../common/logger');
 const errors = require('../../../common/errors');
 const bosh = require('../../../data-access-layer/bosh');
-const cf = require('../../../data-access-layer/cf');
 const backupStore = require('../../../data-access-layer/iaas').backupStore;
 const utils = require('../../../common/utils');
 const Agent = require('../../../data-access-layer/service-agent');
@@ -17,7 +16,6 @@ const CONST = require('../../../common/constants');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
-const boshOperationQueue = bosh.BoshOperationQueue;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
@@ -29,7 +27,6 @@ const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
-const DeploymentDelayed = errors.DeploymentDelayed;
 const catalog = require('../../../common/models/catalog');
 
 class DirectorManager extends BaseManager {
@@ -183,182 +180,6 @@ class DirectorManager extends BaseManager {
       })
       .catch(err => {
         logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
-        throw err;
-      });
-  }
-
-  enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
-    const results = {
-      cached: false,
-      shouldRunNow: shouldRunNow,
-      enqueue: false
-    };
-    if (scheduled) {
-      if (shouldRunNow) {
-        //do not store in etcd for scheduled updates
-        results.shouldRunNow = shouldRunNow;
-        return results;
-      } else {
-        throw new errors.DeploymentAttemptRejected(deploymentName);
-      }
-    } else {
-      // user-triggered operations
-      if (shouldRunNow) {
-        //check if the deployment already exists in etcd (poller-run)
-        return boshOperationQueue.containsDeployment(deploymentName).then(enqueued => {
-          if (enqueued) {
-            results.cached = true;
-          }
-          return results;
-        });
-      } else {
-        results.enqueue = true;
-        return results;
-      }
-    }
-  }
-
-  createOrUpdateDeployment(deploymentName, params, args) {
-    logger.info(`Checking rate limits against bosh for deployment `);
-    const previousValues = _.get(params, 'previous_values');
-    const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
-    const scheduled = _.get(params, 'scheduled') || false;
-    const runImmediately = _.get(params, 'parameters._runImmediately') || false;
-    _.omit(params, 'scheduled');
-    _.omit(params, 'parameters._runImmediately');
-
-    if (!config.enable_bosh_rate_limit || runImmediately) {
-      return this._createOrUpdateDeployment(deploymentName, params, args, scheduled)
-        .then(taskId => {
-          return {
-            cached: false,
-            task_id: taskId
-          };
-        });
-    }
-    const decisionMaker = {
-      'shouldRunNow': false,
-      'cached': false
-    };
-    return this.executePolicy(scheduled, action, deploymentName)
-      .then(checkResults => this.enqueueOrTrigger(checkResults.shouldRunNow, scheduled, deploymentName))
-      .tap(res => {
-        decisionMaker.shouldRunNow = res.shouldRunNow;
-        decisionMaker.cached = res.cached;
-      })
-      .then(res => {
-        if (res.enqueue) {
-          // stagger here by putting it into etcd cache and return promise
-          return boshOperationQueue.saveDeployment(this.plan.id, deploymentName, params, args)
-            .then(() => {
-              decisionMaker.cached = true;
-              throw new DeploymentDelayed(deploymentName);
-            });
-        }
-      })
-      .then(() => {
-        if (decisionMaker.shouldRunNow && decisionMaker.cached) {
-          //the deployment was cached in etcd earlier; remove it from cache and proceed
-          return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
-        }
-      })
-      .then(() => this._createOrUpdateDeployment(deploymentName, params, args, scheduled))
-      .then(taskId => {
-        const out = {
-          'cached': false
-        };
-        if (decisionMaker.cached) {
-          return boshOperationQueue.saveBoshTask(this.getInstanceGuid(deploymentName), taskId)
-            .then(() => {
-              out.cached = true;
-              out.task_id = taskId;
-              return out;
-            });
-        } else {
-          out.task_id = taskId;
-          return out;
-        }
-      })
-      .catch(DeploymentDelayed, e => {
-        logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
-        return {
-          'cached': true
-        };
-      })
-      .catch(err => {
-        logger.error(`Error in deployment for ${deploymentName}`, err);
-        throw err;
-      });
-  }
-
-  _createOrUpdateDeployment(deploymentName, params, args, scheduled) {
-    const previousValues = _.get(params, 'previous_values');
-    const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
-    const opts = _.omit(params, 'previous_values');
-    args = args || {};
-    args = _.set(args, 'bosh_director_name', _.get(params, 'parameters.bosh_director_name'));
-    const username = _.get(params, 'parameters.username');
-    const password = _.get(params, 'parameters.password');
-    logger.info(`Starting to ${action} deployment '${deploymentName}'...`);
-    let serviceLifeCycle;
-    let actionContext = {};
-    _.chain(actionContext)
-      .set('params', params)
-      .set('deployment_name', deploymentName)
-      .set('sf_operations_args', args)
-      .value();
-    let preUpdateAgentResponse = {};
-    return Promise
-      .try(() => {
-        switch (action) {
-        case CONST.OPERATION_TYPE.UPDATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          if (_.get(params, 'parameters.bosh_director_name') ||
-            username || password) {
-            throw new BadRequest(`Update cannot be done on custom BOSH`);
-          }
-          return this
-            .getDeploymentManifest(deploymentName)
-            .then(manifest => {
-              _.assign(actionContext.params, {
-                'previous_manifest': manifest
-              });
-              _.assign(opts, {
-                previous_manifest: manifest
-              }, opts.context);
-              return;
-            })
-            .then(() => {
-              let preUpdateContext = _.cloneDeep(actionContext);
-              return this.executePreUpdate(deploymentName, preUpdateContext);
-            })
-            .tap(response => {
-              logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
-              preUpdateAgentResponse = response;
-            });
-        case CONST.OPERATION_TYPE.CREATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
-          if (_.get(params, 'parameters.bosh_director_name')) {
-            return cf
-              .uaa
-              .getScope(username, password)
-              .then(scopes => {
-                const isAdmin = _.includes(scopes, 'cloud_controller.admin');
-                if (!isAdmin) {
-                  throw new errors.Forbidden('Token has insufficient scope');
-                }
-              });
-          }
-          return;
-        }
-      })
-      .then(() => this.executeActions(serviceLifeCycle, actionContext))
-      .then((preDeployResponse) => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
-      .tap(manifest => logger.info('+-> Deployment manifest:\n', manifest))
-      .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
-      .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
-      .catch(err => {
-        logger.error(`+-> Failed to ${action} deployment`, err);
         throw err;
       });
   }

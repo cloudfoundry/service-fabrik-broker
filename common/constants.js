@@ -371,16 +371,6 @@ module.exports = Object.freeze({
   ADD_ON_JOBS: {
     IP_TABLES_MANAGER: 'iptables-manager'
   },
-  ETCD: {
-    SORT_BY_CREATE: 'Create',
-    TARGET_NONE: 'None',
-    JSON: 'json',
-    NUMBER: 'number',
-    STRING: 'string',
-    LOCK_TTL: 5,
-    LOCK_KEY_SUFFIX: '/lock',
-    LOCK_DETAILS_SUFFIX: '/lock/details'
-  },
   API_SERVER: {
     WATCH_EVENT: {
       ADDED: 'ADDED',
