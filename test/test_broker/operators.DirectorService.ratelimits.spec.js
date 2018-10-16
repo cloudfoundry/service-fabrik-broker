@@ -62,7 +62,7 @@ describe('manager', () => {
       DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
-      directorService = new DirectorServiceSub(guid, plan);
+      directorService = new DirectorServiceSub(plan, guid);
       directorService.createOrUpdateDeployment = codSpy;
       directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
@@ -221,7 +221,7 @@ describe('manager', () => {
       DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
-      directorService = new DirectorServiceSub(guid, plan);
+      directorService = new DirectorServiceSub(plan, guid);
       directorService.createOrUpdateDeployment = codSpy;
       //directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
@@ -300,7 +300,7 @@ describe('manager', () => {
     let directorService;
 
     before(function () {
-      directorService = new DirectorService(guid, catalog.getPlan(plan_id));
+      directorService = new DirectorService(catalog.getPlan(plan_id), guid);
     });
     afterEach(function () {
       mocks.reset();
@@ -325,14 +325,14 @@ describe('manager', () => {
         deployment_name: 'my-deployment'
       };
       it('should return empty response if no actions are defined', function () {
-        const service = new DirectorService(guid, catalog.getPlan(rabbit_plan_id));
+        const service = new DirectorService(catalog.getPlan(rabbit_plan_id), guid);
         return service.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
           .then(actionResponse => {
             expect(actionResponse).to.eql({});
           });
       });
       it('should return empty response if actions are not provided', function () {
-        const dService = new DirectorService(guid, catalog.getPlan(small_plan_id));
+        const dService = new DirectorService(catalog.getPlan(small_plan_id), guid);
         let temp_actions = dService.service.actions;
         dService.service.actions = '';
         return dService.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
@@ -360,7 +360,7 @@ describe('manager', () => {
     describe('#configureAddOns', function () {
       it('should update manifest with addons', function () {
         const plan = _.cloneDeep(catalog.getPlan(plan_id));
-        const directorService = new DirectorService(guid, plan);
+        const directorService = new DirectorService(plan, guid);
         const updatedTemplate = directorService.template + '\n' +
           'addons: \n' +
           '  - name: service-addon \n' +
@@ -374,7 +374,7 @@ describe('manager', () => {
         expect(manifest.releases.length).to.equal(2);
       });
       it('should not update manifest with addons with parameter skip_addons set to true', function () {
-        const directorService = new DirectorService(guid, _.cloneDeep(catalog.getPlan(plan_id)));
+        const directorService = new DirectorService(_.cloneDeep(catalog.getPlan(plan_id)), guid);
         expect(directorService.plan.id).to.eql(plan_id);
         const manifest = yaml.safeLoad(directorService.generateManifest(`service-fabrik-90-${used_guid}`, {
           skip_addons: true
@@ -428,7 +428,7 @@ describe('manager', () => {
         '../../common/config': configStub,
         '../../data-access-layer/bosh': boshStub
       });
-      service = new DirectorServiceSub(guid, plan);
+      service = new DirectorServiceSub(plan, guid);
       service.director = {
         'getDirectorForOperation': directorOpSpy,
         'getCurrentTasks': currentTasksSpy,
