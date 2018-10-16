@@ -402,5 +402,11 @@ module.exports = Object.freeze({
   },
   NETWORK_MANAGER: {
     NETWORK_ID: 'SF'
+  },
+  WORKFLOW: {
+    TYPE: {
+      BLUEPRINT_WORKFLOW: 'blueprint_workflow',
+      UPGRADE_MULTI_AZ: 'upgrade_to_multi_az'
+    }
   }
 });

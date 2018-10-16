@@ -44,6 +44,9 @@ class TaskManager extends BaseManager {
         .then(taskResponse => {
           taskDetails.resource = taskResponse.resource;
           taskDetails.response = taskResponse.response;
+          const status = {
+            state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+          description: `${taskDetails.task_description} is in progress.`};
           return apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
@@ -51,7 +54,8 @@ class TaskManager extends BaseManager {
             options: taskDetails,
             status: {
               response: taskDetails.response,
-              state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+              lastOperation : status,
+              state: status.state
             }
           });
         })
@@ -84,6 +88,7 @@ class TaskManager extends BaseManager {
         if (utils.isServiceFabrikOperationFinished(state)) {
           logger.info(`TASK COMPLETE - on resource - ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)}  - ${JSON.stringify(taskDetails.resource)}`);
           const status = {
+            description: operationStatus.description,
             response: operationStatus,
             state: CONST.APISERVER.TASK_STATE.DONE
           };
@@ -94,6 +99,7 @@ class TaskManager extends BaseManager {
             .tap(() => logger.info('Released processing lock!!!'))
             .return(true);
         } else {
+          logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
           this.continueToHoldLock(object);
         }
         return false;

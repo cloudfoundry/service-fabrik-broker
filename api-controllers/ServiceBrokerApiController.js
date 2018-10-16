@@ -17,6 +17,7 @@ const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const config = require('../common/config');
 const formatUrl = require('url').format;
+const workflowMapper = require('../workflow/WorkFlowMapper');
 
 
 class ServiceBrokerApiController extends FabrikBaseController {
@@ -152,7 +153,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(() => {
-        workflow = this.getWorkFlow(params);
+        workflow = workflowMapper.getWorkFlow(params);
         if (workflow !== undefined) {
           lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW;
           lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW;
@@ -210,14 +211,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(done);
-  }
-
-  getWorkFlow(params) {
-    logger.info(`Checking for multi-az-migrate in params ${JSON.stringify(params)}`);
-    if (_.get(params, 'parameters.multi_az') !== undefined) {
-      return 'blueprint_workflow';
-    }
-    return undefined;
   }
 
   deleteInstance(req, res) {
@@ -295,6 +288,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
+      if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+        body.state = CONST.OPERATION.IN_PROGRESS;
+        body.description = body.description || `new udpate @${new Date()}`;
+      }
+      logger.debug('returning ..', body);
       res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
     }
 

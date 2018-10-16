@@ -11,7 +11,8 @@ class Task {
     throw new errors.NotImplementedBySubclass('run');
   }
 
-  static getStatus(taskDetails) {
+  static getStatus(taskId, taskDetails) {
+    logger.debug(`Fetching status for ${JSON.stringify(taskDetails)}`);
     return apiServerClient.getLastOperation({
       resourceGroup: taskDetails.resource.resourceGroup,
       resourceType: taskDetails.resource.resourceType,

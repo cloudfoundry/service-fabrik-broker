@@ -9,7 +9,7 @@ class TaskFabrik {
     switch (taskType) {
     case CONST.APISERVER.TASK_TYPE.SERVICE_INSTANCE_UPDATE:
       if (ServiceInstanceUpdate === undefined) {
-        ServiceInstanceUpdate = require('./ScheduleBackupJob');
+        ServiceInstanceUpdate = require('./ServiceInstanceUpdateTask');
       }
       return ServiceInstanceUpdate;
     case CONST.APISERVER.TASK_TYPE.BLUEPRINT:

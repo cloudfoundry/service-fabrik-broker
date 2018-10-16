@@ -1,7 +1,7 @@
 ---
 defaults:
 blueprint_workflow:
-  description: 'Blueprint Workflow '
+  description: 'Blueprint Workflow'
   tasks:
   - task_type: BlueprintTask
     task_description: 'Void blueprint task'
@@ -12,15 +12,13 @@ blueprint_workflow:
     task_data: 
       sample: 'InputDataFrom Task2 ----'
 upgrade_to_multi_az:
-  description: 'Distribute deployment in multiple-availability zones'
+  description: 'Distributed deployment in multiple-availability zones'
   tasks: 
   - task_type: ServiceInstanceUpdateTask
-    task_description: 'Deployment update for multi-az. Phase: scale up'
+    task_description: 'Deployment update for multi-az, phase: scale up'
     task_data: 
-      order: 1
       vms_scale: upgrade
   - task_type: ServiceInstanceUpdateTask
-    task_description: 'Deployment update for multi-az. Phase: scale down'
+    task_description: 'Deployment updated for multi-az, phase: scale down'
     task_data:
-      order: 2
       vms_scale: downgrade

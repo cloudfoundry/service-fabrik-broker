@@ -13,7 +13,7 @@ const utils = require('../common/utils');
 const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
 const BaseManager = require('../managers/BaseManager');
 const TaskFabrik = require('./task/TaskFabrik');
-
+const FAILED = true;
 class SerialWorkFlowManager extends BaseManager {
 
   init() {
@@ -46,7 +46,7 @@ class SerialWorkFlowManager extends BaseManager {
       const workFlowOptions = JSON.parse(resource.spec.options);
       if (this.WORKFLOW_DEFINITION[workFlowOptions.workflow_name] === undefined) {
         return this
-          .workflowComplete(workFlowOptions, `Invalid workflow ${workFlowOptions.workflow_name}. No workflow definition found!`, false)
+          .workflowComplete(workFlowOptions, `Invalid workflow ${workFlowOptions.workflow_name}. No workflow definition found!`, FAILED)
           .throw(new errors.BadRequest(`Invalid workflow ${workFlowOptions.workflow_name}. No workflow definition found!`));
       }
       const workflow = this.WORKFLOW_DEFINITION[workFlowOptions.workflow_name];
@@ -75,7 +75,7 @@ class SerialWorkFlowManager extends BaseManager {
         .then(() => this.updateWorkflowStatus(
           workFlowOptions, {
             state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-            description: `${tasks[0].task_description} created @ ${new Date()}`
+            description: `${tasks[0].task_description} in progress @ ${new Date()}`
           }))
         .tap((resource) => logger.info('Successfully updated workflow ::', resource.body.status));
     });
@@ -104,16 +104,23 @@ class SerialWorkFlowManager extends BaseManager {
         response: previousTaskResponse
       };
       const relayedStatus = {
-        state: CONST.APISERVER.TASK_STATE.RELAYED,
+        state: previousTaskResponse.state,
         response: previousTaskResponse,
         message: `Last Task complete.`
       };
+      if (previousTaskResponse.state !== CONST.OPERATION.SUCCEEDED) {
+        logger.info(`Task ${resourceDetails.resourceId} has failed. workflow will be marked as failed.`);
+        relayedStatus.message = `Task - ${taskDetails.task_description} failed and workflow is also marked as failed.`;
+        return task
+          .updateStatus(resourceDetails, relayedStatus)
+          .then(() => this.workflowComplete(taskDetails, `${taskDetails.task_description} failed - ${previousTaskResponse.description}`, FAILED));
+      }
       logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in workflow ${workflow.tasks.length}`);
       if (workflow.tasks.length === taskDetails.task_order) {
         logger.info('Workflow complete. Updating the status of last task as complete and marking workflow as done.');
         return task
           .updateStatus(resourceDetails, relayedStatus)
-          .then(() => this.workflowComplete(taskDetails, ''));
+          .then(() => this.workflowComplete(taskDetails));
       } else {
         const labels = {
           workflowId: taskDetails.workflowId
@@ -164,7 +171,7 @@ class SerialWorkFlowManager extends BaseManager {
   workflowComplete(taskDetails, message, failed) {
     const status = {
       state: failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED,
-      description: `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}. ${message}`
+      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}.`
     };
     return this.updateWorkflowStatus(taskDetails, status);
   }
