@@ -46,7 +46,8 @@ class TaskManager extends BaseManager {
           taskDetails.response = taskResponse.response;
           const status = {
             state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-          description: `${taskDetails.task_description} is in progress.`};
+            description: `${taskDetails.task_description} is in progress.`
+          };
           return apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
@@ -54,7 +55,7 @@ class TaskManager extends BaseManager {
             options: taskDetails,
             status: {
               response: taskDetails.response,
-              lastOperation : status,
+              lastOperation: status,
               state: status.state
             }
           });
@@ -100,7 +101,9 @@ class TaskManager extends BaseManager {
             .return(true);
         } else {
           logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
-          this.continueToHoldLock(object);
+          return this
+            .continueToHoldLock(object)
+            .tap(() => logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name}`));
         }
         return false;
       });

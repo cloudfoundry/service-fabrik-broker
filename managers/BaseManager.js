@@ -65,7 +65,8 @@ class BaseManager {
         metadata: metadata
       })
       .tap((resource) => logger.debug(`Successfully acquired processing lock for request with options: ${metadata.name}\n\
-        Updated resource with annotations is:`, resource));
+        Updated resource with annotations is:`, resource))
+      .then(resource => resource.body);
   }
 
   /**
@@ -150,7 +151,7 @@ class BaseManager {
   handleResource(changeObject, handler, resourceGroup, resourceType, queryString) {
     logger.debug(`Handling Resource:-, ${changeObject.object.metadata.name}, ${resourceGroup}, ${resourceType}, ${queryString}`);
     logger.debug('Changed resource:', changeObject);
-    const changeObjectBody = changeObject.object;
+    let changeObjectBody = changeObject.object;
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.silly('Changed resource options(parsed):', changedOptions);
     const processingLockStatus = {
@@ -159,6 +160,7 @@ class BaseManager {
     let releaseProcessingLock = true;
     return this
       ._preProcessRequest(changeObjectBody, processingLockStatus, resourceGroup, resourceType, queryString)
+      .tap(updatedResource => changeObjectBody = updatedResource)
       .then(() => {
         if (!processingLockStatus.conflict) {
           if (handler) {
@@ -184,7 +186,6 @@ class BaseManager {
         }
       });
   }
-
 }
 
 module.exports = BaseManager;
