@@ -12,9 +12,9 @@ class BasePlatformManager {
     const platform = this.platform;
     _.remove(modifiedCatalog.services, function (service) {
       _.remove(service.plans, function (plan) {
-        return !_.includes(_.get(plan, 'metadata.supportedPlatforms', ['cf']), platform);
+        return !_.includes(_.get(plan, 'supported_platform', ['cf']), platform);
       });
-      return !_.includes(_.get(service, 'metadata.supportedPlatforms', ['cf']), platform);
+      return !_.includes(_.get(service, 'supported_platform', ['cf']), platform);
     });
     return modifiedCatalog;
   }
