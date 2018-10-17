@@ -166,10 +166,12 @@ class FabrikBaseController extends BaseController {
             space_guid: req.body.space_guid
           });
         }
-        _.extend(req.body.context, {
-          platform: CONST.PLATFORM.SM,
-          origin: context.platform
-        });
+        if (context) {
+          _.extend(req.body.context, {
+            platform: CONST.PLATFORM.SM,
+            origin: context.platform
+          });
+        }
       })
       .throw(new ContinueWithNext());
   }
