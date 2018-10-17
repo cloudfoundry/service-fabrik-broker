@@ -99,6 +99,7 @@ describe('eventmesh', () => {
         const resourceDetails = apiserver.parseResourceDetailsFromSelfLink(selfLink);
         expect(resourceDetails).to.deep.eql({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceId: 'sample_director',
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
         });
       });

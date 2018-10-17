@@ -282,7 +282,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getLastInstanceOperation(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
-    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
+    const operation = encodedOp === undefined ? {} : utils.decodeBase64(encodedOp);
     const guid = req.params.instance_id;
     let action, instanceType;
 
