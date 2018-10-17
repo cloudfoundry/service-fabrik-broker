@@ -775,8 +775,8 @@ class DirectorService extends BaseDirectorService {
           throw err;
         })
       )
-      .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
-      .tap(() => {
+      .tap(credentials => {
+        _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
         utils.maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
@@ -819,8 +819,7 @@ class DirectorService extends BaseDirectorService {
           throw err;
         })
       )
-      .then(() => this.deleteBindingProperty(deploymentName, id))
-      .tap(() => logger.info('+-> Deleted service binding'))
+      .tap(() => logger.info('+-> Deleted service credentials'))
       .catch(err => {
         logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
         logger.error(err);
@@ -836,7 +835,8 @@ class DirectorService extends BaseDirectorService {
         }
         logger.info(`[getCredentials] Fetching property from bosh for binding ${id}`);
         return this.getBindingProperty(deploymentName, id)
-          .then(binding => binding.credentials);
+          .then(binding => binding.credentials)
+          .tap(() => this.deleteBindingProperty(deploymentName, id));
       });
   }
 
@@ -849,7 +849,7 @@ class DirectorService extends BaseDirectorService {
       })
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
-        if (response) {
+        if (!_.isEmpty(response)) {
           return utils.decodeBase64(response);
         }
       })
