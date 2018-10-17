@@ -39,7 +39,6 @@ module.exports = Object.freeze({
   },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
-  RESTORE_RESOURCE_POLLER_INTERVAL: 3000,
   RESTORE_OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -53,8 +52,7 @@ module.exports = Object.freeze({
     PROCESSING: 'processing'
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
-  DIRECTOR_RESOURCE_POLLER_RELAXATION_TIME: 5000, // in ms
-  BACKUP_RESOURCE_POLLER_RELAXATION_TIME: 5000, //in ms
+  POLLER_RELAXATION_TIME: 5000, // in ms
   PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes
   OPERATION: {
     SUCCEEDED: 'succeeded',
@@ -80,7 +78,8 @@ module.exports = Object.freeze({
   URL: {
     backup: '/api/v1/service_instances/:instance_id/backup',
     restore: '/api/v1/service_instances/:instance_id/restore',
-    backup_by_guid: '/api/v1/backups/:backup_guid'
+    backup_by_guid: '/api/v1/backups/:backup_guid',
+    instance: '/:platform(cf|k8s)/v2/service_instances/:instance_id'
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',

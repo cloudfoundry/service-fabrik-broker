@@ -17,6 +17,7 @@ const BadRequest = errors.BadRequest;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
+const eventmesh = require('../eventmesh');
 
 class BoshDirectorClient extends HttpClient {
   constructor() {
@@ -542,16 +543,76 @@ class BoshDirectorClient extends HttpClient {
       if (this.deploymentIpsCache[deploymentName] !== undefined) {
         return this.deploymentIpsCache[deploymentName];
       } else {
-        return this
-          .getDeploymentInstances(deploymentName)
-          .reduce((ipList, instance) => ipList.concat(instance.ips), [])
-          .tap(response => {
-            logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
-            this.deploymentIpsCache[deploymentName] = response;
+        return this.getDeploymentIpsFromResource(deploymentName)
+          .then(ips => {
+            if (!_.isEmpty(ips)) {
+              logger.info(`[getDeploymentIps] Cached Ips for deployment - ${deploymentName} - `, ips);
+              this.deploymentIpsCache[deploymentName] = ips;
+              return ips;
+            } else {
+              return this.getDeploymentIpsFromDirector(deploymentName)
+                .then(ips => {
+                  logger.info(`[getDeploymentIps] Caching IPs on ApiServer and locally`);
+                  this.deploymentIpsCache[deploymentName] = ips;
+                  return this.putDeploymentIpsInResource(deploymentName, ips)
+                    .then(() => ips);
+                });
+            }
           });
       }
     });
+  }
 
+  getDeploymentIpsFromResource(deploymentName) {
+    logger.info(`[getDeploymentIps] making request to ApiServer for deployment - ${deploymentName}`);
+    let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
+    if (deploymentName === resourceId) {
+      //don't contact to ApiServer if it is out-of-band deployment
+      return Promise.resolve();
+    }
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: resourceId
+      })
+      .then(resource => JSON.parse(_.get(resource, 'metadata.annotations.deploymentIps', '{}')))
+      .catch(err => {
+        logger.error(`[getDeploymentIps] Error occurred while getting deployment Ips for ${deploymentName} from ApiServer`, err);
+        return;
+      });
+  }
+
+  putDeploymentIpsInResource(deploymentName, ips) {
+    let resourceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
+    if (deploymentName === resourceId) {
+      //don't contact to ApiServer if it is out-of-band deployment
+      return Promise.resolve();
+    }
+    return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: resourceId,
+        metadata: {
+          annotations: {
+            deploymentIps: JSON.stringify(ips)
+          }
+        }
+      })
+      .catch(err => {
+        logger.error(`[getDeploymentIps] Error occured while updating resource for ${deploymentName} on ApiServer`, err);
+        return;
+      });
+  }
+
+  getDeploymentIpsFromDirector(deploymentName) {
+    logger.info(`[getDeploymentIps] making request to director for deployment - ${deploymentName}`);
+    return this
+      .getDeploymentInstances(deploymentName)
+      .reduce((ipList, instance) => ipList.concat(instance.ips), [])
+      .tap(response => {
+        logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
+        this.deploymentIpsCache[deploymentName] = response;
+      });
   }
 
   getAgentPropertiesFromManifest(deploymentName) {

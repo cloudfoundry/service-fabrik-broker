@@ -19,7 +19,7 @@ const CONST = require('../common/constants');
 const maintenanceManager = require('../maintenance').maintenanceManager;
 const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 const eventmesh = require('../data-access-layer/eventmesh');
-const DirectorService = require('../managers/bosh-manager/DirectorService');
+const DirectorService = require('../operators/bosh-operator/DirectorService');
 const Conflict = errors.Conflict;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
@@ -34,7 +34,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const allowForbiddenManifestChanges = (req.body.forbidden_changes === undefined) ? true :
       JSON.parse(req.body.forbidden_changes);
     const deploymentName = req.params.name;
-    const instanceId = this.parseServiceInstanceIdFromDeployment(deploymentName);
+    const instanceId = utils.parseServiceInstanceIdFromDeployment(deploymentName);
     const runImmediately = (req.body.run_immediately === 'true' ? true : false);
     let resourceDetails;
     let plan;
@@ -138,14 +138,6 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .status(202)
         .send(body)
       );
-  }
-
-  parseServiceInstanceIdFromDeployment(deploymentName) {
-    const deploymentNameArray = utils.deploymentNameRegExp().exec(deploymentName);
-    if (deploymentNameArray !== undefined && deploymentNameArray.length === 4) {
-      return deploymentNameArray[3];
-    }
-    return deploymentName;
   }
 
   getOutdatedDiff(instanceDetails, tenantInfo, plan) {
@@ -463,8 +455,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         });
       })
       .catch(err => {
-        logger.error('Error occurred while fetching list of Backup List file info');
-        logger.error(err);
+        logger.error('Error occurred while fetching list of Backup List file info', err);
         throw err;
       })
       .catchThrow(RangeError, new BadRequest('Parameter \'before\' is not a valid Date'));

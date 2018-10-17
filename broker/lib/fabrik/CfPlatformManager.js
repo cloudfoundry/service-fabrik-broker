@@ -56,11 +56,7 @@ class CfPlatformManager extends BasePlatformManager {
       .retry(tries => {
         logger.info(`+-> ${ordinals[tries]} attempt to create security group '${name}'...`);
         return this.cloudController
-          .createSecurityGroup(name, rules, [options.context.space_guid])
-          .catch(err => {
-            logger.error(err);
-            throw err;
-          });
+          .createSecurityGroup(name, rules, [options.context.space_guid]);
       }, {
         maxAttempts: 4,
         minDelay: 1000
@@ -68,8 +64,7 @@ class CfPlatformManager extends BasePlatformManager {
       .then(securityGroup => securityGroup.metadata.guid)
       .tap(guid => logger.info(`+-> Created security group with guid '${guid}'`))
       .catch(err => {
-        logger.error(`+-> Failed to create security group ${name}`);
-        logger.error(err);
+        logger.error(`+-> Failed to create security group ${name}`, err);
         throw new SecurityGroupNotCreated(name);
       });
   }
@@ -101,8 +96,7 @@ class CfPlatformManager extends BasePlatformManager {
         logger.warn('+-> Could not find security group');
         logger.warn(err);
       }).catch(err => {
-        logger.error('+-> Failed to delete security group');
-        logger.error(err);
+        logger.error('+-> Failed to delete security group', err);
         throw err;
       });
   }

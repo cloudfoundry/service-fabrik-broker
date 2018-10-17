@@ -27,7 +27,8 @@ const JobSchema = new Mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
+    index: true
   },
   updatedAt: {
     type: Date,

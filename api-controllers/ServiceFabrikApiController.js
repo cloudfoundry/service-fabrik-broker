@@ -10,8 +10,8 @@ const filename = backupStore.filename;
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const errors = require('../common/errors');
-const BackupService = require('../managers/backup-manager');
-const RestoreService = require('../managers/restore-manager');
+const BackupService = require('../operators/backup-operator');
+const RestoreService = require('../operators/restore-operator');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
@@ -384,8 +384,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip', 'description'))
       )
-      .catch(NotFound, (err) => {
-        logger.error('Error occured during getLastBackup ', err);
+      .catch(NotFound, () => {
+        logger.error(`No backup found for service instance '${req.params.instance_id}'`);
         throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
       });
   }
@@ -557,7 +557,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         });
       })
       .catch(err => {
-        logger.error('Handling error while starting restore:', err);
         if (err instanceof DeploymentAlreadyLocked) {
           throw err;
         }
@@ -565,6 +564,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return lockManager.unlock(req.params.instance_id)
             .throw(err);
         }
+        logger.error('Error occurred while starting restore:', err);
         throw err;
       });
   }
@@ -601,8 +601,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .send(result)
       )
       // .catchThrow(NotFound, new NotFound(`No restore found for service instance '${instanceId}'`));
-      .catch(e => {
-        logger.error('Caught error while getting last restore', e); // TODO fix this
+      .catch(err => {
+        logger.error('Caught error while getting last restore', err); // TODO fix this
         throw new NotFound(`No restore found for service instance '${instanceId}'`);
       });
   }

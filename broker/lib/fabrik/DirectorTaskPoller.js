@@ -29,11 +29,11 @@ class DirectorTaskPoller extends LockStatusPoller {
             return DirectorManager.load(catalogPlan)
               .then(manager => manager.createOrUpdateDeployment(deploymentName, cached.params, cached.args));
           })
-          .catch(e => {
-            logger.error(`Error in scheduled deployment operation for ${deploymentName}`, e);
+          .catch(err => {
+            logger.error(`Error in scheduled deployment operation for ${deploymentName}`, err);
           });
       })
-      .catch(e => logger.error('error in processing deployments', e));
+      .catch(err => logger.error('error in processing deployments', err));
   }
 }
 

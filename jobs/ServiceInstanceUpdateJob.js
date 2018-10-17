@@ -11,7 +11,7 @@ const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 const catalog = require('../common/models/catalog');
 const CONST = require('../common/constants');
 const ScheduleManager = require('./ScheduleManager');
-const DirectorService = require('../managers/bosh-manager/DirectorService');
+const DirectorService = require('../operators/bosh-operator/DirectorService');
 const eventmesh = require('../data-access-layer/eventmesh');
 const Repository = require('../common/db').Repository;
 //NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
@@ -224,9 +224,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
       start_after_hr: afterHr,
       start_before_hr: beforeHr,
       start_after_min: afterMin,
-      start_before_min: beforeMin
+      start_before_min: beforeMin,
+      dayInterval: runOnceEvery
     };
-    return utils.getRandomCronForOnceEveryXDays(runOnceEvery, opts);
+    return utils.getRandomCronForOnceEveryXDaysWeekly(opts);
   }
 
   static getLastRunStatus(name) {

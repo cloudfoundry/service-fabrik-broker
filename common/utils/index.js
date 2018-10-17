@@ -39,6 +39,7 @@ exports.deploymentNamesRegExp = deploymentNamesRegExp;
 exports.deploymentNameRegExp = deploymentNameRegExp;
 exports.getRandomInt = getRandomInt;
 exports.getRandomCronForOnceEveryXDays = getRandomCronForOnceEveryXDays;
+exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWeekly;
 exports.getRandomCronForEveryDayAtXHoursInterval = getRandomCronForEveryDayAtXHoursInterval;
 exports.getCronWithIntervalAndAfterXminute = getCronWithIntervalAndAfterXminute;
 exports.isDBConfigured = isDBConfigured;
@@ -53,6 +54,7 @@ exports.initializeEventListener = initializeEventListener;
 exports.buildErrorJson = buildErrorJson;
 exports.deploymentLocked = deploymentLocked;
 exports.deploymentStaggered = deploymentStaggered;
+exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeployment;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -322,6 +324,14 @@ function taskIdRegExp() {
   return new RegExp(`^([0-9a-z-]+)_([0-9]+)$`);
 }
 
+function parseServiceInstanceIdFromDeployment(deploymentName) {
+  const deploymentNameArray = deploymentNameRegExp().exec(deploymentName);
+  if (Array.isArray(deploymentNameArray) && deploymentNameArray.length === 4) {
+    return deploymentNameArray[3];
+  }
+  return deploymentName;
+}
+
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -341,6 +351,52 @@ function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
     hoursApplicable = `${hoursApplicable},${nthHour}`;
   }
   return `${min} ${hoursApplicable} * * *`;
+}
+
+/**
+ * Create a weekly cron
+ * @param {Object} options                          - Various options for weekly cron
+ * @param {string} [options.start_after_weekday=0]  - bound of the weekday to start the cron (inclusive)
+ * @param {string} [options.start_before_weekday=7] - bound of the weekday to end the cron (excluded)
+ * @param {string} [options.start_after_hr=0]       - bound of the hour to start the cron
+ * @param {string} [options.start_before_hr=23]     - bound of the hour to end the cron
+ * @param {string} [options.start_after_min=0]      - bound of the minute to start the cron
+ * @param {string} [options.start_before_min=59]    - bound of the minute to end the cron
+ */
+function getRandomCronForOnceEveryXDaysWeekly(options) {
+  const dayInterval = _.get(options, 'day_interval', 0);
+  // Get random hour
+  const startAfterHour = _.get(options, 'start_after_hr', 0);
+  const startBeforeHour = _.get(options, 'start_before_hr', 23);
+  const hr = exports.getRandomInt(startAfterHour, startBeforeHour);
+  // Get random minute
+  const startAfterMin = _.get(options, 'start_after_min', 0);
+  const startBeforeMin = _.get(options, 'start_before_min', 59);
+  const min = exports.getRandomInt(startAfterMin, startBeforeMin);
+  // Get Weekday bounds
+  const startAfterWeekday = _.get(options, 'start_after_weekday', 0);
+  const startBeforeWeekday = _.get(options, 'start_before_weekday', 7);
+  const day = exports.getRandomInt(startAfterWeekday, startBeforeWeekday);
+  // Validate the bounds
+  assert.ok((startAfterWeekday >= 0 && startAfterWeekday <= 6), 'Start day should be between 0-6');
+  assert.ok((startAfterWeekday < startBeforeWeekday), 'start_before_weekday should be greater than start_after_weekday');
+  // Get weekday cron based on interval
+  let weeklyCron;
+  // Default behavior will have dayInterval as 0
+  // hence will produce a cron with only one day included
+  // 34 11 * * 3
+  // which is "At 11:34 on Wednesday."
+  // for running multiple times in a week provide a interval between 0 and 4
+  // For and interval of 2 and start day of 3, cron:
+  // 34 11 * * 3,5
+  // the above cron runs at “At 11:34 on Wednesday and Friday.”
+  if (dayInterval === 0 || dayInterval >= 4) {
+    weeklyCron = `${min} ${hr} * * ${day}`;
+  } else {
+    const weekdays = _.toString(_.range(startAfterWeekday, startBeforeWeekday, dayInterval));
+    weeklyCron = `${min} ${hr} * * ${weekdays}`;
+  }
+  return weeklyCron;
 }
 
 function getRandomCronForOnceEveryXDays(days, options) {

@@ -48,6 +48,13 @@ describe('service-fabrik-api-sf2.0', function () {
       const container = backupStore.containerName;
       const repeatInterval = '*/1 * * * *';
       const repeatTimezone = 'America/New_York';
+      const dummyDeploymentResource = {
+        metadata: {
+          annotations: {
+            labels: 'dummy'
+          }
+        }
+      };
 
       const getJob = (name, type) => {
         return Promise.resolve({
@@ -120,6 +127,8 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getState(operational, details);
