@@ -95,7 +95,6 @@ describe('operators', function () {
         const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
         createOrUpdateDeploymentStub.withArgs('deployment_name', _.get(resourceBody, 'spec.options')).onCall(0).returns(Promise.resolve({
           task_id: 'task_id',
-          cached: false
         }));
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, () => {
           return true;
@@ -129,7 +128,7 @@ describe('operators', function () {
         });
         const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
         createOrUpdateDeploymentStub.withArgs('deployment_name', _.get(resourceBody, 'spec.options')).onCall(0).returns(Promise.resolve({
-          cached: true
+          task_id: undefined
         }));
         return boshStaggeredDeploymentPoller.getStatus(resourceBody, 'interval_id')
           .then(() => {

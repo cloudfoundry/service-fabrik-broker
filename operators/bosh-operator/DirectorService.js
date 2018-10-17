@@ -226,7 +226,6 @@ class DirectorService extends BaseDirectorService {
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
         .set('task_id', _.get(op, 'task_id'))
-        .set('cached', _.get(op, 'cached'))
         .set('deployment_name', this.deploymentName)
         .value()
       );
@@ -246,7 +245,6 @@ class DirectorService extends BaseDirectorService {
             .chain(operation)
             .assign(_.pick(params, 'parameters', 'context'))
             .set('task_id', _.get(op, 'task_id'))
-            .set('cached', _.get(op, 'cached'))
             .set('deployment_name', this.deploymentName)
             .value()
           );
@@ -359,7 +357,6 @@ class DirectorService extends BaseDirectorService {
       return this._createOrUpdateDeployment(deploymentName, params, args, scheduled)
         .then(taskId => {
           return {
-            cached: false,
             task_id: taskId
           };
         });
@@ -371,7 +368,7 @@ class DirectorService extends BaseDirectorService {
           throw new errors.DeploymentAttemptRejected(deploymentName);
         }
         if (!res.shouldRunNow) {
-          // stagger here by putting it into waiting return promise
+          // deployment stagger
           throw new DeploymentDelayed(deploymentName);
         } else {
           //process the deployment
@@ -380,14 +377,13 @@ class DirectorService extends BaseDirectorService {
       })
       .then(taskId => {
         return {
-          cached: false,
           task_id: taskId
         };
       })
       .catch(DeploymentDelayed, e => {
         logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
         return {
-          cached: true
+          task_id: undefined
         };
       })
       .catch(err => {

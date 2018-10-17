@@ -15,7 +15,8 @@ const expectedGetDeploymentResponse = {
       label1: 'label1',
       label2: 'label2',
       last_backup_defaultbackups: 'backup1'
-    }
+    },
+    creationTimestamp: '2018-09-26T20:45:28Z'
   },
   spec: {
     options: JSON.stringify({
@@ -39,7 +40,8 @@ const sampleDeploymentResource = {
       label1: 'label1',
       label2: 'label2',
       last_backup_defaultbackups: 'backup1'
-    }
+    },
+    creationTimestamp: '2018-09-26T20:45:28Z'
   },
   spec: {
     options: {

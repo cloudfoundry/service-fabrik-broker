@@ -208,7 +208,7 @@ class DBManager {
       params.skip_addons = true;
       return this.directorService.createOrUpdateDeployment(config.mongodb.deployment_name, params)
         .tap(out => {
-          const taskId = out.task_id;
+          const taskId = _.get(out, 'task_id');
           logger.info(`MongoDB ${operation} request is complete. Check status for task id - ${taskId}`);
           this.director
             .pollTaskStatusTillComplete(taskId)

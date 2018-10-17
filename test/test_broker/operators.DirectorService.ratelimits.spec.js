@@ -30,6 +30,32 @@ const internal_params = {
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
 
+const expectedGetDeploymentResponse = {
+  metadata: {
+    name: used_guid2,
+    labels: {
+      label1: 'label1',
+      label2: 'label2',
+      last_backup_defaultbackups: 'backup1'
+    },
+    creationTimestamp: '2018-09-26T20:45:28Z'
+  },
+  spec: {
+    options: JSON.stringify({
+      opt1: 'opt1',
+      opt2: 'opt2'
+    }),
+    instanceId: used_guid2
+  },
+  status: {
+    state: 'create',
+    response: JSON.stringify({
+      resp: 'resp',
+      deployment_name: `service-fabrik-90-${used_guid2}`
+    })
+  }
+};
+
 describe('manager', () => {
   describe('DirectorService - with ratelimits', function () {
     let configStub = {
@@ -40,7 +66,7 @@ describe('manager', () => {
     let DirectorServiceSub;
     let directorService;
     let sandbox;
-    let initializeSpy, codSpy, finalizeSpy, getTaskSpy, getOpStateSpy;
+    let initializeSpy, codSpy, finalizeSpy, getTaskSpy;
     const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
     const plan = catalog.getPlan(plan_id);
 
@@ -55,15 +81,13 @@ describe('manager', () => {
       getTaskSpy = sandbox.stub();
       codSpy = sandbox.stub();
       codSpy.returns(Promise.resolve({
-        cached: true
+        task_id: undefined
       }));
-      getOpStateSpy = sandbox.stub();
       DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
       directorService.createOrUpdateDeployment = codSpy;
-      directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
@@ -75,7 +99,6 @@ describe('manager', () => {
 
     it('should create with rate limits', () => {
       return directorService.create(params).then(out => {
-        expect(out.cached).to.eql(true);
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
@@ -83,7 +106,6 @@ describe('manager', () => {
     });
     it('should update with rate limits', () => {
       return directorService.update(params).then(out => {
-        expect(out.cached).to.eql(true);
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
@@ -97,7 +119,6 @@ describe('manager', () => {
         expectedParams.scheduled = true;
         expectedParams._runImmediately = true;
 
-        expect(out.cached).to.eql(true);
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
@@ -112,7 +133,6 @@ describe('manager', () => {
         expectedParams.scheduled = true;
         expectedParams._runImmediately = false;
 
-        expect(out.cached).to.eql(true);
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
@@ -120,22 +140,14 @@ describe('manager', () => {
       });
     });
     it('should invoke last operation: op in progress - cached', () => {
-      getOpStateSpy.returns({
-        cached: true
-      });
       return directorService.lastOperation(lastOpWithoutTaskId).then((out) => {
         expect(out.state).to.eql('in progress');
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(undefined);
         expect(out.description).to.eql(`Create deployment is still in progress`);
         expect(getTaskSpy.notCalled).to.eql(true);
       });
     });
     it('should invoke last operation: op in progress- task available', () => {
-      getOpStateSpy.returns({
-        cached: false,
-        task_id: task_id
-      });
       getTaskSpy.returns(Promise.resolve({
         deployment: `deployment-${guid}`,
         timestamp: (new Date().getTime()) / 1000,
@@ -143,17 +155,12 @@ describe('manager', () => {
       }));
       return directorService.lastOperation(lastOpWithoutTaskId).then((out) => {
         expect(out.state).to.eql('in progress');
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(undefined);
         expect(out.description).to.eql(`Create deployment is still in progress`);
       });
     });
     it('should invoke last operation: op done- task succeeded', () => {
       finalizeSpy.returns(Promise.resolve());
-      getOpStateSpy.returns({
-        cached: false,
-        task_id: task_id
-      });
       getTaskSpy.returns(Promise.resolve({
         deployment: `deployment-${guid}`,
         timestamp: (new Date().getTime()) / 1000,
@@ -163,7 +170,6 @@ describe('manager', () => {
         task_id: task_id
       })).then((out) => {
         expect(out.state).to.eql('succeeded');
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
       });
@@ -200,7 +206,6 @@ describe('manager', () => {
       });
       directorService = new DirectorServiceSub(plan, guid);
       directorService.createOrUpdateDeployment = codSpy;
-      //directorService.getCurrentOperationState = getOpStateSpy;
       directorService.getTask = getTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
@@ -213,7 +218,6 @@ describe('manager', () => {
 
     it('should create without rate limits', () => {
       return directorService.create(params).then(out => {
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
@@ -221,7 +225,6 @@ describe('manager', () => {
     });
     it('should update without rate limits', () => {
       return directorService.update(params).then(out => {
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
@@ -233,7 +236,6 @@ describe('manager', () => {
         _.set(expectedParams, 'parameters', _.assign(_.cloneDeep(params.parameters), {
           scheduled: true
         }));
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.parameters).to.eql(_.assign(_.cloneDeep(params.parameters), {
           scheduled: true
@@ -250,7 +252,6 @@ describe('manager', () => {
       }));
       return directorService.lastOperation(lastOpTaskId).then((out) => {
         expect(out.state).to.eql('in progress');
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.eql(`Create deployment deployment-${guid} is still in progress`);
       });
@@ -264,7 +265,6 @@ describe('manager', () => {
       }));
       return directorService.lastOperation(lastOpTaskId).then((out) => {
         expect(out.state).to.eql('succeeded');
-        expect(out.cached).to.eql(undefined);
         expect(out.task_id).to.eql(task_id);
         expect(out.description).to.include(`Create deployment deployment-${guid} succeeded`);
       });
@@ -369,7 +369,7 @@ describe('manager', () => {
     let service;
     let sandbox, directorOpSpy, currentTasksSpy;
     let deleteDeploymentSpy, containsDeploymentSpy, deploymentSpy;
-    let getDeploymentNamesInCacheSpy, getDirectorDeploymentsSpy, getInstanceGuidSpy;
+    let getDirectorDeploymentsSpy, getInstanceGuidSpy;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -380,7 +380,6 @@ describe('manager', () => {
       deleteDeploymentSpy = sandbox.stub();
       getDirectorDeploymentsSpy = sandbox.stub();
       getInstanceGuidSpy = sandbox.stub();
-      getDeploymentNamesInCacheSpy = sandbox.stub();
       var boshStub = {
         NetworkSegmentIndex: {
           adjust: function (num) {
@@ -406,7 +405,6 @@ describe('manager', () => {
       };
       service._createOrUpdateDeployment = deploymentSpy;
       service.getInstanceGuid = getInstanceGuidSpy;
-      service.getDeploymentNamesInCache = getDeploymentNamesInCacheSpy;
     });
 
     afterEach(function () {
@@ -415,11 +413,14 @@ describe('manager', () => {
     });
     describe('#acquireNetworkSegmentIndex', () => {
       it('should return network segment index when there are deployment names in cache', () => {
-        getDeploymentNamesInCacheSpy.returns([`service-fabrik-90-${used_guid2}`]);
+        mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
         getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
         return service.acquireNetworkSegmentIndex('guid')
           .then(index => {
             expect(index).to.eql(2);
+            mocks.verify();
           });
       });
     });
@@ -446,7 +447,6 @@ describe('manager', () => {
           }));
           return service.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
-              expect(out.cached).to.eql(false);
               expect(out.task_id).to.eql(task_id);
               expect(directorOpSpy.calledOnce).to.eql(true);
               expect(currentTasksSpy.calledOnce).to.eql(true);
@@ -469,7 +469,6 @@ describe('manager', () => {
           }));
           return service.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
-              expect(out.cached).to.eql(true);
               expect(out.task_id).to.eql(undefined);
               expect(directorOpSpy.calledOnce).to.eql(true);
               expect(currentTasksSpy.calledOnce).to.eql(true);
@@ -489,7 +488,7 @@ describe('manager', () => {
           currentTasksSpy.returns(Promise.reject(new Error('Bosh unavailable')));
           return service.createOrUpdateDeployment(deploymentName)
             .then(out => {
-              expect(out.cached).to.eql(true);
+              expect(_.get(out, 'task_id')).to.be.eql(undefined);
               expect(directorOpSpy.calledOnce).to.be.eql(true);
               expect(currentTasksSpy.calledOnce).to.eql(true);
             });
@@ -524,7 +523,6 @@ describe('manager', () => {
           }));
           return service.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
-              expect(out.cached).to.eql(false);
               expect(out.task_id).to.eql(task_id);
               expect(deleteDeploymentSpy.notCalled).to.eql(true);
               expect(deploymentSpy.calledOnce).to.eql(true);
@@ -572,7 +570,6 @@ describe('manager', () => {
           return service.createOrUpdateDeployment(deploymentName, params)
             .then(out => {
               expect(out.task_id).to.eql(task_id);
-              expect(out.cached).to.eql(false);
               expect(deploymentSpy.callCount).to.eql(1);
             });
         });

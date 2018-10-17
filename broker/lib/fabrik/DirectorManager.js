@@ -22,8 +22,6 @@ const Addons = bosh.manifest.Addons;
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const NotImplemented = errors.NotImplemented;
-const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
-const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
@@ -115,99 +113,8 @@ class DirectorManager extends BaseManager {
     return this.director.getDeploymentNames(queued);
   }
 
-  getDeploymentManifest(deploymentName) {
-    logger.info(`Fetching deployment manifest '${deploymentName}'...`);
-    return this.director
-      .getDeploymentManifest(deploymentName)
-      .tap(() => logger.info('+-> Fetched deployment manifest'))
-      .catch(err => {
-        logger.error('+-> Failed to fetch deployment manifest', err);
-        throw err;
-      });
-  }
-
   getDeploymentIps(deploymentName) {
     return this.director.getDeploymentIps(deploymentName);
-  }
-
-  executePolicy(scheduled, action, deploymentName) {
-    const runOutput = {
-      'shouldRunNow': false
-    };
-    let targetDirectorConfig;
-    return this.director.getDirectorForOperation(action, deploymentName)
-      .then(directorConfig => {
-        targetDirectorConfig = directorConfig;
-        return this.director.getCurrentTasks(action, targetDirectorConfig);
-      })
-      .then(tasksCount => {
-        let currentTasks, maxWorkers;
-        const allTasks = tasksCount.total;
-        const maxTasks = _.get(targetDirectorConfig, 'max_workers', 6);
-        if (allTasks >= maxTasks) {
-          //no slots left anyway
-          runOutput.shouldRunNow = false;
-          return runOutput;
-        }
-        if (scheduled) {
-          currentTasks = tasksCount.scheduled;
-          maxWorkers = _.get(targetDirectorConfig, 'policies.scheduled.max_workers', 3);
-        } else {
-          currentTasks = tasksCount[action];
-          maxWorkers = _.get(targetDirectorConfig, `policies.user.${action}.max_workers`, 3);
-        }
-        if (currentTasks < maxWorkers) {
-          //should run if the tasks count is lesser than the specified max workers for op type
-          runOutput.shouldRunNow = true;
-          return runOutput;
-        }
-        return runOutput;
-      }).catch(err => {
-        logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
-        //in case the director request returns an error, we queue it to avoid user experience issues
-        // return with shouldRunNow = false so that it is taken care of in processing
-        return runOutput;
-      });
-  }
-
-  _deleteEntity(action, opts) {
-    return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-        return action();
-      }, {
-        maxAttempts: opts.maxAttempts,
-        minDelay: opts.minDelay
-      })
-      .catch(err => {
-        logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
-        throw err;
-      });
-  }
-
-  executePreUpdate(deploymentName, context) {
-    _.assign(context, {
-      'instance_guid': this.getInstanceGuid(context.deployment_name)
-    });
-    const agentProperties = catalog.getPlan(context.params.previous_values.plan_id).manager.settings.agent;
-    _.chain(context.params)
-      .set('service_id', this.service.id)
-      .set('plan_id', this.plan.id)
-      .set('agent_properties', _.omit(agentProperties, 'auth', 'provider'))
-      .value();
-    return this
-      .getDeploymentIps(deploymentName)
-      .then(ips => this.agent.preUpdate(ips, context))
-      .catch(FeatureNotSupportedByAnyAgent, ServiceInstanceNotOperational, err => {
-        logger.debug('+-> Caught expected error of feature \'preUpdate\':', err);
-        return {};
-      })
-      .catch(err => {
-        if (err.status === CONST.HTTP_STATUS_CODE.NOT_FOUND) {
-          logger.debug('+-> Caught expected error of feature \'preUpdate\':', err);
-          return {};
-        }
-        throw err;
-      });
   }
 
   executeActions(phase, context) {

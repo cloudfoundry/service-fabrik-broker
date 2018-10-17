@@ -128,8 +128,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 parameters: parameters,
                 context: {
@@ -162,8 +162,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 parameters: parameters,
               });
@@ -198,8 +198,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 parameters: parameters,
                 context: {
@@ -255,8 +255,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.create(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'create',
                 parameters: {
                   bosh_director_name: 'bosh',
@@ -315,8 +315,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
               });
@@ -363,8 +363,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
                 context: context
@@ -413,8 +413,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
                 context: context
@@ -462,8 +462,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
               });
@@ -508,8 +508,8 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.update(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
-                cached: false,
+              expect(_.pick(res, ['type', 'parameters', 'context', 'task_id'])).to.eql({
+                task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
               });
@@ -557,7 +557,7 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
+              expect(_.pick(res, ['type', 'parameters', 'context'])).to.eql({
                 type: 'delete',
                 context: {
                   platform: 'cloudfoundry'
@@ -602,7 +602,7 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
+              expect(_.pick(res, ['type', 'parameters', 'context'])).to.eql({
                 type: 'delete',
                 context: {
                   platform: 'cloudfoundry'
@@ -636,7 +636,7 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.delete(options))
             .then(res => {
-              expect(_.pick(res, ['type', 'parameters', 'context', 'cached'])).to.eql({
+              expect(_.pick(res, ['type', 'parameters', 'context'])).to.eql({
                 type: 'delete',
                 context: {
                   platform: 'kubernetes'
