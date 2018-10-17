@@ -17,7 +17,7 @@ const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const config = require('../common/config');
 const formatUrl = require('url').format;
-const workflowMapper = require('../workflow/WorkFlowMapper');
+const workflowMapper = require('../common/utils/WorkFlowMapper');
 
 
 class ServiceBrokerApiController extends FabrikBaseController {

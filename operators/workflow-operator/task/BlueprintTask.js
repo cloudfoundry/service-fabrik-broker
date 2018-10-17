@@ -1,8 +1,8 @@
 'use strict';
 
 const Promise = require('bluebird');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
+const logger = require('../../../common/logger');
+const CONST = require('../../../common/constants');
 const Task = require('./Task');
 
 

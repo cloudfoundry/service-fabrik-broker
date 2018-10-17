@@ -3,11 +3,11 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
-const logger = require('../../common/logger');
-const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
-const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const BaseOperator = require('../../operators/BaseOperator');
+const logger = require('../../../common/logger');
+const CONST = require('../../../common/constants');
+const utils = require('../../../common/utils');
+const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
+const BaseOperator = require('../../../operators/BaseOperator');
 const TaskFabrik = require('./TaskFabrik');
 
 class TaskOperator extends BaseOperator {

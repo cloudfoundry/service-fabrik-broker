@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const CONST = require('../common/constants');
-const logger = require('../common/logger');
+const CONST = require('../constants');
+const logger = require('../logger');
 
 class WorkFlowMapper {
   getWorkFlow(params) {
