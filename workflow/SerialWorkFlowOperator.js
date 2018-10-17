@@ -11,10 +11,11 @@ const errors = require('../common/errors');
 const CONST = require('../common/constants');
 const utils = require('../common/utils');
 const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
-const BaseManager = require('../managers/BaseManager');
+const BaseOperator = require('../operators/BaseOperator');
 const TaskFabrik = require('./task/TaskFabrik');
 const FAILED = true;
-class SerialWorkFlowManager extends BaseManager {
+
+class SerialWorkFlowOperator extends BaseOperator {
 
   init() {
     const statesToWatchForWorkflowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
@@ -177,4 +178,4 @@ class SerialWorkFlowManager extends BaseManager {
   }
 }
 
-module.exports = SerialWorkFlowManager;
+module.exports = SerialWorkFlowOperator;

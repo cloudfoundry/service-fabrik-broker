@@ -7,10 +7,10 @@ const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const BaseManager = require('../../managers/BaseManager');
+const BaseOperator = require('../../operators/BaseOperator');
 const TaskFabrik = require('./TaskFabrik');
 
-class TaskManager extends BaseManager {
+class TaskOperator extends BaseOperator {
   init() {
     const statesToWatchForTaskRun = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
     const statesToWatchForTaskStatus = [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS];
@@ -121,4 +121,4 @@ class TaskManager extends BaseManager {
   }
 }
 
-module.exports = TaskManager;
+module.exports = TaskOperator;

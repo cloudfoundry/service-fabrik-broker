@@ -1,8 +1,8 @@
 'use strict';
 
-const SerialWorkFlowManager = require('./SerialWorkFlowManager');
-const TaskManager = require('./task/TaskManager');
-const swf = new SerialWorkFlowManager();
-const tm = new TaskManager();
+const SerialWorkFlowOperator = require('./SerialWorkFlowOperator');
+const TaskOperator = require('./task/TaskOperator');
+const swf = new SerialWorkFlowOperator();
+const tm = new TaskOperator();
 swf.init();
 tm.init();
