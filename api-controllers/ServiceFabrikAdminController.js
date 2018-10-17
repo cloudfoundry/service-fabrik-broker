@@ -72,10 +72,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return Promise.try(() => {
       logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
       return eventmesh.apiServerClient.getResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: instanceId
-        })
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'spec.options'))
         .then(resource => {
@@ -144,9 +144,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
     return DirectorService.createInstance(instanceDetails.instance_id, {
-        plan_id: plan.id,
-        context: tenantInfo.context
-      })
+      plan_id: plan.id,
+      context: tenantInfo.context
+    })
       .then(directorInstance => directorInstance.diffManifest(deploymentName, tenantInfo))
       .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
       .then(result => result.diff);
@@ -229,6 +229,16 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getDeploymentsSummary(req, res) {
     this.getDeployments(req, res, true);
+  }
+
+
+  dummyFunction(req, res) {
+    let deploymentName = 'service-fabrik-1471-b59dbcbf-bc33-4437-8620-b3b30efb3e6a';
+    let jobName = 'blueprint';
+    let instanceId = 'a96b9d48-c310-4ce6-90d3-1182635f7808';
+    let diskId = 'vol-0e4ec5f70f30b78fd';
+    return bosh.director.boshAttachOrchestration(deploymentName, jobName, instanceId, diskId)
+      .then(() => res.status(200).send('Operation triggered!'));
   }
 
   getDeploymentDirectorConfig(req, res) {
@@ -626,11 +636,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .value();
 
         return ScheduleManager.schedule(
-            req.params.name,
-            CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
-            req.body.repeatInterval,
-            data,
-            req.user)
+          req.params.name,
+          CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
+          req.body.repeatInterval,
+          data,
+          req.user)
           .then(body => res
             .status(201)
             .send(body));

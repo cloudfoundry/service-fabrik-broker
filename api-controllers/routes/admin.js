@@ -23,6 +23,9 @@ router.route('/deployments')
 router.route('/deployments/summary')
   .get(controller.handler('getDeploymentsSummary'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
+router.route('/dummyendpoint')
+  .get(controller.handler('dummyFunction'))
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 router.route('/deployments/:name')
   .get(controller.handler('getDeployment'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
