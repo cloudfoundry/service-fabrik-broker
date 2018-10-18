@@ -950,7 +950,6 @@ describe('#DirectorService', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(binding_id);
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: '8 hours'
@@ -1004,7 +1003,6 @@ describe('#DirectorService', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(binding_id);
           mocks.serviceFabrikClient.scheduleBackup(instance_id, {
             type: CONST.BACKUP.TYPE.ONLINE,
             repeatInterval: '8 hours'
@@ -1038,8 +1036,6 @@ describe('#DirectorService', function () {
         });
       });
 
-
-
       describe('#unbind', function () {
         it('returns 200 OK: credentials fetched from ApiServer', function () {
           const context = {
@@ -1054,8 +1050,7 @@ describe('#DirectorService', function () {
             .omit('sf_operations_args')
             .value();
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
-
-          let dummyResource = {
+          let dummyBindResource = {
             status: {
               response: utils.encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
@@ -1063,10 +1058,11 @@ describe('#DirectorService', function () {
           };
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyResource, 1, 200);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(binding_id);
           const options = {
             binding_id: binding_id,
             service_id: service_id,
@@ -1079,17 +1075,11 @@ describe('#DirectorService', function () {
           };
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.unbind(options))
-            .then(res => {
-              expect(res).to.eql({
-                'body': '',
-                'headers': {},
-                'statusCode': 204,
-                'statusMessage': null
-              });
+            .then(() => {
               mocks.verify();
             });
         });
-        it('returns 200 OK: bind resource not found on ApiServer', function () {
+        it('returns 200 OK: credentials not found on ApiServer', function () {
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -1101,12 +1091,19 @@ describe('#DirectorService', function () {
             .omit('params')
             .omit('sf_operations_args')
             .value();
+
+          let dummyBindResource = {
+            status: {
+              response: '{}',
+              state: 'succeeded'
+            }
+          };
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, {}, 1, 404);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
           mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
@@ -1123,13 +1120,7 @@ describe('#DirectorService', function () {
           };
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.unbind(options))
-            .then(res => {
-              expect(res).to.eql({
-                'body': '',
-                'headers': {},
-                'statusCode': 204,
-                'statusMessage': null
-              });
+            .then(() => {
               mocks.verify();
             });
         });
@@ -1140,16 +1131,21 @@ describe('#DirectorService', function () {
             .omit('params')
             .omit('sf_operations_args')
             .value();
+          let dummyBindResource = {
+            status: {
+              response: utils.encodeBase64(mocks.agent.credentials),
+              state: 'succeeded'
+            }
+          };  
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.director.getBindingProperty(binding_id);
           mocks.agent.getInfo();
           mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(binding_id);
           const options = {
             binding_id: binding_id,
             service_id: service_id,
@@ -1161,13 +1157,7 @@ describe('#DirectorService', function () {
           };
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.unbind(options))
-            .then(res => {
-              expect(res).to.eql({
-                'body': '',
-                'headers': {},
-                'statusCode': 204,
-                'statusMessage': null
-              });
+            .then(() => {
               mocks.verify();
             });
         });
