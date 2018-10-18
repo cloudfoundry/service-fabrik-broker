@@ -1136,7 +1136,7 @@ describe('#DirectorService', function () {
               response: utils.encodeBase64(mocks.agent.credentials),
               state: 'succeeded'
             }
-          };  
+          };
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);

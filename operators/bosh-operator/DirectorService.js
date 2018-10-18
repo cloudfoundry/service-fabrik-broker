@@ -18,7 +18,6 @@ const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const boshOperationQueue = bosh.BoshOperationQueue;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
