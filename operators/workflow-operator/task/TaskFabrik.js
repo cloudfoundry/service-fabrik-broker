@@ -18,7 +18,7 @@ class TaskFabrik {
       }
       return BlueprintTask;
     default:
-      assert.fail(taskType, [CONST.TASK.SERVICE_INSTANCE_UPDATE], `Invalid task type. ${taskType} does not exist`, 'in');
+      assert.fail(taskType, [CONST.APISERVER.TASK_TYPE.SERVICE_INSTANCE_UPDATE, CONST.APISERVER.TASK_TYPE.BLUEPRINT], `Invalid task type. ${taskType} does not exist`, 'in');
     }
   }
 }

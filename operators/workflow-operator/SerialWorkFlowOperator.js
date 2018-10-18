@@ -152,7 +152,7 @@ class SerialWorkFlowOperator extends BaseOperator {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[taskDetails.task_order-1].task_description} completed @ ${new Date()}`
             }))
-          .return('HOLD_PROCESSING_LOCK');
+          .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
     });
   }

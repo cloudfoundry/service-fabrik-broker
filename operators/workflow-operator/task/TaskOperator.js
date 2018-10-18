@@ -17,6 +17,7 @@ class TaskOperator extends BaseOperator {
     this.pollers = {};
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK)
       .then(() => {
+        logger.info(`${CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW} ${CONST.APISERVER.RESOURCE_TYPES.TASK}- crd registration complete.`);
         this.registerWatcher(
           CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
@@ -65,18 +66,19 @@ class TaskOperator extends BaseOperator {
   }
 
   startTaskStatusPoller(event) {
-    logger.debug('Received Task Event: ', event);
-    if (!this.pollers[event.metadata.name]) {
-      logger.debug(`Starting task status poller for : ${event.metadata.name} with interval of ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
-      const taskDetails = JSON.parse(event.spec.options);
-      const task = TaskFabrik.getTask(taskDetails.task_type);
-      const intervalId = setInterval(() => this.pollTaskStatus(event, intervalId, task, taskDetails), CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
-      this.pollers[event.metadata.name] = task;
-      return Promise.resolve('HOLD_PROCESSING_LOCK');
-    } else {
-      logger.debug(`Poller already set for : ${event.metadata.name}`);
-    }
-    return Promise.resolve('');
+    return Promise.try(() => {
+      logger.debug('Received Task Event: ', event);
+      if (!this.pollers[event.metadata.name]) {
+        logger.debug(`Starting task status poller for : ${event.metadata.name} with interval of ${CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+        const taskDetails = JSON.parse(event.spec.options);
+        const task = TaskFabrik.getTask(taskDetails.task_type);
+        const intervalId = setInterval(() => this.pollTaskStatus(event, intervalId, task, taskDetails), CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+        this.pollers[event.metadata.name] = intervalId;
+        return CONST.APISERVER.HOLD_PROCESSING_LOCK;
+      } else {
+        logger.debug(`Poller already set for : ${event.metadata.name}`);
+      }
+    });
   }
 
   pollTaskStatus(object, intervalId, task, taskDetails) {
@@ -96,23 +98,22 @@ class TaskOperator extends BaseOperator {
           return task
             .updateStatus(resourceDetails, status)
             .then(() => this.clearPoller(object, intervalId))
-            .then(() => this._releaseProcessingLock(object))
             .tap(() => logger.info('Released processing lock!!!'))
             .return(true);
         } else {
           logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
           return this
             .continueToHoldLock(object)
-            .tap(() => logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name}`));
+            .tap(() => logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name}`))
+            .return(false);
         }
-        return false;
       });
   }
 
   clearPoller(object, intervalId) {
     return Promise.try(() => {
-      logger.debug(`Clearing poller interval for task ${object.metadata.name}`);
       if (object.metadata.name) {
+        logger.info(`Clearing poller interval for task ${object.metadata.name} - intervalId`, intervalId);
         clearInterval(intervalId);
       }
       this._postProcessRequest(object);

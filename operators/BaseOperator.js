@@ -75,7 +75,7 @@ class BaseOperator {
 
   _releaseProcessingLock(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.debug(`Trying to release processing lock for resource: ${changeObjectBody.metadata.name}`);
+    logger.debug(`Trying to release processing lock for resource:--> ${changeObjectBody.metadata.name}`);
     const metadata = {
       annotations: {
         lockedByManager: '',
@@ -134,6 +134,7 @@ class BaseOperator {
 
   _postProcessRequest(objectBody) {
     const options = JSON.parse(objectBody.spec.options);
+    logger.info('Releasing lock as part of post processing......--->>>>>');
     return this._releaseProcessingLock(objectBody)
       .catch((NotFound), () => logger.debug(`Resource resourceType: ${objectBody.kind},\`
         resourceId: ${objectBody.metadata.name} is not found, No need to panic as it is already deleted.`))
@@ -169,7 +170,7 @@ class BaseOperator {
           return this.processRequest(changeObjectBody);
         }
       })
-      .tap((releaseLock) => releaseProcessingLock = releaseLock !== 'HOLD_PROCESSING_LOCK')
+      .tap((releaseLock) => releaseProcessingLock = releaseLock !== CONST.APISERVER.HOLD_PROCESSING_LOCK)
       .catch(err => {
         if (!processingLockStatus.conflict) {
           logger.error(`Caught error while processing request with options ${JSON.stringify(changedOptions)} `, err);
@@ -182,7 +183,6 @@ class BaseOperator {
         } else {
           const reason = processingLockStatus.conflict ? 'is locked by other processor' : ' is under polling and needs to hold lock.';
           logger.info(`Will not try to release lock as resource ${changeObject.object.metadata.name} ${reason}`);
-          //return 'HOLD_PROCESSING_LOCK';
         }
       });
   }

@@ -12,9 +12,9 @@ class BlueprintTask extends Task {
     logger.info(`Running Blueprint Task with Data - ${JSON.stringify((taskDetails))}`);
     return Promise.try(() => {
       taskDetails.resource = {
-        resourceGroup: 'RG Of the resource which Task is executing',
-        resourceType: 'Type of the resource which Task is executing',
-        resourceId: 'Resource ID of the resource which would be getting created by the task in this run method'
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, //'RG Of the resource which Task is executing',
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK, //'Type of the resource which Task is executing',
+        resourceId: 'bp_task' //'Resource ID of the resource which would be getting created by the task in this run method'
       };
       taskDetails.response = {
         description: 'Task Run initiated successfully... Wait for poll to complete status.'
