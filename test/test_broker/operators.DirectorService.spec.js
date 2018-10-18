@@ -692,7 +692,6 @@ describe('#DirectorService', function () {
             space_guid: space_guid
           };
           mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
@@ -775,7 +774,6 @@ describe('#DirectorService', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
-          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
