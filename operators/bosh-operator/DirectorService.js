@@ -834,8 +834,7 @@ class DirectorService extends BaseDirectorService {
         }
         logger.info(`[getCredentials] Fetching property from bosh for binding ${id}`);
         return this.getBindingProperty(deploymentName, id)
-          .then(binding => binding.credentials)
-          .tap(() => this.deleteBindingProperty(deploymentName, id));
+          .then(binding => binding.credentials);
       });
   }
 
@@ -863,11 +862,6 @@ class DirectorService extends BaseDirectorService {
       .getDeploymentProperty(deploymentName, `binding-${id}`)
       .then(result => JSON.parse(result))
       .catchThrow(NotFound, new ServiceBindingNotFound(id));
-  }
-
-  deleteBindingProperty(deploymentName, id) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
   }
 
   diffManifest(deploymentName, opts) {
