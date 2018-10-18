@@ -673,7 +673,7 @@ class DockerService extends BaseService {
   static getPlatformManager(context) {
     let platform = context.platform;
     if (platform === CONST.PLATFORM.SM) {
-      platform = platform.origin;
+      platform = context.origin;
     }
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
