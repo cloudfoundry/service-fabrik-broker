@@ -1124,7 +1124,7 @@ describe('#DirectorService', function () {
             });
         });
 
-        it.only('returns 200 OK: bind resource not found on ApiServer', function () {
+        it('returns 200 OK: bind resource not found on ApiServer', function () {
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
