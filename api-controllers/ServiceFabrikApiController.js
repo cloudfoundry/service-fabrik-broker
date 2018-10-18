@@ -234,21 +234,19 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getBackupOptions(backupGuid, req) {
-    return Promise
-      .all([
-        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
-        cf.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
-      ])
-      .spread((planDetails, orgAndSpaceDetails) => {
-        const context = req.body.context || {
-          space_guid: orgAndSpaceDetails.space_guid,
-          platform: CONST.PLATFORM.CF
-        };
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: req.params.instance_id
+      })
+      .then(resource => {
+        const context = req.body.context || _.get(resource, 'spec.options.context');
+        const planId = _.get(resource, 'spec.options.plan_id');
         const backupOptions = {
           guid: backupGuid,
           instance_guid: req.params.instance_id,
-          plan_id: req.body.plan_id || planDetails.entity.unique_id,
-          service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
+          plan_id: req.body.plan_id || planId,
+          service_id: req.body.service_id || this.getPlan(planId).service.id,
           arguments: req.body,
           username: req.user.name,
           useremail: req.user.email || '',
@@ -259,15 +257,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getRestoreOptions(req, metadata) {
-    return Promise
-      .try(() => {
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: req.params.instance_id
+      })
+      .then(resource => {
         const restoreOptions = {
           plan_id: metadata.plan_id,
           service_id: metadata.service_id,
-          context: req.body.context || {
-            space_guid: req.entity.tenant_id,
-            platform: CONST.PLATFORM.CF
-          },
+          context: req.body.context || _.get(resource, 'spec.options.context'),
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
@@ -878,13 +877,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (checkUpdateRequired) {
           return req.manager
             .findDeploymentNameByInstanceId(req.params.instance_id)
-            .then(deploymentName => this.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
-              .then(opts => {
-                const context = {
-                  platform: CONST.PLATFORM.CF,
-                  organization_guid: opts.organization_guid,
-                  space_guid: opts.space_guid
-                };
+            .then(deploymentName => eventmesh.apiServerClient.getResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                resourceId: req.params.instance_id
+              })
+              .then(resource => _.get(resource, 'spec.options.context'))
+              .then(context => {
+                const opts = {};
                 opts.context = context;
                 return req.manager.diffManifest(deploymentName, opts);
               })

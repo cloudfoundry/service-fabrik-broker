@@ -79,7 +79,7 @@ module.exports = Object.freeze({
     backup: '/api/v1/service_instances/:instance_id/backup',
     restore: '/api/v1/service_instances/:instance_id/restore',
     backup_by_guid: '/api/v1/backups/:backup_guid',
-    instance: '/:platform(cf|k8s)/v2/service_instances/:instance_id'
+    instance: '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id'
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',

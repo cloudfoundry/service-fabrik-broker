@@ -15,7 +15,7 @@ const internal = ExpressApp.create('internal', app => {
   });
   app.use('/admin', routes.admin);
   // cloud foundry service broker api
-  app.use('/:platform(cf|k8s)', routes.broker);
+  app.use('/:platform(cf|k8s|sm)', routes.broker);
 });
 
 // exernal app

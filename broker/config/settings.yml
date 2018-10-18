@@ -567,6 +567,7 @@ defaults: &defaults
     supported_platform:
     - k8s
     - cf
+    - sm
     actions: Blueprint
     backup_interval: '8 hours'
     pitr: true
@@ -733,6 +734,7 @@ defaults: &defaults
       supported_platform:
       - k8s
       - cf
+      - sm
     - &blueprint_plan4
       id: 'bc158c9a-7934-401e-94ab-057082a5073e'
       name: 'v1.0-small'
@@ -767,6 +769,7 @@ defaults: &defaults
       supported_platform:
       - k8s
       - cf
+      - sm
     - &blueprint_plan5
       id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
       name: 'v1.0-large'
@@ -802,6 +805,7 @@ defaults: &defaults
       supported_platform:
       - k8s
       - cf
+      - sm
     - &blueprint_plan8
       id: 'gd158c9a-7934-401e-94ab-057082a5073e'
       name: 'v2.0-xsmall'
@@ -836,6 +840,7 @@ defaults: &defaults
       supported_platform:
       - k8s
       - cf
+      - sm
     - &blueprint_plan6
       id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
       name: 'v1.0-dedicated-large-deprecated'

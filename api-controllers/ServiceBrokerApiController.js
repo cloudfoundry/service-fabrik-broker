@@ -41,7 +41,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    res.status(CONST.HTTP_STATUS_CODE.OK).json(this.fabrik.getPlatformManager(req.params.platform).getCatalog(catalog));
+    res.status(CONST.HTTP_STATUS_CODE.OK).json(this.fabrik.getPlatformManager({
+      platform: req.params.platform
+    }).getCatalog(catalog));
   }
 
   putInstance(req, res) {
@@ -139,7 +141,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(() => {
-        return eventmesh.apiServerClient.updateResource({
+        return eventmesh.apiServerClient.patchResource({
           resourceGroup: plan.manager.resource_mappings.resource_group,
           resourceType: plan.manager.resource_mappings.resource_type,
           resourceId: req.params.instance_id,
@@ -205,7 +207,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.updateResource({
+        return eventmesh.apiServerClient.patchResource({
           resourceGroup: plan.manager.resource_mappings.resource_group,
           resourceType: plan.manager.resource_mappings.resource_type,
           resourceId: req.params.instance_id,

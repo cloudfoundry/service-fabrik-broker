@@ -876,6 +876,7 @@ class DirectorService extends BaseDirectorService {
                 }
                 logger.info(`Scheduling Backup for instance : ${this.guid} with backup interval of - ${options.repeatInterval}`);
                 //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+                // This flow has to be revisited when we start supporting K8s through service manager
                 return this.serviceFabrikClient.scheduleBackup(options);
               });
           } catch (err) {
