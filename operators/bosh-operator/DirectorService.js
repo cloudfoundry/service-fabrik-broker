@@ -866,12 +866,6 @@ class DirectorService extends BaseDirectorService {
       .catchThrow(NotFound, new ServiceBindingNotFound(id));
   }
 
-  createBindingProperty(deploymentName, id, value) {
-    return this.director
-      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
-  }
-
   deleteBindingProperty(deploymentName, id) {
     return this.director
       .deleteDeploymentProperty(deploymentName, `binding-${id}`);
