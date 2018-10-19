@@ -57,6 +57,7 @@ describe('operators', function () {
         after(function () {
           registerWatcherStub.restore();
           registerCRDStub.restore();
+          updateResourceStub.restore();
           clock.restore();
         });
         it('Initializes task operator successfully', () => {
@@ -113,7 +114,6 @@ describe('operators', function () {
                       expect(resp).to.equal(true);
                       expect(updateResourceStub).to.be.calledTwice; //Once to update DONE status , Second time to release processing lock
                       expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.TASK_STATE.DONE);
-                      clearInterval(intervalId);
                       resolve(true);
                     })
                     .catch((err) => {

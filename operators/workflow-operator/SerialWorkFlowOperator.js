@@ -127,6 +127,7 @@ class SerialWorkFlowOperator extends BaseOperator {
           workflowId: taskDetails.workflowId
         };
         let relayedTaskId;
+
         return utils
           .uuidV4()
           .tap(taskId => relayedTaskId = taskId)
@@ -172,7 +173,7 @@ class SerialWorkFlowOperator extends BaseOperator {
   workflowComplete(taskDetails, message, failed) {
     const status = {
       state: failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED,
-      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}.`
+      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}`
     };
     return this.updateWorkflowStatus(taskDetails, status);
   }
