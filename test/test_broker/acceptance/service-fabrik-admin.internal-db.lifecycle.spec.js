@@ -110,9 +110,7 @@ describe('service-fabrik-admin', function () {
         mocks.director.createOrUpdateDeployment('777');
         mocks.director.getDeploymentTask('777', 'done');
         mocks.agent.getInfo();
-        mocks.agent.createCredentials();
         config.directors[0].default_task_poll_interval = 10;
-        mocks.director.createBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
         return chai
           .request(app)
           .post(`${base_url}/service-fabrik/db`)
