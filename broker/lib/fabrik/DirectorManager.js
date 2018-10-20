@@ -19,11 +19,7 @@ const EvaluationContext = bosh.EvaluationContext;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
-const NotFound = errors.NotFound;
-const BadRequest = errors.BadRequest;
 const NotImplemented = errors.NotImplemented;
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const catalog = require('../../../common/models/catalog');
 
@@ -158,44 +154,6 @@ class DirectorManager extends BaseManager {
         return {};
       }
     });
-  }
-
-  createBinding(deploymentName, binding) {
-    this.verifyFeatureSupport('credentials');
-    logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
-    logger.info('+-> Binding parameters:', binding.parameters);
-    let actionContext = {
-      'deployment_name': deploymentName
-    };
-    _.assign(actionContext, binding);
-    return Promise.join(
-        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
-        this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => this.agent.createCredentials(ips, binding.parameters, preBindResponse)
-      )
-      .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
-      .tap(() => {
-        const bindCreds = _.cloneDeep(binding.credentials);
-        utils.maskSensitiveInfo(bindCreds);
-        logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
-      })
-      .catch(err => {
-        logger.error('+-> Failed to create binding', err);
-        throw err;
-      });
-  }
-
-  getBindingProperty(deploymentName, id) {
-    return this.director
-      .getDeploymentProperty(deploymentName, `binding-${id}`)
-      .then(result => JSON.parse(result))
-      .catchThrow(NotFound, new ServiceBindingNotFound(id));
-  }
-
-  createBindingProperty(deploymentName, id, value) {
-    return this.director
-      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
   }
 
   diffManifest(deploymentName, opts) {
