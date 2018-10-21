@@ -692,11 +692,6 @@ describe('#DirectorService', function () {
         });
 
         it('create: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
@@ -1258,8 +1253,8 @@ describe('#DirectorService', function () {
         });
       });
 
-      describe('#platformContext - context not present in options ', function() {
-        it('context found in resource', function(done) {
+      describe('#platformContext - context not present in options ', function () {
+        it('context found in resource', function (done) {
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -1269,16 +1264,16 @@ describe('#DirectorService', function () {
           };
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           return DirectorService.createInstance(instance_id, options)
-          .then(service => {
-            expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
-            expect(service.guid).to.equal(instance_id);
-            expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
-            mocks.verify();
-            done();
-          });
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
+            });
         });
 
-        it('context not found in resource, but present in bosh property', function(done) {
+        it('context not found in resource, but present in bosh property', function (done) {
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -1291,16 +1286,16 @@ describe('#DirectorService', function () {
             platform: 'cloudfoundry'
           });
           return DirectorService.createInstance(instance_id, options)
-          .then(service => {
-            expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
-            expect(service.guid).to.equal(instance_id);
-            expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
-            mocks.verify();
-            done();
-          });
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
+            });
         });
 
-        it('context neither found in resource nor in bosh property', function(done) {
+        it('context neither found in resource nor in bosh property', function (done) {
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -1311,13 +1306,13 @@ describe('#DirectorService', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext);
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context');
           return DirectorService.createInstance(instance_id, options)
-          .then(service => {
-            expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
-            expect(service.guid).to.equal(instance_id);
-            expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
-            mocks.verify();
-            done();
-          });
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
+            });
         });
       });
     });

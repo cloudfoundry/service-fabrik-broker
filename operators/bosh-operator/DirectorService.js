@@ -13,7 +13,6 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
@@ -56,27 +55,27 @@ class DirectorService extends BaseDirectorService {
 
   get platformContext() {
     return this.getContextFromResource()
-    .then(context => {
-      if(context) {
-        return context;
-      }
-      logger.info(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
-      return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
-        .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
-        .then(context => JSON.parse(context))
-        .catch(NotFound, () => {
-          /* Following is to handle existing deployments. 
-              For them platform-context is not saved in deployment property. Defaults to CF.
-          */
-          logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
+      .then(context => {
+        if (context) {
+          return context;
+        }
+        logger.info(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
+        return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
+          .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
+          .then(context => JSON.parse(context))
+          .catch(NotFound, () => {
+            /* Following is to handle existing deployments. 
+                For them platform-context is not saved in deployment property. Defaults to CF.
+            */
+            logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
           Setting default platform as '${CONST.PLATFORM.CF}'`);
 
-          const context = {
-            platform: CONST.PLATFORM.CF
-          };
-          return context;
-        });    
-    });
+            const context = {
+              platform: CONST.PLATFORM.CF
+            };
+            return context;
+          });
+      });
   }
 
   static get prefix() {
@@ -94,17 +93,17 @@ class DirectorService extends BaseDirectorService {
   getContextFromResource() {
     logger.info(`Fetching context from etcd for ${this.guid}`);
     return eventmesh.apiServerClient.getResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-      resourceId: this.guid
-    })
-    .then(resource => {
-      return _.get(resource, 'spec.options.context', undefined);
-    })
-    .catch(err => {
-      logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
-      return;
-    });
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: this.guid
+      })
+      .then(resource => {
+        return _.get(resource, 'spec.options.context', undefined);
+      })
+      .catch(err => {
+        logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
+        return;
+      });
   }
 
   getNetworkSegmentIndex(deploymentName) {
