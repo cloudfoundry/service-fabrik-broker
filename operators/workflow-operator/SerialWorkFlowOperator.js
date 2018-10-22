@@ -91,7 +91,7 @@ class SerialWorkFlowOperator extends BaseOperator {
       const workflow = this.WORKFLOW_DEFINITION[taskDetails.workflow_name];
       const tasks = workflow.tasks;
       const task = TaskFabrik.getTask(taskDetails.task_type);
-      taskDetails.task_order = taskDetails.task_order === undefined ? 1 : taskDetails.task_order + 1;
+      taskDetails.task_order = taskDetails.task_order + 1;
       let previousTaskResponse;
       try {
         previousTaskResponse = JSON.parse(event.status.response);
@@ -173,7 +173,7 @@ class SerialWorkFlowOperator extends BaseOperator {
   workflowComplete(taskDetails, message, failed) {
     const status = {
       state: failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED,
-      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description ||  taskDetails.workflow_name} completed @ ${new Date()}`
+      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description} completed @ ${new Date()}`
     };
     return this.updateWorkflowStatus(taskDetails, status);
   }

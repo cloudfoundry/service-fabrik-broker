@@ -12,7 +12,7 @@ describe('operators', function () {
     describe('tasks', function () {
       describe('TaskOperator', function () {
         /* jshint expr:true */
-        let TaskOperator, registerWatcherStub, registerCRDStub, updateResourceStub, clock;
+        let TaskOperator, registerWatcherStub, registerCRDStub, updateResourceStub, clock, startTaskStatusPollerCallBack;
         const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
         const task = TaskFabrik.getTask(CONST.APISERVER.TASK_TYPE.BLUEPRINT);
         const taskDetails = {
@@ -43,7 +43,11 @@ describe('operators', function () {
           }
         };
         before(function () {
-          registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', () => Promise.resolve(true));
+          /* jshint unused: false */
+          registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', (resourceGroup, resourceType, validStateList, handler) => {
+            startTaskStatusPollerCallBack = handler;
+            return Promise.resolve(true);
+          });
           registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
           TaskOperator = require('../../operators/workflow-operator/task/TaskOperator');
           updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve(true));
@@ -99,31 +103,37 @@ describe('operators', function () {
         it('start status poller and complete the poller', () => {
           const to = new TaskOperator();
           return to.init()
-            .then(() => to.startTaskStatusPoller(changeObject.object))
+            .then(() => startTaskStatusPollerCallBack(changeObject.object))
             .then((response) => {
               expect(response).to.equal(CONST.APISERVER.HOLD_PROCESSING_LOCK);
               expect(_.keys(to.pollers).length).to.equal(1);
-              expect(_.keys(to.pollers)[0]).to.equal(instance_id);
-              const pollStatusImpl = to.pollTaskStatus;
+              //If poller is already set, then invoking the start poller should not have any impact.
+              return startTaskStatusPollerCallBack(changeObject.object)
+                .then(resp => {
+                  expect(resp).to.equal(undefined);
+                  expect(_.keys(to.pollers).length).to.equal(1);
+                  expect(_.keys(to.pollers)[0]).to.equal(instance_id);
+                  const pollStatusImpl = to.pollTaskStatus;
 
-              const promiseResp = new Promise((resolve, reject) => {
-                /* jshint unused:false */
-                const pollStatusStub = sinon.stub(to, 'pollTaskStatus', (event, intervalId, task, taskDetails) => {
-                  return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
-                    .then(resp => {
-                      expect(resp).to.equal(true);
-                      expect(updateResourceStub).to.be.calledTwice; //Once to update DONE status , Second time to release processing lock
-                      expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.TASK_STATE.DONE);
-                      resolve(true);
-                    })
-                    .catch((err) => {
-                      console.log(err);
-                      reject(false);
+                  const promiseResp = new Promise((resolve, reject) => {
+                    /* jshint unused:false */
+                    const pollStatusStub = sinon.stub(to, 'pollTaskStatus', (event, intervalId, task, taskDetails) => {
+                      return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
+                        .then(resp => {
+                          expect(resp).to.equal(true);
+                          expect(updateResourceStub).to.be.calledTwice; //Once to update DONE status , Second time to release processing lock
+                          expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.TASK_STATE.DONE);
+                          resolve(true);
+                        })
+                        .catch((err) => {
+                          console.log(err);
+                          reject(false);
+                        });
                     });
+                  });
+                  clock.tick(CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
+                  return promiseResp;
                 });
-              });
-              clock.tick(CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
-              return promiseResp;
             });
         });
         describe('TaskPoller', function () {

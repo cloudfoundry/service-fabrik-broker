@@ -112,10 +112,8 @@ class TaskOperator extends BaseOperator {
 
   clearPoller(object, intervalId) {
     return Promise.try(() => {
-      if (object.metadata.name) {
-        logger.info(`Clearing poller interval for task ${object.metadata.name} - intervalId`, intervalId);
-        clearInterval(intervalId);
-      }
+      logger.info(`Clearing poller interval for task ${object.metadata.name} - intervalId`, intervalId);
+      clearInterval(intervalId);
       this._postProcessRequest(object);
       _.unset(this.pollers, object.metadata.name);
     });

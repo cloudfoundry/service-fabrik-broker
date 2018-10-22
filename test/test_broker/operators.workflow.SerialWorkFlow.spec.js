@@ -4,6 +4,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const BaseOperator = require('../../operators/BaseOperator');
 const CONST = require('../../common/constants');
+const errors = require('../../common/errors');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 const utils = require('../../common/utils');
 
@@ -73,8 +74,12 @@ describe('operators', function () {
           }
         }
       };
+      let relayTaskCallBack;
       before(function () {
-        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', () => Promise.resolve(true));
+        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', (resourceGroup, resourceType, validStateList, handler) => {
+          relayTaskCallBack = handler;
+          Promise.resolve(true);
+        });
         registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
         SerialWorkFlowOperator = require('../../operators/workflow-operator/SerialWorkFlowOperator');
         updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve({
@@ -123,9 +128,41 @@ describe('operators', function () {
             expect(registerWatcherStub.secondCall.args[4]).to.equal(CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
           });
       });
+      it('throws error for invalid workflow objects', () => {
+        const serialWorkFlow = new SerialWorkFlowOperator();
+        return serialWorkFlow
+          .init()
+          .then(() => serialWorkFlow.processRequest({
+            metadata: {
+              name: instance_id
+            },
+            spec: {
+              options: `{"workflowId": "${workflow_id}", "workflow_name": "UNKNOWN_FLOW"}`
+            }
+          }))
+          .then(() => {
+            throw 'Method should have thrown BadRequest exception!';
+          })
+          .catch(errors.BadRequest, () => {
+            const status = {
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              description: `Invalid workflow UNKNOWN_FLOW. No workflow definition found!`
+            };
+            expect(updateResourceStub).to.be.calledOnce;
+            expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.RESOURCE_STATE.FAILED);
+            expect(updateResourceStub.firstCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
+              resourceId: workflow_id,
+              status: {
+                lastOperation: status,
+                state: status.state
+              }
+            });
+          });
+      });
       it('initiate workflow successfully', () => {
         const serialWorkFlow = new SerialWorkFlowOperator();
-
         return serialWorkFlow
           .init()
           .then(() => serialWorkFlow.processRequest(workFLowObject.object))
@@ -170,7 +207,7 @@ describe('operators', function () {
       it('relay next task successfully on completion of a task run & workflow state is updated as complete', () => {
         const serialWorkFlow = new SerialWorkFlowOperator();
         return serialWorkFlow.init()
-          .then(() => serialWorkFlow.relayTask(taskObject.object))
+          .then(() => relayTaskCallBack(taskObject.object))
           .then(() => {
             expect(updateResourceStub).to.be.calledTwice;
             expect(updateResourceStub.firstCall.args[0]).to.eql({
@@ -208,7 +245,7 @@ describe('operators', function () {
       it('relay next task successfully on completion of a task run & update workflow state as in-progress', () => {
         const inProgressTask = _.cloneDeep(taskObject);
         const inProgressTaskDetails = _.cloneDeep(taskDetails);
-        inProgressTaskDetails.task_order = undefined;
+        inProgressTaskDetails.task_order = 0;
         inProgressTask.object.spec.options = JSON.stringify(inProgressTaskDetails);
         const serialWorkFlow = new SerialWorkFlowOperator();
         return serialWorkFlow.init()
