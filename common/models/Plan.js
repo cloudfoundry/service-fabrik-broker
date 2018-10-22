@@ -46,6 +46,22 @@ class Plan {
     return _.get(this.manager.settings, 'update_predecessors');
   }
 
+  get resourceGroup() {
+    return _.get(this.manager, 'resource_mappings.resource_group');
+  }
+
+  get resourceType() {
+    return _.get(this.manager, 'resource_mappings.resource_type');
+  }
+
+  get bindResourceGroup() {
+    return _.get(this.manager, 'resource_mappings.bind.resource_group');
+  }
+
+  get bindResourceType() {
+    return _.get(this.manager, 'resource_mappings.bind.resource_type');
+  }
+
   toJSON() {
     return _
       .chain(this)

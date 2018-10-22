@@ -83,8 +83,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -97,8 +97,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceGroup: plan.resourceGroup,
+            resourceType: plan.resourceType,
             resourceId: req.params.instance_id,
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
@@ -142,8 +142,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       })
       .then(() => {
         return eventmesh.apiServerClient.patchResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -154,11 +154,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .catch(NotFound, () => {
-        logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
-          `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+        logger.info(`Resource resourceGroup: ${plan.resourceGroup},` +
+          `resourceType: ${plan.resourceType}, resourceId: ${req.params.instance_id} not found, Creating now...`);
         return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -171,8 +171,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceGroup: plan.resourceGroup,
+            resourceType: plan.resourceType,
             resourceId: req.params.instance_id,
             start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
             started_at: new Date()
@@ -208,8 +208,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.patchResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -220,11 +220,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .catch(NotFound, () => {
-        logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.resource_group},` +
-          `resourceType: ${plan.manager.resource_mappings.resource_type}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+        logger.info(`Resource resourceGroup: ${plan.resourceGroup},` +
+          `resourceType: ${plan.resourceType}, resourceId: ${req.params.instance_id} not found, Creating now...`);
         return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -237,8 +237,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceGroup: plan.resourceGroup,
+            resourceType: plan.resourceType,
             resourceId: req.params.instance_id,
             start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
             started_at: new Date()
@@ -279,8 +279,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
     return eventmesh.apiServerClient.getLastOperation({
-        resourceGroup: plan.manager.resource_mappings.resource_group,
-        resourceType: plan.manager.resource_mappings.resource_type,
+        resourceGroup: plan.resourceGroup,
+        resourceType: plan.resourceType,
         resourceId: req.params.instance_id
       })
       .then(done)
@@ -310,8 +310,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-          resourceType: plan.manager.resource_mappings.bind.resource_type,
+          resourceGroup: plan.bindResourceGroup,
+          resourceType: plan.bindResourceType,
           resourceId: params.binding_id,
           labels: {
             instance_guid: req.params.instance_id
@@ -323,8 +323,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-        resourceType: plan.manager.resource_mappings.bind.resource_type,
+        resourceGroup: plan.bindResourceGroup,
+        resourceType: plan.bindResourceType,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
@@ -352,8 +352,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.updateResource({
-            resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-            resourceType: plan.manager.resource_mappings.bind.resource_type,
+            resourceGroup: plan.bindResourceGroup,
+            resourceType: plan.bindResourceType,
             resourceId: params.binding_id,
             options: params,
             status: {
@@ -361,11 +361,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           })
           .catch((NotFound), () => {
-            logger.info(`Resource resourceGroup: ${plan.manager.resource_mappings.bind.resource_group},` +
-              `resourceType: ${plan.manager.resource_mappings.bind.resource_type}, resourceId: ${params.binding_id} not found, Creating now...`);
+            logger.info(`Resource resourceGroup: ${plan.bindResourceGroup},` +
+              `resourceType: ${plan.bindResourceType}, resourceId: ${params.binding_id} not found, Creating now...`);
             return eventmesh.apiServerClient.createResource({
-              resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-              resourceType: plan.manager.resource_mappings.bind.resource_type,
+              resourceGroup: plan.bindResourceGroup,
+              resourceType: plan.bindResourceType,
               resourceId: params.binding_id,
               labels: {
                 instance_guid: req.params.instance_id
@@ -379,15 +379,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-        resourceType: plan.manager.resource_mappings.bind.resource_type,
+        resourceGroup: plan.bindResourceGroup,
+        resourceType: plan.bindResourceType,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
       .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: plan.manager.resource_mappings.bind.resource_group,
-        resourceType: plan.manager.resource_mappings.bind.resource_type,
+        resourceGroup: plan.bindResourceGroup,
+        resourceType: plan.bindResourceType,
         resourceId: params.binding_id
       }))
       .then(done)

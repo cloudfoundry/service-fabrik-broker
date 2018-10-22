@@ -20,6 +20,9 @@ const expectedGetDeploymentResponse = {
   },
   spec: {
     options: JSON.stringify({
+      context: {
+        platform: 'abc'
+      },
       opt1: 'opt1',
       opt2: 'opt2'
     }),
@@ -45,6 +48,9 @@ const sampleDeploymentResource = {
   },
   spec: {
     options: {
+      context: {
+        'platform': 'abc'
+      },
       opt1: 'opt1',
       opt2: 'opt2'
     },
@@ -790,6 +796,21 @@ describe('eventmesh', () => {
           })
           .then(res => {
             expect(res).to.eql(sampleDeploymentResource.status.state);
+            verify();
+          });
+      });
+    });
+
+    describe('getPlatformContext', () => {
+      it('Gets getPlatformContext', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getPlatformContext({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR
+          })
+          .then(res => {
+            expect(res).to.eql(sampleDeploymentResource.spec.options.context);
             verify();
           });
       });

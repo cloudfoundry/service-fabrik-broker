@@ -923,17 +923,14 @@ class DirectorService extends BaseDirectorService {
     return Promise
       .try(() => context ? context : directorService.platformContext)
       .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context)))
-      .tap(() => console.log(this.platformManager))
       .return(directorService);
   }
 
   static getPlatformManager(context) {
     let platform = context.platform;
-    console.log(platform);
     if (platform === CONST.PLATFORM.SM) {
       platform = context.origin;
     }
-    console.log(platform);
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);

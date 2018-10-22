@@ -10,8 +10,6 @@ const filename = backupStore.filename;
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const errors = require('../common/errors');
-const BackupService = require('../operators/backup-operator');
-const RestoreService = require('../operators/restore-operator');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
@@ -370,20 +368,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: backupGuid
         })
       )
-      .catch(NotFound, AssertionError, err => {
-        // This code block is specifically for the transition of Service Fabrik to v2
-        // Here we reffer to BackupService to get the lastBackup status
-        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        const tenantId = req.entity.tenant_id;
-        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
-          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
-          .then(backupService => backupService.getLastBackup(tenantId, req.params.instance_id));
-      })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip', 'description'))
       )
-      .catch(NotFound, () => {
+      .catch(NotFound, AssertionError, () => {
         logger.error(`No backup found for service instance '${req.params.instance_id}'`);
         throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
       });
@@ -571,7 +560,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
     const instanceId = req.params.instance_id;
-    const tenantId = req.entity.tenant_id;
 
     return eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -587,14 +575,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: restoreGuid
         })
       )
-      .catch(NotFound, AssertionError, (err) => {
-        // This code block is specifically for the transition of Service Fabrik to v2
-        // Here we reffer to RestoreService to get the lastRestore status
-        logger.info('Restore metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
-          .then(plan_id => RestoreService.createService(catalog.getPlan(plan_id)))
-          .then(restoreService => restoreService.getLastRestore(tenantId, req.params.instance_id));
-      })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)

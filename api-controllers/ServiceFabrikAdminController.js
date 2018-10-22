@@ -243,14 +243,14 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getDeployment(req, res) {
     const deploymentName = req.params.name;
+    const plan = catalog.getPlan(req.query.plan_id);
     this.createManager(req.query.plan_id)
       .then(manager =>
-        eventmesh.apiServerClient.getResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        eventmesh.apiServerClient.getPlatformContext({
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
           resourceId: this.getInstanceId(deploymentName)
         })
-        .then(resource => _.get(resource, 'spec.options.context'))
         .then(context => {
           const opts = {};
           opts.context = context;
@@ -366,12 +366,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
-        return eventmesh.apiServerClient.getResource({
+        return eventmesh.apiServerClient.getPlatformContext({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
             resourceId: this.getInstanceId(deployment.name)
           })
-          .then(resource => _.get(resource, 'spec.options.context'))
           .then(context => {
             const opts = {};
             opts.context = context;
