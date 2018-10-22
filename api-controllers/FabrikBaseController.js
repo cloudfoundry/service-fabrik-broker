@@ -16,6 +16,7 @@ const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
 const CONST = require('../common/constants');
 const lockManager = require('../data-access-layer/eventmesh').lockManager;
+const formatUrl = require('url').format;
 
 class FabrikBaseController extends BaseController {
   constructor() {
@@ -169,6 +170,16 @@ class FabrikBaseController extends BaseController {
 
   getPlan(plan_id) {
     return catalog.getPlan(plan_id);
+  }
+
+  static getDashboardUrl(serviceId, planId, instanceId) {
+    return formatUrl(_
+      .chain(config.external)
+      .pick('protocol', 'host')
+      .set('slashes', true)
+      .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceId}`)
+      .value()
+    );
   }
 }
 
