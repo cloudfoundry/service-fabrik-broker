@@ -59,7 +59,7 @@ class DirectorService extends BaseDirectorService {
         if (context) {
           return context;
         }
-        logger.info(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
+        logger.debug(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
         return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
           .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
           .then(context => JSON.parse(context))
@@ -91,7 +91,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   getContextFromResource() {
-    logger.info(`Fetching context from etcd for ${this.guid}`);
+    logger.debug(`Fetching context from etcd for ${this.guid}`);
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
