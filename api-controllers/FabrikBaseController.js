@@ -179,6 +179,7 @@ class FabrikBaseController extends BaseController {
     return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
   }
 
+  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
   createManager(plan_id) {
     return this.fabrik.createManager(this.getPlan(plan_id));
   }

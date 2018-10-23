@@ -231,6 +231,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  //TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
+
   getBackupOptions(backupGuid, req) {
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -239,11 +241,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(resource => {
         const context = req.body.context || _.get(resource, 'spec.options.context');
-        const planId = _.get(resource, 'spec.options.plan_id');
+        const planId = req.body.plan_id || _.get(resource, 'spec.options.plan_id');
         const backupOptions = {
           guid: backupGuid,
           instance_guid: req.params.instance_id,
-          plan_id: req.body.plan_id || planId,
+          plan_id: planId,
           service_id: req.body.service_id || this.getPlan(planId).service.id,
           arguments: req.body,
           username: req.user.name,
@@ -255,16 +257,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getRestoreOptions(req, metadata) {
-    return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+    const planDetails = catalog.getPlan(metadata.plan_id);
+    return Promise.try(() => req.body.context ? req.body.context : eventmesh.apiServerClient.getPlatformContext({
+        resourceGroup: planDetails.resourceGroup,
+        resourceType: planDetails.resourceType,
         resourceId: req.params.instance_id
-      })
-      .then(resource => {
+      }))
+      .then(context => {
         const restoreOptions = {
           plan_id: metadata.plan_id,
           service_id: metadata.service_id,
-          context: req.body.context || _.get(resource, 'spec.options.context'),
+          context: context,
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
@@ -857,12 +860,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (checkUpdateRequired) {
           return req.manager
             .findDeploymentNameByInstanceId(req.params.instance_id)
-            .then(deploymentName => eventmesh.apiServerClient.getResource({
+            .then(deploymentName => eventmesh.apiServerClient.getPlatformContext({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
                 resourceId: req.params.instance_id
               })
-              .then(resource => _.get(resource, 'spec.options.context'))
               .then(context => {
                 const opts = {};
                 opts.context = context;
