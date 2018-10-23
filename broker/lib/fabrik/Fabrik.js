@@ -11,7 +11,7 @@ const VirtualHostManager = require('./VirtualHostManager');
 const ServiceFabrikOperation = require('./ServiceFabrikOperation');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
-const BasePlatformManager = require('./BasePlatformManager');
+const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
 const CONST = require('../../../common/constants');
 const DockerManager = config.enable_swarm_manager ? require('./DockerManager') : undefined;
 
@@ -57,7 +57,7 @@ class Fabrik {
     if (platform === CONST.PLATFORM.SM) {
       platform = context.origin;
     }
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`./${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`./${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
+    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);
     } else {

@@ -32,7 +32,7 @@ const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
 const EvaluationContext = bosh.EvaluationContext;
 const BadRequest = errors.BadRequest;
-const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager');
+const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 
 
 class DirectorService extends BaseDirectorService {
@@ -931,7 +931,7 @@ class DirectorService extends BaseDirectorService {
     if (platform === CONST.PLATFORM.SM) {
       platform = context.origin;
     }
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
+    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);
     } else {
