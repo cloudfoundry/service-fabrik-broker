@@ -307,6 +307,7 @@ module.exports = Object.freeze({
       UNLOCKED: 'unlocked'
     },
     TASK_TYPE: {
+      SERVICE_INSTANCE_BACKUP: 'ServiceInstanceBackupTask',
       SERVICE_INSTANCE_UPDATE: 'ServiceInstanceUpdateTask',
       BLUEPRINT: 'BlueprintTask'
     },
@@ -406,7 +407,8 @@ module.exports = Object.freeze({
   WORKFLOW: {
     TYPE: {
       BLUEPRINT_WORKFLOW: 'blueprint_workflow',
-      UPGRADE_MULTI_AZ: 'upgrade_to_multi_az'
+      UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
+      MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
     }
   }
 });

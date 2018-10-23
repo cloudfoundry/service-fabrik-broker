@@ -12,13 +12,24 @@ blueprint_workflow:
     task_data: 
       sample: 'InputDataFrom Task2 ----'
 upgrade_to_multi_az:
-  description: 'Distributed deployment in multiple-availability zones'
+  description: 'Distribute deployment in multiple-availability zones'
   tasks: 
   - task_type: ServiceInstanceUpdateTask
     task_description: 'Deployment update for multi-az, phase: scale up'
     task_data: 
       vms_scale: upgrade
   - task_type: ServiceInstanceUpdateTask
-    task_description: 'Deployment updated for multi-az, phase: scale down'
+    task_description: 'phase: scale down'
+    task_data:
+      vms_scale: downgrade
+major_version_upgrade:
+  description: 'Major version upgrade'
+  tasks: 
+  - task_type: ServiceInstanceBackupTask
+    task_description: 'Instance backup prior to version upgrade'
+    task_data: 
+      vms_scale: upgrade
+  - task_type: ServiceInstanceUpdateTask
+    task_description: 'Deployment version upgrade'
     task_data:
       vms_scale: downgrade

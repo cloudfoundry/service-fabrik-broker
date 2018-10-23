@@ -90,9 +90,14 @@ class TaskOperator extends BaseOperator {
         const state = _.get(operationStatus, 'state');
         if (utils.isServiceFabrikOperationFinished(state)) {
           logger.info(`TASK COMPLETE - on resource - ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)}  - ${JSON.stringify(taskDetails.resource)}`);
+          let description = _.get(operationStatus, 'lastOperation.description');
+          description = description || _.get(operationStatus, 'response.description');
           const status = {
-            description: operationStatus.description,
-            response: operationStatus,
+            description: description,
+            response: {
+              description: description,
+              state: state
+            },
             state: CONST.APISERVER.TASK_STATE.DONE
           };
           return task
@@ -104,7 +109,10 @@ class TaskOperator extends BaseOperator {
           logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
           return this
             .continueToHoldLock(object)
-            .tap(() => logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name}`))
+            .tap((resource) => {
+              object.metadata.resourceVersion = resource.metadata.resourceVersion;
+              logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name} with version - ${resource.metadata.resourceVersion}`);
+            })
             .return(false);
         }
       });
@@ -112,7 +120,7 @@ class TaskOperator extends BaseOperator {
 
   clearPoller(object, intervalId) {
     return Promise.try(() => {
-      logger.info(`Clearing poller interval for task ${object.metadata.name} - intervalId`, intervalId);
+      logger.info(`Clearing poller interval for task ${object.metadata.name}`);
       clearInterval(intervalId);
       this._postProcessRequest(object);
       _.unset(this.pollers, object.metadata.name);

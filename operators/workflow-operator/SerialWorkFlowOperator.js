@@ -151,7 +151,7 @@ class SerialWorkFlowOperator extends BaseOperator {
           .then(() => this.updateWorkflowStatus(
             taskDetails, {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-              description: `${tasks[taskDetails.task_order-1].task_description} completed @ ${new Date()}`
+              description: `${tasks[taskDetails.task_order-1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
             }))
           .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
@@ -171,9 +171,10 @@ class SerialWorkFlowOperator extends BaseOperator {
   }
 
   workflowComplete(taskDetails, message, failed) {
+    const state = failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED;
     const status = {
-      state: failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED,
-      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description} completed @ ${new Date()}`
+      state: state,
+      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description} ${state} @ ${new Date()}`
     };
     return this.updateWorkflowStatus(taskDetails, status);
   }

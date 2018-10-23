@@ -12,8 +12,8 @@ class Task {
   }
 
   static getStatus(taskId, taskDetails) {
-    logger.debug(`Fetching status for ${JSON.stringify(taskDetails)}`);
-    return apiServerClient.getLastOperation({
+    logger.debug(`Fetching resource state for ${JSON.stringify(taskDetails)}`);
+    return apiServerClient.getResourceStatus({
       resourceGroup: taskDetails.resource.resourceGroup,
       resourceType: taskDetails.resource.resourceType,
       resourceId: taskDetails.resource.resourceId

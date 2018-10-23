@@ -488,6 +488,18 @@ class ApiServerClient {
       .then(resource => _.get(resource, 'status.state'));
   }
 
+
+  /**
+   * @description Get resource status
+   * @param {string} opts.resourceGroup - Name of operation
+   * @param {string} opts.resourceType - Type of operation
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getResourceStatus(opts) {
+    return this.getResource(opts)
+      .then(resource => _.get(resource, 'status'));
+  }
+
   /**
    * @description Get resource last operation
    * @param {string} opts.resourceGroup - Name of operation

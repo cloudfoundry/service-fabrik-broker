@@ -160,7 +160,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           const workFlowOptions = {
             workflow_name: workflow,
             instance_id: req.params.instance_id,
-            operation_params: params
+            operation_params: params,
+            user: req.user
           };
           return utils
             .uuidV4()

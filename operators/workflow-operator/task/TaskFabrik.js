@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const CONST = require('../../../common/constants');
-let ServiceInstanceUpdate, BlueprintTask;
+let ServiceInstanceUpdate, ServiceInstanceBackup, BlueprintTask;
 
 class TaskFabrik {
   static getTask(taskType) {
@@ -12,6 +12,11 @@ class TaskFabrik {
         ServiceInstanceUpdate = require('./ServiceInstanceUpdateTask');
       }
       return ServiceInstanceUpdate;
+    case CONST.APISERVER.TASK_TYPE.SERVICE_INSTANCE_BACKUP:
+      if (ServiceInstanceBackup === undefined) {
+        ServiceInstanceBackup = require('./ServiceInstanceBackupTask');
+      }
+      return ServiceInstanceBackup;
     case CONST.APISERVER.TASK_TYPE.BLUEPRINT:
       if (BlueprintTask === undefined) {
         BlueprintTask = require('./BlueprintTask');
