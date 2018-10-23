@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
 const utils = require('../common/utils');
+const config = require('../common/config');
 const catalog = require('../common/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
 const BadRequest = errors.BadRequest;
@@ -15,6 +16,7 @@ const ContinueWithNext = errors.ContinueWithNext;
 const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
+const formatUrl = require('url').format;
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -51,7 +53,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
-        dashboard_url: FabrikBaseController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -108,7 +110,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       let body = {
-        dashboard_url: FabrikBaseController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -351,6 +353,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }))
       .then(done)
       .catch(NotFound, gone);
+  }
+
+  static getDashboardUrl(serviceId, planId, instanceId) {
+    return formatUrl(_
+      .chain(config.external)
+      .pick('protocol', 'host')
+      .set('slashes', true)
+      .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceId}`)
+      .value()
+    );
   }
 
 }
