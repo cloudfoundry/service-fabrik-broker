@@ -5,7 +5,7 @@ const Promise = require('bluebird');
 const config = require('../../../common/config');
 const logger = require('../../../common/logger');
 const catalog = require('../../../common/models/catalog');
-const DirectorManager = require('./DirectorManager');
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
@@ -44,10 +44,10 @@ class DBManager {
         if (_.get(config, 'mongodb.provision.plan_id') !== undefined) {
           logger.info(`ServiceFabrik configured to use mongo plan: ${config.mongodb.provision.plan_id}`);
           const plan = catalog.getPlan(config.mongodb.provision.plan_id);
-          return DirectorManager
-            .load(plan)
-            .then(directorManager => {
-              this.directorManager = directorManager;
+          return Promise
+            .try(() => new DirectorService(plan))
+            .then(directorService => {
+              this.directorService = directorService;
               if (config.mongodb.deployment_name) {
                 return this.initDbFromBindInfo();
                 /**
@@ -101,7 +101,7 @@ class DBManager {
       }
       return utils
         .retry(() => this
-          .directorManager
+          .directorService
           .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
             maxAttempts: 5,
             minDelay: 5000,
@@ -206,9 +206,9 @@ class DBManager {
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
-      return this.directorManager.createOrUpdateDeployment(config.mongodb.deployment_name, params)
+      return this.directorService.createOrUpdateDeployment(config.mongodb.deployment_name, params)
         .tap(out => {
-          const taskId = out.task_id;
+          const taskId = _.get(out, 'task_id');
           logger.info(`MongoDB ${operation} request is complete. Check status for task id - ${taskId}`);
           this.director
             .pollTaskStatusTillComplete(taskId)
@@ -229,7 +229,7 @@ class DBManager {
       .then(() => this.initialize())
       .catch(ServiceBindingNotFound, () => {
         return this
-          .directorManager
+          .directorService
           .createBinding(config.mongodb.deployment_name, {
             id: CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID,
             parameters: config.mongodb.provision.bind_params || {}

@@ -145,7 +145,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
             }
           }))
           .catch(err => {
-            logger.error(`Error occurred while updating deployment IPs in etcd for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
+            logger.error(`Error occurred while updating deployment IPs in apiserver for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
             return eventmesh.apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,

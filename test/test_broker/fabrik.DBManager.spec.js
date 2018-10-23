@@ -15,8 +15,8 @@ let bindPropertyFound = 0;
 let failCreateUpdate = false;
 const mongoDBUrl = 'mongodb://username:password@10.11.0.2:27017,10.11.0.3:27017,10.11.0.4:27017/service-fabrik';
 let dbConnectionState = 1;
-const DirectorManagerStub = {
-  getBindingProperty: function () {
+class DirectorServiceStub {
+  getBindingProperty() {
     return Promise.try(() => {
       if (bindPropertyFound === 0) {
         return {
@@ -30,21 +30,26 @@ const DirectorManagerStub = {
         throw new errors.ServiceUnavailable('BOSH is down... simulated failure. Expected error.!');
       }
     });
-  },
-  createBinding: () => Promise.resolve({
-    credentials: {
-      uri: mongoDBUrl
-    }
-  }),
-  createOrUpdateDeployment: () => Promise.try(() => {
-    if (!failCreateUpdate) {
-      return {
-        task_id: '1234'
-      };
-    }
-    throw new errors.ServiceUnavailable('Bosh is down... simulated failure. Expected error.!');
-  })
-};
+  }
+  createBinding() {
+    return Promise.resolve({
+      credentials: {
+        uri: mongoDBUrl
+      }
+    });
+  }
+  createOrUpdateDeployment() {
+    return Promise.try(() => {
+      if (!failCreateUpdate) {
+        return {
+          task_id: '1234'
+        };
+      }
+      throw new errors.ServiceUnavailable('Bosh is down... simulated failure. Expected error.!');
+    });
+  }
+}
+
 let errorOnDbStart = false;
 const proxyLibs = {
   '../../../common/config': {
@@ -72,9 +77,7 @@ const proxyLibs = {
     getConnectionStatus: () => dbConnectionState,
     shutDown: () => Promise.resolve({})
   },
-  './DirectorManager': {
-    load: () => Promise.resolve(DirectorManagerStub)
-  },
+  '../../../operators/bosh-operator/DirectorService': DirectorServiceStub,
   '../../../common/models/Catalog': {
     getPlan: () => {}
   }
@@ -321,6 +324,7 @@ describe('fabrik', function () {
           return dbManager.createOrUpdateDbDeployment(true).catch(errors.BadRequest, error => {});
         });
       });
+
       it('should provision & connect to MongoDB Successfully', function () {
         const dbManager = new DBManager();
         deferred.reject(new errors.NotFound('Deployment not found'));
@@ -342,6 +346,7 @@ describe('fabrik', function () {
             });
         });
       });
+
       it('Should gracefully handle BOSH errors while creating deployment', function () {
         errorPollTask = true;
         const dbManager = new DBManager();

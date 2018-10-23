@@ -230,18 +230,6 @@ defaults: &defaults
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
   
-
-  ####################
-  # ETCD SETTINGS #
-  ####################
-  etcd:
-    url:
-      - 'localhost:2379'
-    ssl:
-      ca: <%= certificate('etcd-ca.crt') %>
-      crt: <%= certificate('etcd.crt') %>
-      key: <%= certificate('etcd.key') %>
-
   hook:
     port: <%= hook.port %>
     ip: <%= hook.ip %>

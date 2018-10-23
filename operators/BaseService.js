@@ -16,6 +16,10 @@ class BaseService {
     return this.plan.manager.settings;
   }
 
+  get subnet() {
+    return this.settings.subnet || this.service.subnet;
+  }
+
   getTenantGuid(context) {
     if (context.platform === CONST.PLATFORM.CF) {
       return context.space_guid;

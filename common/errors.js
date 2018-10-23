@@ -34,14 +34,6 @@ class DeploymentDelayed extends BaseError {
 }
 exports.DeploymentDelayed = DeploymentDelayed;
 
-class CacheUpdateError extends BaseError {
-  constructor(keyName) {
-    super(keyName);
-    this.code = 'ETCDERROR';
-  }
-}
-exports.CacheUpdateError = CacheUpdateError;
-
 class ContinueWithNext extends BaseError {
   constructor() {
     super('Continue with next handler');

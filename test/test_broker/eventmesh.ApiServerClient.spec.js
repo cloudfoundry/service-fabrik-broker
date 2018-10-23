@@ -15,7 +15,8 @@ const expectedGetDeploymentResponse = {
       label1: 'label1',
       label2: 'label2',
       last_backup_defaultbackups: 'backup1'
-    }
+    },
+    creationTimestamp: '2018-09-26T20:45:28Z'
   },
   spec: {
     options: JSON.stringify({
@@ -39,7 +40,8 @@ const sampleDeploymentResource = {
       label1: 'label1',
       label2: 'label2',
       last_backup_defaultbackups: 'backup1'
-    }
+    },
+    creationTimestamp: '2018-09-26T20:45:28Z'
   },
   spec: {
     options: {
@@ -680,6 +682,52 @@ describe('eventmesh', () => {
             verify();
           });
       });
+
+      it('Gets resource list by state', () => {
+        mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
+        return apiserver.getResourceListByState({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+          })
+          .then(res => {
+            expect(res).to.eql([sampleDeploymentResource]);
+            verify();
+          });
+      });
+
+      it('Gets resource list by state with empy array', () => {
+        mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [], 1, 200);
+        return apiserver.getResourceListByState({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+          })
+          .then(res => {
+            expect(res).to.eql([]);
+            verify();
+          });
+      });
+
+      it('Gets resource list by state: error', () => {
+        mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 404);
+        return apiserver.getResourceListByState({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+          })
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            verify();
+          });
+      });
+
     });
 
     describe('getLastOperation', () => {
