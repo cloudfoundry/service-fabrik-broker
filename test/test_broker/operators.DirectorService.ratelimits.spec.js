@@ -303,6 +303,16 @@ describe('service', () => {
         });
     });
 
+    it('should not update without rate limits - fails due to exception', () => {
+      initializeSpy.returns(Promise.reject(new errors.ServiceInstanceNotFound()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.update(params)
+        .catch(err => {
+          expect(err instanceof errors.ServiceInstanceNotFound).to.eql(true);
+          expect(codSpy.callCount).to.eql(0);
+        });
+    });
+
     it('should update without rate limits - internal operation', () => {
       return directorService.update(internal_params).then(out => {
         let expectedParams = _.cloneDeep(params);

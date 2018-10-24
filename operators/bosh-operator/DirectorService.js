@@ -247,8 +247,13 @@ class DirectorService extends BaseDirectorService {
     };
     return this
       .initialize(operation)
-      .catch(err => logger.error(`Error occurred while finding network index for update
-        and instance guid :${this.guid}`, err))
+      .catch(err => {
+        logger.error(`Error occurred while finding network index for update
+        and instance guid :${this.guid}`, err);
+        if (err instanceof errors.ServiceInstanceNotFound) {
+          throw err;
+        }
+      })
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
