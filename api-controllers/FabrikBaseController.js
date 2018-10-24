@@ -154,21 +154,6 @@ class FabrikBaseController extends BaseController {
       });
   }
 
-  ensurePlatformContext(req, res) {
-    /* jshint unused:false */
-    return Promise.try(() => {
-        const context = _.get(req, 'body.context');
-        if (context === undefined && req.body.space_guid && req.body.organization_guid) {
-          _.set(req.body, 'context', {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: req.body.organization_guid,
-            space_guid: req.body.space_guid
-          });
-        }
-      })
-      .throw(new ContinueWithNext());
-  }
-
   getInstanceId(deploymentName) {
     return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
   }
