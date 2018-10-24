@@ -244,6 +244,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getDeployment(req, res) {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
+    // TODO: Director Service should be used
     this.createManager(req.query.plan_id)
       .then(manager =>
         eventmesh.apiServerClient.getPlatformContext({

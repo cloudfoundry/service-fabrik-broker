@@ -103,7 +103,7 @@ exports.checkQuota = function () {
             });
         }
       } else {
-        logger.debug(`[Quota]: Platform/Origin can be either ${CONST.PLATFORM.CF} or ${CONST.PLATFORM.SM}/${CONST.PLATFORM.CF}. Skipping quota check : calling next handler..`);
+        logger.debug(`[Quota]: Platform: ${platform}, Origin: ${origin}. Platform is not ${CONST.PLATFORM.CF} or ${CONST.PLATFORM.SM}/${CONST.PLATFORM.CF}. Skipping quota check : calling next handler..`);
         next();
       }
     }

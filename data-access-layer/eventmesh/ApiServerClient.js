@@ -572,8 +572,6 @@ class ApiServerClient {
       })
       .then(resource => _.get(resource, 'spec.options.context'));
   }
-
-
 }
 
 module.exports = ApiServerClient;

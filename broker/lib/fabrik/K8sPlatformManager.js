@@ -1,7 +1,6 @@
 'use strict';
 
 const BasePlatformManager = require('./BasePlatformManager');
-// const _ = require('lodash');
 
 class K8sPlatformManager extends BasePlatformManager {
   constructor(platform) {

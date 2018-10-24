@@ -112,7 +112,7 @@ class DirectorService extends BaseDirectorService {
               this.platformManager.preInstanceDeleteOperations({
                 guid: this.guid
               }),
-              this.deleteRestoreFile()
+              this.deleteRestoreFile() // This should be revisited when broker start supporting K8s through service manager
             ]);
         }
       });
