@@ -68,7 +68,7 @@ class DirectorService extends BaseDirectorService {
                 For them platform-context is not saved in deployment property. Defaults to CF.
             */
             /*TODO: Remove the code for querying bosh for property.
-            */
+             */
             logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
           Setting default platform as '${CONST.PLATFORM.CF}'`);
 
