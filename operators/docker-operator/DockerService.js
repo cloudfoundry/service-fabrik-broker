@@ -666,11 +666,15 @@ class DockerService extends BaseService {
         dockerService.imageInfo = manager.imageInfo;
       })
       .then(() => context ? context : dockerService.platformContext)
-      .then(context => dockerService.assignPlatformManager(DockerService.getPlatformManager(context.platform)))
+      .then(context => dockerService.assignPlatformManager(DockerService.getPlatformManager(context)))
       .return(dockerService);
   }
 
-  static getPlatformManager(platform) {
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);

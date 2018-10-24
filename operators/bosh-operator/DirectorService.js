@@ -112,7 +112,7 @@ class DirectorService extends BaseDirectorService {
               this.platformManager.preInstanceDeleteOperations({
                 guid: this.guid
               }),
-              this.deleteRestoreFile()
+              this.deleteRestoreFile() // This should be revisited when broker start supporting K8s through service manager
             ]);
         }
       });
@@ -876,6 +876,7 @@ class DirectorService extends BaseDirectorService {
                 }
                 logger.info(`Scheduling Backup for instance : ${this.guid} with backup interval of - ${options.repeatInterval}`);
                 //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+                // This flow has to be revisited when we start supporting K8s through service manager
                 return this.serviceFabrikClient.scheduleBackup(options);
               });
           } catch (err) {
@@ -921,11 +922,15 @@ class DirectorService extends BaseDirectorService {
     const directorService = new DirectorService(plan, instanceId);
     return Promise
       .try(() => context ? context : directorService.platformContext)
-      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context.platform)))
+      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context)))
       .return(directorService);
   }
 
-  static getPlatformManager(platform) {
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);

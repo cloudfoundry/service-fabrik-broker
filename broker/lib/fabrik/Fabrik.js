@@ -47,12 +47,16 @@ class Fabrik {
         const instance = manager.createInstance(instance_id);
         return Promise
           .try(() => context ? context : instance.platformContext)
-          .then(context => instance.assignPlatformManager(Fabrik.getPlatformManager(context.platform)))
+          .then(context => instance.assignPlatformManager(Fabrik.getPlatformManager(context)))
           .return(instance);
       });
   }
 
-  static getPlatformManager(platform) {
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
     const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`./${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`./${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);

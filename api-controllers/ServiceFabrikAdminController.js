@@ -243,14 +243,17 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getDeployment(req, res) {
     const deploymentName = req.params.name;
+    const plan = catalog.getPlan(req.query.plan_id);
+    // TODO: Director Service should be used
     this.createManager(req.query.plan_id)
-      .then(manager => this.cloudController.getOrgAndSpaceGuid(this.getInstanceId(deploymentName))
-        .then(opts => {
-          const context = {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: opts.organization_guid,
-            space_guid: opts.space_guid
-          };
+      .then(manager =>
+        eventmesh.apiServerClient.getPlatformContext({
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
+          resourceId: this.getInstanceId(deploymentName)
+        })
+        .then(context => {
+          const opts = {};
           opts.context = context;
           return Promise
             .all([
@@ -364,13 +367,13 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
-        return this.cloudController.getOrgAndSpaceGuid(this.getInstanceId(deployment.name))
-          .then(opts => {
-            const context = {
-              platform: CONST.PLATFORM.CF,
-              organization_guid: opts.organization_guid,
-              space_guid: opts.space_guid
-            };
+        return eventmesh.apiServerClient.getPlatformContext({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: this.getInstanceId(deployment.name)
+          })
+          .then(context => {
+            const opts = {};
             opts.context = context;
             return deployment.manager
               .diffManifest(deployment.name, opts)

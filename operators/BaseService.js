@@ -21,9 +21,13 @@ class BaseService {
   }
 
   getTenantGuid(context) {
-    if (context.platform === CONST.PLATFORM.CF) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
+    if (platform === CONST.PLATFORM.CF) {
       return context.space_guid;
-    } else if (context.platform === CONST.PLATFORM.K8S) {
+    } else if (platform === CONST.PLATFORM.K8S) {
       return context.namespace;
     }
   }

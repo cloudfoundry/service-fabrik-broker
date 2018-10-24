@@ -532,11 +532,17 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
+            }
           });
           mocks.director.getDeployments();
           mocks.director.getDeployment(deploymentName, true);

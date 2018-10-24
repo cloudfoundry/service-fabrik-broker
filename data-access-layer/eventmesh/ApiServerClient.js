@@ -558,6 +558,20 @@ class ApiServerClient {
       .then(resource => _.get(resource, 'status.lastOperation'));
   }
 
+  /**
+   * @description Get platform context
+   * @param {string} opts.resourceGroup - Name of resourceGroup
+   * @param {string} opts.resourceType - Type of resource
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getPlatformContext(opts) {
+    return this.getResource({
+        resourceGroup: opts.resourceGroup,
+        resourceType: opts.resourceType,
+        resourceId: opts.resourceId
+      })
+      .then(resource => _.get(resource, 'spec.options.context'));
+  }
 }
 
 module.exports = ApiServerClient;

@@ -13,7 +13,6 @@ const config = require('../../../common/config');
 const errors = require('../../../common/errors');
 const fabrik = lib.fabrik;
 const utils = require('../../../common/utils');
-const NotFound = errors.NotFound;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = iaas.backupStore.filename;
@@ -176,13 +175,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup with SF2.0 not via cloud controller', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -205,6 +197,18 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             metadata: {
               resourceVersion: 10
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
             }
           });
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
@@ -229,13 +233,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should fail start-backup with SF2.0 not via cloud controller with unlocking', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -260,6 +257,18 @@ describe('service-fabrik-api-sf2.0', function () {
               resourceVersion: 10
             }
           }, 2);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {}, 1, undefined, 404);
           return chai
             .request(apps.external)
@@ -280,13 +289,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup operation with optional space_guid', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -308,6 +310,18 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai
             .request(apps.external)
@@ -329,13 +343,6 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should initiate a start-backup operation with context', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudProvider.list(container, list_prefix, [
@@ -357,6 +364,18 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai
             .request(apps.external)
@@ -440,13 +459,6 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
-          });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           //cloud controller admin check will ensure getSpaceDeveloper isnt called, so no need to set that mock.
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
@@ -461,6 +473,18 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             metadata: {
               resourceVersion: 10
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
             }
           });
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {});
@@ -706,53 +730,11 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should return 200 Ok - should check blobstore if metadata is not found in apiserver', function () {
+        it('should return 404  - if last backup label is not set in deployment resource', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id, 2);
-          mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
-            metadata: {
-              labels: {
-                last_backup_defaultbackups: backup_guid
-              }
-            }
-          });
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, {
-            status: {
-              response: JSON.stringify(data)
-            }
-          }, 1, 404);
-          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-          const pathname = `/${container}/${backupFilename}`;
-          mocks.cloudProvider.download(pathname, data);
-          // mocks.agent.lastBackupOperation(backupState);
-          return chai.request(apps.external)
-            .get(`${base_url}/service_instances/${instance_id}/backup`)
-            .set('Authorization', authHeader)
-            .query({
-              space_guid: space_guid,
-            })
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql(_.omit(data, 'agent_ip'));
-              mocks.verify();
-            });
-        });
-
-        it('should return 200 Ok - should check blobstore if last backup label is not set in deployment resource', function () {
-          mocks.uaa.tokenKey();
-          mocks.cloudController.findServicePlan(instance_id, plan_id, 2);
+          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
-          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-          const pathname = `/${container}/${backupFilename}`;
-          mocks.cloudProvider.download(pathname, data);
-          // mocks.agent.lastBackupOperation(backupState);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -761,22 +743,14 @@ describe('service-fabrik-api-sf2.0', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              expect(res).to.have.status(200);
-              expect(res.body).to.eql(_.omit(data, 'agent_ip'));
+              expect(res).to.have.status(404);
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });
 
-        it('should return 404 if Not Found in blobstore and apiserver', function () {
-          const backupPrefix = `${space_guid}/backup/${service_id}.${instance_id}`;
-          const backupFilename = `${space_guid}/backup/${service_id}.${instance_id}.${backup_guid}.${started_at}.json`;
-          const pathname = `/${container}/${backupFilename}`;
+        it('should return 404 if Not Found in apiserver', function () {
           mocks.uaa.tokenKey();
-          // mocks.cloudController.getServiceInstance(instance_id, {
-          //   space_guid: space_guid,
-          //   service_plan_guid: plan_guid
-          // });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
@@ -791,8 +765,6 @@ describe('service-fabrik-api-sf2.0', function () {
               response: JSON.stringify(data)
             }
           }, 1, 404);
-          mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
-          mocks.cloudProvider.download(pathname, new NotFound('not found'));
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/backup`)
             .set('Authorization', authHeader)
@@ -1417,6 +1389,17 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                }
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai
             .request(apps.external)
@@ -1447,6 +1430,17 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             spec: {
               options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                }
+              })
             }
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
@@ -1482,6 +1476,17 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             spec: {
               options: '{}'
+            }
+          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                }
+              })
             }
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
@@ -1521,6 +1526,17 @@ describe('service-fabrik-api-sf2.0', function () {
               options: '{}'
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                }
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
@@ -1558,6 +1574,17 @@ describe('service-fabrik-api-sf2.0', function () {
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                }
+              })
+            }
+          });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai
             .request(apps.external)
@@ -1613,21 +1640,6 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
 
-          // const restore_state_response = {
-          //   'service_id': '24731fb8-7b84-4f57-914f-c3d55d793dd4',
-          //   'plan_id': 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3',
-          //   'instance_guid': '4c82166e-67d2-4aaa-82b9-a22a33a79b9c',
-          //   'username': 'admin_cf',
-          //   'operation': 'restore',
-          //   'backup_guid': '1507b872-a91e-43b8-b989-33d14b5223cb',
-          //   'state': 'processing',
-          //   'agent_ip': '10.11.98.184',
-          //   'started_at': '2018-08-15T11:43:31.998Z',
-          //   'finished_at': null,
-          //   'tenant_id': '52a3147b-c0ca-4d2a-ba98-6046ba9d6ad0',
-          //   'stage': 'Waiting for attachment of volume vol-00949e1f29d445194 to get ready...'
-          // };
-
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
@@ -1646,14 +1658,7 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.cloudController.findServicePlan(instance_id, plan_id);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          // mocks.cloudProvider.download(pathname, new NotFound('not found'));
-          // mocks.apiServerEventMesh.nockGetResource('backup', 'defaultbackup', restore_guid, {
-          //   status: {
-          //     response: JSON.stringify(restoreState)
-          //   }
-          // });
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
             metadata: {
               labels: {
@@ -2246,11 +2251,17 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: organization_guid
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: organization_guid
+                },
+                plan_id: plan_id
+              })
+            }
           });
           mocks.director.getDeployments();
           mocks.director.getDeployment(deploymentName, true);

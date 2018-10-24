@@ -10,8 +10,6 @@ const filename = backupStore.filename;
 const eventmesh = require('../data-access-layer/eventmesh');
 const lockManager = eventmesh.lockManager;
 const errors = require('../common/errors');
-const BackupService = require('../operators/backup-operator');
-const RestoreService = require('../operators/restore-operator');
 const FabrikBaseController = require('./FabrikBaseController');
 const Unauthorized = errors.Unauthorized;
 const NotFound = errors.NotFound;
@@ -233,22 +231,22 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  //TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
+
   getBackupOptions(backupGuid, req) {
-    return Promise
-      .all([
-        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id),
-        cf.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
-      ])
-      .spread((planDetails, orgAndSpaceDetails) => {
-        const context = req.body.context || {
-          space_guid: orgAndSpaceDetails.space_guid,
-          platform: CONST.PLATFORM.CF
-        };
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: req.params.instance_id
+      })
+      .then(resource => {
+        const context = req.body.context || _.get(resource, 'spec.options.context');
+        const planId = req.body.plan_id || _.get(resource, 'spec.options.plan_id');
         const backupOptions = {
           guid: backupGuid,
           instance_guid: req.params.instance_id,
-          plan_id: req.body.plan_id || planDetails.entity.unique_id,
-          service_id: req.body.service_id || this.getPlan(planDetails.entity.unique_id).service.id,
+          plan_id: planId,
+          service_id: req.body.service_id || this.getPlan(planId).service.id,
           arguments: req.body,
           username: req.user.name,
           useremail: req.user.email || '',
@@ -259,15 +257,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getRestoreOptions(req, metadata) {
-    return Promise
-      .try(() => {
+    const planDetails = catalog.getPlan(metadata.plan_id);
+    return Promise.try(() => req.body.context ? req.body.context : eventmesh.apiServerClient.getPlatformContext({
+        resourceGroup: planDetails.resourceGroup,
+        resourceType: planDetails.resourceType,
+        resourceId: req.params.instance_id
+      }))
+      .then(context => {
         const restoreOptions = {
           plan_id: metadata.plan_id,
           service_id: metadata.service_id,
-          context: req.body.context || {
-            space_guid: req.entity.tenant_id,
-            platform: CONST.PLATFORM.CF
-          },
+          context: context,
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
@@ -371,20 +371,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: backupGuid
         })
       )
-      .catch(NotFound, AssertionError, err => {
-        // This code block is specifically for the transition of Service Fabrik to v2
-        // Here we reffer to BackupService to get the lastBackup status
-        logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        const tenantId = req.entity.tenant_id;
-        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
-          .then(plan_id => BackupService.createService(catalog.getPlan(plan_id)))
-          .then(backupService => backupService.getLastBackup(tenantId, req.params.instance_id));
-      })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.omit(result, 'secret', 'agent_ip', 'description'))
       )
-      .catch(NotFound, () => {
+      .catch(NotFound, AssertionError, () => {
         logger.error(`No backup found for service instance '${req.params.instance_id}'`);
         throw new NotFound(`No backup found for service instance '${req.params.instance_id}'`);
       });
@@ -572,7 +563,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getLastRestore(req, res) {
     req.manager.verifyFeatureSupport('restore');
     const instanceId = req.params.instance_id;
-    const tenantId = req.entity.tenant_id;
 
     return eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -588,14 +578,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceId: restoreGuid
         })
       )
-      .catch(NotFound, AssertionError, (err) => {
-        // This code block is specifically for the transition of Service Fabrik to v2
-        // Here we reffer to RestoreService to get the lastRestore status
-        logger.info('Restore metadata not found in apiserver, checking blobstore. Error message:', err.message);
-        return cf.cloudController.getPlanIdFromInstanceId(req.params.instance_id)
-          .then(plan_id => RestoreService.createService(catalog.getPlan(plan_id)))
-          .then(restoreService => restoreService.getLastRestore(tenantId, req.params.instance_id));
-      })
       .then(result => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(result)
@@ -878,13 +860,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (checkUpdateRequired) {
           return req.manager
             .findDeploymentNameByInstanceId(req.params.instance_id)
-            .then(deploymentName => this.cloudController.getOrgAndSpaceGuid(req.params.instance_id)
-              .then(opts => {
-                const context = {
-                  platform: CONST.PLATFORM.CF,
-                  organization_guid: opts.organization_guid,
-                  space_guid: opts.space_guid
-                };
+            .then(deploymentName => eventmesh.apiServerClient.getPlatformContext({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                resourceId: req.params.instance_id
+              })
+              .then(context => {
+                const opts = {};
                 opts.context = context;
                 return req.manager.diffManifest(deploymentName, opts);
               })

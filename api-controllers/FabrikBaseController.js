@@ -155,21 +155,6 @@ class FabrikBaseController extends BaseController {
       });
   }
 
-  ensurePlatformContext(req, res) {
-    /* jshint unused:false */
-    return Promise.try(() => {
-        const context = _.get(req, 'body.context');
-        if (context === undefined && req.body.space_guid && req.body.organization_guid) {
-          _.set(req.body, 'context', {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: req.body.organization_guid,
-            space_guid: req.body.space_guid
-          });
-        }
-      })
-      .throw(new ContinueWithNext());
-  }
-
   assignManager(req, res) {
     /* jshint unused:false */
     return Promise
@@ -194,6 +179,7 @@ class FabrikBaseController extends BaseController {
     return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
   }
 
+  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
   createManager(plan_id) {
     return this.fabrik.createManager(this.getPlan(plan_id));
   }

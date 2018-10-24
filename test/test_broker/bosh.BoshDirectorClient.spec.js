@@ -1164,7 +1164,6 @@ describe('bosh', () => {
         }));
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
           .then(ips => {
-            console.log(ips);
             assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
             assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
             expect(putDeploymentIpsInResourceStub).to.have.been.calledWith(deploymentName, ips);
