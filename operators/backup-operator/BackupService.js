@@ -197,16 +197,6 @@ class BackupService extends BaseDirectorService {
       });
   }
 
-  getLastBackup(tenant_id, instance_guid) {
-    return this.backupStore
-      .getBackupFile({
-        tenant_id: tenant_id,
-        service_id: this.plan.service.id,
-        plan_id: this.plan.id,
-        instance_guid: instance_guid
-      });
-  }
-
   getBackupOperationState(opts) {
     logger.debug('Getting Backup operation State for:', opts);
     const agent_ip = opts.agent_ip;

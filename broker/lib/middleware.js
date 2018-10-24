@@ -69,6 +69,11 @@ exports.checkBlockingOperationInProgress = function () {
 };
 
 exports.checkQuota = function () {
+  function shouldCheckQuotaForPlatform(platform, origin) {
+    return (platform === CONST.PLATFORM.CF ||
+      (platform === CONST.PLATFORM.SM &&
+        origin === CONST.PLATFORM.CF));
+  }
   return function (req, res, next) {
     if (utils.isServiceFabrikOperation(req.body)) {
       logger.debug('[Quota]: Check skipped as it is ServiceFabrikOperation: calling next handler..');
@@ -76,9 +81,7 @@ exports.checkQuota = function () {
     } else {
       const platform = _.get(req, 'body.context.platform');
       const origin = _.get(req, 'body.context.origin');
-      if (platform === CONST.PLATFORM.CF ||
-        (platform === CONST.PLATFORM.SM &&
-          origin === CONST.PLATFORM.CF)) {
+      if (shouldCheckQuotaForPlatform(platform, origin)) {
         const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
         if (orgId === undefined) {
           next(new BadRequest(`organization_id is undefined`));
