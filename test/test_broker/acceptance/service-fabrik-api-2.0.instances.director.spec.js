@@ -1964,7 +1964,6 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -1990,7 +1989,6 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -2045,7 +2043,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -2091,7 +2089,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -2136,7 +2134,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
@@ -2162,7 +2160,7 @@ describe('service-fabrik-api-sf2.0', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          // mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_update`)

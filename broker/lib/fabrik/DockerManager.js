@@ -6,8 +6,6 @@ const config = require('../../../common/config');
 const docker = require('../../../data-access-layer/docker');
 const BaseManager = require('./BaseManager');
 const DockerInstance = require('./DockerInstance');
-const errors = require('../../../common/errors');
-const NotImplemented = errors.NotImplemented;
 const dockerClient = docker.client;
 
 class DockerManager extends BaseManager {
@@ -15,10 +13,6 @@ class DockerManager extends BaseManager {
     super(plan);
     this.credentials = docker.createCredentials(this.plan.credentials);
     this.imageInfo = undefined;
-  }
-
-  isAutoUpdatePossible() {
-    throw new NotImplemented(`Feature 'Update' not supported for selected service`);
   }
 
   get imageName() {

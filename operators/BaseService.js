@@ -1,10 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
 const CONST = require('../common/constants');
 const Agent = require('../data-access-layer/service-agent');
-const errors = require('../common/errors');
-const NotImplemented = errors.NotImplemented;
 
 class BaseService {
   constructor(plan) {
@@ -36,11 +33,6 @@ class BaseService {
     return this.plan.service;
   }
 
-  verifyFeatureSupport(feature) {
-    if (!_.includes(this.agent.features, feature)) {
-      throw new NotImplemented(`Feature '${feature}' not supported`);
-    }
-  }
 }
 
 module.exports = BaseService;

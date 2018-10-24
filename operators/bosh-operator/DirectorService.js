@@ -72,6 +72,24 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
+  verifyFeatureSupport(feature) {
+    utils.verifyFeatureSupport(this.plan, feature);
+  }
+
+  getDeploymentName(guid, networkSegmentIndex) {
+    let subnet = this.subnet ? `_${this.subnet}` : '';
+    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+  }
+
+  getServiceInstanceState(instanceGuid) {
+    return this
+      .findNetworkSegmentIndex(instanceGuid)
+      .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
+      .then(deploymentName => this.getDeploymentIps(deploymentName))
+      .then(ips => this.agent.getState(ips));
+  }
+
+
   static get prefix() {
     return _
       .reduce(config.directors,
@@ -116,6 +134,20 @@ class DirectorService extends BaseDirectorService {
             ]);
         }
       });
+  }
+
+  findDeploymentNameByInstanceId(guid) {
+    logger.info(`Finding deployment name with instance id : '${guid}'`);
+    return this.getDeploymentNames(false)
+      .then(deploymentNames => {
+        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
+        if (!deploymentName) {
+          logger.warn(`+-> Could not find a matching deployment for guid: ${guid}`);
+          throw new ServiceInstanceNotFound(guid);
+        }
+        return deploymentName;
+      })
+      .tap(deploymentName => logger.info(`+-> Found deployment '${deploymentName}' for '${guid}'`));
   }
 
   acquireNetworkSegmentIndex(guid) {

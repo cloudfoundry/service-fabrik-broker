@@ -19,8 +19,6 @@ const EvaluationContext = bosh.EvaluationContext;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
-const NotImplemented = errors.NotImplemented;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const catalog = require('../../../common/models/catalog');
 
 class DirectorManager extends BaseManager {
@@ -29,10 +27,6 @@ class DirectorManager extends BaseManager {
     this.director = bosh.director;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
-  }
-
-  isAutoUpdatePossible() {
-    return true;
   }
 
   get template() {
@@ -78,24 +72,6 @@ class DirectorManager extends BaseManager {
     return new Networks(BoshDirectorClient.getInfrastructure().networks, index, BoshDirectorClient.getInfrastructure().segmentation);
   }
 
-  getNetwork(index) {
-    return this.getNetworks(index)[this.networkName];
-  }
-
-  findDeploymentNameByInstanceId(guid) {
-    logger.info(`Finding deployment name with instance id : '${guid}'`);
-    return this.getDeploymentNames(false)
-      .then(deploymentNames => {
-        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
-        if (!deploymentName) {
-          logger.warn(`+-> Could not find a matching deployment for guid: ${guid}`);
-          throw new ServiceInstanceNotFound(guid);
-        }
-        return deploymentName;
-      })
-      .tap(deploymentName => logger.info(`+-> Found deployment '${deploymentName}' for '${guid}'`));
-  }
-
   findNetworkSegmentIndex(guid) {
     logger.info(`Finding network segment index of an existing deployment with instance id '${guid}'...`);
     return this
@@ -103,14 +79,6 @@ class DirectorManager extends BaseManager {
       .getDeploymentNameForInstanceId(guid)
       .then(deploymentName => this.getNetworkSegmentIndex(deploymentName))
       .tap(networkSegmentIndex => logger.info(`+-> Found network segment index '${networkSegmentIndex}'`));
-  }
-
-  getDeploymentNames(queued) {
-    return this.director.getDeploymentNames(queued);
-  }
-
-  getDeploymentIps(deploymentName) {
-    return this.director.getDeploymentIps(deploymentName);
   }
 
   executeActions(phase, context) {
@@ -275,20 +243,6 @@ class DirectorManager extends BaseManager {
       .tap(events => _.each(events, addInfoEvent))
       .return(_.set(info, 'events', events))
       .catchReturn(DeploymentDoesNotExist, null);
-  }
-
-  getServiceInstanceState(instanceGuid) {
-    return this
-      .findNetworkSegmentIndex(instanceGuid)
-      .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
-      .then(deploymentName => this.getDeploymentIps(deploymentName))
-      .then(ips => this.agent.getState(ips));
-  }
-
-  verifyFeatureSupport(feature) {
-    if (!_.includes(this.agent.features, feature)) {
-      throw new NotImplemented(`Feature '${feature}' not supported`);
-    }
   }
 
   static get prefix() {
