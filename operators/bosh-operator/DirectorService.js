@@ -94,13 +94,10 @@ class DirectorService extends BaseDirectorService {
 
   getContextFromResource() {
     logger.debug(`Fetching context from etcd for ${this.guid}`);
-    return eventmesh.apiServerClient.getResource({
+    return eventmesh.apiServerClient.getPlatformContext({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: this.guid
-      })
-      .then(resource => {
-        return _.get(resource, 'spec.options.context', undefined);
       })
       .catch(err => {
         logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
