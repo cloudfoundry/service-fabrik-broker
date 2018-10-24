@@ -23,7 +23,7 @@ describe('operators', function () {
         creationTimestamp: '2018-09-06T16:01:28Z',
         generation: 1,
         labels: {
-          state: 'succeeded'
+          state: 'waiting'
         },
         name: instance_id,
         namespace: 'default',
@@ -46,28 +46,27 @@ describe('operators', function () {
         }
       },
       status: {
-        state: 'succeeded',
+        state: 'waiting',
         lastOperation: {},
         response: {
-          service_id: 'service_id',
-          plan_id: 'plan_id',
+          type: 'create',
           context: {
             platform: 'cloudfoundry',
             organization_guid: 'organization_guid',
             space_guid: 'space_guid'
           },
-          organization_guid: 'organization_guid',
-          space_guid: 'space_guid',
           deployment_name: 'deployment_name'
         }
       }
     };
-    let sandbox, initStub, clearPollerStub, createOrUpdateDeploymentStub;
+    let sandbox, initStub, clearPollerStub, createStub, updateStub, createOrUpdateDeploymentStub;
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
       initStub = sandbox.stub(BaseStatusPoller.prototype, 'init');
       clearPollerStub = sandbox.stub(BaseStatusPoller.prototype, 'clearPoller');
       createOrUpdateDeploymentStub = sandbox.stub();
+      createStub = sandbox.stub();
+      updateStub = sandbox.stub();
     });
 
     afterEach(function () {
@@ -165,6 +164,93 @@ describe('operators', function () {
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
             expect(createOrUpdateDeploymentStub.callCount).to.be.eql(1);
+            expect(initStub.callCount).to.be.eql(1);
+            expect(clearPollerStub.callCount).to.be.eql(1);
+            mocks.verify();
+            done();
+          })
+          .catch(done);
+      });
+
+      it('create should be succesful and status is in_progress', function (done) {
+        initStub.returns(Promise.resolve());
+        clearPollerStub.returns(Promise.resolve());
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+          './DirectorService': {
+            'createInstance': function (instance_id, options) {
+              /* jshint unused:false */
+              return Promise.resolve({
+                'create': createStub
+              });
+            }
+          }
+        });
+        const resourceBodyCopy = _.cloneDeep(resourceBody);
+        resourceBodyCopy.status.response.deployment_name = undefined;
+        const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
+        createStub.withArgs(_.get(resourceBodyCopy, 'spec.options')).onCall(0).returns(Promise.resolve({
+          type: 'create',
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: 'organization_guid',
+            space_guid: 'space_guid'
+          },
+          task_id: 'task_id',
+          deployment_name: 'deployment_name'
+        }));
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, () => {
+          return true;
+        });
+        return boshStaggeredDeploymentPoller.getStatus(resourceBodyCopy, 'interval_id')
+          .spread((res, interval) => {
+            /* jshint unused:false */
+            expect(res.statusCode).to.be.eql(200);
+            expect(res.body).to.be.eql({});
+            expect(createStub.callCount).to.be.eql(1);
+            expect(initStub.callCount).to.be.eql(1);
+            expect(clearPollerStub.callCount).to.be.eql(1);
+            mocks.verify();
+            done();
+          })
+          .catch(done);
+      });
+
+      it('update should be succesful and status is in_progress', function (done) {
+        initStub.returns(Promise.resolve());
+        clearPollerStub.returns(Promise.resolve());
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+          './DirectorService': {
+            'createInstance': function (instance_id, options) {
+              /* jshint unused:false */
+              return Promise.resolve({
+                'update': updateStub
+              });
+            }
+          }
+        });
+        const resourceBodyCopy = _.cloneDeep(resourceBody);
+        resourceBodyCopy.status.response.type = 'update';
+        resourceBodyCopy.status.response.deployment_name = undefined;
+        const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
+        updateStub.withArgs(_.get(resourceBodyCopy, 'spec.options')).onCall(0).returns(Promise.resolve({
+          type: 'create',
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: 'organization_guid',
+            space_guid: 'space_guid'
+          },
+          task_id: 'task_id',
+          deployment_name: 'deployment_name'
+        }));
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, () => {
+          return true;
+        });
+        return boshStaggeredDeploymentPoller.getStatus(resourceBodyCopy, 'interval_id')
+          .spread((res, interval) => {
+            /* jshint unused:false */
+            expect(res.statusCode).to.be.eql(200);
+            expect(res.body).to.be.eql({});
+            expect(updateStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();

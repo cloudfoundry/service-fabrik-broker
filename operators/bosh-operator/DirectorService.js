@@ -101,9 +101,10 @@ class DirectorService extends BaseDirectorService {
         }
         return this.findNetworkSegmentIndex(this.guid);
       })
-      .tap(networkSegmentIndex => {
+      .then(networkSegmentIndex => {
         assert.ok(_.isInteger(networkSegmentIndex), `Network segment index '${networkSegmentIndex}' must be an integer`);
         this.networkSegmentIndex = networkSegmentIndex;
+        return networkSegmentIndex;
       })
       .tap(() => {
         if (operation.type === 'delete') {
@@ -219,14 +220,23 @@ class DirectorService extends BaseDirectorService {
     };
     return this
       .initialize(operation)
+      .catch(err => {
+        logger.error(`Error occurred while acquiring network index for create
+                      and instance guid :${this.guid}`, err);
+        if (err instanceof ServiceInstanceAlreadyExists) {
+          throw err;
+        }
+      })
       .then(() => {
-        return this.createOrUpdateDeployment(this.deploymentName, params);
+        if (this.networkSegmentIndex) {
+          return this.createOrUpdateDeployment(this.deploymentName, params);
+        }
       })
       .then(op => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
         .set('task_id', _.get(op, 'task_id'))
-        .set('deployment_name', this.deploymentName)
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
         .value()
       );
   }
@@ -237,18 +247,22 @@ class DirectorService extends BaseDirectorService {
     };
     return this
       .initialize(operation)
+      .catch(err => logger.error(`Error occurred while finding network index for update
+        and instance guid :${this.guid}`, err))
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
-        return this.createOrUpdateDeployment(this.deploymentName, params)
-          .then(op => _
-            .chain(operation)
-            .assign(_.pick(params, 'parameters', 'context'))
-            .set('task_id', _.get(op, 'task_id'))
-            .set('deployment_name', this.deploymentName)
-            .value()
-          );
-      });
+        if (this.networkSegmentIndex) {
+          return this.createOrUpdateDeployment(this.deploymentName, params);
+        }
+      })
+      .then(op => _
+        .chain(operation)
+        .assign(_.pick(params, 'parameters', 'context'))
+        .set('task_id', _.get(op, 'task_id'))
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
+        .value()
+      );
   }
 
   findNetworkSegmentIndex(guid) {
