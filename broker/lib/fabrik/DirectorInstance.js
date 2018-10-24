@@ -9,6 +9,7 @@ const logger = require('../../../common/logger');
 const errors = require('../../../common/errors');
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
+const eventmesh = require('../../../data-access-layer/eventmesh');
 
 class DirectorInstance extends BaseInstance {
   constructor(guid, manager) {
@@ -17,20 +18,42 @@ class DirectorInstance extends BaseInstance {
   }
 
   get platformContext() {
-    return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.manager.director.getDeploymentNameForInstanceId(this.guid))
-      .then(deploymentName => this.manager.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
-      .then(context => JSON.parse(context))
-      .catch(NotFound, () => {
-        /* Following is to handle existing deployments. 
-           For them platform-context is not saved in deployment property. Defaults to CF.
-         */
-        logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
-        Setting default platform as '${CONST.PLATFORM.CF}'`);
+    return this.getContextFromResource()
+      .then(context => {
+        if (context) {
+          return context;
+        }
+        return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.manager.director.getDeploymentNameForInstanceId(this.guid))
+        .then(deploymentName => this.manager.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
+        .then(context => JSON.parse(context))
+        .catch(NotFound, () => {
+          /* Following is to handle existing deployments. 
+             For them platform-context is not saved in deployment property. Defaults to CF.
+          */
+          logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
+          Setting default platform as '${CONST.PLATFORM.CF}'`);
 
-        const context = {
-          platform: CONST.PLATFORM.CF
-        };
-        return context;
+          const context = {
+            platform: CONST.PLATFORM.CF
+          };
+          return context;
+        });
+      });
+  }
+  
+  getContextFromResource() {
+    logger.debug(`Fetching context from etcd for ${this.guid}`);
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: this.guid
+      })
+      .then(resource => {
+        return _.get(resource, 'spec.options.context', undefined);
+      })
+      .catch(err => {
+        logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
+        return;
       });
   }
   get deploymentName() {
