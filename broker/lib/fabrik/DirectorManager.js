@@ -81,49 +81,6 @@ class DirectorManager extends BaseManager {
       .tap(networkSegmentIndex => logger.info(`+-> Found network segment index '${networkSegmentIndex}'`));
   }
 
-  executeActions(phase, context) {
-    //Lazy create of deploymentHookClient
-    //Only Processes that require service lifecycle operations will need deployment_hooks properties.
-    //Can be loaded on top when we modularize scheduler and report process codebase
-    const deploymentHookClient = require('../../../common/utils/DeploymentHookClient');
-    return Promise.try(() => {
-      const serviceLevelActions = this.service.actions;
-      const planLevelActions = phase === CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE ? catalog.getPlan(context.params.previous_values.plan_id).actions :
-        this.plan.actions;
-      if (serviceLevelActions || planLevelActions) {
-        const cumilativeActions = serviceLevelActions ? (planLevelActions ? `${serviceLevelActions},${planLevelActions}` : serviceLevelActions) :
-          planLevelActions;
-        const actionsToPerform = _.chain(cumilativeActions)
-          .replace(/\s*/g, '')
-          .split(',')
-          .value();
-        if (actionsToPerform.length === 0) {
-          logger.info(`no actions to perform for ${context.deployment_name}`);
-          return {};
-        }
-        logger.info(`actionsToPerform - @service - ${serviceLevelActions} , @plan - ${planLevelActions}`);
-        logger.info(`Cumulative actions to perform on ${context.deployment_name} - ${actionsToPerform}`);
-        _.assign(context, {
-          'instance_guid': this.getInstanceGuid(context.deployment_name)
-        });
-        _.chain(context.params)
-          .set('service_id', this.service.id)
-          .set('plan_id', this.plan.id)
-          .value();
-        const options = _.chain({})
-          .set('phase', phase)
-          .set('actions', actionsToPerform)
-          .set('context', context)
-          .value();
-        return deploymentHookClient.executeDeploymentActions(options)
-          .tap((actionResponse) => logger.info(`${phase} response ...`, actionResponse));
-      } else {
-        logger.info(`No actions to perform for ${context.deployment_name}`);
-        return {};
-      }
-    });
-  }
-
   diffManifest(deploymentName, opts) {
     logger.debug(`+-> Checking diff of deployment ${deploymentName}`);
     return this
