@@ -71,6 +71,9 @@ router.route('/service-fabrik/maintenance')
   .put(controller.handler('updateMaintenance'))
   .get(controller.handler('getMaintenance'))
   .all(commonMiddleware.methodNotAllowed(['GET', 'POST', 'PUT']));
+router.route('/update/schedules')
+  .get(controller.handler('getScheduledUpdateInstances'))
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 
 
 router.use(commonMiddleware.notFound());
