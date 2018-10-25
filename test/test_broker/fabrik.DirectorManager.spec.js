@@ -5,7 +5,6 @@ const yaml = require('js-yaml');
 const catalog = require('../../common/models').catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const CONST = require('../../common/constants');
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var deployment_name = `service-fabrik-0021-${used_guid}`;

@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const Promise = require('bluebird');
 const config = require('../../../common/config');
 const logger = require('../../../common/logger');
 const errors = require('../../../common/errors');
@@ -12,14 +11,12 @@ const utils = require('../../../common/utils');
 const Agent = require('../../../data-access-layer/service-agent');
 const BaseManager = require('./BaseManager');
 const DirectorInstance = require('./DirectorInstance');
-const CONST = require('../../../common/constants');
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const EvaluationContext = bosh.EvaluationContext;
 const Networks = bosh.manifest.Networks;
 const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
-const catalog = require('../../../common/models/catalog');
 
 class DirectorManager extends BaseManager {
   constructor(plan) {
