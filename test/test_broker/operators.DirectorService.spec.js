@@ -11,7 +11,7 @@ const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const utils = require('../../common/utils');
-const cfPlatformManager = require('../../broker/lib/fabrik/CfPlatformManager');
+const cfPlatformManager = require('../../platform-managers/CfPlatformManager');
 
 describe('#DirectorService', function () {
   describe('instances', function () {
