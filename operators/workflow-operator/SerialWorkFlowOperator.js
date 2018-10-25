@@ -98,6 +98,7 @@ class SerialWorkFlowOperator extends BaseOperator {
       } catch (err) {
         previousTaskResponse = event.status.response;
       }
+      previousTaskResponse.description = previousTaskResponse.description || '';
       taskDetails.previous_task = {
         type: taskDetails.task_type,
         description: taskDetails.task_description,
@@ -114,7 +115,7 @@ class SerialWorkFlowOperator extends BaseOperator {
         relayedStatus.message = `Task - ${taskDetails.task_description} failed and workflow is also marked as failed.`;
         return task
           .updateStatus(resourceDetails, relayedStatus)
-          .then(() => this.workflowComplete(taskDetails, `${taskDetails.task_description} failed - ${previousTaskResponse.description}`, FAILED));
+          .then(() => this.workflowComplete(taskDetails, `${taskDetails.task_description} failed. ${previousTaskResponse.description}`, FAILED));
       }
       logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in workflow ${workflow.tasks.length}`);
       if (workflow.tasks.length === taskDetails.task_order) {
