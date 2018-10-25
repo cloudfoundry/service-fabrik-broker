@@ -691,8 +691,7 @@ describe('eventmesh', () => {
 
       it('Gets resource list by state', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
         return apiserver.getResourceListByState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -706,8 +705,7 @@ describe('eventmesh', () => {
 
       it('Gets resource list by state with empy array', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.WAITING], [], 1, 200);
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.WAITING], [], 1, 200);
         return apiserver.getResourceListByState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -721,8 +719,7 @@ describe('eventmesh', () => {
 
       it('Gets resource list by state: error', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 404);
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 404);
         return apiserver.getResourceListByState({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
