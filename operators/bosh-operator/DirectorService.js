@@ -13,7 +13,6 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
@@ -55,20 +54,29 @@ class DirectorService extends BaseDirectorService {
   }
 
   get platformContext() {
-    return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
-      .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
-      .then(context => JSON.parse(context))
-      .catch(NotFound, () => {
-        /* Following is to handle existing deployments. 
-           For them platform-context is not saved in deployment property. Defaults to CF.
-         */
-        logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
-        Setting default platform as '${CONST.PLATFORM.CF}'`);
+    return this.getContextFromResource()
+      .then(context => {
+        if (context) {
+          return context;
+        }
+        logger.debug(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
+        return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
+          .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
+          .then(context => JSON.parse(context))
+          .catch(NotFound, () => {
+            /* Following is to handle existing deployments. 
+                For them platform-context is not saved in deployment property. Defaults to CF.
+            */
+            /*TODO: Remove the code for querying bosh for property.
+             */
+            logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
+          Setting default platform as '${CONST.PLATFORM.CF}'`);
 
-        const context = {
-          platform: CONST.PLATFORM.CF
-        };
-        return context;
+            const context = {
+              platform: CONST.PLATFORM.CF
+            };
+            return context;
+          });
       });
   }
 
@@ -82,6 +90,19 @@ class DirectorService extends BaseDirectorService {
   get deploymentName() {
     let subnet = this.subnet ? `_${this.subnet}` : '';
     return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(this.networkSegmentIndex)}-${this.guid}`;
+  }
+
+  getContextFromResource() {
+    logger.debug(`Fetching context from etcd for ${this.guid}`);
+    return eventmesh.apiServerClient.getPlatformContext({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: this.guid
+      })
+      .catch(err => {
+        logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
+        return;
+      });
   }
 
   getNetworkSegmentIndex(deploymentName) {
@@ -179,20 +200,7 @@ class DirectorService extends BaseDirectorService {
       .try(() => {
         switch (operation.type) {
         case 'create':
-          return utils
-            .retry(tries => {
-              logger.info(`+-> ${ordinals[tries]} attempt to create property '${CONST.PLATFORM_CONTEXT_KEY}' for deployment '${this.deploymentName}'...`);
-              return this.director
-                .createDeploymentProperty(this.deploymentName, CONST.PLATFORM_CONTEXT_KEY, JSON.stringify(operation.context))
-                .catch(err => {
-                  logger.error(`Error occured while trying to create deployment property for deployment ${this.deploymentName}`, err);
-                  throw err;
-                });
-            }, {
-              maxAttempts: 3,
-              minDelay: 1000
-            })
-            .then(() => this.platformManager.postInstanceProvisionOperations({
+          return Promise.try(() => this.platformManager.postInstanceProvisionOperations({
               ipRuleOptions: this.buildIpRules(),
               guid: this.guid,
               context: operation.context

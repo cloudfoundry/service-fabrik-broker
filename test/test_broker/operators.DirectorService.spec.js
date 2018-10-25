@@ -11,6 +11,7 @@ const iaas = require('../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const utils = require('../../common/utils');
+const cfPlatformManager = require('../../platform-managers/CfPlatformManager');
 
 describe('#DirectorService', function () {
   describe('instances', function () {
@@ -78,11 +79,27 @@ describe('#DirectorService', function () {
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
       let getScheduleStub;
-      const dummyDeploymentResource = {
+      const dummyDeplResourceWithContext = {
         metadata: {
-          annotations: {
-            labels: 'dummy'
-          }
+          name: instance_id
+        },
+        spec: {
+          options: `{"service_id":"${service_id}","plan_id":"${plan_id}","organization_guid":"${organization_guid}","space_guid":"${space_guid}",
+          "context":{"platform":"cloudfoundry","organization_guid":"${organization_guid}","space_guid":"${space_guid}"}}`
+        },
+        status: {
+          state: 'succeeded'
+        }
+      };
+      const dummyDeplResourceWithoutContext = {
+        metadata: {
+          name: instance_id
+        },
+        spec: {
+          options: `{"service_id":"${service_id}","plan_id":"${plan_id}","organization_guid":"${organization_guid}","space_guid":"${space_guid}"}`
+        },
+        status: {
+          state: 'succeeded'
         }
       };
       before(function () {
@@ -149,9 +166,7 @@ describe('#DirectorService', function () {
           });
           mocks.director.createOrUpdateDeployment(task_id);
           mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBodyNoContext);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -292,12 +307,9 @@ describe('#DirectorService', function () {
             .value();
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
@@ -346,7 +358,7 @@ describe('#DirectorService', function () {
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
@@ -395,7 +407,7 @@ describe('#DirectorService', function () {
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           //mocks.agent.preUpdate();
@@ -440,12 +452,9 @@ describe('#DirectorService', function () {
           expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo();
@@ -473,9 +482,7 @@ describe('#DirectorService', function () {
         });
         it('returns 202 when preupdate feature is not implemented by agent', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
           _.set(expectedRequestBody.context.params, 'plan_id', plan_id_update);
           _.set(expectedRequestBody.context.params, 'previous_values', {
@@ -492,7 +499,6 @@ describe('#DirectorService', function () {
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
           mocks.director.createOrUpdateDeployment(task_id);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deploymentName);
           mocks.agent.getInfo(1, 'preupdate');
@@ -532,12 +538,12 @@ describe('#DirectorService', function () {
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           const restoreFilename = `${space_guid}/restore/${service_id}.${instance_id}.json`;
           const restorePathname = `/${container}/${restoreFilename}`;
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext, 3);
           mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
@@ -582,7 +588,7 @@ describe('#DirectorService', function () {
             organization_guid: organization_guid,
             space_guid: space_guid
           });
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext, 3);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
@@ -624,7 +630,7 @@ describe('#DirectorService', function () {
             platform: 'kubernetes',
             namespace: 'default'
           });
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext, 3);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.director.deleteDeployment(task_id);
@@ -686,13 +692,7 @@ describe('#DirectorService', function () {
         });
 
         it('create: returns 200 OK (state = succeeded)', function () {
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
           mocks.director.getDeploymentTask(task_id, 'done');
-          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
             repeatInterval: CONST.SCHEDULE.RANDOM,
@@ -775,7 +775,6 @@ describe('#DirectorService', function () {
             repeatInterval: CONST.SCHEDULE.RANDOM,
             timeZone: 'Asia/Kolkata'
           };
-          mocks.director.createDeploymentProperty('platform-context', context);
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
@@ -886,6 +885,7 @@ describe('#DirectorService', function () {
             task_id: `${deployment_name}_${task_id}`,
             type: 'delete'
           };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext);
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
@@ -916,6 +916,7 @@ describe('#DirectorService', function () {
             task_id: `${deployment_name}_${task_id}`,
             type: 'delete'
           };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext);
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
@@ -939,13 +940,10 @@ describe('#DirectorService', function () {
             .value();
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
-            platform: 'cloudfoundry'
-          });
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
@@ -998,7 +996,7 @@ describe('#DirectorService', function () {
             .value();
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
@@ -1112,7 +1110,7 @@ describe('#DirectorService', function () {
           };
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentInstances(deployment_name);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
           mocks.agent.getInfo();
@@ -1154,7 +1152,7 @@ describe('#DirectorService', function () {
           };
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
@@ -1193,7 +1191,7 @@ describe('#DirectorService', function () {
 
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, {}, 1, 404);
@@ -1232,7 +1230,7 @@ describe('#DirectorService', function () {
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context', undefined);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext, 2);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, binding_id, dummyBindResource, 1, 200);
           mocks.director.getDeploymentInstances(deployment_name);
@@ -1251,6 +1249,69 @@ describe('#DirectorService', function () {
             .then(service => service.unbind(options))
             .then(() => {
               mocks.verify();
+            });
+        });
+      });
+
+      describe('#platformContext - context not present in options ', function () {
+        it('context found in resource', function (done) {
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('context not found in resource, but present in bosh property', function (done) {
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext);
+          mocks.director.getDeploymentProperty(deployment_name, true, 'platform-context', {
+            platform: 'cloudfoundry'
+          });
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('context neither found in resource nor in bosh property', function (done) {
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithoutContext);
+          mocks.director.getDeploymentProperty(deployment_name, false, 'platform-context');
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => {
+              expect(service.platformManager).to.be.an.instanceOf(cfPlatformManager);
+              expect(service.guid).to.equal(instance_id);
+              expect(service.plan).to.deep.equal(catalog.getPlan(plan_id));
+              mocks.verify();
+              done();
             });
         });
       });
