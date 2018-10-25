@@ -763,7 +763,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
-  //Method for getting backup instance ids
+  //Method for getting  instance ids with updates scheduled
   getScheduledUpdateInstances(req, res) {
     logger.info('Getting scheduled update instance list...');
     return getInstancesWithUpdateScheduled()
