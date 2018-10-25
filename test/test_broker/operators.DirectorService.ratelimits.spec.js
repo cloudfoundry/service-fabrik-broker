@@ -8,7 +8,9 @@ const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
 
 const guid = 'guid';
 const task_id = 'task_id';
@@ -120,7 +122,7 @@ describe('service', () => {
     });
 
     it('should create with rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject());
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.create(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -132,7 +134,7 @@ describe('service', () => {
     });
 
     it('should update with rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject());
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -214,7 +216,7 @@ describe('service', () => {
     let DirectorServiceSub;
     let directorService;
     let sandbox;
-    let initializeSpy, codSpy, getTaskSpy, finalizeSpy;
+    let initializeSpy, codSpy, deleteDeploymentSpy, getTaskSpy, finalizeSpy;
     let lastOpTaskId;
 
     beforeEach(() => {
@@ -232,6 +234,8 @@ describe('service', () => {
       codSpy.returns(Promise.resolve({
         task_id: task_id
       }));
+      deleteDeploymentSpy = sandbox.stub();
+      deleteDeploymentSpy.returns(Promise.resolve(task_id));
       getTaskSpy = sandbox.stub();
       DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
@@ -239,6 +243,7 @@ describe('service', () => {
       directorService = new DirectorServiceSub(plan, guid);
       directorService.networkSegmentIndex = index;
       directorService.createOrUpdateDeployment = codSpy;
+      directorService.deleteDeployment = deleteDeploymentSpy;
       directorService.getTask = getTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
@@ -269,8 +274,20 @@ describe('service', () => {
       });
     });
 
+    it('should delete without rate limits', () => {
+      directorService.platformManager = new CfPlatformManager('cloudfoundry');
+      return directorService.delete(params).then(out => {
+        expect(out.task_id).to.eql(task_id);
+        expect(out.context).to.eql({
+          platform: 'cloudfoundry'
+        });
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(deleteDeploymentSpy.callCount).to.eql(1);
+      });
+    });
+
     it('should create without rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject());
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.create(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -282,7 +299,7 @@ describe('service', () => {
     });
 
     it('should update without rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject());
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -290,6 +307,20 @@ describe('service', () => {
         expect(out.context).to.eql(params.context);
         expect(out.deployment_name).to.eql(undefined);
         expect(codSpy.callCount).to.eql(0);
+      });
+    });
+
+    it('should delete without rate limits - bosh resilience - staggered', () => {
+      directorService.platformManager = new CfPlatformManager('cloudfoundry');
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.delete(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.context).to.eql({
+          platform: 'cloudfoundry'
+        });
+        expect(out.deployment_name).to.eql(undefined);
+        expect(deleteDeploymentSpy.callCount).to.eql(0);
       });
     });
 

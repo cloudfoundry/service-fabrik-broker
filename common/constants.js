@@ -385,5 +385,6 @@ module.exports = Object.freeze({
   },
   DOCKER_HOST_CONFIG: {
     PIDS_LIMIT: 150
-  }
+  },
+  SYSTEM_ERRORS: ['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ESOCKETTIMEDOUT']
 });

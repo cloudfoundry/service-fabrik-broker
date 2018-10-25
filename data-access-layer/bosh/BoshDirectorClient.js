@@ -14,6 +14,8 @@ const HttpClient = utils.HttpClient;
 const config = require('../../common/config');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
+const InternalServerError = errors.InternalServerError;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
@@ -352,7 +354,8 @@ class BoshDirectorClient extends HttpClient {
         .compact()
         .uniq()
         .value()
-      );
+      )
+      .catch(err => this.convertHttperrorAndThrow(err));
   }
 
   getDeployment(deploymentName) {
@@ -496,7 +499,8 @@ class BoshDirectorClient extends HttpClient {
             this.boshConfigCache[deploymentName] = config;
           })
           .then(res => this.prefixTaskId(deploymentName, res));
-      });
+      })
+      .catch(err => this.convertHttperrorAndThrow(err));
   }
 
   deleteDeployment(deploymentName) {
@@ -506,7 +510,8 @@ class BoshDirectorClient extends HttpClient {
         method: 'DELETE',
         url: `/deployments/${deploymentName}`
       }, 302, deploymentName)
-      .then(res => this.prefixTaskId(deploymentName, res));
+      .then(res => this.prefixTaskId(deploymentName, res))
+      .catch(err => this.convertHttperrorAndThrow(err));
   }
 
   /* VirtualMachines operations */
@@ -612,7 +617,8 @@ class BoshDirectorClient extends HttpClient {
       .tap(response => {
         logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
         this.deploymentIpsCache[deploymentName] = response;
-      });
+      })
+      .catch(err => this.convertHttperrorAndThrow(err));
   }
 
   getAgentPropertiesFromManifest(deploymentName) {
@@ -966,6 +972,14 @@ class BoshDirectorClient extends HttpClient {
 
   lastSegment(url) {
     return _.last(parseUrl(url).path.split('/'));
+  }
+
+  convertHttperrorAndThrow(err) {
+    if ((err instanceof InternalServerError) || _.includes(CONST.SYSTEM_ERRORS, err.code)) {
+      throw new ServiceUnavailable(err.message);
+    } else {
+      throw err;
+    }
   }
 }
 

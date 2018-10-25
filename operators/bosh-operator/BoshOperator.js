@@ -109,7 +109,7 @@ class BoshOperator extends BaseOperator {
         resourceId: _.get(changeObjectBody, 'metadata.name'),
         status: {
           response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+          state: _.get(response, 'task_id') ? CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS : CONST.APISERVER.RESOURCE_STATE.WAITING
         }
       }))
       .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({

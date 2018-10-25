@@ -20,6 +20,7 @@ const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
@@ -92,10 +93,13 @@ class DirectorService extends BaseDirectorService {
     return _.nth(BaseDirectorService.parseDeploymentName(deploymentName, this.subnet), 2);
   }
 
-  initialize(operation) {
+  initialize(operation, deploymentName) {
     return Promise
       .try(() => {
         this.operation = operation.type;
+        if (deploymentName) {
+          return this.getNetworkSegmentIndex(deploymentName);
+        }
         if (operation.type === CONST.OPERATION_TYPE.CREATE) {
           return this.acquireNetworkSegmentIndex(this.guid);
         }
@@ -107,7 +111,7 @@ class DirectorService extends BaseDirectorService {
         return networkSegmentIndex;
       })
       .tap(() => {
-        if (operation.type === 'delete') {
+        if (!deploymentName && operation.type === 'delete') {
           return Promise
             .all([
               this.platformManager.preInstanceDeleteOperations({
@@ -214,24 +218,19 @@ class DirectorService extends BaseDirectorService {
       }));
   }
 
-  create(params) {
+  create(params, deploymentName) {
     const operation = {
       type: 'create'
     };
     return this
-      .initialize(operation)
-      .catch(err => {
-        logger.error(`Error occurred while acquiring network index for create
-                      and instance guid :${this.guid}`, err);
-        if (err instanceof ServiceInstanceAlreadyExists) {
-          throw err;
-        }
-      })
+      .initialize(operation, deploymentName)
       .then(() => {
         if (this.networkSegmentIndex) {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
+      .catch(ServiceUnavailable, err =>
+        logger.warn(`Error occurred while creating deployment for instance guid :${this.guid}`, err))
       .then(op => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
@@ -241,19 +240,12 @@ class DirectorService extends BaseDirectorService {
       );
   }
 
-  update(params) {
+  update(params, deploymentName) {
     const operation = {
       type: 'update'
     };
     return this
-      .initialize(operation)
-      .catch(err => {
-        logger.error(`Error occurred while finding network index for update
-        and instance guid :${this.guid}`, err);
-        if (err instanceof errors.ServiceInstanceNotFound) {
-          throw err;
-        }
-      })
+      .initialize(operation, deploymentName)
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
@@ -261,6 +253,8 @@ class DirectorService extends BaseDirectorService {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
+      .catch(ServiceUnavailable, err =>
+        logger.error(`Error occurred while updating deployment for instance guid :${this.guid}`, err))
       .then(op => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
@@ -553,19 +547,26 @@ class DirectorService extends BaseDirectorService {
     });
   }
 
-  delete(params) {
+  delete(params, deploymentName) {
     const operation = {
       type: 'delete'
     };
     return this
-      .initialize(operation)
-      .then(() => this.deleteDeployment(this.deploymentName, params))
+      .initialize(operation, deploymentName)
+      .then(() => {
+        if (this.networkSegmentIndex) {
+          return this.deleteDeployment(this.deploymentName, params);
+        }
+      })
+      .catch(ServiceUnavailable, err =>
+        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err))
       .then(taskId => _
         .chain(operation)
         .set('task_id', taskId)
         .set('context', {
           platform: this.platformManager.platform
         })
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
         .value()
       );
   }
@@ -590,8 +591,7 @@ class DirectorService extends BaseDirectorService {
       .then(() => this.director.deleteDeployment(deploymentName))
       .tap(taskId => logger.info(`+-> Scheduled delete deployment task '${taskId}'`))
       .catch(err => {
-        logger.error('+-> Failed to delete deployment');
-        logger.error(err);
+        logger.error('+-> Failed to delete deployment', err);
         throw err;
       });
   }

@@ -24,18 +24,16 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
     const instanceId = resourceBody.metadata.name;
     const resourceOptions = _.get(resourceBody, 'spec.options');
     const deploymentName = _.get(resourceBody, 'status.response.deployment_name');
+    const operationType = _.get(resourceBody, 'status.response.type');
     return DirectorService
       .createInstance(instanceId, resourceOptions)
       .then(directorService => {
-        if (deploymentName) {
-          return directorService.createOrUpdateDeployment(deploymentName, resourceOptions);
-        } else {
-          const type = _.get(resourceBody, 'status.response.type');
-          if (type === CONST.OPERATION_TYPE.CREATE) {
-            return directorService.create(resourceOptions);
-          } else if (type === CONST.OPERATION_TYPE.UPDATE) {
-            return directorService.update(resourceOptions);
-          }
+        if (operationType === CONST.OPERATION_TYPE.CREATE) {
+          return directorService.create(resourceOptions, deploymentName);
+        } else if (operationType === CONST.OPERATION_TYPE.UPDATE) {
+          return directorService.update(resourceOptions, deploymentName);
+        } else if (operationType === CONST.OPERATION_TYPE.DELETE) {
+          return directorService.delete(resourceOptions, deploymentName);
         }
       })
       .then(directorResponse => {
