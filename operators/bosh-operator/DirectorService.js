@@ -72,10 +72,6 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  verifyFeatureSupport(feature) {
-    utils.verifyFeatureSupport(this.plan, feature);
-  }
-
   getDeploymentName(guid, networkSegmentIndex) {
     let subnet = this.subnet ? `_${this.subnet}` : '';
     return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
@@ -686,7 +682,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   createBinding(deploymentName, binding) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
     logger.info('+-> Binding parameters:', binding.parameters);
     let actionContext = {
@@ -726,7 +722,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   deleteBinding(deploymentName, id) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
     let actionContext = {
       'deployment_name': deploymentName,
@@ -891,7 +887,7 @@ class DirectorService extends BaseDirectorService {
       .try(() => {
         if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
           try {
-            this.verifyFeatureSupport('backup');
+            utils.verifyFeatureSupport(this.plan, 'backup');
             ScheduleManager
               .getSchedule(this.guid, CONST.JOB.SCHEDULED_BACKUP)
               .then(schedule => {
