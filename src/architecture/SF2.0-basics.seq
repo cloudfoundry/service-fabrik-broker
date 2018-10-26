@@ -7,34 +7,34 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  Consumer; Broker; APIServer; Manager; Service;
+  Consumer; Broker; APIServer; Operator; Service;
 
   # trigger provisioning of service instance
   Consumer => Broker [label = "Create/Update/Delete", return = "ok"] {
     Broker => APIServer [label = "Create resource with state as in_queue/update/delete", return = "true"];
   }
 
-  APIServer -> Manager [label = "Trigger watcher for the request"]
-  Manager ->> Service [label = "service deploy/update/delete"]
-  Manager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+  APIServer -> Operator [label = "Trigger watcher for the request"]
+  Operator ->> Service [label = "service deploy/update/delete"]
+  Operator -> APIServer [label = "sets resource state as in_progress", return = "true"];
 
   # Consumer asks for last operation status
   Consumer => Broker [label = "last operation?", return = "in progress"] {
     Broker => APIServer [label = "last operation of resource?", return = "processing"]
   }
 
-  Manager -> Manager [ label = "Start Poller" ];
+  Operator -> Operator [ label = "Start Poller" ];
 
-  # Manager asks for last operation status
-  Manager => Manager [ label = "check status" ]{	
-    Manager => Service [label = "task state?", return = "in progress"]
-    Manager => APIServer [label = "sets last operation as in progress"]
+  # Operator asks for last operation status
+  Operator => Operator [ label = "check status" ]{	
+    Operator => Service [label = "task state?", return = "in progress"]
+    Operator => APIServer [label = "sets last operation as in progress"]
   }
 
-  # Manager asks for last operation status
-  Manager => Manager [ label = "check status" ]{	
-    Manager => Service [label = "task state?", return = "succeeded"]
-    Manager => APIServer [label = "sets last operation as succeeded"]
+  # Operator asks for last operation status
+  Operator => Operator [ label = "check status" ]{	
+    Operator => Service [label = "task state?", return = "succeeded"]
+    Operator => APIServer [label = "sets last operation as succeeded"]
   }
 
 

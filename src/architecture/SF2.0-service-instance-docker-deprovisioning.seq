@@ -7,25 +7,25 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; Controller; Broker; APIServer; DockerManager; Swarm; Docker; Driver; Service;
+  User; Controller; Broker; APIServer; DockerOperator; Swarm; Docker; Driver; Service;
 
   # trigger deprovisioning of service instance
   User => Controller [label = "cf delete-service"] {
     Controller => Broker [label = "run deprovisioning"] {
       Broker => APIServer [label = "update docker resource with state delete and wait for deletion"]{
-        APIServer -> DockerManager [label = "trigger watcher for updated docker resource"]
-        DockerManager => Controller [label = "delete security-group", leftnote = "Done only if needed"]
-        DockerManager => Swarm [label = "remove container"] {
+        APIServer -> DockerOperator [label = "trigger watcher for updated docker resource"]
+        DockerOperator => Controller [label = "delete security-group", leftnote = "Done only if needed"]
+        DockerOperator => Swarm [label = "remove container"] {
           Swarm => Docker [label = "remove container"] {
             Docker => Service [label = "send SIGTERM"]
           }
         }
-        DockerManager => Swarm [label = "remove volume"] {
+        DockerOperator => Swarm [label = "remove volume"] {
           Swarm => Docker [label = "remove volume"] {
             Docker => Driver [label = "remove volume"]
           }
         }
-        DockerManager -> APIServer [label = "removes the resource"]
+        DockerOperator -> APIServer [label = "removes the resource"]
       }
     }
   }

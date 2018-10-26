@@ -7,17 +7,17 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; Controller; Broker; APIServer; BOSHManager; Agent; Service;
+  User; Controller; Broker; APIServer; BOSHOperator; Agent; Service;
 
   # trigger service binding creation
   User => Controller [label = "cf delete-service-binding", return = "ok"] {
     Controller => Broker [label = "delete binding", return = "ok"] {
       Broker => APIServer [label = "update bind resource with state delete and wait for state change", return = "ok"]{
-        APIServer -> BOSHManager [label = "trigger watcher for updated bind resource"]
-          BOSHManager => Agent [label = "delete credentials", return = "ok"] {
+        APIServer -> BOSHOperator [label = "trigger watcher for updated bind resource"]
+          BOSHOperator => Agent [label = "delete credentials", return = "ok"] {
             Agent => Service [label = "delete user", return = "ok"]
           }
-          BOSHManager => APIServer [label = "update the resource state as succeeded", return = "ok"]
+          BOSHOperator => APIServer [label = "update the resource state as succeeded", return = "ok"]
           Broker => APIServer [label = "deletes the bind resource", return = "ok"]
       }
     }

@@ -7,25 +7,25 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; Controller; Broker; APIServer; DockerManager; Swarm; Docker; Driver; Service;
+  User; Controller; Broker; APIServer; DockerOperator; Swarm; Docker; Driver; Service;
 
   # trigger provisioning of service instance
   User => Controller [label = "cf create-service"] {
     Controller => Broker [label = "run provisioning"] {
       Broker => APIServer [label = "create docker resource with state in_queue and wait for state change"] {
-        APIServer -> DockerManager [label = "trigger watcher for new docker resource"]
-        DockerManager => Swarm [label = "create container"] {
+        APIServer -> DockerOperator [label = "trigger watcher for new docker resource"]
+        DockerOperator => Swarm [label = "create container"] {
           Swarm => Docker [label = "create container"] {
             Docker => Driver [label = "create volume"]
           }
         }
-        DockerManager => Swarm [label = "start container"] {
+        DockerOperator => Swarm [label = "start container"] {
           Swarm => Docker [label = "start container"] {
             Docker => Service [label = "start run script"]
           }
         }
-        DockerManager => Controller [label = "create security-group", leftnote = "Done only if needed"]
-        DockerManager => APIServer [label = "update the resource state as succeeded with response", return = "ok"]
+        DockerOperator => Controller [label = "create security-group", leftnote = "Done only if needed"]
+        DockerOperator => APIServer [label = "update the resource state as succeeded with response", return = "ok"]
       }
     }
   }
