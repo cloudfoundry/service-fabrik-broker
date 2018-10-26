@@ -7,7 +7,7 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; UAA; FabrikApi; APIServer; BackupManager; Agent; Service; IaaS;
+  User; UAA; FabrikApi; APIServer; BackupOperator; Agent; Service; IaaS;
 
   # get token
   User => UAA [label = "get token", return = "token"]
@@ -26,13 +26,13 @@ seqdiag {
   User <-- FabrikApi [ label = "backup triggered, backup guid is sent back", leftnote = 
               "response returned back to user" ];
 
-    APIServer -> BackupManager [label = "Trigger watcher for new backup request"];
+    APIServer -> BackupOperator [label = "Trigger watcher for new backup request"];
     
-    BackupManager => Agent [label = "backup supported?", return = "yes"];
+    BackupOperator => Agent [label = "backup supported?", return = "yes"];
 
-    BackupManager ->> Agent [label = "trigger backup"];
-    BackupManager => IaaS [label = "create backup record",return = "true"];
-    APIServer <- BackupManager [ label = "Update backup status as in progress" ];
+    BackupOperator ->> Agent [label = "trigger backup"];
+    BackupOperator => IaaS [label = "create backup record",return = "true"];
+    APIServer <- BackupOperator [ label = "Update backup status as in progress" ];
 
 
     FabrikApi -> FabrikApi [ label = "Unlock Poller" ];
@@ -41,7 +41,7 @@ seqdiag {
       FabrikApi => APIServer [label = "check backup resource state?", return = "in_progress"];
     }
     
-    BackupManager -> BackupManager [ label = "Start Poller" ];
+    BackupOperator -> BackupOperator [ label = "Start Poller" ];
     
     # agent starts backup
     Agent => IaaS [label = "create snapshot from volume"]
@@ -50,22 +50,22 @@ seqdiag {
     Agent => Agent [label = "create/encrypt tarball"]
 
     # FabrikStatusPoller asks for last operation status
-    BackupManager => BackupManager [ label = "check status" ]{
-      BackupManager => Agent [label = "backup state?", return = "processing"];
+    BackupOperator => BackupOperator [ label = "check status" ]{
+      BackupOperator => Agent [label = "backup state?", return = "processing"];
     }
 
     # agent continues backup
     Agent => IaaS [label = "upload tarball to blob store"]
     Agent => IaaS [label = "unmount, detach, and delete temporary volume"]
     Agent => IaaS [label = "unmount, detach, and delete cloned volume"]
-    BackupManager <<-- Agent [label = "backup completed\nno actual callback"]
+    BackupOperator <<-- Agent [label = "backup completed\nno actual callback"]
 
     # BrokerApi asks for last operation status
-    BackupManager => BackupManager [ label = "check status" ]{
-      BackupManager => Agent [label = "backup state?", return = "succeeded"]
-      BackupManager => Agent [label = "fetch logs", return = "logs"]
-      BackupManager => IaaS [label = "update backup record with logs"]
-      APIServer <-- BackupManager [ label = "Update backup status as succeeded" ];
+    BackupOperator => BackupOperator [ label = "check status" ]{
+      BackupOperator => Agent [label = "backup state?", return = "succeeded"]
+      BackupOperator => Agent [label = "fetch logs", return = "logs"]
+      BackupOperator => IaaS [label = "update backup record with logs"]
+      APIServer <-- BackupOperator [ label = "Update backup status as succeeded" ];
     }
 
     FabrikApi => FabrikApi [ label = "check backup resource status" ]{

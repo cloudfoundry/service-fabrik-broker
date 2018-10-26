@@ -7,7 +7,7 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  Admin; Controller; Broker; APIServer; BOSHManager; Bosh; Service; IaaS;
+  Admin; Controller; Broker; APIServer; BOSHOperator; Bosh; Service; IaaS;
 
   # trigger update of outdated service instances
   Admin ->> Broker [label = "trigger update of outdated deployments"] {
@@ -30,9 +30,9 @@ seqdiag {
     Broker => APIServer [label = "Update the director resource with state as update", return = "true"];
   }
 
-  APIServer -> BOSHManager [label = "Trigger watcher for new update request"]
-  BOSHManager ->> Bosh [label = "bosh deploy"]
-  BOSHManager -> APIServer [label = "sets resource state as in_progress", return = "true"];
+  APIServer -> BOSHOperator [label = "Trigger watcher for new update request"]
+  BOSHOperator ->> Bosh [label = "bosh deploy"]
+  BOSHOperator -> APIServer [label = "sets resource state as in_progress", return = "true"];
         
   
   # bosh starts deployment
@@ -44,22 +44,22 @@ seqdiag {
     Broker => APIServer [label = "last operation of director resource?", return = "processing"]
   }
 
-  BOSHManager -> BOSHManager [ label = "Start Poller" ];
+  BOSHOperator -> BOSHOperator [ label = "Start Poller" ];
 
-  # BOSHManager asks for last operation status
-  BOSHManager => BOSHManager [ label = "check status" ]{
-    BOSHManager => Bosh [label = "task state?", return = "in progress"]
-    BOSHManager => APIServer [label = "sets last operation as in progress"]
+  # BOSHOperator asks for last operation status
+  BOSHOperator => BOSHOperator [ label = "check status" ]{
+    BOSHOperator => Bosh [label = "task state?", return = "in progress"]
+    BOSHOperator => APIServer [label = "sets last operation as in progress"]
   }
 
   # bosh continues deployment
   Bosh => Service [label = "monit start all"]
-  BOSHManager <<-- Bosh [label = "deployment completed\nno actual callback"]
+  BOSHOperator <<-- Bosh [label = "deployment completed\nno actual callback"]
 
-  # BOSHManager asks for last operation status
-  BOSHManager => BOSHManager [ label = "check status" ]{
-    BOSHManager => Bosh [label = "task state?", return = "succeeded"]
-    BOSHManager => APIServer [label = "sets last operation as succeeded"]
+  # BOSHOperator asks for last operation status
+  BOSHOperator => BOSHOperator [ label = "check status" ]{
+    BOSHOperator => Bosh [label = "task state?", return = "succeeded"]
+    BOSHOperator => APIServer [label = "sets last operation as succeeded"]
   }
 
   # controller asks for last operation status

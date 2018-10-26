@@ -7,17 +7,17 @@ seqdiag {
   default_note_color = lightblue;
 
   # actors (in order left to right)
-  User; Controller; Broker; APIServer; BOSHManager; Agent; Service;
+  User; Controller; Broker; APIServer; BOSHOperator; Agent; Service;
 
   # trigger service binding creation
   User => Controller [label = "cf create-service-binding", return = "credentials"] {
     Controller => Broker [label = "create binding", return = "credentials"] {
       Broker => APIServer [label = "create bind resource with state in_queue and wait for state change", return = "credentials"]{
-        APIServer -> BOSHManager [label = "trigger watcher for new bind resource"]
-          BOSHManager => Agent [label = "create credentials", return = "credentials"] {
+        APIServer -> BOSHOperator [label = "trigger watcher for new bind resource"]
+          BOSHOperator => Agent [label = "create credentials", return = "credentials"] {
             Agent => Service [label = "create user", return = "ok"]
           }
-          BOSHManager => APIServer [label = "update the resource state as succeeded with response", return = "ok"]
+          BOSHOperator => APIServer [label = "update the resource state as succeeded with response", return = "ok"]
       }
     }
   }
