@@ -306,7 +306,8 @@ class BoshDirectorClient extends HttpClient {
     return Promise
       .map(this.primaryConfigs,
         (directorConfig) => this.getDeploymentsByConfig(directorConfig))
-      .reduce((all_deployments, deployments) => all_deployments.concat(deployments), []);
+      .reduce((all_deployments, deployments) => all_deployments.concat(deployments), [])
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   getDeploymentNameForInstanceId(guid) {
@@ -354,8 +355,7 @@ class BoshDirectorClient extends HttpClient {
         .compact()
         .uniq()
         .value()
-      )
-      .catch(err => this.convertHttperrorAndThrow(err));
+      );
   }
 
   getDeployment(deploymentName) {
@@ -500,7 +500,7 @@ class BoshDirectorClient extends HttpClient {
           })
           .then(res => this.prefixTaskId(deploymentName, res));
       })
-      .catch(err => this.convertHttperrorAndThrow(err));
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   deleteDeployment(deploymentName) {
@@ -511,7 +511,7 @@ class BoshDirectorClient extends HttpClient {
         url: `/deployments/${deploymentName}`
       }, 302, deploymentName)
       .then(res => this.prefixTaskId(deploymentName, res))
-      .catch(err => this.convertHttperrorAndThrow(err));
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   /* VirtualMachines operations */
@@ -530,7 +530,8 @@ class BoshDirectorClient extends HttpClient {
         method: 'GET',
         url: `/deployments/${deploymentName}/instances`
       }, 200, deploymentName)
-      .then(res => JSON.parse(res.body));
+      .then(res => JSON.parse(res.body))
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   /* Property operations */
@@ -617,8 +618,7 @@ class BoshDirectorClient extends HttpClient {
       .tap(response => {
         logger.info(`Cached Ips for deployment - ${deploymentName} - `, response);
         this.deploymentIpsCache[deploymentName] = response;
-      })
-      .catch(err => this.convertHttperrorAndThrow(err));
+      });
   }
 
   getAgentPropertiesFromManifest(deploymentName) {
@@ -822,7 +822,8 @@ class BoshDirectorClient extends HttpClient {
             return task;
           });
       })
-      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
+      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), [])
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   getTask(taskId) {
@@ -974,7 +975,7 @@ class BoshDirectorClient extends HttpClient {
     return _.last(parseUrl(url).path.split('/'));
   }
 
-  convertHttperrorAndThrow(err) {
+  convertHttpErrorAndThrow(err) {
     if ((err instanceof InternalServerError) || _.includes(CONST.SYSTEM_ERRORS, err.code)) {
       throw new ServiceUnavailable(err.message);
     } else {
