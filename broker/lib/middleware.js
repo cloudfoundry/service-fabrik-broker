@@ -36,16 +36,24 @@ exports.validateRequest = function () {
 exports.validateCreateRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
-    if (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid')) {
-      return next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
+    let platform = utils.getPlatformFromContext(_.get(req, 'body.context'));
+    if(platform === CONST.PLATFORM.CF) {
+      if (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid')) {
+        return next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
+      }
+      next();
+    } else {
+      //TODO:Add validations of create requests for K8S platform
+      next();
     }
-    next();
   };
 };
 
 exports.checkBlockingOperationInProgress = function () {
   return function (req, res, next) {
     const plan_id = req.body.plan_id || req.query.plan_id;
+    logger.debug(req.body);
+    logger.debug(req.query);
     const plan = catalog.getPlan(plan_id);
     if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance

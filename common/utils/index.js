@@ -72,6 +72,7 @@ function verifyFeatureSupport(plan, feature) {
     throw new NotImplemented(`Feature '${feature}' not supported`);
   }
 }
+exports.getPlatformFromContext = getPlatformFromContext;
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');
@@ -347,6 +348,15 @@ function parseServiceInstanceIdFromDeployment(deploymentName) {
     return deploymentNameArray[3];
   }
   return deploymentName;
+}
+
+function getPlatformFromContext(context) {
+  let platform = _.get(context, 'platform');
+  if(platform === CONST.PLATFORM.SM) {
+    return _.get(context, 'origin');
+  } else {
+    return platform;
+  }
 }
 
 function getRandomInt(min, max) {
