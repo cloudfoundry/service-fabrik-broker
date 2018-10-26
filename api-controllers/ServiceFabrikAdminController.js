@@ -232,13 +232,16 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
 
-  dummyFunction(req, res) {
-    let deploymentName = 'service-fabrik-1471-b59dbcbf-bc33-4437-8620-b3b30efb3e6a';
-    let jobName = 'blueprint';
-    let instanceId = 'a96b9d48-c310-4ce6-90d3-1182635f7808';
-    let diskId = 'vol-0e4ec5f70f30b78fd';
-    return bosh.director.boshAttachOrchestration(deploymentName, jobName, instanceId, diskId)
-      .then(() => res.status(200).send('Operation triggered!'));
+  triggerFunction(req, res) {
+    //insert details here.
+    let deploymentName = '';
+    let vm_cid = '';
+    let jobData;
+    return bosh.director.getDeploymentInstances(deploymentName)
+      .then((vms) => {
+        jobData = _.pick(_.filter(vms, ['cid', vm_cid])[0], 'id', 'job');
+        res.status(200).send(`Operation triggered!: ${JSON.stringify(jobData)}`);
+      });
   }
 
   getDeploymentDirectorConfig(req, res) {

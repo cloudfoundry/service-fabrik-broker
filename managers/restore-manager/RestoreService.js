@@ -32,14 +32,20 @@ class RestoreService extends BaseDirectorService {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .getRestoreLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-        default:
-          return metadata;
+          case 'processing':
+            return this.agent
+              .getRestoreLastOperation(metadata.agent_ip)
+              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+          default:
+            return metadata;
         }
       });
+  }
+
+  updateState(ip, state, stage) {
+    return Promise.try(() => {
+      return this.agent.updateState(ip, state, stage);
+    });
   }
 
   getRestoreOperationState(opts) {
@@ -65,9 +71,9 @@ class RestoreService extends BaseDirectorService {
       .tap(lastOperation => {
         if (isFinished(lastOperation.state)) {
           return Promise.all([this.agent
-              .getRestoreLogs(agent_ip), this.backupStore
+            .getRestoreLogs(agent_ip), this.backupStore
               .getRestoreFile(options)
-            ])
+          ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
               // following restoreDates will have structure
@@ -239,22 +245,22 @@ class RestoreService extends BaseDirectorService {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortRestore(metadata.agent_ip)
-            .then(() => eventmesh.apiServerClient.updateResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-              resourceId: abortOptions.restore_guid,
-              status: {
-                'state': CONST.OPERATION.ABORTING
-              }
-            }))
-            .return({
-              state: CONST.OPERATION.ABORTING
-            });
-        default:
-          return _.pick(metadata, 'state');
+          case 'processing':
+            return this.agent
+              .abortRestore(metadata.agent_ip)
+              .then(() => eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: abortOptions.restore_guid,
+                status: {
+                  'state': CONST.OPERATION.ABORTING
+                }
+              }))
+              .return({
+                state: CONST.OPERATION.ABORTING
+              });
+          default:
+            return _.pick(metadata, 'state');
         }
       });
   }

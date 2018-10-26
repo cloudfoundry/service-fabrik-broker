@@ -689,14 +689,14 @@ class BoshDirectorClient extends HttpClient {
 
   }
 
-  pollTaskStatusTillComplete(taskId, pollInterval, timeout, maxErrorRetry) {
+  pollTaskStatusTillComplete(taskId, pollInterval, timeout, maxErrorRetry, directorConfig) {
     let errorRetries = 0;
     maxErrorRetry = maxErrorRetry || CONST.BOSH_POLL_MAX_ATTEMPTS;
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
       logger.debug('will query state for task :', taskId);
       const statePoller = () => {
-        this.getTask(taskId)
+        this.getTask(taskId, directorConfig)
           .tap(task => logger.info(`+-> Fetched task for deployment '${task.deployment}' has state '${task.state}'`))
           .then(task => {
             const timestamp = new Date(task.timestamp * 1000).toISOString();
@@ -819,14 +819,14 @@ class BoshDirectorClient extends HttpClient {
       .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
   }
 
-  getTask(taskId) {
+  getTask(taskId, directorConfig) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
       return this
         .makeRequestWithConfig({
           method: 'GET',
           url: `/tasks/${taskId}`
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
+        }, 200, directorConfig || this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
         .then(res => JSON.parse(res.body));
     }
     const deploymentName = splitArray[1];
@@ -906,33 +906,56 @@ class BoshDirectorClient extends HttpClient {
       }, 302, config))
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
-        logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
+        logger.info(`Sent signal to ${deploymentName}; BOSH task ID: ${taskId}`);
         return taskId;
       });
   }
 
   boshStartOperation(deploymentName, jobName, jobId) {
     return this.startDeployment(deploymentName, jobName, jobId)
-      .then(taskId => this.pollTaskStatusTillComplete(taskId))
-      .then(response => { return response });
+      .then(taskId => {
+        return this.getDirectorConfig(deploymentName)
+          .then(config => {
+            return Promise.try(() => {
+              return this.pollTaskStatusTillComplete(taskId, undefined, undefined, undefined, config)
+                .then(response => { return response });
+            });
+          })
+      });
   }
 
   boshStopOperation(deploymentName, jobName, jobId) {
     return this.stopDeployment(deploymentName, jobName, jobId)
-      .then(taskId => this.pollTaskStatusTillComplete(taskId))
-      .then(response => { return response });
+      .then(taskId => {
+        return this.getDirectorConfig(deploymentName)
+          .then(config => {
+            return Promise.try(() => {
+              return this.pollTaskStatusTillComplete(taskId, undefined, undefined, undefined, config)
+                .then(response => { return response });
+            });
+          })
+      });
   }
 
   boshAttachOperation(deploymentName, diskId, jobName, instanceId) {
     return this.attachDisk(deploymentName, diskId, jobName, instanceId)
-      .then(taskId => this.pollTaskStatusTillComplete(taskId))
-      .then(response => { return response });
+      .then(taskId => {
+        return this.getDirectorConfig(deploymentName)
+          .then(config => {
+            return Promise.try(() => {
+              return this.pollTaskStatusTillComplete(taskId, undefined, undefined, undefined, config)
+                .then(response => { return response });
+            });
+          })
+      });
   }
 
   boshAttachOrchestration(deploymentName, jobName, instanceId, diskId) {
-    return this.boshStopOperation(deploymentName, jobName, instanceId)
-      .then(() => this.boshAttachOperation(deploymentName, diskId, jobName, instanceId))
-      .then(() => this.boshStartOperation(deploymentName, jobName, instanceId));
+    return Promise.try(() => {
+      return this.boshStopOperation(deploymentName, jobName, instanceId)
+        .then(() => this.boshAttachOperation(deploymentName, diskId, jobName, instanceId))
+        .then(() => this.boshStartOperation(deploymentName, jobName, instanceId))
+    });
   }
 
   invokeDeploymentJobAction(directorConfig, deploymentName, expectedState, job, jobId) {

@@ -229,6 +229,14 @@ class Agent extends HttpClient {
       .post(ip, 'backup/start', body, CONST.HTTP_STATUS_CODE.ACCEPTED);
   }
 
+  updateState(ip, state, stage) {
+    const body = {
+      state: state,
+      stage: stage
+    };
+    return this.post(ip, '/updateStage', body, CONST.HTTP_STATUS_CODE.ACCEPTED)
+  }
+
   abortBackup(ip) {
     const body = {};
     return this

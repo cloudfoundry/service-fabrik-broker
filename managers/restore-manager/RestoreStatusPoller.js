@@ -11,6 +11,8 @@ const RestoreService = require('./');
 const utils = require('../../common/utils');
 const EventLogInterceptor = require('../../common/EventLogInterceptor');
 const BaseStatusPoller = require('../BaseStatusPoller');
+const bosh = require('../../data-access-layer/bosh');
+const director = bosh.director;
 
 class RestoreStatusPoller extends BaseStatusPoller {
   constructor() {
@@ -22,6 +24,33 @@ class RestoreStatusPoller extends BaseStatusPoller {
       pollInterval: config.backup.backup_restore_status_check_every
     });
   }
+
+  initiateBoshAttachOperation(ip, instance_guid, operationStatusResponse, restoreService) {
+    logger.debug('Initiating the bosh attach operation');
+    let deploymentName;
+    let instanceId = operationStatusResponse.metadata.vm_cid;
+    let diskId = operationStatusResponse.metadata.volume_id;
+
+    return director
+      .getDeploymentNameForInstanceId(instance_guid)
+      .then((deploymentResult) => deploymentName = deploymentResult)
+      .then(() => {
+        return restoreService.updateState(ip, 'processing', 'BOSH_ATTACH_IN_PROGRESS')
+          .then(() => {
+            return director.getDeploymentInstances(deploymentName)
+              .then((vms) => {
+                let jobData;
+                jobData = _.pick(_.filter(vms, ['cid', instanceId])[0], 'id', 'job');
+                return jobData;
+              })
+              .then(jobData => {
+                return director.boshAttachOrchestration(deploymentName, jobData.job, jobData.id, diskId);
+              })
+              .then(() => restoreService.updateState(ip, 'succeeded', 'BOSH_ATTACH_SUCCESSFULL'))
+          })
+      });
+  }
+
   getStatus(resourceBody, intervalId) {
     const response = _.get(resourceBody, 'status.response');
     const changedOptions = _.get(resourceBody, 'spec.options');
@@ -48,22 +77,31 @@ class RestoreStatusPoller extends BaseStatusPoller {
               }
             }))
             .then(() => {
-              if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
-                return eventmesh.apiServerClient.patchResource({
-                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-                    resourceId: changedOptions.restore_guid,
-                    status: {
-                      state: operationStatusResponse.state
-                    }
-                  })
-                  .then(() => {
-                    logger.debug('Clearing Restore Task Poller:', resourceBody.metadata.name);
-                    this.clearPoller(resourceBody.metadata.name, intervalId);
-                    _.set(restore_opts, 'user.name', changedOptions.username);
-                    return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
-                  });
-              }
+              return Promise
+                .try(() => {
+                  if (operationStatusResponse.stage === 'BOSH_ATTACH_INIT') {
+                    return this.initiateBoshAttachOperation(response.agent_ip, changedOptions.instance_guid, operationStatusResponse, restoreService);
+                  }
+                })
+                .then(() => {
+                  if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
+                    return eventmesh.apiServerClient
+                      .patchResource({
+                        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                        resourceId: changedOptions.restore_guid,
+                        status: {
+                          state: operationStatusResponse.state
+                        }
+                      })
+                      .then(() => {
+                        logger.debug('Clearing Restore Task Poller:', resourceBody.metadata.name);
+                        this.clearPoller(resourceBody.metadata.name, intervalId);
+                        _.set(restore_opts, 'user.name', changedOptions.username);
+                        return this._logEvent(restore_opts, CONST.OPERATION_TYPE.RESTORE, operationStatusResponse);
+                      });
+                  }
+                })
             });
         })
       );
