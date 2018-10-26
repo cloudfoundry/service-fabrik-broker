@@ -352,7 +352,7 @@ function parseServiceInstanceIdFromDeployment(deploymentName) {
 
 function getPlatformFromContext(context) {
   let platform = _.get(context, 'platform');
-  if(platform === CONST.PLATFORM.SM) {
+  if (platform === CONST.PLATFORM.SM) {
     return _.get(context, 'origin');
   } else {
     return platform;

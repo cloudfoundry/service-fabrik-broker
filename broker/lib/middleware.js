@@ -37,7 +37,7 @@ exports.validateCreateRequest = function () {
   return function (req, res, next) {
     /* jshint unused:false */
     let platform = utils.getPlatformFromContext(_.get(req, 'body.context'));
-    if(platform === CONST.PLATFORM.CF) {
+    if (platform === CONST.PLATFORM.CF) {
       if (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid')) {
         return next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
       }

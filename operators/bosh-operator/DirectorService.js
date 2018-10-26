@@ -704,10 +704,10 @@ class DirectorService extends BaseDirectorService {
         parameters: params.parameters || {}
       }))
       .tap(() => {
-        if(this.platformManager.platformName === CONST.PLATFORM.CF) {
+        if (this.platformManager.platformName === CONST.PLATFORM.CF) {
           return this
-          .scheduleBackUp()
-          .catch(() => {})
+            .scheduleBackUp()
+            .catch(() => {});
         } else {
           //TODO: revisit this when supporting extension APIs for K8S consumption
           return;
