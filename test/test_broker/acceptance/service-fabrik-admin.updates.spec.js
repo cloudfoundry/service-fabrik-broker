@@ -58,7 +58,7 @@ describe('service-fabrik-admin', function () {
       }]));
     });
 
-    it.only('should list all instances with updates scheduled', function () {
+    it('should list all instances with updates scheduled', function () {
       return chai
         .request(app)
         .get(`${base_url}/update/schedules`)
