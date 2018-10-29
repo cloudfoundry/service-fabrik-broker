@@ -80,6 +80,20 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
+  getDeploymentName(guid, networkSegmentIndex) {
+    let subnet = this.subnet ? `_${this.subnet}` : '';
+    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+  }
+
+  getServiceInstanceState(instanceGuid) {
+    return this
+      .findNetworkSegmentIndex(instanceGuid)
+      .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
+      .then(deploymentName => this.getDeploymentIps(deploymentName))
+      .then(ips => this.agent.getState(ips));
+  }
+
+
   static get prefix() {
     return _
       .reduce(config.directors,
@@ -137,6 +151,20 @@ class DirectorService extends BaseDirectorService {
             ]);
         }
       });
+  }
+
+  findDeploymentNameByInstanceId(guid) {
+    logger.info(`Finding deployment name with instance id : '${guid}'`);
+    return this.getDeploymentNames(false)
+      .then(deploymentNames => {
+        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
+        if (!deploymentName) {
+          logger.warn(`+-> Could not find a matching deployment for guid: ${guid}`);
+          throw new ServiceInstanceNotFound(guid);
+        }
+        return deploymentName;
+      })
+      .tap(deploymentName => logger.info(`+-> Found deployment '${deploymentName}' for '${guid}'`));
   }
 
   acquireNetworkSegmentIndex(guid) {
@@ -662,7 +690,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   createBinding(deploymentName, binding) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
     logger.info('+-> Binding parameters:', binding.parameters);
     let actionContext = {
@@ -702,7 +730,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   deleteBinding(deploymentName, id) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
     let actionContext = {
       'deployment_name': deploymentName,
@@ -867,7 +895,7 @@ class DirectorService extends BaseDirectorService {
       .try(() => {
         if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
           try {
-            this.verifyFeatureSupport('backup');
+            utils.verifyFeatureSupport(this.plan, 'backup');
             ScheduleManager
               .getSchedule(this.guid, CONST.JOB.SCHEDULED_BACKUP)
               .then(schedule => {

@@ -5,7 +5,6 @@ const yaml = require('js-yaml');
 const catalog = require('../../common/models').catalog;
 const proxyquire = require('proxyquire');
 const Promise = require('bluebird');
-const CONST = require('../../common/constants');
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var deployment_name = `service-fabrik-0021-${used_guid}`;
@@ -72,52 +71,6 @@ describe('fabrik', function () {
       });
     });
 
-    describe('#executeActions', function () {
-      before(function () {
-        return mocks.setup([]);
-      });
-
-      afterEach(function () {
-        mocks.reset();
-      });
-      const rabbit_plan_id = 'b715f834-2048-11e7-a560-080027afc1e6';
-      const context = {
-        deployment_name: 'my-deployment'
-      };
-      it('should return empty response if no actions are defined', function () {
-        manager = new DirectorManager(catalog.getPlan(rabbit_plan_id));
-        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
-          .then(actionResponse => {
-            expect(actionResponse).to.eql({});
-          });
-      });
-      it('should return empty response if actions are not provided', function () {
-        manager = new DirectorManager(catalog.getPlan(small_plan_id));
-        let temp_actions = manager.service.actions;
-        manager.service.actions = '';
-        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
-          .then(actionResponse => {
-            manager.service.actions = temp_actions;
-            expect(actionResponse).to.eql({});
-          });
-      });
-      it('should return correct action response', function () {
-        const expectedRequestBody = {
-          phase: 'PreCreate',
-          actions: ['Blueprint', 'ReserveIps'],
-          context: {
-            deployment_name: 'my-deployment'
-          }
-        };
-        mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-        manager = new DirectorManager(catalog.getPlan(xsmall_plan_id));
-        return manager.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_CREATE, context)
-          .then(actionResponse => {
-            expect(actionResponse).to.eql({});
-            mocks.verify();
-          });
-      });
-    });
     describe('#configureAddOns', function () {
       it('should update manifest with addons', function () {
         const plan = _.cloneDeep(catalog.getPlan(plan_id));

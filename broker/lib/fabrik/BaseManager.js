@@ -3,6 +3,7 @@
 const formatUrl = require('url').format;
 const _ = require('lodash');
 const config = require('../../../common/config');
+const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
 const CONST = require('../../../common/constants');
@@ -37,18 +38,13 @@ class BaseManager {
     return this.settings.restore_predecessors || this.updatePredecessors;
   }
 
-  isAutoUpdatePossible() {
-    throw new NotImplementedBySubclass('isAutoUpdatePossible');
-  }
-
   isUpdatePossible(plan_id) {
     const previousPlan = _.find(this.service.plans, ['id', plan_id]);
     return this.plan === previousPlan || _.includes(this.updatePredecessors, previousPlan.id);
   }
 
   isRestorePossible(plan_id) {
-    const previousPlan = _.find(this.service.plans, ['id', plan_id]);
-    return this.plan === previousPlan || _.includes(this.restorePredecessors, previousPlan.id);
+    return utils.isRestorePossible(plan_id, this.plan);
   }
 
   getSecurityGroupName(guid) {

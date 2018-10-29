@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const assert = require('assert');
 const Promise = require('bluebird');
 const BaseController = require('../common/controllers/BaseController');
 const config = require('../common/config');
@@ -153,26 +152,6 @@ class FabrikBaseController extends BaseController {
         //Restore file might not be found, first time restore.
         return true;
       });
-  }
-
-  assignManager(req, res) {
-    /* jshint unused:false */
-    return Promise
-      .try(() => {
-        const plan_id = req.body.plan_id || req.query.plan_id;
-        if (plan_id) {
-          this.validateUuid(plan_id, 'Plan ID');
-          return plan_id;
-        }
-        const instance_id = req.params.instance_id;
-        assert.ok(instance_id, 'Middleware assignManager requires a plan_id or instance_id');
-        return this.cloudController
-          .findServicePlanByInstanceId(instance_id)
-          .then(body => body.entity.unique_id);
-      })
-      .then(plan_id => this.createManager(plan_id))
-      .tap(manager => _.set(req, 'manager', manager))
-      .throw(new ContinueWithNext());
   }
 
   getInstanceId(deploymentName) {
