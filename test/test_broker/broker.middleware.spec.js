@@ -16,7 +16,7 @@ const utils = require('../../common/utils');
 const errors = require('../../common/errors');
 const BadRequest = errors.BadRequest;
 const Forbidden = errors.Forbidden;
-const PROMISE_WAIT_SIMULATED_DELAY = 2;
+const PROMISE_WAIT_SIMULATED_DELAY = 30;
 
 class Response {
   constructor() {

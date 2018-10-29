@@ -4,6 +4,7 @@ const _ = require('lodash');
 const assert = require('assert');
 const Promise = require('bluebird');
 const jwt = require('../broker/lib/jwt');
+const DirectorService = require('../operators/bosh-operator/DirectorService');
 const logger = require('../common/logger');
 const backupStore = require('../data-access-layer/iaas').backupStore;
 const filename = backupStore.filename;
@@ -43,6 +44,32 @@ const CloudControllerError = {
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
     super();
+  }
+
+  validateUuid(uuid, description) {
+    const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(uuid)) {
+      throw new errors.BadRequest(`Invalid ${description || 'uuid'} '${uuid}'`);
+    }
+  }
+
+  setPlan(req) {
+    if (req.plan === undefined) {
+      return Promise
+        .try(() => {
+          const plan_id = req.body.plan_id || req.query.plan_id;
+          if (plan_id) {
+            this.validateUuid(plan_id, 'Plan ID');
+            return plan_id;
+          }
+          const instance_id = req.params.instance_id;
+          assert.ok(instance_id, 'Middleware assignManager requires a plan_id or instance_id');
+          return cf.cloudController
+            .findServicePlanByInstanceId(instance_id)
+            .then(body => body.entity.unique_id);
+        })
+        .then(plan_id => req.plan = catalog.getPlan(plan_id));
+    }
   }
 
   verifyAccessToken(req, res) {
@@ -199,9 +226,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getServiceInstanceState(req, res) {
-    req.manager.verifyFeatureSupport('state');
-    return req.manager
-      .getServiceInstanceState(req.params.instance_id)
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, 'state'))
+      .then(() => new DirectorService(req.plan, req.params.instance_id))
+      .then(directorService => directorService.getServiceInstanceState(req.params.instance_id))
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(_.pick(body, 'operational', 'details'))
@@ -286,11 +315,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
   startBackup(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     let lockId;
-    req.manager.verifyFeatureSupport(CONST.OPERATION_TYPE.BACKUP);
     const trigger = _.get(req.body, 'trigger', CONST.BACKUP.TRIGGER.ON_DEMAND);
     let backupGuid;
     return Promise
-      .try(() => this.checkQuota(req, trigger))
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => this.checkQuota(req, trigger))
       .then(() => utils.uuidV4())
       .then(guid => {
         _.set(req.body, 'trigger', trigger);
@@ -355,15 +385,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastBackup(req, res) {
-    req.manager.verifyFeatureSupport('backup');
     // TODO-PR: We should get lastOperation response from querying backup resource with instance_guid
-    return eventmesh.apiServerClient.getLastOperationValue({
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.BACKUP,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
         resourceId: req.params.instance_id
-      })
+      }))
       .then(backupGuid =>
         eventmesh.apiServerClient.getResponse({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
@@ -382,15 +414,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   abortLastBackup(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    return eventmesh
-      .apiServerClient.getLastOperationValue({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        operationName: CONST.OPERATION_TYPE.BACKUP,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: req.params.instance_id
-      })
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => eventmesh
+        .apiServerClient.getLastOperationValue({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          operationName: CONST.OPERATION_TYPE.BACKUP,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: req.params.instance_id
+        }))
       .then(backupGuid => {
         return eventmesh
           .apiServerClient.getResourceState({
@@ -426,18 +460,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
-    // TODO move verifyFeatureSupport out of manager
-    req.manager.verifyFeatureSupport('restore');
     let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     return Promise
-      .all([
-        utils.uuidV4(),
-        cf.cloudController.findServicePlanByInstanceId(req.params.instance_id)
-      ])
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() =>
+        Promise
+        .all([
+          utils.uuidV4(),
+          cf.cloudController.findServicePlanByInstanceId(req.params.instance_id)
+        ]))
       .spread((guid, planDetails) => {
         serviceId = this.getPlan(planDetails.entity.unique_id).service.id;
         planId = planDetails.entity.unique_id;
@@ -496,7 +532,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (metadata.state !== 'succeeded') {
           throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
         }
-        if (!req.manager.isRestorePossible(metadata.plan_id)) {
+        if (!utils.isRestorePossible(metadata.plan_id, req.plan)) {
           throw new UnprocessableEntity(`Cannot restore for guid/timeStamp: '${timeStamp || backupGuid}' to plan:'${metadata.plan_id}'`);
         }
         return metadata;
@@ -561,16 +597,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getLastRestore(req, res) {
-    req.manager.verifyFeatureSupport('restore');
     const instanceId = req.params.instance_id;
 
-    return eventmesh.apiServerClient.getLastOperationValue({
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() => eventmesh.apiServerClient.getLastOperationValue({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         operationName: CONST.OPERATION_TYPE.RESTORE,
         operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
         resourceId: req.params.instance_id
-      })
+      }))
       .then(restoreGuid =>
         eventmesh.apiServerClient.getResponse({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -590,15 +628,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   abortLastRestore(req, res) {
-    req.manager.verifyFeatureSupport('restore');
-    return eventmesh
-      .apiServerClient.getLastOperationValue({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        operationName: CONST.OPERATION_TYPE.RESTORE,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-        resourceId: req.params.instance_id
-      })
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => eventmesh
+        .apiServerClient.getLastOperationValue({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          operationName: CONST.OPERATION_TYPE.RESTORE,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          resourceId: req.params.instance_id
+        }))
       .then(restoreGuid => {
         return eventmesh
           .apiServerClient.getResourceState({
@@ -765,7 +805,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   scheduleBackup(req, res) {
-    req.manager.verifyFeatureSupport('backup');
     if (_.isEmpty(req.body.repeatInterval) || _.isEmpty(req.body.type)) {
       throw new BadRequest('repeatInterval | type are mandatory');
     }
@@ -775,19 +814,22 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .set('instance_id', req.params.instance_id)
       .set('trigger', CONST.BACKUP.TRIGGER.SCHEDULED)
       .set('tenant_id', req.entity.tenant_id)
-      .set('plan_id', req.manager.plan.id)
-      .set('service_id', req.manager.service.id)
       .value();
-    return this.cloudController.getOrgAndSpaceDetails(data.instance_id, data.tenant_id)
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => this.cloudController.getOrgAndSpaceDetails(data.instance_id, data.tenant_id))
       .then(space => {
-        const serviceDetails = catalog.getService(data.service_id);
-        const planDetails = catalog.getPlan(req.manager.plan.id);
+        const serviceDetails = catalog.getService(req.plan.service.id);
+        const planDetails = catalog.getPlan(req.plan.id);
         _.chain(data)
           .set('service_name', serviceDetails.name)
           .set('service_plan_name', planDetails.name)
           .set('space_name', space.space_name)
           .set('organization_name', space.organization_name)
           .set('organization_guid', space.organization_guid)
+          .set('plan_id', req.plan.id)
+          .set('service_id', req.plan.service.id)
           .value();
         return ScheduleManager
           .schedule(
@@ -803,32 +845,38 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getBackupSchedule(req, res) {
-    req.manager.verifyFeatureSupport('backup');
-    return ScheduleManager
-      .getSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => ScheduleManager
+        .getSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP))
       .then(body => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send(body));
   }
 
   cancelScheduledBackup(req, res) {
-    req.manager.verifyFeatureSupport('backup');
     if (!_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
       throw new Forbidden(`Permission denined. Cancelling of backups can only be done by user with cloud_controller.admin scope.`);
     }
-    return ScheduleManager
-      .cancelSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP)
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.BACKUP))
+      .then(() => ScheduleManager
+        .cancelSchedule(req.params.instance_id, CONST.JOB.SCHEDULED_BACKUP))
       .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({}));
   }
 
   scheduleUpdate(req, res) {
-    req.manager.isAutoUpdatePossible();
     if (_.isEmpty(req.body.repeatInterval)) {
       throw new BadRequest('repeatInterval is mandatory');
     }
-    return req.manager.findDeploymentNameByInstanceId(req.params.instance_id)
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => new DirectorService(req.plan, req.params.instance_id))
+      .then(directorService => directorService.findDeploymentNameByInstanceId(req.params.instance_id))
       .then(deploymentName => _
         .chain({
           instance_id: req.params.instance_id,
@@ -851,14 +899,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getUpdateSchedule(req, res) {
-    req.manager.isAutoUpdatePossible();
-    return ScheduleManager
-      .getSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE)
+    return Promise.try(() => this.setPlan(req))
+      .then(() => ScheduleManager
+        .getSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE))
       .then(scheduleInfo => {
         const checkUpdateRequired = _.get(req.query, 'check_update_required');
         logger.info(`Instance Id: ${req.params.instance_id} - check outdated status - ${checkUpdateRequired}`);
         if (checkUpdateRequired) {
-          return req.manager
+          const directorService = new DirectorService(req.plan, req.params.instance_id);
+          return directorService
             .findDeploymentNameByInstanceId(req.params.instance_id)
             .then(deploymentName => eventmesh.apiServerClient.getPlatformContext({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -868,7 +917,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               .then(context => {
                 const opts = {};
                 opts.context = context;
-                return req.manager.diffManifest(deploymentName, opts);
+                return directorService.diffManifest(deploymentName, opts);
               })
               .then(result => utils.unifyDiffResult(result))
             )
