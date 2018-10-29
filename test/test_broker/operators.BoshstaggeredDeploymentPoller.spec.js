@@ -253,7 +253,7 @@ describe('operators', function () {
         resourceBodyCopy.status.response.deployment_name = undefined;
         const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
         updateStub.withArgs(_.get(resourceBodyCopy, 'spec.options')).onCall(0).returns(Promise.resolve({
-          type: 'create',
+          type: 'update',
           context: {
             platform: 'cloudfoundry',
             organization_guid: 'organization_guid',
@@ -316,6 +316,33 @@ describe('operators', function () {
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();
+            done();
+          })
+          .catch(done);
+      });
+
+      it('no ops for deployment type unknown', function (done) {
+        initStub.returns(Promise.resolve());
+        clearPollerStub.returns(Promise.resolve());
+        const BoshStaggeredDeploymentPoller = proxyquire('../../operators/bosh-operator/BoshStaggeredDeploymentPoller.js', {
+          './DirectorService': {
+            'createInstance': function (instance_id, options) {
+              /* jshint unused:false */
+              return Promise.resolve({
+                'create': createStub
+              });
+            }
+          }
+        });
+        const resourceBodyCopy = _.cloneDeep(resourceBody);
+        resourceBodyCopy.status.response.deployment_name = undefined;
+        resourceBodyCopy.status.response.type = 'random';
+        const boshStaggeredDeploymentPoller = new BoshStaggeredDeploymentPoller();
+        return boshStaggeredDeploymentPoller.getStatus(resourceBodyCopy, 'interval_id')
+          .then(() => {
+            expect(createStub.callCount).to.be.eql(0);
+            expect(initStub.callCount).to.be.eql(1);
+            expect(clearPollerStub.callCount).to.be.eql(0);
             done();
           })
           .catch(done);
