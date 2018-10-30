@@ -116,7 +116,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
-    let workflow, workflowId;
+    let workflow;
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
@@ -127,8 +127,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           'type': 'update'
         };
         if (workflow !== undefined) {
-          operation.workflow_name = workflow;
-          operation.workflowId = workflowId;
+          operation.workflow_name = workflow.name;
+          operation.workflowId = workflow.id;
         }
         body.operation = utils.encodeBase64(operation);
       }
@@ -153,30 +153,27 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(() => {
-        workflow = workflowMapper.getWorkFlow(params);
+        workflow = req._workflow;
         if (workflow !== undefined) {
           lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW;
           lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW;
           const workFlowOptions = {
-            workflow_name: workflow,
+            workflow_name: workflow.name,
             instance_id: req.params.instance_id,
             operation_params: params,
             user: req.user
           };
-          return utils
-            .uuidV4()
-            .tap(workId => workflowId = workId)
-            .then(workflowId => eventmesh.apiServerClient.createResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflowId,
-              options: workFlowOptions,
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-                lastOperation: {},
-                response: {}
-              }
-            }));
+          return eventmesh.apiServerClient.createResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
+            resourceId: workflow.id,
+            options: workFlowOptions,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+              lastOperation: {},
+              response: {}
+            }
+          });
         } else {
           return eventmesh.apiServerClient.updateResource({
             resourceGroup: plan.manager.resource_mappings.resource_group,
