@@ -8,7 +8,9 @@ const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
 
 const guid = 'guid';
 const task_id = 'task_id';
@@ -29,6 +31,7 @@ const internal_params = {
 
 var used_guid = '4a6e7c34-d97c-4fc0-95e6-7a3bc8030be9';
 var used_guid2 = '6a6e7c34-d37c-4fc0-94e6-7a3bc8030bb9';
+const index = mocks.director.networkSegmentIndex;
 
 const expectedGetDeploymentResponse = {
   metadata: {
@@ -56,7 +59,7 @@ const expectedGetDeploymentResponse = {
   }
 };
 
-describe('manager', () => {
+describe('service', () => {
   describe('DirectorService - with ratelimits', function () {
     let configStub = {
       'enable_bosh_rate_limit': true
@@ -87,6 +90,7 @@ describe('manager', () => {
         '../../../common/config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
+      directorService.networkSegmentIndex = index;
       directorService.createOrUpdateDeployment = codSpy;
       directorService.getTask = getTaskSpy;
       directorService.initialize = initializeSpy;
@@ -102,15 +106,45 @@ describe('manager', () => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(codSpy.callCount).to.eql(1);
       });
     });
+
     it('should update with rate limits', () => {
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(codSpy.callCount).to.eql(1);
       });
     });
+
+    it('should create with rate limits - bosh resilience - staggered', () => {
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.create(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.parameters).to.eql(params.parameters);
+        expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(undefined);
+        expect(codSpy.callCount).to.eql(0);
+      });
+    });
+
+    it('should update with rate limits - bosh resilience - staggered', () => {
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.update(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.parameters).to.eql(params.parameters);
+        expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(undefined);
+        expect(codSpy.callCount).to.eql(0);
+      });
+    });
+
     it('should update with rate limits - internal operation [runs immediately]', () => {
       let iparams = _.cloneDeep(internal_params);
       iparams.parameters._runImmediately = true;
@@ -122,7 +156,7 @@ describe('manager', () => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0021-${guid}`, expectedParams]);
       });
     });
     it('should update with rate limits - internal operation [staggers]', () => {
@@ -136,7 +170,7 @@ describe('manager', () => {
         expect(out.task_id).to.eql(undefined);
         expect(out.parameters).to.eql(iparams.parameters);
         expect(out.context).to.eql(iparams.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0021-${guid}`, expectedParams]);
       });
     });
     it('should invoke last operation: op in progress - cached', () => {
@@ -182,7 +216,7 @@ describe('manager', () => {
     let DirectorServiceSub;
     let directorService;
     let sandbox;
-    let initializeSpy, codSpy, getTaskSpy, finalizeSpy;
+    let initializeSpy, codSpy, deleteDeploymentSpy, getTaskSpy, finalizeSpy;
     let lastOpTaskId;
 
     beforeEach(() => {
@@ -200,12 +234,16 @@ describe('manager', () => {
       codSpy.returns(Promise.resolve({
         task_id: task_id
       }));
+      deleteDeploymentSpy = sandbox.stub();
+      deleteDeploymentSpy.returns(Promise.resolve(task_id));
       getTaskSpy = sandbox.stub();
       DirectorServiceSub = proxyquire('../../operators/bosh-operator/DirectorService', {
         '../../../common/config': configStub
       });
       directorService = new DirectorServiceSub(plan, guid);
+      directorService.networkSegmentIndex = index;
       directorService.createOrUpdateDeployment = codSpy;
+      directorService.deleteDeployment = deleteDeploymentSpy;
       directorService.getTask = getTaskSpy;
       directorService.initialize = initializeSpy;
       directorService.finalize = finalizeSpy;
@@ -221,15 +259,91 @@ describe('manager', () => {
         expect(out.task_id).to.eql(task_id);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(codSpy.callCount).to.eql(1);
       });
     });
+
     it('should update without rate limits', () => {
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(task_id);
         expect(out.parameters).to.eql(params.parameters);
         expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(codSpy.callCount).to.eql(1);
       });
     });
+
+    it('should delete without rate limits', () => {
+      directorService.platformManager = new CfPlatformManager('cloudfoundry');
+      return directorService.delete(params).then(out => {
+        expect(out.task_id).to.eql(task_id);
+        expect(out.context).to.eql({
+          platform: 'cloudfoundry'
+        });
+        expect(out.deployment_name).to.eql(`service-fabrik-0021-${guid}`);
+        expect(deleteDeploymentSpy.callCount).to.eql(1);
+      });
+    });
+
+    it('should create without rate limits - bosh resilience - staggered', () => {
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.create(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.parameters).to.eql(params.parameters);
+        expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(undefined);
+        expect(codSpy.callCount).to.eql(0);
+      });
+    });
+
+    it('should update without rate limits - bosh resilience - staggered', () => {
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.update(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.parameters).to.eql(params.parameters);
+        expect(out.context).to.eql(params.context);
+        expect(out.deployment_name).to.eql(undefined);
+        expect(codSpy.callCount).to.eql(0);
+      });
+    });
+
+    it('should delete without rate limits - bosh resilience - staggered', () => {
+      directorService.platformManager = new CfPlatformManager('cloudfoundry');
+      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.delete(params).then(out => {
+        expect(out.task_id).to.eql(undefined);
+        expect(out.context).to.eql({
+          platform: 'cloudfoundry'
+        });
+        expect(out.deployment_name).to.eql(undefined);
+        expect(deleteDeploymentSpy.callCount).to.eql(0);
+      });
+    });
+
+    it('should not create without rate limits - fails due to exception', () => {
+      initializeSpy.returns(Promise.reject(new errors.ServiceInstanceAlreadyExists()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.create(params)
+        .catch(err => {
+          expect(err instanceof errors.ServiceInstanceAlreadyExists).to.eql(true);
+          expect(codSpy.callCount).to.eql(0);
+        });
+    });
+
+    it('should not update without rate limits - fails due to exception', () => {
+      initializeSpy.returns(Promise.reject(new errors.ServiceInstanceNotFound()));
+      directorService.networkSegmentIndex = undefined;
+      return directorService.update(params)
+        .catch(err => {
+          expect(err instanceof errors.ServiceInstanceNotFound).to.eql(true);
+          expect(codSpy.callCount).to.eql(0);
+        });
+    });
+
     it('should update without rate limits - internal operation', () => {
       return directorService.update(internal_params).then(out => {
         let expectedParams = _.cloneDeep(params);
@@ -241,7 +355,7 @@ describe('manager', () => {
           scheduled: true
         }));
         expect(out.context).to.eql(params.context);
-        expect(codSpy.args[0]).to.eql([`service-fabrik-0000-${guid}`, expectedParams]);
+        expect(codSpy.args[0]).to.eql([`service-fabrik-0021-${guid}`, expectedParams]);
       });
     });
     it('should invoke last operation: op in progress', () => {

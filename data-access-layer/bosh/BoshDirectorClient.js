@@ -14,6 +14,8 @@ const HttpClient = utils.HttpClient;
 const config = require('../../common/config');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
+const InternalServerError = errors.InternalServerError;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
@@ -304,7 +306,8 @@ class BoshDirectorClient extends HttpClient {
     return Promise
       .map(this.primaryConfigs,
         (directorConfig) => this.getDeploymentsByConfig(directorConfig))
-      .reduce((all_deployments, deployments) => all_deployments.concat(deployments), []);
+      .reduce((all_deployments, deployments) => all_deployments.concat(deployments), [])
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   getDeploymentNameForInstanceId(guid) {
@@ -496,7 +499,8 @@ class BoshDirectorClient extends HttpClient {
             this.boshConfigCache[deploymentName] = config;
           })
           .then(res => this.prefixTaskId(deploymentName, res));
-      });
+      })
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   deleteDeployment(deploymentName) {
@@ -506,7 +510,8 @@ class BoshDirectorClient extends HttpClient {
         method: 'DELETE',
         url: `/deployments/${deploymentName}`
       }, 302, deploymentName)
-      .then(res => this.prefixTaskId(deploymentName, res));
+      .then(res => this.prefixTaskId(deploymentName, res))
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   /* VirtualMachines operations */
@@ -525,7 +530,8 @@ class BoshDirectorClient extends HttpClient {
         method: 'GET',
         url: `/deployments/${deploymentName}/instances`
       }, 200, deploymentName)
-      .then(res => JSON.parse(res.body));
+      .then(res => JSON.parse(res.body))
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   /* Property operations */
@@ -816,7 +822,8 @@ class BoshDirectorClient extends HttpClient {
             return task;
           });
       })
-      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), []);
+      .reduce((all_tasks, tasks) => all_tasks.concat(tasks), [])
+      .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
   getTask(taskId) {
@@ -966,6 +973,14 @@ class BoshDirectorClient extends HttpClient {
 
   lastSegment(url) {
     return _.last(parseUrl(url).path.split('/'));
+  }
+
+  convertHttpErrorAndThrow(err) {
+    if ((err instanceof InternalServerError) || _.includes(CONST.SYSTEM_ERRORS, err.code)) {
+      throw new ServiceUnavailable(err.message);
+    } else {
+      throw err;
+    }
   }
 }
 
