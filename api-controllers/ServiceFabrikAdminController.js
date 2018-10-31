@@ -766,13 +766,13 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   //Method for getting  instance ids with updates scheduled
   getScheduledUpdateInstances(req, res) {
     logger.info('Getting scheduled update instance list...');
-    return ServiceFabrikAdminController.getInstancesWithUpdateScheduled()
+    return this.getInstancesWithUpdateScheduled()
       .then(body => res
         .status(200)
         .send(body));
   }
 
-  static getInstancesWithUpdateScheduled() {
+  getInstancesWithUpdateScheduled() {
     function getInstancesWithUpdateScheduled(instanceList, offset, modelName, searchCriteria, paginateOpts) {
       if (offset < 0) {
         return Promise.resolve();

@@ -51,7 +51,7 @@ describe('service-fabrik-admin', function () {
   describe('#getScheduledUpdateInstances', function () {
 
     before(function () {
-      sinon.stub(ServiceFabrikAdminController, 'getInstancesWithUpdateScheduled').returns(Promise.resolve([{
+      sinon.stub(ServiceFabrikAdminController.prototype, 'getInstancesWithUpdateScheduled').returns(Promise.resolve([{
         instance_id: '9999-8888-7777-6666'
       }, {
         instance_id: '5555-4444-3333-2222'
@@ -61,7 +61,7 @@ describe('service-fabrik-admin', function () {
     it('should list all instances with updates scheduled', function () {
       return chai
         .request(app)
-        .get(`${base_url}/update/schedules`)
+        .get(`${base_url}/instances/update/schedules`)
         .set('Accept', 'application/json')
         .auth(config.username, config.password)
         .catch(err => err.response)
@@ -111,7 +111,7 @@ describe('service-fabrik-admin', function () {
         offset: config.mongodb.record_max_fetch_count
       };
 
-      return adminController
+      return new adminController()
         .getInstancesWithUpdateScheduled()
         .then(instances => {
           expect(instances).to.eql(expectedInstanceList);
