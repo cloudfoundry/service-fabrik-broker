@@ -4,9 +4,9 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: tasks.workflow.servicefabrik.io
+  name: tasks.serviceflow.servicefabrik.io
 spec:
-  group: workflow.servicefabrik.io
+  group: serviceflow.servicefabrik.io
   names:
     kind: Task
     plural: tasks

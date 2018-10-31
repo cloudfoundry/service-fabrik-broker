@@ -53,7 +53,7 @@ module.exports = Object.freeze({
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   POLLER_RELAXATION_TIME: 5000, // in ms
-  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes
+  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 30000, // 5 minutes
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -262,7 +262,7 @@ module.exports = Object.freeze({
     },
     DEFAULT_LOCK_TTL: 86400, // 1 days in sec
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
-    WATCHER_REFRESH_INTERVAL: 30000, // in ms ( 1 minute )
+    WATCHER_REFRESH_INTERVAL: 10000, // in ms ( 1 minute )
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
@@ -276,7 +276,7 @@ module.exports = Object.freeze({
       BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
       RESTORE: 'backup.servicefabrik.io',
-      WORK_FLOW: 'workflow.servicefabrik.io'
+      SERVICE_FLOW: 'serviceflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -288,7 +288,7 @@ module.exports = Object.freeze({
       VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
-      SERIAL_WORK_FLOW: 'serialworkflows',
+      SERIAL_SERVICE_FLOW: 'serialserviceflows',
       TASK: 'tasks'
     },
     RESOURCE_STATE: {
@@ -404,9 +404,9 @@ module.exports = Object.freeze({
   NETWORK_MANAGER: {
     NETWORK_ID: 'SF'
   },
-  WORKFLOW: {
+  SERVICE_FLOW: {
     TYPE: {
-      BLUEPRINT_WORKFLOW: 'blueprint_workflow',
+      BLUEPRINT_SERVICEFLOW: 'blueprint_serviceflow',
       UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
       MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
     }

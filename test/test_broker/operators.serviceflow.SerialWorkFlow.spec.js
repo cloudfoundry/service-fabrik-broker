@@ -9,12 +9,12 @@ const apiServerClient = require('../../data-access-layer/eventmesh').apiServerCl
 const utils = require('../../common/utils');
 
 describe('operators', function () {
-  describe('workflow', function () {
-    describe('SerialWorkFlow', function () {
+  describe('ServiceFlow', function () {
+    describe('serialServiceFlow', function () {
       /* jshint expr:true */
-      let SerialWorkFlowOperator, registerWatcherStub, registerCRDStub, updateResourceStub, createResourceStub, clock, utilsStub;
+      let SerialServiceFlowOperator, registerWatcherStub, registerCRDStub, updateResourceStub, createResourceStub, clock, utilsStub;
       const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-      const workflow_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfb';
+      const serviceflow_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfb';
       const task_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfc';
 
       const taskDetails = {
@@ -26,8 +26,8 @@ describe('operators', function () {
         },
         task_type: CONST.APISERVER.TASK_TYPE.BLUEPRINT,
         task_order: 1,
-        workflowId: workflow_id,
-        workflow_name: CONST.WORKFLOW.TYPE.BLUEPRINT_WORKFLOW,
+        serviceflow_id: serviceflow_id,
+        serviceflow_name: CONST.SERVICE_FLOW.TYPE.BLUEPRINT_SERVICEFLOW,
         task_description: 'Void blueprint task',
         instance_id: instance_id
       };
@@ -35,7 +35,7 @@ describe('operators', function () {
         object: {
           metadata: {
             name: task_id,
-            selfLink: `/apis/workflow.servicefabrik.io/v1alpha1/namespaces/default/tasks/${task_id}`
+            selfLink: `/apis/serviceflow.servicefabrik.io/v1alpha1/namespaces/default/tasks/${task_id}`
           },
           spec: {
             options: JSON.stringify(taskDetails)
@@ -51,8 +51,8 @@ describe('operators', function () {
           }
         }
       };
-      const workflowOptions = {
-        workflow_name: CONST.WORKFLOW.TYPE.BLUEPRINT_WORKFLOW,
+      const serviceFlowOptions = {
+        serviceflow_name: CONST.SERVICE_FLOW.TYPE.BLUEPRINT_SERVICEFLOW,
         instance_id: instance_id,
         operation_params: {
           parameters: {
@@ -60,14 +60,14 @@ describe('operators', function () {
           }
         }
       };
-      const workFLowObject = {
+      const serviceFlowObject = {
         object: {
           metadata: {
-            name: workflow_id,
-            selfLink: `/apis/workflow.servicefabrik.io/v1alpha1/namespaces/default/workflows/${workflow_id}`
+            name: serviceflow_id,
+            selfLink: `/apis/serviceflow.servicefabrik.io/v1alpha1/namespaces/default/serviceflows/${serviceflow_id}`
           },
           spec: {
-            options: JSON.stringify(workflowOptions)
+            options: JSON.stringify(serviceFlowOptions)
           },
           status: {
             state: CONST.OPERATION.IN_QUEUE
@@ -81,7 +81,7 @@ describe('operators', function () {
           Promise.resolve(true);
         });
         registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
-        SerialWorkFlowOperator = require('../../operators/workflow-operator/SerialWorkFlowOperator');
+        SerialServiceFlowOperator = require('../../operators/serviceflow-operator/SerialServiceFlowOperator');
         updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve({
           body: {
             status: 200
@@ -106,38 +106,38 @@ describe('operators', function () {
         utilsStub.restore();
         clock.restore();
       });
-      it('Initializes SerialWorkFlow operator successfully', () => {
+      it('Initializes SerialServiceFlow operator successfully', () => {
         /* jshint unused:false */
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow.init()
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow.init()
           .then(() => {
             expect(registerCRDStub).to.be.calledOnce;
             expect(registerWatcherStub).to.be.calledTwice;
 
-            const statesToWatchForWorkflowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
+            const statesToWatchForServiceFlowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
             const statesToWatchForTaskRelay = [CONST.APISERVER.TASK_STATE.DONE];
 
-            expect(registerWatcherStub.firstCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW);
-            expect(registerWatcherStub.firstCall.args[1]).to.equal(CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW);
-            expect(registerWatcherStub.firstCall.args[2]).to.eql(statesToWatchForWorkflowExecution);
+            expect(registerWatcherStub.firstCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW);
+            expect(registerWatcherStub.firstCall.args[1]).to.equal(CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW);
+            expect(registerWatcherStub.firstCall.args[2]).to.eql(statesToWatchForServiceFlowExecution);
 
-            expect(registerWatcherStub.secondCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW);
+            expect(registerWatcherStub.secondCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW);
             expect(registerWatcherStub.secondCall.args[1]).to.equal(CONST.APISERVER.RESOURCE_TYPES.TASK);
             expect(registerWatcherStub.secondCall.args[2]).to.eql(statesToWatchForTaskRelay);
             expect(typeof registerWatcherStub.secondCall.args[3]).to.equal('function');
             expect(registerWatcherStub.secondCall.args[4]).to.equal(CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
           });
       });
-      it('throws error for invalid workflow objects', () => {
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow
+      it('throws error for invalid service flow objects', () => {
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow
           .init()
-          .then(() => serialWorkFlow.processRequest({
+          .then(() => serialServiceFlow.processRequest({
             metadata: {
-              name: instance_id
+              name: serviceflow_id
             },
             spec: {
-              options: `{"workflowId": "${workflow_id}", "workflow_name": "UNKNOWN_FLOW"}`
+              options: `{"serviceflow_id": "${serviceflow_id}", "serviceflow_name": "UNKNOWN_FLOW"}`
             }
           }))
           .then(() => {
@@ -146,14 +146,14 @@ describe('operators', function () {
           .catch(errors.BadRequest, () => {
             const status = {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: `Invalid workflow UNKNOWN_FLOW. No workflow definition found!`
+              description: `Invalid service flow UNKNOWN_FLOW. No service flow definition found!`
             };
             expect(updateResourceStub).to.be.calledOnce;
             expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.RESOURCE_STATE.FAILED);
             expect(updateResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflow_id,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+              resourceId: serviceflow_id,
               status: {
                 lastOperation: status,
                 state: status.state
@@ -161,29 +161,29 @@ describe('operators', function () {
             });
           });
       });
-      it('initiate workflow successfully', () => {
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow
+      it('initiate service flow successfully', () => {
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow
           .init()
-          .then(() => serialWorkFlow.processRequest(workFLowObject.object))
+          .then(() => serialServiceFlow.processRequest(serviceFlowObject.object))
           .then(() => {
-            const workflow = serialWorkFlow.WORKFLOW_DEFINITION[CONST.WORKFLOW.TYPE.BLUEPRINT_WORKFLOW];
-            const tasks = workflow.tasks;
+            const serviceFlow = serialServiceFlow.SERVICE_FLOW_DEFINITION[CONST.SERVICE_FLOW.TYPE.BLUEPRINT_SERVICEFLOW];
+            const tasks = serviceFlow.tasks;
             const status = {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[0].task_description} in progress @ ${new Date()}`
             };
             expect(createResourceStub).to.be.calledOnce;
             expect(createResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               labels: {
-                workflowId: workflow_id
+                serviceflow_id: serviceflow_id
               },
-              options: _.merge(workflowOptions, tasks[0], {
+              options: _.merge(serviceFlowOptions, tasks[0], {
                 task_order: 0,
-                workflowId: workflow_id
+                serviceflow_id: serviceflow_id
               }),
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
@@ -194,9 +194,9 @@ describe('operators', function () {
             expect(updateResourceStub).to.be.calledOnce;
             expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS);
             expect(updateResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflow_id,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+              resourceId: serviceflow_id,
               status: {
                 lastOperation: status,
                 state: status.state
@@ -204,97 +204,101 @@ describe('operators', function () {
             });
           });
       });
-      it('relay next task successfully on completion of a task run & workflow state is updated as complete', () => {
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow.init()
+      it('relay next task successfully on completion of a task run & service flow state is updated as complete', () => {
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow.init()
           .then(() => relayTaskCallBack(taskObject.object))
           .then(() => {
             expect(updateResourceStub).to.be.calledTwice;
             expect(updateResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               status: {
                 lastOperation: {
                   state: CONST.OPERATION.SUCCEEDED,
                   response: {
-                    state: CONST.OPERATION.SUCCEEDED
+                    state: CONST.OPERATION.SUCCEEDED,
+                    description: ''
                   },
                   message: 'Last Task complete.'
                 },
                 response: {
-                  state: CONST.OPERATION.SUCCEEDED
+                  state: CONST.OPERATION.SUCCEEDED,
+                  description: ''
                 },
                 state: CONST.OPERATION.SUCCEEDED
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflow_id,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+              resourceId: serviceflow_id,
               status: {
                 lastOperation: {
                   state: CONST.OPERATION.SUCCEEDED,
-                  description: `Blueprint Workflow completed @ ${new Date()}`
+                  description: `Blueprint Service Flow succeeded @ ${new Date()}`
                 },
                 state: CONST.OPERATION.SUCCEEDED
               }
             });
           });
       });
-      it('relay next task successfully on completion of a task run & update workflow state as in-progress', () => {
+      it('relay next task successfully on completion of a task run & update service flow state as in-progress', () => {
         const inProgressTask = _.cloneDeep(taskObject);
         const inProgressTaskDetails = _.cloneDeep(taskDetails);
         inProgressTaskDetails.task_order = 0;
         inProgressTask.object.spec.options = JSON.stringify(inProgressTaskDetails);
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow.init()
-          .then(() => serialWorkFlow.relayTask(inProgressTask.object))
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow.init()
+          .then(() => serialServiceFlow.relayTask(inProgressTask.object))
           .then(() => {
             expect(updateResourceStub).to.be.calledTwice;
             expect(updateResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               status: {
                 lastOperation: {
                   state: CONST.OPERATION.SUCCEEDED,
                   response: {
-                    state: CONST.OPERATION.SUCCEEDED
+                    state: CONST.OPERATION.SUCCEEDED,
+                    description: ''
                   },
                   message: `Task complete and next relayed task is ${task_id}`
                 },
                 response: {
-                  state: CONST.OPERATION.SUCCEEDED
+                  state: CONST.OPERATION.SUCCEEDED,
+                  description: ''
                 },
                 state: CONST.OPERATION.SUCCEEDED
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflow_id,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+              resourceId: serviceflow_id,
               status: {
                 lastOperation: {
                   state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-                  description: `Void blueprint task completed @ ${new Date()}`
+                  description: `Void blueprint task is complete. Initiated Void blueprint task2 @ ${new Date()}`
                 },
                 state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
               }
             });
           });
       });
-      it('serial workflow stops if any task fails', () => {
+      it('serial service flow stops if any task fails', () => {
         const failedTask = _.cloneDeep(taskObject);
         failedTask.object.status.response.state = CONST.OPERATION.FAILED;
         failedTask.object.status.response.description = 'Task Failed';
-        const serialWorkFlow = new SerialWorkFlowOperator();
-        return serialWorkFlow.init()
-          .then(() => serialWorkFlow.relayTask(failedTask.object))
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        return serialServiceFlow.init()
+          .then(() => serialServiceFlow.relayTask(failedTask.object))
           .then(() => {
             expect(updateResourceStub).to.be.calledTwice;
             expect(updateResourceStub.firstCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               status: {
@@ -304,7 +308,7 @@ describe('operators', function () {
                     state: CONST.OPERATION.FAILED,
                     description: 'Task Failed'
                   },
-                  message: 'Task - Void blueprint task failed and workflow is also marked as failed.'
+                  message: 'Task - Void blueprint task failed and service flow is also marked as failed.'
                 },
                 response: {
                   state: CONST.OPERATION.FAILED,
@@ -314,13 +318,13 @@ describe('operators', function () {
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-              resourceId: workflow_id,
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+              resourceId: serviceflow_id,
               status: {
                 lastOperation: {
                   state: CONST.OPERATION.FAILED,
-                  description: `Void blueprint task failed - ${failedTask.object.status.response.description}`
+                  description: `Void blueprint task failed. ${failedTask.object.status.response.description}`
                 },
                 state: CONST.OPERATION.FAILED
               }

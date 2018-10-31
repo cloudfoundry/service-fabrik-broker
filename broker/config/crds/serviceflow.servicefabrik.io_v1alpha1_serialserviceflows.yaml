@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: serialworkflows.workflow.servicefabrik.io
+  name: serialserviceflows.serviceflow.servicefabrik.io
 spec:
-  group: workflow.servicefabrik.io
+  group: serviceflow.servicefabrik.io
   names:
-    kind: Serialworkflow
-    plural: serialworkflows
+    kind: Serialserviceflow
+    plural: serialserviceflows
   scope: Namespaced
   validation:
     openAPIV3Schema:

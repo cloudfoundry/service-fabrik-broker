@@ -1,13 +1,13 @@
 'use strict';
 
 const Promise = require('bluebird');
-const Task = require('../../operators/workflow-operator/task/Task');
+const Task = require('../../operators/serviceflow-operator/task/Task');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../../common/constants');
 const NotImplementedBySubclass = require('../../common/errors').NotImplementedBySubclass;
 
 describe('operators', function () {
-  describe('workflow', function () {
+  describe('ServiceFlow', function () {
     describe('tasks', function () {
       describe('Task', function () {
         const instanceId = 'bc158c9a-7934-401e-94ab-057082abcde';
@@ -20,14 +20,14 @@ describe('operators', function () {
               multi_az: true
             }
           },
-          workflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
-          workflow_name: 'blueprint_workflow',
+          serviceflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
+          serviceflow_name: 'BLUEPRINT_SERVICEFLOW',
           task_description: 'TEST_TASK',
           instance_id: instanceId
         };
         before(function () {
           apiServerClientUpdateStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve(taskDetails));
-          apiServerClientLastOpStub = sinon.stub(apiServerClient, 'getLastOperation', () => Promise.resolve({
+          apiServerClientLastOpStub = sinon.stub(apiServerClient, 'getResourceStatus', () => Promise.resolve({
             state: CONST.OPERATION.IN_PROGRESS,
             description: 'Task in Progress..'
           }));

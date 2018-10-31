@@ -17,7 +17,7 @@ const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const config = require('../common/config');
 const formatUrl = require('url').format;
-const workflowMapper = require('../common/utils/WorkFlowMapper');
+const serviceFlowMapper = require('../common/utils/ServiceFlowMapper');
 
 
 class ServiceBrokerApiController extends FabrikBaseController {
@@ -116,7 +116,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
-    let workflow;
+    let serviceFlow;
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
@@ -126,9 +126,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
         const operation = {
           'type': 'update'
         };
-        if (workflow !== undefined) {
-          operation.workflow_name = workflow.name;
-          operation.workflowId = workflow.id;
+        if (serviceFlow !== undefined) {
+          operation.serviceflow_name = serviceFlow.name;
+          operation.serviceflow_id = serviceFlow.id;
         }
         body.operation = utils.encodeBase64(operation);
       }
@@ -153,21 +153,21 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(() => {
-        workflow = req._workflow;
-        if (workflow !== undefined) {
-          lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW;
-          lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW;
-          const workFlowOptions = {
-            workflow_name: workflow.name,
+        serviceFlow = req._serviceFlow;
+        if (serviceFlow !== undefined) {
+          lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW;
+          lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW;
+          const serviceFlowOptions = {
+            serviceflow_name: serviceFlow.name,
             instance_id: req.params.instance_id,
             operation_params: params,
             user: req.user
           };
           return eventmesh.apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-            resourceId: workflow.id,
-            options: workFlowOptions,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+            resourceId: serviceFlow.id,
+            options: serviceFlowOptions,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
               lastOperation: {},
@@ -313,15 +313,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
-    const resourceGroup = operation.workflowId ? CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW : plan.manager.resource_mappings.resource_group;
-    const resourceType = operation.workflowId ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW : plan.manager.resource_mappings.resource_type;
-    const resourceId = operation.workflowId ? operation.workflowId : req.params.instance_id;
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : plan.manager.resource_mappings.resource_group;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : plan.manager.resource_mappings.resource_type;
+    const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
         resourceGroup: resourceGroup,
         resourceType: resourceType,
         resourceId: resourceId
       })
-      .tap(() => logger.debug(`Returnings state of operation: ${operation.workflowId}, ${resourceGroup}, ${resourceType}`))
+      .tap(() => logger.debug(`Returnings state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done)
       .catch(NotFound, notFound);
   }

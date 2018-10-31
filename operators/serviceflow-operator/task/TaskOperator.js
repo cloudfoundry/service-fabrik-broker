@@ -15,15 +15,15 @@ class TaskOperator extends BaseOperator {
     const statesToWatchForTaskRun = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
     const statesToWatchForTaskStatus = [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS];
     this.pollers = {};
-    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK)
+    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK)
       .then(() => {
-        logger.info(`${CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW} ${CONST.APISERVER.RESOURCE_TYPES.TASK}- crd registration complete.`);
+        logger.info(`${CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW} ${CONST.APISERVER.RESOURCE_TYPES.TASK}- crd registration complete.`);
         this.registerWatcher(
-          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskRun);
         this.registerWatcher(
-          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskStatus,
           (event) => this.startTaskStatusPoller(event),
@@ -50,7 +50,7 @@ class TaskOperator extends BaseOperator {
             description: `${taskDetails.task_description} is in progress.`
           };
           return apiServerClient.updateResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
             resourceId: resource.metadata.name,
             options: taskDetails,

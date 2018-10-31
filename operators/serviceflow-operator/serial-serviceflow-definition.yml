@@ -1,7 +1,7 @@
 ---
 defaults:
-blueprint_workflow:
-  description: 'Blueprint Workflow'
+blueprint_serviceflow:
+  description: 'Blueprint Service Flow'
   tasks:
   - task_type: BlueprintTask
     task_description: 'Void blueprint task'

@@ -515,11 +515,11 @@ describe('service-broker-api-2.0', function () {
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .then(res => {
+              mocks.verify();
               expect(res).to.have.status(202);
               expect(res.body.operation).to.deep.equal(utils.encodeBase64({
                 'type': 'update'
               }));
-              mocks.verify();
             });
         });
 

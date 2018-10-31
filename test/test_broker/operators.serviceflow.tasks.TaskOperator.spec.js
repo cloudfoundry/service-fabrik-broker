@@ -3,12 +3,12 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const BaseOperator = require('../../operators/BaseOperator');
-const TaskFabrik = require('../../operators/workflow-operator/task/TaskFabrik');
+const TaskFabrik = require('../../operators/serviceflow-operator/task/TaskFabrik');
 const CONST = require('../../common/constants');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 
 describe('operators', function () {
-  describe('workflow', function () {
+  describe('ServiceFlow', function () {
     describe('tasks', function () {
       describe('TaskOperator', function () {
         /* jshint expr:true */
@@ -23,8 +23,8 @@ describe('operators', function () {
             }
           },
           task_type: CONST.APISERVER.TASK_TYPE.BLUEPRINT,
-          workflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
-          workflow_name: 'upgrade_to_multi_az',
+          serviceflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
+          serviceflow_name: 'upgrade_to_multi_az',
           task_description: 'TEST_TASK',
           instance_id: instance_id
         };
@@ -32,7 +32,7 @@ describe('operators', function () {
           object: {
             metadata: {
               name: instance_id,
-              selfLink: `/apis/workflow.servicefabrik.io/v1alpha1/namespaces/default/tasks/${instance_id}`
+              selfLink: `/apis/serviceflow.servicefabrik.io/v1alpha1/namespaces/default/tasks/${instance_id}`
             },
             spec: {
               options: JSON.stringify(taskDetails)
@@ -49,8 +49,10 @@ describe('operators', function () {
             return Promise.resolve(true);
           });
           registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
-          TaskOperator = require('../../operators/workflow-operator/task/TaskOperator');
-          updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve(true));
+          TaskOperator = require('../../operators/serviceflow-operator/task/TaskOperator');
+          updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve({
+            body: changeObject.object
+          }));
           clock = sinon.useFakeTimers(new Date().getTime());
         });
         afterEach(function () {
@@ -75,11 +77,11 @@ describe('operators', function () {
               const statesToWatchForTaskRun = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
               const statesToWatchForTaskStatus = [CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS];
 
-              expect(registerWatcherStub.firstCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW);
+              expect(registerWatcherStub.firstCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW);
               expect(registerWatcherStub.firstCall.args[1]).to.equal(CONST.APISERVER.RESOURCE_TYPES.TASK);
               expect(registerWatcherStub.firstCall.args[2]).to.eql(statesToWatchForTaskRun);
 
-              expect(registerWatcherStub.secondCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW);
+              expect(registerWatcherStub.secondCall.args[0]).to.equal(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW);
               expect(registerWatcherStub.secondCall.args[1]).to.equal(CONST.APISERVER.RESOURCE_TYPES.TASK);
               expect(registerWatcherStub.secondCall.args[2]).to.eql(statesToWatchForTaskStatus);
               expect(typeof registerWatcherStub.secondCall.args[3]).to.equal('function');
@@ -94,7 +96,7 @@ describe('operators', function () {
               expect(updateResourceStub).to.be.calledOnce;
               expect(updateResourceStub.firstCall.args[0].status.state).to.equal(CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS);
               expect(updateResourceStub.firstCall.args[0].options.resource).to.eql({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
                 resourceId: 'bp_task'
               });

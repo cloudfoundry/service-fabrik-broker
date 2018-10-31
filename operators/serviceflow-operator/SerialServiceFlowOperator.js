@@ -11,32 +11,32 @@ const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
-const BaseOperator = require('../../operators/BaseOperator');
+const BaseOperator = require('../BaseOperator');
 const TaskFabrik = require('./task/TaskFabrik');
 const FAILED = true;
 
-class SerialWorkFlowOperator extends BaseOperator {
+class SerialServiceFlowOperator extends BaseOperator {
 
   init() {
-    const statesToWatchForWorkflowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
+    const statesToWatchForServiceFlowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
     const statesToWatchForTaskRelay = [CONST.APISERVER.TASK_STATE.DONE];
-    this.WORKFLOW_DEFINITION = yaml.safeLoad(fs.readFileSync(path.join(__dirname, 'serial-workflow-definition.yml')));
+    this.SERVICE_FLOW_DEFINITION = yaml.safeLoad(fs.readFileSync(path.join(__dirname, 'serial-serviceflow-definition.yml')));
     this.pollers = {};
-    logger.debug('Registering CRDs related to Workflow Manager..!');
-    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW)
+    logger.debug('Registering CRDs related to Service Flow Operator..!');
+    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW)
       .then(() => {
         this.registerWatcher(
-          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-          CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-          statesToWatchForWorkflowExecution);
-        logger.debug('Registered watcher for Workflow Manager.');
+          CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+          CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+          statesToWatchForServiceFlowExecution);
+        logger.debug('Registered watcher for Service Flow Operator..');
         this.registerWatcher(
-          CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskRelay,
           (event) => this.relayTask(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
-        logger.debug('Registered watcher for Workflow Tasks!.');
+        logger.debug('Registered watcher for Service Flow Tasks!.');
       });
   }
 
@@ -44,28 +44,28 @@ class SerialWorkFlowOperator extends BaseOperator {
     return Promise.try(() => {
       assert.ok(resource.metadata.name, `Argument 'metadata.name' is required to run the task`);
       assert.ok(resource.spec.options, `Argument 'spec.options' is required to run the task`);
-      const workFlowOptions = JSON.parse(resource.spec.options);
-      if (this.WORKFLOW_DEFINITION[workFlowOptions.workflow_name] === undefined) {
+      const serviceFlowOptions = JSON.parse(resource.spec.options);
+      serviceFlowOptions.serviceflow_id = resource.metadata.name;
+      serviceFlowOptions.task_order = 0;
+      if (this.SERVICE_FLOW_DEFINITION[serviceFlowOptions.serviceflow_name] === undefined) {
         return this
-          .workflowComplete(workFlowOptions, `Invalid workflow ${workFlowOptions.workflow_name}. No workflow definition found!`, FAILED)
-          .throw(new errors.BadRequest(`Invalid workflow ${workFlowOptions.workflow_name}. No workflow definition found!`));
+          .serviceFlowComplete(serviceFlowOptions, `Invalid service flow ${serviceFlowOptions.serviceflow_name}. No service flow definition found!`, FAILED)
+          .throw(new errors.BadRequest(`Invalid service flow ${serviceFlowOptions.serviceflow_name}. No service flow definition found!`));
       }
-      const workflow = this.WORKFLOW_DEFINITION[workFlowOptions.workflow_name];
-      const tasks = workflow.tasks;
-      assert.equal(tasks.length > 0, true, `workflow ${workFlowOptions.name} does not have right task definitions. Please check`);
-      workFlowOptions.workflowId = resource.metadata.name;
-      workFlowOptions.task_order = 0;
+      const serviceFlow = this.SERVICE_FLOW_DEFINITION[serviceFlowOptions.serviceflow_name];
+      const tasks = serviceFlow.tasks;
+      assert.equal(tasks.length > 0, true, `service flow ${serviceFlowOptions.name} does not have right task definitions. Please check`);
       const labels = {
-        workflowId: workFlowOptions.workflowId
+        serviceflow_id: serviceFlowOptions.serviceflow_id
       };
       return utils
         .uuidV4()
         .then(taskId => apiServerClient.createResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
           resourceId: taskId,
           labels: labels,
-          options: _.merge(workFlowOptions, tasks[0]),
+          options: _.merge(serviceFlowOptions, tasks[0]),
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             lastOperation: {},
@@ -73,12 +73,12 @@ class SerialWorkFlowOperator extends BaseOperator {
           }
         }))
         .tap((resource) => logger.info('Created task -> ', resource))
-        .then(() => this.updateWorkflowStatus(
-          workFlowOptions, {
+        .then(() => this.updateServiceFlowStatus(
+          serviceFlowOptions, {
             state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
             description: `${tasks[0].task_description} in progress @ ${new Date()}`
           }))
-        .tap((resource) => logger.info('Successfully updated workflow ::', resource.body.status));
+        .tap((resource) => logger.info('Successfully updated service flow ::', resource.body.status));
     });
   }
 
@@ -88,8 +88,8 @@ class SerialWorkFlowOperator extends BaseOperator {
       const resourceDetails = apiServerClient.parseResourceDetailsFromSelfLink(event.metadata.selfLink);
       const previousTaskDetails = JSON.parse(event.spec.options);
       const taskDetails = _.omit(previousTaskDetails, 'resource', 'response');
-      const workflow = this.WORKFLOW_DEFINITION[taskDetails.workflow_name];
-      const tasks = workflow.tasks;
+      const serviceFlow = this.SERVICE_FLOW_DEFINITION[taskDetails.serviceflow_name];
+      const tasks = serviceFlow.tasks;
       const task = TaskFabrik.getTask(taskDetails.task_type);
       taskDetails.task_order = taskDetails.task_order + 1;
       let previousTaskResponse;
@@ -111,21 +111,21 @@ class SerialWorkFlowOperator extends BaseOperator {
         message: `Last Task complete.`
       };
       if (previousTaskResponse.state !== CONST.OPERATION.SUCCEEDED) {
-        logger.info(`Task ${resourceDetails.resourceId} has failed. workflow will be marked as failed.`);
-        relayedStatus.message = `Task - ${taskDetails.task_description} failed and workflow is also marked as failed.`;
+        logger.info(`Task ${resourceDetails.resourceId} has failed. service flow will be marked as failed.`);
+        relayedStatus.message = `Task - ${taskDetails.task_description} failed and service flow is also marked as failed.`;
         return task
           .updateStatus(resourceDetails, relayedStatus)
-          .then(() => this.workflowComplete(taskDetails, `${taskDetails.task_description} failed. ${previousTaskResponse.description}`, FAILED));
+          .then(() => this.serviceFlowComplete(taskDetails, `${taskDetails.task_description} failed. ${previousTaskResponse.description}`, FAILED));
       }
-      logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in workflow ${workflow.tasks.length}`);
-      if (workflow.tasks.length === taskDetails.task_order) {
-        logger.info('Workflow complete. Updating the status of last task as complete and marking workflow as done.');
+      logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in service flow ${serviceFlow.tasks.length}`);
+      if (serviceFlow.tasks.length === taskDetails.task_order) {
+        logger.info('Service Flow complete. Updating the status of last task as complete and marking service flow as done.');
         return task
           .updateStatus(resourceDetails, relayedStatus)
-          .then(() => this.workflowComplete(taskDetails));
+          .then(() => this.serviceFlowComplete(taskDetails));
       } else {
         const labels = {
-          workflowId: taskDetails.workflowId
+          serviceflow_id: taskDetails.serviceflow_id
         };
         let relayedTaskId;
 
@@ -133,7 +133,7 @@ class SerialWorkFlowOperator extends BaseOperator {
           .uuidV4()
           .tap(taskId => relayedTaskId = taskId)
           .then(taskId => apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
             resourceId: taskId,
             labels: labels,
@@ -145,11 +145,11 @@ class SerialWorkFlowOperator extends BaseOperator {
             }
           }))
           .then(() => {
-            logger.info('Created next task in the workflow. Updating the state of current task as Relayed.');
+            logger.info('Created next task in the service flow. Updating the state of current task as Relayed.');
             relayedStatus.message = `Task complete and next relayed task is ${relayedTaskId}`;
             return task.updateStatus(resourceDetails, relayedStatus);
           })
-          .then(() => this.updateWorkflowStatus(
+          .then(() => this.updateServiceFlowStatus(
             taskDetails, {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[taskDetails.task_order-1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
@@ -159,11 +159,11 @@ class SerialWorkFlowOperator extends BaseOperator {
     });
   }
 
-  updateWorkflowStatus(taskDetails, status) {
+  updateServiceFlowStatus(taskDetails, status) {
     return apiServerClient.updateResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_WORK_FLOW,
-      resourceId: taskDetails.workflowId,
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+      resourceId: taskDetails.serviceflow_id,
       status: {
         lastOperation: status,
         state: status.state
@@ -171,14 +171,14 @@ class SerialWorkFlowOperator extends BaseOperator {
     });
   }
 
-  workflowComplete(taskDetails, message, failed) {
+  serviceFlowComplete(taskDetails, message, failed) {
     const state = failed ? CONST.OPERATION.FAILED : CONST.OPERATION.SUCCEEDED;
     const status = {
       state: state,
-      description: message || `${this.WORKFLOW_DEFINITION[taskDetails.workflow_name].description} ${state} @ ${new Date()}`
+      description: message || `${this.SERVICE_FLOW_DEFINITION[taskDetails.serviceflow_name].description} ${state} @ ${new Date()}`
     };
-    return this.updateWorkflowStatus(taskDetails, status);
+    return this.updateServiceFlowStatus(taskDetails, status);
   }
 }
 
-module.exports = SerialWorkFlowOperator;
+module.exports = SerialServiceFlowOperator;

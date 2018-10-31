@@ -1,12 +1,12 @@
 'use strict';
 
 const Promise = require('bluebird');
-const ServiceInstanceUpdateTask = require('../../operators/workflow-operator/task/ServiceInstanceUpdateTask');
+const ServiceInstanceUpdateTask = require('../../operators/serviceflow-operator/task/ServiceInstanceUpdateTask');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../../common/constants');
 
 describe('operators', function () {
-  describe('workflow', function () {
+  describe('ServiceFlow', function () {
     describe('tasks', function () {
       describe('ServiceInstanceUpdateTask', function () {
         const instanceId = 'bc158c9a-7934-401e-94ab-057082abcde';
@@ -19,8 +19,8 @@ describe('operators', function () {
               multi_az: true
             }
           },
-          workflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
-          workflow_name: 'upgrade_to_multi_az',
+          serviceflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
+          serviceflow_name: 'upgrade_to_multi_az',
           task_description: 'TEST_TASK',
           instance_id: instanceId
         };

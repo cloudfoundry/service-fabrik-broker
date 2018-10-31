@@ -1,12 +1,12 @@
 'use strict';
 
 const Promise = require('bluebird');
-const BlueprintTask = require('../../operators/workflow-operator/task/BlueprintTask');
+const BlueprintTask = require('../../operators/serviceflow-operator/task/BlueprintTask');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../../common/constants');
 
 describe('operators', function () {
-  describe('workflow', function () {
+  describe('ServiceFlow', function () {
     describe('tasks', function () {
       describe('BlueprintTask', function () {
         const instanceId = 'bc158c9a-7934-401e-94ab-057082abcde';
@@ -19,8 +19,8 @@ describe('operators', function () {
               multi_az: true
             }
           },
-          workflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
-          workflow_name: 'blueprint_workflow',
+          serviceflow_id: 'bc158c9a-7934-401e-94ab-057082abcde',
+          serviceflow_name: 'BLUEPRINT_SERVICEFLOW',
           task_description: 'TEST_TASK',
           instance_id: instanceId
         };
@@ -34,7 +34,7 @@ describe('operators', function () {
           return BlueprintTask.run(taskId, taskDetails)
             .then(taskResponse => {
               expect(taskResponse.resource).to.eql({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.WORK_FLOW, //'RG Of the resource which Task is executing',
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, //'RG Of the resource which Task is executing',
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK, //'Type of the resource which Task is executing',
                 resourceId: 'bp_task' //'Resource ID of the resource which would be getting created by the task in this run method'
               });
