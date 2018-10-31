@@ -139,7 +139,7 @@ Then, we need to upload the cloud-config required for service-fabrik on bosh.
 For bosh-lite, you can upload cloud-config in the following manner:
 ```shell
 cd templates
-bosh –e bosh upload-cloud-config config/cloud-config.yml
+bosh -e vbox update-cloud-config config/cloud-config.yml
 ```
 To use along with the boshrelease of Service-Fabrik, `cloud-config-boshlite.yml` is provided here : https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/templates/cloud-config-boshlite.yml
 
