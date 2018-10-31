@@ -528,8 +528,7 @@ describe('service', () => {
     describe('#acquireNetworkSegmentIndex', () => {
       it('should return network segment index when there are deployment names in cache', () => {
         mocks.apiServerEventMesh.nockGetResourceListByState(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
+          CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, [CONST.APISERVER.RESOURCE_STATE.WAITING], [expectedGetDeploymentResponse], 1, 200);
         getDirectorDeploymentsSpy.returns([`service-fabrik-90-${used_guid}`]);
         return service.acquireNetworkSegmentIndex('guid')
           .then(index => {

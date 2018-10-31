@@ -23,6 +23,7 @@ const DirectorService = require('../operators/bosh-operator/DirectorService');
 const Conflict = errors.Conflict;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
+const Repository = require('../common/db').Repository;
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
@@ -760,6 +761,46 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(body => res
         .status(200)
         .send(body));
+  }
+
+  //Method for getting  instance ids with updates scheduled
+  getScheduledUpdateInstances(req, res) {
+    logger.info('Getting scheduled update instance list...');
+    return this.getInstancesWithUpdateScheduled()
+      .then(body => res
+        .status(200)
+        .send(body));
+  }
+
+  getInstancesWithUpdateScheduled() {
+    function getInstancesWithUpdateScheduled(instanceList, offset, modelName, searchCriteria, paginateOpts) {
+      if (offset < 0) {
+        return Promise.resolve();
+      }
+      _.chain(paginateOpts)
+        .set('offset', offset)
+        .value();
+      return Repository.search(modelName, searchCriteria, paginateOpts)
+        .then((result) => {
+          instanceList.push.apply(instanceList, _.map(result.list, 'data'));
+          return getInstancesWithUpdateScheduled(instanceList, result.nextOffset, modelName, searchCriteria, paginateOpts);
+        });
+    }
+    const criteria = {
+      searchBy: {
+        type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+      },
+      projection: {
+        'data.instance_id': 1
+      }
+    };
+    const paginateOpts = {
+      records: config.mongodb.record_max_fetch_count,
+      offset: 0
+    };
+    const result = [];
+    return getInstancesWithUpdateScheduled(result, 0, CONST.DB_MODEL.JOB, criteria, paginateOpts)
+      .then(() => result);
   }
 }
 
