@@ -89,7 +89,7 @@ class BaseOperator {
         resourceId: changeObjectBody.metadata.name,
         metadata: metadata
       })
-      .tap(() => logger.debug(`Successfully released processing lock for the resource: ${changeObjectBody.metadata.name} with options: ${JSON.stringify(changedOptions)}`));
+      .tap(() => logger.info(`Successfully released processing lock for the resource: ${changeObjectBody.metadata.name} with options: ${JSON.stringify(changedOptions)}`));
   }
 
   _preProcessRequest(objectBody, processingLockStatus, resourceGroup, resourceType, queryString) {
@@ -134,7 +134,6 @@ class BaseOperator {
 
   _postProcessRequest(objectBody) {
     const options = JSON.parse(objectBody.spec.options);
-    logger.info('Releasing lock as part of post processing......--->>>>>');
     return this._releaseProcessingLock(objectBody)
       .catch((NotFound), () => logger.debug(`Resource resourceType: ${objectBody.kind},\`
         resourceId: ${objectBody.metadata.name} is not found, No need to panic as it is already deleted.`))

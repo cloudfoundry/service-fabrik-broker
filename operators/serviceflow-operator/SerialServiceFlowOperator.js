@@ -20,23 +20,23 @@ class SerialServiceFlowOperator extends BaseOperator {
   init() {
     const statesToWatchForServiceFlowExecution = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE];
     const statesToWatchForTaskRelay = [CONST.APISERVER.TASK_STATE.DONE];
-    this.SERVICE_FLOW_DEFINITION = yaml.safeLoad(fs.readFileSync(path.join(__dirname, 'serial-serviceflow-definition.yml')));
+    this.SERVICE_FLOW_DEFINITION = yaml.safeLoad(fs.readFileSync(path.join(__dirname, CONST.SERVICE_FLOW.DEFINITION_FILE_NAME)));
     this.pollers = {};
-    logger.debug('Registering CRDs related to Service Flow Operator..!');
+    logger.info('Registering CRDs related to Service Flow Operator..!');
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW)
       .then(() => {
         this.registerWatcher(
           CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
           statesToWatchForServiceFlowExecution);
-        logger.debug('Registered watcher for Service Flow Operator..');
+        logger.info('Registered watcher for Service Flow Operator..');
         this.registerWatcher(
           CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskRelay,
           (event) => this.relayTask(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
-        logger.debug('Registered watcher for Service Flow Tasks!.');
+        logger.info('Registered watcher for Service Flow Tasks!.');
       });
   }
 
@@ -119,6 +119,8 @@ class SerialServiceFlowOperator extends BaseOperator {
       }
       logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in service flow ${serviceFlow.tasks.length}`);
       if (serviceFlow.tasks.length === taskDetails.task_order) {
+        //TODO: It might also be a good idea to fetch the actual tasks from etcd and check that number than this order
+        //Just in case due to some bug or some other reason task order is not getting incremented. For now though not required.
         logger.info('Service Flow complete. Updating the status of last task as complete and marking service flow as done.');
         return task
           .updateStatus(resourceDetails, relayedStatus)

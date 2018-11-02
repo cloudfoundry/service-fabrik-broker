@@ -29,7 +29,6 @@ class TaskOperator extends BaseOperator {
           (event) => this.startTaskStatusPoller(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
         logger.info('registered both watchers for tasks!');
-        // 
       });
   }
 

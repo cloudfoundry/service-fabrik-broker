@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
@@ -155,6 +156,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(() => {
         serviceFlow = req._serviceFlow;
         if (serviceFlow !== undefined) {
+          assert.ok(serviceFlow.id, 'Service Flow Id is mandatory and must be set in BaseController');
           lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW;
           lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW;
           const serviceFlowOptions = {
@@ -258,7 +260,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const body = _.pick(result, 'state', 'description');
       if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
         body.state = CONST.OPERATION.IN_PROGRESS;
-        body.description = body.description || `new udpate @${new Date()}`;
       }
       logger.debug('returning ..', body);
       res.status(CONST.HTTP_STATUS_CODE.OK).send(body);

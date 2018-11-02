@@ -2,7 +2,7 @@
 
 const SerialServiceFlowOperator = require('./SerialServiceFlowOperator');
 const TaskOperator = require('./task/TaskOperator');
-const swf = new SerialServiceFlowOperator();
-const tm = new TaskOperator();
-swf.init();
-tm.init();
+const swfOperator = new SerialServiceFlowOperator();
+const taskOperator = new TaskOperator();
+swfOperator.init();
+taskOperator.init();

@@ -53,7 +53,7 @@ module.exports = Object.freeze({
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   POLLER_RELAXATION_TIME: 5000, // in ms
-  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 30000, // 5 minutes
+  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -262,7 +262,7 @@ module.exports = Object.freeze({
     },
     DEFAULT_LOCK_TTL: 86400, // 1 days in sec
     WATCHER_ERROR_DELAY: 30000, // in ms (30 seconds)
-    WATCHER_REFRESH_INTERVAL: 10000, // in ms ( 1 minute )
+    WATCHER_REFRESH_INTERVAL: 60000, // in ms ( 1 minute )
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
@@ -398,6 +398,7 @@ module.exports = Object.freeze({
     NETWORK_ID: 'SF'
   },
   SERVICE_FLOW: {
+    DEFINITION_FILE_NAME: 'serial-serviceflow-definition.yml',
     TYPE: {
       BLUEPRINT_SERVICEFLOW: 'blueprint_serviceflow',
       UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
