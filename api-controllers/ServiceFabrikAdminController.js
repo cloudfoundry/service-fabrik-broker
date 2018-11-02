@@ -23,6 +23,7 @@ const DirectorService = require('../operators/bosh-operator/DirectorService');
 const Conflict = errors.Conflict;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
+const Repository = require('../common/db').Repository;
 
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
@@ -243,14 +244,17 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getDeployment(req, res) {
     const deploymentName = req.params.name;
+    const plan = catalog.getPlan(req.query.plan_id);
+    // TODO: Director Service should be used
     this.createManager(req.query.plan_id)
-      .then(manager => this.cloudController.getOrgAndSpaceGuid(this.getInstanceId(deploymentName))
-        .then(opts => {
-          const context = {
-            platform: CONST.PLATFORM.CF,
-            organization_guid: opts.organization_guid,
-            space_guid: opts.space_guid
-          };
+      .then(manager =>
+        eventmesh.apiServerClient.getPlatformContext({
+          resourceGroup: plan.resourceGroup,
+          resourceType: plan.resourceType,
+          resourceId: this.getInstanceId(deploymentName)
+        })
+        .then(context => {
+          const opts = {};
           opts.context = context;
           return Promise
             .all([
@@ -364,13 +368,13 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
-        return this.cloudController.getOrgAndSpaceGuid(this.getInstanceId(deployment.name))
-          .then(opts => {
-            const context = {
-              platform: CONST.PLATFORM.CF,
-              organization_guid: opts.organization_guid,
-              space_guid: opts.space_guid
-            };
+        return eventmesh.apiServerClient.getPlatformContext({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: this.getInstanceId(deployment.name)
+          })
+          .then(context => {
+            const opts = {};
             opts.context = context;
             return deployment.manager
               .diffManifest(deployment.name, opts)
@@ -757,6 +761,46 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(body => res
         .status(200)
         .send(body));
+  }
+
+  //Method for getting  instance ids with updates scheduled
+  getScheduledUpdateInstances(req, res) {
+    logger.info('Getting scheduled update instance list...');
+    return this.getInstancesWithUpdateScheduled()
+      .then(body => res
+        .status(200)
+        .send(body));
+  }
+
+  getInstancesWithUpdateScheduled() {
+    function getInstancesWithUpdateScheduled(instanceList, offset, modelName, searchCriteria, paginateOpts) {
+      if (offset < 0) {
+        return Promise.resolve();
+      }
+      _.chain(paginateOpts)
+        .set('offset', offset)
+        .value();
+      return Repository.search(modelName, searchCriteria, paginateOpts)
+        .then((result) => {
+          instanceList.push.apply(instanceList, _.map(result.list, 'data'));
+          return getInstancesWithUpdateScheduled(instanceList, result.nextOffset, modelName, searchCriteria, paginateOpts);
+        });
+    }
+    const criteria = {
+      searchBy: {
+        type: CONST.JOB.SERVICE_INSTANCE_UPDATE
+      },
+      projection: {
+        'data.instance_id': 1
+      }
+    };
+    const paginateOpts = {
+      records: config.mongodb.record_max_fetch_count,
+      offset: 0
+    };
+    const result = [];
+    return getInstancesWithUpdateScheduled(result, 0, CONST.DB_MODEL.JOB, criteria, paginateOpts)
+      .then(() => result);
   }
 }
 

@@ -17,6 +17,7 @@ const EventLogDomainSocketClient = require('./EventLogDomainSocketClient');
 const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
+const NotImplemented = errors.NotImplemented;
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
 exports.promiseWhile = promiseWhile;
@@ -55,6 +56,21 @@ exports.buildErrorJson = buildErrorJson;
 exports.deploymentLocked = deploymentLocked;
 exports.deploymentStaggered = deploymentStaggered;
 exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeployment;
+exports.verifyFeatureSupport = verifyFeatureSupport;
+exports.isRestorePossible = isRestorePossible;
+
+function isRestorePossible(plan_id, plan) {
+  const settings = plan.manager.settings;
+  const restorePredecessors = settings.restore_predecessors || settings.update_predecessors || [];
+  const previousPlan = _.find(plan.service.plans, ['id', plan_id]);
+  return plan === previousPlan || _.includes(restorePredecessors, previousPlan.id);
+}
+
+function verifyFeatureSupport(plan, feature) {
+  if (!_.includes(plan.manager.settings.agent.supported_features, feature)) {
+    throw new NotImplemented(`Feature '${feature}' not supported`);
+  }
+}
 
 function streamToPromise(stream, options) {
   const encoding = _.get(options, 'encoding', 'utf8');

@@ -2,7 +2,7 @@
 
 const Promise = require('bluebird');
 const _ = require('lodash');
-const CfPlatformManager = require('../../broker/lib/fabrik/CfPlatformManager');
+const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
 const assert = require('assert');
 let config = require('../../common/config');
 

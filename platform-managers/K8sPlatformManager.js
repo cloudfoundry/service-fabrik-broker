@@ -1,12 +1,11 @@
 'use strict';
 
-class BasePlatformManager {
-  constructor(platform) {
-    this.platform = platform;
-  }
+const BasePlatformManager = require('./BasePlatformManager');
 
-  getCatalog(catalog) {
-    return catalog;
+class K8sPlatformManager extends BasePlatformManager {
+  constructor(platform) {
+    super(platform);
+    this.platform = platform;
   }
 
   postInstanceProvisionOperations(options) {
@@ -26,4 +25,4 @@ class BasePlatformManager {
   }
 
 }
-module.exports = BasePlatformManager;
+module.exports = K8sPlatformManager;

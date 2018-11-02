@@ -434,6 +434,69 @@ class ApiServerClient {
   }
 
   /**
+   * @description Get Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Unique id of resource
+   * @param {string} opts.resourceType - Name of operation
+   * @param {object} opts.query - optional query
+   */
+  _getResources(opts) {
+    logger.debug('Get resources with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
+    let query = {};
+    if (opts.query) {
+      query.qs = opts.query;
+    }
+    return Promise.try(() => this.init())
+      .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].get(query))
+      .then(response => {
+        const resources = _.get(response, 'body.items', []);
+        _.forEach(resources, (resource) => {
+          _.forEach(resource.spec, (val, key) => {
+            try {
+              resource.spec[key] = JSON.parse(val);
+            } catch (err) {
+              resource.spec[key] = val;
+            }
+          });
+          _.forEach(resource.status, (val, key) => {
+            try {
+              resource.status[key] = JSON.parse(val);
+            } catch (err) {
+              resource.status[key] = val;
+            }
+          });
+        });
+        if (resources.length > 0) {
+          return _.sortBy(resources, ['metadata.creationTimeStamp']);
+        }
+        return [];
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  /**
+   * @description Get Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Unique id of resource
+   * @param {string} opts.resourceType - Name of operation
+   * @param {array} opts.stateList - Array of states of resorces
+   */
+  getResourceListByState(opts) {
+    logger.debug('Get resource list with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
+    assert.ok(opts.stateList, `Property 'stateList' is required to fetch resource list`);
+    return this._getResources(_.assign(opts, {
+      query: {
+        labelSelector: `state in (${_.join(opts.stateList, ',')})`
+      }
+    }));
+  }
+
+  /**
    * @description Gets Last Operation
    * @param {string} opts.resourceId - Unique id of resource
    * @param {string} opts.resourceGroup - Name of operation
@@ -511,6 +574,20 @@ class ApiServerClient {
       .then(resource => _.get(resource, 'status.lastOperation'));
   }
 
+  /**
+   * @description Get platform context
+   * @param {string} opts.resourceGroup - Name of resourceGroup
+   * @param {string} opts.resourceType - Type of resource
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getPlatformContext(opts) {
+    return this.getResource({
+        resourceGroup: opts.resourceGroup,
+        resourceType: opts.resourceType,
+        resourceId: opts.resourceId
+      })
+      .then(resource => _.get(resource, 'spec.options.context'));
+  }
 }
 
 module.exports = ApiServerClient;

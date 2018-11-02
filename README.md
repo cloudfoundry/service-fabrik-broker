@@ -75,7 +75,7 @@ nvm use node
 
 ### Installing Bosh Lite
 
-Boshlite on Virtual Box (recommended):
+#### Boshlite on Virtual Box (recommended):
 Follow [this](https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Bootstrap-BOSH-2.0-with-local-VirtualBox) article for setting up boshlite env on virtual box.
 
 Bosh Lite is a lightweight local development environment for BOSH using Warden/Garden containers in a Vagrant box.
@@ -83,6 +83,11 @@ Bosh Lite is a lightweight local development environment for BOSH using Warden/G
 * Follow instructions at https://github.com/cloudfoundry/bosh-lite/blob/master/README.md#install-bosh-lite
 * Run `vagrant ssh` and then remove `8.8.8.8` from `/etc/resolv.conf` to avoid 5s timeouts
 * If you want to work with BOSH2.0 and want to deploy [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment), then please follow the bosh-lite installation guide as described in https://bosh.io/docs/bosh-lite.
+
+#### Boshlite on a VM on AWS, GCP, or Azure:
+You can also deploy your boshlite on a VM on AWS, GCP, or Azure
+* Prepare your environment for specific IaaS with "Getting Started" guides at https://github.com/cloudfoundry/bosh-bootloader/blob/master/README.md
+* To setup boshlite on IaaS, follow instructions at https://github.com/cloudfoundry/cf-deployment/blob/master/iaas-support/bosh-lite/README.md
 
 ### Installing Cloud Foundry
 
@@ -134,7 +139,7 @@ Then, we need to upload the cloud-config required for service-fabrik on bosh.
 For bosh-lite, you can upload cloud-config in the following manner:
 ```shell
 cd templates
-bosh –e bosh upload-cloud-config config/cloud-config.yml
+bosh -e vbox update-cloud-config config/cloud-config.yml
 ```
 To use along with the boshrelease of Service-Fabrik, `cloud-config-boshlite.yml` is provided here : https://github.com/cloudfoundry-incubator/service-fabrik-boshrelease/blob/master/templates/cloud-config-boshlite.yml
 

@@ -46,29 +46,6 @@ describe('service-broker-api-2.0', function () {
       const parameters = {
         foo: 'bar'
       };
-      const deploymentHookRequestBody = {
-        phase: 'PreCreate',
-        actions: ['Blueprint', 'ReserveIps'],
-        context: {
-          params: {
-            context: {
-              platform: 'cloudfoundry',
-              organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-              space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-            },
-            organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-            space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
-            parameters: {
-              'foo': 'bar'
-            },
-            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
-            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f'
-          },
-          deployment_name: 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
-          sf_operations_args: {},
-          instance_guid: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa'
-        }
-      };
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
@@ -454,6 +431,7 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, payload1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -499,6 +477,7 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, payload);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -520,66 +499,6 @@ describe('service-broker-api-2.0', function () {
               expect(res.body.operation).to.deep.equal(utils.encodeBase64({
                 'type': 'update'
               }));
-            });
-        });
-
-        it('returns 202 Accepted if resource is not present', function () {
-          const payloadUpdate = _.cloneDeep(payload);
-          payloadUpdate.apiVersion = 'deployment.servicefabrik.io/v1alpha1';
-          payloadUpdate.kind = 'Director';
-          //let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-          const context = {
-            platform: 'cloudfoundry',
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          };
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          _.set(expectedRequestBody.context.params, 'plan_id', plan_id_update);
-          _.set(expectedRequestBody.context.params, 'previous_values', {
-            plan_id: plan_id,
-            service_id: service_id
-          });
-          expectedRequestBody.context.params = _.chain(expectedRequestBody.context.params)
-            .omit('space_guid')
-            .omit('organization_guid')
-            .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
-            spec: {
-              options: JSON.stringify({
-                lockedResourceDetails: {
-                  operation: 'update'
-                }
-              })
-            }
-          });
-          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
-            metadata: {
-              resourceVersion: 10
-            }
-          });
-          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, 1, payloadUpdate);
-          return chai.request(app)
-            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
-            .send({
-              service_id: service_id,
-              plan_id: plan_id_update,
-              parameters: parameters,
-              context: context,
-              previous_values: {
-                plan_id: plan_id,
-                service_id: service_id
-              }
-            })
-            .set('X-Broker-API-Version', api_version)
-            .auth(config.username, config.password)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
-                'type': 'update'
-              }));
-              mocks.verify();
             });
         });
 
@@ -686,6 +605,7 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -706,7 +626,7 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
-        it('returns 202 Accepted if resource does not exist', function () {
+        it('returns 410 GONE if resource does not exist', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             spec: {
               options: JSON.stringify({
@@ -721,7 +641,6 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
-          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {});
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
             .query({
@@ -733,10 +652,8 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .catch(err => err.response)
             .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
-                'type': 'delete'
-              }));
+              expect(res).to.have.status(410);
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });
@@ -756,6 +673,7 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -790,6 +708,7 @@ describe('service-broker-api-2.0', function () {
               resourceVersion: 10
             }
           });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)

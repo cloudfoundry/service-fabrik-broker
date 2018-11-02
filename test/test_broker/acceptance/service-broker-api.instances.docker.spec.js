@@ -279,6 +279,7 @@ describe('service-broker-api', function () {
       describe('#update', function () {
         it('returns 200 OK', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
@@ -307,6 +308,7 @@ describe('service-broker-api', function () {
         });
         it('returns 200 OK : For K8S', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2K8s, 1);
           return chai.request(app)
             .patch(`${base_url}/service_instances/${instance_id}`)
@@ -464,6 +466,7 @@ describe('service-broker-api', function () {
         };
         it('returns 200 OK', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -482,6 +485,7 @@ describe('service-broker-api', function () {
 
         it('returns 410 Gone', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {}, 1, 404);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -501,6 +505,7 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)
@@ -519,6 +524,7 @@ describe('service-broker-api', function () {
 
         it('returns 200 OK: In K8S platform', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payloadK8s, 1);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, {});
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, payload2K8s, 1);
           return chai.request(app)
             .delete(`${base_url}/service_instances/${instance_id}`)

@@ -13,15 +13,13 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
-const boshOperationQueue = bosh.BoshOperationQueue;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
@@ -34,11 +32,11 @@ const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
 const EvaluationContext = bosh.EvaluationContext;
 const BadRequest = errors.BadRequest;
-const BasePlatformManager = require('../../broker/lib/fabrik/BasePlatformManager');
+const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 
 
 class DirectorService extends BaseDirectorService {
-  constructor(guid, plan) {
+  constructor(plan, guid) {
     super(plan);
     this.guid = guid;
     this.plan = plan;
@@ -57,22 +55,45 @@ class DirectorService extends BaseDirectorService {
   }
 
   get platformContext() {
-    return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
-      .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
-      .then(context => JSON.parse(context))
-      .catch(NotFound, () => {
-        /* Following is to handle existing deployments. 
-           For them platform-context is not saved in deployment property. Defaults to CF.
-         */
-        logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
-        Setting default platform as '${CONST.PLATFORM.CF}'`);
+    return this.getContextFromResource()
+      .then(context => {
+        if (context) {
+          return context;
+        }
+        logger.debug(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
+        return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
+          .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
+          .then(context => JSON.parse(context))
+          .catch(NotFound, () => {
+            /* Following is to handle existing deployments. 
+                For them platform-context is not saved in deployment property. Defaults to CF.
+            */
+            /*TODO: Remove the code for querying bosh for property.
+             */
+            logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
+          Setting default platform as '${CONST.PLATFORM.CF}'`);
 
-        const context = {
-          platform: CONST.PLATFORM.CF
-        };
-        return context;
+            const context = {
+              platform: CONST.PLATFORM.CF
+            };
+            return context;
+          });
       });
   }
+
+  getDeploymentName(guid, networkSegmentIndex) {
+    let subnet = this.subnet ? `_${this.subnet}` : '';
+    return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(networkSegmentIndex)}-${guid}`;
+  }
+
+  getServiceInstanceState(instanceGuid) {
+    return this
+      .findNetworkSegmentIndex(instanceGuid)
+      .then(networkSegmentIndex => this.getDeploymentName(instanceGuid, networkSegmentIndex))
+      .then(deploymentName => this.getDeploymentIps(deploymentName))
+      .then(ips => this.agent.getState(ips));
+  }
+
 
   static get prefix() {
     return _
@@ -86,6 +107,19 @@ class DirectorService extends BaseDirectorService {
     return `${this.prefix}${subnet}-${NetworkSegmentIndex.adjust(this.networkSegmentIndex)}-${this.guid}`;
   }
 
+  getContextFromResource() {
+    logger.debug(`Fetching context from etcd for ${this.guid}`);
+    return eventmesh.apiServerClient.getPlatformContext({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: this.guid
+      })
+      .catch(err => {
+        logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
+        return;
+      });
+  }
+
   getNetworkSegmentIndex(deploymentName) {
     return _.nth(BaseDirectorService.parseDeploymentName(deploymentName, this.subnet), 1);
   }
@@ -94,30 +128,48 @@ class DirectorService extends BaseDirectorService {
     return _.nth(BaseDirectorService.parseDeploymentName(deploymentName, this.subnet), 2);
   }
 
-  initialize(operation) {
+  initialize(operation, deploymentName) {
     return Promise
       .try(() => {
         this.operation = operation.type;
+        if (deploymentName) {
+          return this.getNetworkSegmentIndex(deploymentName);
+        }
         if (operation.type === CONST.OPERATION_TYPE.CREATE) {
           return this.acquireNetworkSegmentIndex(this.guid);
         }
         return this.findNetworkSegmentIndex(this.guid);
       })
-      .tap(networkSegmentIndex => {
+      .then(networkSegmentIndex => {
         assert.ok(_.isInteger(networkSegmentIndex), `Network segment index '${networkSegmentIndex}' must be an integer`);
         this.networkSegmentIndex = networkSegmentIndex;
+        return networkSegmentIndex;
       })
       .tap(() => {
-        if (operation.type === 'delete') {
+        if (!deploymentName && operation.type === 'delete') {
           return Promise
             .all([
               this.platformManager.preInstanceDeleteOperations({
                 guid: this.guid
               }),
-              this.deleteRestoreFile()
+              this.deleteRestoreFile() // This should be revisited when broker start supporting K8s through service manager
             ]);
         }
       });
+  }
+
+  findDeploymentNameByInstanceId(guid) {
+    logger.info(`Finding deployment name with instance id : '${guid}'`);
+    return this.getDeploymentNames(false)
+      .then(deploymentNames => {
+        const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
+        if (!deploymentName) {
+          logger.warn(`+-> Could not find a matching deployment for guid: ${guid}`);
+          throw new ServiceInstanceNotFound(guid);
+        }
+        return deploymentName;
+      })
+      .tap(deploymentName => logger.info(`+-> Found deployment '${deploymentName}' for '${guid}'`));
   }
 
   acquireNetworkSegmentIndex(guid) {
@@ -127,7 +179,12 @@ class DirectorService extends BaseDirectorService {
       promises.push(this.getDeploymentNamesInCache());
     }
     return Promise.all(promises)
-      .then(deploymentNameCollection => _.flatten(deploymentNameCollection))
+      .then(deploymentNameCollection =>
+        _.chain(deploymentNameCollection)
+        .flatten()
+        .uniq()
+        .value()
+      )
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
         if (deploymentName) {
@@ -176,20 +233,7 @@ class DirectorService extends BaseDirectorService {
       .try(() => {
         switch (operation.type) {
         case 'create':
-          return utils
-            .retry(tries => {
-              logger.info(`+-> ${ordinals[tries]} attempt to create property '${CONST.PLATFORM_CONTEXT_KEY}' for deployment '${this.deploymentName}'...`);
-              return this.director
-                .createDeploymentProperty(this.deploymentName, CONST.PLATFORM_CONTEXT_KEY, JSON.stringify(operation.context))
-                .catch(err => {
-                  logger.error(`Error occured while trying to create deployment property for deployment ${this.deploymentName}`, err);
-                  throw err;
-                });
-            }, {
-              maxAttempts: 3,
-              minDelay: 1000
-            })
-            .then(() => this.platformManager.postInstanceProvisionOperations({
+          return Promise.try(() => this.platformManager.postInstanceProvisionOperations({
               ipRuleOptions: this.buildIpRules(),
               guid: this.guid,
               context: operation.context
@@ -210,42 +254,50 @@ class DirectorService extends BaseDirectorService {
       }));
   }
 
-  create(params) {
+  create(params, deploymentName) {
     const operation = {
       type: 'create'
     };
     return this
-      .initialize(operation)
+      .initialize(operation, deploymentName)
       .then(() => {
-        return this.createOrUpdateDeployment(this.deploymentName, params);
+        if (this.networkSegmentIndex) {
+          return this.createOrUpdateDeployment(this.deploymentName, params);
+        }
       })
+      .catch(ServiceUnavailable, err =>
+        logger.warn(`Error occurred while creating deployment for instance guid :${this.guid}`, err))
       .then(op => _
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
-        .set('task_id', op.task_id)
-        .set('cached', op.cached)
+        .set('task_id', _.get(op, 'task_id'))
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
         .value()
       );
   }
 
-  update(params) {
+  update(params, deploymentName) {
     const operation = {
       type: 'update'
     };
     return this
-      .initialize(operation)
+      .initialize(operation, deploymentName)
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
-        return this.createOrUpdateDeployment(this.deploymentName, params)
-          .then(op => _
-            .chain(operation)
-            .assign(_.pick(params, 'parameters', 'context'))
-            .set('task_id', op.task_id)
-            .set('cached', op.cached)
-            .value()
-          );
-      });
+        if (this.networkSegmentIndex) {
+          return this.createOrUpdateDeployment(this.deploymentName, params);
+        }
+      })
+      .catch(ServiceUnavailable, err =>
+        logger.error(`Error occurred while updating deployment for instance guid :${this.guid}`, err))
+      .then(op => _
+        .chain(operation)
+        .assign(_.pick(params, 'parameters', 'context'))
+        .set('task_id', _.get(op, 'task_id'))
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
+        .value()
+      );
   }
 
   findNetworkSegmentIndex(guid) {
@@ -262,7 +314,19 @@ class DirectorService extends BaseDirectorService {
   }
 
   getDeploymentNamesInCache() {
-    return boshOperationQueue.getDeploymentNames();
+    return eventmesh.apiServerClient.getResourceListByState({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+      })
+      .map(resource => _.get(resource, 'status.response.deployment_name'))
+      .then(deploymentNames => _
+        .chain(deploymentNames)
+        .flatten()
+        .compact()
+        .uniq()
+        .value()
+      );
   }
 
   getTask(taskId) {
@@ -329,89 +393,6 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  _deleteEntity(action, opts) {
-    return utils.retry(tries => {
-        logger.info(`+-> Attempt ${tries + 1}, action "${opts.actionName}"...`);
-        return action();
-      }, {
-        maxAttempts: opts.maxAttempts,
-        minDelay: opts.minDelay
-      })
-      .catch(err => {
-        logger.error(`Timeout Error for action "${opts.actionName}" after multiple attempts`, err);
-        throw err;
-      });
-  }
-
-  cleanupOperation(deploymentName) {
-    return Promise.try(() => {
-      if (!config.enable_bosh_rate_limit) {
-        return;
-      }
-      const serviceInstanceId = this.getInstanceGuid(deploymentName);
-      let retryTaskDelete = this._deleteEntity(() => {
-        return boshOperationQueue.deleteBoshTask(serviceInstanceId);
-      }, {
-        actionName: `delete bosh task for instance ${serviceInstanceId}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
-      let retryDeploymentDelete = this._deleteEntity(() => {
-        return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
-      }, {
-        actionName: `delete bosh deployment ${deploymentName}`,
-        maxAttempts: 5,
-        minDelay: 1000
-      });
-      return Promise.all([retryTaskDelete, retryDeploymentDelete]);
-    });
-  }
-
-  getCurrentOperationState(serviceInstanceId) {
-    let output = {
-      'cached': false,
-      'task_id': null
-    };
-
-    return Promise.all([boshOperationQueue.containsServiceInstance(serviceInstanceId), boshOperationQueue.getBoshTask(serviceInstanceId)])
-      .spread((cached, taskId) => {
-        output.cached = cached;
-        output.task_id = taskId;
-      })
-      .return(output);
-  }
-
-  enqueueOrTrigger(shouldRunNow, scheduled, deploymentName) {
-    const results = {
-      cached: false,
-      shouldRunNow: shouldRunNow,
-      enqueue: false
-    };
-    if (scheduled) {
-      if (shouldRunNow) {
-        //do not store in etcd for scheduled updates
-        results.shouldRunNow = shouldRunNow;
-        return results;
-      } else {
-        throw new errors.DeploymentAttemptRejected(deploymentName);
-      }
-    } else {
-      // user-triggered operations
-      if (shouldRunNow) {
-        //check if the deployment already exists in etcd (poller-run)
-        return boshOperationQueue.containsDeployment(deploymentName).then(enqueued => {
-          if (enqueued) {
-            results.cached = true;
-          }
-          return results;
-        });
-      } else {
-        results.enqueue = true;
-        return results;
-      }
-    }
-  }
-
   createOrUpdateDeployment(deploymentName, params, args) {
     logger.info(`Checking rate limits against bosh for deployment `);
     const previousValues = _.get(params, 'previous_values');
@@ -425,58 +406,33 @@ class DirectorService extends BaseDirectorService {
       return this._createOrUpdateDeployment(deploymentName, params, args, scheduled)
         .then(taskId => {
           return {
-            cached: false,
             task_id: taskId
           };
         });
     }
-    const decisionMaker = {
-      'shouldRunNow': false,
-      'cached': false
-    };
-    return this.executePolicy(scheduled, action, deploymentName)
-      .then(checkResults => this.enqueueOrTrigger(checkResults.shouldRunNow, scheduled, deploymentName))
-      .tap(res => {
-        decisionMaker.shouldRunNow = res.shouldRunNow;
-        decisionMaker.cached = res.cached;
-      })
+    return this
+      .executePolicy(scheduled, action, deploymentName)
       .then(res => {
-        if (res.enqueue) {
-          // stagger here by putting it into etcd cache and return promise
-          return boshOperationQueue.saveDeployment(this.plan.id, deploymentName, params, args)
-            .then(() => {
-              decisionMaker.cached = true;
-              throw new DeploymentDelayed(deploymentName);
-            });
+        if (scheduled && !res.shouldRunNow) {
+          throw new errors.DeploymentAttemptRejected(deploymentName);
         }
-      })
-      .then(() => {
-        if (decisionMaker.shouldRunNow && decisionMaker.cached) {
-          //the deployment was cached in etcd earlier; remove it from cache and proceed
-          return boshOperationQueue.deleteDeploymentFromCache(deploymentName);
-        }
-      })
-      .then(() => this._createOrUpdateDeployment(deploymentName, params, args, scheduled))
-      .then(taskId => {
-        const out = {
-          'cached': false
-        };
-        if (decisionMaker.cached) {
-          return boshOperationQueue.saveBoshTask(this.getInstanceGuid(deploymentName), taskId)
-            .then(() => {
-              out.cached = true;
-              out.task_id = taskId;
-              return out;
-            });
+        if (!res.shouldRunNow) {
+          // deployment stagger
+          throw new DeploymentDelayed(deploymentName);
         } else {
-          out.task_id = taskId;
-          return out;
+          //process the deployment
+          return this._createOrUpdateDeployment(deploymentName, params, args, scheduled);
         }
+      })
+      .then(taskId => {
+        return {
+          task_id: taskId
+        };
       })
       .catch(DeploymentDelayed, e => {
         logger.info(`Deployment ${deploymentName} delayed- this should be picked up later for processing`, e);
         return {
-          'cached': true
+          task_id: undefined
         };
       })
       .catch(err => {
@@ -627,19 +583,26 @@ class DirectorService extends BaseDirectorService {
     });
   }
 
-  delete(params) {
+  delete(params, deploymentName) {
     const operation = {
       type: 'delete'
     };
     return this
-      .initialize(operation)
-      .then(() => this.deleteDeployment(this.deploymentName, params))
+      .initialize(operation, deploymentName)
+      .then(() => {
+        if (this.networkSegmentIndex) {
+          return this.deleteDeployment(this.deploymentName, params);
+        }
+      })
+      .catch(ServiceUnavailable, err =>
+        logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err))
       .then(taskId => _
         .chain(operation)
         .set('task_id', taskId)
         .set('context', {
           platform: this.platformManager.platform
         })
+        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
         .value()
       );
   }
@@ -664,8 +627,7 @@ class DirectorService extends BaseDirectorService {
       .then(() => this.director.deleteDeployment(deploymentName))
       .tap(taskId => logger.info(`+-> Scheduled delete deployment task '${taskId}'`))
       .catch(err => {
-        logger.error('+-> Failed to delete deployment');
-        logger.error(err);
+        logger.error('+-> Failed to delete deployment', err);
         throw err;
       });
   }
@@ -682,10 +644,7 @@ class DirectorService extends BaseDirectorService {
         this.networkSegmentIndex = this.getNetworkSegmentIndex(task.deployment);
         this.setOperationState(operation, task);
         if (operation.state !== 'in progress') {
-          return Promise.try(() => {
-              return this.cleanupOperation(task.deployment);
-            })
-            .then(() => this.finalize(operation));
+          return Promise.try(() => this.finalize(operation));
         }
       })
       .return(operation);
@@ -699,18 +658,11 @@ class DirectorService extends BaseDirectorService {
       return this.getBoshTaskStatus(instanceId, operation, operation.task_id);
     } else {
       return Promise.try(() => {
-        return this.getCurrentOperationState(this.guid);
-      }).then(state => {
-        const isCached = state.cached;
-        const taskId = state.task_id;
-        if (isCached) {
-          return _.assign(operation, {
-            description: `${_.capitalize(operation.type)} deployment is still in progress`,
-            state: 'in progress'
-          });
-        } else {
-          return this.getBoshTaskStatus(instanceId, operation, taskId);
-        }
+        return _.assign(operation, {
+          description: `${_.capitalize(operation.type)} deployment is still in progress`,
+          state: 'in progress',
+          resourceState: CONST.APISERVER.RESOURCE_STATE.WAITING
+        });
       });
     }
   }
@@ -757,7 +709,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   createBinding(deploymentName, binding) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Creating binding '${binding.id}' for deployment '${deploymentName}'...`);
     logger.info('+-> Binding parameters:', binding.parameters);
     let actionContext = {
@@ -775,8 +727,8 @@ class DirectorService extends BaseDirectorService {
           throw err;
         })
       )
-      .tap(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
-      .tap(() => {
+      .tap(credentials => {
+        _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
         utils.maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
@@ -797,7 +749,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   deleteBinding(deploymentName, id) {
-    this.verifyFeatureSupport('credentials');
+    utils.verifyFeatureSupport(this.plan, 'credentials');
     logger.info(`Deleting binding '${id}' for deployment '${deploymentName}'...`);
     let actionContext = {
       'deployment_name': deploymentName,
@@ -819,8 +771,7 @@ class DirectorService extends BaseDirectorService {
           throw err;
         })
       )
-      .then(() => this.deleteBindingProperty(deploymentName, id))
-      .tap(() => logger.info('+-> Deleted service binding'))
+      .tap(() => logger.info('+-> Deleted service credentials'))
       .catch(err => {
         logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
         logger.error(err);
@@ -849,7 +800,7 @@ class DirectorService extends BaseDirectorService {
       })
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
-        if (response) {
+        if (!_.isEmpty(response)) {
           return utils.decodeBase64(response);
         }
       })
@@ -864,17 +815,6 @@ class DirectorService extends BaseDirectorService {
       .getDeploymentProperty(deploymentName, `binding-${id}`)
       .then(result => JSON.parse(result))
       .catchThrow(NotFound, new ServiceBindingNotFound(id));
-  }
-
-  createBindingProperty(deploymentName, id, value) {
-    return this.director
-      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
-  }
-
-  deleteBindingProperty(deploymentName, id) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
   }
 
   diffManifest(deploymentName, opts) {
@@ -974,7 +914,7 @@ class DirectorService extends BaseDirectorService {
       .try(() => {
         if (utils.isFeatureEnabled(CONST.FEATURE.SCHEDULED_BACKUP)) {
           try {
-            this.verifyFeatureSupport('backup');
+            utils.verifyFeatureSupport(this.plan, 'backup');
             ScheduleManager
               .getSchedule(this.guid, CONST.JOB.SCHEDULED_BACKUP)
               .then(schedule => {
@@ -991,6 +931,7 @@ class DirectorService extends BaseDirectorService {
                 }
                 logger.info(`Scheduling Backup for instance : ${this.guid} with backup interval of - ${options.repeatInterval}`);
                 //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+                // This flow has to be revisited when we start supporting K8s through service manager
                 return this.serviceFabrikClient.scheduleBackup(options);
               });
           } catch (err) {
@@ -1033,15 +974,19 @@ class DirectorService extends BaseDirectorService {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const context = _.get(options, 'context');
-    const directorService = new DirectorService(instanceId, plan);
+    const directorService = new DirectorService(plan, instanceId);
     return Promise
       .try(() => context ? context : directorService.platformContext)
-      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context.platform)))
+      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context)))
       .return(directorService);
   }
 
-  static getPlatformManager(platform) {
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../broker/lib/fabrik/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
+    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);
     } else {

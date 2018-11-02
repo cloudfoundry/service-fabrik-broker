@@ -9,10 +9,9 @@ const VirtualHostAgent = require('./VirtualHostAgent');
 const DirectorManager = require('./DirectorManager');
 const VirtualHostManager = require('./VirtualHostManager');
 const ServiceFabrikOperation = require('./ServiceFabrikOperation');
-const BoshTaskPoller = require('./DirectorTaskPoller');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
-const BasePlatformManager = require('./BasePlatformManager');
+const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
 const CONST = require('../../../common/constants');
 const DockerManager = config.enable_swarm_manager ? require('./DockerManager') : undefined;
 
@@ -48,13 +47,17 @@ class Fabrik {
         const instance = manager.createInstance(instance_id);
         return Promise
           .try(() => context ? context : instance.platformContext)
-          .then(context => instance.assignPlatformManager(Fabrik.getPlatformManager(context.platform)))
+          .then(context => instance.assignPlatformManager(Fabrik.getPlatformManager(context)))
           .return(instance);
       });
   }
 
-  static getPlatformManager(platform) {
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`./${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`./${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
+  static getPlatformManager(context) {
+    let platform = context.platform;
+    if (platform === CONST.PLATFORM.SM) {
+      platform = context.origin;
+    }
+    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
     if (PlatformManager === undefined) {
       return new BasePlatformManager(platform);
     } else {
@@ -72,7 +75,6 @@ Fabrik.DockerManager = DockerManager;
 Fabrik.DirectorManager = DirectorManager;
 Fabrik.ServiceFabrikOperation = ServiceFabrikOperation;
 Fabrik.dbManager = new DBManager();
-Fabrik.BoshTaskPoller = BoshTaskPoller;
 Fabrik.oobBackupManager = OobBackupManager;
 Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
 module.exports = Fabrik;

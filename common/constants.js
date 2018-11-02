@@ -79,7 +79,7 @@ module.exports = Object.freeze({
     backup: '/api/v1/service_instances/:instance_id/backup',
     restore: '/api/v1/service_instances/:instance_id/restore',
     backup_by_guid: '/api/v1/backups/:backup_guid',
-    instance: '/:platform(cf|k8s)/v2/service_instances/:instance_id'
+    instance: '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id'
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',
@@ -294,6 +294,7 @@ module.exports = Object.freeze({
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
       IN_PROGRESS: 'in_progress',
+      WAITING: 'waiting',
       DELETE: 'delete',
       DELETED: 'deleted',
       SUCCEEDED: 'succeeded',
@@ -335,12 +336,14 @@ module.exports = Object.freeze({
   },
   PLATFORM: {
     CF: 'cloudfoundry',
-    K8S: 'kubernetes'
+    K8S: 'kubernetes',
+    SM: 'sapcp'
   },
 
   PLATFORM_ALIAS_MAPPINGS: {
     'cf': 'cloudfoundry',
-    'k8s': 'kubernetes'
+    'k8s': 'kubernetes',
+    'sm': 'sapcp'
   },
 
   PLATFORM_MANAGER: {
@@ -384,16 +387,6 @@ module.exports = Object.freeze({
   ADD_ON_JOBS: {
     IP_TABLES_MANAGER: 'iptables-manager'
   },
-  ETCD: {
-    SORT_BY_CREATE: 'Create',
-    TARGET_NONE: 'None',
-    JSON: 'json',
-    NUMBER: 'number',
-    STRING: 'string',
-    LOCK_TTL: 5,
-    LOCK_KEY_SUFFIX: '/lock',
-    LOCK_DETAILS_SUFFIX: '/lock/details'
-  },
   API_SERVER: {
     WATCH_EVENT: {
       ADDED: 'ADDED',
@@ -410,5 +403,9 @@ module.exports = Object.freeze({
       UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
       MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
     }
-  }
+  },
+  DOCKER_HOST_CONFIG: {
+    PIDS_LIMIT: 150
+  },
+  SYSTEM_ERRORS: ['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ESOCKETTIMEDOUT']
 });

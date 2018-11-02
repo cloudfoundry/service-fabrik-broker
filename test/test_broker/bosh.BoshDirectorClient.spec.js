@@ -9,6 +9,8 @@ const config = require('../../common/config');
 const logger = require('../../common/logger');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
+const InternalServerError = errors.InternalServerError;
+const ServiceUnavailable = errors.ServiceUnavailable;
 const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
 const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
@@ -42,42 +44,69 @@ class MockBoshDirectorClient extends BoshDirectorClient {
   }
 
   makeRequest(options, expectedStatusCode) {
-    switch (this.res.statusCode) {
-    case 400:
-      this.res.statusCode = 204;
-      return Promise.reject(new BadRequest(''));
-    case 404:
-      this.res.statusCode = 204;
-      return Promise.reject(new NotFound(''));
-    default:
-      expect(expectedStatusCode).to.equal(this.res.statusCode);
-      expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
+    if (this.res.statusCode && !this.res.code) {
+      switch (this.res.statusCode) {
+      case 400:
+        this.res.statusCode = 204;
+        return Promise.reject(new BadRequest(''));
+      case 404:
+        this.res.statusCode = 204;
+        return Promise.reject(new NotFound(''));
+      case 502:
+      case 503:
+      case 500:
+        this.res.statusCode = 500;
+        return Promise.reject(new InternalServerError(''));
+      default:
+        expect(expectedStatusCode).to.equal(this.res.statusCode);
+        expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
 
-      return Promise.resolve({
-        body: this.res.body,
-        statusCode: this.res.statusCode,
-        headers: this.res.headers
-      });
+        return Promise.resolve({
+          body: this.res.body,
+          statusCode: this.res.statusCode,
+          headers: this.res.headers
+        });
+      }
+    }
+    switch (this.res.code) {
+    case 'ECONNREFUSED':
+      let e = new Error('ECONNREFUSED');
+      e.code = 'ECONNREFUSED';
+      throw e;
     }
   }
 
   makeRequestWithConfig(options, expectedStatusCode) {
-    switch (this.res.statusCode) {
-    case 400:
-      this.res.statusCode = 204;
-      return Promise.reject(new BadRequest(''));
-    case 404:
-      this.res.statusCode = 204;
-      return Promise.reject(new NotFound(''));
-    default:
-      expect(expectedStatusCode).to.equal(this.res.statusCode);
-      expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
+    if (this.res.statusCode && !this.res.code) {
+      switch (this.res.statusCode) {
+      case 400:
+        this.res.statusCode = 204;
+        return Promise.reject(new BadRequest(''));
+      case 404:
+        this.res.statusCode = 204;
+        return Promise.reject(new NotFound(''));
+      case 502:
+      case 503:
+      case 500:
+        this.res.statusCode = 500;
+        return Promise.reject(new InternalServerError(''));
+      default:
+        expect(expectedStatusCode).to.equal(this.res.statusCode);
+        expect(_.omit(options, 'body')).to.eql(_.omit(this.req, 'body'));
 
-      return Promise.resolve({
-        body: this.res.body,
-        statusCode: this.res.statusCode,
-        headers: this.res.headers
-      });
+        return Promise.resolve({
+          body: this.res.body,
+          statusCode: this.res.statusCode,
+          headers: this.res.headers
+        });
+      }
+    }
+
+    switch (this.res.code) {
+    case 'ECONNREFUSED':
+      let e = new Error('ECONNREFUSED');
+      e.code = 'ECONNREFUSED';
+      throw e;
     }
   }
 
@@ -313,6 +342,21 @@ describe('bosh', () => {
         clock.tick(500);
         return deployments;
       });
+
+      it('returns ServiceUnavailable error: 503', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/deployments'
+        };
+        let response = {
+          statusCode: 503
+        };
+        new MockBoshDirectorClient(request, response).getDeployments()
+          .catch((res) => {
+            expect(res instanceof ServiceUnavailable).to.eql(true);
+            done();
+          }).catch(done);
+      });
     });
 
     describe('#getDeployment', () => {
@@ -443,6 +487,7 @@ describe('bosh', () => {
           })
           .catch(done);
       });
+
       it('returns an integer (task-id): user-triggered update', (done) => {
         let taskId = Math.floor(Math.random() * 123456789);
         let request = {
@@ -472,6 +517,53 @@ describe('bosh', () => {
           })
           .catch(done);
       });
+
+      it('returns service unavailable exception: ECONNREFUSED : user-triggered update', (done) => {
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::Operation::update'
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          code: 'ECONNREFUSED'
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
+          .catch((res) => {
+            expect(res instanceof ServiceUnavailable).to.eql(true);
+            done();
+          })
+          .catch(done);
+      });
+
+      it('returns service unavailable exception: 502 : user-triggered update', (done) => {
+        let request = {
+          method: 'POST',
+          url: '/deployments',
+          headers: {
+            'Content-Type': 'text/yaml',
+            'X-Bosh-Context-Id': 'Fabrik::Operation::update'
+          },
+          qs: undefined,
+          body: manifest
+        };
+        let response = {
+          statusCode: 502
+        };
+        new MockBoshDirectorClient(request, response)
+          .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
+          .catch((res) => {
+            expect(res instanceof ServiceUnavailable).to.eql(true);
+            done();
+          })
+          .catch(done);
+      });
+
     });
 
     describe('#deleteDeployment', () => {
@@ -496,6 +588,23 @@ describe('bosh', () => {
           done();
         }).catch(done);
       });
+
+      it('returns ServiceUnavailable: 502', (done) => {
+        let request = {
+          method: 'DELETE',
+          url: `/deployments/${deployment_name}`
+        };
+        let response = {
+          statusCode: 502
+        };
+
+        new MockBoshDirectorClient(request, response).deleteDeployment(id)
+          .catch((res) => {
+            expect(res instanceof ServiceUnavailable).to.eql(true);
+            done();
+          }).catch(done);
+      });
+
     });
 
     describe('#getDeploymentVms', () => {
@@ -538,6 +647,34 @@ describe('bosh', () => {
         return new MockBoshDirectorClient(request, response)
           .getDeploymentInstances(id)
           .then(body => expect(body).to.eql(vms));
+      });
+
+      it('returns Service Unavailable Error: 503', () => {
+        let request = {
+          method: 'GET',
+          url: `/deployments/${id}/instances`
+        };
+        let response = {
+          statusCode: 503
+        };
+
+        return new MockBoshDirectorClient(request, response)
+          .getDeploymentInstances(id)
+          .catch(res => expect(res instanceof ServiceUnavailable).to.eql(true));
+      });
+
+      it('returns Service Unavailable Error: 500', () => {
+        let request = {
+          method: 'GET',
+          url: `/deployments/${id}/instances`
+        };
+        let response = {
+          statusCode: 500
+        };
+
+        return new MockBoshDirectorClient(request, response)
+          .getDeploymentInstances(id)
+          .catch(res => expect(res instanceof ServiceUnavailable).to.eql(true));
       });
     });
 
@@ -803,6 +940,27 @@ describe('bosh', () => {
           let body = JSON.parse(response.body)[0];
           body.id = `${deployment_name}_${body.id}`;
           expect(content).to.eql([body]);
+          done();
+        }).catch(done);
+      });
+
+      it('returns Service Unavailable Error : 500', (done) => {
+        let request = {
+          method: 'GET',
+          url: '/tasks',
+          qs: {
+            deployment: deployment_name,
+            limit: 1000
+          }
+        };
+        let response = {
+          statusCode: 500
+        };
+
+        new MockBoshDirectorClient(request, response).getTasks({
+          deployment: deployment_name
+        }).catch((res) => {
+          expect(res instanceof ServiceUnavailable).to.eql(true);
           done();
         }).catch(done);
       });
@@ -1164,7 +1322,6 @@ describe('bosh', () => {
         }));
         dummyBoshDirectorClient.getDeploymentIps(deploymentName)
           .then(ips => {
-            console.log(ips);
             assert.deepEqual(ips, ['10.244.10.216', '10.244.10.217']);
             assert.deepEqual(dummyBoshDirectorClient.deploymentIpsCache[deploymentName], ips);
             expect(putDeploymentIpsInResourceStub).to.have.been.calledWith(deploymentName, ips);

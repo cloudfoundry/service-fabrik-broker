@@ -1,11 +1,9 @@
 'use strict';
 
-const BasePlatformManager = require('./BasePlatformManager');
 const _ = require('lodash');
 
-class K8sPlatformManager extends BasePlatformManager {
+class BasePlatformManager {
   constructor(platform) {
-    super(platform);
     this.platform = platform;
   }
 
@@ -14,9 +12,9 @@ class K8sPlatformManager extends BasePlatformManager {
     const platform = this.platform;
     _.remove(modifiedCatalog.services, function (service) {
       _.remove(service.plans, function (plan) {
-        return !_.includes(_.get(plan, 'supported_platform'), platform);
+        return !_.includes(_.get(plan, 'supported_platform', ['cf']), platform);
       });
-      return !_.includes(_.get(service, 'supported_platform'), platform);
+      return !_.includes(_.get(service, 'supported_platform', ['cf']), platform);
     });
     return modifiedCatalog;
   }
@@ -38,4 +36,4 @@ class K8sPlatformManager extends BasePlatformManager {
   }
 
 }
-module.exports = K8sPlatformManager;
+module.exports = BasePlatformManager;

@@ -85,13 +85,17 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments);
-          _.each(_.range(numberOfDeployments), index => mocks.cloudController
-            .getServiceInstance(mocks.director.uuidByIndex(index), {
-              space_guid: space_guid
-            }));
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: org_guid
-          }, numberOfDeployments);
+          _.each(_.range(numberOfDeployments), index => mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, mocks.director.uuidByIndex(index), {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: org_guid
+                }
+              })
+            }
+          }));
           return chai
             .request(apps.internal)
             .get(`${base_url}/deployments/outdated`)
@@ -235,11 +239,16 @@ describe('service-fabrik-admin', function () {
             const token = _.get(body.parameters, 'service-fabrik-operation');
             return support.jwt.verify(token, name, args);
           });
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: org_guid
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: org_guid
+                }
+              })
+            }
           });
           return chai
             .request(apps.internal)
@@ -270,11 +279,16 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments, diff);
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid
-          });
-          mocks.cloudController.getSpace(space_guid, {
-            organization_guid: org_guid
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                context: {
+                  platform: CONST.PLATFORM.CF,
+                  space_guid: space_guid,
+                  organization_guid: org_guid
+                }
+              })
+            }
           });
           return chai
             .request(apps.internal)
