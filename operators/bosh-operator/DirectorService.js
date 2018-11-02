@@ -13,6 +13,7 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
+const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
@@ -735,7 +736,7 @@ class DirectorService extends BaseDirectorService {
       })
       .tap(() => {
         //TODO: Temporary fix. Binding info should always be fetched from etcd.
-        if(deploymentName === config.mongodb.deployment_name) {
+        if (deploymentName === config.mongodb.deployment_name) {
           return this.createBindingProperty(deploymentName, binding.id, binding);
         }
       })
@@ -780,7 +781,7 @@ class DirectorService extends BaseDirectorService {
       .tap(() => logger.info('+-> Deleted service credentials'))
       .tap(() => {
         //TODO: Temporary fix. Binding info should always be fetched from etcd.
-        if(deploymentName === config.mongodb.deployment_name) {
+        if (deploymentName === config.mongodb.deployment_name) {
           return this.deleteBindingProperty(deploymentName, id);
         }
       })
@@ -822,16 +823,16 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  createBindingProperty(deploymentName, id, value) {	
-    return this.director	
-      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))	
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));	
+  createBindingProperty(deploymentName, id, value) {
+    return this.director
+      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
+      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
   }
 
-  deleteBindingProperty(deploymentName, id) {	
-    return this.director	
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);	
-  }	
+  deleteBindingProperty(deploymentName, id) {
+    return this.director
+      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
+  }
 
   getBindingProperty(deploymentName, id) {
     return this.director
