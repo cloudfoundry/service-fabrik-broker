@@ -18,7 +18,8 @@ const JobSchema = new Mongoose.Schema({
   },
   type: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   runOnlyOnce: {
     type: Boolean,
