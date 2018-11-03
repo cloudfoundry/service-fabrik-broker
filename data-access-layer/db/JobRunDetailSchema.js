@@ -11,7 +11,8 @@ const JobRunDetailSchema = new Mongoose.Schema({
   },
   type: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   interval: {
     type: String,
