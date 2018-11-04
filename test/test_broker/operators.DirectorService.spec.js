@@ -1282,7 +1282,7 @@ describe('#DirectorService', function () {
               mocks.verify();
             });
         });
-        
+
         it('deleteBinding for sfmongodb deletes property on bosh', function (done) {
           const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
           expectedRequestBody.context = _.chain(expectedRequestBody.context)
