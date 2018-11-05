@@ -899,6 +899,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getUpdateSchedule(req, res) {
+    let context;
     return Promise.try(() => this.setPlan(req))
       .then(() => ScheduleManager
         .getSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE))
@@ -906,25 +907,30 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const checkUpdateRequired = _.get(req.query, 'check_update_required');
         logger.info(`Instance Id: ${req.params.instance_id} - check outdated status - ${checkUpdateRequired}`);
         if (checkUpdateRequired) {
-          const directorService = new DirectorService(req.plan, req.params.instance_id);
-          return directorService
-            .findDeploymentNameByInstanceId(req.params.instance_id)
-            .then(deploymentName => eventmesh.apiServerClient.getPlatformContext({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-                resourceId: req.params.instance_id
-              })
-              .then(context => {
-                const opts = {};
-                opts.context = context;
-                return directorService.diffManifest(deploymentName, opts);
-              })
-              .then(result => utils.unifyDiffResult(result))
-            )
-            .then(result => {
-              scheduleInfo.update_required = result && result.length > 0;
-              scheduleInfo.update_details = result;
-              return scheduleInfo;
+          return eventmesh.apiServerClient.getPlatformContext({
+              resourceGroup: req.plan.resourceGroup,
+              resourceType: req.plan.resourceType,
+              resourceId: req.params.instance_id
+            })
+            .tap(ctxt => context = ctxt)
+            .then(platformContext => DirectorService.createInstance(req.params.instance_id, {
+              plan_id: req.plan.id,
+              context: platformContext
+            }))
+            .then(directorService => {
+              return directorService
+                .findDeploymentNameByInstanceId(req.params.instance_id)
+                .then(deploymentName => directorService.diffManifest(deploymentName, {
+                  opts: {
+                    context: context
+                  }
+                }))
+                .then(result => utils.unifyDiffResult(result))
+                .then(result => {
+                  scheduleInfo.update_required = result && result.length > 0;
+                  scheduleInfo.update_details = result;
+                  return scheduleInfo;
+                });
             });
         } else {
           return scheduleInfo;
