@@ -213,7 +213,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -241,7 +241,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -268,7 +268,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(201);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -303,7 +303,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });
@@ -333,7 +333,7 @@ describe('service-broker-api', function () {
             .then(res => {
               expect(res).to.have.status(200);
               expect(res.body).to.eql({
-                dashboard_url: `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`
+                dashboard_url: `${protocol}://${host}/manage/dashboards/docker/instances/${instance_id}`
               });
               mocks.verify();
             });

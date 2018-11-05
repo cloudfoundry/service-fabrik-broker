@@ -49,7 +49,7 @@ describe('service-broker-api-2.0', function () {
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
-      const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
+      const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});

@@ -53,7 +53,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
-        dashboard_url: ServiceBrokerApiController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -110,7 +110,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       let body = {
-        dashboard_url: ServiceBrokerApiController.getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -355,12 +355,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(NotFound, gone);
   }
 
-  static getDashboardUrl(serviceId, planId, instanceId) {
+  static getDashboardUrl(plan, instanceId) {
     return formatUrl(_
       .chain(config.external)
       .pick('protocol', 'host')
       .set('slashes', true)
-      .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceId}`)
+      .set('pathname', `manage/dashboards/${plan.manager.name}/instances/${instanceId}`)
       .value()
     );
   }

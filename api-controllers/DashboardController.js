@@ -136,6 +136,10 @@ class DashboardController extends FabrikBaseController {
       .throw(new ContinueWithNext());
   }
 
+  validateServiceInstanceAndType(req, res) {
+    /* jshint unused:false */
+  }
+
   requireLogin(req, res) {
     logger.info(`Validating user '${req.session.user_id}' and access token`);
     req.session.service_id = req.params.service_id;
