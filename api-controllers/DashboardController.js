@@ -10,6 +10,8 @@ const errors = require('../common/errors');
 const logger = require('../common/logger');
 const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
+const CONST = require('../common/constants');
+const eventmesh = require('../data-access-layer/eventmesh');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
@@ -92,7 +94,10 @@ class DashboardController extends FabrikBaseController {
         req.session.user_id = userInfo.user_name || userInfo.email || userInfo.user_id;
         return saveSession(req.session);
       })
-      .then(() => res.redirect(manageInstancePath(req.session)));
+      .then(() => {
+        const oldUrl = req.instance_type ? false : true;
+        return res.redirect(manageInstancePath(req, oldUrl));
+      });
   }
 
   validateServiceInstanceId(req, res) {
@@ -138,6 +143,46 @@ class DashboardController extends FabrikBaseController {
 
   validateServiceInstanceAndType(req, res) {
     /* jshint unused:false */
+    const instance_id = req.params.instance_id;
+    const instance_type = req.params.instance_type;
+    return this._getApiServerResource(instance_id, instance_type)
+      .then(resource => _.get(resource, 'spec.options'))
+      .then(resourceOptions => {
+        const service_id = _.get(resourceOptions, 'service_id');
+        const plan_id = _.get(resourceOptions, 'plan_id');
+        const context = _.get(resourceOptions, 'context');
+        req.params.service_id = service_id;
+        req.params.plan_id = plan_id;
+        return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+      })
+      .then(instance => {
+        req.instance = instance;
+        req.manager = instance.manager;
+      })
+      .throw(new ContinueWithNext());
+  }
+
+  _getApiServerResource(instance_id, instance_type) {
+    switch (instance_type) {
+    case CONST.INSTANCE_TYPE.DIRECTOR:
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instance_id
+      });
+    case CONST.INSTANCE_TYPE.DOCKER:
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
+        resourceId: instance_id
+      });
+    case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+        resourceId: instance_id
+      });
+    }
   }
 
   requireLogin(req, res) {
@@ -220,8 +265,8 @@ function saveSession(session) {
     .tap(() => session.saveAsync());
 }
 
-function manageInstancePath(session) {
-  return `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
+function manageInstancePath(req, oldUrl) {
+  return oldUrl ? `/manage/instances/${req.session.service_id}/${req.session.plan_id}/${req.session.instance_id}` : `/manage/dashboards/${req.instance_type}/instances/${req.instance_id}`;
 }
 
 module.exports = DashboardController;
