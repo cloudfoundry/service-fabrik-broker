@@ -5,6 +5,7 @@ const parseUrl = require('url').parse;
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
 const catalog = require('../../../common/models').catalog;
+const CONST = require('../../../common/constants');
 const docker = require('../../../data-access-layer/docker');
 const fabrik = lib.fabrik;
 
@@ -16,7 +17,41 @@ describe('dashboard', function () {
     const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
     const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
+    const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
+    const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
     const plan = catalog.getPlan(plan_id);
+
+    const resource = {
+      apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+      kind: 'Docker',
+      metadata: {
+        name: instance_id,
+        labels: {
+          state: 'succeeded'
+        }
+      },
+      spec: {
+        options: JSON.stringify({
+          service_id: service_id,
+          plan_id: plan_id,
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          },
+          organization_guid: organization_guid,
+          space_guid: space_guid,
+          parameters: {
+            foo: 'bar'
+          }
+        })
+      },
+      status: {
+        state: 'succeeded',
+        lastOperation: '{}',
+        response: '{}'
+      }
+    };
 
     before(function () {
       _.unset(fabrik.DockerManager, plan_id);
@@ -42,8 +77,8 @@ describe('dashboard', function () {
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
-        mocks.cloudController.getServiceInstance(instance_id);
         mocks.cloudController.findServicePlanByInstanceId(instance_id, service_plan_guid, plan_id, undefined, 2);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DOCKER, instance_id, resource, 1);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer(instance_id);
         mocks.docker.inspectContainer();
@@ -77,7 +112,7 @@ describe('dashboard', function () {
           )
           .then(res => {
             expect(res.body.userId).to.equal('me');
-            expect(res.body.instance.metadata.guid).to.equal(instance_id);
+            expect(res.body.instance.metadata.name).to.equal(instance_id);
             expect(res.body.processes).to.eql([
               ['UID', 'PID'],
               ['root', '13642']

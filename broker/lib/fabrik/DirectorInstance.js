@@ -75,7 +75,11 @@ class DirectorInstance extends BaseInstance {
     };
     return Promise
       .all([
-        this.cloudController.getServiceInstance(this.guid),
+        eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: this.guid
+        }),
         this.initialize(operation).then(() => this.manager.getDeploymentInfo(this.deploymentName))
       ])
       .spread((instance, deploymentInfo) => {
