@@ -50,7 +50,7 @@ const JobRunDetailSchema = new Mongoose.Schema({
   }
 });
 
-JobSchema.index({
+JobRunDetailSchema.index({
   type: 1,
   createdAt: 1
 });
