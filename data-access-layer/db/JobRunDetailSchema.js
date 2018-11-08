@@ -50,6 +50,9 @@ const JobRunDetailSchema = new Mongoose.Schema({
   }
 });
 
-JobSchema.index({ type: 1, createdAt: 1 });
+JobSchema.index({
+  type: 1,
+  createdAt: 1
+});
 Mongoose.model(CONST.DB_MODEL.JOB_RUN_DETAIL, JobRunDetailSchema);
 module.exports.JobRunDetailSchema = JobRunDetailSchema;
