@@ -109,7 +109,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
-      let body = {
+      const body = {
         dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
       };
       if (plan.manager.async) {

@@ -56,7 +56,7 @@ class BaseManager {
       .chain(config.external)
       .pick('protocol', 'host')
       .set('slashes', true)
-      .set('pathname', `/manage/instances/${this.service.id}/${this.plan.id}/${guid}`)
+      .set('pathname', `/manage/dashboards/${this.plan.manager.name}/instances/${guid}`)
       .value()
     );
   }

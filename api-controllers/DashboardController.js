@@ -94,10 +94,7 @@ class DashboardController extends FabrikBaseController {
         req.session.user_id = userInfo.user_name || userInfo.email || userInfo.user_id;
         return saveSession(req.session);
       })
-      .then(() => {
-        const oldUrl = req.instance_type ? false : true;
-        return res.redirect(manageInstancePath(req, oldUrl));
-      });
+      .then(() => res.redirect(manageInstancePath(req)));
   }
 
   validateServiceInstanceId(req, res) {
@@ -151,45 +148,46 @@ class DashboardController extends FabrikBaseController {
         const service_id = _.get(resourceOptions, 'service_id');
         const plan_id = _.get(resourceOptions, 'plan_id');
         const context = _.get(resourceOptions, 'context');
-        req.params.service_id = service_id;
-        req.params.plan_id = plan_id;
+        req.session.service_id = service_id;
+        req.session.plan_id = plan_id;
         return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
       })
       .then(instance => {
         req.instance = instance;
         req.manager = instance.manager;
       })
+      .tap(() => saveSession(req.session))
       .throw(new ContinueWithNext());
   }
 
   _getApiServerResource(instance_id, instance_type) {
+    let resourceType;
     switch (instance_type) {
     case CONST.INSTANCE_TYPE.DIRECTOR:
-      return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: instance_id
-      });
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.DIRECTOR;
+      break;
     case CONST.INSTANCE_TYPE.DOCKER:
-      return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
-        resourceId: instance_id
-      });
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.DOCKER;
+      break;
     case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
-      return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
-        resourceId: instance_id
-      });
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST;
+      break;
+    default:
+      throw new errors.NotFound(`Resource doesn't exist for instance type ${instance_type}`);
     }
+    return eventmesh.apiServerClient.getResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: resourceType,
+      resourceId: instance_id
+    });
   }
 
   requireLogin(req, res) {
     logger.info(`Validating user '${req.session.user_id}' and access token`);
-    req.session.service_id = req.params.service_id;
-    req.session.plan_id = req.params.plan_id;
+    req.session.service_id = req.params.service_id || req.session.service_id;
+    req.session.plan_id = req.params.plan_id || req.session.plan_id;
     req.session.instance_id = req.params.instance_id;
+    req.session.instance_type = req.params.instance_type;
     const oldestAllowableLastSeen = Date.now() - config.external.session_expiry * 1000;
     if (req.session.user_id && req.session.access_token && req.session.last_seen > oldestAllowableLastSeen) {
       req.session.last_seen = Date.now();
@@ -265,8 +263,8 @@ function saveSession(session) {
     .tap(() => session.saveAsync());
 }
 
-function manageInstancePath(req, oldUrl) {
-  return oldUrl ? `/manage/instances/${req.session.service_id}/${req.session.plan_id}/${req.session.instance_id}` : `/manage/dashboards/${req.instance_type}/instances/${req.instance_id}`;
+function manageInstancePath(req) {
+  return req.session.instance_type ? `/manage/dashboards/${req.session.instance_type}/instances/${req.session.instance_id}` : `/manage/instances/${req.session.service_id}/${req.session.plan_id}/${req.session.instance_id}`;
 }
 
 module.exports = DashboardController;

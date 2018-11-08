@@ -36,7 +36,7 @@ router.use(expressSession({
 router.get('/auth/cf', controller.handler('redirectToAuthorizationServer'));
 router.get('/auth/cf/callback', controller.handler('handleAuthorizationResponse'));
 router.use('/instances/:service_id/:plan_id/:instance_id', instanceRouter);
-router.use('/manage/dashboards/:instance_type/instances/:instance_id', dashboardRouter);
+router.use('/dashboards/:instance_type/instances/:instance_id', dashboardRouter);
 
 /* Service Fabrik Instance Router */
 instanceRouter.use(commonMiddleware.csp());
