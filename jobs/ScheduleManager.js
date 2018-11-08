@@ -211,7 +211,9 @@ class ScheduleManager {
         runOnlyOnce: true
       });
       criteria.push({
-        type: '/.*_[0-9]+/'
+        type: {
+          $regex: '.*_[0-9]+'
+        }
       });
       return scheduler
         .purgeOldFinishedJobs()
