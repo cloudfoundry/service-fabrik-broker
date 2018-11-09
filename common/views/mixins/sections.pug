@@ -25,8 +25,7 @@ mixin showSectionService(service, plan, instance, customAttrs)
           }, customAttrs.plan))
         .col-lg-6
           +renderPropertyListPanel('Service Instance', _.assign({
-            GUID: instance.metadata.guid,
-            Name: instance.entity.name,
+            GUID: instance.metadata.name,
             Manager: plan.manager.name
           }, customAttrs.service_instance))
 
@@ -72,7 +71,6 @@ mixin showSectionParentService(plan, instance)
           })
         .col-lg-6
           +renderPropertyListPanel('Service Instance', {
-            GUID: instance.metadata.guid,
-            Name: instance.entity.name,
+            GUID: instance.metadata.name,
             Manager: plan.manager.name
           })

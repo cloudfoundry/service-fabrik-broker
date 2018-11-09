@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
 const utils = require('../common/utils');
+const config = require('../common/config');
 const catalog = require('../common/models/catalog');
 const FabrikBaseController = require('./FabrikBaseController');
 const BadRequest = errors.BadRequest;
@@ -15,9 +16,7 @@ const ContinueWithNext = errors.ContinueWithNext;
 const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
-const config = require('../common/config');
 const formatUrl = require('url').format;
-
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -51,20 +50,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
 
-    function getDashboardUrl(serviceId, planId, instanceId) {
-      return formatUrl(_
-        .chain(config.external)
-        .pick('protocol', 'host')
-        .set('slashes', true)
-        .set('pathname', `/manage/instances/${serviceId}/${planId}/${instanceId}`)
-        .value()
-      );
-    }
-
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
-        dashboard_url: getDashboardUrl(params.service_id, params.plan_id, req.params.instance_id)
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -120,7 +109,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
-      let body = {};
+      const body = {
+        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
+      };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64({
@@ -362,6 +353,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }))
       .then(done)
       .catch(NotFound, gone);
+  }
+
+  static getDashboardUrl(plan, instanceId) {
+    return formatUrl(_
+      .chain(config.external)
+      .pick('protocol', 'host')
+      .set('slashes', true)
+      .set('pathname', `manage/dashboards/${plan.manager.name}/instances/${instanceId}`)
+      .value()
+    );
   }
 
 }

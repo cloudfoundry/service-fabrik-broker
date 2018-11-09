@@ -12,7 +12,7 @@ const fabrik = lib.fabrik;
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const DirectorManager = lib.fabrik.DirectorManager;
-const cloudController = require('../../../data-access-layer/cf').cloudController;
+const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
@@ -33,7 +33,6 @@ describe('service-broker-api-2.0', function () {
       const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-      const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
       const plan = catalog.getPlan(plan_id);
       const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
@@ -49,7 +48,7 @@ describe('service-broker-api-2.0', function () {
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
-      const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
+      const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
@@ -1327,46 +1326,57 @@ describe('service-broker-api-2.0', function () {
       });
 
       describe('#getInfo', function () {
-        let sandbox, getDeploymentInfoStub, getServiceInstanceStub, getServicePlanStub;
+        let sandbox, getDeploymentInfoStub, getResourceStub;
+
+        const resource = {
+          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+          kind: 'Director',
+          metadata: {
+            name: instance_id,
+            labels: {
+              state: 'succeeded'
+            }
+          },
+          spec: {
+            options: {
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+                space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
+              },
+              organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+              space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
+              parameters: {
+                foo: 'bar'
+              }
+            }
+          },
+          status: {
+            state: 'succeeded',
+            lastOperation: {},
+            response: {}
+          }
+        };
         before(function () {
           sandbox = sinon.sandbox.create();
           getDeploymentInfoStub = sandbox.stub(DirectorManager.prototype, 'getDeploymentInfo');
-          getServiceInstanceStub = sandbox.stub(cloudController, 'getServiceInstance');
-          getServicePlanStub = sandbox.stub(cloudController, 'getServicePlan');
+          getResourceStub = sandbox.stub(apiServerClient, 'getResource');
 
-          let entity = {};
-          getServiceInstanceStub
-            .withArgs(instance_id)
-            .returns(Promise.try(() => {
-              return {
-                metadata: {
-                  guid: instance_id
-                },
-                entity: _.assign({
-                  name: 'blueprint',
-                  service_plan_guid: '466c5078-df6e-427d-8fb2-c76af50c0f56'
-                }, entity)
-              };
-            }));
+          getResourceStub
+            .withArgs({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: instance_id
+            })
+            .returns(Promise.try(() => resource));
 
           getDeploymentInfoStub
             .withArgs(deployment_name)
             .returns(Promise.try(() => {
               return {};
             }));
-
-          entity = {};
-          getServicePlanStub
-            .withArgs(service_plan_guid, {})
-            .returns(Promise.try(() => {
-              return {
-                entity: _.assign({
-                  unique_id: plan_id,
-                  name: 'blueprint'
-                }, entity)
-              };
-            }));
-
         });
 
         after(function () {
@@ -1385,7 +1395,7 @@ describe('service-broker-api-2.0', function () {
               expect(res.title).to.equal('Blueprint Dashboard');
               expect(res.plan.id).to.equal(plan_id);
               expect(res.service.id).to.equal(service_id);
-              expect(res.instance.metadata.guid).to.equal(instance_id);
+              expect(res.instance.metadata.name).to.equal(instance_id);
             });
         });
       });

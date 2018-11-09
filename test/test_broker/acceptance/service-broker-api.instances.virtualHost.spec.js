@@ -27,7 +27,7 @@ describe('service-broker-api', function () {
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
-      const dashboard_url = `${protocol}://${host}/manage/instances/${service_id}/${plan_id}/${instance_id}`;
+      const dashboard_url = `${protocol}://${host}/manage/dashboards/virtual_host/instances/${instance_id}`;
       const context = {
         platform: 'cloudfoundry',
         organization_guid: organization_guid,
