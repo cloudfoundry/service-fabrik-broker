@@ -362,9 +362,10 @@ function updateBindingProperty(binding_id, parameters, binding_credentials) {
     .reply(204);
 }
 
-function deleteBindingProperty(binding_id) {
+function deleteBindingProperty(binding_id, deployment) {
+  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
   return nock(directorUrl)
-    .delete(`/deployments/${deploymentNameByIndex(networkSegmentIndex)}/properties/binding-${binding_id}`)
+    .delete(`/deployments/${deploymentName}/properties/binding-${binding_id}`)
     .reply(204);
 }
 
