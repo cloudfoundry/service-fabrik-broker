@@ -94,7 +94,7 @@ class DashboardController extends FabrikBaseController {
         req.session.user_id = userInfo.user_name || userInfo.email || userInfo.user_id;
         return saveSession(req.session);
       })
-      .then(() => res.redirect(manageInstancePath(req)));
+      .then(() => res.redirect(manageInstancePath(req.session)));
   }
 
   validateServiceInstanceId(req, res) {
@@ -107,7 +107,7 @@ class DashboardController extends FabrikBaseController {
   validateSession(req, res) {
     /* jshint unused:false */
     logger.info(`Validating session '${req.session.id}'`);
-    if (!req.session.service_id || req.session.service_id === req.params.service_id) {
+    if ((!req.session.service_id || req.session.service_id === req.params.service_id) || (!req.session.instance_type || req.session.instance_type === req.params.instance_type)) {
       throw new ContinueWithNext();
     }
     logger.info('Regenerating session...');
@@ -156,7 +156,7 @@ class DashboardController extends FabrikBaseController {
         req.instance = instance;
         req.manager = instance.manager;
       })
-      .tap(() => saveSession(req.session))
+      .then(() => saveSession(req.session))
       .throw(new ContinueWithNext());
   }
 
@@ -263,8 +263,8 @@ function saveSession(session) {
     .tap(() => session.saveAsync());
 }
 
-function manageInstancePath(req) {
-  return req.session.instance_type ? `/manage/dashboards/${req.session.instance_type}/instances/${req.session.instance_id}` : `/manage/instances/${req.session.service_id}/${req.session.plan_id}/${req.session.instance_id}`;
+function manageInstancePath(session) {
+  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
 }
 
 module.exports = DashboardController;

@@ -92,21 +92,21 @@ describe('dashboard', function () {
       }
     };
 
-    before(function () {
-      _.unset(fabrik.VirtualHostManager, plan_id);
-      virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
-      mocks.cloudProvider.auth();
-      mocks.cloudProvider.getContainer(container);
-      return mocks.setup([
-        virtualHostStore.cloudProvider.getContainer()
-      ]);
-    });
-
-    afterEach(function () {
-      mocks.reset();
-    });
-
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
+      before(function () {
+        _.unset(fabrik.VirtualHostManager, plan_id);
+        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.getContainer(container);
+        return mocks.setup([
+          virtualHostStore.cloudProvider.getContainer()
+        ]);
+      });
+
+      afterEach(function () {
+        mocks.reset();
+      });
+
       this.slow(1500);
       it('should redirect to authorization server', function () {
         const agent = chai.request.agent(app);
@@ -121,6 +121,68 @@ describe('dashboard', function () {
         mocks.cloudProvider.download(pathname, data);
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
+          .set('Accept', 'application/json')
+          .set('X-Forwarded-Proto', 'https')
+          .redirects(2)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(302);
+            const location = parseUrl(res.headers.location);
+            expect(location.pathname).to.equal('/manage/auth/cf/callback');
+            expect(_
+              .chain(res.redirects)
+              .map(parseUrl)
+              .map(url => url.pathname)
+              .value()
+            ).to.eql([
+              '/manage/auth/cf',
+              '/oauth/authorize'
+            ]);
+            return location;
+          })
+          .then(location => agent
+            .get(location.path)
+            .set('Accept', 'application/json')
+            .set('X-Forwarded-Proto', 'https')
+          )
+          .then(res => {
+            expect(res.body.userId).to.equal('me');
+            expect(res.body.instance.metadata.name).to.equal(instance_id);
+            expect(res.body.parent_instance.metadata.name).to.equal(parent_instance_id);
+            mocks.verify();
+          });
+      });
+    });
+
+    describe('/manage/dashboards/virtual_host/instances/:instance_id', function () {
+      before(function () {
+        _.unset(fabrik.VirtualHostManager, plan_id);
+        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
+        mocks.cloudProvider.auth();
+        mocks.cloudProvider.getContainer(container);
+        return mocks.setup([
+          virtualHostStore.cloudProvider.getContainer()
+        ]);
+      });
+
+
+      afterEach(function () {
+        mocks.reset();
+      });
+
+      this.slow(1500);
+      it('should redirect to authorization server', function () {
+        const agent = chai.request.agent(app);
+        agent.app.listen(0);
+        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
+        mocks.uaa.getUserInfo();
+        mocks.cloudController.getServiceInstancePermissions(instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, resource1, 3);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, parent_instance_id, resource2, 1);
+        //mocks.cloudProvider.download(pathname, data);
+        return agent
+          .get(`/manage/dashboards/virtual_host/instances/${instance_id}`)
           .set('Accept', 'application/json')
           .set('X-Forwarded-Proto', 'https')
           .redirects(2)
