@@ -258,7 +258,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
-      if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS) {
+      if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS ||
+        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
       logger.debug('returning ..', body);
