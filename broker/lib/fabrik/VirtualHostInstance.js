@@ -6,6 +6,7 @@ const utils = require('../../../common/utils');
 const mapper = require('./VirtualHostRelationMapper');
 const catalog = require('../../../common/models').catalog;
 const CONST = require('../../../common/constants');
+const eventmesh = require('../../../data-access-layer/eventmesh');
 
 class VirtualHostInstance extends BaseInstance {
   constructor(guid, manager) {
@@ -34,21 +35,28 @@ class VirtualHostInstance extends BaseInstance {
         this.parentInstanceId = this.getParentInstanceId();
         return Promise
           .all([
-            this.cloudController.getServiceInstance(this.guid),
-            this.cloudController.getServiceInstance(this.parentInstanceId),
-            this.cloudController.findServicePlanByInstanceId(this.parentInstanceId)
-            .then((body) => {
-              return new Promise.resolve(catalog.getPlan(body.entity.unique_id));
+            eventmesh.apiServerClient.getResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+              resourceId: this.guid
+            }),
+            eventmesh.apiServerClient.getResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: this.parentInstanceId
             })
           ])
-          .spread((instance, parent_instance, parent_instance_plan) => ({
-            title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
-            plan: this.plan,
-            service: this.plan.service,
-            instance: instance,
-            parent_plan: parent_instance_plan,
-            parent_instance: parent_instance
-          }));
+          .spread((instance, parent_instance) => {
+            const parent_instance_plan = catalog.getPlan(_.get(parent_instance, 'spec.options.plan_id'));
+            return {
+              title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+              plan: this.plan,
+              service: this.plan.service,
+              instance: instance,
+              parent_plan: parent_instance_plan,
+              parent_instance: parent_instance
+            };
+          });
       });
   }
 

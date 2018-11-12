@@ -100,7 +100,7 @@ function tokenKey() {
     });
 }
 
-function getAuthorizationCode(service_id) {
+function getAuthorizationCode(service_id, times) {
   const dashboard_client = catalog.getService(service_id).dashboard_client;
   return nock(authorizationEndpointUrl)
     .get('/oauth/authorize')
@@ -115,6 +115,7 @@ function getAuthorizationCode(service_id) {
       })
       .value()
     )
+    .times(times || 1)
     .reply(302, null, {
       location: req => `${redirect_uri}?code=${authorizationCode}&state=${parseUrl(req.path, true).query.state}`
     });

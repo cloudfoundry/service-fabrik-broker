@@ -10,6 +10,8 @@ const errors = require('../common/errors');
 const logger = require('../common/logger');
 const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
+const CONST = require('../common/constants');
+const eventmesh = require('../data-access-layer/eventmesh');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
@@ -105,7 +107,7 @@ class DashboardController extends FabrikBaseController {
   validateSession(req, res) {
     /* jshint unused:false */
     logger.info(`Validating session '${req.session.id}'`);
-    if (!req.session.service_id || req.session.service_id === req.params.service_id) {
+    if ((!req.session.service_id || req.session.service_id === req.params.service_id) || (!req.session.instance_type || req.session.instance_type === req.params.instance_type)) {
       throw new ContinueWithNext();
     }
     logger.info('Regenerating session...');
@@ -136,11 +138,56 @@ class DashboardController extends FabrikBaseController {
       .throw(new ContinueWithNext());
   }
 
+  validateServiceInstanceAndType(req, res) {
+    /* jshint unused:false */
+    const instance_id = req.params.instance_id;
+    const instance_type = req.params.instance_type;
+    return this._getApiServerResource(instance_id, instance_type)
+      .then(resource => _.get(resource, 'spec.options'))
+      .then(resourceOptions => {
+        const service_id = _.get(resourceOptions, 'service_id');
+        const plan_id = _.get(resourceOptions, 'plan_id');
+        const context = _.get(resourceOptions, 'context');
+        req.session.service_id = service_id;
+        req.session.plan_id = plan_id;
+        return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+      })
+      .then(instance => {
+        req.instance = instance;
+        req.manager = instance.manager;
+      })
+      .then(() => saveSession(req.session))
+      .throw(new ContinueWithNext());
+  }
+
+  _getApiServerResource(instance_id, instance_type) {
+    let resourceType;
+    switch (instance_type) {
+    case CONST.INSTANCE_TYPE.DIRECTOR:
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.DIRECTOR;
+      break;
+    case CONST.INSTANCE_TYPE.DOCKER:
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.DOCKER;
+      break;
+    case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
+      resourceType = CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST;
+      break;
+    default:
+      throw new errors.NotFound(`Resource doesn't exist for instance type ${instance_type}`);
+    }
+    return eventmesh.apiServerClient.getResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: resourceType,
+      resourceId: instance_id
+    });
+  }
+
   requireLogin(req, res) {
     logger.info(`Validating user '${req.session.user_id}' and access token`);
-    req.session.service_id = req.params.service_id;
-    req.session.plan_id = req.params.plan_id;
+    req.session.service_id = req.params.service_id || req.session.service_id;
+    req.session.plan_id = req.params.plan_id || req.session.plan_id;
     req.session.instance_id = req.params.instance_id;
+    req.session.instance_type = req.params.instance_type;
     const oldestAllowableLastSeen = Date.now() - config.external.session_expiry * 1000;
     if (req.session.user_id && req.session.access_token && req.session.last_seen > oldestAllowableLastSeen) {
       req.session.last_seen = Date.now();
@@ -217,7 +264,7 @@ function saveSession(session) {
 }
 
 function manageInstancePath(session) {
-  return `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
+  return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
 }
 
 module.exports = DashboardController;

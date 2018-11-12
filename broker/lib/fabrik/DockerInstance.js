@@ -7,6 +7,7 @@ const utils = require('../../../common/utils');
 const docker = require('../../../data-access-layer/docker');
 const BaseInstance = require('./BaseInstance');
 const CONST = require('../../../common/constants');
+const eventmesh = require('../../../data-access-layer/eventmesh');
 
 const DockerError = {
   NotFound: {
@@ -115,7 +116,11 @@ class DockerInstance extends BaseInstance {
   getInfo() {
     return Promise
       .all([
-        this.cloudController.getServiceInstance(this.guid),
+        eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
+          resourceId: this.guid
+        }),
         this.inspectContainer()
       ])
       .spread((instance, containerInfo) => {
