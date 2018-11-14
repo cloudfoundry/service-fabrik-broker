@@ -119,6 +119,31 @@ class CfPlatformManager extends BasePlatformManager {
       ports: portRule
     };
   }
+
+  isTenantWhiteListed(options) {
+    const orgId = _.get(options, 'context.organization_guid');
+    assert.ok(orgId, 'OrgId must be present when checking for whitelisting of Tenant in CF Context');
+    return this.cloudController.getOrganization(orgId)
+      .tap((res) => console.log('Org Response -->', res))
+      .then(org => _.includes(config.quota.whitelist, org.entity.name))
+      .tap(result => logger.info(`Current org - ${orgId} is whitelisted: ${result}`));
+  }
+
+  isMultiAzDeploymentEnabled(options) {
+    return Promise.try(() => {
+      if (config.multi_az_enabled === CONST.INTERNAL) {
+        return this.isTenantWhiteListed(options);
+      } else if (config.multi_az_enabled === CONST.ALL || config.multi_az_enabled === true) {
+        logger.info('+-> Multi-AZ Deployment enabled for all consumers : ${config.multi_az_enabled}');
+        return true;
+      } else if (config.multi_az_enabled === CONST.DISABLED || config.multi_az_enabled === false) {
+        logger.info(`+-> Multi-AZ Deployment disabled for all consumers : ${config.multi_az_enabled}`);
+        return false;
+      }
+      throw new errors.UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
+    });
+  }
+
 }
 
 module.exports = CfPlatformManager;
