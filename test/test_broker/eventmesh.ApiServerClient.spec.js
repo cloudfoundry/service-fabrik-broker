@@ -751,6 +751,24 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('getOperationStatus', () => {
+      it('Gets operation status on resource', () => {
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        return apiserver.getResourceStatus({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            operationName: CONST.OPERATION_TYPE.BACKUP,
+            operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP
+          })
+          .then(res => {
+            expect(res.state).to.eql(expectedGetDeploymentResponse.status.state);
+            expect(res.response).to.eql(JSON.parse(expectedGetDeploymentResponse.status.response));
+            verify();
+          });
+      });
+    });
+
     describe('getOptions', () => {
       it('Gets options of resource', () => {
         nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);

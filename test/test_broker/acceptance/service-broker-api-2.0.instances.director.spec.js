@@ -893,7 +893,7 @@ describe('service-broker-api-2.0', function () {
             status: {
               lastOperation: JSON.stringify({
                 description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
               })
             }
           });

@@ -35,16 +35,6 @@ class ServiceFlowMapper {
     return undefined;
   }
 
-  _checkForMajorVersionUpdate(params) {
-    logger.debug(`Checking for major version update `);
-    const currentPlanId = _.get(params, 'plan_id', '');
-    const prevPlanId = _.get(params, 'previous_values.plan_id', '');
-    if (currentPlanId !== prevPlanId) {
-      logger.info(`Plan has changed... This is being treated as Major Version upgrade for now...!`);
-      return CONST.SERVICE_FLOW.TYPE.MAJOR_VERSION_UPGRADE;
-    }
-    return undefined;
-  }
 }
 
 module.exports = new ServiceFlowMapper();
