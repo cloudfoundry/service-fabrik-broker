@@ -664,8 +664,8 @@ class BoshDirectorClient extends HttpClient {
           qs: {
             format: 'full'
           }
-        }, 302)
-        .then(res => this.prefixTaskId(deploymentName, res));
+        }, 302, deploymentName)
+        .then(res => self.prefixTaskId(deploymentName, res));
     }
 
 
