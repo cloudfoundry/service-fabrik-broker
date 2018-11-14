@@ -393,7 +393,7 @@ describe('service-broker-api-2.0', function () {
         const workflowId = 'w651abb8-0921-4c2e-9565-a19776d95619';
         const workflow_payload = {
           apiVersion: 'serviceflow.servicefabrik.io/v1alpha1',
-          kind: 'Serialserviceflow',
+          kind: 'SerialServiceFlow',
           metadata: {
             name: workflowId,
             labels: {
