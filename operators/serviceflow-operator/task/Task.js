@@ -1,6 +1,5 @@
 'use strict';
 
-
 const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const errors = require('../../../common/errors');
 const logger = require('../../../common/logger');

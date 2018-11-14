@@ -102,7 +102,7 @@ class TaskOperator extends BaseOperator {
           return task
             .updateStatus(resourceDetails, status)
             .then(() => this.clearPoller(object, intervalId))
-            .tap(() => logger.info('Released processing lock!!!'))
+            .tap(() => logger.info(`+-> Should be Releasing processing lock for resource: ${object.metadata.name} - ${taskDetails.task_type}`))
             .return(true);
         } else {
           logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
@@ -110,7 +110,7 @@ class TaskOperator extends BaseOperator {
             .continueToHoldLock(object)
             .tap((resource) => {
               object.metadata.resourceVersion = resource.metadata.resourceVersion;
-              logger.debug(`-> Retained the lock successfully -> for for ${object.metadata.name} with version - ${resource.metadata.resourceVersion}`);
+              logger.debug(`-> Retained the lock successfully -> for ${object.metadata.name} with version - ${resource.metadata.resourceVersion}`);
             })
             .return(false);
         }

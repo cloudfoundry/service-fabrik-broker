@@ -117,7 +117,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         const operation = {
-          'type': 'update'
+          'type': CONST.OPERATION_TYPE.UPDATE
         };
         if (serviceFlow !== undefined) {
           operation.serviceflow_name = serviceFlow.name;
