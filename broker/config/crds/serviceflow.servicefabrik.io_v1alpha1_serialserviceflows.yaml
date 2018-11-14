@@ -8,7 +8,7 @@ metadata:
 spec:
   group: serviceflow.servicefabrik.io
   names:
-    kind: Serialserviceflow
+    kind: SerialServiceFlow
     plural: serialserviceflows
   scope: Namespaced
   validation:
