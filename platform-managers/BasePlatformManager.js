@@ -4,6 +4,7 @@ const _ = require('lodash');
 const CONST = require('../common/constants');
 const config = require('../common/config');
 const errors = require('../common/errors');
+const Promise = require('bluebird');
 
 class BasePlatformManager {
   constructor(platform) {
