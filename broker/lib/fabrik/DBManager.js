@@ -14,6 +14,7 @@ const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
 const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
+const eventmesh = require('../../../data-access-layer/eventmesh');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
@@ -101,14 +102,22 @@ class DBManager {
       if (this.bindInfo) {
         return this.bindInfo;
       }
-      return utils
-        .retry(() => this
-          .directorService
-          .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
-            maxAttempts: 5,
-            minDelay: 5000,
-            predicate: (err) => !(err instanceof ServiceBindingNotFound)
-          });
+      return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+      })
+      .then(resource => _.get(resource, 'status.response'))
+      .catch(NotFound, () => {
+        return utils
+          .retry(() => this
+            .directorService
+            .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
+              maxAttempts: 5,
+              minDelay: 5000,
+              predicate: (err) => !(err instanceof ServiceBindingNotFound)
+            });
+        });
     });
   }
 
@@ -214,7 +223,21 @@ class DBManager {
           logger.info(`MongoDB ${operation} request is complete. Check status for task id - ${taskId}`);
           this.director
             .pollTaskStatusTillComplete(taskId)
-            .then(response => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
+            .then(response => {
+              return Promise.try(() => {
+                if(createIfNotPresent) {
+                  //This is precaution to ensure that no previous bind resource exists in the event that
+                  //service-fabrik-mongodb is recreated but ApiServer is not.
+                  return eventmesh.apiServerClient.deleteResource({
+                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+                    resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+                  });
+                }
+              })
+              .then(() => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
+              .catch(NotFound, () => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
+            })
             .catch(err => this.dbCreateUpdateFailed(err, operation));
         })
         .catch(err => this.dbCreateUpdateFailed(err, operation));
@@ -240,8 +263,13 @@ class DBManager {
             this.bindInfo = {
               credentials: credentials
             };
-            this.initialize();
-          });
+            return this.storeBindPropertyOnApiServer({
+              id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
+              parameters: config.mongodb.provision.bind_params || {},
+              credentials: credentials
+            })
+          })
+          .then(() => this.initialize());
       })
       .catch((err) => {
         this.dbState = CONST.DB.STATE.BIND_FAILED;
@@ -249,6 +277,21 @@ class DBManager {
         //This block of code could be reached due to Bosh being down (either while getting binding or creating binding). So retry this operation.
         setTimeout(() => this.dbCreateUpdateSucceeded(response, createIfNotPresent), config.mongodb.retry_connect.min_delay);
       });
+  }
+
+  storeBindPropertyOnApiServer(bindProperty) {
+    return eventmesh.apiServerClient.createResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+      resourceId: bindProperty.id,
+      options: {
+        binding_id: bindProperty.id
+      },
+      status: {
+        state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+        response: bindProperty
+      }
+    });
   }
 
   dbCreateUpdateFailed(err, operation) {
