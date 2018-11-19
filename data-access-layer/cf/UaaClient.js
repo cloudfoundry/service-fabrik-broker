@@ -117,7 +117,8 @@ class UaaClient extends HttpClient {
         grant_type: 'password',
         client_id: this.clientId,
         username: username,
-        password: password
+        password: password,
+        login_hint: '{"origin":"uaa"}'
       }
     }, 200).then((res) => {
       return JSON.parse(res.body);
