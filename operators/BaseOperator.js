@@ -28,7 +28,7 @@ class BaseOperator {
         return Promise
           .delay(watchRefreshInterval)
           .then(() => {
-            logger.debug(`Refreshing stream after ${watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL}`);
+            logger.debug(`Refreshing stream after ${watchRefreshInterval}`);
             stream.abort();
             return this.registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval);
           });

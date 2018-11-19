@@ -133,8 +133,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
     let lastOperationState = {
-      resourceGroup: plan.manager.resource_mappings.resource_group,
-      resourceType: plan.manager.resource_mappings.resource_type,
+      resourceGroup: plan.resourceGroup,
+      resourceType: plan.resourceType,
       resourceId: req.params.instance_id,
       start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
       started_at: new Date()
