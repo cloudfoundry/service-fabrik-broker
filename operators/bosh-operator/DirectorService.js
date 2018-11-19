@@ -883,7 +883,7 @@ class DirectorService extends BaseDirectorService {
       parameters: opts.parameters || {},
       properties: this.settings.context || {},
       previous_manifest: opts.previous_manifest,
-      multi_az_enabled: config.multi_az_enabled,
+      multi_az_enabled: this.platformManager.isMultiAzDeploymentEnabled(opts),
       stemcell: this.stemcell,
       actions: preDeployResponse,
       preUpdateAgentResponse: preUpdateAgentResponse

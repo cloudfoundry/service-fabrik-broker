@@ -1,6 +1,10 @@
 'use strict';
 
 const _ = require('lodash');
+const CONST = require('../common/constants');
+const config = require('../common/config');
+const errors = require('../common/errors');
+const Promise = require('bluebird');
 
 class BasePlatformManager {
   constructor(platform) {
@@ -29,6 +33,21 @@ class BasePlatformManager {
 
   postInstanceUpdateOperations(options) {
     /* jshint unused:false */
+  }
+
+  isMultiAzDeploymentEnabled() {
+    return Promise.try(() => {
+      if (config.multi_az_enabled === CONST.INTERNAL ||
+        config.multi_az_enabled === CONST.ALL ||
+        config.multi_az_enabled === true) {
+        //Default implementation does not differentiate between internal / all clients. 
+        //If additional checks are to be done for internal, then platform specific manager must override and provide impl.
+        return true;
+      } else if (config.multi_az_enabled === CONST.DISABLED || config.multi_az_enabled === false) {
+        return false;
+      }
+      throw new errors.UnprocessableEntity(`config.multi_az_enabled is set to ${config.multi_az_enabled}. Allowed values: [${CONST.INTERNAL}, ${CONST.ALL}/true, ${CONST.DISABLED}/false]`);
+    });
   }
 
   ensureTenantId(options) {

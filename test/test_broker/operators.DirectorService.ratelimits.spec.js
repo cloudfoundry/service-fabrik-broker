@@ -451,6 +451,7 @@ describe('service', () => {
       it('should update manifest with addons', function () {
         const plan = _.cloneDeep(catalog.getPlan(plan_id));
         const directorService = new DirectorService(plan, guid);
+        directorService.platformManager = new CfPlatformManager('cloudfoundry');
         const updatedTemplate = directorService.template + '\n' +
           'addons: \n' +
           '  - name: service-addon \n' +
@@ -465,6 +466,7 @@ describe('service', () => {
       });
       it('should not update manifest with addons with parameter skip_addons set to true', function () {
         const directorService = new DirectorService(_.cloneDeep(catalog.getPlan(plan_id)), guid);
+        directorService.platformManager = new CfPlatformManager('cloudfoundry');
         expect(directorService.plan.id).to.eql(plan_id);
         const manifest = yaml.safeLoad(directorService.generateManifest(`service-fabrik-90-${used_guid}`, {
           skip_addons: true

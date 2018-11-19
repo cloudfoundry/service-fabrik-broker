@@ -13,6 +13,7 @@ const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
+const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
@@ -47,6 +48,7 @@ class DBManager {
           return Promise
             .try(() => new DirectorService(plan))
             .then(directorService => {
+              directorService.assignPlatformManager(new BasePlatformManager());
               this.directorService = directorService;
               if (config.mongodb.deployment_name) {
                 return this.initDbFromBindInfo();
