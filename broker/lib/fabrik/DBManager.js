@@ -116,6 +116,14 @@ class DBManager {
               maxAttempts: 5,
               minDelay: 5000,
               predicate: (err) => !(err instanceof ServiceBindingNotFound)
+            })
+            .then(bindInfo => {
+              return this.storeBindPropertyOnApiServer({
+                id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
+                parameters: bindInfo.parameters,
+                credentials: bindInfo.credentials
+              })
+              .then(() => bindInfo);
             });
         });
     });
