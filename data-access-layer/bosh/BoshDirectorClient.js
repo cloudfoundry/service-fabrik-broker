@@ -829,12 +829,7 @@ class BoshDirectorClient extends HttpClient {
   getTask(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      return this
-        .makeRequestWithConfig({
-          method: 'GET',
-          url: `/tasks/${taskId}`
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
-        .then(res => JSON.parse(res.body));
+      throw new UnprocessableEntity(`not able to query correct bosh as taskId is not in required format: ${taskId}`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
@@ -849,21 +844,7 @@ class BoshDirectorClient extends HttpClient {
   getTaskResult(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      return this
-        .makeRequestWithConfig({
-          method: 'GET',
-          url: `/tasks/${taskId}/output`,
-          qs: {
-            type: 'result'
-          }
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
-        .then(res => _
-          .chain(res.body)
-          .split('\n')
-          .compact()
-          .map(JSON.parse)
-          .value()
-        );
+      throw new UnprocessableEntity(`not able to query correct bosh as taskId is not in required format: ${taskId}`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
@@ -918,25 +899,7 @@ class BoshDirectorClient extends HttpClient {
   getTaskEvents(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      return this
-        .makeRequestWithConfig({
-          method: 'GET',
-          url: `/tasks/${taskId}/output`,
-          qs: {
-            type: 'event'
-          }
-        }, 200, this.getConfigByName(CONST.BOSH_DIRECTORS.BOSH))
-        .then(res => {
-          let events = [];
-          _.trim(res.body).split('\n').forEach((event) => {
-            try {
-              events.push(JSON.parse(event));
-            } catch (err) {
-              logger.error(`Error parsing task ${taskId} event ${event}: event response - ${res.body} `, err);
-            }
-          });
-          return events;
-        });
+      throw new UnprocessableEntity(`not able to query correct bosh as taskId is not in required format: ${taskId}`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
