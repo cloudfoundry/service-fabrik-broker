@@ -253,6 +253,7 @@ module.exports = Object.freeze({
   },
   APISERVER: {
     OPERATION_TIMEOUT_IN_SECS: 175,
+    HOLD_PROCESSING_LOCK: 'HOLD_PROCESSING_LOCK',
     RETRY_DELAY: 2000,
     MAX_RETRY_UNLOCK: 3,
     LOCK_TYPE: {
@@ -274,7 +275,8 @@ module.exports = Object.freeze({
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
-      RESTORE: 'backup.servicefabrik.io'
+      RESTORE: 'backup.servicefabrik.io',
+      SERVICE_FLOW: 'serviceflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       DEPLOYMENT_LOCKS: 'deploymentlocks',
@@ -285,7 +287,9 @@ module.exports = Object.freeze({
       DOCKER_BIND: 'dockerbinds',
       VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups',
-      DEFAULT_RESTORE: 'defaultrestores'
+      DEFAULT_RESTORE: 'defaultrestores',
+      SERIAL_SERVICE_FLOW: 'serialserviceflows',
+      TASK: 'tasks'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
@@ -302,6 +306,16 @@ module.exports = Object.freeze({
       UPDATE: 'update',
       LOCKED: 'locked',
       UNLOCKED: 'unlocked'
+    },
+    TASK_TYPE: {
+      SERVICE_INSTANCE_BACKUP: 'ServiceInstanceBackupTask',
+      SERVICE_INSTANCE_UPDATE: 'ServiceInstanceUpdateTask',
+      BLUEPRINT: 'BlueprintTask'
+    },
+    TASK_STATE: {
+      DONE: 'DONE',
+      RELAYED: 'RELAYED',
+      FLOW_COMPLETE: 'FLOW_COMPLETE'
     },
     RESOURCE_KEYS: {
       STATE: 'state',
@@ -382,6 +396,14 @@ module.exports = Object.freeze({
   },
   NETWORK_MANAGER: {
     NETWORK_ID: 'SF'
+  },
+  SERVICE_FLOW: {
+    DEFINITION_FILE_NAME: 'serial-serviceflow-definition.yml',
+    TYPE: {
+      BLUEPRINT_SERVICEFLOW: 'blueprint_serviceflow',
+      UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
+      MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
+    }
   },
   DOCKER_HOST_CONFIG: {
     PIDS_LIMIT: 150

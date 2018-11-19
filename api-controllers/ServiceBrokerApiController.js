@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const assert = require('assert');
 const Promise = require('bluebird');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
@@ -106,6 +107,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.UPDATE;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
+    let serviceFlow;
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
@@ -114,9 +116,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64({
-          'type': 'update'
-        });
+        const operation = {
+          'type': CONST.OPERATION_TYPE.UPDATE
+        };
+        if (serviceFlow !== undefined) {
+          operation.serviceflow_name = serviceFlow.name;
+          operation.serviceflow_id = serviceFlow.id;
+        }
+        body.operation = utils.encodeBase64(operation);
       }
       res.status(statusCode).send(body);
     }
@@ -125,6 +132,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
       const previousPlan = _.find(plan.service.plans, ['id', previousPlanId]);
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
+    let lastOperationState = {
+      resourceGroup: plan.resourceGroup,
+      resourceType: plan.resourceType,
+      resourceId: req.params.instance_id,
+      start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+      started_at: new Date()
+    };
     return Promise
       .try(() => {
         if (!isUpdatePossible(params.previous_values.plan_id)) {
@@ -132,27 +146,45 @@ class ServiceBrokerApiController extends FabrikBaseController {
         }
       })
       .then(() => {
-        return eventmesh.apiServerClient.patchResource({
-          resourceGroup: plan.resourceGroup,
-          resourceType: plan.resourceType,
-          resourceId: req.params.instance_id,
-          options: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-            lastOperation: {},
-            response: {}
-          }
-        });
-      })
-      .then(() => {
-        if (!plan.manager.async) {
-          return eventmesh.apiServerClient.getResourceOperationStatus({
+        serviceFlow = req._serviceFlow;
+        if (serviceFlow !== undefined) {
+          assert.ok(serviceFlow.id, 'Service Flow Id is mandatory and must be set in BaseController');
+          lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW;
+          lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW;
+          const serviceFlowOptions = {
+            serviceflow_name: serviceFlow.name,
+            instance_id: req.params.instance_id,
+            operation_params: params,
+            user: req.user
+          };
+          return eventmesh.apiServerClient.createResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+            resourceId: serviceFlow.id,
+            options: serviceFlowOptions,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+              lastOperation: {},
+              response: {}
+            }
+          });
+        } else {
+          return eventmesh.apiServerClient.patchResource({
             resourceGroup: plan.resourceGroup,
             resourceType: plan.resourceType,
             resourceId: req.params.instance_id,
-            start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-            started_at: new Date()
+            options: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+              lastOperation: {},
+              response: {}
+            }
           });
+        }
+      })
+      .then(() => {
+        if (!plan.manager.async) {
+          return eventmesh.apiServerClient.getResourceOperationStatus(lastOperationState);
         }
       })
       .then(done);
@@ -209,14 +241,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .then(done)
       .catch(NotFound, gone);
   }
+
   getLastInstanceOperation(req, res) {
     const encodedOp = _.get(req, 'query.operation', undefined);
-    const operation = encodedOp === undefined ? null : utils.decodeBase64(encodedOp);
+    const operation = encodedOp === undefined ? {} : utils.decodeBase64(encodedOp);
     const guid = req.params.instance_id;
     let action, instanceType;
 
     function done(result) {
       const body = _.pick(result, 'state', 'description');
+      if (body.state === CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS ||
+        body.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        body.state = CONST.OPERATION.IN_PROGRESS;
+      }
+      logger.debug('returning ..', body);
       res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
     }
 
@@ -239,11 +277,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : plan.resourceGroup;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : plan.resourceType;
+    const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
-        resourceGroup: plan.resourceGroup,
-        resourceType: plan.resourceType,
-        resourceId: req.params.instance_id
+        resourceGroup: resourceGroup,
+        resourceType: resourceType,
+        resourceId: resourceId
       })
+      .tap(() => logger.debug(`Returnings state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done)
       .catch(NotFound, notFound);
   }

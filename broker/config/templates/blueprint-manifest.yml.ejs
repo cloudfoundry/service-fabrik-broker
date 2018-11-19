@@ -48,6 +48,7 @@ if(!spec.actions && spec.previous_manifest){
 else{
   properties.blueprint.actionResponse = JSON.stringify(spec.actions);
 }
+properties.blueprint.update_params = JSON.stringify(spec.parameters);
 %>
 - name: blueprint
   migrated_from:
@@ -68,6 +69,7 @@ else{
       port: 8080
       actionResponse: <%= properties.blueprint.actionResponse %>
       preUpdateAgentResponse: <%= properties.blueprint.preUpdateAgentResponse %>
+      update_params: <%= properties.blueprint.update_params %>
       admin:
         username: <%= properties.blueprint.admin.username %>
         password: <%= properties.blueprint.admin.password %>
@@ -77,3 +79,4 @@ else{
       username: <%= p('agent.auth.username') %>
       password: <%= p('agent.auth.password') %>
       provider: <%= JSON.stringify(p('agent.provider')) %>
+      update_params: <%= properties.blueprint.update_params %>

@@ -390,6 +390,56 @@ describe('service-broker-api-2.0', function () {
             response: '{}'
           }
         };
+        const workflowId = 'w651abb8-0921-4c2e-9565-a19776d95619';
+        const workflow_payload = {
+          apiVersion: 'serviceflow.servicefabrik.io/v1alpha1',
+          kind: 'SerialServiceFlow',
+          metadata: {
+            name: workflowId,
+            labels: {
+              state: 'in_queue'
+            }
+          },
+          spec: {
+            options: JSON.stringify({
+              serviceflow_name: 'upgrade_to_multi_az',
+              instance_id: 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa',
+              operation_params: {
+                service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+                plan_id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a',
+                parameters: {
+                  multi_az: true
+                },
+                context: {
+                  platform: 'cloudfoundry',
+                  organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+                  space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
+                },
+                previous_values: {
+                  plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
+                  service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+                }
+              },
+              user: {
+                name: 'broker'
+              }
+            })
+          },
+          status: {
+            state: 'in_queue',
+            lastOperation: '{}',
+            response: '{}'
+          }
+        };
+        let utilsStub;
+
+        before(function () {
+          utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(workflowId));
+        });
+        after(function () {
+          utilsStub.restore();
+        });
+
         it('no context : returns 202 Accepted', function () {
           const payload1 = {
             metadata: {
@@ -493,11 +543,11 @@ describe('service-broker-api-2.0', function () {
             .set('X-Broker-API-Version', api_version)
             .auth(config.username, config.password)
             .then(res => {
+              mocks.verify();
               expect(res).to.have.status(202);
               expect(res.body.operation).to.deep.equal(utils.encodeBase64({
                 'type': 'update'
               }));
-              mocks.verify();
             });
         });
 
@@ -584,6 +634,55 @@ describe('service-broker-api-2.0', function () {
               expect(res.body.description).to.be.eql('This request requires client support for asynchronous service operations.');
             });
         });
+
+        it('returns 202 Accepted for initiating a workflow', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                lockedResourceDetails: {
+                  operation: 'update'
+                }
+              })
+            }
+          });
+          mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
+            metadata: {
+              resourceVersion: 10
+            }
+          });
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW, {}, 1, workflow_payload);
+          return chai.request(app)
+            .patch(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id_update,
+              parameters: {
+                multi_az: true
+              },
+              context: context,
+              previous_values: {
+                plan_id: plan_id,
+                service_id: service_id
+              }
+            })
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .then(res => {
+              mocks.verify();
+              expect(res).to.have.status(202);
+              expect(res.body.operation).to.deep.equal(utils.encodeBase64({
+                'type': 'update',
+                serviceflow_name: 'upgrade_to_multi_az',
+                serviceflow_id: workflowId
+              }));
+            });
+        });
+
       });
 
 
@@ -794,7 +893,7 @@ describe('service-broker-api-2.0', function () {
             status: {
               lastOperation: JSON.stringify({
                 description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
               })
             }
           });

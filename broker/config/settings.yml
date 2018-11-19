@@ -215,6 +215,8 @@ defaults: &defaults
       "deployment.servicefabrik.io_v1alpha1_dockers.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_dockers.yaml') %>
       "deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_virtualhosts.yaml') %>
       "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
+      "serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml') %>
+      "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

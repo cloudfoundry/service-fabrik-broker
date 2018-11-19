@@ -16,6 +16,8 @@ const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
 const CONST = require('../common/constants');
 const lockManager = require('../data-access-layer/eventmesh').lockManager;
+const serviceFlowMapper = require('../common/utils/ServiceFlowMapper');
+const utils = require('../common/utils');
 
 class FabrikBaseController extends BaseController {
   constructor() {
@@ -35,12 +37,29 @@ class FabrikBaseController extends BaseController {
     return (req, res, next) => {
       let resourceLocked = false;
       let processedRequest = false;
-      let lockId;
-      return this._lockResource(req, operationType)
+      let lockId, serviceFlowId, serviceFlowName;
+      return Promise.try(() => {
+          if (operationType === CONST.OPERATION_TYPE.UPDATE) {
+            serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
+            if (serviceFlowName !== undefined) {
+              return utils
+                .uuidV4()
+                .tap(id => serviceFlowId = id);
+            }
+          }
+          return undefined;
+        })
+        .then(serviceFlowId => this._lockResource(req, operationType, serviceFlowId))
         .tap(() => resourceLocked = true)
         .then(lockResourceId => {
           lockId = lockResourceId;
           const fn = _.isString(func) ? this[func] : func;
+          if (serviceFlowId !== undefined) {
+            req._serviceFlow = {
+              id: serviceFlowId,
+              name: serviceFlowName
+            };
+          }
           return fn.call(this, req, res);
         })
         .tap(() => processedRequest = true)
@@ -49,22 +68,36 @@ class FabrikBaseController extends BaseController {
     };
   }
 
-  _lockResource(req, operationType) {
+  _lockResource(req, operationType, serviceFlowId) {
     const plan_id = req.body.plan_id || req.query.plan_id;
     const plan = catalog.getPlan(plan_id);
     return Promise.try(() => {
       if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
         // Acquire lock for this instance
         return lockManager.lock(req.params.instance_id, {
-          lockedResourceDetails: {
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: req.params.instance_id,
-            operation: operationType
-          }
+          lockedResourceDetails: this._getLockResourceDetails(req, operationType, serviceFlowId)
         }, plan);
       }
     });
+  }
+
+  _getLockResourceDetails(req, operationType, serviceFlowId) {
+    if (_.includes(CONST.OPERATION_TYPE.LIFECYCLE, operationType)) {
+      if (serviceFlowId !== undefined) {
+        return {
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
+          resourceId: serviceFlowId,
+          operation: operationType
+        };
+      }
+      return {
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: req.params.instance_id,
+        operation: operationType
+      };
+    }
   }
 
   _unlockIfReqfailed(operationType, processedRequest, lockId, req, res, next, err) {

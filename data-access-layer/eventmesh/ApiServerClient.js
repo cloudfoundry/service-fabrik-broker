@@ -170,11 +170,14 @@ class ApiServerClient {
   }
   parseResourceDetailsFromSelfLink(selfLink) {
     // self links are typically: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/d-7
-    const resourceType = _.split(selfLink, '/')[6];
-    const resourceGroup = _.split(selfLink, '/')[2];
+    const linkParts = _.split(selfLink, '/');
+    const resourceType = linkParts[6];
+    const resourceGroup = linkParts[2];
+    const resourceId = linkParts[7];
     return {
       resourceGroup: resourceGroup,
-      resourceType: resourceType
+      resourceType: resourceType,
+      resourceId: resourceId
     };
   }
 
@@ -275,7 +278,7 @@ class ApiServerClient {
    * @param {string} opts.status - status of the resource
    */
   updateResource(opts) {
-    logger.info('Updating resource with opts: ', opts);
+    logger.silly('Updating resource with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
@@ -304,6 +307,7 @@ class ApiServerClient {
           });
           patchBody.status = statusJson;
         }
+        logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
         return Promise.try(() => this.init())
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
@@ -545,6 +549,18 @@ class ApiServerClient {
   getResourceState(opts) {
     return this.getResource(opts)
       .then(resource => _.get(resource, 'status.state'));
+  }
+
+
+  /**
+   * @description Get resource status
+   * @param {string} opts.resourceGroup - Name of operation
+   * @param {string} opts.resourceType - Type of operation
+   * @param {string} opts.resourceId - Unique id of resource
+   */
+  getResourceStatus(opts) {
+    return this.getResource(opts)
+      .then(resource => _.get(resource, 'status'));
   }
 
   /**
