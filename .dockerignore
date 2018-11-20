@@ -1,0 +1,15 @@
+node_modules
+test
+*Dockerfile*
+*docker-compose*
+.dockerignore
+.git
+.gitignore
+README.md
+LICENSE
+.vscode
+.DS_Store
+.idea
+logs/*.log
+tmp
+store/sessions
