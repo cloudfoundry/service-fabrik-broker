@@ -42,7 +42,7 @@ class BoshDirectorClient extends HttpClient {
     this.uaaObjects = {};
     //populate UAA objects if uaa based auth is being used by any of the directors
     this.determineDirectorAuthenticationMethod();
-    this.ready = this.populateConfigCache();
+    this.ready = config.directors ? this.populateConfigCache() : Promise.resolve({});
   }
 
   determineDirectorAuthenticationMethod() {
