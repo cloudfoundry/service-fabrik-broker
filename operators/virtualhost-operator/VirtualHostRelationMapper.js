@@ -2,26 +2,22 @@
 
 const Promise = require('bluebird');
 const logger = require('../../common/logger');
-const bosh = require('../../data-access-layer/bosh');
-const cloudController = require('../../data-access-layer/cf').cloudController;
-const virtualHostStore = require('../../data-access-layer/iaas').virtualHostStore;
+const CONST = require('../../common/constants');
+const eventmesh = require('../../data-access-layer/eventmesh');
 
 class VirtualHostRelationMapper {
   constructor() {
     this.cache = {};
-    this.director = bosh.director;
-    this.cloudController = cloudController;
-    this.virtualHostStore = virtualHostStore;
   }
 
   createVirtualHostRelation(deploymentName, instanceId) {
     logger.info(`Storing deployment name : '${deploymentName}' for virtual_host instance id : '${instanceId}'`);
     this.cache[instanceId] = deploymentName;
-    const data = {
-      'deployment_name': deploymentName,
-      'instance_guid': instanceId
-    };
-    return this.virtualHostStore.putFile(data);
+    return eventmesh.apiServerClient.patchResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+      resourceId: instanceId,
+      operator_metadata: { deployment_name: deploymentName }});
   }
 
   getDeploymentName(instanceId) {
@@ -36,23 +32,20 @@ class VirtualHostRelationMapper {
   }
 
   loadCacheforInstance(instanceId) {
-    const options = {
-      'instance_guid': instanceId
-    };
-    return this.virtualHostStore.getFile(options)
-      .then((metadata) => {
-        this.cache[metadata.instance_guid] = metadata.deployment_name;
-        return metadata.deployment_name;
-      });
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+        resourceId: instanceId,
+    })
+    .then((resourcebody) => {
+        this.cache[instanceId] = resourcebody.operator_metadata.deployment_name;
+        return resourcebody.operator_metadata.deployment_name;
+    });
   }
 
   deleteVirtualHostRelation(instanceId) {
     logger.info(`Deleting deployment name relation for virtual_host instance id : '${instanceId}'`);
-    const options = {
-      'instance_guid': instanceId
-    };
-    return this.virtualHostStore.removeFile(options)
-      .then(() => this.deleteCacheEntry(instanceId));
+    return this.deleteCacheEntry(instanceId);
   }
 
   deleteCacheEntry(instanceId) {

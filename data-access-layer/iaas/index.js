@@ -8,7 +8,6 @@ const BackupStore = require('./BackupStore');
 const BackupStoreForServiceInstance = require('./BackupStoreForServiceInstance');
 const BackupStoreForOob = require('./BackupStoreForOob');
 const BaseCloudClient = require('./BaseCloudClient');
-const VirtualHostStore = require('./VirtualHostStore');
 
 const getCloudClient = function (settings) {
   switch (settings.name) {
@@ -34,6 +33,3 @@ exports.BaseCloudClient = BaseCloudClient;
 exports.cloudProvider = cloudProvider;
 exports.backupStore = new BackupStoreForServiceInstance(cloudProvider);
 exports.backupStoreForOob = new BackupStoreForOob(cloudProvider);
-
-const virtualHostCloudProvider = getCloudClient(config.virtual_host.provider);
-exports.virtualHostStore = new VirtualHostStore(virtualHostCloudProvider);
