@@ -25,7 +25,7 @@ spec:
             options:
               type: string
           type: object
-        operator_metadata:
+        operatorMetadata:
           type: object
         status:
           properties:

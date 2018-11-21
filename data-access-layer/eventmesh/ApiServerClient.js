@@ -282,7 +282,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
-    assert.ok(opts.metadata || opts.options || opts.status || opts.operator_metadata, `Property 'metadata' or 'options' or 'status' or 'operator_metadata'  is required to update resource`);
+    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata'  is required to update resource`);
     return Promise.try(() => {
         const patchBody = {};
         if (opts.metadata) {
@@ -293,8 +293,8 @@ class ApiServerClient {
             'options': JSON.stringify(opts.options)
           };
         }
-        if (opts.operator_metadata) {
-          patchBody.operator_metadata = opts.operator_metadata;
+        if (opts.operatorMetadata) {
+          patchBody.operatorMetadata = opts.operatorMetadata;
         }
         if (opts.status) {
           const statusJson = {};
@@ -337,7 +337,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
-    assert.ok(opts.metadata || opts.options || opts.status || opts.operator_metadata, `Property 'metadata' or 'options' or 'status' or 'operator_metadata' is required to patch resource`);
+    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata' is required to patch resource`);
     return this.getResource(opts)
       .then(resource => {
         if (_.get(opts, 'status.response') && resource.status) {
@@ -350,9 +350,9 @@ class ApiServerClient {
           const options = _.merge(oldOptions, opts.options);
           _.set(opts, 'options', options);
         }
-        if (opts.operator_metadata && resource.operator_metadata) {
-          const oldOperatorMetadata = _.get(resource, 'operator_metadata');
-          const operatorMetadata = _.merge(oldOperatorMetadata, opts.operator_metadata);
+        if (opts.operatorMetadata && resource.operatorMetadata) {
+          const oldOperatorMetadata = _.get(resource, 'operatorMetadata');
+          const operatorMetadata = _.merge(oldOperatorMetadata, opts.operatorMetadata);
           _.set(opts, 'operatorMetadata', operatorMetadata);
         }
         return this.updateResource(opts);

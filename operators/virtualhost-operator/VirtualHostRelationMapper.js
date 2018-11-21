@@ -17,7 +17,7 @@ class VirtualHostRelationMapper {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
       resourceId: instanceId,
-      operator_metadata: { deployment_name: deploymentName }});
+      operatorMetadata: { deploymentName: deploymentName }});
   }
 
   getDeploymentName(instanceId) {
@@ -38,8 +38,8 @@ class VirtualHostRelationMapper {
         resourceId: instanceId,
     })
     .then((resourcebody) => {
-        this.cache[instanceId] = resourcebody.operator_metadata.deployment_name;
-        return resourcebody.operator_metadata.deployment_name;
+        this.cache[instanceId] = resourcebody.operatorMetadata.deploymentName;
+        return resourcebody.operatorMetadata.deploymentName;
     });
   }
 
