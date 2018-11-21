@@ -48,15 +48,22 @@ const JobSchema = new Mongoose.Schema({
 
 JobSchema.index({
   type: 1,
-  createdAt: 1
-});
-JobSchema.index({
-  name: 1,
+  'data.instance_id': 1,
   createdAt: 1
 });
 JobSchema.index({
   type: 1,
+  'data.instance_id': 1
+});
+JobSchema.index({
+  type: 1,
   'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1
+});
+JobSchema.index({
+  type: 1,
+  'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1,
   createdAt: 1
 });
 Mongoose.model(CONST.DB_MODEL.JOB, JobSchema);

@@ -54,15 +54,22 @@ const JobRunDetailSchema = new Mongoose.Schema({
 
 JobRunDetailSchema.index({
   type: 1,
-  createdAt: 1
-});
-JobRunDetailSchema.index({
-  name: 1,
+  'data.instance_id': 1,
   createdAt: 1
 });
 JobRunDetailSchema.index({
   type: 1,
+  'data.instance_id': 1
+});
+JobRunDetailSchema.index({
+  type: 1,
   'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1
+});
+JobRunDetailSchema.index({
+  type: 1,
+  'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1,
   createdAt: 1
 });
 Mongoose.model(CONST.DB_MODEL.JOB_RUN_DETAIL, JobRunDetailSchema);
