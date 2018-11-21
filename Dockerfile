@@ -21,8 +21,8 @@ ENV PATH /opt/node_modules/.bin:$PATH
 WORKDIR /opt/service-fabrik-broker
 COPY . /opt/service-fabrik-broker
 
-
-ENV SETTINGS_PATH /opt/service-fabrik-broker/broker/config/settings.yml
+ENV CONF_DIR /opt/service-fabrik-broker/broker/config
+ENV SETTINGS_PATH=$CONF_DIR/settings.yml
 
 # the official node image provides an unprivileged user as a security best practice
 # https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md#non-root-user
