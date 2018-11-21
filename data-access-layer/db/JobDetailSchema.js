@@ -18,7 +18,8 @@ const JobSchema = new Mongoose.Schema({
   },
   type: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   runOnlyOnce: {
     type: Boolean,
@@ -27,7 +28,8 @@ const JobSchema = new Mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
+    index: true
   },
   updatedAt: {
     type: Date,
@@ -46,6 +48,15 @@ const JobSchema = new Mongoose.Schema({
 
 JobSchema.index({
   type: 1,
+  createdAt: 1
+});
+JobSchema.index({
+  name: 1,
+  createdAt: 1
+});
+JobSchema.index({
+  name: 1,
+  "data.instance_id": 1,
   createdAt: 1
 });
 Mongoose.model(CONST.DB_MODEL.JOB, JobSchema);
