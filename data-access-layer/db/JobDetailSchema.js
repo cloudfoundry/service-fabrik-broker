@@ -55,7 +55,7 @@ JobSchema.index({
   createdAt: 1
 });
 JobSchema.index({
-  name: 1,
+  type: 1,
   "data.instance_id": 1,
   createdAt: 1
 });
