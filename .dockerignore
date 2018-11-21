@@ -13,3 +13,5 @@ LICENSE
 logs/*.log
 tmp
 store/sessions
+broker/config/settings.*.yml
+common/config/settings.*.yml
