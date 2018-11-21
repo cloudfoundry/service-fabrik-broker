@@ -829,7 +829,8 @@ class BoshDirectorClient extends HttpClient {
   getTask(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}`);
+      //Required format is deploymentName_taskId.
+      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}.`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
@@ -844,7 +845,8 @@ class BoshDirectorClient extends HttpClient {
   getTaskResult(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}`);
+      //Required format is deploymentName_taskId.
+      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}.`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
@@ -899,7 +901,8 @@ class BoshDirectorClient extends HttpClient {
   getTaskEvents(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {
-      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}`);
+      //Required format is deploymentName_taskId.
+      throw new errors.UnprocessableEntity(`Not able to query correct bosh as taskId is not in required format: ${taskId}.`);
     }
     const deploymentName = splitArray[1];
     const taskIdAlone = splitArray[2];
