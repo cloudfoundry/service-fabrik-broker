@@ -56,7 +56,7 @@ JobSchema.index({
 });
 JobSchema.index({
   type: 1,
-  "data.instance_id": 1,
+  'data.instance_id': 1,
   createdAt: 1
 });
 Mongoose.model(CONST.DB_MODEL.JOB, JobSchema);
