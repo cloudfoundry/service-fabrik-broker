@@ -126,27 +126,12 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
 
   _updateLastOperationStateInResource(instanceId, lastOperationValue, directorService) {
     return Promise.try(() => {
-      if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED &&
-        (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE || lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE)) {
-        return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
-          .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
-          .then(ips => eventmesh.apiServerClient.updateResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: instanceId,
-            status: {
-              lastOperation: lastOperationValue,
-              state: lastOperationValue.resourceState
-            },
-            metadata: {
-              annotations: {
-                deploymentIps: JSON.stringify(ips)
-              }
-            }
-          }))
-          .catch(err => {
-            logger.error(`Error occurred while updating deployment IPs in apiserver for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
-            return eventmesh.apiServerClient.updateResource({
+      if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+        if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE || 
+          lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
+          return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
+            .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
+            .then(ips => eventmesh.apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
               resourceId: instanceId,
@@ -156,11 +141,35 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               },
               metadata: {
                 annotations: {
-                  deploymentIps: '{}'
+                  deploymentIps: JSON.stringify(ips)
                 }
               }
+            }))
+            .catch(err => {
+              logger.error(`Error occurred while updating deployment IPs in apiserver for ${instanceId}. Erasing deploymentIPs in the resource.`, err);
+              return eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                resourceId: instanceId,
+                status: {
+                  lastOperation: lastOperationValue,
+                  state: lastOperationValue.resourceState
+                },
+                metadata: {
+                  annotations: {
+                    deploymentIps: '{}'
+                  }
+                }
+              });
             });
+        }
+        if(lastOperationValue.type === CONST.OPERATION_TYPE.DELETE){
+          return eventmesh.apiServerClient.deleteResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: instanceId
           });
+        }
       } else {
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
