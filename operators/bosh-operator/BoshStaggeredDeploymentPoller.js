@@ -55,7 +55,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
       })
       .catch(err => {
         logger.error(`Error occured while triggering deployment for instance ${instanceId}`, err);
-        const timestamp = new Date(task.timestamp * 1000).toISOString();
+        const timestamp = new Date().toISOString();
         this.clearPoller(instanceId, intervalId);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
