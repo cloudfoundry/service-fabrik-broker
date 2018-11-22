@@ -17,11 +17,13 @@ const EventDetailSchema = new Mongoose.Schema({
   },
   instanceId: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   eventName: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   completeEventName: {
     type: String,
@@ -30,7 +32,8 @@ const EventDetailSchema = new Mongoose.Schema({
   metric: {
     type: Number,
     required: true,
-    validate: validateMetric
+    validate: validateMetric,
+    index: true
   },
   state: {
     type: String,
@@ -49,13 +52,19 @@ const EventDetailSchema = new Mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
+    index: true
   },
   createdBy: {
     type: String,
     required: true
   }
 });
-
+EventDetailSchema.index({
+  eventName: 1,
+  instanceId: 1,
+  metric: 1,
+  createdAt: 1
+});
 Mongoose.model(CONST.DB_MODEL.EVENT_DETAIL, EventDetailSchema);
 module.exports.EventDetailSchema = EventDetailSchema;
