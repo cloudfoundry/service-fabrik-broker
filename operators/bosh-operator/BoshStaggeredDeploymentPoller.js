@@ -55,6 +55,7 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
       })
       .catch(err => {
         logger.error(`Error occured while triggering deployment for instance ${instanceId}`, err);
+        const timestamp = new Date(task.timestamp * 1000).toISOString();
         this.clearPoller(instanceId, intervalId);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -62,6 +63,10 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
           resourceId: instanceId,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            lastOperation: {
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              description: `${operationType} deployment ${deploymentName} failed at ${timestamp} with Error "${err.message}"`
+            },
             error: utils.buildErrorJson(err)
           }
         });
