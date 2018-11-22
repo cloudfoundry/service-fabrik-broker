@@ -40,9 +40,9 @@ class VirtualHostRelationMapper {
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
         resourceId: instanceId,
       })
-      .then((resourcebody) => {
-        this.cache[instanceId] = resourcebody.operatorMetadata.deploymentName;
-        return resourcebody.operatorMetadata.deploymentName;
+      .then((resourceBody) => {
+        this.cache[instanceId] = resourceBody.operatorMetadata.deploymentName;
+        return resourceBody.operatorMetadata.deploymentName;
       });
   }
 
