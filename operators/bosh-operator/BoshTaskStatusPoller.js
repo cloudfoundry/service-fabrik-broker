@@ -127,7 +127,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
   _updateLastOperationStateInResource(instanceId, lastOperationValue, directorService) {
     return Promise.try(() => {
       if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
-        if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE || 
+        if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE ||
           lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
           return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
             .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
@@ -163,7 +163,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               });
             });
         }
-        if(lastOperationValue.type === CONST.OPERATION_TYPE.DELETE){
+        if (lastOperationValue.type === CONST.OPERATION_TYPE.DELETE) {
           return eventmesh.apiServerClient.deleteResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
