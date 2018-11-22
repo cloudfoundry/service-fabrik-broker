@@ -1032,6 +1032,10 @@ describe('bosh', () => {
           done();
         }).catch(done);
       });
+
+      it('throws exception when taskId is in wrong format', () => {
+        expect(() => new MockBoshDirectorClient().getTask(taskId)).to.throw(errors.UnprocessableEntity);
+      });
     });
 
     describe('#getTaskResult', () => {
@@ -1055,6 +1059,10 @@ describe('bosh', () => {
           expect(content).to.eql([body]);
           done();
         });
+      });
+
+      it('throws exception when taskId is in wrong format', () => {
+        expect(() => new MockBoshDirectorClient().getTaskResult(taskId)).to.throw(errors.UnprocessableEntity);
       });
     });
 
@@ -1080,6 +1088,10 @@ describe('bosh', () => {
           expect(content[0].uuid).to.eql(id1);
           expect(content[1].uuid).to.eql(id2);
         });
+      });
+
+      it('throws exception when taskId is in wrong format', () => {
+        expect(() => new MockBoshDirectorClient().getTaskEvents(taskId)).to.throw(errors.UnprocessableEntity);
       });
     });
 
