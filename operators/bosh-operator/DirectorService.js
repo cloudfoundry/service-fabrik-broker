@@ -860,46 +860,53 @@ class DirectorService extends BaseDirectorService {
   }
 
   generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse) {
-    const index = opts.network_index || this.getNetworkSegmentIndex(deploymentName);
-    const networks = this.getNetworks(index);
-    const allRequiredNetworks = _.union(networks.dynamic, networks.all.filter(net => _.startsWith(net.name, this.networkName)));
-    const tags = opts.context;
-    const skipAddOns = _.get(opts, 'skip_addons', false) || _.get(config, 'service_addon_jobs', []).length === 0;
-    const header = new Header({
-      name: deploymentName,
-      director_uuid: this.director.uuid,
-      releases: this.releases,
-      stemcells: [this.stemcell],
-      tags: tags,
-      networks: _.map(allRequiredNetworks, net => net.toJSON()),
-      release_name: !skipAddOns ? config.release_name : undefined,
-      release_version: !skipAddOns ? config.release_version : undefined
-    });
-    const context = new EvaluationContext(_.assign({
-      index: index,
-      header: header,
-      cpi: this.director.cpi,
-      networks: networks[this.networkName],
-      parameters: opts.parameters || {},
-      properties: this.settings.context || {},
-      previous_manifest: opts.previous_manifest,
-      multi_az_enabled: this.platformManager.isMultiAzDeploymentEnabled(opts),
-      stemcell: this.stemcell,
-      actions: preDeployResponse,
-      preUpdateAgentResponse: preUpdateAgentResponse
-    }, opts.context));
-    logger.info('Predeploy response -', preDeployResponse);
-    if (networks[this.networkName] === undefined) {
-      logger.error(`subnet ${this.networkName} definition not found among the applicable networks defintion : ${JSON.stringify(networks)}`);
-      throw new errors.UnprocessableEntity(`subnet ${this.networkName} definition not found`);
-    }
-    let manifestYml = _.template(this.template)(context);
-    if (!skipAddOns) {
-      const serviceManifest = yaml.safeLoad(manifestYml);
-      this.configureAddOnJobs(serviceManifest, context.spec);
-      manifestYml = yaml.safeDump(serviceManifest);
-    }
-    return manifestYml;
+    return this.platformManager
+      .isMultiAzDeploymentEnabled(opts)
+      .then(isMultiAzEnabled => {
+        const index = opts.network_index || this.getNetworkSegmentIndex(deploymentName);
+        const networks = this.getNetworks(index);
+        const allRequiredNetworks = _.union(networks.dynamic, networks.all.filter(net => _.startsWith(net.name, this.networkName)));
+        const tags = opts.context;
+        const skipAddOns = _.get(opts, 'skip_addons', false) || _.get(config, 'service_addon_jobs', []).length === 0;
+        const header = new Header({
+          name: deploymentName,
+          director_uuid: this.director.uuid,
+          releases: this.releases,
+          stemcells: [this.stemcell],
+          tags: tags,
+          networks: _.map(allRequiredNetworks, net => net.toJSON()),
+          release_name: !skipAddOns ? config.release_name : undefined,
+          release_version: !skipAddOns ? config.release_version : undefined
+        });
+        const context = new EvaluationContext(_.assign({
+          index: index,
+          header: header,
+          cpi: this.director.cpi,
+          networks: networks[this.networkName],
+          parameters: opts.parameters || {},
+          properties: this.settings.context || {},
+          previous_manifest: opts.previous_manifest,
+          multi_az_enabled: isMultiAzEnabled,
+          stemcell: this.stemcell,
+          actions: preDeployResponse,
+          preUpdateAgentResponse: preUpdateAgentResponse
+        }, opts.context));
+        logger.info('Predeploy response -', preDeployResponse);
+        logger.info('Multi-az Enabled : ', context.spec.multi_az_enabled);
+        logger.info('network name to be used for deployment ', this.networkName);
+        logger.debug('network config to be used:', networks[this.networkName]);
+        if (networks[this.networkName] === undefined) {
+          logger.error(`subnet ${this.networkName} definition not found among the applicable networks defintion : ${JSON.stringify(networks)}`);
+          throw new errors.UnprocessableEntity(`subnet ${this.networkName} definition not found`);
+        }
+        let manifestYml = _.template(this.template)(context);
+        if (!skipAddOns) {
+          const serviceManifest = yaml.safeLoad(manifestYml);
+          this.configureAddOnJobs(serviceManifest, context.spec);
+          manifestYml = yaml.safeDump(serviceManifest);
+        }
+        return manifestYml;
+      });
   }
 
   configureAddOnJobs(serviceManifest, context) {
