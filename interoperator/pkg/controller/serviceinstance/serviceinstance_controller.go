@@ -18,14 +18,20 @@ package serviceinstance
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"reflect"
 
 	interoperatorv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/interoperator/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
+	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services/properties"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,14 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this interoperator.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -68,14 +68,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by ServiceInstance - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &interoperatorv1alpha1.ServiceInstance{},
-	})
-	if err != nil {
-		return err
+	postgres := &unstructured.Unstructured{}
+	postgres.SetKind("Postgres")
+	postgres.SetAPIVersion("kubedb.com/v1alpha1")
+	subresources := []runtime.Object{
+		&appsv1.Deployment{},
+		&corev1.ConfigMap{},
+		postgres,
+	}
+
+	for _, subresource := range subresources {
+		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &interoperatorv1alpha1.ServiceInstance{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -94,6 +103,9 @@ type ReconcileServiceInstance struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
+// +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=serviceinstances,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -104,63 +116,271 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
+			log.Printf("instance %s deleted\n", request.NamespacedName)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this to be the object type created by your controller
-	// Define the desired Deployment object
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-deployment",
-			Namespace: instance.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx",
-						},
-					},
-				},
-			},
-		},
+	labels := instance.GetLabels()
+	stateLabel, ok := labels["state"]
+	if ok {
+		switch stateLabel {
+		case "delete":
+			err = r.Delete(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			log.Printf("instance %s deleted\n", request.NamespacedName)
+			return reconcile.Result{}, nil
+		case "in_queue":
+			if instance.Status.State == "succeeded" {
+				labels["state"] = "succeeded"
+				instance.SetLabels(labels)
+				err = r.Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				log.Printf("instance %s state label updated to succeeded\n", request.NamespacedName)
+			}
+		}
 	}
-	if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+
+	err = json.Unmarshal([]byte(instance.Spec.OptionsString), &instance.Spec.Options)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Check if the Deployment already exists
-	found := &appsv1.Deployment{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Create(context.TODO(), deploy)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
+	expectedResources, err := r.computeExpectedResources(instance)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
-		found.Spec = deploy.Spec
-		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Update(context.TODO(), found)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+	_, err = r.reconcileResources(instance, expectedResources)
+	if err != nil {
+		log.Printf("Reconcile error %v\n", err)
 	}
+
+	err = r.updateStatus(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileServiceInstance) computeExpectedResources(instance *interoperatorv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
+	serviceID := instance.Spec.Options.ServiceID
+	service, err := services.FindServiceInfo(serviceID)
+	if err != nil {
+		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
+		return nil, err
+	}
+
+	renderer, err := rendererFactory.GetRenderer(service.Template.Type, nil)
+	if err != nil {
+		log.Printf("error getting renderer of type %s. %v\n", service.Template.Type, err)
+		return nil, err
+	}
+
+	input, err := rendererFactory.GetRendererInput(&service.Template, instance)
+	if err != nil {
+		log.Printf("error creating renderer input of type %s. %v\n", service.Template.Type, err)
+		return nil, err
+	}
+
+	output, err := renderer.Render(input)
+	if err != nil {
+		log.Printf("error renderering resources for service %s. %v\n", serviceID, err)
+		return nil, err
+	}
+
+	files, err := output.ListFiles()
+	if err != nil {
+		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		return nil, err
+	}
+
+	resources := make([]*unstructured.Unstructured, 0, len(files))
+	for _, file := range files {
+		subResourcesString, err := output.FileContent(file)
+		if err != nil {
+			log.Printf("error getting file content %s. %v\n", file, err)
+			continue
+		}
+
+		subresources, err := dynamic.StringToUnstructured(subResourcesString)
+		if err != nil {
+			log.Printf("error converting file content to unstructured %s. %v\n", file, err)
+			continue
+		}
+
+		for _, obj := range subresources {
+			if err := controllerutil.SetControllerReference(instance, obj, r.scheme); err != nil {
+				log.Printf("error setting owner reference for subresource in file %s. %v\n", file, err)
+				continue
+			}
+			obj.SetNamespace(instance.Namespace)
+			resources = append(resources, obj)
+		}
+	}
+
+	return resources, nil
+}
+
+func (r *ReconcileServiceInstance) reconcileResources(instance *interoperatorv1alpha1.ServiceInstance,
+	expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+
+	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
+	for _, expectedResource := range expectedResources {
+		foundResource := &unstructured.Unstructured{}
+
+		kind := expectedResource.GetKind()
+		apiVersion := expectedResource.GetAPIVersion()
+		foundResource.SetKind(kind)
+		foundResource.SetAPIVersion(apiVersion)
+		namespacedName := types.NamespacedName{
+			Name:      expectedResource.GetName(),
+			Namespace: expectedResource.GetNamespace(),
+		}
+
+		err := r.Get(context.TODO(), namespacedName, foundResource)
+		if err != nil && errors.IsNotFound(err) {
+			log.Printf("Creating %s %s\n", kind, namespacedName)
+			err = r.Create(context.TODO(), expectedResource)
+			if err != nil {
+				log.Printf("error creating %s %s. %v\n", kind, namespacedName, err)
+				return nil, err
+			}
+			foundResources = append(foundResources, foundResource)
+			break
+		} else if err != nil {
+			log.Printf("error getting %s %s. %v\n", kind, namespacedName, err)
+			return nil, err
+		}
+
+		var specKey string
+		specKeys := []string{"spec", "Spec", "data", "Data"}
+		for _, key := range specKeys {
+			if _, ok := expectedResource.Object[key]; ok {
+				specKey = key
+				break
+			}
+		}
+
+		if !reflect.DeepEqual(expectedResource.Object[specKey], foundResource.Object[specKey]) {
+			foundResource.Object[specKey] = expectedResource.Object[specKey]
+			log.Printf("Updating %s %s\n", kind, namespacedName)
+			err = r.Update(context.TODO(), foundResource)
+			if err != nil {
+				log.Printf("error updating %s %s. %v\n", kind, namespacedName, err)
+				return nil, err
+			}
+		} else {
+			log.Printf("%s %s already up todate .\n", kind, namespacedName)
+		}
+		foundResources = append(foundResources, foundResource)
+	}
+	return foundResources, nil
+}
+
+func (r *ReconcileServiceInstance) updateStatus(instance *interoperatorv1alpha1.ServiceInstance) error {
+	serviceID := instance.Spec.Options.ServiceID
+	service, err := services.FindServiceInfo(serviceID)
+	if err != nil {
+		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
+		return err
+	}
+
+	renderer, err := rendererFactory.GetRenderer(service.PropertiesTemplate.Type, nil)
+	if err != nil {
+		log.Printf("error getting renderer of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		return err
+	}
+
+	input, err := rendererFactory.GetRendererInput(&service.PropertiesTemplate, instance)
+	if err != nil {
+		log.Printf("error creating renderer input of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		return err
+	}
+
+	output, err := renderer.Render(input)
+	if err != nil {
+		log.Printf("error renderering sources for service %s. %v\n", serviceID, err)
+		return err
+	}
+
+	sourcesString, err := output.FileContent("sources.yaml")
+	if err != nil {
+		log.Printf("error getting file content of sources.yaml. %v\n", err)
+		return err
+	}
+
+	sources, err := properties.ParseSources(sourcesString)
+	if err != nil {
+		log.Printf("error parsing file content of sources.yaml. %v\n", err)
+		return err
+	}
+
+	sourceObjects := make(map[string]*unstructured.Unstructured)
+	for key, val := range sources {
+		obj := &unstructured.Unstructured{}
+		obj.SetKind(val.Kind)
+		obj.SetAPIVersion(val.APIVersion)
+		namespacedName := types.NamespacedName{
+			Name:      val.Name,
+			Namespace: instance.Namespace,
+		}
+		err := r.Get(context.TODO(), namespacedName, obj)
+		if err != nil {
+			log.Printf("failed to fetch resource %v. %v\n", val, err)
+			continue
+		}
+		sourceObjects[key] = obj
+	}
+
+	input, err = rendererFactory.GetPropertiesRendererInput(&service.PropertiesTemplate, instance, sourceObjects)
+	if err != nil {
+		log.Printf("error creating properties renderer input of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		return err
+	}
+
+	output, err = renderer.Render(input)
+	if err != nil {
+		log.Printf("error renderering properties for service %s. %v\n", serviceID, err)
+		return err
+	}
+
+	propertiesString, err := output.FileContent("properties.yaml")
+	if err != nil {
+		log.Printf("error getting file content of properties.yaml. %v\n", err)
+		return err
+	}
+
+	properties, err := properties.ParseProperties(propertiesString)
+	if err != nil {
+		log.Printf("error parsing file content of properties.yaml. %v\n", err)
+		return err
+	}
+
+	// Fetch object again before updating status
+	instanceObj := &interoperatorv1alpha1.ServiceInstance{}
+	namespacedName := types.NamespacedName{
+		Name:      instance.GetName(),
+		Namespace: instance.GetNamespace(),
+	}
+	err = r.Get(context.TODO(), namespacedName, instanceObj)
+	if err != nil {
+		log.Printf("error fetching instance. %v\n", err)
+		return err
+	}
+
+	instanceObj.Status = properties.Status
+	err = r.Status().Update(context.Background(), instanceObj)
+	if err != nil {
+		log.Printf("error updating status. %v\n", err)
+		return err
+	}
+	return nil
 }
