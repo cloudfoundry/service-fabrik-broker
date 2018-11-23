@@ -307,7 +307,7 @@ describe('fabrik', function () {
           return validateConnected(dbManager);
         });
       });
-      it('On start if binding property is found in ApiServer then no further calls to director are made', function() {
+      it('On start if binding property is found in ApiServer then no further calls to director are made', function () {
         bindPropertyFoundOnApiServer = true;
         bindPropertyFound = 1; //ensure bindProperty won't be found on Director 
         const dbManager = new DBManager();
