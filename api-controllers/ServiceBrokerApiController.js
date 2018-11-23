@@ -12,12 +12,12 @@ const FabrikBaseController = require('./FabrikBaseController');
 const BadRequest = errors.BadRequest;
 const PreconditionFailed = errors.PreconditionFailed;
 const NotFound = errors.NotFound;
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const ContinueWithNext = errors.ContinueWithNext;
 const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const formatUrl = require('url').format;
+const lib = require('../broker/lib');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -41,9 +41,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
-      platform: req.params.platform
-    }).getCatalog(catalog));
+    return Promise.try(() => lib.loadServices())
+      .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
+        platform: req.params.platform
+      }).getCatalog(catalog)));
   }
 
   putInstance(req, res) {
@@ -72,25 +73,26 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.resourceGroup,
-          resourceType: plan.resourceType,
+        return eventmesh.apiServerClient.createOSBResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id,
-          options: params,
+          metadata: {
+            finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
+          },
+          spec: params,
           status: {
-            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            lastOperation: {},
-            response: {},
-            appliedOptions: {}
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
           }
         });
       })
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.resourceGroup,
-            resourceType: plan.resourceType,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
             start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
           });
@@ -134,9 +136,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
       return plan === previousPlan || _.includes(plan.manager.settings.update_predecessors, previousPlan.id);
     }
     let lastOperationState = {
-      resourceGroup: plan.resourceGroup,
-      resourceType: plan.resourceType,
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
       resourceId: req.params.instance_id,
+      namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
       start_state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
       started_at: new Date()
     };
@@ -152,6 +155,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           assert.ok(serviceFlow.id, 'Service Flow Id is mandatory and must be set in BaseController');
           lastOperationState.resourceGroup = CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW;
           lastOperationState.resourceType = CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW;
+          lastOperationState.namespaceId = undefined;
           const serviceFlowOptions = {
             serviceflow_name: serviceFlow.name,
             instance_id: req.params.instance_id,
@@ -170,17 +174,36 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         } else {
-          return eventmesh.apiServerClient.patchResource({
-            resourceGroup: plan.resourceGroup,
-            resourceType: plan.resourceType,
-            resourceId: req.params.instance_id,
-            options: params,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-              lastOperation: {},
-              response: {}
-            }
-          });
+          return eventmesh.apiServerClient.patchOSBResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+              resourceId: req.params.instance_id,
+              metadata: {
+                finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
+              },
+              spec: params,
+              status: {
+                state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+                description: ''
+              }
+            })
+            .catch(NotFound, () => {
+              logger.info(`Resource resourceGroup: ${CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR},` +
+                `resourceType: ${CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES}, resourceId: ${req.params.instance_id} not found, Creating now...`);
+              return eventmesh.apiServerClient.createOSBResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+                resourceId: req.params.instance_id,
+                metadata: {
+                  finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
+                },
+                spec: params,
+                status: {
+                  state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+                  description: ''
+                }
+              });
+            });
         }
       })
       .then(() => {
@@ -199,13 +222,23 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
-      if (plan.manager.async) {
-        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64({
-          'type': 'delete'
-        });
-      }
-      res.status(statusCode).send(body);
+      return Promise.try(() => {
+          if (plan.manager.async) {
+            statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+            body.operation = utils.encodeBase64({
+              'type': 'delete'
+            });
+          } else {
+            return eventmesh.apiServerClient.removeFinalizers({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+              resourceId: req.params.instance_id,
+              namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
+              finalizer: CONST.APISERVER.FINALIZERS.BROKER
+            });
+          }
+        })
+        .then(() => res.status(statusCode).send(body));
     }
 
     function gone(err) {
@@ -213,28 +246,28 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
-
-    return Promise
-      .try(() => {
-        return eventmesh.apiServerClient.patchResource({
-          resourceGroup: plan.resourceGroup,
-          resourceType: plan.resourceType,
-          resourceId: req.params.instance_id,
-          options: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-            lastOperation: {},
-            response: {}
-          }
-        });
+    return eventmesh.apiServerClient.patchOSBResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: req.params.instance_id,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+          description: ''
+        }
       })
+      .then(() => eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: req.params.instance_id
+      }))
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({
-            resourceGroup: plan.resourceGroup,
-            resourceType: plan.resourceType,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
-            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
+            namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
+            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             started_at: new Date()
           });
         }
@@ -256,7 +289,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
       logger.debug('returning ..', body);
-      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
+      return Promise.try(() => {
+          if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED) {
+            return eventmesh.apiServerClient.removeFinalizers({
+              resourceGroup: resourceGroup,
+              resourceType: resourceType,
+              resourceId: resourceId,
+              finalizer: CONST.APISERVER.FINALIZERS.BROKER,
+              namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
+            });
+          }
+        })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
     }
 
     function failed(err) {
@@ -276,17 +320,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       failed(err);
     }
-    const planId = req.query.plan_id;
-    const plan = catalog.getPlan(planId);
-    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : plan.resourceGroup;
-    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : plan.resourceType;
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
         resourceGroup: resourceGroup,
         resourceType: resourceType,
-        resourceId: resourceId
+        resourceId: resourceId,
+        namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
       })
-      .tap(() => logger.debug(`Returnings state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
+      .tap(() => logger.debug(`Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done)
       .catch(NotFound, notFound);
   }
@@ -294,6 +337,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
   putBinding(req, res) {
     const params = _(req.body)
       .set('binding_id', req.params.binding_id)
+      .set('id', req.params.binding_id)
+      .set('instance_id', req.params.instance_id)
       .value();
 
     function done(encodedCredentials) {
@@ -308,91 +353,76 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
 
-    const planId = params.plan_id;
-    const plan = catalog.getPlan(planId);
-
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.bindResourceGroup,
-          resourceType: plan.bindResourceType,
+        return eventmesh.apiServerClient.createOSBResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
           resourceId: params.binding_id,
+          metadata: {
+            finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
+          },
           labels: {
             instance_guid: req.params.instance_id
           },
-          options: params,
+          spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
           }
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
       }))
-      .then(operationStatus => done(operationStatus.response))
-      .catch(ServiceBindingAlreadyExists, conflict);
+      .then(operationStatus => {
+        const secretName = operationStatus.response.secretRef;
+        return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
+          .then(secret => done(secret.data.response));
+      })
+      .catch(Conflict, conflict);
   }
 
   deleteBinding(req, res) {
     const params = _(req.query)
       .set('binding_id', req.params.binding_id)
+      .set('id', req.params.binding_id)
+      .set('instance_id', req.params.instance_id)
       .value();
 
     function done() {
-      res.status(CONST.HTTP_STATUS_CODE.OK).send({});
+      return eventmesh.apiServerClient.removeFinalizers({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+          resourceId: params.binding_id,
+          finalizer: CONST.APISERVER.FINALIZERS.BROKER,
+          namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
+        })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));
     }
 
     function gone(err) {
       /* jshint unused:false */
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
-    const planId = params.plan_id;
-    const plan = catalog.getPlan(planId);
 
-    return Promise
-      .try(() => {
-        return eventmesh.apiServerClient.updateResource({
-            resourceGroup: plan.bindResourceGroup,
-            resourceType: plan.bindResourceType,
-            resourceId: params.binding_id,
-            options: params,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.DELETE
-            }
-          })
-          .catch((NotFound), () => {
-            logger.info(`Resource resourceGroup: ${plan.bindResourceGroup},` +
-              `resourceType: ${plan.bindResourceType}, resourceId: ${params.binding_id} not found, Creating now...`);
-            return eventmesh.apiServerClient.createResource({
-              resourceGroup: plan.bindResourceGroup,
-              resourceType: plan.bindResourceType,
-              resourceId: params.binding_id,
-              labels: {
-                instance_guid: req.params.instance_id
-              },
-              options: params,
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-                response: {}
-              }
-            });
-          });
+    return eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+        resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
-      }))
-      .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
-        resourceId: params.binding_id
       }))
       .then(done)
       .catch(NotFound, gone);

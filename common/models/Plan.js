@@ -39,11 +39,11 @@ class Plan {
   }
 
   get supportedFeatures() {
-    return _.get(this.manager.settings, 'agent.supported_features');
+    return _.get(this.manager, 'settings.agent.supported_features');
   }
 
   get updatePredecessors() {
-    return _.get(this.manager.settings, 'update_predecessors');
+    return _.get(this.manager, 'settings.update_predecessors');
   }
 
   get resourceGroup() {

@@ -1,0 +1,15 @@
+{{- $name := "" }}
+{{- $binding := "" }}
+{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
+{{- with .binding.metadata.name }} {{ $binding = . }} {{ end }}
+{{- $namespace := "default" }}
+director:
+  apiVersion: "deployment.servicefabrik.io/v1alpha1"
+  kind: Director
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+directorbind:
+  apiVersion: "bind.servicefabrik.io/v1alpha1"
+  kind: DirectorBind
+  name: {{ $binding }}
+  namespace: {{ $namespace }}
