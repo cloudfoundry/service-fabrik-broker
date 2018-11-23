@@ -124,7 +124,6 @@ class CfPlatformManager extends BasePlatformManager {
     const orgId = _.get(options, 'context.organization_guid');
     assert.ok(orgId, 'OrgId must be present when checking for whitelisting of Tenant in CF Context');
     return this.cloudController.getOrganization(orgId)
-      .tap((res) => console.log('Org Response -->', res))
       .then(org => _.includes(config.quota.whitelist, org.entity.name))
       .tap(result => logger.info(`Current org - ${orgId} is whitelisted: ${result}`));
   }

@@ -921,9 +921,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               return directorService
                 .findDeploymentNameByInstanceId(req.params.instance_id)
                 .then(deploymentName => directorService.diffManifest(deploymentName, {
-                  opts: {
-                    context: context
-                  }
+                  context: context
                 }))
                 .then(result => utils.unifyDiffResult(result))
                 .then(result => {
