@@ -12,6 +12,7 @@ const CONST = require('../../common/constants');
 const DBManagerNoProxy = require('../../broker/lib/fabrik/DBManager');
 
 let bindPropertyFound = 0;
+let bindPropertyFoundOnApiServer = false;
 let failCreateUpdate = false;
 const mongoDBUrl = 'mongodb://username:password@10.11.0.2:27017,10.11.0.3:27017,10.11.0.4:27017/service-fabrik';
 let dbConnectionState = 1;
@@ -50,6 +51,38 @@ class DirectorServiceStub {
   }
 }
 
+let eventMeshStub = {
+  apiServerClient: {
+    getResource: () => {
+      return Promise.try(() => {
+        if (bindPropertyFoundOnApiServer) {
+          return {
+            status: {
+              response: {
+                credentials: {
+                  uri: mongoDBUrl
+                }
+              }
+            }
+          };
+        } else {
+          throw new errors.NotFound('resource not found on ApiServer');
+        }
+      });
+    },
+    deleteResource: () => {
+      if (bindPropertyFoundOnApiServer) {
+        return Promise.resolve();
+      } else {
+        throw new errors.NotFound('resource not found on ApiServer');
+      }
+    },
+    createResource: () => {
+      return Promise.resolve();
+    }
+  }
+};
+
 let errorOnDbStart = false;
 const proxyLibs = {
   '../../../common/config': {
@@ -80,7 +113,8 @@ const proxyLibs = {
   '../../../operators/bosh-operator/DirectorService': DirectorServiceStub,
   '../../../common/models/Catalog': {
     getPlan: () => {}
-  }
+  },
+  '../../../data-access-layer/eventmesh': eventMeshStub
 };
 
 const DBManager = proxyquire('../../broker/lib/fabrik/DBManager', proxyLibs);

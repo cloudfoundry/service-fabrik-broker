@@ -1086,37 +1086,6 @@ describe('#DirectorService', function () {
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
-
-        it('creates bind property for sfmongodb bind', function (done) {
-          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
-            .set('parameters', {})
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
-          expectedRequestBody.context.deployment_name = config.mongodb.deployment_name;
-          _.unset(expectedRequestBody, 'context.instance_guid');
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.createCredentials();
-          mocks.director.createBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
-          const mongo_plan = catalog.getPlan(config.mongodb.provision.plan_id);
-          return Promise.try(() => new DirectorService(mongo_plan))
-            .then(service => service.createBinding(config.mongodb.deployment_name, {
-              id: CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID,
-              parameters: {}
-            }))
-            .then(res => {
-              delete config.mongodb.provision.plan_id;
-              expect(res).to.eql(mocks.agent.credentials);
-              mocks.verify();
-              done();
-            });
-        });
       });
 
       describe('#unbind', function () {
@@ -1280,34 +1249,6 @@ describe('#DirectorService', function () {
             .then(service => service.unbind(options))
             .then(() => {
               mocks.verify();
-            });
-        });
-
-        it('deleteBinding for sfmongodb deletes property on bosh', function (done) {
-          const expectedRequestBody = _.cloneDeep(deploymentHookRequestBody);
-          expectedRequestBody.context = _.chain(expectedRequestBody.context)
-            .set('id', CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
-            .omit('params')
-            .omit('sf_operations_args')
-            .value();
-          expectedRequestBody.context.deployment_name = config.mongodb.deployment_name;
-          _.unset(expectedRequestBody, 'context.instance_guid');
-          expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND;
-          mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, 1, 404);
-          mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name);
-          mocks.agent.getInfo();
-          mocks.agent.deleteCredentials();
-          mocks.director.deleteBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, config.mongodb.deployment_name);
-          config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
-          const mongo_plan = catalog.getPlan(config.mongodb.provision.plan_id);
-          return Promise.try(() => new DirectorService(mongo_plan))
-            .then(service => service.deleteBinding(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID))
-            .then(() => {
-              delete config.mongodb.provision.plan_id;
-              mocks.verify();
-              done();
             });
         });
       });

@@ -13,7 +13,6 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');

@@ -103,27 +103,27 @@ class DBManager {
         return this.bindInfo;
       }
       return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
-      })
-      .then(resource => _.get(resource, 'status.response'))
-      .catch(NotFound, () => {
-        return utils
-          .retry(() => this
-            .directorService
-            .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
-              maxAttempts: 5,
-              minDelay: 5000,
-              predicate: (err) => !(err instanceof ServiceBindingNotFound)
-            })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+        })
+        .then(resource => _.get(resource, 'status.response'))
+        .catch(NotFound, () => {
+          return utils
+            .retry(() => this
+              .directorService
+              .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
+                maxAttempts: 5,
+                minDelay: 5000,
+                predicate: (err) => !(err instanceof ServiceBindingNotFound)
+              })
             .then(bindInfo => {
               return this.storeBindPropertyOnApiServer({
-                id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
-                parameters: bindInfo.parameters,
-                credentials: bindInfo.credentials
-              })
-              .then(() => bindInfo);
+                  id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
+                  parameters: bindInfo.parameters,
+                  credentials: bindInfo.credentials
+                })
+                .then(() => bindInfo);
             });
         });
     });
@@ -233,18 +233,18 @@ class DBManager {
             .pollTaskStatusTillComplete(taskId)
             .then(response => {
               return Promise.try(() => {
-                if(createIfNotPresent) {
-                  //This is precaution to ensure that no previous bind resource exists in the event that
-                  //service-fabrik-mongodb is recreated but ApiServer is not.
-                  return eventmesh.apiServerClient.deleteResource({
-                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-                    resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
-                  });
-                }
-              })
-              .then(() => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
-              .catch(NotFound, () => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
+                  if (createIfNotPresent) {
+                    //This is precaution to ensure that no previous bind resource exists in the event that
+                    //service-fabrik-mongodb is recreated but ApiServer is not.
+                    return eventmesh.apiServerClient.deleteResource({
+                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+                      resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+                    });
+                  }
+                })
+                .then(() => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
+                .catch(NotFound, () => this.dbCreateUpdateSucceeded(response, createIfNotPresent));
             })
             .catch(err => this.dbCreateUpdateFailed(err, operation));
         })
@@ -275,7 +275,7 @@ class DBManager {
               id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
               parameters: config.mongodb.provision.bind_params || {},
               credentials: credentials
-            })
+            });
           })
           .then(() => this.initialize());
       })
