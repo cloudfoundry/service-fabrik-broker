@@ -13,6 +13,11 @@ class Catalog {
     this.plans = _.flatMap(this.services, service => service.plans);
   }
 
+  reload() {
+    this.services = _.map(config.services, service => new Service(service));
+    this.plans = _.flatMap(this.services, service => service.plans);
+  }
+
   getPlan(id) {
     const plan = _.find(this.plans, plan => plan.id === id);
     if (!plan) {

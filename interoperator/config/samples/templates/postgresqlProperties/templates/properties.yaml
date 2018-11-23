@@ -1,0 +1,13 @@
+{{ $stateString := "succeeded" }}
+{{- if eq .Values.postgresql.status.phase "Failed" }}
+  {{- $stateString = "failed" }}
+{{- else }}
+  {{- if eq .Values.postgresql.status.phase "Running"}}
+    {{- $stateString = "succeeded" }}
+  {{- else }}
+    {{- $stateString = "in progress" }}
+  {{- end }}
+{{- end }}
+status:
+  state: {{ $stateString | quote }}  
+  description: {{ .Values.postgresql.status.reason | quote }}
