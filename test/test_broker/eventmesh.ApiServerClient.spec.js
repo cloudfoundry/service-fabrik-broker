@@ -1041,6 +1041,37 @@ describe('eventmesh', () => {
           });
       });
     });
-
+    describe('createNamespace', () => {
+      it('Creates namespace successfully', () => {
+        const payload = {
+          kind: 'Namespace',
+          apiVersion: 'v1',
+          metadata: {
+            name: 'namespace1'
+          }
+        };
+        mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload);
+        return apiserver.createNamespace('namespace1')
+          .then(res => {
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Doesnt create namespace if already present', () => {
+        const payload = {
+          kind: 'Namespace',
+          apiVersion: 'v1',
+          metadata: {
+            name: 'namespace1'
+          }
+        };
+        mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload, 409);
+        return apiserver.createNamespace('namespace1')
+          .then(res => {
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+    });
   });
 });

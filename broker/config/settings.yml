@@ -153,6 +153,8 @@ defaults: &defaults
   # APISERVER SETTINGS #
   ##############################
   apiserver:
+    # isServiceDefinitionAvailableOnApiserver: false
+    # enable_resource_isolation: false
     ip: '10.244.14.252'
     port: 8443
     encryption:
@@ -174,6 +176,10 @@ defaults: &defaults
       "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
       "deployment.servicefabrik.io_v1alpha1_postgresqlmts.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_postgresqlmts.yaml') %>
       "bind.servicefabrik.io_v1alpha1_postgresqlmtbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_postgresqlmtbinds.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfservices.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservices.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfplans.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfplans.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #
