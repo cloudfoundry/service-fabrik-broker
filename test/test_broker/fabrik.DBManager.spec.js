@@ -98,13 +98,16 @@ delete proxyLib3['../../../common/config'].mongodb.provision;
 delete proxyLib3['../../../common/config'].mongodb.deployment_name;
 proxyLib3['../../../common/config'].mongodb.url = 'mongodb://user:pass@localhost:27017/service-fabrik';
 const DBManagerByUrl = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib3);
+const proxyLib4 = _.cloneDeep(proxyLibs);
+proxyLib4['../../../common/config'].mongodb.retry_connect.min_delay = 120000;
+const DBManagerCreateWithDelayedReconnectRetry = proxyquire('../../broker/lib/fabrik/DBManager', proxyLib4);
 
 describe('fabrik', function () {
   /* jshint unused:false */
   /* jshint expr:true */
   describe('DBManager', function () {
     let sandbox, getDeploymentVMsStub, getDeploymentStub, pollTaskStatusTillCompleteStub,
-      loggerWarnSpy, dbInitializeSpy, dbInitializeByUrlSpy, dbCreateUpdateSucceededSpy, retryStub;
+      loggerWarnSpy, dbInitializeSpy, dbInitializeByUrlSpy, dbInitializeForCreateSpy, dbCreateUpdateSucceededSpy, retryStub;
     const db_backup_guid = '925eb8f4-1e14-42f6-b7cd-cdcf05205bb2';
     const dbIps = ['10.11.0.2', '10.11.0.3', '10.11.0.4'];
     const deploymentVms = [{
@@ -189,6 +192,7 @@ describe('fabrik', function () {
       loggerWarnSpy = sandbox.spy(logger, 'warn');
       retryStub = sandbox.stub(utils, 'retry', (callback, options) => callback());
       dbInitializeSpy = sinon.spy(DBManager.prototype, 'initialize');
+      dbInitializeForCreateSpy = sinon.spy(DBManagerCreateWithDelayedReconnectRetry.prototype, 'initialize');
       dbInitializeByUrlSpy = sinon.spy(DBManagerByUrl.prototype, 'initialize');
       dbCreateUpdateSucceededSpy = sandbox.spy(DBManagerForUpdate.prototype, 'dbCreateUpdateSucceeded');
       getDeploymentVMsStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentVms');
@@ -375,18 +379,18 @@ describe('fabrik', function () {
       it('At start of app, binding retrieval from BOSH fails & then subsequent create operation should provision mongodb and connect to DB Successfully', function () {
         this.timeout(25000);
         bindPropertyFound = 2;
-        const dbManager = new DBManager();
+        const dbManager = new DBManagerCreateWithDelayedReconnectRetry();
         deferred.reject(new errors.NotFound('Deployment not found'));
         return Promise.delay(5).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
-          expect(dbInitializeSpy).called;
+          expect(dbInitializeForCreateSpy).called;
           bindPropertyFound = 1;
           let taskId;
           return dbManager
             .createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
-            .then(() => Promise.delay(5000))
+            .then(() => Promise.delay(10))
             .then(() => {
               expect(getDeploymentStub).to.be.calledOnce;
               expect(getDeploymentStub.firstCall.args[0]).to.eql('service-fabrik-mongodb-new');

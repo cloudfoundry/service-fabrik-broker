@@ -460,19 +460,24 @@ describe('service', () => {
           '      release: service-release';
         directorService.plan.manager.settings.template = Buffer.from(updatedTemplate).toString('base64');
         expect(directorService.plan.id).to.eql(plan_id);
-        const manifest = yaml.safeLoad(directorService.generateManifest(`service-fabrik-90-${used_guid}`, {}));
-        expect(manifest.addons.length).to.equal(2);
-        expect(manifest.releases.length).to.equal(2);
+        return directorService.generateManifest(`service-fabrik-90-${used_guid}`, {})
+          .then(generatedManifest => {
+            const manifest = yaml.safeLoad(generatedManifest);
+            expect(manifest.addons.length).to.equal(2);
+            expect(manifest.releases.length).to.equal(2);
+          });
       });
       it('should not update manifest with addons with parameter skip_addons set to true', function () {
         const directorService = new DirectorService(_.cloneDeep(catalog.getPlan(plan_id)), guid);
         directorService.platformManager = new CfPlatformManager('cloudfoundry');
         expect(directorService.plan.id).to.eql(plan_id);
-        const manifest = yaml.safeLoad(directorService.generateManifest(`service-fabrik-90-${used_guid}`, {
+        return directorService.generateManifest(`service-fabrik-90-${used_guid}`, {
           skip_addons: true
-        }));
-        expect(manifest.addons).to.equal(undefined);
-        expect(manifest.releases.length).to.equal(1);
+        }).then(generatedManifest => {
+          const manifest = yaml.safeLoad(generatedManifest);
+          expect(manifest.addons).to.equal(undefined);
+          expect(manifest.releases.length).to.equal(1);
+        });
       });
     });
   });
