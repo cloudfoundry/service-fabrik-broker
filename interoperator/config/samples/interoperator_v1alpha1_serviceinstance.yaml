@@ -5,5 +5,5 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: serviceinstance-sample
 spec:
-  # Add fields here
-  foo: bar
+  options: '{"service_id": "blueprint-id", "plan_id": "blueprint-plan-id", "context": "{\"organizationGuid\": \"organization-guid\",\"spaceGuid\": \"space-guid\"}","organization_guid": "blueprint-organization-guid","space_guid": "blueprint-space-guid","parameters": "{\"foo\":\"bar\"}"}'
+   

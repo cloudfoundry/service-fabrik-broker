@@ -1,0 +1,11 @@
+{{ $namespace := .namespace }}
+config:
+  apiVersion: v1
+  kind: ConfigMap
+  name: {{ .Release.Name }}-configmap
+  namespace: {{ $namespace }}
+deployment:
+  apiVersion: apps/v1
+  kind: Deployment
+  name: {{ .Release.Name }}-deployment
+  namespace: {{ $namespace }}
