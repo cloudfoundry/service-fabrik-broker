@@ -1,0 +1,72 @@
+# Service Fabrik Inter Operator
+
+Service Fabrik Inter Operator is the component of Service Fabrik responsible for mapping the OSB resources to service specific resources mentioned in the templates of the Service Operator.
+
+![InterOperator](https://github.wdf.sap.corp/I068838/service-fabrik-interoperator/blob/add-readme/images/InterOperator.png)
+
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+
+### Prerequisites
+
+* Install [dep](https://github.com/golang/dep)
+* Install [kustomize](https://github.com/kubernetes-sigs/kustomize)
+* Install [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+
+```
+version=1.0.5 # latest stable version
+arch=amd64
+
+# download the release
+curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${version}/kubebuilder_${version}_darwin_${arch}.tar.gz
+
+# extract the archive
+tar -zxvf kubebuilder_${version}_darwin_${arch}.tar.gz
+sudo mv kubebuilder_${version}_darwin_${arch} /usr/local/kubebuilder
+
+# update your PATH to include /usr/local/kubebuilder/bin
+export PATH=$PATH:/usr/local/kubebuilder/bin
+```
+
+### Installing
+
+A step by step series of examples that tell you how to get a development env running
+
+Installing the CRDs
+
+```
+make install
+```
+
+Run it locally
+
+```
+make run
+```
+
+In a new terminal, create an instance of the CRD and check if controller picks it up
+
+```
+kubectl apply -f config/samples/interoperator_v1alpha1_serviceinstance.yaml
+```
+
+
+## Deployment
+
+Give example of how to deploy it k8s using the docker file
+
+## Authors
+
+* **Vivek Anand Kallampally**
+* **Amit malav**
+* **Subhankar Chattopadhyay**
+
+See also the list of [contributors](https://github.com/cloudfoundry-incubator/service-fabrik-broker/contributors) who participated in this project.
+
+## License
+
+
+## Acknowledgments
+
+* [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)

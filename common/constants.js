@@ -272,7 +272,9 @@ module.exports = Object.freeze({
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
-    NAMESPACE: 'default',
+    DEFAULT_NAMESPACE: 'default',
+    NAMESPACE_API_VERSION: 'v1',
+    SECRET_API_VERSION: 'v1',
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
@@ -282,6 +284,7 @@ module.exports = Object.freeze({
       RESOURCE_KIND: 'ConfigMap'
     },
     RESOURCE_GROUPS: {
+      INTEROPERATOR: 'osb.servicefabrik.io',
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BIND: 'bind.servicefabrik.io',
@@ -290,6 +293,10 @@ module.exports = Object.freeze({
       SERVICE_FLOW: 'serviceflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
+      INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
+      INTEROPERATOR_SERVICEBINDINGS: 'sfservicebindings',
+      INTEROPERATOR_SERVICES: 'sfservices',
+      INTEROPERATOR_PLANS: 'sfplans',
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
       DOCKER: 'dockers',
@@ -319,6 +326,9 @@ module.exports = Object.freeze({
       UPDATE: 'update',
       LOCKED: 'locked',
       UNLOCKED: 'unlocked'
+    },
+    FINALIZERS: {
+      BROKER: 'broker.servicefabrik.io'
     },
     TASK_TYPE: {
       SERVICE_INSTANCE_BACKUP: 'ServiceInstanceBackupTask',
