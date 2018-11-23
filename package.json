@@ -117,6 +117,6 @@
     "test-ci": "./test/init test-ci",
     "test-cov": "./test/init test-cov",
     "test-coverall": "./test/init test-coverall",
-    "jsformat": "js-beautify -r $(find . -iname '*.js' -not -path '*node_modules*' -not -path '*public/js*')"
+    "jsformat": "js-beautify -r $(find . -iname '*.js' -not -path '*node_modules*' -not -path '*public/js*' -not -path '*interoperator/vendor*')"
   }
 }
