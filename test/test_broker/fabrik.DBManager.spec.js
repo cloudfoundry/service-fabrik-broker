@@ -307,6 +307,18 @@ describe('fabrik', function () {
           return validateConnected(dbManager);
         });
       });
+      it('On start if binding property is found in ApiServer then no further calls to director are made', function() {
+        bindPropertyFoundOnApiServer = true;
+        bindPropertyFound = 1; //ensure bindProperty won't be found on Director 
+        const dbManager = new DBManager();
+        return Promise.delay(10).then(() => {
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
+          expect(dbManager.dbInitialized).to.eql(true);
+          bindPropertyFound = 0;
+          bindPropertyFoundOnApiServer = false;
+          return validateConnected(dbManager, 1);
+        });
+      });
       it('On start if mongodb URL is configured, then it must connect to it successfully', function () {
         const dbManager = new DBManagerByUrl();
         return Promise.delay(20).then(() => {
