@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
+const catalog = require('../../../common/models/catalog');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
 const catalog = require('../../../common/models/catalog');
@@ -22,6 +23,41 @@ describe('service-broker-api', function () {
           expect(res.body.services).to.have.length(3);
           expect(res.body.services[0].plans).to.have.length(8);
           expect(res.body.services[1].plans).to.have.length(3);
+        });
+    });
+
+    it('returns 200 Ok; Loads catalog from apiserver', function () {
+      const oldServices = config.services;
+      config.services = undefined;
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {
+        items: [{
+          spec: {
+            id: 'service1',
+            name: 's1'
+          }
+        }]
+      });
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {
+        items: [{
+          spec: {
+            id: 'plan1',
+            name: 'p1'
+          }
+        }]
+      }, {
+        labelSelector: `serviceId=service1`
+      });
+      return chai.request(app)
+        .get(`${baseCFUrl}/catalog`)
+        .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
+        .auth(config.username, config.password)
+        .then(res => {
+          config.services = oldServices;
+          catalog.reload();
+          expect(res).to.have.status(200);
+          expect(res.body.services).to.be.instanceof(Array);
+          expect(res.body.services).to.have.length(1);
+          expect(res.body.services[0].plans).to.have.length(1);
         });
     });
 
@@ -49,8 +85,8 @@ describe('service-broker-api', function () {
         .then(res => {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
-          expect(res.body.services).to.have.length(1);
-          expect(res.body.services[0].plans).to.have.length(4);
+          expect(res.body.services).to.have.length(2);
+          expect(res.body.services[0].plans).to.have.length(8);
         });
     });
 

@@ -1,0 +1,10 @@
+postgresql:
+  status:
+    phase: ""
+    reason: ""
+secret:
+  data:
+    POSTGRES_PASSWORD: ""
+service:
+  spec:
+    clusterIP: ""
