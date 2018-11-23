@@ -11,6 +11,8 @@ spec:
     kind: ServiceInstance
     plural: serviceinstances
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -21,8 +23,24 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            options:
+              type: string
           type: object
         status:
+          properties:
+            dashboardUrl:
+              type: string
+            error:
+              type: string
+            lastOperation:
+              type: string
+            response:
+              type: string
+            state:
+              type: string
+          required:
+          - state
           type: object
   version: v1alpha1
 status:

@@ -17,22 +17,42 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// ServiceInstanceOptions defines all the options passed from OSB.
+// Director/Docker operators also expect this format.
+type ServiceInstanceOptions struct {
+	ServiceID        string          `json:"service_id"`
+	PlanID           string          `json:"plan_id"`
+	RawContext       json.RawMessage `json:"context,omitempty"`
+	OrganizationGUID string          `json:"organization_guid"`
+	SpaceGUID        string          `json:"space_guid"`
+	RawParameters    json.RawMessage `json:"parameters,omitempty"`
+
+	// ServiceID        string `json:"serviceId"`
+	// PlanID           string `json:"planId"`
+	// RawContext       string `json:"context,omitempty"`
+	// OrganizationGUID string `json:"organizationGuid"`
+	// SpaceGUID        string `json:"spaceGuid"`
+	// RawParameters    string `json:"parameters,omitempty"`
+}
 
 // ServiceInstanceSpec defines the desired state of ServiceInstance
 type ServiceInstanceSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	OptionsString string `json:"options,omitempty"`
+	Options       ServiceInstanceOptions
 }
 
 // ServiceInstanceStatus defines the observed state of ServiceInstance
 type ServiceInstanceStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	DashboardURL  string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
+	State         string `yaml:"state" json:"state"`
+	Error         string `yaml:"error,omitempty" json:"error,omitempty"`
+	LastOperation string `yaml:"lastOperation,omitempty" json:"lastOperation,omitempty"`
+	Response      string `yaml:"response,omitempty" json:"response,omitempty"`
 }
 
 // +genclient
@@ -40,6 +60,7 @@ type ServiceInstanceStatus struct {
 
 // ServiceInstance is the Schema for the serviceinstances API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
