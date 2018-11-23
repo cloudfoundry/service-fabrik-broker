@@ -14,6 +14,8 @@
 /store/sessions
 npm-debug.log
 
+*/*/kubeconfig.yaml
+
 # Ignore developer's settings files
 broker/config/settings.*.yml
 common/config/settings.*.yml
@@ -31,3 +33,5 @@ broker/lib/fabrik/actions/js/ReserveIps.js
 broker/lib/fabrik/actions/sh/
 deployment_hooks/lib/actions/js/ReserveIps.js
 deployment_hooks/lib/actions/sh/
+
+interoperator/vendor

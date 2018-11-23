@@ -1,0 +1,120 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: sfplans.osb.servicefabrik.io
+spec:
+  group: osb.servicefabrik.io
+  names:
+    kind: SFPlan
+    plural: sfplans
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bindable:
+              type: boolean
+            context:
+              type: object
+            description:
+              type: string
+            free:
+              type: boolean
+            id:
+              type: string
+            asyncOpsSupportingParallelSyncOps:
+              type: array
+            actions:
+              type: string
+            manager:
+              type: object
+            metadata:
+              type: object
+            name:
+              type: string
+            planUpdatable:
+              type: boolean
+            schemas:
+              properties:
+                binding:
+                  properties:
+                    create:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+                instance:
+                  properties:
+                    create:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                    update:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+              type: object
+            serviceId:
+              type: string
+            templates:
+              items:
+                properties:
+                  action:
+                    enum:
+                    - provision
+                    - properties
+                    - bind
+                    - sources
+                    type: string
+                  content:
+                    type: string
+                  type:
+                    enum:
+                    - gotemplate
+                    - helm
+                    type: string
+                  url:
+                    type: string
+                required:
+                - action
+                - type
+                type: object
+              type: array
+          required:
+          - name
+          - id
+          - description
+          - free
+          - bindable
+          - templates
+          - serviceId
+          type: object
+        status:
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

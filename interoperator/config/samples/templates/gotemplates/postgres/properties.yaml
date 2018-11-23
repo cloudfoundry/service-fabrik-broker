@@ -1,0 +1,37 @@
+{{ $stateString := "failed" }}
+{{- with .postgresql.status.phase }} 
+  {{- if eq . "Failed" }}
+    {{- $stateString = "failed" }}
+  {{- else }}
+    {{- if eq . "Running"}}
+      {{- $stateString = "succeeded" }}
+    {{- else }}
+      {{- $stateString = "in progress" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+provision:
+  state: {{ printf "%s" $stateString }}
+  response: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
+{{- $host := "" }}
+{{- with .service.spec.clusterIP }} {{ $host = . }} {{ end }}
+{{- $pass := "" }}
+{{- with .secret.data.POSTGRES_PASSWORD }} {{ $pass = (b64dec .) }} {{ end }}
+{{- $stateString = "in progress" }}
+{{- if and (not (eq $host "")) (not (eq $pass "")) }}
+  {{- $stateString = "succeeded" }}
+{{- end }}
+bind:
+  state: {{ printf "%s" $stateString }}
+  error: ""
+  response: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 
+{{- $stateString = "succeeded" }}
+unbind:
+  state: {{ printf "%s" $stateString }}
+  error: ""
+{{- $stateString = "in progress" }} 
+{{- with .postgresql }} {{ with .metadata.deletionTimestamp }} {{ $stateString = "in progress" }} {{ end }} {{ else }} {{ $stateString = "succeeded" }}  {{ end }}
+deprovision:
+  state: {{ printf "%s" $stateString }}
+  error: ""
+  response: ""
