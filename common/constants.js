@@ -272,6 +272,7 @@ module.exports = Object.freeze({
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
     RESOURCE_GROUPS: {
+      INTEROPERATOR: 'osb.servicefabrik.io',
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
       BIND: 'bind.servicefabrik.io',
@@ -280,6 +281,10 @@ module.exports = Object.freeze({
       SERVICE_FLOW: 'serviceflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
+      INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
+      INTEROPERATOR_SERVICEBINDINGS: 'sfservicebindings',
+      INTEROPERATOR_SERVICES: 'sfservices',
+      INTEROPERATOR_PLANS: 'sfplans',
       DEPLOYMENT_LOCKS: 'deploymentlocks',
       DIRECTOR: 'directors',
       DOCKER: 'dockers',
