@@ -76,7 +76,7 @@ const VirtualHostOperator = proxyquire('../../operators/virtualhost-operator/Vir
 const jsonWriteDelay = 50;
 
 function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
-  /* jshint unused:false */
+
   const vm = new VirtualHostOperator();
   vm.init();
   return Promise.delay(100)
@@ -293,7 +293,7 @@ describe('operators', function () {
           expect(createVirtualHostServiceSpy.callCount).to.equal(1);
           expect(createVirtualHostServiceSpy.firstCall.args[0]).to.eql(instance_id);
           expect(createVirtualHostServiceSpy.firstCall.args[1]).to.eql(options);
-          expect(deleteSpy.callCount).to.equal(1);
+          expect(deleteSpy.callCount).to.equal(2);
           mocks.verify();
         });
     });
