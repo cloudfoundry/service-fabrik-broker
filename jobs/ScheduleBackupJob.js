@@ -138,7 +138,8 @@ class ScheduleBackupJob extends BaseJob {
           logger.info(`-> Initiating delete of - ${logInfo} - instance deleted : ${instanceDeleted}`);
           const deleteOptions = {
             backup_guid: backup.backup_guid,
-            tenant_id: options.tenant_id
+            tenant_id: options.tenant_id,
+            instance_deleted: instanceDeleted
           };
           return this
             .getFabrikClient()

@@ -84,7 +84,7 @@ class ServiceFabrikClient extends HttpClient {
       .then(accessToken => this
         .request({
           method: 'DELETE',
-          url: `/api/v1/backups/${options.backup_guid}?space_guid=${options.tenant_id}`,
+          url: `/api/v1/backups/${options.backup_guid}?space_guid=${options.tenant_id}&instance_deleted=${options.instance_deleted}`,
           auth: {
             bearer: accessToken
           },

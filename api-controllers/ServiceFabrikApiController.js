@@ -762,10 +762,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   deleteBackup(req, res) {
+    const instanceDeleted = (req.body.instance_deleted === undefined) ? false : JSON.parse(req.body.forbidden_changes);
     const options = {
       tenant_id: req.entity.tenant_id,
       backup_guid: req.params.backup_guid,
-      user: req.user
+      user: req.user,
+      instance_deleted: instanceDeleted
     };
     logger.info('Attempting delete with:', options);
     return eventmesh
