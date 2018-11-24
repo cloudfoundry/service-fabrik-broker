@@ -76,7 +76,7 @@ const VirtualHostOperator = proxyquire('../../operators/virtualhost-operator/Vir
 const jsonWriteDelay = 50;
 
 function initDefaultVMTest(jsonStream, sandbox, registerWatcherStub) {
-
+  /* jshint unused:false */
   const vm = new VirtualHostOperator();
   vm.init();
   return Promise.delay(100)
