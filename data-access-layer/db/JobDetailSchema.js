@@ -18,7 +18,8 @@ const JobSchema = new Mongoose.Schema({
   },
   type: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   runOnlyOnce: {
     type: Boolean,
@@ -45,5 +46,25 @@ const JobSchema = new Mongoose.Schema({
   }
 });
 
+JobSchema.index({
+  type: 1,
+  'data.instance_id': 1,
+  createdAt: 1
+});
+JobSchema.index({
+  type: 1,
+  'data.instance_id': 1
+});
+JobSchema.index({
+  type: 1,
+  'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1
+});
+JobSchema.index({
+  type: 1,
+  'data.instance_id': 1,
+  'response.delete_backup_status.instance_deleted': 1,
+  createdAt: 1
+});
 Mongoose.model(CONST.DB_MODEL.JOB, JobSchema);
 module.exports.JobSchema = JobSchema;
