@@ -83,9 +83,9 @@ function scheduleUpdate(instance_id, payload) {
     });
 }
 
-function deleteBackup(backup_guid, space_guid) {
+function deleteBackup(backup_guid, space_guid, instance_deleted) {
   return nock(serviceFabrikUrl)
     .replyContentLength()
-    .delete(`/api/v1/backups/${backup_guid}?space_guid=${space_guid}`)
+    .delete(`/api/v1/backups/${backup_guid}?space_guid=${space_guid}&instance_deleted=${instance_deleted}`)
     .reply(200, {});
 }

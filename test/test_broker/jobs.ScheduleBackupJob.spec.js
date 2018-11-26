@@ -209,7 +209,7 @@ describe('Jobs', function () {
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname18);
         mocks.cloudProvider.remove(transactionLogsPathname16);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid, false);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const expectedBackupResponse = {
@@ -275,7 +275,7 @@ describe('Jobs', function () {
           getBackupData(backup_guid16, CONST.BACKUP.TRIGGER.SCHEDULED, started16DaysPrior, CONST.OPERATION.SUCCEEDED));
         mocks.cloudProvider.download(pathname18,
           getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.SUCCEEDED));
-        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid, false);
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname18);
         mocks.cloudProvider.remove(transactionLogsPathname16);
@@ -409,9 +409,9 @@ describe('Jobs', function () {
           getBackupData(backup_guid16, CONST.BACKUP.TRIGGER.SCHEDULED, started16DaysPrior, CONST.OPERATION.FAILED));
         mocks.cloudProvider.download(pathname18,
           getBackupData(backup_guid2, CONST.BACKUP.TRIGGER.SCHEDULED, started18DaysPrior, CONST.OPERATION.FAILED));
-        mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid, false);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid, false);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid, false);
         //Deletes transactionLogs older than retention period only. Hence, transactionLog older than 1 day is not deleted.
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname18);
@@ -670,9 +670,8 @@ describe('Jobs', function () {
         mocks.cloudProvider.download(pathname14, scheduled_data);
         mocks.cloudProvider.download(pathname16, scheduled_data16);
         mocks.cloudProvider.download(pathname18, ondemand_data);
-        // mocks.serviceFabrikClient.deleteBackup(backup_guid, space_guid);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid);
-        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid2, space_guid, true);
+        mocks.serviceFabrikClient.deleteBackup(backup_guid16, space_guid, true);
         mocks.cloudProvider.remove(transactionLogsPathname19);
         mocks.cloudProvider.remove(transactionLogsPathname16);
         mocks.cloudProvider.remove(transactionLogsPathname18);
