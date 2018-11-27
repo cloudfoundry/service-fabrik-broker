@@ -1,0 +1,128 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: plans.osb.servicefabrik.io
+spec:
+  group: osb.servicefabrik.io
+  names:
+    kind: Plan
+    plural: plans
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bindable:
+              type: boolean
+            context:
+              properties:
+                operator:
+                  type: object
+                serviceFabrik:
+                  type: object
+              type: object
+            description:
+              type: string
+            free:
+              type: boolean
+            id:
+              type: string
+            metadata:
+              type: object
+            name:
+              type: string
+            planUpdatable:
+              type: boolean
+            schemas:
+              properties:
+                binding:
+                  properties:
+                    create:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+                instance:
+                  properties:
+                    create:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                    update:
+                      properties:
+                        parameters:
+                          type: object
+                      required:
+                      - parameters
+                      type: object
+                  type: object
+              type: object
+            templates:
+              properties:
+                bindTemplate:
+                  properties:
+                    path:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - path
+                  type: object
+                propertiesTemplate:
+                  properties:
+                    path:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - path
+                  type: object
+                provisionTemplate:
+                  properties:
+                    path:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - path
+                  type: object
+              required:
+              - provisionTemplate
+              - propertiesTemplate
+              type: object
+          required:
+          - name
+          - id
+          - description
+          - free
+          - bindable
+          - templates
+          type: object
+        status:
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

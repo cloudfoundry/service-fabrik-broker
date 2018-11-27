@@ -21,6 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Context contains the data additional data regarding service/plan
+type Context struct {
+	Operator      *runtime.RawExtension `json:"operator,omitempty"`
+	ServiceFabrik *runtime.RawExtension `json:"serviceFabrik,omitempty"`
+}
+
 // DashboardClient contains the data necessary to activate the Dashboard SSO feature for this service
 type DashboardClient struct {
 	ID          string `json:"id,omitempty"`
@@ -41,6 +47,7 @@ type ServiceSpec struct {
 	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
 	DashboardClient     DashboardClient       `json:"dashboardClient,omitempty"`
 	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
+	RawContext          Context               `json:"context,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service
