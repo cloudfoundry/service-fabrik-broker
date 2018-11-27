@@ -106,41 +106,6 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     });
   }
 
-  updateOutdatedDeployments(req, res) {
-    const self = this;
-
-    function updateDeployment(deployment) {
-      return Promise
-        .try(() => {
-          utils.hasChangesInForbiddenSections(deployment.diff);
-        })
-        .then(() => self.fabrik
-          .createOperation('update', {
-            deployment: deployment.name,
-            username: req.user.name,
-            arguments: req.body
-          })
-          .invoke()
-        )
-        .then(result => ({
-          deployment: deployment.name,
-          guid: result.guid
-        }))
-        .catch(Forbidden, Conflict, err => ({
-          deployment: deployment.name,
-          error: _.pick(err, 'status', 'message')
-        }));
-    }
-
-    return this
-      .findOutdatedDeployments()
-      .map(updateDeployment)
-      .then(body => res
-        .status(202)
-        .send(body)
-      );
-  }
-
   getOutdatedDiff(instanceDetails, tenantInfo, plan) {
     const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
