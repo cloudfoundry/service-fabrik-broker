@@ -20,8 +20,6 @@ const maintenanceManager = require('../maintenance').maintenanceManager;
 const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 const eventmesh = require('../data-access-layer/eventmesh');
 const DirectorService = require('../operators/bosh-operator/DirectorService');
-const Conflict = errors.Conflict;
-const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const Repository = require('../common/db').Repository;
 
