@@ -3,9 +3,10 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-configmap
 data:
-  serviceId: {{ .Values.service_id }}
-  planId: {{ .Values.plan_id }}
-  context: {{ .Values.context | quote }}
-  organizationGuid: {{ .Values.organization_guid }}
-  spaceGuid: {{ .Values.space_guid }}
-  parameters: {{ .Values.parameters | quote }}
+  serviceId: {{ .Values.serviceId }}
+  planId: {{ .Values.planId }}
+  context: {{ .Values.context }}
+  organizationGuid: {{ .Values.context.organizationGuid }}
+  spaceGuid: {{ .Values.spaceGuid }}
+  parameters: {{ .Values.parameters }}
+  foo: {{ .Values.parameters.foo }}

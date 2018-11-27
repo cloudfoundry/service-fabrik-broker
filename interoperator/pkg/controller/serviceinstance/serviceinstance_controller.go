@@ -18,11 +18,10 @@ package serviceinstance
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"reflect"
 
-	interoperatorv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/interoperator/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services"
@@ -63,7 +62,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to ServiceInstance
-	err = c.Watch(&source.Kind{Type: &interoperatorv1alpha1.ServiceInstance{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.ServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -80,7 +79,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	for _, subresource := range subresources {
 		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &interoperatorv1alpha1.ServiceInstance{},
+			OwnerType:    &osbv1alpha1.ServiceInstance{},
 		})
 		if err != nil {
 			return err
@@ -110,7 +109,7 @@ type ReconcileServiceInstance struct {
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=serviceinstances,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance
-	instance := &interoperatorv1alpha1.ServiceInstance{}
+	instance := &osbv1alpha1.ServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -147,11 +146,6 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	err = json.Unmarshal([]byte(instance.Spec.OptionsString), &instance.Spec.Options)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	expectedResources, err := r.computeExpectedResources(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -170,8 +164,8 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileServiceInstance) computeExpectedResources(instance *interoperatorv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
-	serviceID := instance.Spec.Options.ServiceID
+func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
+	serviceID := instance.Spec.ServiceID
 	service, err := services.FindServiceInfo(serviceID)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
@@ -229,7 +223,7 @@ func (r *ReconcileServiceInstance) computeExpectedResources(instance *interopera
 	return resources, nil
 }
 
-func (r *ReconcileServiceInstance) reconcileResources(instance *interoperatorv1alpha1.ServiceInstance,
+func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.ServiceInstance,
 	expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
@@ -285,8 +279,8 @@ func (r *ReconcileServiceInstance) reconcileResources(instance *interoperatorv1a
 	return foundResources, nil
 }
 
-func (r *ReconcileServiceInstance) updateStatus(instance *interoperatorv1alpha1.ServiceInstance) error {
-	serviceID := instance.Spec.Options.ServiceID
+func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceInstance) error {
+	serviceID := instance.Spec.ServiceID
 	service, err := services.FindServiceInfo(serviceID)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
@@ -365,7 +359,7 @@ func (r *ReconcileServiceInstance) updateStatus(instance *interoperatorv1alpha1.
 	}
 
 	// Fetch object again before updating status
-	instanceObj := &interoperatorv1alpha1.ServiceInstance{}
+	instanceObj := &osbv1alpha1.ServiceInstance{}
 	namespacedName := types.NamespacedName{
 		Name:      instance.GetName(),
 		Namespace: instance.GetNamespace(),

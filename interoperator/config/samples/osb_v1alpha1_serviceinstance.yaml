@@ -1,0 +1,16 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: ServiceInstance
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: serviceinstance-sample
+spec:
+  serviceId: blueprint-id
+  planId: blueprint-plan-id
+  context:
+    organizationGuid: context-organization-guid
+    spaceGuid: context-space-guid
+  organizationGuid: blueprint-organization-guid
+  spaceGuid: blueprint-space-guid
+  parameters:
+    foo: bar
