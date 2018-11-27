@@ -1,0 +1,45 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: Plan
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: &name 'v1.0-dev'
+spec:
+  name: *name
+  id: 'bba8beae-5699-11e7-b35c-02a8da424bc3'
+  description: 'Blueprint 1.0 service running inside a Docker container (for non-productive usage)'
+  metadata:
+    service-inventory-key: SERVICE-161
+    costs:
+    - amount:
+        usd: 0.0
+      unit: 'MONTHLY'
+    bullets:
+    - 'Container Deployment'
+    - '128 MB Memory'
+    - '100 MB Disk'
+  free: true
+  bindable: true
+  planUpdatable: false
+  template: 
+    propertiesTemplate:
+      type: helm
+      path: "config/samples/templates/blueprintProperties"
+    provisionTemplate:
+      type: helm
+      path: "config/samples/templates/blueprint"
+    bindTemplate:
+      type: helm
+      path: "config/samples/templates/blueprint"
+  context:
+    operator:
+      image: "servicefabrikjenkins/blueprint"
+      tag: "latest"
+      port: 8080
+      memory: '128m'
+      persistent_volumes:
+      - name: 'data'
+        path: '/data'
+        size: '100m'
+    serviceFabrik:
+      backupEnabled: false
