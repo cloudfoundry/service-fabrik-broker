@@ -16,12 +16,12 @@ limitations under the License.
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v1alpha1 contains API Schema definitions for the interoperator v1alpha1 API group
+// Package v1alpha1 contains API Schema definitions for the osb v1alpha1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/interoperator
+// +k8s:conversion-gen=github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=interoperator.servicefabrik.io
+// +groupName=osb.servicefabrik.io
 package v1alpha1
 
 import (
@@ -31,7 +31,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "interoperator.servicefabrik.io", Version: "v1alpha1"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "osb.servicefabrik.io", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

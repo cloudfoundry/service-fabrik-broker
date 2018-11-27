@@ -1,6 +1,9 @@
 serviceId: "some-id"
 planId: "some-id"
-context: "{\"organizationGuid\": \"some-guid\",\"spaceGuid\": \"some-guid\"}"
+context: 
+  organizationGuid: some-context-guid
+  spaceGuid: some-context-guid
 organizationGuid: "some-guid"
 spaceGuid: "some-guid"
-parameters: "{\"foo\":\"some-id\"}"
+parameters:
+  foo: some-param

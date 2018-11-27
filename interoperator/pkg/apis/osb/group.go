@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package interoperator contains interoperator API versions
-package interoperator
+// Package osb contains osb API versions
+package osb

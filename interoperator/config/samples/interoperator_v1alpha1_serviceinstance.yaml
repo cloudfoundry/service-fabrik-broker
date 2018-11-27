@@ -1,9 +1,0 @@
-apiVersion: interoperator.servicefabrik.io/v1alpha1
-kind: ServiceInstance
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: serviceinstance-sample
-spec:
-  options: '{"service_id": "blueprint-id", "plan_id": "blueprint-plan-id", "context": "{\"organizationGuid\": \"organization-guid\",\"spaceGuid\": \"space-guid\"}","organization_guid": "blueprint-organization-guid","space_guid": "blueprint-space-guid","parameters": "{\"foo\":\"bar\"}"}'
-   

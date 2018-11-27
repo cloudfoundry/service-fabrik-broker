@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	interoperatorv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/interoperator/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/helm"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services"
@@ -24,7 +24,7 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 }
 
 // GetRendererInput contructs the input required for the renderer
-func GetRendererInput(template *services.TemplateSpec, instance *interoperatorv1alpha1.ServiceInstance) (renderer.Input, error) {
+func GetRendererInput(template *services.TemplateSpec, instance *osbv1alpha1.ServiceInstance) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":
@@ -47,7 +47,7 @@ func GetRendererInput(template *services.TemplateSpec, instance *interoperatorv1
 }
 
 // GetPropertiesRendererInput contructs the input required for the renderer
-func GetPropertiesRendererInput(template *services.TemplateSpec, instance *interoperatorv1alpha1.ServiceInstance, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
+func GetPropertiesRendererInput(template *services.TemplateSpec, instance *osbv1alpha1.ServiceInstance, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":

@@ -17,33 +17,18 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
-
-// ServiceInstanceOptions defines all the options passed from OSB.
-// Director/Docker operators also expect this format.
-type ServiceInstanceOptions struct {
-	ServiceID        string          `json:"service_id"`
-	PlanID           string          `json:"plan_id"`
-	RawContext       json.RawMessage `json:"context,omitempty"`
-	OrganizationGUID string          `json:"organization_guid"`
-	SpaceGUID        string          `json:"space_guid"`
-	RawParameters    json.RawMessage `json:"parameters,omitempty"`
-
-	// ServiceID        string `json:"serviceId"`
-	// PlanID           string `json:"planId"`
-	// RawContext       string `json:"context,omitempty"`
-	// OrganizationGUID string `json:"organizationGuid"`
-	// SpaceGUID        string `json:"spaceGuid"`
-	// RawParameters    string `json:"parameters,omitempty"`
-}
 
 // ServiceInstanceSpec defines the desired state of ServiceInstance
 type ServiceInstanceSpec struct {
-	OptionsString string `json:"options,omitempty"`
-	Options       ServiceInstanceOptions
+	ServiceID        string                `json:"serviceId"`
+	PlanID           string                `json:"planId"`
+	RawContext       *runtime.RawExtension `json:"context,omitempty"`
+	OrganizationGUID string                `json:"organizationGuid"`
+	SpaceGUID        string                `json:"spaceGuid"`
+	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
 }
 
 // ServiceInstanceStatus defines the observed state of ServiceInstance

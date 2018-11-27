@@ -4,9 +4,9 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: serviceinstances.interoperator.servicefabrik.io
+  name: serviceinstances.osb.servicefabrik.io
 spec:
-  group: interoperator.servicefabrik.io
+  group: osb.servicefabrik.io
   names:
     kind: ServiceInstance
     plural: serviceinstances
@@ -24,8 +24,23 @@ spec:
           type: object
         spec:
           properties:
-            options:
+            context:
+              type: object
+            organizationGuid:
               type: string
+            parameters:
+              type: object
+            planId:
+              type: string
+            serviceId:
+              type: string
+            spaceGuid:
+              type: string
+          required:
+          - serviceId
+          - planId
+          - organizationGuid
+          - spaceGuid
           type: object
         status:
           properties:

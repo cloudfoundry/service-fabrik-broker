@@ -3,7 +3,7 @@ package properties
 import (
 	"fmt"
 
-	interoperatorv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/interoperator/v1alpha1"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -20,7 +20,7 @@ type Source struct {
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
-	Status interoperatorv1alpha1.ServiceInstanceStatus `yaml:"status" json:"status"`
+	Status osbv1alpha1.ServiceInstanceStatus `yaml:"status" json:"status"`
 }
 
 // ParseSources decodes sources yaml into a map
