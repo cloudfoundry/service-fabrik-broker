@@ -297,7 +297,7 @@ describe('operators', function () {
             });
           });
       });
-      it('relay next task is ignored if the same task was already relayed & update service flow state as in-progress', () => {
+      it('relay next task is ignored if the same task was already relayed', () => {
         const inProgressTask = _.cloneDeep(taskObject);
         const inProgressTaskDetails = _.cloneDeep(taskDetails);
         inProgressTaskDetails.task_order = 0;
