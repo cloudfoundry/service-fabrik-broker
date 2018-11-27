@@ -322,7 +322,7 @@ module.exports = Object.freeze({
       OPTIONS: 'options',
       LASTOPERATION: 'lastoperation'
     },
-    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore'],
+    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_workflow'],
     READ_OPERATIONS: ['backup'],
   },
   SERVICE_KEYS: {

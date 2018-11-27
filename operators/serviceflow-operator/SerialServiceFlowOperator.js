@@ -9,7 +9,6 @@ const path = require('path');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
-const utils = require('../../common/utils');
 const apiServerClient = require('../../data-access-layer/eventmesh').apiServerClient;
 const BaseOperator = require('../BaseOperator');
 const TaskFabrik = require('./task/TaskFabrik');
@@ -56,11 +55,11 @@ class SerialServiceFlowOperator extends BaseOperator {
       const tasks = serviceFlow.tasks;
       assert.equal(tasks.length > 0, true, `service flow ${serviceFlowOptions.name} does not have right task definitions. Please check`);
       const labels = {
-        serviceflow_id: serviceFlowOptions.serviceflow_id
+        serviceflow_id: serviceFlowOptions.serviceflow_id,
+        task_order: `${serviceFlowOptions.task_order}`
       };
-      return utils
-        .uuidV4()
-        .then(taskId => apiServerClient.createResource({
+      const taskId = `${serviceFlowOptions.serviceflow_id}.${serviceFlowOptions.task_order}`;
+      return apiServerClient.createResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
           resourceId: taskId,
@@ -71,7 +70,7 @@ class SerialServiceFlowOperator extends BaseOperator {
             lastOperation: {},
             response: {}
           }
-        }))
+        })
         .tap((resource) => logger.info('Created task -> ', resource))
         .then(() => this.updateServiceFlowStatus(
           serviceFlowOptions, {
@@ -127,17 +126,18 @@ class SerialServiceFlowOperator extends BaseOperator {
           .then(() => this.serviceFlowComplete(taskDetails));
       } else {
         const labels = {
-          serviceflow_id: taskDetails.serviceflow_id
+          serviceflow_id: taskDetails.serviceflow_id,
+          task_order: `${taskDetails.task_order}`
         };
-        let relayedTaskId;
-
-        return utils
-          .uuidV4()
-          .tap(taskId => relayedTaskId = taskId)
-          .then(taskId => apiServerClient.createResource({
+        const relayedTaskId = `${taskDetails.serviceflow_id}.${taskDetails.task_order}`;
+        //Due to some race conditions (stream refresh/broker restart) same task could be tried to be created again. 
+        //Hence task Id is made as a combination of workflow id and task order, which will ensure an
+        //exception is thrown when we try to create a dupe task in workflow, which is ignored. 
+        //This is done as failsafe mechanism to ensure only one task of a type executes in workflow.
+        return apiServerClient.createResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-            resourceId: taskId,
+            resourceId: relayedTaskId,
             labels: labels,
             options: _.merge(taskDetails, tasks[taskDetails.task_order]),
             status: {
@@ -145,7 +145,7 @@ class SerialServiceFlowOperator extends BaseOperator {
               lastOperation: {},
               response: {}
             }
-          }))
+          })
           .then(() => {
             logger.info('Created next task in the service flow. Updating the state of current task as Relayed.');
             relayedStatus.message = `Task complete and next relayed task is ${relayedTaskId}`;
@@ -156,6 +156,7 @@ class SerialServiceFlowOperator extends BaseOperator {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
               description: `${tasks[taskDetails.task_order-1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
             }))
+          .catch(errors.Conflict, (err) => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
           .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
     });
