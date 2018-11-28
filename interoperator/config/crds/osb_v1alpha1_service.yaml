@@ -37,7 +37,7 @@ spec:
               properties:
                 id:
                   type: string
-                redirectURI:
+                redirectUri:
                   type: string
                 secret:
                   type: string

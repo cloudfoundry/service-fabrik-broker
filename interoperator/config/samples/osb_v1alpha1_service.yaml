@@ -29,3 +29,7 @@ spec:
   context:
     serviceFabrik:
       backupEnabled: false
+    operator:
+      image: "servicefabrikjenkins/blueprint"
+      tag: "latest"
+      port: 8080
