@@ -26,8 +26,8 @@ type ServiceInstanceSpec struct {
 	ServiceID        string                `json:"serviceId"`
 	PlanID           string                `json:"planId"`
 	RawContext       *runtime.RawExtension `json:"context,omitempty"`
-	OrganizationGUID string                `json:"organizationGuid"`
-	SpaceGUID        string                `json:"spaceGuid"`
+	OrganizationGUID string                `json:"organizationGuid,omitempty"`
+	SpaceGUID        string                `json:"spaceGuid,omitempty"`
 	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
 }
 

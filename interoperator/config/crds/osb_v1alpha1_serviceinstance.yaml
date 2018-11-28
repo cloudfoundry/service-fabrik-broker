@@ -39,8 +39,6 @@ spec:
           required:
           - serviceId
           - planId
-          - organizationGuid
-          - spaceGuid
           type: object
         status:
           properties:
