@@ -1,0 +1,79 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: services.osb.servicefabrik.io
+spec:
+  group: osb.servicefabrik.io
+  names:
+    kind: Service
+    plural: services
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bindable:
+              type: boolean
+            bindingRetrievable:
+              type: boolean
+            context:
+              properties:
+                operator:
+                  type: object
+                serviceFabrik:
+                  type: object
+              type: object
+            dashboardClient:
+              properties:
+                id:
+                  type: string
+                redirectUri:
+                  type: string
+                secret:
+                  type: string
+              type: object
+            description:
+              type: string
+            id:
+              type: string
+            instanceRetrievable:
+              type: boolean
+            metadata:
+              type: object
+            name:
+              type: string
+            planUpdatable:
+              type: boolean
+            requires:
+              items:
+                type: string
+              type: array
+            tags:
+              items:
+                type: string
+              type: array
+          required:
+          - name
+          - id
+          - description
+          - bindable
+          type: object
+        status:
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

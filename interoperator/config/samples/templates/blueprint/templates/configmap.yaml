@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  serviceId: {{ .Values.serviceId }}
+  planId: {{ .Values.planId }}
+  context: {{ .Values.context }}
+  organizationGuid: {{ .Values.context.organizationGuid }}
+  spaceGuid: {{ .Values.spaceGuid }}
+  parameters: {{ .Values.parameters }}
+  foo: {{ .Values.parameters.foo }}
