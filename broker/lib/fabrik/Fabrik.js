@@ -8,7 +8,6 @@ const Agent = require('../../../data-access-layer/service-agent');
 const VirtualHostAgent = require('./VirtualHostAgent');
 const DirectorManager = require('./DirectorManager');
 const VirtualHostManager = require('./VirtualHostManager');
-const ServiceFabrikOperation = require('./ServiceFabrikOperation');
 const DBManager = require('./DBManager');
 const OobBackupManager = require('./OobBackupManager');
 const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
@@ -64,16 +63,11 @@ class Fabrik {
       return new PlatformManager(platform);
     }
   }
-
-  static createOperation(name, opts) {
-    return new ServiceFabrikOperation(name, opts);
-  }
 }
 Fabrik.Agent = Agent;
 Fabrik.VirtualHostAgent = VirtualHostAgent;
 Fabrik.DockerManager = DockerManager;
 Fabrik.DirectorManager = DirectorManager;
-Fabrik.ServiceFabrikOperation = ServiceFabrikOperation;
 Fabrik.dbManager = new DBManager();
 Fabrik.oobBackupManager = OobBackupManager;
 Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
