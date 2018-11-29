@@ -289,6 +289,8 @@ module.exports = Object.freeze({
       VIRTUALHOST_BIND: 'virtualhostbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
+      LOGICALDB: 'logicaldbs',
+      LOGICALDB_BIND: 'logicaldbbinds',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
       TASK: 'tasks'
     },

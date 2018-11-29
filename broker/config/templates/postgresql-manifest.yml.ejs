@@ -1,0 +1,474 @@
+<%= spec.header %>
+
+<%
+const is_HA = p('postgresql.is_HA', false);
+const provider = p('agent.provider').name;
+
+var orgId = '';
+var spaceId = '';
+var serviceInstanceId = '';
+var boshDeploymentName = spec.header.name;
+if (spec.header.tags.platform === 'cloudfoundry') {
+  orgId = spec.header.tags.organization_guid;
+  spaceId = spec.header.tags.space_guid;
+  serviceInstanceId = boshDeploymentName.substring('service-fabrik'.length + 1).substring(5);
+}
+//check the prev manifest and diff the parameters + put in new values into addon
+var dynatraceFound = false ; //defines if the previous manifest had dynatrace addon defined [update flow]
+var uninstallAgent = false;
+var reinstallInfra = 'false';
+var prevApiUrl ;
+var prevApiToken ;
+var prevTags ;
+var processTags = `InstanceId=${serviceInstanceId} DeploymentName=${boshDeploymentName}`;
+if  ( spec.previous_manifest && spec.previous_manifest.addons ) {
+for(var pos = 0; pos < spec.previous_manifest.addons.length; pos++) {
+    if (spec.previous_manifest.addons[pos].name == "dynatrace-oneagent-beta") {
+        dynatraceFound = true;
+        prevApiUrl = spec.previous_manifest.addons[pos].properties.dynatrace.apiurl ;
+        prevApiToken = spec.previous_manifest.addons[pos].properties.dynatrace.apitoken ;
+        prevTags = spec.previous_manifest.addons[pos].properties.dynatrace.tags ;
+        break;
+    }
+  }
+}
+var maxConnections = p('max_connections');
+var serviceCredentials = `MAX_CONNECTIONS=${maxConnections}`;
+var dynatraceSectionRequired = false;
+// check if dynatrace is enabled first
+if (p('agent.dynatrace.uri')){
+  if (spec.parameters.dynatrace || dynatraceFound || p('agent.dynatrace.monitoring_enabled')){
+    dynatraceSectionRequired = true;
+  }
+  if (p('agent.dynatrace.monitoring_enabled')) {
+    reinstallInfra = 'true';
+  }
+}
+if (spec.parameters.dynatrace === null || spec.parameters.dynatrace === 'null'){
+  if (!dynatraceFound){
+    throw new Error('Cannot uninstall monitoring agent- existing installation not found');
+  }
+  uninstallAgent = true;
+}
+//check if the addons section is required
+if (dynatraceSectionRequired) {
+  var uri = p('agent.dynatrace.uri');
+  const infraTenantTags = `OrgId=${orgId} SpaceId=${spaceId} InstanceId=${serviceInstanceId} Service=postgresql ServiceType=database`;
+%>
+addons:
+- name: dynatrace-oneagent-beta
+  jobs:
+    - name: dynatrace-oneagent
+      release: dynatrace-oneagent-beta
+  properties:
+    dynatrace:
+<%
+  if (uninstallAgent) {
+%>
+      uninstallAgent: true
+      service_credentials: <%= serviceCredentials %>
+      reinstallInfraAgent: <%= reinstallInfra %>
+      apiurl: <%= p('agent.dynatrace.infra_uri') %>
+      apitoken: <%= p('agent.dynatrace.paas_token') %>
+      tags: <%= infraTenantTags %>
+      syslog_aggregator:
+        address: <%= p('syslog.syslog_ingestor.host') %>
+        port: <%= p('syslog.syslog_ingestor.port') %>
+      infra: 0
+      applogaccess: 0
+<%
+  }
+  else if (spec.parameters.dynatrace) {
+    //TODO: validate parameters here
+    var providedDomain = ( spec.parameters.dynatrace.apiurl ).split('/')[2];
+    var actualDomain = uri.split('/')[2];
+    var isUrlEqual = ( actualDomain === providedDomain );
+    if (!isUrlEqual) {
+        throw new Error('Domain for provided Dynatrace domain does not match the platform domain');
+    }
+    //if parameters are provided, put in new values into addon
+  %>
+      apiurl: <%= spec.parameters.dynatrace.apiurl %>
+      apitoken: <%= spec.parameters.dynatrace.apitoken %>
+      service_credentials: <%= serviceCredentials %>
+      tags: <%= spec.parameters.dynatrace.tags ? spec.parameters.dynatrace.tags : "" %>
+      syslog_aggregator:
+        address: <%= p('syslog.syslog_ingestor.host') %>
+        port: <%= p('syslog.syslog_ingestor.port') %>
+      infra: 0
+      applogaccess: 0
+  <% } else if (dynatraceFound) { %>
+      apiurl: <%= prevApiUrl %>
+      apitoken: <%= prevApiToken %>
+      service_credentials: <%= serviceCredentials %>
+      tags: <%= prevTags %>
+      syslog_aggregator:
+        address: <%= p('syslog.syslog_ingestor.host') %>
+        port: <%= p('syslog.syslog_ingestor.port') %>
+      infra: 0
+      applogaccess: 0
+<% } else if (p('agent.dynatrace.monitoring_enabled')) { %>
+      apiurl: <%= p('agent.dynatrace.infra_uri') %>
+      apitoken: <%= p('agent.dynatrace.paas_token') %>
+      service_credentials: <%= serviceCredentials %>
+      tags: <%= infraTenantTags %>
+      syslog_aggregator:
+        address: <%= p('syslog.syslog_ingestor.host') %>
+        port: <%= p('syslog.syslog_ingestor.port') %>
+      infra: 0
+      applogaccess: 0
+<% } %>
+<% } %>
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 3000-600000
+  update_watch_time: 3000-600000
+  serial: true
+
+instance_groups: &instance_groups
+<%
+const stemcell = spec.stemcell;
+
+var net1;
+var net2;
+var net3;
+var postgresql_member1;
+var postgresql_member2;
+var postgresql_members;
+var pgpool_member1;
+var pgpool_member2;
+var pgpool_member3;
+var pgpool_members;
+var postgresql_azs;
+var pgpool_azs;
+var clientip;
+
+if (!spec.previous_manifest) {
+  if (spec.multi_az_enabled && (provider == 'azure' || provider == 'gcp')){
+    net1 = spec.networks[0];
+    postgresql_member1 = net1.static.slice(0,1);
+    pgpool_member1 = net1.static.slice(1,2);
+    clientip = net1.static[2];
+
+    net2 = spec.networks[1];
+    postgresql_member2 = net2.static.slice(0,1);
+    pgpool_member2 = net2.static.slice(1,2);
+
+    net3 = spec.networks[2];
+    pgpool_member3 = net3.static.slice(0,1);
+
+    postgresql_members = postgresql_member1.concat(postgresql_member2);
+    pgpool_members = pgpool_member1.concat(pgpool_member2).concat(pgpool_member3);
+
+    postgresql_azs = ['z1', 'z2'];
+    pgpool_azs = ['z1', 'z2', 'z3'];
+
+  } else {
+    net1 = spec.networks[0];
+    postgresql_members = net1.static.slice(0, 2);
+    pgpool_members = net1.static.slice(2, 5);
+    clientip = net1.static[5];
+    postgresql_azs = ['z1'];
+    pgpool_azs = ['z1'];
+  }
+} else {
+   if(spec.previous_manifest.instance_groups)
+   {
+    /* previous manifest is in v2 schema */
+    postgresql_azs = spec.previous_manifest.instance_groups[0].azs;
+    if ( postgresql_azs.length == 2)
+    {
+         net1 = spec.networks[0];
+         postgresql_member1 = net1.static.slice(0,1);
+         pgpool_member1 = net1.static.slice(1,2);
+         clientip = net1.static[2];
+
+         net2 = spec.networks[1];
+         postgresql_member2 = net2.static.slice(0,1);
+         pgpool_member2 = net2.static.slice(1,2);
+
+         net3 = spec.networks[2];
+         pgpool_member3 = net3.static.slice(0,1);
+
+         postgresql_members = postgresql_member1.concat(postgresql_member2);
+         pgpool_members = pgpool_member1.concat(pgpool_member2).concat(pgpool_member3);
+
+         postgresql_azs = ['z1', 'z2'];
+         pgpool_azs = ['z1', 'z2', 'z3'];
+     } else if( postgresql_azs.length == 1){
+         net1 = spec.networks[0];
+         postgresql_members = net1.static.slice(0, 2);
+         pgpool_members = net1.static.slice(2, 5);
+         clientip = net1.static[5];
+         postgresql_azs = ['z1'];
+         pgpool_azs = ['z1'];
+    }
+   }
+}
+var netid;
+var vnetname;
+var gateway;
+var security_group;
+if (is_HA) {
+  gateway = net1.gateway;
+  if (provider == 'aws' || provider == 'openstack') {
+    security_group = (net1.cloud_properties.security_groups || net1.cloud_properties.tags)[0];
+    if (net1.cloud_properties.net_id) {
+      netid = net1.cloud_properties.net_id;
+    } else {
+      netid = net1.cloud_properties.subnet;
+    }
+  }
+  if (provider == 'azure') {
+    security_group = (net1.cloud_properties.security_group );
+    netid = net1.cloud_properties.subnet_name;
+    vnetname = net1.cloud_properties.virtual_network_name;
+  }
+  if (provider == 'gcp') {
+    security_group = (net1.cloud_properties.security_groups || net1.cloud_properties.tags)[0];
+    netid = net1.cloud_properties.subnetwork_name;
+    vnetname = net1.cloud_properties.network_name;
+  }
+
+}
+%>
+<%
+
+/* DO NOT CHANGE THE ORDER IN WHICH INSTANCE GROUPS AND JOBS INSIDE EACH GROUP IS DEFINED IN THIS FILE. */
+/* INSTANCE GROUPS AND JOBS ARE ACCESSED USING INDEXES AND NOT BY NAME AS OF NOW. IF THERE IS A REQUIREMENT TO */
+/* CHANGE THE ORDER, UPDATE THE CODE BELOW APPROPRIATELY OR IDENITFY IG-JOBS BY NAME AND NOT BY INDEX */
+
+const properties = {};
+if (!spec.previous_manifest) {
+
+  /* create scenario: pick random service instance properties */
+  properties.postgresql = {
+    admin_user: SecureRandom.hex(16),
+    admin_user_password: SecureRandom.hex(16),
+    database_name: SecureRandom.hex(16),
+    database_user: SecureRandom.hex(8),
+    database_user_password: SecureRandom.hex(8)
+  };
+
+  ipfailover_agent_username = SecureRandom.hex(16);
+  ipfailover_agent_password = SecureRandom.hex(16);
+
+} else {
+
+  /* update scenario: preserve previous service instance properties related to postgresql */
+  if(!spec.previous_manifest.instance_groups){
+    properties.postgresql = spec.previous_manifest.properties.postgresql;
+  } else {
+    properties.postgresql = spec.previous_manifest.instance_groups[0].jobs[0].properties;
+  }
+
+  /* handle update scenario for ipfailover properties which will be missing in non-ha landscapes. */
+  if(!spec.previous_manifest.instance_groups){
+    /* Check if ipfailover is defined in previous bosh manifest */
+  	if(!spec.previous_manifest.properties.ipfailover || !spec.previous_manifest.properties.ipfailover.agent){
+    	ipfailover_agent_username = SecureRandom.hex(16);
+    	ipfailover_agent_password = SecureRandom.hex(16);
+  	} else {
+    	properties.ipfailover = spec.previous_manifest.properties.ipfailover;
+    	ipfailover_agent_username = properties.ipfailover.agent.username
+    	ipfailover_agent_password = properties.ipfailover.agent.password
+    }
+  } else {
+    if (is_HA) {
+  	   /* Check if ipfailover is defined in previous bosh2 manifest */
+  	  if(!spec.previous_manifest.instance_groups[1] || !spec.previous_manifest.instance_groups[1].jobs[1].properties || !spec.previous_manifest.instance_groups[1].jobs[1].properties.agent){
+    	  ipfailover_agent_username = SecureRandom.hex(16);
+    	  ipfailover_agent_password = SecureRandom.hex(16);
+  	  } else {
+    	  properties.ipfailover = spec.previous_manifest.instance_groups[1].jobs[1].properties;
+    	  ipfailover_agent_username = properties.ipfailover.agent.username
+    	  ipfailover_agent_password = properties.ipfailover.agent.password
+      }
+    }
+  }
+}
+%>
+
+- name: postgresql
+  azs: <%= JSON.stringify(postgresql_azs) %>
+  instances: <%= postgresql_members.length %>
+  stemcell: <%= stemcell.alias %>
+  vm_type: <%= p('vm_type') %>
+  persistent_disk_type: <%= p('disk_type') %>
+  networks:
+  - name: <%= net1.name %>
+    static_ips: <%= JSON.stringify(postgresql_members) %>
+  migrated_from:
+  - {name: postgresql_master_z1, az: z1}
+  - {name: postgresql_slave_z1, az: z1}
+  jobs:
+  - name:  <%= p('job.template.postgresql') %>
+    release: postgresql
+    properties:
+      port: 5432
+      database_name: <%= properties.postgresql.database_name %>
+      admin_user: <%= properties.postgresql.admin_user %>
+      admin_user_password: <%= properties.postgresql.admin_user_password %>
+      database_user: <%= properties.postgresql.database_user %>
+      database_user_password: <%= properties.postgresql.database_user_password %>
+      max_connections: <%= p('max_connections') %>
+      max_wal_senders: <%= p('max_wal_senders') %>
+      shared_buffers: <%= p('shared_buffers') %>
+      wal_keep_segments: <%= p('wal_keep_segments') %>
+      superuser_reserved_connections: <%= p('superuser_reserved_connections') %>
+      work_mem: <%= p('work_mem') %>
+      maintenance_work_mem: <%= p('maintenance_work_mem') %>
+      checkpoint_timeout: <%= p('checkpoint_timeout') %>
+      checkpoint_completion_target: <%= p('checkpoint_completion_target') %>
+      checkpoint_segments: <%= p('checkpoint_segments') %>
+      autovacuum: <%= p('autovacuum') %>
+      autovacuum_max_workers: <%= p('autovacuum_max_workers') %>
+      autovacuum_naptime: <%= p('autovacuum_naptime') %>
+      autovacuum_freeze_max_age: <%= p('autovacuum_freeze_max_age') %>
+      data_directory: "/var/vcap/store/postgresql"
+      shipper_name: postgresql_<%= postgresql_members[0] %>_<%= postgresql_members[1] %>
+      log_statement: 'ddl'
+      log_min_error_statement: 'error'
+      log_rotation_age: 1440
+      log_rotation_size: 40
+      log_filename: postgresql-%a-%H.log
+      log_min_messages: warning
+      is_HA: <%= is_HA %>
+      clientip: <%= clientip %>
+      version: <%= p('version') %>
+      failover_on_update: <%= p('failover_on_update') %>
+      optimized_failover: <%= p('optimized_failover') %>
+      pitr: <%= p('pitr') %>
+      extension:
+      - ltree
+      - citext
+      - pg_stat_statements
+      - pgcrypto
+      - fuzzystrmatch
+      - hstore
+      - btree_gist
+      - btree_gin
+      - pg_trgm
+      - uuid-ossp
+      locale:
+      - ja_JP
+      riemann:
+        host: <%= p('riemann.host') %>
+        port: <%= p('riemann.tcp_port') %>
+        graphite_port: <%= p('riemann.graphite_port') %>
+      syslog:
+        active: <%= p('syslog.active') %>
+      syslog_ingestor:
+        host: <%= p('syslog.syslog_ingestor.host') %>
+    consumes:
+<% if (is_HA) { %>
+      ipfailover: {from: ipfailover_pgpool}
+<% } %>
+      broker-agent: {from: brokeragent_postgresql}
+      dynatrace:
+        instances: []
+        properties:
+          tags: <%= processTags %>
+# broker-agent job name should not be changed
+  - name: broker-agent
+    release: broker-agent-postgresql
+    properties: &broker-agent_properties
+      username: <%= JSON.stringify(p('agent.auth.username')) %>
+      password: <%= JSON.stringify(p('agent.auth.password')) %>
+      provider: <%= JSON.stringify(p('agent.provider')) %>
+      sm_network_id: <%= p('agent.sm_network_id') %>
+      service_agent:
+        port: 2720
+        username: psql
+        password: secret
+<% if (is_HA) { %>
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+<% } %>
+    provides:
+      broker-agent: {as: brokeragent_postgresql}
+
+
+<% if (is_HA) { %>
+  - name: ipfailover
+    release: ipfailover
+    properties: &ipfailover_properties
+      max_retry_attempts: 7
+      agent:
+        username: <%= ipfailover_agent_username %>
+        password: <%= ipfailover_agent_password %>
+      network:
+<% if (provider == 'azure' || provider == 'gcp') { %>
+        virtualnetworkname: <%= vnetname %>
+<% } %>
+        name: <%= netid %>
+        gateway: <%= gateway %>
+        securitygroup: <%= security_group %>
+    provides:
+      ipfailover: {as: ipfailover_postgresql}
+    consumes:
+      broker-agent: {from: brokeragent_postgresql}
+<% } %>
+
+<% if (is_HA) { %>
+- name: pgpool
+  azs: <%= JSON.stringify(pgpool_azs) %>
+  instances: <%= pgpool_members.length %>
+  stemcell: <%= stemcell.alias %>
+  vm_type: <%= p('pgpool_vm_type') %>
+  persistent_disk_type: <%= p('pgpool_disk_type') %>
+  networks:
+  - name: <%= net1.name %>
+    static_ips: <%= JSON.stringify(pgpool_members) %>
+  migrated_from:
+  - {name: pgpool1_z1, az: z1}
+  - {name: pgpool2_z1, az: z1}
+  - {name: pgpool3_z1, az: z1}
+  jobs:
+  - name: pgpool-II
+    release: pgpool-II
+    properties:
+      port: 9999
+      health_check_period: 300
+      health_check_timeout: 300
+      debug: false
+      watchdog:
+        port: 9000
+        interval: 5
+        life_point: 3
+        use_watchdog: true
+        heartbeat_port: 9694
+        heartbeat_deadtime: 15
+        heartbeat_keepalive: 2
+      pcp:
+        user: vcap
+        password: pcp_password
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+      broker-agent: {from: brokeragent_postgresql}
+
+  - name: ipfailover
+    release: ipfailover
+    properties: *ipfailover_properties
+    provides:
+      ipfailover: {as: ipfailover_pgpool}
+    consumes:
+      broker-agent: {from: brokeragent_postgresql}
+
+  - name: broker-agent
+    release: broker-agent-postgresql
+    properties: *broker-agent_properties
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+    provides:
+      broker-agent: {as: brokeragent_pgpool}
+
+  - name: pgpool-watcher
+    release: pgpool-II
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+      broker-agent: {from: brokeragent_postgresql}
+
+<% } %>

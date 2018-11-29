@@ -37,7 +37,6 @@ const hook = {
   port: 9295
 };
 const redirect_uri = `${external.protocol}://${external.host}/manage/auth/cf/callback`;
-
 const cloudProviders = {
   openstack: {
     authUrl: 'https://myopenstackcloud.com:5000',
@@ -79,12 +78,13 @@ const cloudProviders = {
       "auth_uri": "https://myaccounts.com/oauth2/auth",
       "token_uri": "https://myaccounts.com/oauth2/token",
       "auth_provider_x509_cert_url": "https://myaccounts.com/oauth2/v1/certs",
-      "client_x509_cert_url": "https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com" 
+      "client_x509_cert_url": "https://myaccounts.com/v1/metadata/x509/my-test-user%40my-gcp-dev.iam.myaccounts.com"
     },
     container: 'samplecontainer'
   }
 };
 const cloudProvider = cloudProviders.openstack;
+
 
 %>---
 defaults: &defaults
@@ -170,6 +170,9 @@ defaults: &defaults
       "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
+      "deployment.servicefabrik.io_v1alpha1_logicaldbs.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_logicaldbs.yaml') %>
+      "bind.servicefabrik.io_v1alpha1_logicaldbbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_logicaldbbinds.yaml') %>
+
 
   ##############################
   # REPORT ENDPOINT SETTINGS #
@@ -184,13 +187,13 @@ defaults: &defaults
     ssl:
       key: <%= certificate('broker.key') %>
       cert: <%= certificate('broker.crt') %>
-  
+
   hook:
     port: <%= hook.port %>
     ip: <%= hook.ip %>
     protocol: <%= hook.protocol%>
     host: <%= `${hook.ip}:${hook.port}` %>
-  
+
   #############################
   # DEPLOYMENT HOOKS SETTINGS #
   #############################
@@ -201,7 +204,7 @@ defaults: &defaults
     ip: <%= hook.ip %>
     protocol: <%= hook.protocol%>
     host: <%= `${hook.ip}:${hook.port}` %>
-  
+
   ####################
   # MONGODB SETTINGS #
   ####################
@@ -370,7 +373,7 @@ defaults: &defaults
     url: https://api.bosh-lite.com
     username: admin
     password: admin
-  
+
   ###################
   # DOCKER SETTINGS #
   ###################
@@ -378,11 +381,11 @@ defaults: &defaults
     url: unix:///var/run/docker.sock # how to connect the broker to docker
     allocate_docker_host_ports: true # if true the broker will allocate fixed port mappings for the containers
     volume_driver: local
-  
+
   #List of add on jobs that are to be added onto each service vm
   service_addon_jobs:
   - iptables-manager
-  
+
   #####################
   # DIRECTOR SETTINGS #
   #####################
@@ -430,7 +433,7 @@ defaults: &defaults
       uaa_auth: false #make it true if bosh uses UAA for authentication
       uaa_url: '' #provide complete uaa url here.,e.g., https://192.168.48.6:8443
       client_id: '' #Assuming client credential grant being used, provide client id here
-      client_secret: '' #provide corrsponding client secret 
+      client_secret: '' #provide corrsponding client secret
   - cpi: warden_cpi
     url: https://192.168.50.4:25555
     username: admin
@@ -468,6 +471,17 @@ defaults: &defaults
     rabbitmq: &agent_rabbitmq
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy
+    postgresql: &agent_postgresql
+      version: '1'
+      hostname: <%= process.env.POSTGRESQL_AGENT_HOSTNAME || '~' %>
       auth:
         username: agent
         password: secret
@@ -963,6 +977,86 @@ defaults: &defaults
         bullets:
         - 'Shared Deployment'
         - '1 VirtualHost'
+  ####################
+  # POSTGRESQL SERVICE #
+  ####################
+  - &postgresql_service
+    id: '6db542eb-8187-4afc-8a85-e08b4a3cc24e'
+    name: 'postgresql'
+    description: &description 'Relational database with an object-oriented model.'
+    bindable: true
+    tags:
+    - 'postgresql'
+    - 'relational'
+    metadata:
+      displayName: 'PostgreSQL'
+      longDescription: *description
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://help.sap.com/viewer/6be7ed96ddeb4e158c2107c434142545/Cloud/en-US/1cb29d5c1f714e71a79379c6b7482428.html'
+      supportUrl: 'https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/5dd739823b824b539eee47b7860a00be.html'
+    dashboard_client:
+      id: 'service-fabrik-postgresql-client1'
+      secret: 'service-fabrik-postgresql-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &postgresql_plan1
+      id: 'c41f368b-1eab-4d0f-b740-d9abdd14449f'
+      name: 'v9.6-tiny'
+      free: false
+      # Asynch operations which supports parallel synch operations
+      # e.g. bind and unbind (sync) supported during update and backup (async)
+      supported_operations: *async_ops_supporting_parallel_sync_ops
+      manager: &manager_plan11
+        name: 'director'
+        async: true
+        resource_mappings: *director_resource_mappings
+        settings: &settings_plan11
+          prefix: 'postgresql'
+          agent: *agent_postgresql
+          template: <%= base64_template('templates/postgresql-manifest.yml.ejs') %>
+          releases: &dedicated_releases
+          - { name: postgresql, version: 121 }
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          - { name: broker-agent-postgresql, version: 83 }
+          context: &context_plan11
+            agent: *agent_postgresql
+            disk_type: 20GB
+            vm_type: default
+            max_connections: 50
+            max_wal_senders: 3
+            shared_buffers: 512MB
+            wal_keep_segments: 20
+    - &postgresqlsharedplan
+      id: '2fcf6682-5a4a-4297-a7cd-a97bbe085b8e'
+      name: 'shared-postgresql'
+      free: true
+      manager: &postgresql_manager
+        name: 'postgresql'
+        resource_mappings:
+          resource_group: 'deployment.servicefabrik.io'
+          resource_type: 'logicaldbs'
+          bind:
+            resource_group: 'bind.servicefabrik.io'
+            resource_type: 'logicaldbbinds'
+        settings:
+          prefix: 'postgres'
+          agent: *agent_postgresql
+          context:
+            agent: *agent_postgresql
+      description: '[BETA] PostgreSQL database hosted on shared instances'
+      metadata:
+        service-inventory-key: SERVICE-89
+        skip_quota_check: true
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+          bullets:
+          - 'Single Logical Database'
 
 
 development: &development
@@ -1167,3 +1261,5 @@ test:
       - *default_network
       - *fabrik_network
   password: 'secret'
+
+
