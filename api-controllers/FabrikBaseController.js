@@ -88,7 +88,7 @@ class FabrikBaseController extends BaseController {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
           resourceId: serviceFlowId,
-          operation: operationType
+          operation: `${operationType}_${CONST.OPERATION_TYPE.SERVICE_FLOW}`
         };
       }
       return {

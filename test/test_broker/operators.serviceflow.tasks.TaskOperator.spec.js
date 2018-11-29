@@ -102,6 +102,19 @@ describe('operators', function () {
               });
             });
         });
+        it('In case request is picked up (locked) by other operator, task is skipped', () => {
+          const to = new TaskOperator();
+          const resource = _.cloneDeep(changeObject);
+          resource.object.metadata.annotations = {
+            lockedByManager: '10.0.0.2',
+            processingStartedAt: `${new Date()}`
+          };
+          return to
+            .handleResource(resource)
+            .then(() => {
+              expect(updateResourceStub).not.to.be.called;
+            });
+        });
         it('start status poller and complete the poller', () => {
           const to = new TaskOperator();
           return to.init()
@@ -136,6 +149,15 @@ describe('operators', function () {
                   clock.tick(CONST.APISERVER.WATCHER_REFRESH_INTERVAL);
                   return promiseResp;
                 });
+            });
+        });
+        it('check if task poller continues to hold lock', () => {
+          const to = new TaskOperator();
+          return to.init()
+            .then(() => to.handleResource(changeObject, (input) => to.startTaskStatusPoller(input), CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW, CONST.APISERVER.RESOURCE_TYPES.TASK))
+            .then((response) => {
+              expect(response).to.equal(CONST.APISERVER.HOLD_PROCESSING_LOCK);
+              _.each(to.pollers, (interval) => to.clearPoller(changeObject.object, interval));
             });
         });
         describe('TaskPoller', function () {
