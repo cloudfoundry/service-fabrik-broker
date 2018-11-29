@@ -1,9 +1,9 @@
 'use strict';
 
 exports.jwt = require('./jwt');
-exports.store = require('./store');
+// exports.store = require('./store');
 exports.middleware = require('./middleware');
-exports.fabrik = require('./fabrik');
+// exports.fabrik = require('./fabrik');
 exports.bootstrap = bootstrap;
 exports.loadServices = loadServices;
 const config = require('../../common/config');
@@ -16,6 +16,7 @@ const Promise = require('bluebird');
 const catalog = require('../../common/models').catalog;
 const logger = require('../../common/logger');
 const docker = exports.docker;
+require('./fabrik/UnlockResourcePoller');
 
 function bootstrap() {
   logger.info('Bootstraping docker client...');

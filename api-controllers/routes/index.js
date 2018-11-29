@@ -1,7 +1,17 @@
 'use strict';
 
-exports.broker = require('./broker');
-exports.manage = require('./manage');
-exports.admin = require('./admin');
-exports.api = require('./api');
-exports.report = require('./report');
+const config = require('../common/config');
+const _ = require('lodash');
+
+if (!_.includes(config.disabled_apis, 'broker')) {
+    exports.broker = require('./broker');
+}
+if (!_.includes(config.disabled_apis, 'api')) {
+    exports.api = require('./api');
+}
+if (!_.includes(config.disabled_apis, 'admin')) {
+    exports.admin = require('./admin');
+}
+if (!_.includes(config.disabled_apis, 'manage')) {
+    exports.manage = require('./manage');
+}

@@ -12,6 +12,7 @@ const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
+const cf = require('../data-access-layer/cf');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
@@ -21,6 +22,8 @@ Promise.promisifyAll(crypto, Session.prototype);
 class DashboardController extends FabrikBaseController {
   constructor() {
     super();
+    this.cloudController = cf.cloudController;
+    this.uaa = cf.uaa;
   }
 
   show(req, res) {
