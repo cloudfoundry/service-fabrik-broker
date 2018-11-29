@@ -30,7 +30,7 @@ class HttpClient {
       if (httpCircuitConfig && httpCircuitConfig.apis) {
         this.buildCommandFactory(this.baseUrl);
       } else {
-        logger.warn('Circuit breaker config not found for HTTP. Hystrix will not be configured for ${options.baseUrl}');
+        logger.warn(`Circuit breaker config not found for HTTP. Hystrix will not be configured for ${options.baseUrl}`);
       }
     }
   }

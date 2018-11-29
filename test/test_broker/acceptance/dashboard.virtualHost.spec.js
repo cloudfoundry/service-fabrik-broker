@@ -6,9 +6,6 @@ const parseUrl = require('url').parse;
 const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
 const fabrik = lib.fabrik;
-const iaas = require('../../../data-access-layer/iaas');
-const virtualHostStore = iaas.virtualHostStore;
-const config = require('../../../common/config');
 
 describe('dashboard', function () {
   describe('virtualHost', function () {
@@ -16,20 +13,12 @@ describe('dashboard', function () {
     const service_id = '19f17a7a-5247-4ee2-94b5-03eac6756388';
     const plan_id = 'd035f948-5d3a-43d7-9aec-954e134c3e9d';
     const plan_guid = 'f6280923-b144-4f02-adf7-76a7b5ef3a4a';
-    const index = mocks.director.networkSegmentIndex;
-    const instance_id = mocks.director.uuidByIndex(index);
+    const instance_id = '5a877873-7659-40ea-bdcb-096e9ae0cbb3';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
-    const parent_instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
-    const deployment_name = mocks.director.deploymentNameByIndex(index);
+    const parent_instance_id = 'b4719e7c-e8d3-4f7f-c51c-769ad1c3ebfa';
+    const deployment_name = 'service-fabrik-0028-b4719e7c-e8d3-4f7f-c51c-769ad1c3ebfa';
     const instance_name = 'rmq';
-    const filename = `virtual_hosts/${instance_id}/${instance_id}.json`;
-    const container = virtualHostStore.containerName;
-    const pathname = `/${container}/${filename}`;
-    const data = {
-      instance_guid: instance_id,
-      deployment_name: deployment_name
-    };
 
     const resource1 = {
       apiVersion: 'deployment.servicefabrik.io/v1alpha1',
@@ -55,6 +44,9 @@ describe('dashboard', function () {
             dedicated_rabbitmq_instance: `${instance_name}`
           }
         })
+      },
+      operatorMetadata: {
+        deploymentName: `${deployment_name}`
       },
       status: {
         state: 'succeeded',
@@ -95,12 +87,6 @@ describe('dashboard', function () {
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
       before(function () {
         _.unset(fabrik.VirtualHostManager, plan_id);
-        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
-        mocks.cloudProvider.auth();
-        mocks.cloudProvider.getContainer(container);
-        return mocks.setup([
-          virtualHostStore.cloudProvider.getContainer()
-        ]);
       });
 
       afterEach(function () {
@@ -115,10 +101,9 @@ describe('dashboard', function () {
         mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
         mocks.uaa.getUserInfo();
         mocks.cloudController.getServiceInstancePermissions(instance_id);
-        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, resource1, 1);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, resource1, 2);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, parent_instance_id, resource2, 1);
         mocks.cloudController.findServicePlanByInstanceId(instance_id, plan_guid, plan_id, undefined, 2);
-        mocks.cloudProvider.download(pathname, data);
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
           .set('Accept', 'application/json')
@@ -157,12 +142,6 @@ describe('dashboard', function () {
     describe('/manage/dashboards/virtual_host/instances/:instance_id', function () {
       before(function () {
         _.unset(fabrik.VirtualHostManager, plan_id);
-        virtualHostStore.cloudProvider = new iaas.CloudProviderClient(config.virtual_host.provider);
-        mocks.cloudProvider.auth();
-        mocks.cloudProvider.getContainer(container);
-        return mocks.setup([
-          virtualHostStore.cloudProvider.getContainer()
-        ]);
       });
 
 
@@ -180,7 +159,6 @@ describe('dashboard', function () {
         mocks.cloudController.getServiceInstancePermissions(instance_id);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST, instance_id, resource1, 3);
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, parent_instance_id, resource2, 1);
-        //mocks.cloudProvider.download(pathname, data);
         return agent
           .get(`/manage/dashboards/virtual_host/instances/${instance_id}`)
           .set('Accept', 'application/json')

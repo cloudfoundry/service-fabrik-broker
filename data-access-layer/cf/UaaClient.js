@@ -26,6 +26,7 @@ class UaaClient extends HttpClient {
     options = _.assign({
       response_type: 'code'
     }, options);
+    options.login_hint = '{"origin":"uaa"}';
     if (Array.isArray(options.scope)) {
       options.scope = options.scope.join(' ');
     }

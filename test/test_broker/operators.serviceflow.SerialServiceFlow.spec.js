@@ -13,9 +13,10 @@ describe('operators', function () {
     describe('serialServiceFlow', function () {
       /* jshint expr:true */
       let SerialServiceFlowOperator, registerWatcherStub, registerCRDStub, updateResourceStub, createResourceStub, clock, utilsStub;
+      let throwExceptionOnUpdate = false;
       const instance_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
       const serviceflow_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfb';
-      const task_id = 'b4719e7c-e8d3-4f7f-c515-769ad1c3ebfc';
+      const task_id = `${serviceflow_id}.0`;
 
       const taskDetails = {
         operation_params: {
@@ -82,11 +83,18 @@ describe('operators', function () {
         });
         registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
         SerialServiceFlowOperator = require('../../operators/serviceflow-operator/SerialServiceFlowOperator');
-        updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve({
-          body: {
-            status: 200
-          }
-        }));
+        updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => {
+          return Promise.try(() => {
+            if (throwExceptionOnUpdate) {
+              throw new errors.Conflict(`Task ${task_id} already exists`);
+            }
+            return Promise.resolve({
+              body: {
+                status: 200
+              }
+            });
+          });
+        });
         createResourceStub = sinon.stub(apiServerClient, 'createResource', () => Promise.resolve(true));
         clock = sinon.useFakeTimers(new Date().getTime());
         utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(task_id));
@@ -177,9 +185,10 @@ describe('operators', function () {
             expect(createResourceStub.firstCall.args[0]).to.eql({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-              resourceId: task_id,
+              resourceId: `${serviceflow_id}.0`,
               labels: {
-                serviceflow_id: serviceflow_id
+                serviceflow_id: serviceflow_id,
+                task_order: '0'
               },
               options: _.merge(serviceFlowOptions, tasks[0], {
                 task_order: 0,
@@ -257,7 +266,7 @@ describe('operators', function () {
             expect(updateResourceStub.firstCall.args[0]).to.eql({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-              resourceId: task_id,
+              resourceId: `${serviceflow_id}.0`,
               status: {
                 lastOperation: {
                   state: CONST.OPERATION.SUCCEEDED,
@@ -265,7 +274,7 @@ describe('operators', function () {
                     state: CONST.OPERATION.SUCCEEDED,
                     description: ''
                   },
-                  message: `Task complete and next relayed task is ${task_id}`
+                  message: `Task complete and next relayed task is ${serviceflow_id}.1`
                 },
                 response: {
                   state: CONST.OPERATION.SUCCEEDED,
@@ -284,6 +293,40 @@ describe('operators', function () {
                   description: `Void blueprint task is complete. Initiated Void blueprint task2 @ ${new Date()}`
                 },
                 state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+              }
+            });
+          });
+      });
+      it('relay next task is ignored if the same task was already relayed', () => {
+        const inProgressTask = _.cloneDeep(taskObject);
+        const inProgressTaskDetails = _.cloneDeep(taskDetails);
+        inProgressTaskDetails.task_order = 0;
+        inProgressTask.object.spec.options = JSON.stringify(inProgressTaskDetails);
+        const serialServiceFlow = new SerialServiceFlowOperator();
+        throwExceptionOnUpdate = true;
+        return serialServiceFlow.init()
+          .then(() => serialServiceFlow.relayTask(inProgressTask.object))
+          .then(() => {
+            throwExceptionOnUpdate = false;
+            expect(updateResourceStub).to.be.calledOnce;
+            expect(updateResourceStub.firstCall.args[0]).to.eql({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
+              resourceId: `${serviceflow_id}.0`,
+              status: {
+                lastOperation: {
+                  state: CONST.OPERATION.SUCCEEDED,
+                  response: {
+                    state: CONST.OPERATION.SUCCEEDED,
+                    description: ''
+                  },
+                  message: `Task complete and next relayed task is ${serviceflow_id}.1`
+                },
+                response: {
+                  state: CONST.OPERATION.SUCCEEDED,
+                  description: ''
+                },
+                state: CONST.OPERATION.SUCCEEDED
               }
             });
           });

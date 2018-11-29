@@ -101,17 +101,17 @@ class BaseOperator {
       const processingStartedAt = _.get(objectBody, 'metadata.annotations.processingStartedAt');
       // To handle already existing resources
       // For already existing resources lockedByManager value is either '' or '<ip>' or undefined
-      const currentTime = new Date();
+      const elapsedTimeInMs = new Date() - new Date(processingStartedAt);
       if (
         lockedByManager &&
         (lockedByManager !== '') &&
         processingStartedAt &&
         (processingStartedAt !== '') &&
-        (currentTime - new Date(processingStartedAt) < CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)
+        (elapsedTimeInMs < CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)
       ) {
         processingConflict = true;
       }
-      if ((currentTime - new Date(processingStartedAt) >= CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)) {
+      if (elapsedTimeInMs >= CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT) {
         logger.info(`Lock is expired on ${objectBody.metadata.name} - acquiring the lock.`);
       }
       if (!processingConflict) {
@@ -127,7 +127,8 @@ class BaseOperator {
           });
       } else {
         processingLockStatus.conflict = true;
-        logger.debug(`Resource ${objectBody.metadata.name}  ${resourceGroup}, ${resourceType}, ${queryString} - is picked by process with ip ${lockedByManager} at ${processingStartedAt}`);
+        logger.debug(`Resource ${objectBody.metadata.name}  ${resourceGroup}, ${resourceType}, ${queryString} -` +
+          ` is picked by process with ip ${lockedByManager} at ${processingStartedAt} will be held for another ${elapsedTimeInMs - CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT}(ms)`);
       }
     });
   }
@@ -135,7 +136,7 @@ class BaseOperator {
   _postProcessRequest(objectBody) {
     const options = JSON.parse(objectBody.spec.options);
     return this._releaseProcessingLock(objectBody)
-      .catch((NotFound), () => logger.debug(`Resource resourceType: ${objectBody.kind},\`
+      .catch((NotFound), () => logger.debug(`Resource resourceType: ${objectBody.kind},\
         resourceId: ${objectBody.metadata.name} is not found, No need to panic as it is already deleted.`))
       .catch(err => logger.error(`Caught error while releasing processing lock for request ${JSON.stringify(options)}:`, err));
   }

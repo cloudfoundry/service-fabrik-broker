@@ -12,8 +12,6 @@ describe('service-fabrik-admin', function () {
     describe('director', function () {
       let numberOfDeployments = 8;
       const base_url = '/admin';
-      const name = 'update';
-      const args = {};
       const broker_guid = 'eb3303c3-f373-4339-8562-113d1451a6ef';
       const broker_name = config.broker_name;
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
@@ -209,98 +207,6 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
-              mocks.verify();
-            });
-        });
-      });
-
-      describe('#updateOutdatedDeployments', function () {
-        const store = {};
-
-        before(function () {
-          store.numberOfDeployments = numberOfDeployments;
-          numberOfDeployments = 1;
-        });
-
-        after(function () {
-          numberOfDeployments = store.numberOfDeployments;
-        });
-
-        it('should not contain deployments with changes in forbidden sections (and call cloud controller)', function () {
-          mocks.director.getDeployments({
-            capacity: numberOfDeployments
-          });
-          mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
-          mocks.cloudController.getServicePlans(broker_guid, plan_guid, plan_unique_id);
-          mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
-          mocks.director.getDeploymentManifest(numberOfDeployments);
-          mocks.director.diffDeploymentManifest(numberOfDeployments);
-          mocks.cloudController.updateServiceInstance(instance_id, body => {
-            const token = _.get(body.parameters, 'service-fabrik-operation');
-            return support.jwt.verify(token, name, args);
-          });
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
-            spec: {
-              options: JSON.stringify({
-                context: {
-                  platform: CONST.PLATFORM.CF,
-                  space_guid: space_guid,
-                  organization_guid: org_guid
-                }
-              })
-            }
-          });
-          return chai
-            .request(apps.internal)
-            .post(`${base_url}/deployments/outdated/update`)
-            .set('Accept', 'application/json')
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.length(1);
-              expect(res.body[0]).to.have.property('guid');
-              mocks.verify();
-            });
-        });
-
-        it('should contain deployments with changes in forbidden sections (and not call cloud controller)', function () {
-          const diff = [
-            ['jobs:', null],
-            ['- name: blueprint_z1', null],
-            ['  instances: 2', 'removed'],
-            ['  instances: 1', 'added']
-          ];
-          mocks.director.getDeployments({
-            capacity: numberOfDeployments
-          });
-          mocks.cloudController.findServiceBrokerByName(broker_guid, broker_name);
-          mocks.cloudController.getServicePlans(broker_guid, plan_guid, plan_unique_id);
-          mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
-          mocks.director.getDeploymentManifest(numberOfDeployments);
-          mocks.director.diffDeploymentManifest(numberOfDeployments, diff);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
-            spec: {
-              options: JSON.stringify({
-                context: {
-                  platform: CONST.PLATFORM.CF,
-                  space_guid: space_guid,
-                  organization_guid: org_guid
-                }
-              })
-            }
-          });
-          return chai
-            .request(apps.internal)
-            .post(`${base_url}/deployments/outdated/update`)
-            .set('Accept', 'application/json')
-            .auth(config.username, config.password)
-            .catch(err => err.response)
-            .then(res => {
-              expect(res).to.have.status(202);
-              expect(res.body).to.have.length(1);
-              expect(res.body[0]).to.have.property('error');
-              expect(res.body[0].error).to.have.status(403);
               mocks.verify();
             });
         });

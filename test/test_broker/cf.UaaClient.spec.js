@@ -39,7 +39,7 @@ describe('cf', () => {
           scope: ['foo', 'bar']
         };
 
-        expect(new MockUaaClient().authorizationUrl(options)).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo%20bar`);
+        expect(new MockUaaClient().authorizationUrl(options)).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo%20bar&login_hint=%7B%22origin%22%3A%22uaa%22%7D`);
         done();
       });
 
@@ -48,7 +48,7 @@ describe('cf', () => {
           scope: 'foo'
         };
 
-        expect(new MockUaaClient().authorizationUrl(options)).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo`);
+        expect(new MockUaaClient().authorizationUrl(options)).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo&login_hint=%7B%22origin%22%3A%22uaa%22%7D`);
         done();
       });
     });

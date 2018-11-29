@@ -14,9 +14,6 @@ router.use(commonMiddleware.csp());
 router.route('/deployments/outdated')
   .get(controller.handler('getOutdatedDeployments'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
-router.route('/deployments/outdated/update')
-  .post(controller.handler('updateOutdatedDeployments'))
-  .all(commonMiddleware.methodNotAllowed(['POST']));
 router.route('/deployments')
   .get(controller.handler('getDeployments'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
