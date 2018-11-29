@@ -371,7 +371,7 @@ func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceIns
 	}
 
 	instanceObj.Status = properties.Status
-	err = r.Status().Update(context.Background(), instanceObj)
+	err = r.Update(context.Background(), instanceObj)
 	if err != nil {
 		log.Printf("error updating status. %v\n", err)
 		return err

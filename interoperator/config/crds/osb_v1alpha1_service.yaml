@@ -27,11 +27,6 @@ spec:
             bindingRetrievable:
               type: boolean
             context:
-              properties:
-                operator:
-                  type: object
-                serviceFabrik:
-                  type: object
               type: object
             dashboardClient:
               properties:

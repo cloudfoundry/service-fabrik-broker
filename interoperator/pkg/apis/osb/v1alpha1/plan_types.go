@@ -21,15 +21,10 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// Templates is the details for a all templates for a service plan
-type Templates struct {
-	ProvisionTemplate  TemplateSpec `yaml:"provisionTemplate" json:"provisionTemplate"`
-	BindTemplate       TemplateSpec `yaml:"bindTemplate,omitempty" json:"bindTemplate,omitempty"`
-	PropertiesTemplate TemplateSpec `yaml:"propertiesTemplate" json:"propertiesTemplate"`
-}
-
 // TemplateSpec is the specifcation of a template
+// Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
+	Name string `yaml:"name" json:"name"`
 	Type string `yaml:"type" json:"type"`
 	Path string `yaml:"path" json:"path"`
 }
@@ -69,8 +64,9 @@ type PlanSpec struct {
 	Bindable      bool                  `json:"bindable"`
 	PlanUpdatable bool                  `json:"planUpdatable,omitempty"`
 	Schemas       *ServiceSchemas       `json:"schemas,omitempty"`
-	Templates     *Templates            `json:"templates"`
-	RawContext    Context               `json:"context,omitempty"`
+	Templates     []TemplateSpec        `json:"templates"`
+	RawContext    *runtime.RawExtension `json:"context,omitempty"`
+	ServiceID     string                `json:"serviceId"`
 }
 
 // PlanStatus defines the observed state of Plan
