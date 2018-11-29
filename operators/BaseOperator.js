@@ -128,7 +128,7 @@ class BaseOperator {
       } else {
         processingLockStatus.conflict = true;
         logger.debug(`Resource ${objectBody.metadata.name}  ${resourceGroup}, ${resourceType}, ${queryString} -` +
-          ` is picked by process with ip ${lockedByManager} at ${processingStartedAt} will be held for another ${elapsedTimeInMs}(ms)`);
+          ` is picked by process with ip ${lockedByManager} at ${processingStartedAt} will be held for another ${elapsedTimeInMs - CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT}(ms)`);
       }
     });
   }
