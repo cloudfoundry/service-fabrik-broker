@@ -32,16 +32,16 @@ class FabrikBaseController extends BaseController {
       let processedRequest = false;
       let lockId, serviceFlowId, serviceFlowName;
       return Promise.try(() => {
-        if (operationType === CONST.OPERATION_TYPE.UPDATE) {
-          serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
-          if (serviceFlowName !== undefined) {
-            return utils
-              .uuidV4()
-              .tap(id => serviceFlowId = id);
+          if (operationType === CONST.OPERATION_TYPE.UPDATE) {
+            serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
+            if (serviceFlowName !== undefined) {
+              return utils
+                .uuidV4()
+                .tap(id => serviceFlowId = id);
+            }
           }
-        }
-        return undefined;
-      })
+          return undefined;
+        })
         .then(serviceFlowId => this._lockResource(req, operationType, serviceFlowId))
         .tap(() => resourceLocked = true)
         .then(lockResourceId => {
