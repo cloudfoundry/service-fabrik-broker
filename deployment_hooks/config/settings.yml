@@ -29,7 +29,7 @@ defaults: &defaults
     epoll_create1 epoll_ctl epoll_wait eventfd2 execve exit_group fcntl fstat
     futex getcwd getegid geteuid getgid getpid getppid getrlimit getuid ioctl
     lstat madvise mmap mprotect munmap open pipe2 poll prctl pread64 read readlink
-    rt_sigaction rt_sigprocmask rt_sigreturn setrlimit set_robust_list set_tid_address stat wait4 write
+    rt_sigaction rt_sigprocmask rt_sigreturn setrlimit set_robust_list set_tid_address stat wait4 write uname
 
   ##############################
   # HOOK ENDPOINT SETTINGS #
