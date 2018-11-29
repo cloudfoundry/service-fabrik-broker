@@ -73,7 +73,8 @@ module.exports = Object.freeze({
     UPDATE: 'update',
     BIND: 'bind',
     UNBIND: 'unbind',
-    DELETE: 'delete'
+    DELETE: 'delete',
+    SERVICE_FLOW: 'serviceflow'
   },
   URL: {
     backup: '/api/v1/service_instances/:instance_id/backup',
@@ -322,7 +323,7 @@ module.exports = Object.freeze({
       OPTIONS: 'options',
       LASTOPERATION: 'lastoperation'
     },
-    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_workflow'],
+    WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_serviceflow'],
     READ_OPERATIONS: ['backup'],
   },
   SERVICE_KEYS: {
