@@ -7,6 +7,8 @@ const utils = require('../../common/utils');
 const CONST = require('../../common/constants');
 const BaseOperator = require('../BaseOperator');
 const VirtualHostService = require('./VirtualHostService');
+const errors = require('../../common/errors');
+const Gone = errors.Gone;
 
 class VirtualHostOperator extends BaseOperator {
 
@@ -77,14 +79,15 @@ class VirtualHostOperator extends BaseOperator {
     logger.info('Triggering virtualhost delete with the following options:', changedOptions);
     return VirtualHostService.createVirtualHostService(changeObjectBody.metadata.name, changedOptions)
       .then(virtualHostService => virtualHostService.delete())
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
+        resourceId: changeObjectBody.metadata.name
+      }))
+      .catch(Gone, () => eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+        resourceId: changeObjectBody.metadata.name
       }));
   }
 
