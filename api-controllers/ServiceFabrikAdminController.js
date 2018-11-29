@@ -9,6 +9,7 @@ const logger = require('../common/logger');
 const config = require('../common/config');
 const NetworkSegmentIndex = require('../data-access-layer/bosh/NetworkSegmentIndex');
 const backupStore = require('../data-access-layer/iaas').backupStore;
+const cf = require('../data-access-layer/cf');
 const FabrikBaseController = require('./FabrikBaseController');
 const utils = require('../common/utils');
 const fabrik = require('../broker/lib/fabrik');
@@ -26,6 +27,18 @@ const Repository = require('../common/db').Repository;
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
     super();
+    this.fabrik = fabrik;
+    this.cloudController = cf.cloudController;
+    this.backupStore = backupStore;
+  }
+
+  getInstanceId(deploymentName) {
+    return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
+  }
+
+  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
+  createManager(plan_id) {
+    return this.fabrik.createManager(this.getPlan(plan_id));
   }
 
   updateDeployment(req, res) {

@@ -1,9 +1,9 @@
 'use strict';
 
 exports.jwt = require('./jwt');
-exports.store = require('./store');
+// exports.store = require('./store');
 exports.middleware = require('./middleware');
-exports.fabrik = require('./fabrik');
+// exports.fabrik = require('./fabrik');
 exports.bootstrap = bootstrap;
 const config = require('../../common/config');
 if (config.enable_swarm_manager) {
@@ -11,6 +11,7 @@ if (config.enable_swarm_manager) {
 }
 const logger = require('../../common/logger');
 const docker = exports.docker;
+require('./fabrik/UnlockResourcePoller');
 
 function bootstrap() {
   logger.info('Bootstraping docker client...');

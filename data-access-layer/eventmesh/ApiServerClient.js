@@ -16,13 +16,14 @@ const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
 const InternalServerError = errors.InternalServerError;
 
-const apiserverConfig = config.apiserver.pathToKubeConfig ?
-  kc.config.fromKubeconfig(config.apiserver.pathToKubeConfig) : {
-    url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
-    cert: config.apiserver.certificate,
-    key: config.apiserver.private_key,
-    insecureSkipTlsVerify: true
-  };
+const apiserverConfig = config.apiserver.getConfigInCluster ? kc.config.getInCluster() :
+  (config.apiserver.pathToKubeConfig ?
+    kc.config.fromKubeconfig(config.apiserver.pathToKubeConfig) : {
+      url: `https://${config.apiserver.ip}:${config.apiserver.port}`,
+      cert: config.apiserver.certificate,
+      key: config.apiserver.private_key,
+      insecureSkipTlsVerify: true
+    });
 const apiserver = new kc.Client({
   config: apiserverConfig,
   version: CONST.APISERVER.VERSION

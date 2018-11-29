@@ -116,6 +116,14 @@ defaults: &defaults
   agent_operation_timeout: 35000
   multi_az_enabled: false
   broker_drain_message: 'BROKER_DRAIN_INITIATED'
+
+  ##############################
+  # DISABLED API CONTROLLERS #
+  ##############################
+  disabled_apis:
+  - admin
+  - manage
+  - api
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################

@@ -6,10 +6,7 @@ const BaseController = require('../common/controllers/BaseController');
 const config = require('../common/config');
 const logger = require('../common/logger');
 const errors = require('../common/errors');
-const cf = require('../data-access-layer/cf');
 const bosh = require('../data-access-layer/bosh');
-const fabrik = require('../broker/lib/fabrik');
-const backupStore = require('../data-access-layer/iaas').backupStore;
 const catalog = require('../common/models/catalog');
 const ContinueWithNext = errors.ContinueWithNext;
 const BadRequest = errors.BadRequest;
@@ -22,11 +19,7 @@ const utils = require('../common/utils');
 class FabrikBaseController extends BaseController {
   constructor() {
     super();
-    this.fabrik = fabrik;
-    this.cloudController = cf.cloudController;
-    this.uaa = cf.uaa;
     this.director = bosh.director;
-    this.backupStore = backupStore;
   }
 
   get serviceBrokerName() {
@@ -39,16 +32,16 @@ class FabrikBaseController extends BaseController {
       let processedRequest = false;
       let lockId, serviceFlowId, serviceFlowName;
       return Promise.try(() => {
-          if (operationType === CONST.OPERATION_TYPE.UPDATE) {
-            serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
-            if (serviceFlowName !== undefined) {
-              return utils
-                .uuidV4()
-                .tap(id => serviceFlowId = id);
-            }
+        if (operationType === CONST.OPERATION_TYPE.UPDATE) {
+          serviceFlowName = serviceFlowMapper.getServiceFlow(req.body);
+          if (serviceFlowName !== undefined) {
+            return utils
+              .uuidV4()
+              .tap(id => serviceFlowId = id);
           }
-          return undefined;
-        })
+        }
+        return undefined;
+      })
         .then(serviceFlowId => this._lockResource(req, operationType, serviceFlowId))
         .tap(() => resourceLocked = true)
         .then(lockResourceId => {
@@ -161,39 +154,6 @@ class FabrikBaseController extends BaseController {
       _.lt(new Date(epochRequestDate), new Date(Date.now() - retentionMillis))) {
       throw new BadRequest(`Date '${epochDateString}' is not epoch milliseconds or out of range of ${config.backup.retention_period_in_days} days.`);
     }
-  }
-
-  validateRestoreQuota(options) {
-    return this.backupStore
-      .getRestoreFile(options)
-      .then(metdata => {
-        let restoreDates = _.get(metdata, 'restore_dates.succeeded');
-        if (!_.isEmpty(restoreDates)) {
-          _.remove(restoreDates, date => {
-            const dateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
-            return _.lt(new Date(date), new Date(dateTillRestoreAllowed));
-          });
-          //after removing all older restore, 'restoreDates' contains dates within allowed time
-          // dates count should be less than 'config.backup.num_of_allowed_restores'
-          if (restoreDates.length >= config.backup.num_of_allowed_restores) {
-            throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
-          }
-        }
-      })
-      .catch(NotFound, (err) => {
-        logger.debug('Not found any restore data.', err);
-        //Restore file might not be found, first time restore.
-        return true;
-      });
-  }
-
-  getInstanceId(deploymentName) {
-    return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
-  }
-
-  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
-  createManager(plan_id) {
-    return this.fabrik.createManager(this.getPlan(plan_id));
   }
 
   getService(service_id) {
