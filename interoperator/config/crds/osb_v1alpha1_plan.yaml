@@ -25,11 +25,6 @@ spec:
             bindable:
               type: boolean
             context:
-              properties:
-                operator:
-                  type: object
-                serviceFabrik:
-                  type: object
               type: object
             description:
               type: string
@@ -73,42 +68,23 @@ spec:
                       type: object
                   type: object
               type: object
+            serviceId:
+              type: string
             templates:
-              properties:
-                bindTemplate:
-                  properties:
-                    path:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  - path
-                  type: object
-                propertiesTemplate:
-                  properties:
-                    path:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  - path
-                  type: object
-                provisionTemplate:
-                  properties:
-                    path:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  - path
-                  type: object
-              required:
-              - provisionTemplate
-              - propertiesTemplate
-              type: object
+              items:
+                properties:
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - name
+                - type
+                - path
+                type: object
+              type: array
           required:
           - name
           - id
@@ -116,6 +92,7 @@ spec:
           - free
           - bindable
           - templates
+          - serviceId
           type: object
         status:
           type: object

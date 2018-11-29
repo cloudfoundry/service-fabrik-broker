@@ -3,6 +3,7 @@ kind: Plan
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
+    serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
   name: &name 'v1.0-dev'
 spec:
   name: *name
@@ -21,16 +22,17 @@ spec:
   free: true
   bindable: true
   planUpdatable: false
-  template: 
-    propertiesTemplate:
-      type: helm
-      path: "config/samples/templates/blueprintProperties"
-    provisionTemplate:
-      type: helm
-      path: "config/samples/templates/blueprint"
-    bindTemplate:
-      type: helm
-      path: "config/samples/templates/blueprint"
+  template:
+  - name: propertiesTemplate
+    type: helm
+    path: "config/samples/templates/blueprintProperties"
+  - name: provisionTemplate
+    type: helm
+    path: "config/samples/templates/blueprint"
+  - name: bindTemplate
+    type: helm
+    path: "config/samples/templates/blueprint"
+  serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
   context:
     operator:
       image: "servicefabrikjenkins/blueprint"

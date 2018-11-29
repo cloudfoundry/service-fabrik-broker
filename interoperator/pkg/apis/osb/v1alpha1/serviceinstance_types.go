@@ -45,7 +45,6 @@ type ServiceInstanceStatus struct {
 
 // ServiceInstance is the Schema for the serviceinstances API
 // +k8s:openapi-gen=true
-// +kubebuilder:subresource:status
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

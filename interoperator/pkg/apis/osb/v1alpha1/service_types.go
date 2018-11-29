@@ -34,6 +34,16 @@ type DashboardClient struct {
 	RedirectURI string `json:"redirectUri,omitempty"`
 }
 
+// ServiceMetadata contains the metadata for the service
+type ServiceMetadata struct {
+	DisplayName         string `json:"displayName,omitempty"`
+	LongDescription     string `json:"longDescription,omitempty"`
+	ProviderDisplayName string `json:"providerDisplayName,omitempty"`
+	DocumentationURL    string `json:"documentationUrl,omitempty"`
+	SupportURL          string `json:"supportUrl,omitempty"`
+	ImageURL            string `json:"imageUrl,omitempty"`
+}
+
 // ServiceSpec defines the desired state of Service
 type ServiceSpec struct {
 	Name                string                `json:"name"`
@@ -47,7 +57,7 @@ type ServiceSpec struct {
 	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
 	DashboardClient     DashboardClient       `json:"dashboardClient,omitempty"`
 	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
-	RawContext          Context               `json:"context,omitempty"`
+	RawContext          *runtime.RawExtension `json:"context,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service
