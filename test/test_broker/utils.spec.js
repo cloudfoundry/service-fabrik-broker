@@ -1,7 +1,7 @@
 'use strict';
 
 const lib = require('../../broker/lib');
-const DirectorManager = lib.fabrik.DirectorManager;
+const DirectorManager = require('../../broker/lib/fabrik').DirectorManager;
 const utils = require('../../common/utils');
 
 describe('utils', function () {

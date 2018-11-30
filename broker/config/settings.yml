@@ -118,13 +118,6 @@ defaults: &defaults
   broker_drain_message: 'BROKER_DRAIN_INITIATED'
 
   ##############################
-  # DISABLED API CONTROLLERS #
-  ##############################
-  disabled_apis:
-  - admin
-  - manage
-  - api
-  ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################
   external: &external
