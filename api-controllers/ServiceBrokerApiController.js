@@ -72,11 +72,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.resourceGroup,
-          resourceType: plan.resourceType,
+        return eventmesh.apiServerClient.createOSBResource({
+          resourceGroup: 'osb.servicefabrik.io',
+          resourceType: 'serviceinstances',
           resourceId: req.params.instance_id,
-          options: params,
+          spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             lastOperation: {},
@@ -216,8 +216,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.patchResource({
-          resourceGroup: plan.resourceGroup,
-          resourceType: plan.resourceType,
+          resourceGroup: 'osb.servicefabrik.io',
+          resourceType: 'serviceinstances',
           resourceId: req.params.instance_id,
           options: params,
           status: {
@@ -277,8 +277,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
-    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : plan.resourceGroup;
-    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : plan.resourceType;
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : 'osb.servicefabrik.io';
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : 'serviceinstances';
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
         resourceGroup: resourceGroup,

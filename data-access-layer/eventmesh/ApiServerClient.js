@@ -14,6 +14,7 @@ const Timeout = errors.Timeout;
 const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
+const camelcaseKeysDeep = require('camelcase-keys-deep');
 const InternalServerError = errors.InternalServerError;
 
 const apiserverConfig = config.apiserver.pathToKubeConfig ?
@@ -598,6 +599,97 @@ class ApiServerClient {
       })
       .then(resource => _.get(resource, 'spec.options.context'));
   }
+
+  /**
+   * @description Create OSB Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Name of resource group 
+   * @param {string} opts.resourceType - Type of resource 
+   * @param {string} opts.resourceId - Unique id of resource 
+   * @param {string} opts.labels - to be put in label
+   * @param {Object} opts.spec - Value to set for spec field of resource
+   * @param {string} opts.status - status of the resource
+   */
+  createOSBResource(opts) {
+    logger.info(`Creating resource with opts: `, opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
+    assert.ok(opts.spec, `Property 'spec' is required to create resource`);
+    const metadata = {
+      name: opts.resourceId
+    };
+    if (opts.labels) {
+      metadata.labels = opts.labels;
+    }
+    const crdJson = this.getCrdJson(opts.resourceGroup, opts.resourceType);
+    const resourceBody = {
+      apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
+      kind: crdJson.spec.names.kind,
+      metadata: metadata,
+      spec: camelcaseKeysDeep(opts.spec)
+    };
+
+    if (opts.status) {
+      const statusJson = {};
+      _.forEach(opts.status, (val, key) => {
+        if (key === 'state') {
+          resourceBody.metadata.labels = _.merge(resourceBody.metadata.labels, {
+            'state': val
+          });
+        }
+        statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+      });
+      resourceBody.status = statusJson;
+    }
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
+          body: resourceBody
+        }))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  getAllServices() {
+    return Promise.try(() => this.init())
+      .then(() => apiserver.apis['osb.servicefabrik.io'][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE).services.get())
+      .then(serviceList => serviceList.body.items)
+      .then(serviceList => {
+        let services = [];
+        _.forEach(serviceList, service => {
+          services = _.concat(services, [service.spec]);
+        })
+        return services;
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  getAllPlansForService(serviceId) {
+    return Promise.try(() => this.init())
+      .then(() => apiserver.apis['osb.servicefabrik.io'][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE).plans.get({
+          qs: {
+            labelSelector: `serviceId=${serviceId}`
+          }
+        }))
+      .then(planList => planList.body.items)
+      .then(planList => {
+        let plans = [];
+        _.forEach(planList, plan => {
+          plans = _.concat(plans, [plan.spec]);
+        })
+        return plans;
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
 }
 
 module.exports = ApiServerClient;

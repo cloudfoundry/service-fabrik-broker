@@ -10,6 +10,11 @@ const config = require('../common/config');
 if (config.enable_swarm_manager) {
   lib.bootstrap();
 }
+
+if (!config.services) {
+  lib.loadServices();
+}
+
 const internal = ExpressApp.create('internal', app => {
   // home
   app.get('/', (req, res) => {

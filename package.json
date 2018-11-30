@@ -38,6 +38,7 @@
     "basic-auth": "1.0.4",
     "bluebird": "3.4.0",
     "body-parser": "1.15.1",
+    "camelcase-keys-deep": "0.1.0",
     "connect-timeout": "1.9.0",
     "dockerode": "2.2.10",
     "etcd3": "0.2.9",
