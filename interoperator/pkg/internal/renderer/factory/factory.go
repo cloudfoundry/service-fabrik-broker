@@ -30,19 +30,19 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 	case "helm", "Helm", "HELM":
 		values := make(map[string]interface{})
 
-		serviceObj, err := dynamic.ObjectToMapInterface(service.Spec)
+		serviceObj, err := dynamic.ObjectToMapInterface(service)
 		if err != nil {
 			return nil, err
 		}
 		values["service"] = serviceObj
 
-		planObj, err := dynamic.ObjectToMapInterface(plan.Spec)
+		planObj, err := dynamic.ObjectToMapInterface(plan)
 		if err != nil {
 			return nil, err
 		}
 		values["plan"] = planObj
 
-		instanceObj, err := dynamic.ObjectToMapInterface(instance.Spec)
+		instanceObj, err := dynamic.ObjectToMapInterface(instance)
 		if err != nil {
 			return nil, err
 		}

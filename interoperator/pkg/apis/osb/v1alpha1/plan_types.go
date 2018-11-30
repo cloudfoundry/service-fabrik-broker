@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -111,5 +113,10 @@ func init() {
 
 // GetTemplate fetches the Template spec with the given name
 func (plan *Plan) GetTemplate(templateName string) (*TemplateSpec, error) {
-	return nil, nil
+	for _, template := range plan.Spec.Templates {
+		if template.Name == templateName {
+			return &template, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to get template %s", templateName)
 }
