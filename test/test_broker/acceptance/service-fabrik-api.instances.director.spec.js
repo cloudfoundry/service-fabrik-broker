@@ -2,14 +2,12 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const lib = require('../../../broker/lib');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const catalog = require('../../../common/models').catalog;
 const config = require('../../../common/config');
-// const errors = require('../../../common/errors');
-const fabrik = require('../../../broker/lib/fabrik');;
+const fabrik = require('../../../broker/lib/fabrik');
 const utils = require('../../../common/utils');
 // const NotFound = errors.NotFound;
 const iaas = require('../../../data-access-layer/iaas');

@@ -1,12 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = require('../../../broker/lib/fabrik');;
+const fabrik = require('../../../broker/lib/fabrik');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const ScheduleManager = require('../../../jobs');

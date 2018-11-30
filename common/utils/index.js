@@ -17,6 +17,7 @@ const EventLogDomainSocketClient = require('./EventLogDomainSocketClient');
 const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
+const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 const NotImplemented = errors.NotImplemented;
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
@@ -58,6 +59,7 @@ exports.deploymentStaggered = deploymentStaggered;
 exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeployment;
 exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
+exports.getPlatformManager = getPlatformManager;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -590,4 +592,17 @@ function deploymentStaggered(err) {
   const response = _.get(err, 'error', {});
   const description = _.get(response, 'description', '');
   return description.indexOf(CONST.FABRIK_OPERATION_STAGGERED) > 0 && description.indexOf(CONST.FABRIK_OPERATION_COUNT_EXCEEDED) > 0;
+}
+
+function getPlatformManager(context) {
+  let platform = context.platform;
+  if (platform === CONST.PLATFORM.SM) {
+    platform = context.origin;
+  }
+  const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
+  if (PlatformManager === undefined) {
+    return new BasePlatformManager(platform);
+  } else {
+    return new PlatformManager(platform);
+  }
 }

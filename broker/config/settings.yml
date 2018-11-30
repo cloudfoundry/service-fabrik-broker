@@ -116,7 +116,6 @@ defaults: &defaults
   agent_operation_timeout: 35000
   multi_az_enabled: false
   broker_drain_message: 'BROKER_DRAIN_INITIATED'
-
   ##############################
   # EXTERNAL ENDPOINT SETTINGS #
   ##############################

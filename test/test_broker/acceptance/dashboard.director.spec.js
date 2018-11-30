@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const parseUrl = require('url').parse;
-const lib = require('../../../broker/lib');
 const CONST = require('../../../common/constants');
 const app = require('../support/apps').external;
 const fabrik = require('../../../broker/lib/fabrik');

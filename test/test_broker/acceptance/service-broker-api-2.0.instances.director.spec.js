@@ -1,8 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
-//const errors = require('../../../common/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
