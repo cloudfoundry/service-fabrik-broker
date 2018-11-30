@@ -68,10 +68,9 @@ exports.checkBlockingOperationInProgress = function () {
 
 exports.checkQuota = function () {
   function shouldCheckQuotaForPlatform(platform, origin) {
-    return false;
-    // return (platform === CONST.PLATFORM.CF ||
-    //   (platform === CONST.PLATFORM.SM &&
-    //     origin === CONST.PLATFORM.CF));
+    return (platform === CONST.PLATFORM.CF ||
+      (platform === CONST.PLATFORM.SM &&
+        origin === CONST.PLATFORM.CF));
   }
   return function (req, res, next) {
     if (utils.isServiceFabrikOperation(req.body)) {

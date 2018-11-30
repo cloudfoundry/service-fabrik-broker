@@ -5,7 +5,7 @@ const nock = require('nock');
 const lib = require('../../../broker/lib');
 const config = require('../../../common/config');
 const cloudControllerUrl = config.cf.url;
-const DirectorManager = lib.fabrik.DirectorManager;
+const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
 const prefix = 'service-fabrik';
 
 exports.url = cloudControllerUrl;
