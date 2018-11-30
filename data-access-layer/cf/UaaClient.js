@@ -22,11 +22,13 @@ class UaaClient extends HttpClient {
     this.clientId = config.cf.client_id || 'cf';
   }
 
-  authorizationUrl(options) {
+  authorizationUrl(options, loginHint) {
     options = _.assign({
       response_type: 'code'
     }, options);
-    options.login_hint = '{"origin":"uaa"}';
+    if (loginHint && loginHint !== '') {
+      options.login_hint = `{"origin":"${loginHint}"}`;
+    }
     if (Array.isArray(options.scope)) {
       options.scope = options.scope.join(' ');
     }

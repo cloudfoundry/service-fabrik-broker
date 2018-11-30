@@ -67,7 +67,7 @@ class DashboardController extends FabrikBaseController {
         state: req.session.state
       }))
       .tap(query => logger.info('Redirecting to authorization server with query parameters:', query))
-      .then(query => res.redirect(this.uaa.authorizationUrl(query)));
+      .then(query => res.redirect(this.uaa.authorizationUrl(query, req.session.login_hint)));
   }
 
   handleAuthorizationResponse(req, res) {
@@ -188,6 +188,9 @@ class DashboardController extends FabrikBaseController {
     req.session.plan_id = req.params.plan_id || req.session.plan_id;
     req.session.instance_id = req.params.instance_id;
     req.session.instance_type = req.params.instance_type;
+    if (req.query.login_hint) {
+      req.session.login_hint = req.query.login_hint;
+    }
     const oldestAllowableLastSeen = Date.now() - config.external.session_expiry * 1000;
     if (req.session.user_id && req.session.access_token && req.session.last_seen > oldestAllowableLastSeen) {
       req.session.last_seen = Date.now();
