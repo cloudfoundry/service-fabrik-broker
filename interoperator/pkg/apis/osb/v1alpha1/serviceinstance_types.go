@@ -33,11 +33,10 @@ type ServiceInstanceSpec struct {
 
 // ServiceInstanceStatus defines the observed state of ServiceInstance
 type ServiceInstanceStatus struct {
-	DashboardURL  string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
-	State         string `yaml:"state" json:"state"`
-	Error         string `yaml:"error,omitempty" json:"error,omitempty"`
-	LastOperation string `yaml:"lastOperation,omitempty" json:"lastOperation,omitempty"`
-	Response      string `yaml:"response,omitempty" json:"response,omitempty"`
+	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
+	State        string `yaml:"state" json:"state"`
+	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
+	Description  string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // +genclient

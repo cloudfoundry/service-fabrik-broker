@@ -4,11 +4,11 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
     serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
-  name: &name 'v1.0-dev'
+  name: &name 'v1.0-dev-large'
 spec:
   name: *name
-  id: 'bba8beae-5699-11e7-b35c-02a8da424bc3'
-  description: 'Blueprint 1.0 service running inside a Docker container (for non-productive usage)'
+  id: 'a66844e2-5699-11e7-93cc-02a8da424bc3'
+  description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
   metadata:
     service-inventory-key: SERVICE-161
     costs:
@@ -17,8 +17,8 @@ spec:
       unit: 'MONTHLY'
     bullets:
     - 'Container Deployment'
-    - '128 MB Memory'
-    - '100 MB Disk'
+    - '256 MB Memory'
+    - '200 MB Disk'
   free: true
   bindable: true
   planUpdatable: false
@@ -38,10 +38,10 @@ spec:
       image: "servicefabrikjenkins/blueprint"
       tag: "latest"
       port: 8080
-      memory: '128m'
+      memory: '256m'
       persistent_volumes:
       - name: 'data'
         path: '/data'
-        size: '100m'
+        size: '200m'
     serviceFabrik:
       backupEnabled: false

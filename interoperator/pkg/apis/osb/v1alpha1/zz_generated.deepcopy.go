@@ -149,6 +149,11 @@ func (in *PlanSpec) DeepCopyInto(out *PlanSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Manager != nil {
+		in, out := &in.Manager, &out.Manager
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
