@@ -111,8 +111,7 @@ function getAuthorizationCode(service_id, times) {
         response_type: 'code',
         client_id: dashboard_client.id,
         redirect_uri: redirect_uri,
-        scope: 'cloud_controller_service_permissions.read openid',
-        login_hint: '{"origin":"uaa"}'
+        scope: 'cloud_controller_service_permissions.read openid'
       })
       .value()
     )
