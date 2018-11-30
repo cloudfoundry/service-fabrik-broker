@@ -48,9 +48,7 @@ describe('cf', () => {
           scope: ['foo', 'bar']
         };
 
-        expect(new MockUaaClient().authorizationUrl(options, {
-          login_hint: 'uaa'
-        })).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo%20bar&login_hint=%7B%22origin%22%3A%22uaa%22%7D`);
+        expect(new MockUaaClient().authorizationUrl(options, 'uaa')).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo%20bar&login_hint=%7B%22origin%22%3A%22uaa%22%7D`);
         done();
       });
 
