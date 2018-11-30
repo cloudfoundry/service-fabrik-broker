@@ -188,7 +188,7 @@ class DashboardController extends FabrikBaseController {
     req.session.plan_id = req.params.plan_id || req.session.plan_id;
     req.session.instance_id = req.params.instance_id;
     req.session.instance_type = req.params.instance_type;
-    if(req.query.login_hint) {
+    if (req.query.login_hint) {
       req.session.login_hint = req.query.login_hint;
     }
     const oldestAllowableLastSeen = Date.now() - config.external.session_expiry * 1000;
