@@ -14,7 +14,6 @@ const Promise = require('bluebird');
 const catalog = require('../../common/models').catalog;
 const logger = require('../../common/logger');
 const docker = exports.docker;
-require('./fabrik/UnlockResourcePoller');
 
 function bootstrap() {
   logger.info('Bootstraping docker client...');
