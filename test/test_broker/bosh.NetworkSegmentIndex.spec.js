@@ -1,6 +1,5 @@
 'use strict';
 
-const lib = require('../../broker/lib');
 const catalog = require('../../common/models').catalog;
 const DirectorManager = require('../../broker/lib/fabrik').DirectorManager;
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;

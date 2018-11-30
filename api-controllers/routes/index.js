@@ -11,6 +11,7 @@ if (!_.includes(config.disabled_apis, 'api')) {
 }
 if (!_.includes(config.disabled_apis, 'admin')) {
   exports.admin = require('./admin');
+  exports.report = require('./report');
 }
 if (!_.includes(config.disabled_apis, 'manage')) {
   exports.manage = require('./manage');

@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const nock = require('nock');
-const lib = require('../../../broker/lib');
 const config = require('../../../common/config');
 const cloudControllerUrl = config.cf.url;
 const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;

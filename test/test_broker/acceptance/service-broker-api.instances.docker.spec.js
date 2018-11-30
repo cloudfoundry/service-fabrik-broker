@@ -2,14 +2,13 @@
 
 const _ = require('lodash');
 const parseUrl = require('url').parse;
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
 const catalog = require('../../../common/models').catalog;
 const docker = require('../../../data-access-layer/docker');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
-const fabrik = require('../../../broker/lib/fabrik');;
+const fabrik = require('../../../broker/lib/fabrik');
 
 describe('service-broker-api', function () {
   describe('instances', function () {

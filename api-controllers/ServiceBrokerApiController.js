@@ -41,7 +41,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    res.status(CONST.HTTP_STATUS_CODE.OK).json(this.fabrik.getPlatformManager({
+    res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
       platform: req.params.platform
     }).getCatalog(catalog));
   }

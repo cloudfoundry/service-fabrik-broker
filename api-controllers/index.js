@@ -15,8 +15,11 @@ if (!_.includes(config.disabled_apis, 'api')) {
 }
 if (!_.includes(config.disabled_apis, 'admin')) {
   const ServiceFabrikAdminController = require('./ServiceFabrikAdminController');
+  const ServiceFabrikReportController = require('./ServiceFabrikReportController');
   exports.ServiceFabrikAdminController = ServiceFabrikAdminController;
+  exports.ServiceFabrikReportController = ServiceFabrikReportController;
   exports.serviceFabrikAdmin = new ServiceFabrikAdminController();
+  exports.serviceFabrikReport = new ServiceFabrikReportController();
 }
 if (!_.includes(config.disabled_apis, 'manage')) {
   const DashboardController = require('./DashboardController');

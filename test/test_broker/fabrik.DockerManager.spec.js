@@ -1,6 +1,5 @@
 'use strict';
 
-const lib = require('../../broker/lib');
 const fabrik = require('../../broker/lib/fabrik/Fabrik');
 const config = require('../../common/config');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
