@@ -43,6 +43,15 @@ describe('cf', () => {
         done();
       });
 
+      it('returns a string containing the authorization endpoint with login_hint', (done) => {
+        let options = {
+          scope: ['foo', 'bar']
+        };
+
+        expect(new MockUaaClient().authorizationUrl(options, {login_hint: 'uaa'})).to.eql(`${authorizationEndpoint}/oauth/authorize?response_type=code&scope=foo%20bar&login_hint=%7B%22origin%22%3A%22uaa%22%7D`);
+        done();
+      });
+
       it('returns a string containing the authorization endpoint (scope is a string)', (done) => {
         let options = {
           scope: 'foo'
