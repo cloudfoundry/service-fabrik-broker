@@ -33,7 +33,6 @@ const Header = bosh.manifest.Header;
 const Addons = bosh.manifest.Addons;
 const EvaluationContext = bosh.EvaluationContext;
 const BadRequest = errors.BadRequest;
-const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 
 
 class DirectorService extends BaseDirectorService {
@@ -1008,21 +1007,8 @@ class DirectorService extends BaseDirectorService {
     const directorService = new DirectorService(plan, instanceId);
     return Promise
       .try(() => context ? context : directorService.platformContext)
-      .then(context => directorService.assignPlatformManager(DirectorService.getPlatformManager(context)))
+      .then(context => directorService.assignPlatformManager(utils.getPlatformManager(context)))
       .return(directorService);
-  }
-
-  static getPlatformManager(context) {
-    let platform = context.platform;
-    if (platform === CONST.PLATFORM.SM) {
-      platform = context.origin;
-    }
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
-    if (PlatformManager === undefined) {
-      return new BasePlatformManager(platform);
-    } else {
-      return new PlatformManager(platform);
-    }
   }
 }
 

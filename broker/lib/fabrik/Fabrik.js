@@ -70,5 +70,4 @@ Fabrik.DockerManager = DockerManager;
 Fabrik.DirectorManager = DirectorManager;
 Fabrik.dbManager = new DBManager();
 Fabrik.oobBackupManager = OobBackupManager;
-Fabrik.UnlockResourcePoller = require('./UnlockResourcePoller');
 module.exports = Fabrik;

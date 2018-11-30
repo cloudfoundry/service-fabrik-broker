@@ -49,5 +49,6 @@ if (config.external) {
 }
 
 HttpServer.handleShutdown();
+require('../common/UnlockResourcePoller');
 
 //https://github.com/nodejs/node-v0.x-archive/issues/5054

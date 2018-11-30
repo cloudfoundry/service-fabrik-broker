@@ -9,7 +9,6 @@ if (config.enable_swarm_manager) {
 }
 const logger = require('../../common/logger');
 const docker = exports.docker;
-require('./fabrik/UnlockResourcePoller');
 
 function bootstrap() {
   logger.info('Bootstraping docker client...');
