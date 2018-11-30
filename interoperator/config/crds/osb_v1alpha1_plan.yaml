@@ -32,6 +32,8 @@ spec:
               type: boolean
             id:
               type: string
+            manager:
+              type: object
             metadata:
               type: object
             name:

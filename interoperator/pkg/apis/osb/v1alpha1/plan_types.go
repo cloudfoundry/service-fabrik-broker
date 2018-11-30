@@ -21,6 +21,13 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// List of templates to be provided for a service plan
+const (
+	ProvisionTemplateName  = "provisionTemplate"
+	PropertiesTemplateName = "propertiesTemplate"
+	BindTemplateName       = "bindTemplate"
+)
+
 // TemplateSpec is the specifcation of a template
 // Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
@@ -65,8 +72,9 @@ type PlanSpec struct {
 	PlanUpdatable bool                  `json:"planUpdatable,omitempty"`
 	Schemas       *ServiceSchemas       `json:"schemas,omitempty"`
 	Templates     []TemplateSpec        `json:"templates"`
-	RawContext    *runtime.RawExtension `json:"context,omitempty"`
 	ServiceID     string                `json:"serviceId"`
+	RawContext    *runtime.RawExtension `json:"context,omitempty"`
+	Manager       *runtime.RawExtension `json:"manager,omitempty"`
 }
 
 // PlanStatus defines the observed state of Plan
@@ -99,4 +107,9 @@ type PlanList struct {
 
 func init() {
 	SchemeBuilder.Register(&Plan{}, &PlanList{})
+}
+
+// GetTemplate fetches the Template spec with the given name
+func (plan *Plan) GetTemplate(templateName string) (*TemplateSpec, error) {
+	return nil, nil
 }

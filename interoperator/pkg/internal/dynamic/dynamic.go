@@ -1,6 +1,7 @@
 package dynamic
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -21,7 +22,7 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal %s. %v", contentString, err)
 		}
-		body = ConvertMapInterfaceToMapString(body)
+		body = MapInterfaceToMapString(body)
 
 		switch x := body.(type) {
 		case map[string]interface{}:
@@ -34,32 +35,46 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 	return res, nil
 }
 
-// ConvertMapInterfaceToMapString converts map[interface{}]interface{}
+// MapInterfaceToMapString converts map[interface{}]interface{}
 // to map[string]interface{}
-func ConvertMapInterfaceToMapString(v interface{}) interface{} {
+func MapInterfaceToMapString(v interface{}) interface{} {
 	switch x := v.(type) {
 	case map[interface{}]interface{}:
 		m := map[string]interface{}{}
 		for k, v2 := range x {
 			switch k2 := k.(type) {
 			case string:
-				m[k2] = ConvertMapInterfaceToMapString(v2)
+				m[k2] = MapInterfaceToMapString(v2)
 			default:
-				m[fmt.Sprint(k)] = ConvertMapInterfaceToMapString(v2)
+				m[fmt.Sprint(k)] = MapInterfaceToMapString(v2)
 			}
 		}
 		v = m
 
 	case []interface{}:
 		for i, v2 := range x {
-			x[i] = ConvertMapInterfaceToMapString(v2)
+			x[i] = MapInterfaceToMapString(v2)
 		}
 
 	case map[string]interface{}:
 		for k, v2 := range x {
-			x[k] = ConvertMapInterfaceToMapString(v2)
+			x[k] = MapInterfaceToMapString(v2)
 		}
 	}
 
 	return v
+}
+
+// ObjectToMapInterface converts an Object to map[interface{}]interface{}
+func ObjectToMapInterface(obj interface{}) (map[string]interface{}, error) {
+	values := make(map[string]interface{})
+	options, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(options, &values)
+	if err != nil {
+		return nil, err
+	}
+	return values, nil
 }

@@ -42,11 +42,9 @@ spec:
           properties:
             dashboardUrl:
               type: string
+            description:
+              type: string
             error:
-              type: string
-            lastOperation:
-              type: string
-            response:
               type: string
             state:
               type: string

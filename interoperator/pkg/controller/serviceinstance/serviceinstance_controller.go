@@ -166,21 +166,28 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 
 func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
 	serviceID := instance.Spec.ServiceID
-	service, err := services.FindServiceInfo(serviceID)
+	planID := instance.Spec.PlanID
+	service, plan, err := services.FindServiceInfo(r, serviceID, planID)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 		return nil, err
 	}
 
-	renderer, err := rendererFactory.GetRenderer(service.Template.Type, nil)
+	template, err := plan.GetTemplate(osbv1alpha1.ProvisionTemplateName)
 	if err != nil {
-		log.Printf("error getting renderer of type %s. %v\n", service.Template.Type, err)
+		log.Printf("plan %s does not have provision template. %v\n", planID, err)
 		return nil, err
 	}
 
-	input, err := rendererFactory.GetRendererInput(&service.Template, instance)
+	renderer, err := rendererFactory.GetRenderer(template.Type, nil)
 	if err != nil {
-		log.Printf("error creating renderer input of type %s. %v\n", service.Template.Type, err)
+		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		return nil, err
+	}
+
+	input, err := rendererFactory.GetRendererInput(template, service, plan, instance)
+	if err != nil {
+		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
 		return nil, err
 	}
 
@@ -281,21 +288,28 @@ func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.Serv
 
 func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceInstance) error {
 	serviceID := instance.Spec.ServiceID
-	service, err := services.FindServiceInfo(serviceID)
+	planID := instance.Spec.PlanID
+	service, plan, err := services.FindServiceInfo(r, serviceID, planID)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 		return err
 	}
 
-	renderer, err := rendererFactory.GetRenderer(service.PropertiesTemplate.Type, nil)
+	template, err := plan.GetTemplate(osbv1alpha1.PropertiesTemplateName)
 	if err != nil {
-		log.Printf("error getting renderer of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		log.Printf("plan %s does not have properties template. %v\n", planID, err)
 		return err
 	}
 
-	input, err := rendererFactory.GetRendererInput(&service.PropertiesTemplate, instance)
+	renderer, err := rendererFactory.GetRenderer(template.Type, nil)
 	if err != nil {
-		log.Printf("error creating renderer input of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		return err
+	}
+
+	input, err := rendererFactory.GetRendererInput(template, service, plan, instance)
+	if err != nil {
+		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
 		return err
 	}
 
@@ -334,9 +348,9 @@ func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceIns
 		sourceObjects[key] = obj
 	}
 
-	input, err = rendererFactory.GetPropertiesRendererInput(&service.PropertiesTemplate, instance, sourceObjects)
+	input, err = rendererFactory.GetPropertiesRendererInput(template, instance, sourceObjects)
 	if err != nil {
-		log.Printf("error creating properties renderer input of type %s. %v\n", service.PropertiesTemplate.Type, err)
+		log.Printf("error creating properties renderer input of type %s. %v\n", template.Type, err)
 		return err
 	}
 

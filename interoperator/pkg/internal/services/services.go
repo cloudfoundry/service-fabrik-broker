@@ -1,68 +1,57 @@
 package services
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const servicesPath = "config/samples/services"
-
-// Info is the details for a particular service
-type Info struct {
-	ID                 string       `yaml:"id" json:"id"`
-	Name               string       `yaml:"name,omitempty" json:"name,omitempty"`
-	Template           TemplateSpec `yaml:"template" json:"template"`
-	PropertiesTemplate TemplateSpec `yaml:"propertiesTemplate" json:"propertiesTemplate"`
-}
-
-// TemplateSpec is the template specifcation of a service
-type TemplateSpec struct {
-	Type string `yaml:"type" json:"type"`
-	Path string `yaml:"path" json:"path"`
-}
 
 // FindServiceInfo fetches the details of a service
 // from the services path
-func FindServiceInfo(serviceID string) (*Info, error) {
-	topDir, err := filepath.Abs(servicesPath)
-	if err != nil {
-		return nil, err
-	}
-	services, err := ioutil.ReadDir(topDir)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read services directory %v", err)
-	}
+func FindServiceInfo(client kubernetes.Client, serviceID string, planID string) (*osbv1alpha1.Service, *osbv1alpha1.Plan, error) {
+	services := &osbv1alpha1.ServiceList{}
+	labels := make(map[string]string)
+	labels["serviceId"] = serviceID
+	options := kubernetes.MatchingLabels(labels)
 
-	for _, s := range services {
-		if !s.IsDir() {
-			continue
+	err := client.List(context.TODO(), options, services)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, nil, fmt.Errorf("unable to find service with id %s", serviceID)
 		}
-		service, err := getServiceInfo(filepath.Join(topDir, s.Name()))
-		if err != nil {
-			continue
-		}
-		if service.ID == serviceID {
-			return service, nil
+		return nil, nil, err
+	}
+	var service *osbv1alpha1.Service
+	for _, obj := range services.Items {
+		if obj.Spec.ID == serviceID {
+			service = &obj
 		}
 	}
-	return nil, fmt.Errorf("unable to find service with id %s", serviceID)
-}
-
-func getServiceInfo(folderPath string) (*Info, error) {
-	base := filepath.Base(folderPath)
-	file := folderPath + string(filepath.Separator) + "Service.yaml"
-	buf, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read Services.yaml for %s. %v", base, err)
+	if service == nil {
+		return nil, nil, fmt.Errorf("unable to find service with id %s", serviceID)
 	}
-	service := Info{}
 
-	err = yaml.Unmarshal(buf, &service)
+	plans := &osbv1alpha1.PlanList{}
+	labels = make(map[string]string)
+	labels["serviceId"] = serviceID
+	labels["planId"] = planID
+	options = kubernetes.MatchingLabels(labels)
+
+	err = client.List(context.TODO(), options, plans)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse Services.yaml for %s. %v", base, err)
+		if errors.IsNotFound(err) {
+			return nil, nil, fmt.Errorf("unable to find plan with service id %s and plan id %s", serviceID, planID)
+		}
+		return nil, nil, err
 	}
-	return &service, nil
+
+	for _, plan := range plans.Items {
+		if plan.Spec.ID == planID {
+			return service, &plan, nil
+		}
+	}
+	return nil, nil, fmt.Errorf("unable to find plan with service id %s and plan id %s", serviceID, planID)
 }
