@@ -212,7 +212,7 @@ class BackupStore {
           const service = catalog.getService(data.service_id);
           container = `${this.containerPrefix}-${service.name}`;
         }
-        if (!options.force && data.state === 'processing') {
+        if (!options.force && data.state === 'processing' && _.get(options, 'instance_deleted', false) === false) {
           throw new UnprocessableEntity(`Backup '${backup_guid}' is still in process`);
         }
         if (!options.force && data.trigger === CONST.BACKUP.TRIGGER.SCHEDULED) {
