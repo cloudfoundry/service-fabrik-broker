@@ -405,4 +405,25 @@ describe('utils', function () {
       });
     });
   });
+  describe('#getPlatformManager', function () {
+    it('should return cf platform manager if platform is cf', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'cf'
+      });
+      expect(platformManager.platform).to.eql('cf');
+    });
+    it('should return k8s platform manager if platform is k8s', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'k8s'
+      });
+      expect(platformManager.platform).to.eql('k8s');
+    });
+    it('should return cf platform manager if platform is sapcp and origin is cf', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'sapcp',
+        origin: 'cf'
+      });
+      expect(platformManager.platform).to.eql('cf');
+    });
+  });
 });
