@@ -17,7 +17,6 @@ const EventLogDomainSocketClient = require('./EventLogDomainSocketClient');
 const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
-const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 const NotImplemented = errors.NotImplemented;
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
@@ -595,6 +594,7 @@ function deploymentStaggered(err) {
 }
 
 function getPlatformManager(context) {
+  const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
   let platform = context.platform;
   if (platform === CONST.PLATFORM.SM) {
     platform = context.origin;
