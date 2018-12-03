@@ -85,7 +85,6 @@ const cloudProviders = {
 };
 const cloudProvider = cloudProviders.openstack;
 
-
 %>---
 defaults: &defaults
   ####################
@@ -172,7 +171,6 @@ defaults: &defaults
       "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
       "deployment.servicefabrik.io_v1alpha1_logicaldbs.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_logicaldbs.yaml') %>
       "bind.servicefabrik.io_v1alpha1_logicaldbbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_logicaldbbinds.yaml') %>
-
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

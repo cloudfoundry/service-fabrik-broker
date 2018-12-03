@@ -8,7 +8,7 @@ const CONST = require('../../common/constants');
 const BaseOperator = require('../BaseOperator');
 const PostgresqlService = require('./PostgresqlService');
 const errors = require('../../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
+const Gone = errors.Gone;
 
 class PostgresqlOperator extends BaseOperator {
 
@@ -61,6 +61,7 @@ class PostgresqlOperator extends BaseOperator {
         }
       }));
   }
+
   _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering logicalDb delete with the following options:', changeObjectBody);
@@ -71,7 +72,7 @@ class PostgresqlOperator extends BaseOperator {
         resourceType: CONST.APISERVER.RESOURCE_TYPES.LOGICALDB,
         resourceId: changeObjectBody.metadata.name,
       }))
-      .catch(ServiceInstanceNotFound, () => eventmesh.apiServerClient.deleteResource({
+      .catch(Gone, () => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.LOGICALDB,
         resourceId: changeObjectBody.metadata.name

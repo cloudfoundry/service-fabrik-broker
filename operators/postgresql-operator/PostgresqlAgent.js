@@ -14,10 +14,9 @@ class PostgresqlAgent extends Agent {
     };
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
-      .tap(ip => logger.info(`Multi tenency enabled ip to handle creation request, ${ip}`))
+      .tap(ip => logger.debug(`Ip to handle logicaldb creation request, ${ip}`))
       .then(ip => this.post(ip, `tenants/${instanceId}`, body, 200));
   }
-
 
   deleteDb(ips, instanceId) {
     const body = {
@@ -25,7 +24,7 @@ class PostgresqlAgent extends Agent {
     };
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
-      .tap(ip => logger.info(`Multi tenency enabled ip to handle deletion request, ${ip}`))
+      .tap(ip => logger.debug(`Ip to handle logicaldb deletion request, ${ip}`))
       .then(ip => this.delete(ip, `tenants/${instanceId}`, body, 204));
   }
 
@@ -35,7 +34,7 @@ class PostgresqlAgent extends Agent {
     };
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
-      .tap(ip => logger.info(`Multi tenency enabled ip to handle update request, ${ip}`))
+      .tap(ip => logger.debug(`Ip to handle logicaldb update request, ${ip}`))
       .then(ip => this.put(ip, `tenants/${instanceId}`, body, 204));
   }
 
@@ -45,7 +44,7 @@ class PostgresqlAgent extends Agent {
     };
     return this
       .getHost(ips, CONST.AGENT.FEATURE.CREDENTIALS)
-      .tap(ip => logger.info(`Ip to handle create credentials request, ${ip}`))
+      .tap(ip => logger.debug(`Ip to handle logicaldb create credentials request, ${ip}`))
       .then(ip => this.post(ip, `tenants/${instanceId}/credentials`, body, 200));
   }
 
@@ -55,8 +54,9 @@ class PostgresqlAgent extends Agent {
     };
     return this
       .getHost(ips, CONST.AGENT.FEATURE.CREDENTIALS)
-      .tap(ip => logger.info(`Ip to handle delete credentials request, ${ip}`))
+      .tap(ip => logger.debug(`Ip to handle logicaldb delete credentials request, ${ip}`))
       .then(ip => this.delete(ip, `tenants/${instanceId}/credentials`, body, 204));
   }
+
 }
 module.exports = PostgresqlAgent;

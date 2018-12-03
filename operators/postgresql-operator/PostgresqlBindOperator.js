@@ -58,6 +58,7 @@ class PostgresqlBindOperator extends BaseOperator {
         });
       });
   }
+
   _processUnbind(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');

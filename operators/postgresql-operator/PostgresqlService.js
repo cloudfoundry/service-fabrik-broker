@@ -17,6 +17,7 @@ const cf = require('../../data-access-layer/cf');
 const bosh = require('../../data-access-layer/bosh');
 const PostgresqlAgent = require('./PostgresqlAgent');
 const eventmesh = require('../../data-access-layer/eventmesh');
+
 class PostgresqlService extends BaseService {
   constructor(guid, spaceId, plan, parameters) {
     super(plan);
@@ -49,7 +50,7 @@ class PostgresqlService extends BaseService {
     else if (operation.type === CONST.OPERATION_TYPE.DELETE || operation.type === CONST.OPERATION_TYPE.UPDATE) {
       return Promise.try(() => {
         this.deploymentName = operation.parameters.deploymentName;
-        logger.info(`Dedicated instance deployment name is '${this.deploymentName}'...`);
+        logger.debug(`Dedicated instance deployment name is '${this.deploymentName}'...`);
 
       });
     }
@@ -61,7 +62,7 @@ class PostgresqlService extends BaseService {
         resourceId: this.guid,
       }).then(resourcebody => {
         this.deploymentName = resourcebody.operatorMetadata.dedicatedInstanceDeploymentName;
-        logger.info(`Dedicated instance deployment name is '${this.deploymentName}'...`);
+        logger.debug(`Dedicated instance deployment name is '${this.deploymentName}'...`);
       });
     }
   }
@@ -76,6 +77,7 @@ class PostgresqlService extends BaseService {
       .then(ips => this.agent.createDb(ips, this.guid, this.parameters))
       .tap(() => logger.info(`+-> Created logical db '${this.guid}' for deployment '${this.deploymentName}'`));
   }
+
   update(changedOptions) {
     const metadata = changedOptions.operatorMetadata;
     const operation = {
@@ -101,10 +103,7 @@ class PostgresqlService extends BaseService {
     };
     let instanceDeleted = true;
     return this.initialize(operation)
-      .tap(() => {
-        logger.info(`Deleting logical db '${this.guid}' for deployment '${this.deploymentName}'...`);
-        delete this.director.deploymentIpsCache[this.deploymentName];
-      })
+      .tap(() => logger.info(`Deleting logical db '${this.guid}' for deployment '${this.deploymentName}'...`))
       .then(() => this.director.getDeploymentIps(this.deploymentName))
       .tap(() => instanceDeleted = false)
       .then(ips => Promise.all([this.agent.deleteDb(ips, this.guid)]))
@@ -126,7 +125,7 @@ class PostgresqlService extends BaseService {
   }
 
   createBinding(deploymentName, instanceId, binding) {
-    logger.info(`Creating binding '${binding.id}' with binding parameters '${binding.parameters}' for deployment '${deploymentName}', instance '${instanceId}'...`);
+    logger.info(`Creating binding '${binding.id}' with binding parameters '${binding.parameters}' for deployment '${deploymentName}', logicaldb instance '${instanceId}'...`);
     return this.director.getDeploymentIps(deploymentName)
       .then(ips => this.agent.createCredentials(ips, instanceId, binding.parameters))
       .then(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
@@ -147,7 +146,7 @@ class PostgresqlService extends BaseService {
   }
 
   deleteBinding(deploymentName, instanceId, bindingId) {
-    logger.info(`Deleting binding '${bindingId}' for deployment '${deploymentName}' , instance '${instanceId}'...`);
+    logger.info(`Deleting binding '${bindingId}' for deployment '${deploymentName}' , logicaldb instance '${instanceId}'...`);
     return Promise
       .all([
         this.director.getDeploymentIps(deploymentName),
