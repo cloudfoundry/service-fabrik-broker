@@ -62,7 +62,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     if (req.plan === undefined) {
       return Promise
         .try(() => {
-          const plan_id = req.body.plan_id || req.query.plan_id;
+          const plan_id = _.get(req, 'resourceDetails.plan_id') || req.body.plan_id || req.query.plan_id;
           if (plan_id) {
             this.validateUuid(plan_id, 'Plan ID');
             return plan_id;
@@ -138,6 +138,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .throw(new ContinueWithNext());
   }
 
+  addResourceDetailsInRequest(req, res) {
+    //TODO: revisit this if default resource type changes for extension APIs
+    return eventmesh.apiServerClient.getResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: req.params.instance_id
+    })
+    .then(resource => _.set(req, 'resourceDetails', _.get(resource, 'spec.options')))
+    .throw(new ContinueWithNext())
+    .catch(err => {
+      logger.warn(`resource could not be fetched for instance id ${req.params.instance_id}. Error: ${err}`);
+      throw(new ContinueWithNext());
+    });
+  }
+
   verifyTenantPermission(req, res) {
     /* jshint unused:false */
     const user = req.user;
@@ -151,12 +166,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         /* Following statement to address cross consumption scenario*/
-        const platform = _.get(req, 'body.context.platform') || _.get(req, 'query.platform') || CONST.PLATFORM.CF;
+        let platform = _.get(req, 'body.context.platform') || _.get(req, 'query.platform') 
+        _.get(req, 'resourceDetails.context.platform') || CONST.PLATFORM.CF;
+
+        if (platform === CONST.PLATFORM.SM) {
+          platform = _.get(req, 'resourceDetails.context.origin') || _.get(req, 'body.context.origin') || CONST.PLATFORM.CF;
+        }
         _.set(req, 'entity.platform', platform);
 
         /*Following statement for backward compatibility*/
-        const tenantId = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') ||
-          _.get(req, 'query.tenant_id') || _.get(req, 'body.context.space_guid') || _.get(req, 'body.context.namespace');
+        const tenantId = _.get(req, 'resourceDetails.context.tenant_id') || _.get(req, 'resourceDetails.space_guid') 
+        || _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') || _.get(req, 'query.tenant_id') 
+        || _.get(req, 'body.context.space_guid') || _.get(req, 'body.context.namespace');
 
         if (tenantId) {
           if ((platform === CONST.PLATFORM.CF && !FabrikBaseController.uuidPattern.test(tenantId)) ||
