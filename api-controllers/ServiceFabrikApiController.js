@@ -147,11 +147,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id
       })
       .then(resource => _.set(req, 'resourceDetails', _.get(resource, 'spec.options')))
-      .throw(new ContinueWithNext())
       .catch(err => {
         logger.warn(`resource could not be fetched for instance id ${req.params.instance_id}. Error: ${err}`);
-        throw (new ContinueWithNext());
-      });
+      })
+      .throw(new ContinueWithNext());
   }
 
   verifyTenantPermission(req, res) {

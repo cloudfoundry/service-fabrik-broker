@@ -535,7 +535,7 @@ describe('service-fabrik-api', function () {
                 plan_id: plan_id
               })
             }
-          });
+          }, 2);
           mocks.director.getDeployments();
           mocks.director.getDeployment(deploymentName, true);
           const diff = [
@@ -544,7 +544,7 @@ describe('service-fabrik-api', function () {
             ['  version: 0.0.11', 'added']
           ];
           mocks.director.diffDeploymentManifest(1, diff);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          //mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_update`)
