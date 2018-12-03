@@ -32,6 +32,18 @@ router.route('/backups')
 router.route('/backups/:backup_guid/delete')
   .post(controller.handler('deleteBackup'))
   .all(commonMiddleware.methodNotAllowed(['POST']));
+router.route('/config/create')
+  .post(controller.handler('createConfig'))
+  .all(commonMiddleware.methodNotAllowed(['POST']));
+router.route('/config/update')
+  .post(controller.handler('updateConfig'))
+  .all(commonMiddleware.methodNotAllowed(['POST']));
+router.route('/config/delete')
+  .post(controller.handler('deleteConfig'))
+  .all(commonMiddleware.methodNotAllowed(['POST']));
+router.route('/config/:name/get')
+  .get(controller.handler('getConfig'))
+  .all(commonMiddleware.methodNotAllowed(['GET']));
 router.route('/service-fabrik/db')
   .post(controller.handler('provisionDataBase'))
   .put(controller.handler('updateDatabaseDeployment'))

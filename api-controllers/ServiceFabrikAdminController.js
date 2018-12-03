@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
+const assert = require('assert');
 var moment = require('moment-timezone');
 const catalog = require('../common/models/catalog');
 const errors = require('../common/errors');
@@ -733,6 +734,32 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(body => res
         .status(200)
         .send(body));
+  }
+
+  createConfig(req, res) {
+    assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
+    assert.ok(req.query.value, 'Value parameter must be defind for the Create Config request');
+    logger.info(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
+    return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
+  }
+
+  updateConfig(req, res) {
+    assert.ok(req.query.key, 'Key parameter must be defined for the Update Config request');
+    assert.ok(req.query.value, 'Value parameter must be defind for the Update Config request');
+    logger.info(`Updating config with key: ${req.query.key} and value: ${req.query.value}`);
+    return res.status(200).send(`Updating config with key: ${req.query.key} and value: ${req.query.value}`);
+  }
+
+  deleteConfig(req, res) {
+    assert.ok(req.query.key, 'Key parameter must be defined for the Delete Config request');
+    logger.info(`Deleting config with key: ${req.query.key}`);
+    return res.status(200).send(`Deleting config with key: ${req.query.key}`);
+  }
+
+  getConfig(req, res) {
+    assert.ok(req.params.name, 'Key parameter must be defined for the Get Config request');
+    logger.info(`Getting config with key: ${req.params.name}`);
+    return res.status(200).send(`Getting config with key: ${req.params.name}`);
   }
 
   getInstancesWithUpdateScheduled() {
