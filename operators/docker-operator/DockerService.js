@@ -15,7 +15,6 @@ const CONST = require('../../common/constants');
 const assert = require('assert');
 const config = require('../../common/config');
 const BaseService = require('../BaseService');
-const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
 const DockerImageLoaderService = require('./DockerImageLoaderService');
 
 const DockerError = {
@@ -666,21 +665,8 @@ class DockerService extends BaseService {
         dockerService.imageInfo = manager.imageInfo;
       })
       .then(() => context ? context : dockerService.platformContext)
-      .then(context => dockerService.assignPlatformManager(DockerService.getPlatformManager(context)))
+      .then(context => dockerService.assignPlatformManager(utils.getPlatformManager(context)))
       .return(dockerService);
-  }
-
-  static getPlatformManager(context) {
-    let platform = context.platform;
-    if (platform === CONST.PLATFORM.SM) {
-      platform = context.origin;
-    }
-    const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
-    if (PlatformManager === undefined) {
-      return new BasePlatformManager(platform);
-    } else {
-      return new PlatformManager(platform);
-    }
   }
 }
 

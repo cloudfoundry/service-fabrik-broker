@@ -1,17 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
-//const errors = require('../../../common/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
-const DirectorManager = lib.fabrik.DirectorManager;
+const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
 const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;

@@ -3,9 +3,8 @@
 const _ = require('lodash');
 const CONST = require('../../../common/constants');
 const parseUrl = require('url').parse;
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 
 describe('dashboard', function () {
   describe('virtualHost', function () {

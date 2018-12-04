@@ -3,7 +3,6 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const moment = require('moment');
-const lib = require('../../../broker/lib');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
@@ -11,7 +10,7 @@ const catalog = require('../../../common/models').catalog;
 const Service = require('../../../common/models').Service;
 const config = require('../../../common/config');
 const errors = require('../../../common/errors');
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 const utils = require('../../../common/utils');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;

@@ -1,9 +1,7 @@
 'use strict';
 
 exports.jwt = require('./jwt');
-exports.store = require('./store');
 exports.middleware = require('./middleware');
-exports.fabrik = require('./fabrik');
 exports.bootstrap = bootstrap;
 const config = require('../../common/config');
 if (config.enable_swarm_manager) {

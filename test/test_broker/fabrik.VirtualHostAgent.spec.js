@@ -2,8 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const lib = require('../../broker/lib');
-const VirtualHostAgent = lib.fabrik.VirtualHostAgent;
+const VirtualHostAgent = require('../../broker/lib/fabrik').VirtualHostAgent;
 
 describe('fabrik', function () {
   describe('VirtualHostAgent', function () {

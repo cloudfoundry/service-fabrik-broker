@@ -2,12 +2,11 @@
 
 const _ = require('lodash');
 const parseUrl = require('url').parse;
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').external;
 const catalog = require('../../../common/models').catalog;
 const CONST = require('../../../common/constants');
 const docker = require('../../../data-access-layer/docker');
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 
 
 describe('dashboard', function () {

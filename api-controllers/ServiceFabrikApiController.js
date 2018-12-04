@@ -29,6 +29,7 @@ const config = require('../common/config');
 const CONST = require('../common/constants');
 const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
+const fabrik = require('../broker/lib/fabrik');
 const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
 
 const CloudControllerError = {
@@ -44,6 +45,10 @@ const CloudControllerError = {
 class ServiceFabrikApiController extends FabrikBaseController {
   constructor() {
     super();
+    this.cloudController = cf.cloudController;
+    this.uaa = cf.uaa;
+    this.backupStore = backupStore;
+    this.fabrik = fabrik;
   }
 
   validateUuid(uuid, description) {
@@ -456,6 +461,30 @@ class ServiceFabrikApiController extends FabrikBaseController {
           }));
       })
       .then(status => res.status(status.state === 'aborting' ? CONST.HTTP_STATUS_CODE.ACCEPTED : CONST.HTTP_STATUS_CODE.OK).send({}));
+  }
+
+  validateRestoreQuota(options) {
+    return this.backupStore
+      .getRestoreFile(options)
+      .then(metdata => {
+        let restoreDates = _.get(metdata, 'restore_dates.succeeded');
+        if (!_.isEmpty(restoreDates)) {
+          _.remove(restoreDates, date => {
+            const dateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
+            return _.lt(new Date(date), new Date(dateTillRestoreAllowed));
+          });
+          //after removing all older restore, 'restoreDates' contains dates within allowed time
+          // dates count should be less than 'config.backup.num_of_allowed_restores'
+          if (restoreDates.length >= config.backup.num_of_allowed_restores) {
+            throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
+          }
+        }
+      })
+      .catch(NotFound, (err) => {
+        logger.debug('Not found any restore data.', err);
+        //Restore file might not be found, first time restore.
+        return true;
+      });
   }
 
   startRestore(req, res) {

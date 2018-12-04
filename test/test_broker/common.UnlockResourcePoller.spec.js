@@ -32,11 +32,11 @@ const CONSTANTS = {
     WATCHER_ERROR_DELAY: 1200000
   }
 };
-const UnlockResourcePoller = proxyquire('../../broker/lib/fabrik/UnlockResourcePoller', {
-  '../../../common/constants': CONSTANTS
+const UnlockResourcePoller = proxyquire('../../common/UnlockResourcePoller', {
+  './constants': CONSTANTS
 });
 
-describe('fabrik', function () {
+describe('common', function () {
   describe('UnlockResourcePoller', function () {
     let sandbox, registerWatcherStub;
     before(function () {
@@ -292,8 +292,8 @@ describe('fabrik', function () {
           WATCHER_ERROR_DELAY: 300
         }
       };
-      const UnlockResourcePollerNew = proxyquire('../../broker/lib/fabrik/UnlockResourcePoller', {
-        '../../../common/constants': NEWCONST
+      const UnlockResourcePollerNew = proxyquire('../../common/UnlockResourcePoller', {
+        './constants': NEWCONST
       });
 
       const jsonStream = new JSONStream();

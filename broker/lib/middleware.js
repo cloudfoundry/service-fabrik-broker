@@ -3,8 +3,6 @@
 const _ = require('lodash');
 const errors = require('../../common/errors');
 const logger = require('../../common/logger');
-const quota = require('../../quota');
-const quotaManager = quota.quotaManager;
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
@@ -86,6 +84,8 @@ exports.checkQuota = function () {
         if (orgId === undefined) {
           next(new BadRequest(`organization_id is undefined`));
         } else {
+          const quota = require('../../quota');
+          const quotaManager = quota.quotaManager;
           return quotaManager.checkQuota(orgId, req.body.plan_id, _.get(req, 'body.previous_values.plan_id'), req.method)
             .then(quotaValid => {
               const plan = getPlanFromRequest(req);

@@ -3,11 +3,11 @@
 const pubsub = require('pubsub-js');
 const _ = require('lodash');
 const Promise = require('bluebird');
-const eventmesh = require('../../../data-access-layer/eventmesh');
-const CONST = require('../../../common/constants');
-const logger = require('../../../common/logger');
+const eventmesh = require('../data-access-layer/eventmesh');
+const CONST = require('./constants');
+const logger = require('./logger');
 const lockManager = eventmesh.lockManager;
-const errors = require('../../../common/errors');
+const errors = require('./errors');
 const NotFound = errors.NotFound;
 
 class UnlockResourcePoller {
