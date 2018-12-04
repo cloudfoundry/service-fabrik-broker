@@ -156,7 +156,7 @@ describe('service-broker-api-2.0', function () {
             parameters: {
               foo: 'bar'
             }
-          })
+          });
           payload.spec.options = newOptions;
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, 1, payload);
@@ -195,14 +195,14 @@ describe('service-broker-api-2.0', function () {
               origin: 'kubernetes',
               namespace: 'default',
               organization_guid: organization_guid,
-              space_guid: space_guid  
+              space_guid: space_guid
             },
             organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
             space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
             parameters: {
               foo: 'bar'
             }
-          })
+          });
           payload.spec.options = newOptions;
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, 1, payload);
