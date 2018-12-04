@@ -72,10 +72,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return Promise.try(() => {
       logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
       return eventmesh.apiServerClient.getResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: instanceId
-        })
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'spec.options'))
         .then(resource => {
@@ -109,9 +109,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
     return DirectorService.createInstance(instanceDetails.instance_id, {
-        plan_id: plan.id,
-        context: tenantInfo.context
-      })
+      plan_id: plan.id,
+      context: tenantInfo.context
+    })
       .then(directorInstance => directorInstance.diffManifest(deploymentName, tenantInfo))
       .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
       .then(result => result.diff);
@@ -217,24 +217,24 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           resourceType: plan.resourceType,
           resourceId: this.getInstanceId(deploymentName)
         })
-        .then(context => {
-          const opts = {};
-          opts.context = context;
-          return Promise
-            .all([
-              this.director.getDeploymentVmsVitals(deploymentName),
-              this.director.getTasks({
-                deployment: deploymentName
-              }),
-              manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
-            ])
-            .spread((vms, tasks, diff) => ({
-              name: deploymentName,
-              diff: diff,
-              tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
-              vms: _.filter(vms, vm => !_.isNil(vm.vitals))
-            }));
-        })
+          .then(context => {
+            const opts = {};
+            opts.context = context;
+            return Promise
+              .all([
+                this.director.getDeploymentVmsVitals(deploymentName),
+                this.director.getTasks({
+                  deployment: deploymentName
+                }),
+                manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+              ])
+              .spread((vms, tasks, diff) => ({
+                name: deploymentName,
+                diff: diff,
+                tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
+                vms: _.filter(vms, vm => !_.isNil(vm.vitals))
+              }));
+          })
       )
       .then(locals => {
         res.format({
@@ -333,10 +333,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           return false;
         }
         return eventmesh.apiServerClient.getPlatformContext({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: this.getInstanceId(deployment.name)
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: this.getInstanceId(deployment.name)
+        })
           .then(context => {
             const opts = {};
             opts.context = context;
@@ -594,11 +594,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .value();
 
         return ScheduleManager.schedule(
-            req.params.name,
-            CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
-            req.body.repeatInterval,
-            data,
-            req.user)
+          req.params.name,
+          CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
+          req.body.repeatInterval,
+          data,
+          req.user)
           .then(body => res
             .status(201)
             .send(body));
@@ -736,24 +736,44 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
-  createConfig(req, res) {
+  checkIfResourceExists(api_version, resourceType, resourceName) {
+    let resourceExists = false;
+    return eventmesh.apiServerClient.getConfigMap({
+      api_version: api_version,
+      resourceType: resourceType,
+      resourceName: resourceName
+    }).then((body) => {
+      if (body.metadata.name === resourceName) {
+        resourceExists = true;
+      }
+      return resourceExists;
+    });
+  }
+
+  createUpdateConfig(req, res) {
     assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
     assert.ok(req.query.value, 'Value parameter must be defind for the Create Config request');
     logger.info(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-    return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-  }
+    let configParam = {};
+    _.set(configParam, req.query.key, req.query.value);
+    const configMapObject = {
+      api_version: CONST.APISERVER.CONFIG_MAP.API_VERSION,
+      resourceType: CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE,
+      resourceName: CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME,
+      data: configParam
+    };
 
-  updateConfig(req, res) {
-    assert.ok(req.query.key, 'Key parameter must be defined for the Update Config request');
-    assert.ok(req.query.value, 'Value parameter must be defind for the Update Config request');
-    logger.info(`Updating config with key: ${req.query.key} and value: ${req.query.value}`);
-    return res.status(200).send(`Updating config with key: ${req.query.key} and value: ${req.query.value}`);
-  }
-
-  deleteConfig(req, res) {
-    assert.ok(req.query.key, 'Key parameter must be defined for the Delete Config request');
-    logger.info(`Deleting config with key: ${req.query.key}`);
-    return res.status(200).send(`Deleting config with key: ${req.query.key}`);
+    if (this.checkIfResourceExists(CONST.APISERVER.CONFIG_MAP.API_VERSION, CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE, CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME)) {
+      return eventmesh.apiServerClient.updateConfigMap(configMapObject)
+        .then(() => {
+          return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
+        });
+    } else {
+      return eventmesh.apiServerClient.createConfigMap(configMapObject)
+        .then(() => {
+          return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
+        });
+    }
   }
 
   getConfig(req, res) {

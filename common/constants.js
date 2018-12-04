@@ -271,6 +271,12 @@ module.exports = Object.freeze({
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
+    CONFIG_MAP: {
+      API_VERSION: 'v1',
+      RESOURCE_TYPE: 'configmaps',
+      RESOURCE_NAME: 'sfconfig',
+      RESOURCE_KIND: 'ConfigMap'
+    },
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',
