@@ -75,14 +75,14 @@ spec:
             templates:
               items:
                 properties:
-                  name:
+                  action:
                     type: string
                   path:
                     type: string
                   type:
                     type: string
                 required:
-                - name
+                - action
                 - type
                 - path
                 type: object

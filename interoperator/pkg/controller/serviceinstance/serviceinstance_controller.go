@@ -173,7 +173,7 @@ func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha
 		return nil, err
 	}
 
-	template, err := plan.GetTemplate(osbv1alpha1.ProvisionTemplateName)
+	template, err := plan.GetTemplate(osbv1alpha1.ProvisionAction)
 	if err != nil {
 		log.Printf("plan %s does not have provision template. %v\n", planID, err)
 		return nil, err
@@ -295,7 +295,7 @@ func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceIns
 		return err
 	}
 
-	template, err := plan.GetTemplate(osbv1alpha1.PropertiesTemplateName)
+	template, err := plan.GetTemplate(osbv1alpha1.PropertiesAction)
 	if err != nil {
 		log.Printf("plan %s does not have properties template. %v\n", planID, err)
 		return err
