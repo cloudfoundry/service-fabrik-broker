@@ -182,7 +182,7 @@ describe('service-broker-api', function () {
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
         });
-        /*
+        
         it('returns 400 BadRequest when both organization_guid and space_guid missing: for K8S', function () {
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
@@ -205,7 +205,7 @@ describe('service-broker-api', function () {
               expect(res.body.error).to.be.eql('Bad Request');
               expect(res.body.description).to.be.eql('This request is missing mandatory organization guid and/or space guid.');
             });
-          });*/
+          });
 
       });
 
