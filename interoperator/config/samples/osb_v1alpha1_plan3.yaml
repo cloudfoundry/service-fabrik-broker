@@ -25,13 +25,13 @@ spec:
   bindable: true
   planUpdatable: false
   templates:
-  - name: propertiesTemplate
+  - action: properties
     type: helm
     path: "config/samples/templates/blueprintProperties"
-  - name: provisionTemplate
+  - action: provision
     type: helm
     path: "config/samples/templates/blueprint"
-  - name: bindTemplate
+  - action: bind
     type: helm
     path: "config/samples/templates/blueprint"
   serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'

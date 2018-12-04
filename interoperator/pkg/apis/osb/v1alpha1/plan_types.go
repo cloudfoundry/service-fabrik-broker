@@ -25,17 +25,17 @@ import (
 
 // List of templates to be provided for a service plan
 const (
-	ProvisionTemplateName  = "provisionTemplate"
-	PropertiesTemplateName = "propertiesTemplate"
-	BindTemplateName       = "bindTemplate"
+	ProvisionAction  = "provision"
+	PropertiesAction = "properties"
+	BindAction       = "bind"
 )
 
 // TemplateSpec is the specifcation of a template
 // Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
-	Name string `yaml:"name" json:"name"`
-	Type string `yaml:"type" json:"type"`
-	Path string `yaml:"path" json:"path"`
+	Action string `yaml:"action" json:"action"`
+	Type   string `yaml:"type" json:"type"`
+	Path   string `yaml:"path" json:"path"`
 }
 
 // Schema definition for the input parameters.
@@ -111,12 +111,12 @@ func init() {
 	SchemeBuilder.Register(&Plan{}, &PlanList{})
 }
 
-// GetTemplate fetches the Template spec with the given name
-func (plan *Plan) GetTemplate(templateName string) (*TemplateSpec, error) {
+// GetTemplate fetches the Template spec with the given action
+func (plan *Plan) GetTemplate(action string) (*TemplateSpec, error) {
 	for _, template := range plan.Spec.Templates {
-		if template.Name == templateName {
+		if template.Action == action {
 			return &template, nil
 		}
 	}
-	return nil, fmt.Errorf("failed to get template %s", templateName)
+	return nil, fmt.Errorf("failed to get template %s", action)
 }
