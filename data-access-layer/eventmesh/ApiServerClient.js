@@ -583,7 +583,7 @@ class ApiServerClient {
    */
   getLastOperation(opts) {
     return this.getResource(opts)
-      .then(resource => _.get(resource, 'status.lastOperation'));
+      .then(resource => _.get(resource, 'status'));
   }
 
   /**
@@ -650,6 +650,96 @@ class ApiServerClient {
         }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+
+
+  /**
+   * @description Update OSB Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
+   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
+   * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
+   * @param {string} opts.metadata - Metadata of resource
+   * @param {Object} opts.spec - Value to set for spec field of resource
+   * @param {string} opts.status - status of the resource
+   */
+  updateOSBResource(opts) {
+    logger.silly('Updating resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
+    assert.ok(opts.metadata || opts.spec || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata'  is required to update resource`);
+    return Promise.try(() => {
+        const patchBody = {};
+        if (opts.metadata) {
+          patchBody.metadata = opts.metadata;
+        }
+        if (opts.spec) {
+          patchBody.spec = camelcaseKeysDeep(opts.spec);
+        }
+        if (opts.operatorMetadata) {
+          patchBody.operatorMetadata = opts.operatorMetadata;
+        }
+        if (opts.status) {
+          const statusJson = {};
+          _.forEach(opts.status, (val, key) => {
+            if (key === 'state') {
+              patchBody.metadata = _.merge(patchBody.metadata, {
+                labels: {
+                  'state': val
+                }
+              });
+            }
+            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+          });
+          patchBody.status = statusJson;
+        }
+        logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+        return Promise.try(() => this.init())
+          .then(() => apiserver
+            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+              body: patchBody,
+              headers: {
+                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+              }
+            }));
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+  /**
+   * @description Patches OSB Resource in Apiserver with the opts
+   * Use this method when you want to append something in status.response or spec.options
+   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
+   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
+   * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
+   */
+  patchOSBResource(opts) {
+    logger.info('Patching resource options with opts: ', opts);
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
+    assert.ok(opts.metadata || opts.spec || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata' is required to patch resource`);
+    return this.getResource(opts)
+      .then(resource => {
+        if (_.get(opts, 'status.response') && resource.status) {
+          const oldResponse = _.get(resource, 'status.response');
+          const response = _.merge(oldResponse, opts.status.response);
+          _.set(opts.status, 'response', response);
+        }
+        if (opts.spec && resource.spec) {
+          const spec = _.merge(resource.spec, camelcaseKeysDeep(opts.spec));
+          _.set(opts, 'spec', spec);
+        }
+        if (opts.operatorMetadata && resource.operatorMetadata) {
+          const oldOperatorMetadata = _.get(resource, 'operatorMetadata');
+          const operatorMetadata = _.merge(oldOperatorMetadata, opts.operatorMetadata);
+          _.set(opts, 'operatorMetadata', operatorMetadata);
+        }
+        return this.updateResource(opts);
       });
   }
 

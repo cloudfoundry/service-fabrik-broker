@@ -78,9 +78,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           resourceId: req.params.instance_id,
           spec: params,
           status: {
-            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            lastOperation: {},
-            response: {}
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
           }
         });
       })
@@ -169,15 +167,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         } else {
-          return eventmesh.apiServerClient.patchResource({
+          return eventmesh.apiServerClient.patchOSBResource({
             resourceGroup: plan.resourceGroup,
             resourceType: plan.resourceType,
             resourceId: req.params.instance_id,
-            options: params,
+            spec: params,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-              lastOperation: {},
-              response: {}
+              description: ''
             }
           });
         }
@@ -215,15 +212,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.patchResource({
+        return eventmesh.apiServerClient.patchOSBResource({
           resourceGroup: 'osb.servicefabrik.io',
           resourceType: 'serviceinstances',
           resourceId: req.params.instance_id,
-          options: params,
+          spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-            lastOperation: {},
-            response: {}
+            description: ''
           }
         });
       })
