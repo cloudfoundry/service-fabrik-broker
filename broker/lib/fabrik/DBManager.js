@@ -109,6 +109,7 @@ class DBManager {
         })
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')))
         .catch(NotFound, () => {
+          //TODO: This can be removed from T2018.13B onwards as bind property would have been moved to ApiServer by then.
           return utils
             .retry(() => this
               .directorService
