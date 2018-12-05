@@ -72,10 +72,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return Promise.try(() => {
       logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
       return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: instanceId
-      })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: instanceId
+        })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'spec.options'))
         .then(resource => {
@@ -109,9 +109,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
     return DirectorService.createInstance(instanceDetails.instance_id, {
-      plan_id: plan.id,
-      context: tenantInfo.context
-    })
+        plan_id: plan.id,
+        context: tenantInfo.context
+      })
       .then(directorInstance => directorInstance.diffManifest(deploymentName, tenantInfo))
       .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
       .then(result => result.diff);
@@ -217,24 +217,24 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           resourceType: plan.resourceType,
           resourceId: this.getInstanceId(deploymentName)
         })
-          .then(context => {
-            const opts = {};
-            opts.context = context;
-            return Promise
-              .all([
-                this.director.getDeploymentVmsVitals(deploymentName),
-                this.director.getTasks({
-                  deployment: deploymentName
-                }),
-                manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
-              ])
-              .spread((vms, tasks, diff) => ({
-                name: deploymentName,
-                diff: diff,
-                tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
-                vms: _.filter(vms, vm => !_.isNil(vm.vitals))
-              }));
-          })
+        .then(context => {
+          const opts = {};
+          opts.context = context;
+          return Promise
+            .all([
+              this.director.getDeploymentVmsVitals(deploymentName),
+              this.director.getTasks({
+                deployment: deploymentName
+              }),
+              manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+            ])
+            .spread((vms, tasks, diff) => ({
+              name: deploymentName,
+              diff: diff,
+              tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
+              vms: _.filter(vms, vm => !_.isNil(vm.vitals))
+            }));
+        })
       )
       .then(locals => {
         res.format({
@@ -333,10 +333,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           return false;
         }
         return eventmesh.apiServerClient.getPlatformContext({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: this.getInstanceId(deployment.name)
-        })
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: this.getInstanceId(deployment.name)
+          })
           .then(context => {
             const opts = {};
             opts.context = context;
@@ -594,11 +594,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .value();
 
         return ScheduleManager.schedule(
-          req.params.name,
-          CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
-          req.body.repeatInterval,
-          data,
-          req.user)
+            req.params.name,
+            CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
+            req.body.repeatInterval,
+            data,
+            req.user)
           .then(body => res
             .status(201)
             .send(body));
