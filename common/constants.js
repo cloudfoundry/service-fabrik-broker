@@ -148,6 +148,9 @@ module.exports = Object.freeze({
     HUMAN_INTERVAL: 'human-readable-interval',
     CRON_EXPRESSION: 'cron_expression'
   },
+  CONFIG: {
+    SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_'
+  },
   DB_MODEL: {
     //Define all DB Model names
     JOB: 'JobDetail',

@@ -98,6 +98,21 @@ class ServiceBrokerClient extends HttpClient {
       }, 202)
       .then(res => res.body);
   }
+
+  getConfigValue(key) {
+    logger.debug(`Getting the config value for key: ${key}`);
+    return this
+      .request({
+        method: 'GET',
+        url: `/admin/config/${key}`,
+        auth: {
+          user: config.username,
+          pass: config.password
+        },
+        json: true
+      }, 200)
+      .then(res => res.body.value);
+  }
 }
 
 module.exports = new ServiceBrokerClient();

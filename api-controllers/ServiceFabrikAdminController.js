@@ -738,22 +738,29 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   createUpdateConfig(req, res) {
     assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
-    assert.ok(req.query.value, 'Value parameter must be defind for the Create Config request');
+    assert.ok(req.query.value, 'Value parameter must be defined for the Create Config request');
     logger.info(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-    const configObject = {
+    const config = {
       key: req.query.key,
       value: req.query.value
     };
-    return eventmesh.apiServerClient.createUpdateConfigMap(configObject)
+    return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, config)
       .then(() => {
-        return res.status(200).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
+        return res.status(201).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
       });
   }
 
   getConfig(req, res) {
     assert.ok(req.params.name, 'Key parameter must be defined for the Get Config request');
-    logger.info(`Getting config with key: ${req.params.name}`);
-    return res.status(200).send(`Getting config with key: ${req.params.name}`);
+    return eventmesh.apiServerClient.getConfigMap(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, req.params.name)
+      .tap(value => logger.debug(`Returning config with key: ${req.params.name} and value: ${value}`))
+      .then(value => {
+        const body = {
+          value: value,
+          key: req.params.name
+        };
+        return res.status(200).send(body);
+      });
   }
 
   getInstancesWithUpdateScheduled() {

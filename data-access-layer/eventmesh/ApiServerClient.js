@@ -488,20 +488,22 @@ class ApiServerClient {
       });
   }
 
-  createConfigMap(opts) {
-    logger.info(`Creating ConfigMap with opts: ${opts}`);
+  createConfigMapResource(configName, configParam) {
+    logger.info(`Creating ConfigMap ${configName} with data: ${configParam}`);
     const metadata = {
-      name: opts.resourceName
+      name: configName
     };
+    let data = {};
+    data = _.set(data, configParam.key, configParam.value);
     const resourceBody = {
-      apiVersion: opts.api_version,
-      kind: opts.resourceKind,
+      apiVersion: CONST.APISERVER.CONFIG_MAP.API_VERSION,
+      kind: CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND,
       metadata: metadata,
-      data: opts.data
+      data: data
     };
     return Promise.try(() => this.init())
-      .then(() => apiserver.api[opts.api_version]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
+      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -509,11 +511,11 @@ class ApiServerClient {
       });
   }
 
-  getConfigMap(opts) {
-    logger.debug('Get resource with opts: ', opts);
+  getConfigMapResource(configName) {
+    logger.debug('Get resource with opts: ', configName);
     return Promise.try(() => this.init())
-      .then(() => apiserver.api[opts.api_version]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceName).get())
+      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
       .then(resource => {
         return resource.body;
       })
@@ -522,66 +524,37 @@ class ApiServerClient {
       });
   }
 
-  updateConfigMap(opts) {
-    logger.debug('Get resource with opts: ', opts);
+  createUpdateConfigMapResource(configName, configParam) {
     const metadata = {
-      name: opts.resourceName
+      name: configName
     };
-    const data = opts.data;
+    let data = {};
+    data = _.set(data, configParam.key, configParam.value);
     const resourceBody = {
-      apiVersion: opts.api_version,
-      kind: opts.resourceKind,
+      apiVersion: CONST.APISERVER.CONFIG_MAP.API_VERSION,
+      kind: CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND,
       metadata: metadata,
+      data: data
     };
     return Promise.try(() => this.init())
-      .then(() => this.getConfigMap(opts))
+      .then(() => this.getConfigMapResource(configName))
       .then((oldResourceBody) => {
-        resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : data;
-        return apiserver.api[opts.api_version]
-          .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceName).patch({
+        resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
+        return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+          .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
             body: resourceBody
           });
       })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
+      .catch(errors.NotFound, () => {
+        return this.createConfigMapResource(configName, configParam);
       });
   }
 
-  checkIfResourceExists(api_version, resourceType, resourceName) {
-    let resourceExists = false;
-    return this.getConfigMap({
-      api_version: api_version,
-      resourceType: resourceType,
-      resourceName: resourceName
-    }).then((body) => {
-      if (body.metadata.name === resourceName) {
-        resourceExists = true;
-      }
-      return resourceExists;
+  getConfigMap(configName, key) {
+    return this.getConfigMapResource(configName).then((body) => {
+      const configParam = body.data;
+      return _.get(configParam, key);
     });
-  }
-
-  createUpdateConfigMap(opts) {
-    let configParam = {};
-    _.set(configParam, opts.key, opts.value);
-    const configMapObject = {
-      api_version: CONST.APISERVER.CONFIG_MAP.API_VERSION,
-      resourceType: CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE,
-      resourceName: CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME,
-      data: configParam
-    };
-
-    if (this.checkIfResourceExists(CONST.APISERVER.CONFIG_MAP.API_VERSION, CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE, CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME)) {
-      return this.updateConfigMap(configMapObject)
-        .catch(err => {
-          return convertToHttpErrorAndThrow(err);
-        });
-    } else {
-      return this.createConfigMap(configMapObject)
-        .catch(err => {
-          return convertToHttpErrorAndThrow(err);
-        });
-    }
   }
 
   /**

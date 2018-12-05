@@ -35,7 +35,7 @@ router.route('/backups/:backup_guid/delete')
 router.route('/config/create')
   .post(controller.handler('createUpdateConfig'))
   .all(commonMiddleware.methodNotAllowed(['POST']));
-router.route('/config/:name/get')
+router.route('/config/:name')
   .get(controller.handler('getConfig'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
 router.route('/service-fabrik/db')
