@@ -520,10 +520,6 @@ describe('service-fabrik-api', function () {
         it('should return update required status if query param check_update_required is provided', function () {
           let deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
           mocks.uaa.tokenKey();
-          /*mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });*/
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
             spec: {
               options: JSON.stringify({
@@ -544,7 +540,6 @@ describe('service-fabrik-api', function () {
             ['  version: 0.0.11', 'added']
           ];
           mocks.director.diffDeploymentManifest(1, diff);
-          //mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_update`)

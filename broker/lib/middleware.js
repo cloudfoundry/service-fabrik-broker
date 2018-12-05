@@ -46,8 +46,6 @@ exports.validateCreateRequest = function () {
 exports.checkBlockingOperationInProgress = function () {
   return function (req, res, next) {
     const plan_id = req.body.plan_id || req.query.plan_id;
-    logger.debug(req.body);
-    logger.debug(req.query);
     const plan = catalog.getPlan(plan_id);
     if (plan.manager.name === CONST.INSTANCE_TYPE.DIRECTOR) {
       // Acquire lock for this instance
