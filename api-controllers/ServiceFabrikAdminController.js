@@ -736,44 +736,18 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
-  checkIfResourceExists(api_version, resourceType, resourceName) {
-    let resourceExists = false;
-    return eventmesh.apiServerClient.getConfigMap({
-      api_version: api_version,
-      resourceType: resourceType,
-      resourceName: resourceName
-    }).then((body) => {
-      if (body.metadata.name === resourceName) {
-        resourceExists = true;
-      }
-      return resourceExists;
-    });
-  }
-
   createUpdateConfig(req, res) {
     assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
     assert.ok(req.query.value, 'Value parameter must be defind for the Create Config request');
     logger.info(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-    let configParam = {};
-    _.set(configParam, req.query.key, req.query.value);
-    const configMapObject = {
-      api_version: CONST.APISERVER.CONFIG_MAP.API_VERSION,
-      resourceType: CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE,
-      resourceName: CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME,
-      data: configParam
+    const configObject = {
+      key: req.query.key,
+      value: req.query.value
     };
-
-    if (this.checkIfResourceExists(CONST.APISERVER.CONFIG_MAP.API_VERSION, CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE, CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME)) {
-      return eventmesh.apiServerClient.updateConfigMap(configMapObject)
-        .then(() => {
-          return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-        });
-    } else {
-      return eventmesh.apiServerClient.createConfigMap(configMapObject)
-        .then(() => {
-          return res.status(200).send(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
-        });
-    }
+    return eventmesh.apiServerClient.createUpdateConfigMap(configObject)
+      .then(() => {
+        return res.status(200).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
+      });
   }
 
   getConfig(req, res) {
