@@ -107,7 +107,7 @@ class DBManager {
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
           resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
         })
-        .then(resource => _.get(resource, 'status.response'))
+        .then(resource => utils.decodeBase64(_.get(resource, 'status.response')))
         .catch(NotFound, () => {
           return utils
             .retry(() => this
@@ -225,27 +225,23 @@ class DBManager {
       }
       params.network_index = config.mongodb.provision.network_index;
       params.skip_addons = true;
-      return this.directorService.createOrUpdateDeployment(config.mongodb.deployment_name, params)
+      return Promise.try(() => {
+          if (createIfNotPresent) {
+            return eventmesh.apiServerClient.deleteResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+                resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+              })
+              .catch(NotFound, () => logger.info('Resource not present in ApiServer. Proceeding with create.'));
+          }
+        })
+        .then(() => this.directorService.createOrUpdateDeployment(config.mongodb.deployment_name, params))
         .tap(out => {
           const taskId = _.get(out, 'task_id');
           logger.info(`MongoDB ${operation} request is complete. Check status for task id - ${taskId}`);
           this.director
             .pollTaskStatusTillComplete(taskId)
-            .then(response => {
-              return Promise.try(() => {
-                  if (createIfNotPresent) {
-                    //This is precaution to ensure that no previous bind resource exists in the event that
-                    //service-fabrik-mongodb is recreated but ApiServer is not.
-                    return eventmesh.apiServerClient.deleteResource({
-                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-                      resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
-                    });
-                  }
-                })
-                .then(() => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
-                .catch(NotFound, () => this.dbCreateUpdateSucceeded(response, createIfNotPresent));
-            })
+            .then(response => this.dbCreateUpdateSucceeded(response, createIfNotPresent))
             .catch(err => this.dbCreateUpdateFailed(err, operation));
         })
         .catch(err => this.dbCreateUpdateFailed(err, operation));
@@ -271,10 +267,13 @@ class DBManager {
             this.bindInfo = {
               credentials: credentials
             };
-            return this.storeBindPropertyOnApiServer({
+            return utils.retry(() => this.storeBindPropertyOnApiServer({
               id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
               parameters: config.mongodb.provision.bind_params || {},
               credentials: credentials
+            }), {
+              maxAttempts: 5,
+              minDelay: 5000
             });
           })
           .then(() => this.initialize());
@@ -288,6 +287,7 @@ class DBManager {
   }
 
   storeBindPropertyOnApiServer(bindProperty) {
+    let encodedBindProperty = utils.encodeBase64(bindProperty);
     return eventmesh.apiServerClient.createResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
@@ -297,7 +297,7 @@ class DBManager {
       },
       status: {
         state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-        response: bindProperty
+        response: encodedBindProperty
       }
     });
   }

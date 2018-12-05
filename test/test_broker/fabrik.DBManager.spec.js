@@ -58,11 +58,11 @@ let eventMeshStub = {
         if (bindPropertyFoundOnApiServer) {
           return {
             status: {
-              response: {
+              response: utils.encodeBase64({
                 credentials: {
                   uri: mongoDBUrl
                 }
-              }
+              })
             }
           };
         } else {
@@ -74,7 +74,9 @@ let eventMeshStub = {
       if (bindPropertyFoundOnApiServer) {
         return Promise.resolve();
       } else {
-        throw new errors.NotFound('resource not found on ApiServer');
+        return Promise.try(() => {
+          throw new errors.NotFound('resource not found on ApiServer');
+        });
       }
     },
     createResource: () => {
