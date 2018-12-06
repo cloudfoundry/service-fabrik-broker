@@ -11,11 +11,12 @@ import (
 
 // FindServiceInfo fetches the details of a service
 // from the services path
-func FindServiceInfo(client kubernetes.Client, serviceID string, planID string) (*osbv1alpha1.Service, *osbv1alpha1.Plan, error) {
+func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, namespace string) (*osbv1alpha1.Service, *osbv1alpha1.Plan, error) {
 	services := &osbv1alpha1.ServiceList{}
 	labels := make(map[string]string)
 	labels["serviceId"] = serviceID
 	options := kubernetes.MatchingLabels(labels)
+	options.Namespace = namespace
 
 	err := client.List(context.TODO(), options, services)
 	if err != nil {
@@ -39,6 +40,7 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string) 
 	labels["serviceId"] = serviceID
 	labels["planId"] = planID
 	options = kubernetes.MatchingLabels(labels)
+	options.Namespace = namespace
 
 	err = client.List(context.TODO(), options, plans)
 	if err != nil {

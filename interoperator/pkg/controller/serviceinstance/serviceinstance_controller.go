@@ -167,7 +167,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
-	service, plan, err := services.FindServiceInfo(r, serviceID, planID)
+	service, plan, err := services.FindServiceInfo(r, serviceID, planID, instance.Namespace)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 		return nil, err
@@ -289,7 +289,7 @@ func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.Serv
 func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceInstance) error {
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
-	service, plan, err := services.FindServiceInfo(r, serviceID, planID)
+	service, plan, err := services.FindServiceInfo(r, serviceID, planID, instance.Namespace)
 	if err != nil {
 		log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 		return err
