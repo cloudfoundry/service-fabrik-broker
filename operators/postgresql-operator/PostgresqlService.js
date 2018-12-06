@@ -134,8 +134,8 @@ class PostgresqlService extends BaseService {
         utils.maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
-     .catch(err => {
-        logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`,err);
+      .catch(err => {
+        logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`, err);
         return;
       });
   }
@@ -147,7 +147,7 @@ class PostgresqlService extends BaseService {
     return this.initialize(operation)
       .then(() => this.deleteBinding(this.deploymentName, this.guid, params.binding_id))
       .catch(err => {
-        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${binding.id}`,err);
+        logger.error(`+-> Failed to delete binding for deployment ${this.deploymentName} with id ${params.binding_id}`, err);
         return;
       });
   }
