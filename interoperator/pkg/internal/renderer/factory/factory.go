@@ -24,7 +24,7 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 }
 
 // GetRendererInput contructs the input required for the renderer
-func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SfService, plan *osbv1alpha1.SfPlan, instance *osbv1alpha1.ServiceInstance) (renderer.Input, error) {
+func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SfService, plan *osbv1alpha1.SfPlan, instance *osbv1alpha1.SfServiceInstance) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":
@@ -56,7 +56,7 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 }
 
 // GetPropertiesRendererInput contructs the input required for the renderer
-func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, instance *osbv1alpha1.ServiceInstance, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
+func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, instance *osbv1alpha1.SfServiceInstance, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":

@@ -17,10 +17,10 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/serviceinstance"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/sfserviceinstance"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, serviceinstance.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, sfserviceinstance.Add)
 }

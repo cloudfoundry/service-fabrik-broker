@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceinstance
+package sfserviceinstance
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to ServiceInstance
-	err = c.Watch(&source.Kind{Type: &osbv1alpha1.ServiceInstance{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SfServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	for _, subresource := range subresources {
 		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &osbv1alpha1.ServiceInstance{},
+			OwnerType:    &osbv1alpha1.SfServiceInstance{},
 		})
 		if err != nil {
 			return err
@@ -106,10 +106,10 @@ type ReconcileServiceInstance struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=serviceinstances,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance
-	instance := &osbv1alpha1.ServiceInstance{}
+	instance := &osbv1alpha1.SfServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -164,7 +164,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha1.ServiceInstance) ([]*unstructured.Unstructured, error) {
+func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha1.SfServiceInstance) ([]*unstructured.Unstructured, error) {
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	service, plan, err := services.FindServiceInfo(r, serviceID, planID, instance.Namespace)
@@ -230,8 +230,7 @@ func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha
 	return resources, nil
 }
 
-func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.ServiceInstance,
-	expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.SfServiceInstance, expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
@@ -286,7 +285,7 @@ func (r *ReconcileServiceInstance) reconcileResources(instance *osbv1alpha1.Serv
 	return foundResources, nil
 }
 
-func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceInstance) error {
+func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.SfServiceInstance) error {
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	service, plan, err := services.FindServiceInfo(r, serviceID, planID, instance.Namespace)
@@ -373,7 +372,7 @@ func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.ServiceIns
 	}
 
 	// Fetch object again before updating status
-	instanceObj := &osbv1alpha1.ServiceInstance{}
+	instanceObj := &osbv1alpha1.SfServiceInstance{}
 	namespacedName := types.NamespacedName{
 		Name:      instance.GetName(),
 		Namespace: instance.GetNamespace(),

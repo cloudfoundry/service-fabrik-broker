@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: serviceinstances.osb.servicefabrik.io
+  name: sfserviceinstances.osb.servicefabrik.io
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: ServiceInstance
-    plural: serviceinstances
+    kind: SfServiceInstance
+    plural: sfserviceinstances
   scope: Namespaced
   validation:
     openAPIV3Schema:

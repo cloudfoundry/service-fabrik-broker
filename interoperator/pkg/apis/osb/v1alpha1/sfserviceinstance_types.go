@@ -21,8 +21,8 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// ServiceInstanceSpec defines the desired state of ServiceInstance
-type ServiceInstanceSpec struct {
+// SfServiceInstanceSpec defines the desired state of SfServiceInstance
+type SfServiceInstanceSpec struct {
 	ServiceID        string                `json:"serviceId"`
 	PlanID           string                `json:"planId"`
 	RawContext       *runtime.RawExtension `json:"context,omitempty"`
@@ -31,8 +31,8 @@ type ServiceInstanceSpec struct {
 	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// ServiceInstanceStatus defines the observed state of ServiceInstance
-type ServiceInstanceStatus struct {
+// SfServiceInstanceStatus defines the observed state of SfServiceInstance
+type SfServiceInstanceStatus struct {
 	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
 	State        string `yaml:"state" json:"state"`
 	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
@@ -42,25 +42,25 @@ type ServiceInstanceStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceInstance is the Schema for the serviceinstances API
+// SfServiceInstance is the Schema for the sfserviceinstances API
 // +k8s:openapi-gen=true
-type ServiceInstance struct {
+type SfServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceInstanceSpec   `json:"spec,omitempty"`
-	Status ServiceInstanceStatus `json:"status,omitempty"`
+	Spec   SfServiceInstanceSpec   `json:"spec,omitempty"`
+	Status SfServiceInstanceStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceInstanceList contains a list of ServiceInstance
-type ServiceInstanceList struct {
+// SfServiceInstanceList contains a list of SfServiceInstance
+type SfServiceInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ServiceInstance `json:"items"`
+	Items           []SfServiceInstance `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ServiceInstance{}, &ServiceInstanceList{})
+	SchemeBuilder.Register(&SfServiceInstance{}, &SfServiceInstanceList{})
 }

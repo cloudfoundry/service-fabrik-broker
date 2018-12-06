@@ -281,7 +281,7 @@ module.exports = Object.freeze({
       SERVICE_FLOW: 'serviceflow.servicefabrik.io'
     },
     RESOURCE_TYPES: {
-      INTEROPERATOR_SERVICEINSTANCES: 'serviceinstances',
+      INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
       INTEROPERATOR_SERVICES: 'sfservices',
       INTEROPERATOR_PLANS: 'sfplans',
       DEPLOYMENT_LOCKS: 'deploymentlocks',
