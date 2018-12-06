@@ -27,14 +27,16 @@ spec:
   templates:
   - action: properties
     type: helm
-    path: "config/samples/templates/blueprintProperties"
+    url: "config/samples/templates/blueprintProperties"
   - action: provision
     type: helm
-    path: "config/samples/templates/blueprint"
+    url: "config/samples/templates/blueprint"
   - action: bind
     type: helm
-    path: "config/samples/templates/blueprint"
+    url: "config/samples/templates/blueprint"
   serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+  manager:
+    async: true
   context:
     operator:
       image: "servicefabrikjenkins/blueprint"

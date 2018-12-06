@@ -77,14 +77,14 @@ spec:
                 properties:
                   action:
                     type: string
-                  path:
-                    type: string
                   type:
+                    type: string
+                  url:
                     type: string
                 required:
                 - action
                 - type
-                - path
+                - url
                 type: object
               type: array
           required:

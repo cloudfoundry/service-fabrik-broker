@@ -35,7 +35,7 @@ const (
 type TemplateSpec struct {
 	Action string `yaml:"action" json:"action"`
 	Type   string `yaml:"type" json:"type"`
-	Path   string `yaml:"path" json:"path"`
+	URL    string `yaml:"url" json:"url"`
 }
 
 // Schema definition for the input parameters.
@@ -77,6 +77,7 @@ type PlanSpec struct {
 	ServiceID     string                `json:"serviceId"`
 	RawContext    *runtime.RawExtension `json:"context,omitempty"`
 	Manager       *runtime.RawExtension `json:"manager,omitempty"`
+	// Add supported_platform field
 }
 
 // PlanStatus defines the observed state of Plan

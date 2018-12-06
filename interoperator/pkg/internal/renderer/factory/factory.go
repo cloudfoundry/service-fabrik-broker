@@ -48,7 +48,7 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		}
 		values["instance"] = instanceObj
 
-		input := helm.NewInput(template.Path, instance.Name, instance.Namespace, values)
+		input := helm.NewInput(template.URL, instance.Name, instance.Namespace, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
@@ -65,7 +65,7 @@ func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, instance *os
 		for key, val := range sources {
 			values[key] = val.Object
 		}
-		input := helm.NewInput(template.Path, instance.Name, instance.Namespace, values)
+		input := helm.NewInput(template.URL, instance.Name, instance.Namespace, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
