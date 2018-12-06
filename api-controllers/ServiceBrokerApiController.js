@@ -73,8 +73,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createOSBResource({
-          resourceGroup: 'osb.servicefabrik.io',
-          resourceType: 'serviceinstances',
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id,
           spec: params,
           status: {
@@ -213,8 +213,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.patchOSBResource({
-          resourceGroup: 'osb.servicefabrik.io',
-          resourceType: 'serviceinstances',
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id,
           spec: params,
           status: {
@@ -273,8 +273,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
-    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : 'osb.servicefabrik.io';
-    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : 'serviceinstances';
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
         resourceGroup: resourceGroup,

@@ -745,8 +745,8 @@ class ApiServerClient {
 
   getAllServices() {
     return Promise.try(() => this.init())
-      .then(() => apiserver.apis['osb.servicefabrik.io'][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE).services.get())
+      .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES].get())
       .then(serviceList => serviceList.body.items)
       .then(serviceList => {
         let services = [];
@@ -762,8 +762,8 @@ class ApiServerClient {
 
   getAllPlansForService(serviceId) {
     return Promise.try(() => this.init())
-      .then(() => apiserver.apis['osb.servicefabrik.io'][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE).plans.get({
+      .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS].get({
           qs: {
             labelSelector: `serviceId=${serviceId}`
           }
