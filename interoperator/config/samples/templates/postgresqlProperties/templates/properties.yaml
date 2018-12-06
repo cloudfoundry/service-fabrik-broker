@@ -1,4 +1,4 @@
-{{ $stateString := "" }}
+{{ $stateString := "succeeded" }}
 {{- if eq .Values.postgresql.status.phase "Failed" }}
   {{- $stateString = "failed" }}
 {{- else }}
@@ -10,5 +10,4 @@
 {{- end }}
 status:
   state: {{ $stateString | quote }}  
-  response: {{ .Values.postgresql.status.reason | quote }}
-  lastOperation: {{ (printf "{ \"state\": \"%s\", \"description\": \"%s\" }" $stateString .Values.postgresql.status.reason) | quote }}
+  description: {{ .Values.postgresql.status.reason | quote }}

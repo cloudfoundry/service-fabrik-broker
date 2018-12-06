@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.10.3 as builder
+FROM golang:1.11.2 as builder
 
 # Copy in the go src
 WORKDIR /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
@@ -14,6 +14,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager github.com/clou
 FROM ubuntu:latest
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/manager .
-#COPY manager .
 COPY config/samples/templates/ config/samples/templates/
 ENTRYPOINT ["./manager"]
