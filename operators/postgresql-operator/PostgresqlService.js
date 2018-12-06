@@ -23,7 +23,6 @@ class PostgresqlService extends BaseService {
     super(plan);
     this.guid = guid;
     this.spaceId = spaceId;
-    this.plan = plan;
     this.parameters = parameters;
     this.director = bosh.director;
     this.cloudController = cf.cloudController;
@@ -134,6 +133,10 @@ class PostgresqlService extends BaseService {
         const bindCreds = _.cloneDeep(binding.credentials);
         utils.maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
+      })
+     .catch(err => {
+        logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`,err);
+        return;
       });
   }
 
@@ -142,7 +145,11 @@ class PostgresqlService extends BaseService {
       type: 'unbind'
     };
     return this.initialize(operation)
-      .then(() => this.deleteBinding(this.deploymentName, this.guid, params.binding_id));
+      .then(() => this.deleteBinding(this.deploymentName, this.guid, params.binding_id))
+      .catch(err => {
+        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${binding.id}`,err);
+        return;
+      });
   }
 
   deleteBinding(deploymentName, instanceId, bindingId) {
@@ -157,7 +164,7 @@ class PostgresqlService extends BaseService {
       .tap(() => logger.info('+-> Deleted service binding'))
       .catchThrow(NotFound, new ServiceBindingNotFound(bindingId));
   }
-
+  // TODO Store and retrieve binding from etcd.
   createBindingProperty(deploymentName, bindingId, value) {
     return this.director
       .createDeploymentProperty(deploymentName, `binding-${bindingId}`, JSON.stringify(value))

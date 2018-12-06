@@ -15,7 +15,7 @@ class PostgresqlAgent extends Agent {
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
       .tap(ip => logger.debug(`Ip to handle logicaldb creation request, ${ip}`))
-      .then(ip => this.post(ip, `tenants/${instanceId}`, body, 200));
+      .then(ip => this.post(ip, `tenants/${instanceId}`, body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   deleteDb(ips, instanceId) {
@@ -25,7 +25,7 @@ class PostgresqlAgent extends Agent {
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
       .tap(ip => logger.debug(`Ip to handle logicaldb deletion request, ${ip}`))
-      .then(ip => this.delete(ip, `tenants/${instanceId}`, body, 204));
+      .then(ip => this.delete(ip, `tenants/${instanceId}`, body, CONST.HTTP_STATUS_CODE.NO_CONTENT));
   }
 
   updateDb(ips, instanceId, params) {
@@ -35,7 +35,7 @@ class PostgresqlAgent extends Agent {
     return this
       .getHost(ips, CONST.AGENT.FEATURE.MULTI_TENANCY)
       .tap(ip => logger.debug(`Ip to handle logicaldb update request, ${ip}`))
-      .then(ip => this.put(ip, `tenants/${instanceId}`, body, 204));
+      .then(ip => this.put(ip, `tenants/${instanceId}`, body, CONST.HTTP_STATUS_CODE.NO_CONTENT));
   }
 
   createCredentials(ips, instanceId, parameters) {
@@ -45,7 +45,7 @@ class PostgresqlAgent extends Agent {
     return this
       .getHost(ips, CONST.AGENT.FEATURE.CREDENTIALS)
       .tap(ip => logger.debug(`Ip to handle logicaldb create credentials request, ${ip}`))
-      .then(ip => this.post(ip, `tenants/${instanceId}/credentials`, body, 200));
+      .then(ip => this.post(ip, `tenants/${instanceId}/credentials`, body, CONST.HTTP_STATUS_CODE.OK));
   }
 
   deleteCredentials(ips, instanceId, credentials) {
@@ -55,7 +55,7 @@ class PostgresqlAgent extends Agent {
     return this
       .getHost(ips, CONST.AGENT.FEATURE.CREDENTIALS)
       .tap(ip => logger.debug(`Ip to handle logicaldb delete credentials request, ${ip}`))
-      .then(ip => this.delete(ip, `tenants/${instanceId}/credentials`, body, 204));
+      .then(ip => this.delete(ip, `tenants/${instanceId}/credentials`, body, CONST.HTTP_STATUS_CODE.NO_CONTENT));
   }
 
 }
