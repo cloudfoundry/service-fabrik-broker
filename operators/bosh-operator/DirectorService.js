@@ -702,9 +702,16 @@ class DirectorService extends BaseDirectorService {
         id: params.binding_id,
         parameters: params.parameters || {}
       }))
-      .tap(() => this
-        .scheduleBackUp()
-        .catch(() => {}));
+      .tap(() => {
+        if (this.platformManager.platformName === CONST.PLATFORM.CF) {
+          return this
+            .scheduleBackUp()
+            .catch(() => {});
+        } else {
+          //TODO: revisit this when supporting extension APIs for K8S consumption
+          return;
+        }
+      });
   }
 
   createBinding(deploymentName, binding) {
