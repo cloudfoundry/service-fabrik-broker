@@ -1,8 +1,0 @@
-id: "24731fb8-7b84-4f57-914f-c3d55d793dd5"
-name: postgresql
-template:
-  type: "helm"
-  path: "config/samples/templates/postgresql"
-propertiesTemplate:
-  type: "helm"
-  path: "config/samples/templates/postgresqlProperties"

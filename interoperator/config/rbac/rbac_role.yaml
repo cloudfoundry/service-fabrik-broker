@@ -5,9 +5,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - osb.servicefabrik.io
+  - apps
   resources:
-  - plans
+  - deployments
   verbs:
   - get
   - list
@@ -19,7 +19,31 @@ rules:
 - apiGroups:
   - osb.servicefabrik.io
   resources:
-  - services
+  - sfplans
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - osb.servicefabrik.io
+  resources:
+  - sfservices
   verbs:
   - get
   - list
@@ -79,7 +103,7 @@ rules:
 - apiGroups:
   - interoperator.servicefabrik.io
   resources:
-  - serviceinstances
+  - sfserviceinstances
   verbs:
   - get
   - list
