@@ -13,7 +13,6 @@ const NotFound = errors.NotFound;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const ScheduleManager = require('../../jobs');
 const CONST = require('../../common/constants');
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const Agent = require('../../data-access-layer/service-agent');
@@ -733,12 +732,6 @@ class DirectorService extends BaseDirectorService {
         utils.maskSensitiveInfo(bindCreds);
         logger.info(`+-> Created binding:${JSON.stringify(bindCreds)}`);
       })
-      .tap(() => {
-        //TODO: Temporary fix. Binding info should always be fetched from etcd.
-        if (deploymentName === config.mongodb.deployment_name) {
-          return this.createBindingProperty(deploymentName, binding.id, binding);
-        }
-      })
       .catch(err => {
         logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`);
         logger.error(err);
@@ -778,12 +771,6 @@ class DirectorService extends BaseDirectorService {
         })
       )
       .tap(() => logger.info('+-> Deleted service credentials'))
-      .tap(() => {
-        //TODO: Temporary fix. Binding info should always be fetched from etcd.
-        if (deploymentName === config.mongodb.deployment_name) {
-          return this.deleteBindingProperty(deploymentName, id);
-        }
-      })
       .catch(err => {
         logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with id ${id}`);
         logger.error(err);
@@ -820,17 +807,6 @@ class DirectorService extends BaseDirectorService {
         logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
         return;
       });
-  }
-
-  createBindingProperty(deploymentName, id, value) {
-    return this.director
-      .createDeploymentProperty(deploymentName, `binding-${id}`, JSON.stringify(value))
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(id));
-  }
-
-  deleteBindingProperty(deploymentName, id) {
-    return this.director
-      .deleteDeploymentProperty(deploymentName, `binding-${id}`);
   }
 
   getBindingProperty(deploymentName, id) {
