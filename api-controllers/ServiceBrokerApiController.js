@@ -170,8 +170,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         } else {
           return eventmesh.apiServerClient.patchOSBResource({
-            resourceGroup: plan.resourceGroup,
-            resourceType: plan.resourceType,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
             spec: params,
             status: {
@@ -310,22 +310,22 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.createResource({
-          resourceGroup: plan.bindResourceGroup,
-          resourceType: plan.bindResourceType,
+        return eventmesh.apiServerClient.createOSBResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
           resourceId: params.binding_id,
           labels: {
             instance_guid: req.params.instance_id
           },
-          options: params,
+          spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
           }
         });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
@@ -352,9 +352,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.updateResource({
-            resourceGroup: plan.bindResourceGroup,
-            resourceType: plan.bindResourceType,
+        return eventmesh.apiServerClient.updateOSBResource({
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
             resourceId: params.binding_id,
             options: params,
             status: {
@@ -364,31 +364,30 @@ class ServiceBrokerApiController extends FabrikBaseController {
           .catch((NotFound), () => {
             logger.info(`Resource resourceGroup: ${plan.bindResourceGroup},` +
               `resourceType: ${plan.bindResourceType}, resourceId: ${params.binding_id} not found, Creating now...`);
-            return eventmesh.apiServerClient.createResource({
-              resourceGroup: plan.bindResourceGroup,
-              resourceType: plan.bindResourceType,
+            return eventmesh.apiServerClient.createOSBResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
               resourceId: params.binding_id,
               labels: {
                 instance_guid: req.params.instance_id
               },
-              options: params,
+              spec: params,
               status: {
-                state: CONST.APISERVER.RESOURCE_STATE.DELETE,
-                response: {}
+                state: CONST.APISERVER.RESOURCE_STATE.DELETE
               }
             });
           });
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
       .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: plan.bindResourceGroup,
-        resourceType: plan.bindResourceType,
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id
       }))
       .then(done)

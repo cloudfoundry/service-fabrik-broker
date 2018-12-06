@@ -282,6 +282,7 @@ module.exports = Object.freeze({
     },
     RESOURCE_TYPES: {
       INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
+      INTEROPERATOR_SERVICEBINDINGS: 'sfservicebindings',
       INTEROPERATOR_SERVICES: 'sfservices',
       INTEROPERATOR_PLANS: 'sfplans',
       DEPLOYMENT_LOCKS: 'deploymentlocks',
