@@ -25,13 +25,13 @@ spec:
   templates:
   - action: properties
     type: helm
-    path: "config/samples/templates/postgresqlProperties"
+    url: "config/samples/templates/postgresqlProperties"
   - action: provision
     type: helm
-    path: "config/samples/templates/postgresql"
+    url: "config/samples/templates/postgresql"
   - action: bind
     type: helm
-    path: "config/samples/templates/postgresql"
+    url: "config/samples/templates/postgresql"
   serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
   context:
     operator:
