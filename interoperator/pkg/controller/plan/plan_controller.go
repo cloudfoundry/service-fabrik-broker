@@ -18,13 +18,19 @@ package plan
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -93,6 +99,56 @@ func (r *ReconcilePlan) Reconcile(request reconcile.Request) (reconcile.Result, 
 		updateRequired = true
 	}
 
+	serviceID := instance.Spec.ServiceID
+	services := &osbv1alpha1.ServiceList{}
+	searchLabels := make(map[string]string)
+	searchLabels["serviceId"] = serviceID
+	options := kubernetes.MatchingLabels(searchLabels)
+	options.Namespace = request.Namespace
+
+	err = r.List(context.TODO(), options, services)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return reconcile.Result{}, fmt.Errorf("unable to find service with id %s", serviceID)
+		}
+		return reconcile.Result{}, err
+	}
+	var service *osbv1alpha1.Service
+	for _, obj := range services.Items {
+		if obj.Spec.ID == serviceID {
+			service = &obj
+		}
+	}
+	if service == nil {
+		return reconcile.Result{}, fmt.Errorf("unable to find service with id %s", serviceID)
+	}
+
+	ownerRefs := instance.GetOwnerReferences()
+	existingRefs := make([]metav1.OwnerReference, len(ownerRefs))
+	for i := range ownerRefs {
+		existingRefs[i] = *ownerRefs[i].DeepCopy()
+	}
+
+	err = controllerutil.SetControllerReference(service, instance, r.scheme)
+	if err != nil {
+		log.Printf("error setting owner reference for plan %s. %v\n", instance.Spec.ID, err)
+		return reconcile.Result{}, err
+	}
+
+	if !updateRequired {
+		ownerRefs = instance.GetOwnerReferences()
+		if len(ownerRefs) != len(existingRefs) {
+			updateRequired = true
+		} else {
+			for i := range ownerRefs {
+				if !referSameObject(ownerRefs[i], existingRefs[i]) {
+					updateRequired = true
+					break
+				}
+			}
+		}
+	}
+
 	if updateRequired {
 		instance.SetLabels(labels)
 		err = r.Update(context.TODO(), instance)
@@ -102,4 +158,19 @@ func (r *ReconcilePlan) Reconcile(request reconcile.Request) (reconcile.Result, 
 		log.Printf("Plan %s labels updated\n", instance.GetName())
 	}
 	return reconcile.Result{}, nil
+}
+
+// Returns true if a and b point to the same object
+func referSameObject(a, b metav1.OwnerReference) bool {
+	aGV, err := schema.ParseGroupVersion(a.APIVersion)
+	if err != nil {
+		return false
+	}
+
+	bGV, err := schema.ParseGroupVersion(b.APIVersion)
+	if err != nil {
+		return false
+	}
+
+	return aGV == bGV && a.Kind == b.Kind && a.Name == b.Name
 }
