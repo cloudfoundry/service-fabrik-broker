@@ -147,7 +147,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id
       })
       .then(resource => {
-        _.set(req, 'resourceDetails', _.get(resource, 'spec.options'));
         if (!_.get(req, 'body.context')) {
           _.set(req, 'body.context', _.get(resource, 'spec.options.context'));
         }
