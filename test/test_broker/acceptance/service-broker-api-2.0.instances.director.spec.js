@@ -44,6 +44,9 @@ describe('service-broker-api-2.0', function () {
       const parameters = {
         foo: 'bar'
       };
+      const subaccount_id = 'b319968c-0eba-43f2-959b-40f507c269fd';
+      const clusterid = '182731cd-d50b-4106-bde3-8cf410ec5940';
+      const namespace = 'default-namespace';
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
@@ -149,7 +152,8 @@ describe('service-broker-api-2.0', function () {
               platform: 'sapcp',
               origin: 'cloudfoundry',
               organization_guid: organization_guid,
-              space_guid: space_guid
+              space_guid: space_guid,
+              subaccount_id: subaccount_id
             },
             organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
             space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
@@ -171,7 +175,8 @@ describe('service-broker-api-2.0', function () {
                 platform: 'sapcp',
                 origin: 'cloudfoundry',
                 organization_guid: organization_guid,
-                space_guid: space_guid
+                space_guid: space_guid,
+                subaccount_id: subaccount_id
               },
               organization_guid: organization_guid,
               space_guid: space_guid,
@@ -193,9 +198,9 @@ describe('service-broker-api-2.0', function () {
             context: {
               platform: 'sapcp',
               origin: 'kubernetes',
-              namespace: 'default',
-              organization_guid: organization_guid,
-              space_guid: space_guid
+              namespace: namespace,
+              subaccount_id: subaccount_id,
+              clusterid: clusterid
             },
             organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
             space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
@@ -216,9 +221,9 @@ describe('service-broker-api-2.0', function () {
               context: {
                 platform: 'sapcp',
                 origin: 'kubernetes',
-                namespace: 'default',
-                organization_guid: organization_guid,
-                space_guid: space_guid
+                namespace: namespace,
+                subaccount_id: subaccount_id,
+                clusterid: clusterid
               },
               organization_guid: organization_guid,
               space_guid: space_guid,
