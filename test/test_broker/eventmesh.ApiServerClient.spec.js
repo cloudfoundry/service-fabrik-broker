@@ -64,6 +64,22 @@ const sampleDeploymentResource = {
   }
 };
 
+const expectedCreateConfigMapResponse = {
+  apiVersion: 'v1',
+  data: {
+    disable_scheduled_update_blueprint: 'true'
+  },
+  kind: 'ConfigMap',
+  metadata: {
+    creationTimestamp: '2018-12-05T11:31:28Z',
+    name: 'sfconfig',
+    namespace: 'default',
+    resourceVersion: '370255',
+    selfLink: '/api/v1/namespaces/default/configmaps/sfconfig',
+    uid: '4e47d831-f881-11e8-9055-123c04a61866'
+  }
+};
+
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
