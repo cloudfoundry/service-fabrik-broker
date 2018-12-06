@@ -1,8 +1,0 @@
-id: blueprint-id
-name: blueprint
-template:
-  type: "helm"
-  path: "config/samples/templates/blueprint"
-propertiesTemplate:
-  type: "helm"
-  path: "config/samples/templates/blueprintProperties"

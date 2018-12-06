@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package sfservice
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// Add creates a new Service Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new SfService Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -39,40 +39,43 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileService{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileSfService{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("service-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("sfservice-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to Service
-	err = c.Watch(&source.Kind{Type: &osbv1alpha1.Service{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to SfService
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SfService{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileService{}
+var _ reconcile.Reconciler = &ReconcileSfService{}
 
-// ReconcileService reconciles a Service object
-type ReconcileService struct {
+// ReconcileSfService reconciles a SfService object
+type ReconcileSfService struct {
 	client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a Service object and makes changes based on the state read
-// and what is in the Service.Spec
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=services,verbs=get;list;watch;create;update;patch;delete
-func (r *ReconcileService) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the Service instance
-	instance := &osbv1alpha1.Service{}
+// Reconcile reads that state of the cluster for a SfService object and makes changes based on the state read
+// and what is in the SfService.Spec
+// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
+// a Deployment as an example
+// Automatically generate RBAC rules to allow the Controller to read and write Deployments
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservices,verbs=get;list;watch;create;update;patch;delete
+func (r *ReconcileSfService) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the SfService instance
+	instance := &osbv1alpha1.SfService{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

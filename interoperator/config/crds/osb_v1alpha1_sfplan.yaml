@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: plans.osb.servicefabrik.io
+  name: sfplans.osb.servicefabrik.io
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: Plan
-    plural: plans
+    kind: SfPlan
+    plural: sfplans
   scope: Namespaced
   validation:
     openAPIV3Schema:

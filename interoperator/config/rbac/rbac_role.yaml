@@ -5,30 +5,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - osb.servicefabrik.io
-  resources:
-  - plans
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - osb.servicefabrik.io
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - kubedb.com
   resources:
   - Postgres
@@ -80,6 +56,54 @@ rules:
   - interoperator.servicefabrik.io
   resources:
   - serviceinstances
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - osb.servicefabrik.io
+  resources:
+  - sfplans
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - osb.servicefabrik.io
+  resources:
+  - sfservices
   verbs:
   - get
   - list

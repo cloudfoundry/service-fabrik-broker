@@ -63,8 +63,8 @@ type ServiceSchemas struct {
 	Binding  ServiceBindingSchema  `json:"binding,omitempty"`
 }
 
-// PlanSpec defines the desired state of Plan
-type PlanSpec struct {
+// SfPlanSpec defines the desired state of SfPlan
+type SfPlanSpec struct {
 	Name          string                `json:"name"`
 	ID            string                `json:"id"`
 	Description   string                `json:"description"`
@@ -80,8 +80,8 @@ type PlanSpec struct {
 	// Add supported_platform field
 }
 
-// PlanStatus defines the observed state of Plan
-type PlanStatus struct {
+// SfPlanStatus defines the observed state of SfPlan
+type SfPlanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -89,32 +89,32 @@ type PlanStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Plan is the Schema for the plans API
+// SfPlan is the Schema for the sfplans API
 // +k8s:openapi-gen=true
-type Plan struct {
+type SfPlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PlanSpec   `json:"spec,omitempty"`
-	Status PlanStatus `json:"status,omitempty"`
+	Spec   SfPlanSpec   `json:"spec,omitempty"`
+	Status SfPlanStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PlanList contains a list of Plan
-type PlanList struct {
+// SfPlanList contains a list of SfPlan
+type SfPlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Plan `json:"items"`
+	Items           []SfPlan `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Plan{}, &PlanList{})
+	SchemeBuilder.Register(&SfPlan{}, &SfPlanList{})
 }
 
 // GetTemplate fetches the Template spec with the given action
-func (plan *Plan) GetTemplate(action string) (*TemplateSpec, error) {
-	for _, template := range plan.Spec.Templates {
+func (sfPlan *SfPlan) GetTemplate(action string) (*TemplateSpec, error) {
+	for _, template := range sfPlan.Spec.Templates {
 		if template.Action == action {
 			return &template, nil
 		}
