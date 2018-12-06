@@ -18,6 +18,7 @@ const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const formatUrl = require('url').format;
+const lib = require('../broker/lib');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -41,9 +42,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
-      platform: req.params.platform
-    }).getCatalog(catalog));
+    return Promise.try(() => lib.loadServices())
+      .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
+        platform: req.params.platform
+      }).getCatalog(catalog)));
   }
 
   putInstance(req, res) {
@@ -73,8 +75,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.createOSBResource({
-          resourceGroup: 'osb.servicefabrik.io',
-          resourceType: 'serviceinstances',
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id,
           spec: params,
           status: {
@@ -213,8 +215,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.patchOSBResource({
-          resourceGroup: 'osb.servicefabrik.io',
-          resourceType: 'serviceinstances',
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: req.params.instance_id,
           spec: params,
           status: {
@@ -273,8 +275,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
     const planId = req.query.plan_id;
     const plan = catalog.getPlan(planId);
-    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : 'osb.servicefabrik.io';
-    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : 'serviceinstances';
+    const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
+    const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
         resourceGroup: resourceGroup,
