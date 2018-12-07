@@ -11,3 +11,6 @@
 status:
   state: {{ $stateString | quote }}  
   description: {{ .Values.postgresql.status.reason | quote }}
+binding:
+  error: ""
+  response: {{ (printf "{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }" .Values.service.spec.clusterIP  (.Values.secret.data.POSTGRES_PASSWORD | b64dec ) ) | b64enc }} 
