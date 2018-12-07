@@ -744,7 +744,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       key: req.query.key,
       value: req.query.value
     };
-    return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, config)
+    return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, config)
       .then(() => {
         return res.status(201).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
       });
@@ -752,7 +752,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
   getConfig(req, res) {
     assert.ok(req.params.name, 'Key parameter must be defined for the Get Config request');
-    return eventmesh.apiServerClient.getConfigMap(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, req.params.name)
+    return eventmesh.apiServerClient.getConfigMap(CONST.CONFIG.RESOURCE_NAME, req.params.name)
       .tap(value => logger.debug(`Returning config with key: ${req.params.name} and value: ${value}`))
       .then(value => {
         const body = {

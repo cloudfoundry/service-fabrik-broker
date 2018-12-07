@@ -32,9 +32,9 @@ router.route('/backups')
 router.route('/backups/:backup_guid/delete')
   .post(controller.handler('deleteBackup'))
   .all(commonMiddleware.methodNotAllowed(['POST']));
-router.route('/config/create')
-  .post(controller.handler('createUpdateConfig'))
-  .all(commonMiddleware.methodNotAllowed(['POST']));
+router.route('/config')
+  .put(controller.handler('createUpdateConfig'))
+  .all(commonMiddleware.methodNotAllowed(['PUT']));
 router.route('/config/:name')
   .get(controller.handler('getConfig'))
   .all(commonMiddleware.methodNotAllowed(['GET']));

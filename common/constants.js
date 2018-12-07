@@ -149,7 +149,8 @@ module.exports = Object.freeze({
     CRON_EXPRESSION: 'cron_expression'
   },
   CONFIG: {
-    SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_'
+    DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_',
+    RESOURCE_NAME: 'sfconfig'
   },
   DB_MODEL: {
     //Define all DB Model names
@@ -277,7 +278,6 @@ module.exports = Object.freeze({
     CONFIG_MAP: {
       API_VERSION: 'v1',
       RESOURCE_TYPE: 'configmaps',
-      RESOURCE_NAME: 'sfconfig',
       RESOURCE_KIND: 'ConfigMap'
     },
     RESOURCE_GROUPS: {

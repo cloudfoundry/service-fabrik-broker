@@ -87,7 +87,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
   static isInstanceUpdateDisabled(resourceDetails) {
     const serviceId = _.get(resourceDetails, 'service_id');
     const serviceName = catalog.getServiceName(serviceId);
-    const configKey = CONST.CONFIG.SCHEDULED_UPDATE_CONFIG_PREFIX + serviceName;
+    const configKey = CONST.CONFIG.DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX + serviceName;
     return serviceBrokerClient.getConfigValue(configKey);
   }
 

@@ -118,13 +118,13 @@ function nockCreateConfigMap(response, expectedStatusCode, payload) {
 
 function nockGetConfigMap(response, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME}`)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockUpdateConfigMap(response, expectedStatusCode, payload) {
   nock(apiServerHost)
-    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME}`, JSON.stringify(payload))
+    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
     .reply(expectedStatusCode || 200, response);
 }
 
@@ -884,7 +884,7 @@ describe('eventmesh', () => {
           key: 'disable_scheduled_update_blueprint',
           value: 'true'
         };
-        return apiserver.createConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, configParam)
+        return apiserver.createConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
             verify();
@@ -906,7 +906,7 @@ describe('eventmesh', () => {
           key: 'disable_scheduled_update_blueprint',
           value: 'true'
         };
-        return apiserver.createConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, configParam)
+        return apiserver.createConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .catch(err => {
             expect(err.status).to.eql(404);
             verify();
@@ -917,7 +917,7 @@ describe('eventmesh', () => {
     describe('getConfigMapResource', () => {
       it('Retrieves an existing config map resource object', () => {
         nockGetConfigMap(expectedConfigMapResponse);
-        return apiserver.getConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME)
+        return apiserver.getConfigMapResource(CONST.CONFIG.RESOURCE_NAME)
           .then(res => {
             expect(res.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
             verify();
@@ -925,7 +925,7 @@ describe('eventmesh', () => {
       });
       it('Throws a 404 error if config map resource doesnt exist', () => {
         nockGetConfigMap({}, 404);
-        return apiserver.getConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME)
+        return apiserver.getConfigMapResource(CONST.CONFIG.RESOURCE_NAME)
           .catch(err => {
             expect(err.status).to.eql(404);
             verify();
@@ -936,7 +936,7 @@ describe('eventmesh', () => {
     describe('getConfigMap', () => {
       it('Retrieves the key-value pair in the existing config map resource object', () => {
         nockGetConfigMap(expectedConfigMapResponse);
-        return apiserver.getConfigMap(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, 'disable_scheduled_update_blueprint')
+        return apiserver.getConfigMap(CONST.CONFIG.RESOURCE_NAME, 'disable_scheduled_update_blueprint')
           .then(res => {
             expect(res).to.eql('true');
             verify();
@@ -962,7 +962,7 @@ describe('eventmesh', () => {
           key: 'disable_scheduled_update_blueprint',
           value: 'true'
         };
-        return apiserver.createUpdateConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, configParam)
+        return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
             verify();
@@ -985,7 +985,7 @@ describe('eventmesh', () => {
           key: 'disable_scheduled_update_blueprint',
           value: 'false'
         };
-        return apiserver.createUpdateConfigMapResource(CONST.APISERVER.CONFIG_MAP.RESOURCE_NAME, configParam)
+        return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
             verify();
