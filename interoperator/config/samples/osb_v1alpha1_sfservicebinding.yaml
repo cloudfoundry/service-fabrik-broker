@@ -1,0 +1,9 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SfServiceBinding
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: sfservicebinding-sample
+spec:
+  # Add fields here
+  foo: bar

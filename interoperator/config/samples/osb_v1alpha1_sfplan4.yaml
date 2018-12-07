@@ -33,6 +33,8 @@ spec:
     type: helm
     url: "config/samples/templates/postgresql"
   serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  manager:
+    async: true
   context:
     operator:
       image: "servicefabrikjenkins/blueprint"

@@ -185,7 +185,7 @@ func (r *ReconcileServiceInstance) computeExpectedResources(instance *osbv1alpha
 		return nil, err
 	}
 
-	input, err := rendererFactory.GetRendererInput(template, service, plan, instance)
+	input, err := rendererFactory.GetProvisionRendererInput(template, service, plan, instance)
 	if err != nil {
 		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
 		return nil, err
@@ -306,7 +306,7 @@ func (r *ReconcileServiceInstance) updateStatus(instance *osbv1alpha1.SfServiceI
 		return err
 	}
 
-	input, err := rendererFactory.GetRendererInput(template, service, plan, instance)
+	input, err := rendererFactory.GetProvisionRendererInput(template, service, plan, instance)
 	if err != nil {
 		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
 		return err

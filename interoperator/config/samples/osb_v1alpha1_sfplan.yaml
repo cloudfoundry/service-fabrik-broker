@@ -33,6 +33,21 @@ spec:
     type: helm
     url: "config/samples/templates/blueprint"
   serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+  schemas:
+    service_instance:
+      create:
+        parameters:
+          "$schema": "http://json-schema.org/draft-06/schema#"
+          title: createServiceInstance
+          type: object
+          additionalProperties: false
+          properties:
+            foo:
+              type: string
+              description: some description for foo field
+          required:
+          - "foo"
+
   manager:
     async: true
   context:
