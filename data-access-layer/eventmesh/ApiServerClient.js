@@ -540,6 +540,7 @@ class ApiServerClient {
       .then(() => this.getConfigMapResource(configName))
       .then((oldResourceBody) => {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
+        resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion || undefined;
         return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
           .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
             body: resourceBody

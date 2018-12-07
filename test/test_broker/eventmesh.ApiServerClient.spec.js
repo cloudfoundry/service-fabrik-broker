@@ -887,6 +887,12 @@ describe('eventmesh', () => {
         return apiserver.createConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -920,6 +926,12 @@ describe('eventmesh', () => {
         return apiserver.getConfigMapResource(CONST.CONFIG.RESOURCE_NAME)
           .then(res => {
             expect(res.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.metadata.resourceVersion).to.eql('370255');
+            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -965,6 +977,12 @@ describe('eventmesh', () => {
         return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -974,7 +992,8 @@ describe('eventmesh', () => {
           apiVersion: 'v1',
           kind: 'ConfigMap',
           metadata: {
-            name: 'sfconfig'
+            name: 'sfconfig',
+            resourceVersion: '370255'
           },
           data: {
             disable_scheduled_update_blueprint: 'false'
@@ -988,6 +1007,12 @@ describe('eventmesh', () => {
         return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
           .then(res => {
             expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
