@@ -1000,6 +1000,87 @@ class DirectorService extends BaseDirectorService {
       .catch(err => logger.error(`Error occurred while scheduling auto-update for instance: ${this.guid} - `, err));
   }
 
+  /* Dashboard rendering functions */
+  getInfo() {
+    const operation = {
+      type: 'get'
+    };
+    return Promise
+      .all([
+        eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: this.guid
+        }),
+        this.initialize(operation).then(() => this.getDeploymentInfo(this.deploymentName))
+      ])
+      .spread((instance, deploymentInfo) => {
+        return {
+          title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: this.plan,
+          service: this.plan.service,
+          instance: _.set(instance, 'task', deploymentInfo),
+          files: [{
+            id: 'status',
+            title: 'Status',
+            language: 'yaml',
+            content: yaml.dump(deploymentInfo)
+          }]
+        };
+      });
+  }
+
+  getDeploymentInfo(deploymentName) {
+    const events = {};
+    const info = {};
+
+    function DeploymentDoesNotExist(err) {
+      return err.status === 404 && _.get(err, 'error.code') === 70000;
+    }
+
+    function addInfoEvent(event) {
+      if (!_.has(events, event.stage)) {
+        events[event.stage] = {
+          tags: event.tags,
+          total: event.total,
+        };
+      }
+      if (!_.has(events[event.stage], event.task)) {
+        events[event.stage][event.task] = {
+          index: event.index,
+          time: event.time,
+          status: event.state
+        };
+      } else {
+        events[event.stage][event.task].status = event.state;
+        let seconds = event.time - events[event.stage][event.task].time;
+        delete events[event.stage][event.task].time;
+        events[event.stage][event.task].duration = `${seconds} sec`;
+      }
+    }
+
+    return this
+      .findDeploymentTask(deploymentName)
+      .tap(task => _.assign(info, task))
+      .then(task => this.director.getTaskEvents(task.id))
+      .tap(events => _.each(events, addInfoEvent))
+      .return(_.set(info, 'events', events))
+      .catchReturn(DeploymentDoesNotExist, null);
+  }
+
+  findDeploymentTask(deploymentName) {
+    return this.director
+      .getTasks({
+        deployment: deploymentName
+      }, true)
+      .then(tasks => _
+        .chain(tasks)
+        .sortBy('id')
+        .find(task => /^create\s+deployment/.test(task.description))
+        .value()
+      );
+  }
+  
   static createInstance(instanceId, options) {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);

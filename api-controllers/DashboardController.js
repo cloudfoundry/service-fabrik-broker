@@ -17,6 +17,7 @@ const fabrik = require('../broker/lib/fabrik');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
+const DirectorService = require('../operators/bosh-operator/DirectorService');
 
 Promise.promisifyAll(crypto, Session.prototype);
 
@@ -29,13 +30,13 @@ class DashboardController extends FabrikBaseController {
   }
 
   show(req, res) {
-    const managerType = req.instance.plan.manager.name;
-    return req.instance
+    const managerType = req.service.plan.manager.name;
+    return req.service
       .getInfo()
       .then(info => {
         let additional_info = {};
-        if (req.instance.plan.manager.settings.dashboard_template) {
-          additional_info = yaml.safeLoad(_.template(Buffer.from(req.instance.plan.manager.settings.dashboard_template, 'base64'))(info));
+        if (req.service.plan.manager.settings.dashboard_template) {
+          additional_info = yaml.safeLoad(_.template(Buffer.from(req.service.plan.manager.settings.dashboard_template, 'base64'))(info));
         }
         info = _.assign({
           userId: req.session.user_id,
@@ -134,11 +135,13 @@ class DashboardController extends FabrikBaseController {
     return this.cloudController.getPlanIdFromInstanceId(instance_id)
       .then(current_plan_id => {
         logger.info(`plan_id in Dashboard URL was ${plan_id} and actual plan_id is ${current_plan_id}`);
-        return this.fabrik.createInstance(instance_id, service_id, current_plan_id, context);
+        //return this.fabrik.createInstance(instance_id, service_id, current_plan_id, context);
+        return new DirectorService(catalog.getPlan(current_plan_id), instance_id);
       })
-      .then(instance => {
-        req.instance = instance;
-        req.manager = instance.manager;
+      .then(service => {
+        /*req.instance = instance;
+        req.manager = instance.manager;*/
+        req.service = service;
       })
       .throw(new ContinueWithNext());
   }
@@ -157,11 +160,13 @@ class DashboardController extends FabrikBaseController {
         const context = _.get(resourceOptions, 'context');
         req.session.service_id = service_id;
         req.session.plan_id = plan_id;
-        return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+        //return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+        return new DirectorService(catalog.getPlan(plan_id), instance_id);
       })
-      .then(instance => {
-        req.instance = instance;
-        req.manager = instance.manager;
+      .then(service => {
+        /*req.instance = instance;
+        req.manager = instance.manager;*/
+        req.service = service;
       })
       .then(() => saveSession(req.session))
       .throw(new ContinueWithNext());
