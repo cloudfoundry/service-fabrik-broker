@@ -17,6 +17,7 @@ const cf = require('../../data-access-layer/cf');
 const bosh = require('../../data-access-layer/bosh');
 const VirtualHostAgent = require('./VirtualHostAgent');
 const mapper = require('./VirtualHostRelationMapper');
+const eventmesh = require('../../data-access-layer/eventmesh');
 
 class VirtualHostService extends BaseService {
   constructor(guid, spaceId, plan, parameters) {
@@ -150,6 +151,46 @@ class VirtualHostService extends BaseService {
     return this.director.deleteDeploymentProperty(deploymentName, `binding-${bindingId}`);
   }
 
+  /* Dashboard rendering functions */
+  getInfo() {
+    return this.initialize()
+      .then(() => {
+        this.parentInstanceId = this.getParentInstanceId();
+        return Promise
+          .all([
+            eventmesh.apiServerClient.getResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+              resourceId: this.guid
+            }),
+            eventmesh.apiServerClient.getResource({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: this.parentInstanceId
+            })
+          ])
+          .spread((instance, parent_instance) => {
+            const parent_instance_plan = catalog.getPlan(_.get(parent_instance, 'spec.options.plan_id'));
+            return {
+              title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+              plan: this.plan,
+              service: this.plan.service,
+              instance: instance,
+              parent_plan: parent_instance_plan,
+              parent_instance: parent_instance
+            };
+          });
+      });
+  }
+
+  getParentInstanceId() {
+    return _.nth(_
+      .chain(utils.deploymentNameRegExp().exec(this.deploymentName))
+      .slice(1)
+      .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
+      .value(), 2);
+  }
+  
   static createVirtualHostService(instanceId, options) {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);

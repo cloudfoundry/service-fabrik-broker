@@ -16,6 +16,7 @@ const assert = require('assert');
 const config = require('../../common/config');
 const BaseService = require('../BaseService');
 const DockerImageLoaderService = require('./DockerImageLoaderService');
+const eventmesh = require('../../data-access-layer/eventmesh');
 
 const DockerError = {
   NotFound: {
@@ -652,6 +653,128 @@ class DockerService extends BaseService {
       .map(kv => _.slice(/^([^=]+)=(.*)$/.exec(kv), 1))
       .fromPairs()
       .value();
+  }
+
+  /* Dashboard rendering functions */
+  getInfo() {
+    return Promise
+      .all([
+        eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER,
+          resourceId: this.guid
+        }),
+        this.inspectContainer()
+      ])
+      .spread((instance, containerInfo) => {
+        /* jshint unused:false */
+        return Promise.all([
+          instance,
+          this.getDetails(),
+          this.getProcesses(),
+          this.getLogs()
+        ]);
+      })
+      .spread((instance, details, processes, logs) => {
+        return {
+          title: `${this.plan.service.metadata.displayName || 'Service'} Dashboard`,
+          plan: this.plan,
+          service: this.plan.service,
+          instance: instance,
+          details: details,
+          processes: processes,
+          files: [{
+            id: 'stdout',
+            title: 'Standard',
+            language: 'ansi',
+            content: logs[0]
+          }, {
+            id: 'stderr',
+            title: 'Error',
+            language: 'xxxx',
+            content: logs[1]
+          }]
+        };
+      });
+  }
+
+  getDetails() {
+    logger.info(`Building details hash for container '${this.containerName}'...`);
+    const info = {
+      'ID': this.containerInfo.Id,
+      'Name': this.containerInfo.Name,
+      'Created': utils.getTimeAgo(this.containerInfo.Created),
+      'Status': this.getContainerStatus(this.containerInfo.State)
+    };
+    const config = {
+      'Image': this.containerInfo.Config.Image,
+      'Entrypoint': _.join(this.containerInfo.Config.Entrypoint, ' '),
+      'Command': _.join(this.containerInfo.Config.Cmd, ' '),
+      'Work Directory': this.containerInfo.Config.WorkingDir,
+      'User': this.containerInfo.Config.User
+    };
+    const hostConfig = {
+      'CPU Shares': this.containerInfo.HostConfig.CpuShares,
+      'Memory': this.containerInfo.HostConfig.Memory,
+      'Memory Swap': this.containerInfo.HostConfig.MemorySwap,
+    };
+    const networkSettings = {
+      'Host IP': undefined,
+      'Container IP': this.containerInfo.NetworkSettings.IPAddress
+    };
+    const details = {
+      'Container': info,
+      'Configuration': config,
+      'Host Configuration': hostConfig,
+      'Environment Variables': this.getEnvironment()
+    };
+    if (this.containerInfo.State.Running) {
+      _.assign(hostConfig, {
+        'Privileged': this.containerInfo.HostConfig.Privileged,
+      });
+      const networkInfo = this.getNetworkInfo(this.containerInfo);
+      _.assign(networkSettings, {
+        'Host IP': networkInfo.ip
+      });
+      _.assign(details, {
+        'Network Settings': networkSettings,
+        'Exposed Ports': networkInfo.ports,
+        'Exposed Volumes': this.containerInfo.HostConfig.Binds
+      });
+    }
+    return details;
+  }
+  
+  getContainerStatus(state) {
+    if (state.Running) {
+      return `Up for ${utils.getTimeAgo(state.StartedAt, true)}${state.Paused ? ' (Paused)' : ''}`;
+    }
+    if (state.ExitCode > 0) {
+      return `Exited (${state.ExitCode}) ${utils.getTimeAgo(state.FinishedAt)}`;
+    }
+    return 'Stopped';
+  }
+
+  getProcesses() {
+    if (this.containerInfo.State.Running) {
+      return this.container
+        .topAsync({
+          ps_args: 'aux'
+        })
+        .then(top => _.concat([top.Titles], top.Processes));
+    }
+  }
+
+  getLogs() {
+    return this.container
+      .logsAsync({
+        stdout: 1,
+        stderr: 1,
+        timestamps: 1
+      })
+      .then(stream => utils.demux(stream, {
+        tail: 1000
+      }));
   }
 
   static createInstance(instanceId, options) {

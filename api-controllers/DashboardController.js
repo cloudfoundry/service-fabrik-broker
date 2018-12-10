@@ -18,6 +18,8 @@ const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
 const DirectorService = require('../operators/bosh-operator/DirectorService');
+const DockerService = require('../operators/docker-operator/DockerService');
+const VirtualHostService = require('../operators/virtualhost-operator/VirtualHostService');
 
 Promise.promisifyAll(crypto, Session.prototype);
 
@@ -135,12 +137,9 @@ class DashboardController extends FabrikBaseController {
     return this.cloudController.getPlanIdFromInstanceId(instance_id)
       .then(current_plan_id => {
         logger.info(`plan_id in Dashboard URL was ${plan_id} and actual plan_id is ${current_plan_id}`);
-        //return this.fabrik.createInstance(instance_id, service_id, current_plan_id, context);
-        return new DirectorService(catalog.getPlan(current_plan_id), instance_id);
+        return this._createService(current_plan_id, instance_id, context);
       })
       .then(service => {
-        /*req.instance = instance;
-        req.manager = instance.manager;*/
         req.service = service;
       })
       .throw(new ContinueWithNext());
@@ -160,12 +159,9 @@ class DashboardController extends FabrikBaseController {
         const context = _.get(resourceOptions, 'context');
         req.session.service_id = service_id;
         req.session.plan_id = plan_id;
-        //return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
-        return new DirectorService(catalog.getPlan(plan_id), instance_id);
+        return this._createService(plan_id, instance_id, context);
       })
       .then(service => {
-        /*req.instance = instance;
-        req.manager = instance.manager;*/
         req.service = service;
       })
       .then(() => saveSession(req.session))
@@ -194,6 +190,29 @@ class DashboardController extends FabrikBaseController {
     });
   }
 
+  _createService(plan_id, instance_id, context) {
+    const plan = catalog.getPlan(plan_id);
+    switch (plan.manager.name) {
+
+      case CONST.INSTANCE_TYPE.DIRECTOR:
+        return new DirectorService(plan, instance_id);
+
+      case CONST.INSTANCE_TYPE.DOCKER:
+        if (config.enable_swarm_manager) {
+          return new DockerService(instance_id, plan);
+        } else {
+          assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
+        }
+        break;
+
+      case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
+        //space_guid is not really necessary here for dashboard rendering
+        return new VirtualHostService(instance_id, context.space_guid, plan);
+
+      default:
+        assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.DOCKER, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
+    }
+  }
   requireLogin(req, res) {
     logger.info(`Validating user '${req.session.user_id}' and access token`);
     req.session.service_id = req.params.service_id || req.session.service_id;
