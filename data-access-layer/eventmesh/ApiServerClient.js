@@ -739,7 +739,7 @@ class ApiServerClient {
           const operatorMetadata = _.merge(oldOperatorMetadata, opts.operatorMetadata);
           _.set(opts, 'operatorMetadata', operatorMetadata);
         }
-        return this.updateResource(opts);
+        return this.updateOSBResource(opts);
       });
   }
 
@@ -752,7 +752,7 @@ class ApiServerClient {
         let services = [];
         _.forEach(serviceList, service => {
           services = _.concat(services, [service.spec]);
-        })
+        });
         return services;
       })
       .catch(err => {
@@ -773,7 +773,7 @@ class ApiServerClient {
         let plans = [];
         _.forEach(planList, plan => {
           plans = _.concat(plans, [plan.spec]);
-        })
+        });
         return plans;
       })
       .catch(err => {

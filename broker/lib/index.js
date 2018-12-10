@@ -9,7 +9,6 @@ if (config.enable_swarm_manager) {
   exports.docker = require('../../data-access-layer/docker');
 }
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const catalog = require('../../common/models').catalog;
 const logger = require('../../common/logger');
@@ -29,19 +28,18 @@ function loadServices() {
     const eventmesh = require('../../data-access-layer/eventmesh');
     return eventmesh.apiServerClient.getAllServices()
       .tap(services => {
-        config.services = services
+        config.services = services;
       })
       .then((services) => {
         return Promise.all(Promise.each(services, service => {
           return eventmesh.apiServerClient.getAllPlansForService(service.id)
             .then(plans => {
-              service.plans = plans
-            })
-        }))
+              service.plans = plans;
+            });
+        }));
       })
       .then(() => catalog.reload())
-      //.tap(() => logger.info('Loaded Services Are ', config.services))
-      .tap(() => logger.info('Loaded Services in catalog Are ', catalog.services))
-      .tap(() => logger.info('Loaded Plans in catalog Are ', catalog.plans))
+      .tap(() => logger.silly('Loaded Services in catalog Are ', catalog.services))
+      .tap(() => logger.silly('Loaded Plans in catalog Are ', catalog.plans));
   }
 }

@@ -170,6 +170,10 @@ defaults: &defaults
       "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfserviceinstances.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfservices.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservices.yaml') %>
+      "osb.servicefabrik.io_v1alpha1_sfplans.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfplans.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #

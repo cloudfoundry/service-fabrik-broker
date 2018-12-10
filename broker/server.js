@@ -1,3 +1,4 @@
+/* jshint ignore:start */
 'use strict';
 
 console.log('Starting Service Fabrik...');
@@ -13,7 +14,9 @@ async function init() {
   if (config.enable_swarm_manager) {
     lib.bootstrap();
   }
+
   await lib.loadServices();
+
   // internal app
   if (config.internal) {
     const internal = ExpressApp.create('internal', app => {
@@ -52,4 +55,6 @@ async function init() {
   HttpServer.handleShutdown(); //https://github.com/nodejs/node-v0.x-archive/issues/5054
   require('../common/UnlockResourcePoller');
 }
+
 init();
+/* jshint ignore:end */

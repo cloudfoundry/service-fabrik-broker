@@ -273,8 +273,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       failed(err);
     }
-    const planId = req.query.plan_id;
-    const plan = catalog.getPlan(planId);
     const resourceGroup = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW : CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR;
     const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
@@ -291,6 +289,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
   putBinding(req, res) {
     const params = _(req.body)
       .set('binding_id', req.params.binding_id)
+      .set('id', req.params.binding_id)
+      .set('instance_id', req.params.instance_id)
       .value();
 
     function done(encodedCredentials) {
@@ -304,9 +304,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       /* jshint unused:false */
       res.status(CONST.HTTP_STATUS_CODE.CONFLICT).send({});
     }
-
-    const planId = params.plan_id;
-    const plan = catalog.getPlan(planId);
 
     return Promise
       .try(() => {
@@ -337,6 +334,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
   deleteBinding(req, res) {
     const params = _(req.query)
       .set('binding_id', req.params.binding_id)
+      .set('id', req.params.binding_id)
+      .set('instance_id', req.params.instance_id)
       .value();
 
     function done() {
@@ -352,11 +351,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     return Promise
       .try(() => {
-        return eventmesh.apiServerClient.updateOSBResource({
+        return eventmesh.apiServerClient.patchOSBResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
             resourceId: params.binding_id,
-            options: params,
+            spec: params,
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.DELETE
             }
