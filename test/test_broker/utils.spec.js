@@ -1,7 +1,6 @@
 'use strict';
 
-const lib = require('../../broker/lib');
-const DirectorManager = lib.fabrik.DirectorManager;
+const DirectorManager = require('../../broker/lib/fabrik').DirectorManager;
 const utils = require('../../common/utils');
 
 describe('utils', function () {
@@ -404,6 +403,27 @@ describe('utils', function () {
         username: 'admin4',
         password: 'admin4'
       });
+    });
+  });
+  describe('#getPlatformManager', function () {
+    it('should return cf platform manager if platform is cf', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'cf'
+      });
+      expect(platformManager.platform).to.eql('cf');
+    });
+    it('should return k8s platform manager if platform is k8s', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'k8s'
+      });
+      expect(platformManager.platform).to.eql('k8s');
+    });
+    it('should return cf platform manager if platform is sapcp and origin is cf', function () {
+      const platformManager = utils.getPlatformManager({
+        platform: 'sapcp',
+        origin: 'cf'
+      });
+      expect(platformManager.platform).to.eql('cf');
     });
   });
 });

@@ -1,16 +1,17 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
 const app = require('../support/apps').internal;
 const DBManager = require('../../../broker/lib/fabrik/DBManager');
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = backupStore.filename;
 const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
+const eventmesh = require('../../../data-access-layer/eventmesh');
+const errors = require('../../../common/errors');
 
 describe('service-fabrik-admin', function () {
   describe('internal-db-lifecycle', function () {
@@ -22,6 +23,7 @@ describe('service-fabrik-admin', function () {
     const container = backupStore.containerName;
     let deploymentHookRequestBody;
     let timestampStub, uuidv4Stub;
+    let getResourceStub, deleteResourceStub, createResourceStub;
 
     function isoDate(time) {
       return new Date(time).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
@@ -53,6 +55,19 @@ describe('service-fabrik-admin', function () {
           sf_operations_args: {},
         }
       };
+      getResourceStub = sinon.stub(eventmesh.apiServerClient, 'getResource');
+      createResourceStub = sinon.stub(eventmesh.apiServerClient, 'createResource');
+      deleteResourceStub = sinon.stub(eventmesh.apiServerClient, 'deleteResource');
+
+      getResourceStub.withArgs().returns(Promise.try(() => {
+        throw new errors.NotFound('resource not found on ApiServer');
+      }));
+      deleteResourceStub.withArgs().returns(Promise.try(() => {
+        throw new errors.NotFound('resource not found on ApiServer');
+      }));
+
+      createResourceStub.withArgs().returns(Promise.resolve());
+
       mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
       fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
@@ -78,6 +93,9 @@ describe('service-fabrik-admin', function () {
     after(function () {
       timestampStub.restore();
       uuidv4Stub.restore();
+      getResourceStub.restore();
+      deleteResourceStub.restore();
+      createResourceStub.restore();
       delete config.mongodb.provision.plan_id;
     });
 

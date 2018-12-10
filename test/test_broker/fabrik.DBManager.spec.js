@@ -12,6 +12,7 @@ const CONST = require('../../common/constants');
 const DBManagerNoProxy = require('../../broker/lib/fabrik/DBManager');
 
 let bindPropertyFound = 0;
+let bindPropertyFoundOnApiServer = false;
 let failCreateUpdate = false;
 const mongoDBUrl = 'mongodb://username:password@10.11.0.2:27017,10.11.0.3:27017,10.11.0.4:27017/service-fabrik';
 let dbConnectionState = 1;
@@ -50,6 +51,40 @@ class DirectorServiceStub {
   }
 }
 
+let eventMeshStub = {
+  apiServerClient: {
+    getResource: () => {
+      return Promise.try(() => {
+        if (bindPropertyFoundOnApiServer) {
+          return {
+            status: {
+              response: utils.encodeBase64({
+                credentials: {
+                  uri: mongoDBUrl
+                }
+              })
+            }
+          };
+        } else {
+          throw new errors.NotFound('resource not found on ApiServer');
+        }
+      });
+    },
+    deleteResource: () => {
+      if (bindPropertyFoundOnApiServer) {
+        return Promise.resolve();
+      } else {
+        return Promise.try(() => {
+          throw new errors.NotFound('resource not found on ApiServer');
+        });
+      }
+    },
+    createResource: () => {
+      return Promise.resolve();
+    }
+  }
+};
+
 let errorOnDbStart = false;
 const proxyLibs = {
   '../../../common/config': {
@@ -80,7 +115,8 @@ const proxyLibs = {
   '../../../operators/bosh-operator/DirectorService': DirectorServiceStub,
   '../../../common/models/Catalog': {
     getPlan: () => {}
-  }
+  },
+  '../../../data-access-layer/eventmesh': eventMeshStub
 };
 
 const DBManager = proxyquire('../../broker/lib/fabrik/DBManager', proxyLibs);
@@ -271,6 +307,18 @@ describe('fabrik', function () {
           expect(dbManager.dbInitialized).to.eql(false);
           bindPropertyFound = 0;
           return validateConnected(dbManager);
+        });
+      });
+      it('On start if binding property is found in ApiServer then no further calls to director are made', function () {
+        bindPropertyFoundOnApiServer = true;
+        bindPropertyFound = 1; //ensure bindProperty won't be found on Director 
+        const dbManager = new DBManager();
+        return Promise.delay(10).then(() => {
+          expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
+          expect(dbManager.dbInitialized).to.eql(true);
+          bindPropertyFound = 0;
+          bindPropertyFoundOnApiServer = false;
+          return validateConnected(dbManager, 1);
         });
       });
       it('On start if mongodb URL is configured, then it must connect to it successfully', function () {

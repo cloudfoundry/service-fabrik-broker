@@ -1,17 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
-//const errors = require('../../../common/errors');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = lib.fabrik;
+const fabrik = require('../../../broker/lib/fabrik');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
-const DirectorManager = lib.fabrik.DirectorManager;
+const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
 const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
@@ -29,6 +27,7 @@ describe('service-broker-api-2.0', function () {
     /* jshint expr:true */
     describe('director', function () {
       const base_url = '/cf/v2';
+      const sm_base_url = '/sm/v2';
       const index = mocks.director.networkSegmentIndex;
       const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
@@ -45,6 +44,9 @@ describe('service-broker-api-2.0', function () {
       const parameters = {
         foo: 'bar'
       };
+      const subaccount_id = 'b319968c-0eba-43f2-959b-40f507c269fd';
+      const clusterid = '182731cd-d50b-4106-bde3-8cf410ec5940';
+      const namespace = 'default-namespace';
       const accepts_incomplete = true;
       const protocol = config.external.protocol;
       const host = config.external.host;
@@ -84,7 +86,7 @@ describe('service-broker-api-2.0', function () {
       });
 
       describe('#provision', function () {
-        const payload = {
+        let payload = {
           apiVersion: 'deployment.servicefabrik.io/v1alpha1',
           kind: 'Director',
           metadata: {
@@ -135,6 +137,100 @@ describe('service-broker-api-2.0', function () {
               parameters: parameters
             })
             .then(res => {
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 Accepted -- for requests via SM originating from CF', function () {
+          let oldOptions = payload.spec.options;
+          let newOptions = JSON.stringify({
+            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
+            context: {
+              platform: 'sapcp',
+              origin: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              subaccount_id: subaccount_id
+            },
+            organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+            space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
+            parameters: {
+              foo: 'bar'
+            }
+          });
+          payload.spec.options = newOptions;
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, 1, payload);
+          return chai.request(app)
+            .put(`${sm_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'sapcp',
+                origin: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid,
+                subaccount_id: subaccount_id
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              payload.spec.options = oldOptions;
+              expect(res).to.have.status(202);
+              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              mocks.verify();
+            });
+        });
+
+        it('returns 202 Accepted -- for requests via SM originating from k8s', function () {
+          let oldOptions = payload.spec.options;
+          let newOptions = JSON.stringify({
+            service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+            plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
+            context: {
+              platform: 'sapcp',
+              origin: 'kubernetes',
+              namespace: namespace,
+              subaccount_id: subaccount_id,
+              clusterid: clusterid
+            },
+            organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+            space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
+            parameters: {
+              foo: 'bar'
+            }
+          });
+          payload.spec.options = newOptions;
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, {}, 1, payload);
+          return chai.request(app)
+            .put(`${sm_base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: plan_id,
+              context: {
+                platform: 'sapcp',
+                origin: 'kubernetes',
+                namespace: namespace,
+                subaccount_id: subaccount_id,
+                clusterid: clusterid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .then(res => {
+              payload.spec.options = oldOptions;
               expect(res).to.have.status(202);
               expect(res.body.dashboard_url).to.equal(dashboard_url);
               mocks.verify();

@@ -11,6 +11,10 @@ class BasePlatformManager {
     this.platform = platform;
   }
 
+  get platformName() {
+    return this.platform;
+  }
+
   getCatalog(catalog) {
     const modifiedCatalog = _.cloneDeep(catalog);
     const platform = this.platform;

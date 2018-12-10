@@ -1,11 +1,10 @@
 'use strict';
 
-const lib = require('../../broker/lib');
 const fabrik = require('../../broker/lib/fabrik/Fabrik');
 const config = require('../../common/config');
 const portRegistry = require('../../data-access-layer/docker').portRegistry;
 const catalog = require('../../common/models').catalog;
-const DockerManager = lib.fabrik.DockerManager;
+const DockerManager = require('../../broker/lib/fabrik').DockerManager;
 
 describe('fabrik', function () {
   describe('DockerManager', function () {

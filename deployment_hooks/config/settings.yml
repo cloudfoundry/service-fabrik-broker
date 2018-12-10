@@ -26,10 +26,11 @@ defaults: &defaults
   # list of syscalls that are allowed by default
   whitelisted_syscalls: >
     access arch_prctl brk clone clock_getres clock_gettime clone close dup2
-    epoll_create1 epoll_ctl epoll_wait eventfd2 execve exit_group fcntl fstat
-    futex getcwd getegid geteuid getgid getpid getppid getrlimit getuid ioctl
+    epoll_create1 epoll_ctl epoll_wait epoll_pwait eventfd2 execve exit_group fcntl fstat
+    futex getcwd getegid geteuid getgid getpid getppid getrlimit gettimeofday getuid ioctl
     lstat madvise mmap mprotect munmap open pipe2 poll prctl pread64 read readlink
-    rt_sigaction rt_sigprocmask rt_sigreturn setrlimit set_robust_list set_tid_address stat wait4 write
+    rt_sigaction rt_sigprocmask rt_sigreturn setrlimit set_robust_list set_tid_address stat 
+    uname wait4 write
 
   ##############################
   # HOOK ENDPOINT SETTINGS #

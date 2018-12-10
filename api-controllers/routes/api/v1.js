@@ -35,6 +35,7 @@ operationRouter.route('/')
   .all(commonMiddleware.methodNotAllowed(['GET']));
 
 /* Service Instance Router */
+instanceRouter.use(controller.handler('addResourceDetailsInRequest'));
 instanceRouter.use(controller.handler('verifyTenantPermission'));
 instanceRouter.route('/')
   .get(controller.handler('getServiceInstanceState'))
