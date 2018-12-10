@@ -1,0 +1,10 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SfServiceBinding
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: de3dd272-fcfc-11e8-a31b-b6001f10c97f
+spec:
+  instanceId: 0304b210-fcfd-11e8-a31b-b6001f10c97f
+  serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  planId: 'bba8beae-5699-12e7-b35c-02a8da424bc3'

@@ -23,7 +23,7 @@ import (
 
 // SfServiceBindingSpec defines the desired state of SfServiceBinding
 type SfServiceBindingSpec struct {
-	ID                string                `json:"id"`
+	ID                string                `json:"id,omitempty"`
 	InstanceID        string                `json:"instanceId"`
 	PlanID            string                `json:"planId"`
 	ServiceID         string                `json:"serviceId"`
@@ -36,7 +36,7 @@ type SfServiceBindingSpec struct {
 
 // SfServiceBindingStatus defines the observed state of SfServiceBinding
 type SfServiceBindingStatus struct {
-	State    string `yaml:"state" json:"state"`
+	State    string `yaml:"state,omitempty" json:"state,omitempty"`
 	Error    string `yaml:"error,omitempty" json:"error,omitempty"`
 	Response string `yaml:"response,omitempty" json:"response,omitempty"`
 }

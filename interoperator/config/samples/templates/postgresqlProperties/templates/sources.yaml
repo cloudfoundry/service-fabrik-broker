@@ -7,7 +7,7 @@ postgresql:
 secret:
   apiVersion: v1
   kind: Secret
-  name: kdb-{{{ .Release.Name }}-pg-auth
+  name: kdb-{{ .Release.Name }}-pg-auth
   namespace: {{ $namespace }}
 service:
   apiVersion: v1

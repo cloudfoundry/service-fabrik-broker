@@ -20,7 +20,8 @@ type Source struct {
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
-	Status osbv1alpha1.SfServiceInstanceStatus `yaml:"status" json:"status"`
+	Status  osbv1alpha1.SfServiceInstanceStatus `yaml:"status" json:"status"`
+	Binding osbv1alpha1.SfServiceBindingStatus  `yaml:"binding" json:"binding"`
 }
 
 // ParseSources decodes sources yaml into a map

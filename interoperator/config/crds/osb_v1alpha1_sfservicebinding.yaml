@@ -41,7 +41,6 @@ spec:
             serviceId:
               type: string
           required:
-          - id
           - instanceId
           - planId
           - serviceId
@@ -54,8 +53,6 @@ spec:
               type: string
             state:
               type: string
-          required:
-          - state
           type: object
   version: v1alpha1
 status:
