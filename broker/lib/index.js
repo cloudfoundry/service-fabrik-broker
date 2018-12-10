@@ -25,21 +25,23 @@ function bootstrap() {
 }
 
 function loadServices() {
-  const eventmesh = require('../../data-access-layer/eventmesh');
-  return eventmesh.apiServerClient.getAllServices()
-    .tap(services => {
-      config.services = services
-    })
-    .then((services) => {
-      return Promise.all(Promise.each(services, service => {
-        return eventmesh.apiServerClient.getAllPlansForService(service.id)
-          .then(plans => {
-            service.plans = plans
-          })
-      }))
-    })
-    .then(() => catalog.reload())
-    //.tap(() => logger.info('Loaded Services Are ', config.services))
-    .tap(() => logger.info('Loaded Services in catalog Are ', catalog.services))
-    .tap(() => logger.info('Loaded Plans in catalog Are ', catalog.plans))
+  if (!config.services) {
+    const eventmesh = require('../../data-access-layer/eventmesh');
+    return eventmesh.apiServerClient.getAllServices()
+      .tap(services => {
+        config.services = services
+      })
+      .then((services) => {
+        return Promise.all(Promise.each(services, service => {
+          return eventmesh.apiServerClient.getAllPlansForService(service.id)
+            .then(plans => {
+              service.plans = plans
+            })
+        }))
+      })
+      .then(() => catalog.reload())
+      //.tap(() => logger.info('Loaded Services Are ', config.services))
+      .tap(() => logger.info('Loaded Services in catalog Are ', catalog.services))
+      .tap(() => logger.info('Loaded Plans in catalog Are ', catalog.plans))
+  }
 }

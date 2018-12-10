@@ -279,10 +279,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const resourceType = operation.serviceflow_id ? CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES;
     const resourceId = operation.serviceflow_id ? operation.serviceflow_id : req.params.instance_id;
     return eventmesh.apiServerClient.getLastOperation({
-      resourceGroup: resourceGroup,
-      resourceType: resourceType,
-      resourceId: resourceId
-    })
+        resourceGroup: resourceGroup,
+        resourceType: resourceType,
+        resourceId: resourceId
+      })
       .tap(() => logger.debug(`Returnings state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done)
       .catch(NotFound, notFound);
@@ -353,14 +353,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return Promise
       .try(() => {
         return eventmesh.apiServerClient.updateOSBResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-          resourceId: params.binding_id,
-          options: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.DELETE
-          }
-        })
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+            resourceId: params.binding_id,
+            options: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.DELETE
+            }
+          })
           .catch((NotFound), () => {
             logger.info(`Resource resourceGroup: ${plan.bindResourceGroup},` +
               `resourceType: ${plan.bindResourceType}, resourceId: ${params.binding_id} not found, Creating now...`);
