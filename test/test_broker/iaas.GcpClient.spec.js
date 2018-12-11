@@ -45,7 +45,9 @@ const storageUrl = 'https://myaccounts.com/storage/v1';
 const bucketUrl = '/b';
 const region = 'EUROPE-WEST1';
 const storageClass = 'REGIONAL';
-const bucketMetadataResponse = [{ /* Bucket Object */ },
+const bucketMetadataResponse = [{
+    /* Bucket Object */
+  },
   {
     kind: 'storage#bucket',
     id: 'sample-container',

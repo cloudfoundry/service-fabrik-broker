@@ -85,7 +85,7 @@
     "esformatter-use-strict": "^3.0.0",
     "esformatter-var-each": "^2.1.0",
     "isparta": "^4.0.0",
-    "js-beautify": "^1.6.14",
+    "js-beautify": "1.8.9",
     "jscover": "^1.0.0",
     "jsdoc": "^3.4.0",
     "jshint": "^2.9.2",
