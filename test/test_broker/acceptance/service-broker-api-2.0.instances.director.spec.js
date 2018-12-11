@@ -142,7 +142,7 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 202 Accepted -- for requests via SM originating from CF', function () {
-          let oldOptions = payload.spec.options;
+          let oldOptions = payload.spec;
           let newOptions = {
             service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
             plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -181,7 +181,7 @@ describe('service-broker-api-2.0', function () {
               parameters: parameters
             })
             .then(res => {
-              payload.spec.options = oldOptions;
+              payload.spec = oldOptions;
               expect(res).to.have.status(202);
               expect(res.body.dashboard_url).to.equal(dashboard_url);
               mocks.verify();
@@ -189,7 +189,7 @@ describe('service-broker-api-2.0', function () {
         });
 
         it('returns 202 Accepted -- for requests via SM originating from k8s', function () {
-          let oldOptions = payload.spec.options;
+          let oldOptions = payload.spec;
           let newOptions = {
             service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
             plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
@@ -228,7 +228,7 @@ describe('service-broker-api-2.0', function () {
               parameters: parameters
             })
             .then(res => {
-              payload.spec.options = oldOptions;
+              payload.spec = oldOptions;
               expect(res).to.have.status(202);
               expect(res.body.dashboard_url).to.equal(dashboard_url);
               mocks.verify();
