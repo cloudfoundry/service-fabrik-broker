@@ -17,6 +17,7 @@ exports.nockPatchResourceRegex = nockPatchResourceRegex;
 exports.nockGetResourceListByState = nockGetResourceListByState;
 exports.nockCreateCrd = nockCreateCrd;
 exports.nockPatchCrd = nockPatchCrd;
+exports.nockGetResources = nockGetResources;
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -92,6 +93,14 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, times, ex
 function nockGetResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetResources(resourceGroup, resourceType, response, query, times, expectedStatusCode) {
+  nock(apiServerHost)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`)
+    .query(query)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }
