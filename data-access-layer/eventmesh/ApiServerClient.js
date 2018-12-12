@@ -747,7 +747,7 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES].get())
-      .then(serviceList => serviceList.body.items)
+      .then(serviceList => _.get(serviceList, 'body.items'))
       .then(serviceList => {
         let services = [];
         _.forEach(serviceList, service => {
