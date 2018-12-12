@@ -3,7 +3,8 @@ kind: SfServiceBinding
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: sfservicebinding-sample
+  name: b2082841-fdc4-11e8-bfbc-b6001f10c97f
 spec:
-  # Add fields here
-  foo: bar
+  instanceId: f5b94d47-fc44-11e8-8fac-b6001f10c97f
+  serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
+  planId: 'bba8beae-5699-11e7-b35c-02a8da424bc3'

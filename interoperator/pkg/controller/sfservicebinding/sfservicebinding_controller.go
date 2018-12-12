@@ -19,32 +19,25 @@ package sfservicebinding
 import (
 	"context"
 	"log"
-	"reflect"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new SfServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this osb.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -68,14 +61,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by SfServiceBinding - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &osbv1alpha1.SfServiceBinding{},
-	})
-	if err != nil {
-		return err
+	postgres := &unstructured.Unstructured{}
+	postgres.SetKind("Postgres")
+	postgres.SetAPIVersion("kubedb.com/v1alpha1")
+	subresources := []runtime.Object{
+		&appsv1.Deployment{},
+		&corev1.ConfigMap{},
+		postgres,
+	}
+
+	for _, subresource := range subresources {
+		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &osbv1alpha1.SfServiceInstance{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -94,12 +96,14 @@ type ReconcileSfServiceBinding struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
+// +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileSfServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SfServiceBinding instance
-	instance := &osbv1alpha1.SfServiceBinding{}
-	err := r.Get(context.TODO(), request.NamespacedName, instance)
+	binding := &osbv1alpha1.SfServiceBinding{}
+	err := r.Get(context.TODO(), request.NamespacedName, binding)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
@@ -110,57 +114,92 @@ func (r *ReconcileSfServiceBinding) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this to be the object type created by your controller
-	// Define the desired Deployment object
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-deployment",
-			Namespace: instance.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx",
-						},
-					},
-				},
-			},
-		},
+	labels := binding.GetLabels()
+	stateLabel, ok := labels["state"]
+	if ok {
+		switch stateLabel {
+		case "delete":
+			err = r.Delete(context.TODO(), binding)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			log.Printf("binding %s deleted\n", request.NamespacedName)
+			return reconcile.Result{}, nil
+		case "in_queue":
+			if binding.Status.State == "succeeded" {
+				labels["state"] = "succeeded"
+				binding.SetLabels(labels)
+				err = r.Update(context.TODO(), binding)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				log.Printf("binding %s state label updated to succeeded\n", request.NamespacedName)
+			}
+		}
 	}
-	if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+
+	serviceID := binding.Spec.ServiceID
+	planID := binding.Spec.PlanID
+	instanceID := binding.Spec.InstanceID
+	bindingID := binding.GetName()
+	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Check if the Deployment already exists
-	found := &appsv1.Deployment{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Create(context.TODO(), deploy)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
+	_, err = resources.ReconcileResources(r, expectedResources)
+	if err != nil {
+		log.Printf("Reconcile error %v\n", err)
+	}
+
+	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace())
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
-		found.Spec = deploy.Spec
-		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Update(context.TODO(), found)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 	return reconcile.Result{}, nil
+}
+func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
+	properties, err := resources.ComputeProperties(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	if err != nil {
+		log.Printf("error computing properties. %v\n", err)
+		return err
+	}
+
+	bindStatus := properties.Binding
+	if bindStatus.State == "" {
+		if bindStatus.Error == "" {
+			if bindStatus.Response == "" {
+				properties.Binding.State = "in progress"
+			} else {
+				properties.Binding.State = "succeeded"
+			}
+		} else {
+			properties.Binding.State = "failed"
+		}
+	}
+
+	// Fetch object again before updating status
+	bindingObj := &osbv1alpha1.SfServiceBinding{}
+	namespacedName := types.NamespacedName{
+		Name:      bindingID,
+		Namespace: namespace,
+	}
+	err = r.Get(context.TODO(), namespacedName, bindingObj)
+	if err != nil {
+		log.Printf("error fetching binding. %v\n", err)
+		return err
+	}
+
+	bindingObj.Status = properties.Binding
+	err = r.Update(context.Background(), bindingObj)
+	if err != nil {
+		log.Printf("error updating status. %v\n", err)
+		return err
+	}
+	return nil
 }

@@ -3,13 +3,13 @@ package factory
 import (
 	"fmt"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
-
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/helm"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -23,32 +23,46 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 	}
 }
 
-// GetProvisionRendererInput contructs the input required for the renderer
-func GetProvisionRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SfService, plan *osbv1alpha1.SfPlan, instance *osbv1alpha1.SfServiceInstance) (renderer.Input, error) {
+// GetRendererInput contructs the input required for the renderer
+func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SfService, plan *osbv1alpha1.SfPlan, instance *osbv1alpha1.SfServiceInstance, binding *osbv1alpha1.SfServiceBinding, name types.NamespacedName) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":
 		values := make(map[string]interface{})
 
-		serviceObj, err := dynamic.ObjectToMapInterface(service)
-		if err != nil {
-			return nil, err
+		if service != nil {
+			serviceObj, err := dynamic.ObjectToMapInterface(service)
+			if err != nil {
+				return nil, err
+			}
+			values["service"] = serviceObj
 		}
-		values["service"] = serviceObj
 
-		planObj, err := dynamic.ObjectToMapInterface(plan)
-		if err != nil {
-			return nil, err
+		if plan != nil {
+			planObj, err := dynamic.ObjectToMapInterface(plan)
+			if err != nil {
+				return nil, err
+			}
+			values["plan"] = planObj
 		}
-		values["plan"] = planObj
 
-		instanceObj, err := dynamic.ObjectToMapInterface(instance)
-		if err != nil {
-			return nil, err
+		if instance != nil {
+			instanceObj, err := dynamic.ObjectToMapInterface(instance)
+			if err != nil {
+				return nil, err
+			}
+			values["instance"] = instanceObj
 		}
-		values["instance"] = instanceObj
 
-		input := helm.NewInput(template.URL, instance.Name, instance.Namespace, values)
+		if binding != nil {
+			bindingObj, err := dynamic.ObjectToMapInterface(binding)
+			if err != nil {
+				return nil, err
+			}
+			values["binding"] = bindingObj
+		}
+
+		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
@@ -56,7 +70,7 @@ func GetProvisionRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv
 }
 
 // GetPropertiesRendererInput contructs the input required for the renderer
-func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, instance *osbv1alpha1.SfServiceInstance, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
+func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, name types.NamespacedName, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
 	rendererType := template.Type
 	switch rendererType {
 	case "helm", "Helm", "HELM":
@@ -65,7 +79,7 @@ func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, instance *os
 		for key, val := range sources {
 			values[key] = val.Object
 		}
-		input := helm.NewInput(template.URL, instance.Name, instance.Namespace, values)
+		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
