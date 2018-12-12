@@ -33,9 +33,10 @@ const (
 // TemplateSpec is the specifcation of a template
 // Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
-	Action string `yaml:"action" json:"action"`
-	Type   string `yaml:"type" json:"type"`
-	URL    string `yaml:"url" json:"url"`
+	Action  string `yaml:"action" json:"action"`
+	Type    string `yaml:"type" json:"type"`
+	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
+	Content string `yaml:"content,omitempty" json:"content,omitempty"`
 }
 
 // Schema definition for the input parameters.
