@@ -18,6 +18,7 @@ exports.nockGetResourceListByState = nockGetResourceListByState;
 exports.nockCreateCrd = nockCreateCrd;
 exports.nockPatchCrd = nockPatchCrd;
 exports.nockGetResources = nockGetResources;
+exports.nockCreateNamespace = nockCreateNamespace;
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -37,6 +38,13 @@ function nockLoadSpec(times) {
 function nockCreateCrd(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
     .post(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions`)
+    .times(times || 1)
+    .reply(201, response);
+}
+
+function nockCreateNamespace(name, response, times, verifier) {
+  nock(apiServerHost)
+    .post(`/api/v1/namespaces`, verifier)
     .times(times || 1)
     .reply(201, response);
 }

@@ -267,7 +267,8 @@ module.exports = Object.freeze({
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
-    NAMESPACE: 'default',
+    DEFAULT_NAMESPACE: 'default',
+    NAMESPACE_API_VERSION: 'v1',
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
