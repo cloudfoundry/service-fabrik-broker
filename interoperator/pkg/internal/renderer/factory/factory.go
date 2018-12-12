@@ -20,7 +20,7 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 	case "helm", "Helm", "HELM":
 		return helm.New(clientSet)
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		return gotemplate.New(clientSet)
+		return gotemplate.New()
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
 	}
@@ -68,7 +68,8 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.content, name.Name, values)
+		input := gotemplate.NewInput(template.Content, name.Name, values)
+		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
 	}
@@ -88,7 +89,7 @@ func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, name types.N
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.content, name.Name, values)
+		input := gotemplate.NewInput(template.Content, name.Name, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
