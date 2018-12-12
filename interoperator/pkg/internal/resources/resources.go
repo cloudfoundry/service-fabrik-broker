@@ -228,9 +228,9 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 		name.Name = binding.GetName()
 	}
 
-	template, err := plan.GetTemplate(osbv1alpha1.PropertiesAction)
+	template, err := plan.GetTemplate(osbv1alpha1.SourcesAction)
 	if err != nil {
-		log.Printf("plan %s does not have properties template. %v\n", planID, err)
+		log.Printf("plan %s does not have sources template. %v\n", planID, err)
 		return nil, err
 	}
 
@@ -252,7 +252,26 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 		return nil, err
 	}
 
-	sourcesString, err := output.FileContent("sources.yaml")
+	files, err := output.ListFiles()
+	if err != nil {
+		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		return nil, err
+	}
+
+	if len(files) == 0 {
+		log.Printf("sources template did not genarate any file. %v\n", err)
+		return nil, err
+	}
+
+	sourcesFileName := files[0]
+	for _, file := range files {
+		if file == "sources.yaml" {
+			sourcesFileName = file
+			break
+		}
+	}
+
+	sourcesString, err := output.FileContent(sourcesFileName)
 	if err != nil {
 		log.Printf("error getting file content of sources.yaml. %v\n", err)
 		return nil, err
@@ -271,7 +290,7 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 		obj.SetAPIVersion(val.APIVersion)
 		namespacedName := types.NamespacedName{
 			Name:      val.Name,
-			Namespace: instance.Namespace,
+			Namespace: name.Namespace,
 		}
 		err := client.Get(context.TODO(), namespacedName, obj)
 		if err != nil {
@@ -281,10 +300,19 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 		sourceObjects[key] = obj
 	}
 
-	input, err = rendererFactory.GetPropertiesRendererInput(template, types.NamespacedName{
-		Name:      instance.Name,
-		Namespace: instance.Namespace,
-	}, sourceObjects)
+	template, err = plan.GetTemplate(osbv1alpha1.PropertiesAction)
+	if err != nil {
+		log.Printf("plan %s does not have properties template. %v\n", planID, err)
+		return nil, err
+	}
+
+	renderer, err = rendererFactory.GetRenderer(template.Type, nil)
+	if err != nil {
+		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		return nil, err
+	}
+
+	input, err = rendererFactory.GetPropertiesRendererInput(template, name, sourceObjects)
 	if err != nil {
 		log.Printf("error creating properties renderer input of type %s. %v\n", template.Type, err)
 		return nil, err
@@ -296,7 +324,26 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 		return nil, err
 	}
 
-	propertiesString, err := output.FileContent("properties.yaml")
+	files, err = output.ListFiles()
+	if err != nil {
+		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		return nil, err
+	}
+
+	if len(files) == 0 {
+		log.Printf("properties template did not genarate any file. %v\n", err)
+		return nil, err
+	}
+
+	propertiesFileName := files[0]
+	for _, file := range files {
+		if file == "properties.yaml" {
+			propertiesFileName = file
+			break
+		}
+	}
+
+	propertiesString, err := output.FileContent(propertiesFileName)
 	if err != nil {
 		log.Printf("error getting file content of properties.yaml. %v\n", err)
 		return nil, err

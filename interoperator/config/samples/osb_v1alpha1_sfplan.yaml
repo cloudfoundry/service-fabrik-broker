@@ -23,6 +23,9 @@ spec:
   bindable: true
   planUpdatable: false
   templates:
+  - action: sources
+    type: helm
+    url: "config/samples/templates/blueprintProperties"
   - action: properties
     type: helm
     url: "config/samples/templates/blueprintProperties"

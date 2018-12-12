@@ -1,0 +1,52 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SfPlan
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+    serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  name: &name 'v9.4-dev-large'
+spec:
+  name: *name
+  id: 29d7d4c8-6fe2-4c2a-a5ca-a826937d5a88
+  description: 'Postgresql service running inside a k8s container (for non-productive usage)'
+  metadata:
+    service-inventory-key: SERVICE-161
+    costs:
+    - amount:
+        usd: 0.0
+      unit: 'MONTHLY'
+    bullets:
+    - 'Container Deployment'
+    - '128 MB Memory'
+    - '100 MB Disk'
+  free: true
+  bindable: true
+  planUpdatable: false
+  templates:
+  - action: sources
+    type: gotemplate
+    content: e3stICRuYW1lIDo9ICIiIH19Cnt7LSB3aXRoIC5pbnN0YW5jZS5tZXRhZGF0YS5uYW1lIH19IHt7ICRuYW1lID0gLiB9fSB7eyBlbmQgfX0Ke3stICRuYW1lc3BhY2UgOj0gIiIgfX0Ke3stIHdpdGggLmluc3RhbmNlLm1ldGFkYXRhLm5hbWVzcGFjZSB9fSB7eyAkbmFtZXNwYWNlID0gLiB9fSB7eyBlbmQgfX0KcG9zdGdyZXNxbDoKICBhcGlWZXJzaW9uOiAia3ViZWRiLmNvbS92MWFscGhhMSIKICBraW5kOiBQb3N0Z3JlcwogIG5hbWU6IGtkYi17eyAkbmFtZSB9fS1wZwogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQpzZWNyZXQ6CiAgYXBpVmVyc2lvbjogdjEKICBraW5kOiBTZWNyZXQKICBuYW1lOiBrZGIte3sgJG5hbWUgfX0tcGctYXV0aAogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQpzZXJ2aWNlOgogIGFwaVZlcnNpb246IHYxCiAga2luZDogU2VydmljZQogIG5hbWU6IGtkYi17eyAkbmFtZSB9fS1wZwogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQ==
+  - action: properties
+    type: gotemplate
+    content: e3sgJHN0YXRlU3RyaW5nIDo9ICJzdWNjZWVkZWQiIH19Cnt7LSBpZiBlcSAucG9zdGdyZXNxbC5zdGF0dXMucGhhc2UgIkZhaWxlZCIgfX0KICB7ey0gJHN0YXRlU3RyaW5nID0gImZhaWxlZCIgfX0Ke3stIGVsc2UgfX0KICB7ey0gaWYgZXEgLnBvc3RncmVzcWwuc3RhdHVzLnBoYXNlICJSdW5uaW5nIn19CiAgICB7ey0gJHN0YXRlU3RyaW5nID0gInN1Y2NlZWRlZCIgfX0KICB7ey0gZWxzZSB9fQogICAge3stICRzdGF0ZVN0cmluZyA9ICJpbiBwcm9ncmVzcyIgfX0KICB7ey0gZW5kIH19Cnt7LSBlbmQgfX0Ke3stICRob3N0IDo9ICIiIH19Cnt7LSB3aXRoIC5zZXJ2aWNlLnNwZWMuY2x1c3RlcklQIH19IHt7ICRob3N0ID0gLiB9fSB7eyBlbmQgfX0Ke3stICRwYXNzIDo9ICIiIH19Cnt7LSB3aXRoIC5zZWNyZXQuZGF0YS5QT1NUR1JFU19QQVNTV09SRCB9fSB7eyAkcGFzcyA9IC4gfX0ge3sgZW5kIH19CnN0YXR1czoKICBzdGF0ZToge3sgcHJpbnRmICIlcyIgJHN0YXRlU3RyaW5nIH19CiAgZGVzY3JpcHRpb246IHt7IHdpdGggLnBvc3RncmVzcWwuc3RhdHVzLnJlYXNvbiB9fSB7eyBwcmludGYgIiVzIiAuIH19IHt7IGVsc2UgfX0gIiIge3sgZW5kIH19CmJpbmRpbmc6CiAgZXJyb3I6ICIiCiAgcmVzcG9uc2U6IHt7IChwcmludGYgYCJ7IFwiaG9zdFwiOiBcIiVzXCIsIFwidXNlcm5hbWVcIjogXCJwb3N0Z3Jlc1wiLCBcInBhc3N3b3JkXCI6IFwiJXNcIiB9ImAgJGhvc3QgICRwYXNzICkgfX0g
+  - action: provision
+    type: gotemplate
+    content: e3stICRuYW1lIDo9ICIiIH19Cnt7LSB3aXRoIC5pbnN0YW5jZS5tZXRhZGF0YS5uYW1lIH19IHt7ICRuYW1lID0gLiB9fSB7eyBlbmQgfX0KYXBpVmVyc2lvbjoga3ViZWRiLmNvbS92MWFscGhhMQpraW5kOiBQb3N0Z3JlcwptZXRhZGF0YToKICBuYW1lOiBrZGIte3sgJG5hbWUgfX0tcGcKc3BlYzoKICB2ZXJzaW9uOiAxMC4yLXYxCiAgc3RvcmFnZVR5cGU6IER1cmFibGUKICBzdG9yYWdlOgogICAgc3RvcmFnZUNsYXNzTmFtZTogZGVmYXVsdAogICAgYWNjZXNzTW9kZXM6CiAgICAtIFJlYWRXcml0ZU9uY2UKICAgIHJlc291cmNlczoKICAgICAgcmVxdWVzdHM6CiAgICAgICAgc3RvcmFnZTogNTBNaQogIHRlcm1pbmF0aW9uUG9saWN5OiBXaXBlT3V0
+  - action: bind
+    type: gotemplate
+    content: e3stICRuYW1lIDo9ICIiIH19Cnt7LSB3aXRoIC5pbnN0YW5jZS5tZXRhZGF0YS5uYW1lIH19IHt7ICRuYW1lID0gLiB9fSB7eyBlbmQgfX0KYXBpVmVyc2lvbjoga3ViZWRiLmNvbS92MWFscGhhMQpraW5kOiBQb3N0Z3JlcwptZXRhZGF0YToKICBuYW1lOiBrZGIte3sgJG5hbWUgfX0tcGcKc3BlYzoKICB2ZXJzaW9uOiAxMC4yLXYxCiAgc3RvcmFnZVR5cGU6IER1cmFibGUKICBzdG9yYWdlOgogICAgc3RvcmFnZUNsYXNzTmFtZTogZGVmYXVsdAogICAgYWNjZXNzTW9kZXM6CiAgICAtIFJlYWRXcml0ZU9uY2UKICAgIHJlc291cmNlczoKICAgICAgcmVxdWVzdHM6CiAgICAgICAgc3RvcmFnZTogNTBNaQogIHRlcm1pbmF0aW9uUG9saWN5OiBXaXBlT3V0
+  serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  manager:
+    async: true
+  context:
+    operator:
+      image: "servicefabrikjenkins/blueprint"
+      tag: "latest"
+      port: 8080
+      memory: '128m'
+      persistent_volumes:
+      - name: 'data'
+        path: '/data'
+        size: '100m'
+    serviceFabrik:
+      backupEnabled: false

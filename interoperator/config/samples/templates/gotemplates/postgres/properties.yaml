@@ -1,0 +1,20 @@
+{{ $stateString := "succeeded" }}
+{{- if eq .postgresql.status.phase "Failed" }}
+  {{- $stateString = "failed" }}
+{{- else }}
+  {{- if eq .postgresql.status.phase "Running"}}
+    {{- $stateString = "succeeded" }}
+  {{- else }}
+    {{- $stateString = "in progress" }}
+  {{- end }}
+{{- end }}
+{{- $host := "" }}
+{{- with .service.spec.clusterIP }} {{ $host = . }} {{ end }}
+{{- $pass := "" }}
+{{- with .secret.data.POSTGRES_PASSWORD }} {{ $pass = . }} {{ end }}
+status:
+  state: {{ printf "%s" $stateString }}
+  description: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
+binding:
+  error: ""
+  response: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 

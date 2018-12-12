@@ -28,6 +28,7 @@ const (
 	ProvisionAction  = "provision"
 	PropertiesAction = "properties"
 	BindAction       = "bind"
+	SourcesAction    = "sources"
 )
 
 // TemplateSpec is the specifcation of a template
