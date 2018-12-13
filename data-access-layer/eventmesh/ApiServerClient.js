@@ -216,8 +216,15 @@ class ApiServerClient {
     logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
     return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
-
+  /**
+   * @description Create Namespace of given name
+   * @param {string} name - Name of resource group ex. backup.servicefabrik.io
+   */
   createNamespace(name) {
+    assert.ok(name, `Property 'name' is required to create namespace`);
+    if (name === CONST.APISERVER.DEFAULT_NAMESPACE) {
+      return;
+    }
     const resourceBody = {
       kind: 'Namespace',
       apiVersion: CONST.APISERVER.NAMESPACE_API_VERSION,
@@ -235,6 +242,10 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       })
       .catch(Conflict, () => logger.debug(`Namespace ${name} already exists, proceeding...`));
+  }
+
+  getNamespaceId(resourceId) {
+    return _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
   }
 
   /**
@@ -281,17 +292,13 @@ class ApiServerClient {
       });
       resourceBody.status = statusJson;
     }
-    const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+    const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
     return Promise.try(() => this.init())
-      .then(() => {
-        if (namespace !== CONST.APISERVER.DEFAULT_NAMESPACE) {
-          return this.createNamespace(namespace);
-        }
-      })
+      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespace)[opts.resourceType].post({
+        .namespaces(namespaceId)[opts.resourceType].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -341,12 +348,14 @@ class ApiServerClient {
           });
           patchBody.status = statusJson;
         }
-        const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+        const namespaceId = this.getNamespaceId(opts.resourceId);
+        // Create Namespace if not default
         return Promise.try(() => this.init())
+          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(namespace)[opts.resourceType](opts.resourceId).patch({
+            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
               body: patchBody,
               headers: {
                 'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
@@ -402,10 +411,10 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to delete resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to delete resource`);
-    const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+    const namespaceId = this.getNamespaceId(opts.resourceId);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespace)[opts.resourceType](opts.resourceId).delete())
+        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -449,10 +458,9 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get resource`);
-    const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespace)[opts.resourceType](opts.resourceId).get())
+        .namespaces(this.getNamespaceId(opts.resourceId))[opts.resourceType](opts.resourceId).get())
       .then(resource => {
         _.forEach(resource.body.spec, (val, key) => {
           try {
@@ -672,17 +680,14 @@ class ApiServerClient {
       });
       resourceBody.status = statusJson;
     }
-    const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+    // Create Namespace if not default
+    const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
     return Promise.try(() => this.init())
-      .then(() => {
-        if (namespace !== CONST.APISERVER.DEFAULT_NAMESPACE) {
-          return this.createNamespace(namespace);
-        }
-      })
+      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespace)[opts.resourceType].post({
+        .namespaces(namespaceId)[opts.resourceType].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -732,12 +737,15 @@ class ApiServerClient {
           });
           patchBody.status = statusJson;
         }
-        const namespace = _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${opts.resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+        // Create Namespace if not default
+        const namespaceId = this.getNamespaceId(opts.resourceId);
+        // Create Namespace if not default
         return Promise.try(() => this.init())
+          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(namespace)[opts.resourceType](opts.resourceId).patch({
+            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
               body: patchBody,
               headers: {
                 'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
