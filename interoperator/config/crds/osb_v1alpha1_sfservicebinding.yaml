@@ -47,9 +47,12 @@ spec:
           type: object
         status:
           properties:
+            bindingResponse:
+              properties:
+                secretRef:
+                  type: string
+              type: object
             error:
-              type: string
-            response:
               type: string
             state:
               type: string

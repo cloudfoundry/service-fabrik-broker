@@ -68,7 +68,7 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.Content, name.Name, values)
+		input := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)
@@ -89,7 +89,7 @@ func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, name types.N
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.Content, name.Name, values)
+		input := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)

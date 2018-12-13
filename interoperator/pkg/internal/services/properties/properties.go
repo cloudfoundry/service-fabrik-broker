@@ -8,15 +8,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Source is the details for identifying each resource
-// sources.yaml file is unmarshalled to a map[string]Source
-type Source struct {
-	APIVersion string `yaml:"apiVersion" json:"apiVersion"`
-	Kind       string `yaml:"kind" json:"kind"`
-	Name       string `yaml:"name" json:"name"`
-	Namespace  string `yaml:"namespace" json:"namespace"`
-}
-
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
@@ -25,8 +16,8 @@ type Properties struct {
 }
 
 // ParseSources decodes sources yaml into a map
-func ParseSources(sourcesString string) (map[string]Source, error) {
-	sources := make(map[string]Source)
+func ParseSources(sourcesString string) (map[string]osbv1alpha1.Source, error) {
+	sources := make(map[string]osbv1alpha1.Source)
 	err := yaml.Unmarshal([]byte(sourcesString), &sources)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s. %v", sourcesString, err)

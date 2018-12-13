@@ -37,16 +37,23 @@ type gotemplateInput struct {
 }
 
 // NewInput creates a new gotemplate Renderer input object.
-func NewInput(content, name string, values map[string]interface{}) renderer.Input {
-	decodedContent, err := base64.StdEncoding.DecodeString(content)
-	if err != nil {
-		return nil
+func NewInput(url, content, name string, values map[string]interface{}) renderer.Input {
+	if content != "" {
+		decodedContent, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			return nil
+		}
+		return gotemplateInput{
+			content: string(decodedContent),
+			name:    name,
+			values:  values,
+		}
+	} else if url != "" {
+		//TODO
+		//Get content from the url and return.
 	}
-	return gotemplateInput{
-		content: string(decodedContent),
-		name:    name,
-		values:  values,
-	}
+
+	return nil
 }
 
 // New creates a new gotemplate Renderer object.

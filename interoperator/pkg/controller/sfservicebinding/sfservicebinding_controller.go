@@ -25,11 +25,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -170,19 +172,6 @@ func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 
-	bindStatus := properties.Binding
-	if bindStatus.State == "" {
-		if bindStatus.Error == "" {
-			if bindStatus.Response == "" {
-				properties.Binding.State = "in progress"
-			} else {
-				properties.Binding.State = "succeeded"
-			}
-		} else {
-			properties.Binding.State = "failed"
-		}
-	}
-
 	// Fetch object again before updating status
 	bindingObj := &osbv1alpha1.SfServiceBinding{}
 	namespacedName := types.NamespacedName{
@@ -194,12 +183,37 @@ func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		log.Printf("error fetching binding. %v\n", err)
 		return err
 	}
-
-	bindingObj.Status = properties.Binding
-	err = r.Update(context.Background(), bindingObj)
-	if err != nil {
-		log.Printf("error updating status. %v\n", err)
-		return err
+	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
+		bindStatus := properties.Binding
+		if bindStatus.State == "succeeded" {
+			data := make(map[string][]byte)
+			data["response"] = []byte(bindStatus.Response)
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      bindingID,
+					Namespace: namespace,
+				},
+				Data: data,
+			}
+			if err := controllerutil.SetControllerReference(bindingObj, secret, r.scheme); err != nil {
+				log.Printf("error setting owner reference for secret. %v\n", err)
+				return err
+			}
+			err = r.Create(context.TODO(), secret)
+			if err != nil {
+				log.Printf("error creating secret. %v\n", err)
+				return err
+			}
+			bindingObj.Status.BindingResponse.SecretRef = bindingID
+		} else if bindStatus.State == "failed" {
+			bindingObj.Status.Error = bindStatus.Error
+		}
+		bindingObj.Status.State = bindStatus.State
+		err = r.Update(context.Background(), bindingObj)
+		if err != nil {
+			log.Printf("error updating status. %v\n", err)
+			return err
+		}
 	}
 	return nil
 }
