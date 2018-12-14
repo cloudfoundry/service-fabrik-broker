@@ -246,6 +246,16 @@ class ApiServerClient {
       .catch(Conflict, () => logger.debug(`Namespace ${name} already exists, proceeding...`));
   }
 
+  deleteNamespace(name) {
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
+      .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
   getNamespaceId(resourceId) {
     return _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
   }
@@ -434,6 +444,12 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
+      .then((res) => {
+        if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE) {
+          return this.deleteNamespace(namespaceId);
+        }
+        return res;
+      })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
