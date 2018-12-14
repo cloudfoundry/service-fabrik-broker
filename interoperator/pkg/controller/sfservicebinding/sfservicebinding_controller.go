@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// Add creates a new SfServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -46,7 +46,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileSfServiceBinding{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileSFServiceBinding{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -57,8 +57,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SfServiceBinding
-	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SfServiceBinding{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to SFServiceBinding
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceBinding{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	for _, subresource := range subresources {
 		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &osbv1alpha1.SfServiceInstance{},
+			OwnerType:    &osbv1alpha1.SFServiceInstance{},
 		})
 		if err != nil {
 			return err
@@ -85,16 +85,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileSfServiceBinding{}
+var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}
 
-// ReconcileSfServiceBinding reconciles a SfServiceBinding object
-type ReconcileSfServiceBinding struct {
+// ReconcileSFServiceBinding reconciles a SFServiceBinding object
+type ReconcileSFServiceBinding struct {
 	client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a SfServiceBinding object and makes changes based on the state read
-// and what is in the SfServiceBinding.Spec
+// Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
+// and what is in the SFServiceBinding.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
@@ -102,9 +102,9 @@ type ReconcileSfServiceBinding struct {
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
-func (r *ReconcileSfServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the SfServiceBinding instance
-	binding := &osbv1alpha1.SfServiceBinding{}
+func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the SFServiceBinding instance
+	binding := &osbv1alpha1.SFServiceBinding{}
 	err := r.Get(context.TODO(), request.NamespacedName, binding)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -165,7 +165,7 @@ func (r *ReconcileSfServiceBinding) Reconcile(request reconcile.Request) (reconc
 
 	return reconcile.Result{}, nil
 }
-func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
+func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
 	properties, err := resources.ComputeProperties(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
@@ -173,7 +173,7 @@ func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serv
 	}
 
 	// Fetch object again before updating status
-	bindingObj := &osbv1alpha1.SfServiceBinding{}
+	bindingObj := &osbv1alpha1.SFServiceBinding{}
 	namespacedName := types.NamespacedName{
 		Name:      bindingID,
 		Namespace: namespace,
@@ -184,17 +184,20 @@ func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
-		bindStatus := properties.Binding
-		if bindStatus.State == "succeeded" {
-			data := make(map[string][]byte)
-			data["response"] = []byte(bindStatus.Response)
+		bindingStatus := properties.Binding
+		if bindingStatus.State == "succeeded" {
+			secretName := "sf-" + bindingID
+
+			data := make(map[string]string)
+			data["response"] = bindingStatus.Response
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      bindingID,
+					Name:      secretName,
 					Namespace: namespace,
 				},
-				Data: data,
+				StringData: data,
 			}
+
 			if err := controllerutil.SetControllerReference(bindingObj, secret, r.scheme); err != nil {
 				log.Printf("error setting owner reference for secret. %v\n", err)
 				return err
@@ -204,11 +207,11 @@ func (r *ReconcileSfServiceBinding) updateBindStatus(instanceID, bindingID, serv
 				log.Printf("error creating secret. %v\n", err)
 				return err
 			}
-			bindingObj.Status.BindingResponse.SecretRef = bindingID
-		} else if bindStatus.State == "failed" {
-			bindingObj.Status.Error = bindStatus.Error
+			bindingObj.Status.Response.SecretRef = secretName
+		} else if bindingStatus.State == "failed" {
+			bindingObj.Status.Error = bindingStatus.Error
 		}
-		bindingObj.Status.State = bindStatus.State
+		bindingObj.Status.State = bindingStatus.State
 		err = r.Update(context.Background(), bindingObj)
 		if err != nil {
 			log.Printf("error updating status. %v\n", err)

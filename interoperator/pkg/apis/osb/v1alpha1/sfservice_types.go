@@ -44,8 +44,8 @@ type ServiceMetadata struct {
 	ImageURL            string `json:"imageUrl,omitempty"`
 }
 
-// SfServiceSpec defines the desired state of SfService
-type SfServiceSpec struct {
+// SFServiceSpec defines the desired state of SFService
+type SFServiceSpec struct {
 	Name                string                `json:"name"`
 	ID                  string                `json:"id"`
 	Description         string                `json:"description"`
@@ -60,8 +60,8 @@ type SfServiceSpec struct {
 	RawContext          *runtime.RawExtension `json:"context,omitempty"`
 }
 
-// SfServiceStatus defines the observed state of SfService
-type SfServiceStatus struct {
+// SFServiceStatus defines the observed state of SFService
+type SFServiceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -69,25 +69,25 @@ type SfServiceStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfService is the Schema for the sfservices API
+// SFService is the Schema for the sfservices API
 // +k8s:openapi-gen=true
-type SfService struct {
+type SFService struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SfServiceSpec   `json:"spec,omitempty"`
-	Status SfServiceStatus `json:"status,omitempty"`
+	Spec   SFServiceSpec   `json:"spec,omitempty"`
+	Status SFServiceStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfServiceList contains a list of SfService
-type SfServiceList struct {
+// SFServiceList contains a list of SFService
+type SFServiceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SfService `json:"items"`
+	Items           []SFService `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SfService{}, &SfServiceList{})
+	SchemeBuilder.Register(&SFService{}, &SFServiceList{})
 }

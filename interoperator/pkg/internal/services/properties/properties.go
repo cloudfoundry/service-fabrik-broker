@@ -8,11 +8,18 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// BindingStatus defines template provided by the service
+type BindingStatus struct {
+	State    string `yaml:"state" json:"state"`
+	Error    string `yaml:"error,omitempty" json:"error,omitempty"`
+	Response string `yaml:"response,omitempty" json:"response,omitempty"`
+}
+
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
-	Status  osbv1alpha1.SfServiceInstanceStatus `yaml:"status" json:"status"`
-	Binding osbv1alpha1.SfServiceBindingStatus  `yaml:"binding" json:"binding"`
+	Status  osbv1alpha1.SFServiceInstanceStatus `yaml:"status" json:"status"`
+	Binding BindingStatus                       `yaml:"binding" json:"binding"`
 }
 
 // ParseSources decodes sources yaml into a map

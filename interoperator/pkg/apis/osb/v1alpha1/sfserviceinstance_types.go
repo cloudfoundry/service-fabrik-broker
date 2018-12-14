@@ -21,8 +21,8 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// SfServiceInstanceSpec defines the desired state of SfServiceInstance
-type SfServiceInstanceSpec struct {
+// SFServiceInstanceSpec defines the desired state of SFServiceInstance
+type SFServiceInstanceSpec struct {
 	ServiceID        string                `json:"serviceId"`
 	PlanID           string                `json:"planId"`
 	RawContext       *runtime.RawExtension `json:"context,omitempty"`
@@ -31,13 +31,13 @@ type SfServiceInstanceSpec struct {
 	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// SfServiceInstanceStatus defines the observed state of SfServiceInstance
-type SfServiceInstanceStatus struct {
+// SFServiceInstanceStatus defines the observed state of SFServiceInstance
+type SFServiceInstanceStatus struct {
 	DashboardURL string                `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
 	State        string                `yaml:"state" json:"state"`
 	Error        string                `yaml:"error,omitempty" json:"error,omitempty"`
 	Description  string                `yaml:"description,omitempty" json:"description,omitempty"`
-	AppliedSpec  SfServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
+	AppliedSpec  SFServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
 	CRDs         []Source              `yaml:"crds,omitempty" json:"crds,omitempty"`
 }
 
@@ -53,25 +53,25 @@ type Source struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfServiceInstance is the Schema for the sfserviceinstances API
+// SFServiceInstance is the Schema for the sfserviceinstances API
 // +k8s:openapi-gen=true
-type SfServiceInstance struct {
+type SFServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SfServiceInstanceSpec   `json:"spec,omitempty"`
-	Status SfServiceInstanceStatus `json:"status,omitempty"`
+	Spec   SFServiceInstanceSpec   `json:"spec,omitempty"`
+	Status SFServiceInstanceStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfServiceInstanceList contains a list of SfServiceInstance
-type SfServiceInstanceList struct {
+// SFServiceInstanceList contains a list of SFServiceInstance
+type SFServiceInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SfServiceInstance `json:"items"`
+	Items           []SFServiceInstance `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SfServiceInstance{}, &SfServiceInstanceList{})
+	SchemeBuilder.Register(&SFServiceInstance{}, &SFServiceInstanceList{})
 }

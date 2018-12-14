@@ -28,6 +28,7 @@ import (
 var ignoreFileSuffix = [...]string{"NOTES.txt"}
 
 type gotemplateRenderer struct {
+	funcMap template.FuncMap
 }
 
 type gotemplateInput struct {
@@ -56,9 +57,24 @@ func NewInput(url, content, name string, values map[string]interface{}) renderer
 	return nil
 }
 
+// EncodeToString converts a string to base64 encoded string
+func EncodeToString(src string) string {
+	return base64.StdEncoding.EncodeToString([]byte(src))
+}
+
+// DecodeString converts base64 encoded string to string
+func DecodeString(src string) (string, error) {
+	res, err := base64.StdEncoding.DecodeString(src)
+	return string(res[:]), err
+}
+
 // New creates a new gotemplate Renderer object.
 func New() (renderer.Renderer, error) {
-	return &gotemplateRenderer{}, nil
+	funcMap := template.FuncMap{
+		"b64enc": EncodeToString,
+		"b64dec": DecodeString,
+	}
+	return &gotemplateRenderer{funcMap: funcMap}, nil
 }
 
 // Render loads the chart from the given location <chartPath> and calls the Render() function
@@ -68,7 +84,7 @@ func (r *gotemplateRenderer) Render(rawInput renderer.Input) (renderer.Output, e
 	if !ok {
 		return nil, fmt.Errorf("invalid input to gotemplate chart renderer")
 	}
-	engine, err := template.New(input.name).Parse(input.content)
+	engine, err := template.New(input.name).Funcs(r.funcMap).Parse(input.content)
 	if err != nil {
 		return nil, fmt.Errorf("can't create template from %s:, %s", input.name, err)
 	}

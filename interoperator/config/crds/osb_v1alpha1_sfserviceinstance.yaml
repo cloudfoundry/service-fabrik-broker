@@ -8,7 +8,7 @@ metadata:
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: SfServiceInstance
+    kind: SFServiceInstance
     plural: sfserviceinstances
   scope: Namespaced
   validation:

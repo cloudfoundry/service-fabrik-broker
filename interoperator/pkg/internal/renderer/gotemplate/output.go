@@ -27,7 +27,7 @@ func (c *gotemplateOutput) FileContent(filename string) (string, error) {
 	if filename == "main" {
 		return c.content.String(), nil
 	}
-	return "", fmt.Errorf("File not found!")
+	return "", fmt.Errorf("File not found")
 }
 
 // ListFiles returns list of file names rendered

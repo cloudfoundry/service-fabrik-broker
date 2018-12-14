@@ -11,10 +11,15 @@
 {{- $host := "" }}
 {{- with .service.spec.clusterIP }} {{ $host = . }} {{ end }}
 {{- $pass := "" }}
-{{- with .secret.data.POSTGRES_PASSWORD }} {{ $pass = . }} {{ end }}
+{{- with .secret.data.POSTGRES_PASSWORD }} {{ $pass = (b64dec .) }} {{ end }}
+{{ $bindStateString := "in progress" }}
+{{- if and (not (eq $host "")) (not (eq $pass "")) }}
+  {{- $bindStateString = "succeeded" }}
+{{- end }}
 status:
   state: {{ printf "%s" $stateString }}
   description: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
 binding:
+  state: {{ printf "%s" $bindStateString }}
   error: ""
   response: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 

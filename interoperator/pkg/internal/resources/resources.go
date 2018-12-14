@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, namespace string) (*osbv1alpha1.SfServiceInstance, *osbv1alpha1.SfServiceBinding, *osbv1alpha1.SfService, *osbv1alpha1.SfPlan, error) {
-	var instance *osbv1alpha1.SfServiceInstance
-	var binding *osbv1alpha1.SfServiceBinding
-	var service *osbv1alpha1.SfService
-	var plan *osbv1alpha1.SfPlan
+func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, namespace string) (*osbv1alpha1.SFServiceInstance, *osbv1alpha1.SFServiceBinding, *osbv1alpha1.SFService, *osbv1alpha1.SFPlan, error) {
+	var instance *osbv1alpha1.SFServiceInstance
+	var binding *osbv1alpha1.SFServiceBinding
+	var service *osbv1alpha1.SFService
+	var plan *osbv1alpha1.SFPlan
 	var err error
 
 	if instanceID != "" {
-		instance = &osbv1alpha1.SfServiceInstance{}
+		instance = &osbv1alpha1.SFServiceInstance{}
 		err = client.Get(context.TODO(), types.NamespacedName{
 			Name:      instanceID,
 			Namespace: namespace,
@@ -50,7 +50,7 @@ func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, 
 	}
 
 	if bindingID != "" {
-		binding = &osbv1alpha1.SfServiceBinding{}
+		binding = &osbv1alpha1.SFServiceBinding{}
 		err := client.Get(context.TODO(), types.NamespacedName{
 			Name:      bindingID,
 			Namespace: namespace,

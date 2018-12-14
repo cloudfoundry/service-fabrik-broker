@@ -11,8 +11,8 @@ import (
 
 // FindServiceInfo fetches the details of a service
 // from the services path
-func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, namespace string) (*osbv1alpha1.SfService, *osbv1alpha1.SfPlan, error) {
-	services := &osbv1alpha1.SfServiceList{}
+func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, namespace string) (*osbv1alpha1.SFService, *osbv1alpha1.SFPlan, error) {
+	services := &osbv1alpha1.SFServiceList{}
 	labels := make(map[string]string)
 	labels["serviceId"] = serviceID
 	options := kubernetes.MatchingLabels(labels)
@@ -25,7 +25,7 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 		}
 		return nil, nil, err
 	}
-	var service *osbv1alpha1.SfService
+	var service *osbv1alpha1.SFService
 	for _, obj := range services.Items {
 		if obj.Spec.ID == serviceID {
 			service = &obj
@@ -35,7 +35,7 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 		return nil, nil, fmt.Errorf("unable to find service with id %s", serviceID)
 	}
 
-	plans := &osbv1alpha1.SfPlanList{}
+	plans := &osbv1alpha1.SFPlanList{}
 	labels = make(map[string]string)
 	labels["serviceId"] = serviceID
 	labels["planId"] = planID

@@ -27,7 +27,7 @@ func GetRenderer(rendererType string, clientSet *kubernetes.Clientset) (renderer
 }
 
 // GetRendererInput contructs the input required for the renderer
-func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SfService, plan *osbv1alpha1.SfPlan, instance *osbv1alpha1.SfServiceInstance, binding *osbv1alpha1.SfServiceBinding, name types.NamespacedName) (renderer.Input, error) {
+func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.SFService, plan *osbv1alpha1.SFPlan, instance *osbv1alpha1.SFServiceInstance, binding *osbv1alpha1.SFServiceBinding, name types.NamespacedName) (renderer.Input, error) {
 	rendererType := template.Type
 	values := make(map[string]interface{})
 
