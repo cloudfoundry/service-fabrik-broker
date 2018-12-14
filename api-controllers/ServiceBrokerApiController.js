@@ -336,7 +336,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date()
       }))
-      .then(operationStatus => done(operationStatus.response))
+      .then(operationStatus => {
+        const secretName = operationStatus.response.secretRef;
+        return eventmesh.apiServerClient.getSecret(secretName, eventmesh.apiServerClient.getNamespaceId(params.instance_id))
+          .then(secret => done(secret.data.response));
+      })
       .catch(Conflict, conflict);
   }
 

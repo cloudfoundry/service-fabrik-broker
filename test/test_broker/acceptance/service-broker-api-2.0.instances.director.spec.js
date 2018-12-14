@@ -1256,6 +1256,13 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
             status: {
               state: 'succeeded',
+              response: {
+                secretRef: 'secret-name'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
+            data: {
               response: utils.encodeBase64(mocks.agent.credentials)
             }
           });
@@ -1296,6 +1303,13 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
             status: {
               state: 'succeeded',
+              response: {
+                secretRef: 'secret-name'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
+            data: {
               response: utils.encodeBase64(mocks.agent.credentials)
             }
           });
@@ -1336,6 +1350,13 @@ describe('service-broker-api-2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, {
             status: {
               state: 'succeeded',
+              response: {
+                secretRef: 'secret-name'
+              }
+            }
+          });
+          mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
+            data: {
               response: utils.encodeBase64(mocks.agent.credentials)
             }
           });

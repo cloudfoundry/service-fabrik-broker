@@ -19,6 +19,7 @@ exports.nockCreateCrd = nockCreateCrd;
 exports.nockPatchCrd = nockPatchCrd;
 exports.nockGetResources = nockGetResources;
 exports.nockCreateNamespace = nockCreateNamespace;
+exports.nockGetSecret = nockGetSecret;
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -101,6 +102,13 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, times, ex
 function nockGetResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetSecret(secretName, namespaceId, response, times, expectedStatusCode) {
+  nock(apiServerHost)
+    .get(`/api/v1/namespaces/${namespaceId}/secrets/${secretName}`)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }

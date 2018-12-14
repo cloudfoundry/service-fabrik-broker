@@ -270,8 +270,9 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => apiserver
         .api[CONST.APISERVER.SECRET_API_VERSION]
-        .namespaces[namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE]
+        .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
         .secrets(secretId).get())
+      .then(secret => secret.body)
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
