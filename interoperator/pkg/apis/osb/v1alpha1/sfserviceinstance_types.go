@@ -21,6 +21,15 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// Source is the details for identifying each resource
+// sources.yaml file is unmarshalled to a map[string]Source
+type Source struct {
+	APIVersion string `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string `yaml:"kind" json:"kind"`
+	Name       string `yaml:"name" json:"name"`
+	Namespace  string `yaml:"namespace" json:"namespace"`
+}
+
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
 type SFServiceInstanceSpec struct {
 	ServiceID        string                `json:"serviceId"`
@@ -39,15 +48,6 @@ type SFServiceInstanceStatus struct {
 	Description  string                `yaml:"description,omitempty" json:"description,omitempty"`
 	AppliedSpec  SFServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
 	CRDs         []Source              `yaml:"crds,omitempty" json:"crds,omitempty"`
-}
-
-// Source is the details for identifying each resource
-// sources.yaml file is unmarshalled to a map[string]Source
-type Source struct {
-	APIVersion string `yaml:"apiVersion" json:"apiVersion"`
-	Kind       string `yaml:"kind" json:"kind"`
-	Name       string `yaml:"name" json:"name"`
-	Namespace  string `yaml:"namespace" json:"namespace"`
 }
 
 // +genclient
