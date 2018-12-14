@@ -269,6 +269,7 @@ module.exports = Object.freeze({
     VERSION: '1.9',
     DEFAULT_NAMESPACE: 'default',
     NAMESPACE_API_VERSION: 'v1',
+    SECRET_API_VERSION: 'v1',
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
