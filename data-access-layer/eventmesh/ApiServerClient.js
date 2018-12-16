@@ -97,6 +97,7 @@ class ApiServerClient {
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
+   * @param {object} opts.namespaceId - namespace Id of resource
    */
   getResourceOperationStatus(opts) {
     logger.debug(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
@@ -105,7 +106,8 @@ class ApiServerClient {
       .then(() => this.getResource({
         resourceGroup: opts.resourceGroup,
         resourceType: opts.resourceType,
-        resourceId: opts.resourceId
+        resourceId: opts.resourceId,
+        namespaceId: opts.namespaceId
       }))
       .then(resource => {
         const state = _.get(resource, 'status.state');
@@ -216,6 +218,65 @@ class ApiServerClient {
     logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
     return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
+  /**
+   * @description Create Namespace of given name
+   * @param {string} name - Name of resource group ex. backup.servicefabrik.io
+   */
+  createNamespace(name) {
+    assert.ok(name, `Property 'name' is required to create namespace`);
+    if (name === CONST.APISERVER.DEFAULT_NAMESPACE) {
+      return;
+    }
+    const resourceBody = {
+      kind: 'Namespace',
+      apiVersion: CONST.APISERVER.NAMESPACE_API_VERSION,
+      metadata: {
+        name: name
+      }
+    };
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns.post({
+          body: resourceBody
+        }))
+      .tap(() => logger.debug(`Successfully created namespace ${name}`))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      })
+      .catch(Conflict, () => logger.debug(`Namespace ${name} already exists, proceeding...`));
+  }
+
+  deleteNamespace(name) {
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
+      .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  getNamespaceId(resourceId) {
+    return _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+  }
+
+  /**
+   * @description Gets secret
+   * @param {string} secretId - Secret Id
+   * @param {string} namespaceId - Optional; Namespace id if given
+   */
+  getSecret(secretId, namespaceId) {
+    assert.ok(secretId, `Property 'secretId' is required to get Secret`);
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .api[CONST.APISERVER.SECRET_API_VERSION]
+        .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
+        .secrets(secretId).get())
+      .then(secret => secret.body)
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
 
   /**
    * @description Create Resource in Apiserver with the opts
@@ -261,10 +322,13 @@ class ApiServerClient {
       });
       resourceBody.status = statusJson;
     }
+    const namespaceId = this.getNamespaceId(opts.resourceId);
+    // Create Namespace if not default
     return Promise.try(() => this.init())
+      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
+        .namespaces(namespaceId)[opts.resourceType].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -315,10 +379,13 @@ class ApiServerClient {
           patchBody.status = statusJson;
         }
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+        const namespaceId = this.getNamespaceId(opts.resourceId);
+        // Create Namespace if not default
         return Promise.try(() => this.init())
+          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
               body: patchBody,
               headers: {
                 'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
@@ -374,9 +441,16 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to delete resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to delete resource`);
+    const namespaceId = this.getNamespaceId(opts.resourceId);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).delete())
+        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
+      .then((res) => {
+        if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE) {
+          return this.deleteNamespace(namespaceId);
+        }
+        return res;
+      })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -414,15 +488,17 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
    * @param {string} opts.resourceId - Type of operation
+   * @param {string} opts.namespaceId - optional; namespace of resource
    */
   getResource(opts) {
     logger.debug('Get resource with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to get resource`);
+    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).get())
+        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).get())
       .then(resource => {
         _.forEach(resource.body.spec, (val, key) => {
           try {
@@ -461,7 +537,7 @@ class ApiServerClient {
     }
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].get(query))
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[opts.resourceType].get(query))
       .then(response => {
         const resources = _.get(response, 'body.items', []);
         _.forEach(resources, (resource) => {
@@ -642,10 +718,16 @@ class ApiServerClient {
       });
       resourceBody.status = statusJson;
     }
+    // Create Namespace if not default
+    const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+      opts.spec.instance_id : opts.resourceId
+    );
+    // Create Namespace if not default
     return Promise.try(() => this.init())
+      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType].post({
+        .namespaces(namespaceId)[opts.resourceType].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -696,10 +778,16 @@ class ApiServerClient {
           patchBody.status = statusJson;
         }
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+        // Create Namespace if not default
+        const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+          opts.spec.instance_id : opts.resourceId
+        );
+        // Create Namespace if not default
         return Promise.try(() => this.init())
+          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(CONST.APISERVER.NAMESPACE)[opts.resourceType](opts.resourceId).patch({
+            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
               body: patchBody,
               headers: {
                 'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
@@ -723,7 +811,12 @@ class ApiServerClient {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
     assert.ok(opts.metadata || opts.spec || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata' is required to patch resource`);
-    return this.getResource(opts)
+    const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+      opts.spec.instance_id : opts.resourceId
+    );
+    return this.getResource(_.merge(opts, {
+        namespaceId: namespaceId
+      }))
       .then(resource => {
         if (_.get(opts, 'status.response') && resource.status) {
           const oldResponse = _.get(resource, 'status.response');
@@ -746,7 +839,7 @@ class ApiServerClient {
   getAllServices() {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES].get())
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES].get())
       .then(serviceList => _.get(serviceList, 'body.items'))
       .then(serviceList => {
         let services = [];
@@ -763,7 +856,7 @@ class ApiServerClient {
   getAllPlansForService(serviceId) {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS].get({
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS].get({
           qs: {
             labelSelector: `serviceId=${serviceId}`
           }
