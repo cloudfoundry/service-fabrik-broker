@@ -8,7 +8,7 @@ metadata:
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: SfPlan
+    kind: SFPlan
     plural: sfplans
   scope: Namespaced
   validation:
@@ -77,6 +77,8 @@ spec:
                 properties:
                   action:
                     type: string
+                  content:
+                    type: string
                   type:
                     type: string
                   url:
@@ -84,7 +86,6 @@ spec:
                 required:
                 - action
                 - type
-                - url
                 type: object
               type: array
           required:

@@ -21,8 +21,8 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// SfServiceBindingSpec defines the desired state of SfServiceBinding
-type SfServiceBindingSpec struct {
+// SFServiceBindingSpec defines the desired state of SFServiceBinding
+type SFServiceBindingSpec struct {
 	ID                string                `json:"id,omitempty"`
 	InstanceID        string                `json:"instanceId"`
 	PlanID            string                `json:"planId"`
@@ -34,35 +34,40 @@ type SfServiceBindingSpec struct {
 	AcceptsIncomplete bool                  `json:"acceptsIncomplete,omitempty"`
 }
 
-// SfServiceBindingStatus defines the observed state of SfServiceBinding
-type SfServiceBindingStatus struct {
-	State    string `yaml:"state,omitempty" json:"state,omitempty"`
-	Error    string `yaml:"error,omitempty" json:"error,omitempty"`
-	Response string `yaml:"response,omitempty" json:"response,omitempty"`
+// SFServiceBindingStatus defines the observed state of SFServiceBinding
+type SFServiceBindingStatus struct {
+	State    string          `yaml:"state,omitempty" json:"state,omitempty"`
+	Error    string          `yaml:"error,omitempty" json:"error,omitempty"`
+	Response BindingResponse `yaml:"response,omitempty" json:"response,omitempty"`
+}
+
+// BindingResponse defines the details of the binding response
+type BindingResponse struct {
+	SecretRef string `yaml:"secretRef,omitempty" json:"secretRef,omitempty"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfServiceBinding is the Schema for the sfservicebindings API
+// SFServiceBinding is the Schema for the sfservicebindings API
 // +k8s:openapi-gen=true
-type SfServiceBinding struct {
+type SFServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SfServiceBindingSpec   `json:"spec,omitempty"`
-	Status SfServiceBindingStatus `json:"status,omitempty"`
+	Spec   SFServiceBindingSpec   `json:"spec,omitempty"`
+	Status SFServiceBindingStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfServiceBindingList contains a list of SfServiceBinding
-type SfServiceBindingList struct {
+// SFServiceBindingList contains a list of SFServiceBinding
+type SFServiceBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SfServiceBinding `json:"items"`
+	Items           []SFServiceBinding `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SfServiceBinding{}, &SfServiceBindingList{})
+	SchemeBuilder.Register(&SFServiceBinding{}, &SFServiceBindingList{})
 }

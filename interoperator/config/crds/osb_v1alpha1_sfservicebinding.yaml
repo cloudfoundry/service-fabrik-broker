@@ -8,7 +8,7 @@ metadata:
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: SfServiceBinding
+    kind: SFServiceBinding
     plural: sfservicebindings
   scope: Namespaced
   validation:
@@ -50,7 +50,10 @@ spec:
             error:
               type: string
             response:
-              type: string
+              properties:
+                secretRef:
+                  type: string
+              type: object
             state:
               type: string
           type: object

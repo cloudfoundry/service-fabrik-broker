@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// Add creates a new SfPlan Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new SFPlan Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -55,8 +55,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SfPlan
-	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SfPlan{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to SFPlan
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFPlan{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -65,22 +65,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileSfPlan{}
 
-// ReconcileSfPlan reconciles a SfPlan object
+// ReconcileSfPlan reconciles a SFPlan object
 type ReconcileSfPlan struct {
 	client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a SfPlan object and makes changes based on the state read
-// and what is in the SfPlan.Spec
+// Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
+// and what is in the SFPlan.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfplans,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the SfPlan instance
-	instance := &osbv1alpha1.SfPlan{}
+	// Fetch the SFPlan instance
+	instance := &osbv1alpha1.SFPlan{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -104,7 +104,7 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 
 	serviceID := instance.Spec.ServiceID
-	services := &osbv1alpha1.SfServiceList{}
+	services := &osbv1alpha1.SFServiceList{}
 	searchLabels := make(map[string]string)
 	searchLabels["serviceId"] = serviceID
 	options := kubernetes.MatchingLabels(searchLabels)
@@ -117,7 +117,7 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 		}
 		return reconcile.Result{}, err
 	}
-	var service *osbv1alpha1.SfService
+	var service *osbv1alpha1.SFService
 	for _, obj := range services.Items {
 		if obj.Spec.ID == serviceID {
 			service = &obj

@@ -28,14 +28,16 @@ const (
 	ProvisionAction  = "provision"
 	PropertiesAction = "properties"
 	BindAction       = "bind"
+	SourcesAction    = "sources"
 )
 
 // TemplateSpec is the specifcation of a template
 // Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
-	Action string `yaml:"action" json:"action"`
-	Type   string `yaml:"type" json:"type"`
-	URL    string `yaml:"url" json:"url"`
+	Action  string `yaml:"action" json:"action"`
+	Type    string `yaml:"type" json:"type"`
+	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
+	Content string `yaml:"content,omitempty" json:"content,omitempty"`
 }
 
 // Schema definition for the input parameters.
@@ -63,8 +65,8 @@ type ServiceSchemas struct {
 	Binding  ServiceBindingSchema  `json:"binding,omitempty"`
 }
 
-// SfPlanSpec defines the desired state of SfPlan
-type SfPlanSpec struct {
+// SFPlanSpec defines the desired state of SFPlan
+type SFPlanSpec struct {
 	Name          string                `json:"name"`
 	ID            string                `json:"id"`
 	Description   string                `json:"description"`
@@ -80,8 +82,8 @@ type SfPlanSpec struct {
 	// Add supported_platform field
 }
 
-// SfPlanStatus defines the observed state of SfPlan
-type SfPlanStatus struct {
+// SFPlanStatus defines the observed state of SFPlan
+type SFPlanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -89,31 +91,31 @@ type SfPlanStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfPlan is the Schema for the sfplans API
+// SFPlan is the Schema for the sfplans API
 // +k8s:openapi-gen=true
-type SfPlan struct {
+type SFPlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SfPlanSpec   `json:"spec,omitempty"`
-	Status SfPlanStatus `json:"status,omitempty"`
+	Spec   SFPlanSpec   `json:"spec,omitempty"`
+	Status SFPlanStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SfPlanList contains a list of SfPlan
-type SfPlanList struct {
+// SFPlanList contains a list of SFPlan
+type SFPlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SfPlan `json:"items"`
+	Items           []SFPlan `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SfPlan{}, &SfPlanList{})
+	SchemeBuilder.Register(&SFPlan{}, &SFPlanList{})
 }
 
 // GetTemplate fetches the Template spec with the given action
-func (sfPlan *SfPlan) GetTemplate(action string) (*TemplateSpec, error) {
+func (sfPlan *SFPlan) GetTemplate(action string) (*TemplateSpec, error) {
 	for _, template := range sfPlan.Spec.Templates {
 		if template.Action == action {
 			return &template, nil

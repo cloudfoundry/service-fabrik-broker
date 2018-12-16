@@ -57,7 +57,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to ServiceInstance
-	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SfServiceInstance{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	for _, subresource := range subresources {
 		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &osbv1alpha1.SfServiceInstance{},
+			OwnerType:    &osbv1alpha1.SFServiceInstance{},
 		})
 		if err != nil {
 			return err
@@ -103,7 +103,7 @@ type ReconcileServiceInstance struct {
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance
-	instance := &osbv1alpha1.SfServiceInstance{}
+	instance := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -174,7 +174,7 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 	}
 
 	// Fetch object again before updating status
-	instanceObj := &osbv1alpha1.SfServiceInstance{}
+	instanceObj := &osbv1alpha1.SFServiceInstance{}
 	namespacedName := types.NamespacedName{
 		Name:      instanceID,
 		Namespace: namespace,

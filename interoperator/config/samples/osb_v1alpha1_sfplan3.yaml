@@ -1,5 +1,5 @@
 apiVersion: osb.servicefabrik.io/v1alpha1
-kind: SfPlan
+kind: SFPlan
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
@@ -25,6 +25,9 @@ spec:
   bindable: true
   planUpdatable: false
   templates:
+  - action: sources
+    type: helm
+    url: "config/samples/templates/blueprintProperties"
   - action: properties
     type: helm
     url: "config/samples/templates/blueprintProperties"

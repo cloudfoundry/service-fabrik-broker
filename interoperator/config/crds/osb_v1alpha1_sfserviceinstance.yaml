@@ -8,7 +8,7 @@ metadata:
 spec:
   group: osb.servicefabrik.io
   names:
-    kind: SfServiceInstance
+    kind: SFServiceInstance
     plural: sfserviceinstances
   scope: Namespaced
   validation:
@@ -40,6 +40,42 @@ spec:
           type: object
         status:
           properties:
+            appliedSpec:
+              properties:
+                context:
+                  type: object
+                organizationGuid:
+                  type: string
+                parameters:
+                  type: object
+                planId:
+                  type: string
+                serviceId:
+                  type: string
+                spaceGuid:
+                  type: string
+              required:
+              - serviceId
+              - planId
+              type: object
+            crds:
+              items:
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - apiVersion
+                - kind
+                - name
+                - namespace
+                type: object
+              type: array
             dashboardUrl:
               type: string
             description:
