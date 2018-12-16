@@ -34,12 +34,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getInstanceId(deploymentName) {
-    return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
-  }
-
-  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
-  createManager(plan_id) {
-    return this.fabrik.createManager(this.getPlan(plan_id));
+    return _.nth(DirectorService.parseDeploymentName(deploymentName), 2);
   }
 
   updateDeployment(req, res) {
@@ -170,15 +165,15 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       ])
       .spread(assignOrgAndSpace)
       .map(deployment => {
-        if (deployment.manager) {
-          const networkSegmentIndex = deployment.manager.getNetworkSegmentIndex(deployment.name);
-          const plan = deployment.manager.plan;
+        if (deployment.serviceInstance) {
+          const networkSegmentIndex = deployment.serviceInstance.getNetworkSegmentIndex(deployment.name);//TODO
+          const plan = deployment.serviceInstance.plan;
           const service = _.omit(plan.service, 'plans');
           deployment = _
             .chain(deployment)
             .pick('guid', 'name', 'stemcells', 'releases', 'entity', 'space', 'organization', 'vms')
             .set('plan', plan)
-            .set('service', service)
+            .set('service', service) 
             .set('index', NetworkSegmentIndex.adjust(networkSegmentIndex))
             .value();
         }
@@ -224,9 +219,8 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getDeployment(req, res) {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
-    // TODO: Director Service should be used
-    this.createManager(req.query.plan_id)
-      .then(manager =>
+    Promise.try(() => utils.createService(req.query.plan_id, this.getInstanceId(deploymentName)))
+      .then(serviceInstance =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
           resourceType: plan.resourceType,
@@ -241,7 +235,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               this.director.getTasks({
                 deployment: deploymentName
               }),
-              manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+              serviceInstance.diffManifest(deploymentName, opts).then(utils.unifyDiffResult) //TODO
             ])
             .spread((vms, tasks, diff) => ({
               name: deploymentName,
@@ -343,7 +337,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found service instance '${deployment.entity.name} [${deployment.metadata.guid}]' without deployment`);
           return false;
         }
-        if (!deployment.manager) {
+        if (!deployment.serviceInstance) { 
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
@@ -355,7 +349,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .then(context => {
             const opts = {};
             opts.context = context;
-            return deployment.manager
+            return deployment.serviceInstance 
               .diffManifest(deployment.name, opts)
               .then(result => _
                 .chain(deployment)
@@ -373,10 +367,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getServiceFabrikDeployments() {
-    const DirectorManager = this.fabrik.DirectorManager;
 
     function extractGuidFromName(deployment) {
-      return (deployment.guid = _.nth(DirectorManager.parseDeploymentName(deployment.name), 2));
+      return (deployment.guid = _.nth(DirectorService.parseDeploymentName(deployment.name), 2));
     }
 
     return this.director
@@ -403,14 +396,13 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .getServiceInstances(`service_plan_guid IN ${guids}`)
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
-            return this
-              .createManager(plan.id)
-              .then(manager => _
-                .chain(instance)
-                .set('manager', manager)
-                .set('entity.service_plan_id', plan.id)
-                .value()
-              );
+            return Promise.try(() => utils.createService(plan.id, _.get(instance, 'metadata.guid')))
+            .then(service => _
+              .chain(instance)
+              .set('serviceInstance', service)
+              .set('entity.service_plan_id', plan.id)
+              .value()
+            );
           });
       });
   }
