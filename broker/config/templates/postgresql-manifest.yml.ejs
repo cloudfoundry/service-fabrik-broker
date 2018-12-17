@@ -1,0 +1,149 @@
+ <%= spec.header %>
+ <%
+ const is_HA = p('postgresql.is_HA', false);
+ const provider = p('agent.provider').name;
+ %>
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 3000-600000
+  update_watch_time: 3000-600000
+  serial: true
+
+instance_groups: &instance_groups
+
+- name: postgresql
+  azs: <%= JSON.stringify(postgresql_azs) %>
+  instances: <%= postgresql_members.length %>
+  stemcell: <%= stemcell.alias %>
+  vm_type: <%= p('vm_type') %>
+  persistent_disk_type: <%= p('disk_type') %>
+  networks:
+  - name: <%= net1.name %>
+    static_ips: <%= JSON.stringify(postgresql_members) %>
+  migrated_from:
+  - {name: postgresql_master_z1, az: z1}
+  - {name: postgresql_slave_z1, az: z1}
+  jobs:
+  - name:  <%= p('job.template.postgresql') %>
+    release: postgresql
+    properties:
+      port: 5432
+      database_name: <%= properties.postgresql.database_name %>
+      admin_user: <%= properties.postgresql.admin_user %>
+      admin_user_password: <%= properties.postgresql.admin_user_password %>
+      database_user: <%= properties.postgresql.database_user %>
+      database_user_password: <%= properties.postgresql.database_user_password %>
+      is_HA: <%= is_HA %>
+      clientip: <%= clientip %>
+      version: <%= p('version') %>
+      failover_on_update: <%= p('failover_on_update') %>
+      optimized_failover: <%= p('optimized_failover') %>
+      riemann:
+        host: <%= p('riemann.host') %>
+        port: <%= p('riemann.tcp_port') %>
+        graphite_port: <%= p('riemann.graphite_port') %>
+      syslog:
+        active: <%= p('syslog.active') %>
+    consumes:
+<% if (is_HA) { %>
+      ipfailover: {from: ipfailover_pgpool}
+<% } %>
+      broker-agent: {from: brokeragent_postgresql}
+# broker-agent job name should not be changed
+  - name: broker-agent
+    release: broker-agent-postgresql
+    properties: &broker-agent_properties
+      username: <%= JSON.stringify(p('agent.auth.username')) %>
+      password: <%= JSON.stringify(p('agent.auth.password')) %>
+      provider: <%= JSON.stringify(p('agent.provider')) %>
+      sm_network_id: <%= p('agent.sm_network_id') %>
+      service_agent:
+        port: 2720
+        username: psql
+        password: secret
+<% if (is_HA) { %>
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+<% } %>
+    provides:
+      broker-agent: {as: brokeragent_postgresql}
+<% if (is_HA) { %>
+  - name: ipfailover
+    release: ipfailover
+    properties: &ipfailover_properties
+      max_retry_attempts: 7
+      agent:
+        username: <%= ipfailover_agent_username %>
+        password: <%= ipfailover_agent_password %>
+      network:
+        name: <%= netid %>
+        gateway: <%= gateway %>
+        securitygroup: <%= security_group %>
+    provides:
+      ipfailover: {as: ipfailover_postgresql}
+    consumes:
+      broker-agent: {from: brokeragent_postgresql}
+<% } %>
+
+<% if (is_HA) { %>
+- name: pgpool
+  azs: <%= JSON.stringify(pgpool_azs) %>
+  instances: <%= pgpool_members.length %>
+  stemcell: <%= stemcell.alias %>
+  vm_type: <%= p('pgpool_vm_type') %>
+  persistent_disk_type: <%= p('pgpool_disk_type') %>
+  networks:
+  - name: <%= net1.name %>
+    static_ips: <%= JSON.stringify(pgpool_members) %>
+  migrated_from:
+  - {name: pgpool1_z1, az: z1}
+  - {name: pgpool2_z1, az: z1}
+  - {name: pgpool3_z1, az: z1}
+  jobs:
+  - name: pgpool-II
+    release: pgpool-II
+    properties:
+      port: 9999
+      health_check_period: 300
+      health_check_timeout: 300
+      debug: false
+      watchdog:
+        port: 9000
+        interval: 5
+        life_point: 3
+        use_watchdog: true
+        heartbeat_port: 9694
+        heartbeat_deadtime: 15
+        heartbeat_keepalive: 2
+      pcp:
+        user: vcap
+        password: pcp_password
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+      broker-agent: {from: brokeragent_postgresql}
+
+  - name: ipfailover
+    release: ipfailover
+    properties: *ipfailover_properties
+    provides:
+      ipfailover: {as: ipfailover_pgpool}
+    consumes:
+      broker-agent: {from: brokeragent_postgresql}
+
+  - name: broker-agent
+    release: broker-agent-postgresql
+    properties: *broker-agent_properties
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+    provides:
+      broker-agent: {as: brokeragent_pgpool}
+
+  - name: pgpool-watcher
+    release: pgpool-II
+    consumes:
+      ipfailover: {from: ipfailover_pgpool}
+      broker-agent: {from: brokeragent_postgresql}
+
+<% } %> 
