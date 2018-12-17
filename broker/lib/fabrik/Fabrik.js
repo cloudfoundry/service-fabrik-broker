@@ -8,6 +8,7 @@ const DirectorService = require('../../../operators/bosh-operator/DirectorServic
 const DockerService = require('../../../operators/docker-operator/DockerService');
 const VirtualHostService = require('../../../operators/virtualhost-operator/VirtualHostService');
 const CONST = require('../../../common/constants');
+const config = require('../../../common/config');
 
 class Fabrik {
   //Kept this function here as of now, we can displace it based on what we decide to do about lib/fabrik
