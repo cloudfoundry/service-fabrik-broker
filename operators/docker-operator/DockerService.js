@@ -466,7 +466,7 @@ class DockerService extends BaseService {
       return {
         protocol: protocol,
         ips: [ip && ip !== '0.0.0.0' ? ip : hostIp],
-        ports: [port]
+        applicationAccessPorts: [port]
       };
     }
 
