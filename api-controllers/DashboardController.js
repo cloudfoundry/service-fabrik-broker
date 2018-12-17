@@ -17,9 +17,6 @@ const fabrik = require('../broker/lib/fabrik');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
-const DirectorService = require('../operators/bosh-operator/DirectorService');
-const DockerService = require('../operators/docker-operator/DockerService');
-const VirtualHostService = require('../operators/virtualhost-operator/VirtualHostService');
 
 Promise.promisifyAll(crypto, Session.prototype);
 
@@ -137,7 +134,7 @@ class DashboardController extends FabrikBaseController {
     return this.cloudController.getPlanIdFromInstanceId(instance_id)
       .then(current_plan_id => {
         logger.info(`plan_id in Dashboard URL was ${plan_id} and actual plan_id is ${current_plan_id}`);
-        return utils.createService(current_plan_id, instance_id, context);
+        return this.fabrik.createService(current_plan_id, instance_id, context);
       })
       .then(service => {
         req.service = service;
@@ -159,7 +156,7 @@ class DashboardController extends FabrikBaseController {
         const context = _.get(resourceOptions, 'context');
         req.session.service_id = service_id;
         req.session.plan_id = plan_id;
-        return utils.createService(plan_id, instance_id, context);
+        return this.fabrik.createService(plan_id, instance_id, context);
       })
       .then(service => {
         req.service = service;

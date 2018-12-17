@@ -219,7 +219,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getDeployment(req, res) {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
-    Promise.try(() => utils.createService(req.query.plan_id, this.getInstanceId(deploymentName)))
+    Promise.try(() => this.fabrik.createService(req.query.plan_id, this.getInstanceId(deploymentName)))
       .then(serviceInstance =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
@@ -396,7 +396,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .getServiceInstances(`service_plan_guid IN ${guids}`)
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
-            return Promise.try(() => utils.createService(plan.id, _.get(instance, 'metadata.guid')))
+            return Promise.try(() => this.fabrik.createService(plan.id, _.get(instance, 'metadata.guid')))
             .then(service => _
               .chain(instance)
               .set('serviceInstance', service)
