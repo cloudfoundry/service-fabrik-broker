@@ -33,7 +33,7 @@ class VirtualHostService extends BaseService {
   }
 
   initialize(operation) {
-    if (operation.type === CONST.OPERATION_TYPE.CREATE) {
+    if (operation && operation.type === CONST.OPERATION_TYPE.CREATE) {
       return this.cloudController.getServiceInstanceByName(this.parameters.dedicated_rabbitmq_instance, this.spaceId)
         .then(serviceInstance => this.director.getDeploymentNameForInstanceId(serviceInstance.metadata.guid))
         .then(deploymentName => this.deploymentName = deploymentName);
