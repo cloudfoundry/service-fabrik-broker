@@ -233,7 +233,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function gone(err) {
       /* jshint unused:false */
-      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
+      return Promise.try(() => {
+          if (!plan.manager.async) {
+            return eventmesh.apiServerClient.removeFinalizers({
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+              resourceId: req.params.instance_id,
+              namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
+              finalizers: CONST.APISERVER.FINALIZERS.BROKER
+            });
+          }
+        })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.GONE).send({}));
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
 
