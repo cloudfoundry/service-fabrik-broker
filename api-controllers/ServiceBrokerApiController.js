@@ -234,7 +234,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
               resourceId: req.params.instance_id,
               namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
-              finalizers: CONST.APISERVER.FINALIZERS.BROKER
+              finalizer: CONST.APISERVER.FINALIZERS.BROKER
             });
           }
         })
@@ -287,7 +287,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
               resourceGroup: resourceGroup,
               resourceType: resourceType,
               resourceId: resourceId,
-              finalizers: CONST.APISERVER.FINALIZERS.BROKER,
+              finalizer: CONST.APISERVER.FINALIZERS.BROKER,
               namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
             });
           }
@@ -321,7 +321,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         resourceId: resourceId,
         namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
       })
-      .tap(() => logger.debug(`Returnings state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
+      .tap(() => logger.debug(`Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
       .then(done)
       .catch(NotFound, notFound);
   }
@@ -391,7 +391,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
           resourceId: params.binding_id,
-          finalizers: CONST.APISERVER.FINALIZERS.BROKER,
+          finalizer: CONST.APISERVER.FINALIZERS.BROKER,
           namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
         })
         .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));

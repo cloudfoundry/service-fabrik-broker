@@ -887,7 +887,6 @@ class ApiServerClient {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to remove finalizer`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to remove finalizer`);
     assert.ok(opts.finalizer, `Property 'finalizer' is required to remove finalizer`);
-
     opts.namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return this.getResource(opts)
       .then(resourceBody => {
