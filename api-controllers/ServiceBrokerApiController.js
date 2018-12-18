@@ -222,19 +222,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {};
-      if (plan.manager.async) {
-        statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
-        body.operation = utils.encodeBase64({
-          'type': 'delete'
-        });
-      }
-      res.status(statusCode).send(body);
-    }
-
-    function gone(err) {
-      /* jshint unused:false */
       return Promise.try(() => {
-          if (!plan.manager.async) {
+          if (plan.manager.async) {
+            statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
+            body.operation = utils.encodeBase64({
+              'type': 'delete'
+            });
+          } else {
             return eventmesh.apiServerClient.removeFinalizers({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
@@ -244,7 +238,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
             });
           }
         })
-        .then(() => res.status(CONST.HTTP_STATUS_CODE.GONE).send({}));
+        .then(() => res.status(statusCode).send(body));
+    }
+
+    function gone(err) {
+      /* jshint unused:false */
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
 
@@ -282,7 +281,18 @@ class ServiceBrokerApiController extends FabrikBaseController {
         body.state = CONST.OPERATION.IN_PROGRESS;
       }
       logger.debug('returning ..', body);
-      res.status(CONST.HTTP_STATUS_CODE.OK).send(body);
+      return Promise.try(() => {
+          if (_.get(operation, 'type') === 'delete') {
+            return eventmesh.apiServerClient.removeFinalizers({
+              resourceGroup: resourceGroup,
+              resourceType: resourceType,
+              resourceId: resourceId,
+              finalizers: CONST.APISERVER.FINALIZERS.BROKER,
+              namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
+            });
+          }
+        })
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
     }
 
     function failed(err) {
@@ -298,14 +308,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function notFound(err) {
       if (_.get(operation, 'type') === 'delete') {
-        return eventmesh.apiServerClient.removeFinalizers({
-            resourceGroup: resourceGroup,
-            resourceType: resourceType,
-            resourceId: resourceId,
-            finalizers: CONST.APISERVER.FINALIZERS.BROKER,
-            namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
-          })
-          .then(() => gone());
+        return gone();
       }
       failed(err);
     }
@@ -384,11 +387,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done() {
-      res.status(CONST.HTTP_STATUS_CODE.OK).send({});
-    }
-
-    function gone(err) {
-      /* jshint unused:false */
       return eventmesh.apiServerClient.removeFinalizers({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
@@ -396,7 +394,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
           finalizers: CONST.APISERVER.FINALIZERS.BROKER,
           namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
         })
-        .then(() => res.status(CONST.HTTP_STATUS_CODE.GONE).send({}));
+        .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));
+    }
+
+    function gone(err) {
+      /* jshint unused:false */
+      res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
 
     return eventmesh.apiServerClient.deleteResource({
