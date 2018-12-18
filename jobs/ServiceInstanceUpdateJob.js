@@ -50,7 +50,13 @@ class ServiceInstanceUpdateJob extends BaseJob {
           resourceId: instanceDetails.instance_id
         })
         .catch(errors.NotFound, () => undefined)
-        .then(resource => _.get(resource, 'spec.options'))
+        .then(resource => {
+          if (!_.isEmpty(_.get(resource, 'status.actualState'))) {
+            return _.get(resource, 'status.actualState');
+          } else {
+            return _.get(resource, 'spec.options');
+          }
+        })
         .then(resourceDetails => {
           if (resourceDetails) {
             return this.isInstanceUpdateDisabled(resourceDetails)

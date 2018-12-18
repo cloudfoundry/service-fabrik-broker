@@ -62,7 +62,8 @@ class DockerOperator extends BaseOperator {
         resourceId: changeObjectBody.metadata.name,
         status: {
           response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+          actualState: changedOptions
         }
       }));
   }
@@ -81,7 +82,8 @@ class DockerOperator extends BaseOperator {
         resourceId: changeObjectBody.metadata.name,
         status: {
           response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+          actualState: changedOptions
         }
       }));
   }
