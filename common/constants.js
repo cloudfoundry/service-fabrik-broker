@@ -60,7 +60,8 @@ module.exports = Object.freeze({
     ABORT: 'abort',
     ABORTED: 'aborted',
     IN_PROGRESS: 'in progress',
-    ABORTING: 'aborting'
+    ABORTING: 'aborting',
+    EXCLUDED: 'excluded'
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
   OPERATION_TYPE: {
@@ -121,7 +122,8 @@ module.exports = Object.freeze({
     BLUEPRINT_JOB: 'BluePrintJob',
     BACKUP_REAPER: 'BackupReaper',
     SERVICE_INSTANCE_UPDATE: 'ServiceInstanceAutoUpdate',
-    DB_COLLECTION_REAPER: 'DbCollectionReaper'
+    DB_COLLECTION_REAPER: 'DbCollectionReaper',
+    METER_INSTANCE: 'MeterInstance'
   },
   JOB_RUN_STATUS_CODE: {
     SUCCEEDED: '0'
@@ -291,7 +293,8 @@ module.exports = Object.freeze({
       BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
       RESTORE: 'backup.servicefabrik.io',
-      SERVICE_FLOW: 'serviceflow.servicefabrik.io'
+      SERVICE_FLOW: 'serviceflow.servicefabrik.io',
+      INSTANCE: 'instance.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
@@ -310,7 +313,11 @@ module.exports = Object.freeze({
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
+      SFEVENT: 'sfevents',
       TASK: 'tasks'
+    },
+    FINALIZERS: {
+      METERING: 'meter.servicefabrik.io'
     },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
@@ -348,6 +355,11 @@ module.exports = Object.freeze({
     },
     WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_serviceflow'],
     READ_OPERATIONS: ['backup'],
+  },
+  METER_STATE: {
+    TO_BE_METERED: 'TO_BE_METERED',
+    METERED: 'METERED',
+    FAILED: 'FAILED'
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',

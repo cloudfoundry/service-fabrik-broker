@@ -1,11 +1,14 @@
 'use strict';
 
 const _ = require('lodash');
+const pubsub = require('pubsub-js');
 const assert = require('assert');
 const Promise = require('bluebird');
 const moment = require('moment');
 const uuid = require('uuid');
 const crypto = require('crypto');
+const logger = require('../logger');
+const eventmesh = require('../../data-access-layer/eventmesh');
 const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
@@ -699,7 +702,8 @@ function registerInterOperatorCrds() {
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
     eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
-    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS)
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS),
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE, CONST.APISERVER.RESOURCE_TYPES.SFEVENT);
   ]);
 }
 

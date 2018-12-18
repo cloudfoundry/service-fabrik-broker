@@ -180,6 +180,7 @@ defaults: &defaults
       "osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservicebindings.yaml') %>
       "osb.servicefabrik.io_v1alpha1_sfservices.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfservices.yaml') %>
       "osb.servicefabrik.io_v1alpha1_sfplans.yaml": <%=base64_template('crds/osb.servicefabrik.io_v1alpha1_sfplans.yaml') %>
+      "instance.servicefabrik.io_v1alpha1_sfevents.yaml": <%= base64_template('crds/instance.servicefabrik.io_v1alpha1_sfevents.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #
@@ -295,6 +296,12 @@ defaults: &defaults
             - name : EventDetail
               retention_in_days: 90
         enabled: true
+      - name: 'Meter_Instance'
+        type: MeterInstance
+        interval: '*/2 * * * *'
+        job_data:
+          retry_count: 3
+        enabled: true
 
   #######################
   # MONITORING SETTINGS #
@@ -342,6 +349,21 @@ defaults: &defaults
     serviceDomain: https://my-tenant-onboarding.com
     username: sb-service-client!t1
     password: quota_password
+  #####################
+  # METERING SETTINGS #
+  #####################
+  metering:
+    client_id: 'metering_client_id'
+    client_secret: 'metering_client_secret'
+    token_url: 'https://service-fabrik.authentication.domain.com'
+    metering_url: 'https://metering.cfapps.domain.com/dev'
+    region: "asia"
+    excluded_service_plans: [
+      {
+        service_name: 'blueprint',
+        plan_sku_names: [ 'dev' ]
+      }
+    ]
   ###################
   # BACKUP SETTINGS #
   ###################
@@ -537,6 +559,7 @@ defaults: &defaults
     - &blueprint_plan1
       id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
       name: 'v1.0-dev'
+      sku_name: 'dev'
       free: true
       manager:
         name: 'docker'
@@ -589,6 +612,7 @@ defaults: &defaults
     - &blueprint_plan2
       id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
       name: 'v1.0-dev-large'
+      sku_name: 'dev'
       free: true
       manager:
         name: 'docker'
@@ -663,6 +687,7 @@ defaults: &defaults
     - &blueprint_plan3
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
+      sku_name: 'xsmall'
       free: false
       # Asynch operations which supports parallel synch operations
       # e.g. bind and unbind (sync) supported during update and backup (async)
