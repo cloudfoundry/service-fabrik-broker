@@ -12,6 +12,7 @@ exports.getDeploymentRestoreStatus = getDeploymentRestoreStatus;
 exports.startDeploymentBackup = startDeploymentBackup;
 exports.getDeploymentBackupStatus = getDeploymentBackupStatus;
 exports.updateServiceInstance = updateServiceInstance;
+exports.getConfigValue = getConfigValue;
 
 function isoDate(time) {
   return new Date(time).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
@@ -87,4 +88,13 @@ function updateServiceInstance(instace_id, payload, response) {
       accepts_incomplete: true
     })
     .reply(response.status || 202, response.body || {});
+}
+
+function getConfigValue(responseStatus, key, disabled) {
+  return nock(serviceBrokerUrl)
+    .replyContentLength()
+    .get(`/admin/config/${key}`)
+    .reply(responseStatus || 200, {
+      value: disabled
+    });
 }

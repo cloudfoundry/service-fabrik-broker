@@ -148,6 +148,10 @@ module.exports = Object.freeze({
     HUMAN_INTERVAL: 'human-readable-interval',
     CRON_EXPRESSION: 'cron_expression'
   },
+  CONFIG: {
+    DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_',
+    RESOURCE_NAME: 'sfconfig'
+  },
   DB_MODEL: {
     //Define all DB Model names
     JOB: 'JobDetail',
@@ -271,6 +275,11 @@ module.exports = Object.freeze({
     API_VERSION: 'v1alpha1',
     CRD_RESOURCE_GROUP: 'apiextensions.k8s.io',
     PATCH_CONTENT_TYPE: 'application/merge-patch+json',
+    CONFIG_MAP: {
+      API_VERSION: 'v1',
+      RESOURCE_TYPE: 'configmaps',
+      RESOURCE_KIND: 'ConfigMap'
+    },
     RESOURCE_GROUPS: {
       LOCK: 'lock.servicefabrik.io',
       DEPLOYMENT: 'deployment.servicefabrik.io',

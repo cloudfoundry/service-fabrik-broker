@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
+const assert = require('assert');
 var moment = require('moment-timezone');
 const catalog = require('../common/models/catalog');
 const errors = require('../common/errors');
@@ -746,6 +747,33 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .then(body => res
         .status(200)
         .send(body));
+  }
+
+  createUpdateConfig(req, res) {
+    assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
+    assert.ok(req.query.value, 'Value parameter must be defined for the Create Config request');
+    logger.info(`Creating config with key: ${req.query.key} and value: ${req.query.value}`);
+    const config = {
+      key: req.query.key,
+      value: req.query.value
+    };
+    return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, config)
+      .then(() => {
+        return res.status(201).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
+      });
+  }
+
+  getConfig(req, res) {
+    assert.ok(req.params.name, 'Key parameter must be defined for the Get Config request');
+    return eventmesh.apiServerClient.getConfigMap(CONST.CONFIG.RESOURCE_NAME, req.params.name)
+      .tap(value => logger.debug(`Returning config with key: ${req.params.name} and value: ${value}`))
+      .then(value => {
+        const body = {
+          value: value,
+          key: req.params.name
+        };
+        return res.status(200).send(body);
+      });
   }
 
   getInstancesWithUpdateScheduled() {

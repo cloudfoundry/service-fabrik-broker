@@ -489,6 +489,73 @@ class ApiServerClient {
       });
   }
 
+  createConfigMapResource(configName, configParam) {
+    logger.info(`Creating ConfigMap ${configName} with data: ${configParam}`);
+    const metadata = {
+      name: configName
+    };
+    let data = {};
+    data = _.set(data, configParam.key, configParam.value);
+    const resourceBody = {
+      apiVersion: CONST.APISERVER.CONFIG_MAP.API_VERSION,
+      kind: CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND,
+      metadata: metadata,
+      data: data
+    };
+    return Promise.try(() => this.init())
+      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
+          body: resourceBody
+        }))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  getConfigMapResource(configName) {
+    logger.debug('Get resource with opts: ', configName);
+    return Promise.try(() => this.init())
+      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
+      .then(resource => {
+        return resource.body;
+      })
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+  createUpdateConfigMapResource(configName, configParam) {
+    const metadata = {
+      name: configName
+    };
+    let data = {};
+    data = _.set(data, configParam.key, configParam.value);
+    const resourceBody = {
+      apiVersion: CONST.APISERVER.CONFIG_MAP.API_VERSION,
+      kind: CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND,
+      metadata: metadata,
+      data: data
+    };
+    return Promise.try(() => this.init())
+      .then(() => this.getConfigMapResource(configName))
+      .then((oldResourceBody) => {
+        resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
+        resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
+        return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+          .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
+            body: resourceBody
+          });
+      })
+      .catch(errors.NotFound, () => {
+        return this.createConfigMapResource(configName, configParam);
+      });
+  }
+
+  getConfigMap(configName, key) {
+    return this.getConfigMapResource(configName).then((body) => _.get(body.data, key));
+  }
+
   /**
    * @description Get Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Unique id of resource

@@ -64,6 +64,38 @@ const sampleDeploymentResource = {
   }
 };
 
+const expectedConfigMapResponse = {
+  apiVersion: 'v1',
+  data: {
+    disable_scheduled_update_blueprint: 'true'
+  },
+  kind: 'ConfigMap',
+  metadata: {
+    creationTimestamp: '2018-12-05T11:31:28Z',
+    name: 'sfconfig',
+    namespace: 'default',
+    resourceVersion: '370255',
+    selfLink: '/api/v1/namespaces/default/configmaps/sfconfig',
+    uid: '4e47d831-f881-11e8-9055-123c04a61866'
+  }
+};
+
+const expectedConfigMapResponse2 = {
+  apiVersion: 'v1',
+  data: {
+    disable_scheduled_update_blueprint: 'true'
+  },
+  kind: 'ConfigMap',
+  metadata: {
+    creationTimestamp: '2018-12-05T11:31:28Z',
+    name: 'sfconfig',
+    namespace: 'default',
+    resourceVersion: '370255',
+    selfLink: '/api/v1/namespaces/default/configmaps/sfconfig',
+    uid: '4e47d831-f881-11e8-9055-123c04a61866'
+  }
+};
+
 function verify() {
   /* jshint expr:true */
   if (!nock.isDone()) {
@@ -76,6 +108,24 @@ function nockGetResource(resourceGroup, resourceType, id, response, expectedExpe
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
     .reply(expectedExpectedCode || 200, response);
+}
+
+function nockCreateConfigMap(response, expectedStatusCode, payload) {
+  nock(apiServerHost)
+    .post(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps`, JSON.stringify(payload))
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetConfigMap(response, expectedStatusCode) {
+  nock(apiServerHost)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockUpdateConfigMap(response, expectedStatusCode, payload) {
+  nock(apiServerHost)
+    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
+    .reply(expectedStatusCode || 200, response);
 }
 
 function nockPatchResource(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
@@ -816,6 +866,158 @@ describe('eventmesh', () => {
           });
       });
     });
+
+    describe('createConfigMapResource', () => {
+      it('Creates a new config map resource', () => {
+        const payload = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: 'sfconfig'
+          },
+          data: {
+            disable_scheduled_update_blueprint: 'true'
+          }
+        };
+        nockCreateConfigMap(expectedConfigMapResponse, undefined, payload);
+        const configParam = {
+          key: 'disable_scheduled_update_blueprint',
+          value: 'true'
+        };
+        return apiserver.createConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
+          .then(res => {
+            expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            verify();
+          });
+      });
+      it('Throws an error if create config map api call is errored', () => {
+        const payload = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: 'sfconfig'
+          },
+          data: {
+            disable_scheduled_update_blueprint: 'true'
+          }
+        };
+        nockCreateConfigMap({}, 404, payload);
+        const configParam = {
+          key: 'disable_scheduled_update_blueprint',
+          value: 'true'
+        };
+        return apiserver.createConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            verify();
+          });
+      });
+    });
+
+    describe('getConfigMapResource', () => {
+      it('Retrieves an existing config map resource object', () => {
+        nockGetConfigMap(expectedConfigMapResponse);
+        return apiserver.getConfigMapResource(CONST.CONFIG.RESOURCE_NAME)
+          .then(res => {
+            expect(res.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.metadata.resourceVersion).to.eql('370255');
+            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            verify();
+          });
+      });
+      it('Throws a 404 error if config map resource doesnt exist', () => {
+        nockGetConfigMap({}, 404);
+        return apiserver.getConfigMapResource(CONST.CONFIG.RESOURCE_NAME)
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            verify();
+          });
+      });
+    });
+
+    describe('getConfigMap', () => {
+      it('Retrieves the key-value pair in the existing config map resource object', () => {
+        nockGetConfigMap(expectedConfigMapResponse);
+        return apiserver.getConfigMap(CONST.CONFIG.RESOURCE_NAME, 'disable_scheduled_update_blueprint')
+          .then(res => {
+            expect(res).to.eql('true');
+            verify();
+          });
+      });
+    });
+
+    describe('createUpdateConfigMapResource', () => {
+      it('Creates a new config map resource, as it doesnt exist', () => {
+        nockGetConfigMap({}, 404);
+        const payload = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: 'sfconfig'
+          },
+          data: {
+            disable_scheduled_update_blueprint: 'true'
+          }
+        };
+        nockCreateConfigMap(expectedConfigMapResponse, undefined, payload);
+        const configParam = {
+          key: 'disable_scheduled_update_blueprint',
+          value: 'true'
+        };
+        return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
+          .then(res => {
+            expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            verify();
+          });
+      });
+      it('Updates an existing config map resource', () => {
+        nockGetConfigMap(expectedConfigMapResponse);
+        const payload = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: 'sfconfig',
+            resourceVersion: '370255'
+          },
+          data: {
+            disable_scheduled_update_blueprint: 'false'
+          }
+        };
+        nockUpdateConfigMap(expectedConfigMapResponse2, undefined, payload);
+        const configParam = {
+          key: 'disable_scheduled_update_blueprint',
+          value: 'false'
+        };
+        return apiserver.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, configParam)
+          .then(res => {
+            expect(res.body.apiVersion).to.eql(CONST.APISERVER.CONFIG_MAP.API_VERSION);
+            expect(res.body.data).to.eql({
+              disable_scheduled_update_blueprint: 'true'
+            });
+            expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
+            expect(res.body.metadata.resourceVersion).to.eql('370255');
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            verify();
+          });
+      });
+    });
+
 
     describe('getPlatformContext', () => {
       it('Gets getPlatformContext', () => {

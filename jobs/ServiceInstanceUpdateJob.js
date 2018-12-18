@@ -51,9 +51,20 @@ class ServiceInstanceUpdateJob extends BaseJob {
         })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'spec.options'))
-        .then(resourceDetails => (resourceDetails === undefined ?
-          this.handleInstanceDeletion(instanceDetails, operationResponse, done) :
-          this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse)))
+        .then(resourceDetails => {
+          if (resourceDetails) {
+            return this.isInstanceUpdateDisabled(resourceDetails)
+              .then(disabled => {
+                if (!disabled) {
+                  return this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse);
+                }
+                operationResponse.update_init = 'disabled';
+                return operationResponse;
+              });
+          } else {
+            return this.handleInstanceDeletion(instanceDetails, operationResponse, done);
+          }
+        })
         .then(opResponse => this.runSucceeded(opResponse, job, done))
         .catch((error) => {
           this.runFailed(error, operationResponse, job, done);
@@ -71,6 +82,13 @@ class ServiceInstanceUpdateJob extends BaseJob {
         operationResponse.instance_deleted = true;
         return operationResponse;
       });
+  }
+
+  static isInstanceUpdateDisabled(resourceDetails) {
+    const serviceId = _.get(resourceDetails, 'service_id');
+    const serviceName = catalog.getServiceName(serviceId);
+    const configKey = CONST.CONFIG.DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX + serviceName;
+    return serviceBrokerClient.getConfigValue(configKey);
   }
 
   static updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse) {

@@ -11,12 +11,45 @@ exports.nockLoadSpec = nockLoadSpec;
 exports.nockCreateResource = nockCreateResource;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
+exports.nockGetConfigMap = nockGetConfigMap;
 exports.nockGetResourceRegex = nockGetResourceRegex;
 exports.nockDeleteResource = nockDeleteResource;
 exports.nockPatchResourceRegex = nockPatchResourceRegex;
 exports.nockGetResourceListByState = nockGetResourceListByState;
 exports.nockCreateCrd = nockCreateCrd;
 exports.nockPatchCrd = nockPatchCrd;
+
+const expectedGetConfigMapResponseEnabled = {
+  apiVersion: 'v1',
+  data: {
+    disable_scheduled_update_blueprint: 'false'
+  },
+  kind: 'ConfigMap',
+  metadata: {
+    creationTimestamp: '2018-12-05T11:31:28Z',
+    name: 'sfconfig',
+    namespace: 'default',
+    resourceVersion: '370255',
+    selfLink: '/api/v1/namespaces/default/configmaps/sfconfig',
+    uid: '4e47d831-f881-11e8-9055-123c04a61866'
+  }
+};
+
+const expectedGetConfigMapResponseDisabled = {
+  apiVersion: 'v1',
+  data: {
+    disable_scheduled_update_blueprint: 'false'
+  },
+  kind: 'ConfigMap',
+  metadata: {
+    creationTimestamp: '2018-12-05T11:31:28Z',
+    name: 'sfconfig',
+    namespace: 'default',
+    resourceVersion: '370255',
+    selfLink: '/api/v1/namespaces/default/configmaps/sfconfig',
+    uid: '4e47d831-f881-11e8-9055-123c04a61866'
+  }
+};
 
 function nockLoadSpec(times) {
   nock(apiServerHost)
@@ -53,6 +86,12 @@ function nockCreateResource(resourceGroup, resourceType, response, times, verifi
     .post(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`, verifier)
     .times(times || 1)
     .reply(expectedStatusCode || 201, response);
+}
+
+function nockGetConfigMap(expectedStatusCode, enabled) {
+  nock(apiServerHost)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps`)
+    .reply(expectedStatusCode || 200, enabled ? expectedGetConfigMapResponseEnabled : expectedGetConfigMapResponseDisabled);
 }
 
 function nockPatchResource(resourceGroup, resourceType, id, response, times, payload, expectedStatusCode) {
