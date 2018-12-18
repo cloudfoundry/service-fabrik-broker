@@ -1,0 +1,44 @@
+'use strict';
+
+const MeteringClient = require('../../data-access-layer/metering/MeteringClient.js');
+
+describe('metering', () => {
+  describe('MeteringClient', () => {
+
+    describe('#getAuthToken', () => {
+      it('queries the metering service for auth token', () => {
+        const mock_token = 'mock_token_string';
+        mocks.metering.mockAuthCall(mock_token);
+        const metering_client = new MeteringClient();
+        return metering_client
+          .getAuthToken()
+          .then(res => {
+            expect(res).to.eql(mock_token);
+            return mocks.verify();
+          });
+      });
+    });
+
+    describe('#putUsageRecord', () => {
+      it('it should return send request with correct body and auth token', () => {
+        const mock_token = 'mock_token_string';
+        const mock_usage_record = {
+          usage: ['records']
+        };
+        const mock_response_code = 200;
+        mocks.metering.mockAuthCall(mock_token);
+        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+          return true;
+        });
+        const metering_client = new MeteringClient();
+        return metering_client
+          .putUsageRecord(mock_usage_record)
+          .then(res => {
+            expect(res.statusCode).to.eql(mock_response_code);
+            mocks.verify();
+          });
+      });
+    });
+
+  });
+});
