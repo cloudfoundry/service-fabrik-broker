@@ -405,7 +405,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
     return eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-        resourceId: params.binding_id
+        resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
       })
       .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
