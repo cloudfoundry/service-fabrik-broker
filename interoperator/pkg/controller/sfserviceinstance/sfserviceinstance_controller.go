@@ -21,6 +21,7 @@ import (
 	"log"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,7 +46,12 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileServiceInstance{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	clusterFactory, _ := clusterFactory.New(mgr)
+	return &ReconcileServiceInstance{
+		Client:         mgr.GetClient(),
+		scheme:         mgr.GetScheme(),
+		clusterFactory: clusterFactory,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -89,7 +95,8 @@ var _ reconcile.Reconciler = &ReconcileServiceInstance{}
 // ReconcileServiceInstance reconciles a ServiceInstance object
 type ReconcileServiceInstance struct {
 	client.Client
-	scheme *runtime.Scheme
+	scheme         *runtime.Scheme
+	clusterFactory *clusterFactory.ClusterFactory
 }
 
 // Reconcile reads that state of the cluster for a ServiceInstance object and makes changes based on the state read
@@ -153,7 +160,12 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	_, err = resources.ReconcileResources(r, expectedResources)
+	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	_, err = resources.ReconcileResources(r, targetClient, expectedResources)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 	}
@@ -167,7 +179,12 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 }
 
 func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
-	properties, err := resources.ComputeProperties(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	if err != nil {
+		return err
+	}
+
+	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
@@ -185,7 +202,10 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		return err
 	}
 
-	instanceObj.Status = properties.Status
+	instanceObj.Status.State = properties.Status.State
+	instanceObj.Status.Error = properties.Status.Error
+	instanceObj.Status.Description = properties.Status.Description
+	instanceObj.Status.DashboardURL = properties.Status.DashboardURL
 	err = r.Update(context.Background(), instanceObj)
 	if err != nil {
 		log.Printf("error updating status. %v\n", err)

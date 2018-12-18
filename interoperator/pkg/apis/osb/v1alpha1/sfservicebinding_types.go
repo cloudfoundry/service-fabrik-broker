@@ -36,9 +36,11 @@ type SFServiceBindingSpec struct {
 
 // SFServiceBindingStatus defines the observed state of SFServiceBinding
 type SFServiceBindingStatus struct {
-	State    string          `yaml:"state,omitempty" json:"state,omitempty"`
-	Error    string          `yaml:"error,omitempty" json:"error,omitempty"`
-	Response BindingResponse `yaml:"response,omitempty" json:"response,omitempty"`
+	State       string               `yaml:"state,omitempty" json:"state,omitempty"`
+	Error       string               `yaml:"error,omitempty" json:"error,omitempty"`
+	Response    BindingResponse      `yaml:"response,omitempty" json:"response,omitempty"`
+	AppliedSpec SFServiceBindingSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
+	CRDs        []Source             `yaml:"crds,omitempty" json:"crds,omitempty"`
 }
 
 // BindingResponse defines the details of the binding response

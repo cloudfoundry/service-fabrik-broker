@@ -21,7 +21,9 @@ import (
 	"log"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -46,7 +48,12 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileSFServiceBinding{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	clusterFactory, _ := clusterFactory.New(mgr)
+	return &ReconcileSFServiceBinding{
+		Client:         mgr.GetClient(),
+		scheme:         mgr.GetScheme(),
+		clusterFactory: clusterFactory,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -90,7 +97,8 @@ var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}
 // ReconcileSFServiceBinding reconciles a SFServiceBinding object
 type ReconcileSFServiceBinding struct {
 	client.Client
-	scheme *runtime.Scheme
+	scheme         *runtime.Scheme
+	clusterFactory *clusterFactory.ClusterFactory
 }
 
 // Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
@@ -146,16 +154,20 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	bindingID := binding.GetName()
 	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+		err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
-	_, err = resources.ReconcileResources(r, expectedResources)
-	if err != nil {
-		log.Printf("Reconcile error %v\n", err)
+		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		_, err = resources.ReconcileResources(r, targetClient, expectedResources)
+		if err != nil {
+			log.Printf("Reconcile error %v\n", err)
+		}
 	}
 
 	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace())
@@ -166,7 +178,12 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
-	properties, err := resources.ComputeProperties(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	if err != nil {
+		return err
+	}
+
+	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err

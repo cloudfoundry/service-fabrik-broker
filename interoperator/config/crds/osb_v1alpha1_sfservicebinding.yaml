@@ -47,6 +47,49 @@ spec:
           type: object
         status:
           properties:
+            appliedSpec:
+              properties:
+                acceptsIncomplete:
+                  type: boolean
+                appGuid:
+                  type: string
+                bindResource:
+                  type: object
+                context:
+                  type: object
+                id:
+                  type: string
+                instanceId:
+                  type: string
+                parameters:
+                  type: object
+                planId:
+                  type: string
+                serviceId:
+                  type: string
+              required:
+              - instanceId
+              - planId
+              - serviceId
+              type: object
+            crds:
+              items:
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - apiVersion
+                - kind
+                - name
+                - namespace
+                type: object
+              type: array
             error:
               type: string
             response:

@@ -6,7 +6,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
@@ -151,7 +151,7 @@ func SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructur
 }
 
 // ReconcileResources setups all resources according to expectation
-func ReconcileResources(client kubernetes.Client, expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
 		foundResource := &unstructured.Unstructured{}
@@ -165,10 +165,10 @@ func ReconcileResources(client kubernetes.Client, expectedResources []*unstructu
 			Namespace: expectedResource.GetNamespace(),
 		}
 
-		err := client.Get(context.TODO(), namespacedName, foundResource)
+		err := targetClient.Get(context.TODO(), namespacedName, foundResource)
 		if err != nil && errors.IsNotFound(err) {
 			log.Printf("Creating %s %s\n", kind, namespacedName)
-			err = client.Create(context.TODO(), expectedResource)
+			err = targetClient.Create(context.TODO(), expectedResource)
 			if err != nil {
 				log.Printf("error creating %s %s. %v\n", kind, namespacedName, err)
 				return nil, err
@@ -192,7 +192,7 @@ func ReconcileResources(client kubernetes.Client, expectedResources []*unstructu
 		if !reflect.DeepEqual(expectedResource.Object[specKey], foundResource.Object[specKey]) {
 			foundResource.Object[specKey] = expectedResource.Object[specKey]
 			log.Printf("Updating %s %s\n", kind, namespacedName)
-			err = client.Update(context.TODO(), foundResource)
+			err = targetClient.Update(context.TODO(), foundResource)
 			if err != nil {
 				log.Printf("error updating %s %s. %v\n", kind, namespacedName, err)
 				return nil, err
@@ -206,8 +206,8 @@ func ReconcileResources(client kubernetes.Client, expectedResources []*unstructu
 }
 
 // ComputeProperties computes properties template
-func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
-	instance, binding, service, plan, err := fetchResources(client, instanceID, bindingID, serviceID, planID, namespace)
+func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
+	instance, binding, service, plan, err := fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
 		log.Printf("error getting resource. %v\n", err)
 		return nil, err
@@ -292,7 +292,7 @@ func ComputeProperties(client kubernetes.Client, instanceID, bindingID, serviceI
 			Name:      val.Name,
 			Namespace: name.Namespace,
 		}
-		err := client.Get(context.TODO(), namespacedName, obj)
+		err := targetClient.Get(context.TODO(), namespacedName, obj)
 		if err != nil {
 			log.Printf("failed to fetch resource %v. %v\n", val, err)
 			continue

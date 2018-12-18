@@ -233,7 +233,7 @@ func (in *SFServiceBinding) DeepCopyInto(out *SFServiceBinding) {
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
-	out.Status = in.Status
+	in.Status.DeepCopyInto(&out.Status)
 	return
 }
 
@@ -323,6 +323,12 @@ func (in *SFServiceBindingSpec) DeepCopy() *SFServiceBindingSpec {
 func (in *SFServiceBindingStatus) DeepCopyInto(out *SFServiceBindingStatus) {
 	*out = *in
 	out.Response = in.Response
+	in.AppliedSpec.DeepCopyInto(&out.AppliedSpec)
+	if in.CRDs != nil {
+		in, out := &in.CRDs, &out.CRDs
+		*out = make([]Source, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
