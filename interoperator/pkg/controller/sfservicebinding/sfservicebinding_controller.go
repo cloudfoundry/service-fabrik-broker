@@ -153,6 +153,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
 	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	var appliedResources []*unstructured.Unstructured
 	if err != nil {
 		err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
 		if err != nil {
@@ -164,23 +165,33 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			return reconcile.Result{}, err
 		}
 
-		_, err = resources.ReconcileResources(r, targetClient, expectedResources)
+		appliedResources, err = resources.ReconcileResources(r, targetClient, expectedResources, binding.Status.CRDs)
 		if err != nil {
 			log.Printf("Reconcile error %v\n", err)
 		}
 	}
 
-	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace())
+	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace(), appliedResources)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
-func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
+func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string, appliedResources []*unstructured.Unstructured) error {
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
 		return err
+	}
+
+	CRDs := make([]osbv1alpha1.Source, 0, len(appliedResources))
+	for _, appliedResource := range appliedResources {
+		resource := osbv1alpha1.Source{}
+		resource.Kind = appliedResource.GetKind()
+		resource.APIVersion = appliedResource.GetAPIVersion()
+		resource.Name = appliedResource.GetName()
+		resource.Namespace = appliedResource.GetNamespace()
+		CRDs = append(CRDs, resource)
 	}
 
 	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
@@ -229,6 +240,9 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 			bindingObj.Status.Error = bindingStatus.Error
 		}
 		bindingObj.Status.State = bindingStatus.State
+		if appliedResources != nil {
+			bindingObj.Status.CRDs = CRDs
+		}
 		err = r.Update(context.Background(), bindingObj)
 		if err != nil {
 			log.Printf("error updating status. %v\n", err)
