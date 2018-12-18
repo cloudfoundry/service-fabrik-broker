@@ -151,7 +151,7 @@ func SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructur
 }
 
 // ReconcileResources setups all resources according to expectation
-func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error) {
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
 		foundResource := &unstructured.Unstructured{}
@@ -164,6 +164,8 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 			Name:      expectedResource.GetName(),
 			Namespace: expectedResource.GetNamespace(),
 		}
+		foundResource.SetName(namespacedName.Name)
+		foundResource.SetNamespace(namespacedName.Namespace)
 
 		err := targetClient.Get(context.TODO(), namespacedName, foundResource)
 		if err != nil && errors.IsNotFound(err) {
@@ -202,7 +204,33 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 		}
 		foundResources = append(foundResources, foundResource)
 	}
+
+	for _, lastResource := range lastResources {
+		oldResource := &unstructured.Unstructured{}
+		oldResource.SetKind(lastResource.Kind)
+		oldResource.SetAPIVersion(lastResource.APIVersion)
+		oldResource.SetName(lastResource.Name)
+		oldResource.SetNamespace(lastResource.Namespace)
+		if ok := findUnstructuredObject(foundResources, oldResource); !ok {
+			err := targetClient.Delete(context.TODO(), oldResource)
+			if err != nil {
+				log.Printf("failed to delete outdated resource %v. %v", lastResource, err)
+				foundResources = append(foundResources, oldResource)
+				continue
+			}
+			log.Printf("deleted outdated resource %v", lastResource)
+		}
+	}
 	return foundResources, nil
+}
+
+func findUnstructuredObject(list []*unstructured.Unstructured, item *unstructured.Unstructured) bool {
+	for _, object := range list {
+		if object.GetKind() == item.GetKind() && object.GetAPIVersion() == item.GetAPIVersion() && object.GetName() == item.GetName() && object.GetNamespace() == item.GetNamespace() {
+			return true
+		}
+	}
+	return false
 }
 
 // ComputeProperties computes properties template

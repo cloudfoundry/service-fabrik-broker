@@ -165,12 +165,12 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	_, err = resources.ReconcileResources(r, targetClient, expectedResources)
+	appliedResources, err := resources.ReconcileResources(r, targetClient, expectedResources, instance.Status.CRDs)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 	}
 
-	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace())
+	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -178,10 +178,20 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID, planID, namespace string) error {
+func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID, planID, namespace string, appliedResources []*unstructured.Unstructured) error {
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
 		return err
+	}
+
+	CRDs := make([]osbv1alpha1.Source, 0, len(appliedResources))
+	for _, appliedResource := range appliedResources {
+		resource := osbv1alpha1.Source{}
+		resource.Kind = appliedResource.GetKind()
+		resource.APIVersion = appliedResource.GetAPIVersion()
+		resource.Name = appliedResource.GetName()
+		resource.Namespace = appliedResource.GetNamespace()
+		CRDs = append(CRDs, resource)
 	}
 
 	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
@@ -206,6 +216,9 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 	instanceObj.Status.Error = properties.Status.Error
 	instanceObj.Status.Description = properties.Status.Description
 	instanceObj.Status.DashboardURL = properties.Status.DashboardURL
+	if appliedResources != nil {
+		instanceObj.Status.CRDs = CRDs
+	}
 	err = r.Update(context.Background(), instanceObj)
 	if err != nil {
 		log.Printf("error updating status. %v\n", err)
