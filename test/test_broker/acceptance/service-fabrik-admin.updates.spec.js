@@ -6,6 +6,7 @@ const config = require('../../../common/config');
 const proxyquire = require('proxyquire');
 const CONST = require('../../../common/constants');
 const ServiceFabrikAdminController = require('../../../api-controllers/ServiceFabrikAdminController');
+const APIServerClient = require('../../../data-access-layer/eventmesh/ApiServerClient');
 const numOfInstances = 2 * config.mongodb.record_max_fetch_count;
 
 const getInstance = (instanceId) => {
@@ -68,6 +69,33 @@ describe('service-fabrik-admin', function () {
         .then(res => {
           expect(res.body).to.have.length(2);
           expect(res).to.have.status(200);
+        });
+    });
+  });
+
+  describe('#getConfig', function () {
+    let getConfigMapStub;
+
+    before(function () {
+      getConfigMapStub = sinon.stub(APIServerClient.prototype, 'getConfigMap');
+    });
+
+    after(function () {
+      getConfigMapStub.restore();
+    });
+
+    it('should get the config parameters (key/value) for the given config key name', function () {
+      getConfigMapStub.returns(Promise.resolve(true));
+      return chai
+        .request(app)
+        .get(`${base_url}/config/disable_scheduled_update_blueprint`)
+        .set('Accept', 'application/json')
+        .auth(config.username, config.password)
+        .catch(err => err.response)
+        .then(res => {
+          expect(res).to.have.status(200);
+          expect(res.body.key).to.be.equal('disable_scheduled_update_blueprint');
+          expect(res.body.value).to.be.equal(true);
         });
     });
   });
