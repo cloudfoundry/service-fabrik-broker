@@ -446,7 +446,7 @@ class ApiServerClient {
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
       .then((res) => {
-        if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE) {
+        if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);
         }
         return res;
@@ -682,6 +682,7 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Name of resource group 
    * @param {string} opts.resourceType - Type of resource 
    * @param {string} opts.resourceId - Unique id of resource 
+   * @param {string} opts.metadata - Optional; pass finalizers or some other field
    * @param {string} opts.labels - to be put in label
    * @param {Object} opts.spec - Value to set for spec field of resource
    * @param {string} opts.status - status of the resource
@@ -692,9 +693,9 @@ class ApiServerClient {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
     assert.ok(opts.spec, `Property 'spec' is required to create resource`);
-    const metadata = {
+    const metadata = _.merge(opts.metadata, {
       name: opts.resourceId
-    };
+    });
     if (opts.labels) {
       metadata.labels = opts.labels;
     }
@@ -779,7 +780,7 @@ class ApiServerClient {
         }
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
         // Create Namespace if not default
-        const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+        const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
           opts.spec.instance_id : opts.resourceId
         );
         // Create Namespace if not default
@@ -872,6 +873,30 @@ class ApiServerClient {
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
+  }
+
+  /**
+   * @description Remove finalizers from finalizer list
+   * @param {string} opts.resourceGroup - Name of resource group 
+   * @param {string} opts.resourceType - Type of resource 
+   * @param {string} opts.resourceId - Unique id of resource
+   * @param {string} opts.finalizer - Name of finalizer
+   */
+  removeFinalizers(opts) {
+    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to remove finalizer`);
+    assert.ok(opts.resourceType, `Property 'resourceType' is required to remove finalizer`);
+    assert.ok(opts.resourceId, `Property 'resourceId' is required to remove finalizer`);
+    assert.ok(opts.finalizer, `Property 'finalizer' is required to remove finalizer`);
+    opts.namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
+    return this.getResource(opts)
+      .then(resourceBody => {
+        opts.metadata = {
+          resourceVersion: _.get(resourceBody, 'metadata.resourceVersion'),
+          finalizers: _.pull(_.get(resourceBody, 'metadata.finalizers'), opts.finalizer)
+        };
+        return this.updateOSBResource(opts);
+      });
+
   }
 
 }

@@ -315,6 +315,9 @@ module.exports = Object.freeze({
       LOCKED: 'locked',
       UNLOCKED: 'unlocked'
     },
+    FINALIZERS: {
+      BROKER: 'broker.servicefabrik.io'
+    },
     TASK_TYPE: {
       SERVICE_INSTANCE_BACKUP: 'ServiceInstanceBackupTask',
       SERVICE_INSTANCE_UPDATE: 'ServiceInstanceUpdateTask',
