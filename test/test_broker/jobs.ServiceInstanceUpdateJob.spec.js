@@ -195,7 +195,7 @@ describe('Jobs', function () {
     });
     it('if there is no update to be done on the instance, the job just succeeds with status as no_update_required', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, []);
       const expectedResponse = {
@@ -216,6 +216,35 @@ describe('Jobs', function () {
           done();
         }).catch(done);
     });
+    it('if service-specific update flag is disabled, the job just succeeds with status as disabled', function (done) {
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: 'TBD',
+        update_init: 'disabled',
+        diff: 'TBD'
+      };
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          done();
+        }).catch(done);
+    });
     it(`if instance is outdated, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       const diff = [
@@ -224,7 +253,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       const expectedResponse = {
@@ -268,7 +297,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       const expectedResponse = {
@@ -310,7 +339,7 @@ describe('Jobs', function () {
         ['  instances: 1', 'removed'],
         ['  instances: 2', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       const expectedResponse = {
@@ -351,7 +380,7 @@ describe('Jobs', function () {
         ['  - name: broker-agent', 'removed'],
         ['    release: blueprint', 'removed']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       const expectedResponse = {
@@ -391,7 +420,7 @@ describe('Jobs', function () {
         ['  instances: 2', 'removed'],
         ['  instances: 1', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
@@ -433,7 +462,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
@@ -474,7 +503,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
@@ -516,7 +545,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
@@ -566,7 +595,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
@@ -612,7 +641,7 @@ describe('Jobs', function () {
         ['  version: 0.0.10', 'removed'],
         ['  version: 0.0.11', 'added']
       ];
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
       mocks.director.getDeploymentManifest(1);
       mocks.director.diffDeploymentManifest(1, diff);
       mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {

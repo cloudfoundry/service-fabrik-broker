@@ -90,9 +90,11 @@ function updateServiceInstance(instace_id, payload, response) {
     .reply(response.status || 202, response.body || {});
 }
 
-function getConfigValue(responseStatus, key, enabled) {
+function getConfigValue(responseStatus, key, disabled) {
   return nock(serviceBrokerUrl)
     .replyContentLength()
     .get(`/admin/config/${key}`)
-    .reply(responseStatus || 200, enabled);
+    .reply(responseStatus || 200, {
+      value: disabled
+    });
 }
