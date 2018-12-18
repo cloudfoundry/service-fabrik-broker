@@ -441,7 +441,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to delete resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to delete resource`);
-    const namespaceId = this.getNamespaceId(opts.resourceId);
+    const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
