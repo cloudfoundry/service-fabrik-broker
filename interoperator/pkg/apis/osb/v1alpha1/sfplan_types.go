@@ -32,9 +32,11 @@ const (
 )
 
 // TemplateSpec is the specifcation of a template
-// Supported names: provisionTemplate, bindTemplate, propertiesTemplate
 type TemplateSpec struct {
-	Action  string `yaml:"action" json:"action"`
+	// +kubebuilder:validation:Enum=provision,properties,bind,sources
+	Action string `yaml:"action" json:"action"`
+
+	// +kubebuilder:validation:Enum=gotemplate,helm
 	Type    string `yaml:"type" json:"type"`
 	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
 	Content string `yaml:"content,omitempty" json:"content,omitempty"`

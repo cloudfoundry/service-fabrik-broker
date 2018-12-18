@@ -76,10 +76,18 @@ spec:
               items:
                 properties:
                   action:
+                    enum:
+                    - provision
+                    - properties
+                    - bind
+                    - sources
                     type: string
                   content:
                     type: string
                   type:
+                    enum:
+                    - gotemplate
+                    - helm
                     type: string
                   url:
                     type: string
