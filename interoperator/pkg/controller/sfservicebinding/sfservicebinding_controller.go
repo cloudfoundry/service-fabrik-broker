@@ -24,7 +24,6 @@ import (
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +37,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+// finalizerName is the name of the finalizer added by interoperator
+const (
+	finalizerName = "interoperator.servicefabrik.io"
 )
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -74,15 +78,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
 	subresources := []runtime.Object{
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
 		postgres,
 	}
 
 	for _, subresource := range subresources {
 		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &osbv1alpha1.SFServiceInstance{},
+			OwnerType:    &osbv1alpha1.SFServiceBinding{},
 		})
 		if err != nil {
 			return err
@@ -124,17 +126,46 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
+	serviceID := binding.Spec.ServiceID
+	planID := binding.Spec.PlanID
+	instanceID := binding.Spec.InstanceID
+	bindingID := binding.GetName()
+
+	if binding.GetDeletionTimestamp().IsZero() {
+		if !containsString(binding.GetFinalizers(), finalizerName) {
+			// The object is not being deleted, so if it does not have our finalizer,
+			// then lets add the finalizer and update the object.
+			binding.SetFinalizers(append(binding.GetFinalizers(), finalizerName))
+			if err := r.Update(context.Background(), binding); err != nil {
+				return reconcile.Result{Requeue: true}, nil
+			}
+		}
+	} else {
+		// The object is being deleted
+		if containsString(binding.GetFinalizers(), finalizerName) {
+			// our finalizer is present, so lets handle our external dependency
+			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			remainingResource, _ := resources.DeleteSubResources(targetClient, binding.Status.CRDs)
+			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
+				return reconcile.Result{}, err
+			}
+			if len(remainingResource) != 0 {
+				return reconcile.Result{Requeue: true}, nil
+			}
+		}
+
+		// Our finalizer has finished, so the reconciler can do nothing.
+		log.Printf("binding %s deleted\n", request.NamespacedName)
+		return reconcile.Result{}, nil
+	}
+
 	labels := binding.GetLabels()
 	stateLabel, ok := labels["state"]
 	if ok {
 		switch stateLabel {
-		case "delete":
-			err = r.Delete(context.TODO(), binding)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			log.Printf("binding %s deleted\n", request.NamespacedName)
-			return reconcile.Result{}, nil
 		case "in_queue":
 			if binding.Status.State == "succeeded" {
 				labels["state"] = "succeeded"
@@ -148,18 +179,10 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		}
 	}
 
-	serviceID := binding.Spec.ServiceID
-	planID := binding.Spec.PlanID
-	instanceID := binding.Spec.InstanceID
-	bindingID := binding.GetName()
+	var requeue bool
 	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	var appliedResources []*unstructured.Unstructured
 	if err != nil {
-		err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
 		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -168,6 +191,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		appliedResources, err = resources.ReconcileResources(r, targetClient, expectedResources, binding.Status.CRDs)
 		if err != nil {
 			log.Printf("Reconcile error %v\n", err)
+			requeue = true
 		}
 	}
 
@@ -176,8 +200,34 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{Requeue: requeue}, nil
 }
+
+func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, remainingResource []osbv1alpha1.Source) error {
+	serviceID := binding.Spec.ServiceID
+	planID := binding.Spec.PlanID
+	instanceID := binding.Spec.InstanceID
+	bindingID := binding.GetName()
+	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	if err != nil {
+		log.Printf("error computing properties. %v\n", err)
+		return err
+	}
+	binding.Status.State = properties.Unbinding.State
+	binding.Status.Error = properties.Unbinding.Error
+	binding.Status.CRDs = remainingResource
+
+	if binding.Status.State == "succeeded" && len(remainingResource) == 0 {
+		// remove our finalizer from the list and update it.
+		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
+	}
+
+	if err := r.Update(context.Background(), binding); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string, appliedResources []*unstructured.Unstructured) error {
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
@@ -250,4 +300,26 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		}
 	}
 	return nil
+}
+
+//
+// Helper functions to check and remove string from a slice of strings.
+//
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
 }

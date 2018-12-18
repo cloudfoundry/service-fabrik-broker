@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -28,6 +30,10 @@ type Source struct {
 	Kind       string `yaml:"kind" json:"kind"`
 	Name       string `yaml:"name" json:"name"`
 	Namespace  string `yaml:"namespace" json:"namespace"`
+}
+
+func (r Source) String() string {
+	return fmt.Sprintf("%s/%s (%s %s)", r.Namespace, r.Name, r.Kind, r.APIVersion)
 }
 
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
