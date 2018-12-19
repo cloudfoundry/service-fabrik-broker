@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const _ = require('lodash');
 const Promise = require('bluebird');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const logger = require('../../common/logger');
@@ -54,8 +55,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processCreate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering create of resource '${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);
@@ -73,8 +74,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processDelete(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering delete of resource:'${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);
@@ -93,8 +94,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processUpdate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering update of resource:'${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);

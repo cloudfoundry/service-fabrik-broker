@@ -54,7 +54,7 @@ class MultitenancyService extends BaseService {
 
   update(changedOptions) {
     const operation = {
-      type: 'update',
+      type: CONST.OPERATION_TYPE.UPDATE,
       parameters: {
         deploymentName: changedOptions.operatorMetadata.dedicatedInstanceDeploymentName
       }
@@ -68,7 +68,7 @@ class MultitenancyService extends BaseService {
 
   delete(changedOptions) {
     const operation = {
-      type: 'delete',
+      type: CONST.OPERATION_TYPE.DELETE,
       parameters: {
         deploymentName: changedOptions.operatorMetadata.dedicatedInstanceDeploymentName
       }

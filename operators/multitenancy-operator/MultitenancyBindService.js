@@ -24,7 +24,6 @@ class MultitenancyBindService extends BaseService {
     this.deploymentResourceType = deploymentResourceType;
   }
 
-
   initialize() {
     return eventmesh.apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -56,7 +55,7 @@ class MultitenancyBindService extends BaseService {
       })
       .catch(err => {
         logger.error(`+-> Failed to create binding for deployment ${deploymentName} with id ${binding.id}`, err);
-        return;
+        throw err;
       });
   }
 
@@ -73,14 +72,12 @@ class MultitenancyBindService extends BaseService {
         this.getCredentialsFromResource(bindingId)
       ])
       .spread((ips, credentials) => this.agent.deleteTenantCredentials(ips, instanceId, credentials))
-      .tap(() => logger.info('+-> Deleted service binding'))
+      .tap(() => logger.info(`+-> Deleted service binding with id ${bindingId}`))
       .catch(err => {
-        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with binding id ${bindingId}`);
-        logger.error(err);
-        return;
+        logger.error(`+-> Failed to delete binding for deployment ${deploymentName} with binding id ${bindingId}`, err);
+        throw err;
       });
   }
-
 
   getCredentialsFromResource(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
@@ -97,7 +94,7 @@ class MultitenancyBindService extends BaseService {
       })
       .catch(err => {
         logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
-        return;
+        throw err;
       });
   }
 

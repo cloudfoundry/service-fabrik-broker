@@ -48,8 +48,8 @@ class MultitenancyBindOperator extends BaseOperator {
   }
 
   _processBind(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info(`Triggering bind of resource: '${this.bindResourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
@@ -71,8 +71,8 @@ class MultitenancyBindOperator extends BaseOperator {
   }
 
   _processUnbind(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), `Argument 'metadata.labels.instance_guid' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info(`Triggering unbind of resource: '${this.bindResourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
