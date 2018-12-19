@@ -85,7 +85,6 @@ class MultitenancyService extends BaseService {
       });
   }
 
-
   storeDedicatedInstanceDeploymentName() {
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
