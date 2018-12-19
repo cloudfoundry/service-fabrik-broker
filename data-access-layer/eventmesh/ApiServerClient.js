@@ -14,7 +14,7 @@ const Timeout = errors.Timeout;
 const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
 const Conflict = errors.Conflict;
-const camelcaseKeysDeep = require('camelcase-keys-deep');
+const camelcaseKeys = require('camelcase-keys');
 const InternalServerError = errors.InternalServerError;
 
 const apiserverConfig = config.apiserver.getConfigInCluster ? kc.config.getInCluster() :
@@ -704,7 +704,7 @@ class ApiServerClient {
       apiVersion: `${crdJson.spec.group}/${crdJson.spec.version}`,
       kind: crdJson.spec.names.kind,
       metadata: metadata,
-      spec: camelcaseKeysDeep(opts.spec)
+      spec: camelcaseKeys(opts.spec)
     };
 
     if (opts.status) {
@@ -759,7 +759,7 @@ class ApiServerClient {
           patchBody.metadata = opts.metadata;
         }
         if (opts.spec) {
-          patchBody.spec = camelcaseKeysDeep(opts.spec);
+          patchBody.spec = camelcaseKeys(opts.spec);
         }
         if (opts.operatorMetadata) {
           patchBody.operatorMetadata = opts.operatorMetadata;
@@ -825,7 +825,7 @@ class ApiServerClient {
           _.set(opts.status, 'response', response);
         }
         if (opts.spec && resource.spec) {
-          const spec = _.merge(resource.spec, camelcaseKeysDeep(opts.spec));
+          const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
           _.set(opts, 'spec', spec);
         }
         if (opts.operatorMetadata && resource.operatorMetadata) {
