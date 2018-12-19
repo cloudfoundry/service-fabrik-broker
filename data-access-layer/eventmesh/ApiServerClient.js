@@ -553,7 +553,10 @@ class ApiServerClient {
   }
 
   getConfigMap(configName, key) {
-    return this.getConfigMapResource(configName).then((body) => _.get(body.data, key));
+    return this.getConfigMapResource(configName).then((body) => _.get(body.data, key))
+      .catch(errors.NotFound, () => {
+        return undefined;
+      });
   }
 
   /**
