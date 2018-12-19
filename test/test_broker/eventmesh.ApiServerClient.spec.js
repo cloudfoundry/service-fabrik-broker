@@ -954,6 +954,14 @@ describe('eventmesh', () => {
             verify();
           });
       });
+      it('If a config map is not found, the function returns undefined ', () => {
+        nockGetConfigMap({}, 404);
+        return apiserver.getConfigMap(CONST.CONFIG.RESOURCE_NAME, 'disable_scheduled_update_blueprint')
+          .then(res => {
+            expect(res).to.eql(undefined);
+            verify();
+          });
+      });
     });
 
     describe('createUpdateConfigMapResource', () => {
