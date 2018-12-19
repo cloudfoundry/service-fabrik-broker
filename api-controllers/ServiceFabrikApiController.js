@@ -147,8 +147,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id
       })
       .then(resource => {
-        let resourceState = _.isEmpty(_.get(resource, 'status.actualState')) ? _.get(resource, 'spec.options') : 
-        _.get(resource, 'status.actualState');
+        let resourceState = _.isEmpty(_.get(resource, 'status.actualState')) ? _.get(resource, 'spec.options') :
+          _.get(resource, 'status.actualState');
         if (!_.get(req, 'body.context')) {
           _.set(req, 'body.context', _.get(resourceState, 'context'));
         }
