@@ -5,6 +5,7 @@ exports.middleware = require('./middleware');
 exports.bootstrap = bootstrap;
 exports.loadServices = loadServices;
 const config = require('../../common/config');
+const _ = require('lodash');
 if (config.enable_swarm_manager) {
   exports.docker = require('../../data-access-layer/docker');
 }
@@ -24,7 +25,7 @@ function bootstrap() {
 }
 
 function loadServices() {
-  if (!config.services) {
+  if (_.isEmpty(config.services)) {
     const eventmesh = require('../../data-access-layer/eventmesh');
     return eventmesh.apiServerClient.getAllServices()
       .tap(services => {
