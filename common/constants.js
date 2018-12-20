@@ -98,6 +98,7 @@ module.exports = Object.freeze({
     OK: 200,
     CREATED: 201,
     ACCEPTED: 202,
+    NO_CONTENT: 204,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,
@@ -293,9 +294,11 @@ module.exports = Object.freeze({
       DIRECTOR: 'directors',
       DOCKER: 'dockers',
       VIRTUALHOST: 'virtualhosts',
+      POSTGRESQL_MT: 'postgresqlmts',
       DIRECTOR_BIND: 'directorbinds',
       DOCKER_BIND: 'dockerbinds',
       VIRTUALHOST_BIND: 'virtualhostbinds',
+      POSTGRESQL_MT_BIND: 'postgresqlmtbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
@@ -406,6 +409,10 @@ module.exports = Object.freeze({
   },
   NETWORK_MANAGER: {
     NETWORK_ID: 'SF'
+  },
+  MULTITENANCY_SERVICE_TYPE: {
+    MULTITENANCYSERVICE: 'multitenancyService',
+    MULTITENANCYBINDSERVICE: 'multitenancyBindService'
   },
   SERVICE_FLOW: {
     DEFINITION_FILE_NAME: 'serial-serviceflow-definition.yml',

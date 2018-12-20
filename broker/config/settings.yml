@@ -170,6 +170,8 @@ defaults: &defaults
       "bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_virtualhostbinds.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_serialserviceflows.yaml') %>
       "serviceflow.servicefabrik.io_v1alpha1_tasks.yaml": <%= base64_template('crds/serviceflow.servicefabrik.io_v1alpha1_tasks.yaml') %>
+      "deployment.servicefabrik.io_v1alpha1_postgresqlmts.yaml": <%= base64_template('crds/deployment.servicefabrik.io_v1alpha1_postgresqlmts.yaml') %>
+      "bind.servicefabrik.io_v1alpha1_postgresqlmtbinds.yaml": <%= base64_template('crds/bind.servicefabrik.io_v1alpha1_postgresqlmtbinds.yaml') %>
 
   ##############################
   # REPORT ENDPOINT SETTINGS #
@@ -468,6 +470,17 @@ defaults: &defaults
     rabbitmq: &agent_rabbitmq
       version: '1'
       hostname: <%= process.env.RABBITMQ_AGENT_HOSTNAME || '~' %>
+      auth:
+        username: agent
+        password: secret
+      supported_features:
+      - state
+      - lifecycle
+      - credentials
+      - multi_tenancy
+    postgresql: &agent_postgresql
+      version: '1'
+      hostname: <%= process.env.POSTGRESQL_AGENT_HOSTNAME || '~' %>
       auth:
         username: agent
         password: secret
@@ -963,6 +976,87 @@ defaults: &defaults
         bullets:
         - 'Shared Deployment'
         - '1 VirtualHost'
+  ####################
+  #POSTGRESQL SERVICE#
+  ####################
+  - &postgresql_service
+    id: '6db542eb-8187-4afc-8a85-e08b4a3cc24e'
+    name: 'postgresql'
+    description: &description 'Relational database with an object-oriented model.'
+    bindable: true
+    tags:
+    - 'postgresql'
+    - 'relational'
+    metadata:
+      displayName: 'PostgreSQL'
+      longDescription: *description
+      providerDisplayName: 'SAP SE'
+      documentationUrl: 'https://help.sap.com/viewer/6be7ed96ddeb4e158c2107c434142545/Cloud/en-US/1cb29d5c1f714e71a79379c6b7482428.html'
+      supportUrl: 'https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/5dd739823b824b539eee47b7860a00be.html'
+    dashboard_client:
+      id: 'service-fabrik-postgresql-client1'
+      secret: 'service-fabrik-postgresql-secret1'
+      redirect_uri: <%= redirect_uri %>
+    plan_updateable: true
+    plans:
+    ###########################
+    # DEDICATED SERVICE PLANS #
+    ###########################
+    - &postgresql_plan1
+      id: 'c41f368b-1eab-4d0f-b740-d9abdd14449f'
+      name: 'v9.6-tiny'
+      free: false
+      # Asynch operations which supports parallel synch operations
+      # e.g. bind and unbind (sync) supported during update and backup (async)
+      supported_operations: *async_ops_supporting_parallel_sync_ops
+      manager: &manager_plan11
+        name: 'director'
+        async: true
+        resource_mappings: *director_resource_mappings
+        settings: &settings_plan11
+          prefix: 'postgresql'
+          agent: *agent_postgresql
+          template: <%= base64_template('templates/postgresql-manifest.yml.ejs') %>
+          releases: &dedicated_releases
+          - { name: postgresql, version: 121 }
+          # An agent running in the deployment should implement Service Fabrik Agent APIs listed here https://cloudfoundry-incubator.github.io/service-fabrik-broker/api/agent_v1.1.html
+          - { name: broker-agent-postgresql, version: 83 }
+          context: &context_plan11
+            agent: *agent_postgresql
+            disk_type: 20GB
+            vm_type: default
+            max_connections: 50
+            max_wal_senders: 3
+            shared_buffers: 512MB
+            wal_keep_segments: 20
+
+    - &postgresqlsharedplan
+      id: '2fcf6682-5a4a-4297-a7cd-a97bbe085b8e'
+      name: 'shared-postgresql'
+      free: true
+      manager: &postgresql_manager
+        name: 'postgresql'
+        resource_mappings:
+          resource_group: 'deployment.servicefabrik.io'
+          resource_type: 'postgresqlmts'
+          bind:
+            resource_group: 'bind.servicefabrik.io'
+            resource_type: 'postgresqlmtbinds'
+        settings:
+          prefix: 'postgres'
+          agent: *agent_postgresql
+          context:
+            agent: *agent_postgresql
+      description: '[BETA] PostgreSQL database hosted on shared instances'
+      metadata:
+        service-inventory-key: SERVICE-89
+        skip_quota_check: true
+        costs:
+        - amount:
+            usd: 0.0
+          unit: 'MONTHLY'
+          bullets:
+          - 'Single database hosted in a shared dedicated instance'
 
 
 development: &development
