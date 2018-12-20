@@ -57,6 +57,19 @@ class BackupReaperJob extends BaseJob {
   }
 
   static isServiceInstanceDeleted(instanceId) {
+    return eventmesh.apiServerClient.getResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: instanceId
+    })
+    .then(() => false)
+    .catch(errors.NotFound, () => {
+      logger.warn(`service instance : ${instanceId} deleted`);
+      return true;
+    });
+  }
+/*
+  static isServiceInstanceDeleted(instanceId) {
     return cloudController.findServicePlanByInstanceId(instanceId)
       .then(() => false)
       .catch(ServiceInstanceNotFound, () => {
@@ -64,7 +77,7 @@ class BackupReaperJob extends BaseJob {
         return true;
       });
   }
-
+*/
   static isDeploymentDeleted(deploymentName) {
     const director = bosh.director;
     return director.getDeployment(deploymentName)
