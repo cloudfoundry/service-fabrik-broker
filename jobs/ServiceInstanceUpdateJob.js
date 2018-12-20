@@ -51,8 +51,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
         })
         .catch(errors.NotFound, () => undefined)
         .then(resource => {
-          if (!_.isEmpty(_.get(resource, 'status.actualState'))) {
-            return _.get(resource, 'status.actualState');
+          if (!_.isEmpty(_.get(resource, 'status.appliedOptions'))) {
+            return _.get(resource, 'status.appliedOptions');
           } else {
             return _.get(resource, 'spec.options');
           }

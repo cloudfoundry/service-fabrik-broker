@@ -138,7 +138,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               status: {
                 lastOperation: lastOperationValue,
                 state: lastOperationValue.resourceState,
-                actualState: options
+                appliedOptions: options
               },
               metadata: {
                 annotations: {

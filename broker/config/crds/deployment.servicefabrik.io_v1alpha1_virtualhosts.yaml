@@ -37,7 +37,7 @@ spec:
               type: string
             state:
               type: string
-            actualState:
+            appliedOptions:
               type: string
           type: object
       type: object

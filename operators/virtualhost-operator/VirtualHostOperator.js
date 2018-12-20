@@ -54,7 +54,7 @@ class VirtualHostOperator extends BaseOperator {
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          actualState: changedOptions
+          appliedOptions: changedOptions
         }
       }));
   }
@@ -71,7 +71,7 @@ class VirtualHostOperator extends BaseOperator {
         status: {
           response: response,
           state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          actualState: changedOptions
+          appliedOptions: changedOptions
         }
       }));
   }

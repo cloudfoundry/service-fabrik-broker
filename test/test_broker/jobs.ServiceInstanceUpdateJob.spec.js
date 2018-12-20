@@ -83,7 +83,7 @@ describe('Jobs', function () {
           state: 'succeeded',
           lastOperation: '{}',
           response: '{}',
-          actualState: currentState
+          appliedOptions: currentState
         }
       };
     };
@@ -290,10 +290,10 @@ describe('Jobs', function () {
         }).catch(done);
     });
 
-    it('if resource does not contain actualState paramater, spec.options is used to fetch the resourceDetails', function (done) {
+    it('if resource does not contain appliedOptions paramater, spec.options is used to fetch the resourceDetails', function (done) {
       let deploymentResource = resourceDetails();
-      _.unset(deploymentResource, 'status.actualState');
-      expect(deploymentResource.status.actualState).to.eql(undefined);
+      _.unset(deploymentResource, 'status.appliedOptions');
+      expect(deploymentResource.status.appliedOptions).to.eql(undefined);
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, deploymentResource);
       const diff = [
         ['releases:', null],
