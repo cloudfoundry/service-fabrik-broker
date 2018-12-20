@@ -55,7 +55,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
           if (resourceDetails) {
             return this.isInstanceUpdateDisabled(resourceDetails)
               .then(disabled => {
-                if (!disabled) {
+                if (disabled !== 'true') {
                   return this.updateInstanceIfOutdated(instanceDetails, resourceDetails, operationResponse);
                 }
                 operationResponse.update_init = 'disabled';

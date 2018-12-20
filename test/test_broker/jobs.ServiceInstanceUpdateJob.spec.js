@@ -218,7 +218,7 @@ describe('Jobs', function () {
     });
     it('if service-specific update flag is disabled, the job just succeeds with status as disabled', function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
-      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', true);
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', 'true');
       const diff = [
         ['releases:', null],
         ['- name: blueprint', null],
