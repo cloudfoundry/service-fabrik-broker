@@ -10,9 +10,9 @@
     {{- end }}
   {{- end }}
 {{- end }}
-status:
+provision:
   state: {{ printf "%s" $stateString }}
-  description: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
+  response: {{ with .postgresql.status.reason }} {{ printf "%s" . }} {{ else }} "" {{ end }}
 {{- $host := "" }}
 {{- with .service.spec.clusterIP }} {{ $host = . }} {{ end }}
 {{- $pass := "" }}
@@ -21,12 +21,12 @@ status:
 {{- if and (not (eq $host "")) (not (eq $pass "")) }}
   {{- $stateString = "succeeded" }}
 {{- end }}
-binding:
+bind:
   state: {{ printf "%s" $stateString }}
   error: ""
   response: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 
 {{- $stateString = "succeeded" }}
-unbinding:
+unbind:
   state: {{ printf "%s" $stateString }}
   error: ""
 {{- $stateString = "in progress" }} 

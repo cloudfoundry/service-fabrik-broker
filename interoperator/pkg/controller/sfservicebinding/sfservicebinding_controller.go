@@ -77,8 +77,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
+	director := &unstructured.Unstructured{}
+	director.SetKind("DirectorBind")
+	director.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
 	subresources := []runtime.Object{
 		postgres,
+		director,
 	}
 
 	for _, subresource := range subresources {
@@ -87,7 +91,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			OwnerType:    &osbv1alpha1.SFServiceBinding{},
 		})
 		if err != nil {
-			return err
+			log.Printf("%v", err)
 		}
 	}
 
@@ -109,6 +113,7 @@ type ReconcileSFServiceBinding struct {
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=directorbind,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
@@ -213,8 +218,8 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 		log.Printf("error computing properties. %v\n", err)
 		return err
 	}
-	binding.Status.State = properties.Unbinding.State
-	binding.Status.Error = properties.Unbinding.Error
+	binding.Status.State = properties.Unbind.State
+	binding.Status.Error = properties.Unbind.Error
 	binding.Status.CRDs = remainingResource
 
 	if binding.Status.State == "succeeded" && len(remainingResource) == 0 {
@@ -262,7 +267,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
-		bindingStatus := properties.Binding
+		bindingStatus := properties.Bind
 		if bindingStatus.State == "succeeded" {
 			secretName := "sf-" + bindingID
 

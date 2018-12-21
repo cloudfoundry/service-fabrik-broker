@@ -65,6 +65,18 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - bind.servicefabrik.io
+  resources:
+  - directorbind
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - ""
   resources:
   - configmap
@@ -104,6 +116,30 @@ rules:
   - kubedb.com
   resources:
   - Postgres
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - kubernetes.sapcloud.io
+  resources:
+  - postgresql
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - deployment.servicefabrik.io
+  resources:
+  - director
   verbs:
   - get
   - list

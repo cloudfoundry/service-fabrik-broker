@@ -76,10 +76,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
+	postgres2 := &unstructured.Unstructured{}
+	postgres2.SetKind("Postgresql")
+	postgres2.SetAPIVersion("kubernetes.sapcloud.io/v1alpha1")
+	director := &unstructured.Unstructured{}
+	director.SetKind("Director")
+	director.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 	subresources := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		postgres,
+		postgres2,
+		director,
 	}
 
 	for _, subresource := range subresources {
@@ -88,7 +96,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			OwnerType:    &osbv1alpha1.SFServiceInstance{},
 		})
 		if err != nil {
-			return err
+			log.Printf("%v", err)
 		}
 	}
 
@@ -110,6 +118,8 @@ type ReconcileServiceInstance struct {
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=postgresql,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=director,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
@@ -266,10 +276,10 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		return err
 	}
 
-	instanceObj.Status.State = properties.Status.State
-	instanceObj.Status.Error = properties.Status.Error
-	instanceObj.Status.Description = properties.Status.Description
-	instanceObj.Status.DashboardURL = properties.Status.DashboardURL
+	instanceObj.Status.State = properties.Provision.State
+	instanceObj.Status.Error = properties.Provision.Error
+	instanceObj.Status.Description = properties.Provision.Response
+	instanceObj.Status.DashboardURL = properties.Provision.DashboardURL
 	if appliedResources != nil {
 		instanceObj.Status.CRDs = CRDs
 	}

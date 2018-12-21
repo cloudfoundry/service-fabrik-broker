@@ -10,10 +10,8 @@ import (
 
 // InstanceStatus defines template provided by the service for provision response
 type InstanceStatus struct {
+	GenericStatus
 	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
-	State        string `yaml:"state" json:"state"`
-	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
-	Description  string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // GenericStatus defines template provided by the service for binding response
@@ -26,9 +24,9 @@ type GenericStatus struct {
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
-	Status      InstanceStatus `yaml:"status" json:"status"`
-	Binding     GenericStatus  `yaml:"binding" json:"binding"`
-	Unbinding   GenericStatus  `yaml:"unbinding" json:"unbinding"`
+	Provision   InstanceStatus `yaml:"provision" json:"provision"`
+	Bind        GenericStatus  `yaml:"bind" json:"bind"`
+	Unbind      GenericStatus  `yaml:"unbind" json:"unbind"`
 	Deprovision GenericStatus  `yaml:"deprovision" json:"deprovision"`
 }
 

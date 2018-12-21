@@ -1,0 +1,8 @@
+{{- $name := "" }}
+{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
+{{- $namespace := "default" }}
+director:
+  apiVersion: "deployment.servicefabrik.io/v1alpha1"
+  kind: Director
+  name: {{ $name }}
+  namespace: {{ $namespace }}
