@@ -5,7 +5,6 @@ exports.middleware = require('./middleware');
 exports.bootstrap = bootstrap;
 exports.loadServices = loadServices;
 const config = require('../../common/config');
-const _ = require('lodash');
 if (config.enable_swarm_manager) {
   exports.docker = require('../../data-access-layer/docker');
 }

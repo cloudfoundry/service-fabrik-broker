@@ -36,3 +36,5 @@ metadata:
   name: {{ $name }}
 spec:
   options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}
+status:
+  state: {{ $state }}
