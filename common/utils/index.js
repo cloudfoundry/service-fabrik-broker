@@ -10,8 +10,6 @@ const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
 const CONST = require('../constants');
-const catalog = require('../models').catalog;
-const logger = require('../logger');
 const RetryOperation = require('./RetryOperation');
 const randomBytes = Promise.promisify(crypto.randomBytes);
 const EventLogRiemannClient = require('./EventLogRiemannClient');
@@ -61,7 +59,6 @@ exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeploym
 exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
 exports.getPlatformManager = getPlatformManager;
-exports.loadServices = loadServices;
 exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 
 function isRestorePossible(plan_id, plan) {
@@ -611,27 +608,6 @@ function getPlatformManager(context) {
   }
 }
 
-function loadServices() {
-  if (_.isEmpty(config.services)) {
-    const eventmesh = require('../../data-access-layer/eventmesh');
-    return eventmesh.apiServerClient.getAllServices()
-      .tap(services => {
-        config.services = services;
-      })
-      .then((services) => {
-        return Promise.all(Promise.each(services, service => {
-          return eventmesh.apiServerClient.getAllPlansForService(service.id)
-            .then(plans => {
-              service.plans = plans;
-            });
-        }));
-      })
-      .then(() => catalog.reload())
-      .tap(() => logger.silly('Loaded Services in catalog Are ', catalog.services))
-      .tap(() => logger.silly('Loaded Plans in catalog Are ', catalog.plans));
-  }
-}
-
 function pushServicePlanToApiServer() {
   if (!config.isServiceDefinitionAvailableOnApiserver) {
     const planTemplate = function (plan, service) {
@@ -644,7 +620,7 @@ function pushServicePlanToApiServer() {
         apiVersion: 'osb.servicefabrik.io/v1alpha1',
         kind: 'SFPlan',
         metadata: {
-          name: plan.name,
+          name: plan.id,
           labels: {
             'controller-tools.k8s.io': '1.0',
             serviceId: service.id
@@ -689,7 +665,7 @@ function pushServicePlanToApiServer() {
         apiVersion: 'osb.servicefabrik.io/v1alpha1',
         kind: 'SFService',
         metadata: {
-          name: service.name,
+          name: service.id,
           labels: {
             'controller-tools.k8s.io': '1.0',
             serviceId: service.id

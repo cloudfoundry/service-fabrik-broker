@@ -16,7 +16,7 @@ async function init() {
     lib.bootstrap();
   }
 
-  await utils.loadServices();
+  await lib.loadServices();
   await utils.pushServicePlanToApiServer();
 
   // internal app
