@@ -9,12 +9,24 @@
 {{- $context := "{}" }}
 {{- $params := "{}" }}
 {{- with .instance.spec }}
-  {{- $serviceId = .serviceId }}
-  {{- $plan_id = .planId }}
-  {{- $organization_guid = .organizationGuid }}
-  {{- $space_guid = .spaceGuid }}
-  {{- $context = (printf "%s" .context) }}
-  {{- $params = (printf "%s" .parameters) }}
+  {{- with .serviceId }}
+    {{- $serviceId = . }}
+  {{- end }}
+  {{- with .planId }}
+    {{- $planId = . }}
+  {{- end }}
+  {{- with .organizationGuid }}
+    {{- $organizationGuid = . }}
+  {{- end }}
+  {{- with .spaceGuid }}
+    {{- $spaceGuid = . }}
+  {{- end }}
+  {{- with .context }}
+    {{- $context = (marshalJSON .) }}
+  {{- end }}
+  {{- with .parameters }}
+    {{- $params = (marshalJSON .) }}
+  {{- end }}
 {{- end }}
 apiVersion: deployment.servicefabrik.io/v1alpha1
 kind: Director
@@ -23,4 +35,4 @@ metadata:
     state: {{ $state }}
   name: {{ $name }}
 spec:
-  options: {{ (printf `"{ \"service_id\": \"%s\", \"plan_id\": \"postgres\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": \"%s\", \"parameters\": \"%s\" }"` $serviceId $planId $organizationGuid $spaceGuid $context $params ) }}
+  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}

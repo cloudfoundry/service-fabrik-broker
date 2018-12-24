@@ -157,7 +157,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
-			if len(remainingResource) != 0 {
+			if len(remainingResource) != 0 && binding.Status.State != "failed" {
 				return reconcile.Result{Requeue: true}, nil
 			}
 		}
@@ -171,7 +171,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	stateLabel, ok := labels["state"]
 	if ok {
 		switch stateLabel {
-		case "in_queue":
+		case "in_queue", "update":
 			if binding.Status.State == "succeeded" {
 				labels["state"] = "succeeded"
 				binding.SetLabels(labels)
@@ -222,7 +222,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	binding.Status.Error = properties.Unbind.Error
 	binding.Status.CRDs = remainingResource
 
-	if binding.Status.State == "succeeded" && len(remainingResource) == 0 {
+	if binding.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
 		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
 	}

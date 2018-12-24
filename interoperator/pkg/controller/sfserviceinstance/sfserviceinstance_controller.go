@@ -164,7 +164,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
-			if len(remainingResource) != 0 {
+			if len(remainingResource) != 0 && instance.Status.State != "failed" {
 				return reconcile.Result{Requeue: true}, nil
 			}
 		}
@@ -178,7 +178,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	stateLabel, ok := labels["state"]
 	if ok {
 		switch stateLabel {
-		case "in_queue":
+		case "in_queue", "update":
 			if instance.Status.State == "succeeded" {
 				labels["state"] = "succeeded"
 				instance.SetLabels(labels)
@@ -231,7 +231,7 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 	instance.Status.Description = properties.Deprovision.Response
 	instance.Status.CRDs = remainingResource
 
-	if instance.Status.State == "succeeded" && len(remainingResource) == 0 {
+	if instance.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
 		instance.SetFinalizers(removeString(instance.GetFinalizers(), finalizerName))
 	}

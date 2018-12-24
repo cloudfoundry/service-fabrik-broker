@@ -3,10 +3,10 @@ kind: SFService
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: &name postgresql
+  name: &id '24731fb8-7b84-5f57-914f-c3d55d793dd4'
 spec:
-  name: *name
-  id: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  name: &name postgresql
+  id: *id
   description: &description 'Postgresql for internal development, testing, and documentation purposes of the Service Fabrik'
   tags:
   - 'postgresql'

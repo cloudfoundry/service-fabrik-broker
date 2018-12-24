@@ -4,10 +4,10 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
     serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
-  name: &name 'v9.4-dev-large'
+  name: &id 29d7d4c8-6fe2-4c2a-a5ca-a826937d5a88
 spec:
-  name: *name
-  id: 29d7d4c8-6fe2-4c2a-a5ca-a826937d5a88
+  name: &name 'v9.4-dev-large'
+  id: *id
   description: 'Postgresql service running inside a k8s container (for non-productive usage)'
   metadata:
     service-inventory-key: SERVICE-161

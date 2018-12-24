@@ -4,10 +4,10 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
     serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
-  name: &name 'v1.0-xsmall'
+  name: &id 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3'
 spec:
-  name: *name
-  id: 'e86e2cf2-569a-11e7-a2e3-02a8da424bc3'
+  name: &name 'v1.0-xsmall'
+  id: *id
   description: 'Blueprint 1.0 service x-small (managed service in beta)'
   metadata:
     service-inventory-key: SERVICE-161

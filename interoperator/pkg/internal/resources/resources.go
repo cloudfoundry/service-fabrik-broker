@@ -407,7 +407,7 @@ func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Sou
 		resource.SetAPIVersion(subResource.APIVersion)
 		resource.SetName(subResource.Name)
 		resource.SetNamespace(subResource.Namespace)
-		err := client.Delete(context.TODO(), resource)
+		err := deleteSubResource(client, resource)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				log.Printf("deleted completed for resource %v", subResource)
@@ -422,4 +422,42 @@ func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Sou
 		remainingResource = append(remainingResource, subResource)
 	}
 	return remainingResource, lastError
+}
+
+func deleteSubResource(client kubernetes.Client, resource *unstructured.Unstructured) error {
+	var specialDelete = [...]string{"deployment.servicefabrik.io/v1alpha1", "bind.servicefabrik.io/v1alpha1"}
+	apiVersion := resource.GetAPIVersion()
+
+	for _, val := range specialDelete {
+		if apiVersion == val {
+			namespacedName := types.NamespacedName{
+				Name:      resource.GetName(),
+				Namespace: resource.GetNamespace(),
+			}
+			err := client.Get(context.TODO(), namespacedName, resource)
+			if err != nil {
+				return err
+			}
+			content := resource.UnstructuredContent()
+			statusInt, ok := content["status"]
+			var status map[string]interface{}
+			if ok {
+				status, ok = statusInt.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("status field not map for resource %v", resource)
+				}
+			} else {
+				status = make(map[string]interface{})
+			}
+			status["state"] = "delete"
+			content["status"] = status
+			resource.SetUnstructuredContent(content)
+			err = client.Update(context.TODO(), resource)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	return client.Delete(context.TODO(), resource)
 }

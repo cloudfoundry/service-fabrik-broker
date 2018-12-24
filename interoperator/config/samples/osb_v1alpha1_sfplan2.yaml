@@ -4,10 +4,10 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
     serviceId: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
-  name: &name 'v1.0-dev-large'
+  name: &id 'a66844e2-5699-11e7-93cc-02a8da424bc3'
 spec:
-  name: *name
-  id: 'a66844e2-5699-11e7-93cc-02a8da424bc3'
+  name: &name 'v1.0-dev-large'
+  id: *id
   description: 'Blueprint 1.0 service running inside a large Docker container (for non-productive usage)'
   metadata:
     service-inventory-key: SERVICE-161
