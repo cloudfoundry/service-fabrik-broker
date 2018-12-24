@@ -609,7 +609,7 @@ function getPlatformManager(context) {
 }
 
 function pushServicePlanToApiServer() {
-  if (!config.isServiceDefinitionAvailableOnApiserver) {
+  if (!config.apiserver.isServiceDefinitionAvailableOnApiserver) {
     const planTemplate = function (plan, service) {
       assert.ok(plan.name, 'plan.name is required to generate plan crd');
       assert.ok(plan.id, 'plan.id is required to generate plan crd');
@@ -705,7 +705,7 @@ function pushServicePlanToApiServer() {
       return serviceCRD;
     };
 
-    if (!config.isServiceDefinitionAvailableOnApiserver) {
+    if (!config.apiserver.isServiceDefinitionAvailableOnApiserver) {
       const eventmesh = require('../../data-access-layer/eventmesh');
       let promiseList = [];
       _.each(config.services, service => {
