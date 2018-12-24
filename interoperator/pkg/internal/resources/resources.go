@@ -22,6 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	defaultNamespace = "default"
+)
+
 func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, namespace string) (*osbv1alpha1.SFServiceInstance, *osbv1alpha1.SFServiceBinding, *osbv1alpha1.SFService, *osbv1alpha1.SFPlan, error) {
 	var instance *osbv1alpha1.SFServiceInstance
 	var binding *osbv1alpha1.SFServiceBinding
@@ -42,7 +46,7 @@ func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, 
 	}
 
 	if serviceID != "" && planID != "" {
-		service, plan, err = services.FindServiceInfo(client, serviceID, planID, namespace)
+		service, plan, err = services.FindServiceInfo(client, serviceID, planID, defaultNamespace)
 		if err != nil {
 			log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 			return nil, nil, nil, nil, err
@@ -384,4 +388,38 @@ func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.C
 	}
 
 	return properties, nil
+}
+
+// DeleteSubResources setups all resources according to expectation
+func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error) {
+	//
+	// delete the external dependency here
+	//
+	// Ensure that delete implementation is idempotent and safe to invoke
+	// multiple types for same object.
+
+	var remainingResource []osbv1alpha1.Source
+	var lastError error
+
+	for _, subResource := range subResources {
+		resource := &unstructured.Unstructured{}
+		resource.SetKind(subResource.Kind)
+		resource.SetAPIVersion(subResource.APIVersion)
+		resource.SetName(subResource.Name)
+		resource.SetNamespace(subResource.Namespace)
+		err := client.Delete(context.TODO(), resource)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				log.Printf("deleted completed for resource %v", subResource)
+				continue
+			}
+			log.Printf("failed to delete resource %v. %v", subResource, err)
+			remainingResource = append(remainingResource, subResource)
+			lastError = err
+			continue
+		}
+		log.Printf("deleted triggered for resource %v", subResource)
+		remainingResource = append(remainingResource, subResource)
+	}
+	return remainingResource, lastError
 }

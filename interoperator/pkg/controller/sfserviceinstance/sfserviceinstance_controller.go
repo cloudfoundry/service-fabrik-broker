@@ -38,6 +38,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+// finalizerName is the name of the finalizer added by interoperator
+const (
+	finalizerName = "interoperator.servicefabrik.io"
+)
+
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -71,10 +76,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
+	postgres2 := &unstructured.Unstructured{}
+	postgres2.SetKind("Postgresql")
+	postgres2.SetAPIVersion("kubernetes.sapcloud.io/v1alpha1")
+	director := &unstructured.Unstructured{}
+	director.SetKind("Director")
+	director.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 	subresources := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		postgres,
+		postgres2,
+		director,
 	}
 
 	for _, subresource := range subresources {
@@ -83,7 +96,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			OwnerType:    &osbv1alpha1.SFServiceInstance{},
 		})
 		if err != nil {
-			return err
+			log.Printf("%v", err)
 		}
 	}
 
@@ -105,6 +118,8 @@ type ReconcileServiceInstance struct {
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=postgresql,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=director,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
@@ -123,17 +138,46 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+	instanceID := instance.GetName()
+	bindingID := ""
+
+	if instance.GetDeletionTimestamp().IsZero() {
+		if !containsString(instance.GetFinalizers(), finalizerName) {
+			// The object is not being deleted, so if it does not have our finalizer,
+			// then lets add the finalizer and update the object.
+			instance.SetFinalizers(append(instance.GetFinalizers(), finalizerName))
+			if err := r.Update(context.Background(), instance); err != nil {
+				return reconcile.Result{Requeue: true}, nil
+			}
+		}
+	} else {
+		// The object is being deleted
+		if containsString(instance.GetFinalizers(), finalizerName) {
+			// our finalizer is present, so lets handle our external dependency
+			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			remainingResource, _ := resources.DeleteSubResources(targetClient, instance.Status.CRDs)
+			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
+				return reconcile.Result{}, err
+			}
+			if len(remainingResource) != 0 {
+				return reconcile.Result{Requeue: true}, nil
+			}
+		}
+
+		// Our finalizer has finished, so the reconciler can do nothing.
+		log.Printf("instance %s deleted\n", request.NamespacedName)
+		return reconcile.Result{}, nil
+	}
+
 	labels := instance.GetLabels()
 	stateLabel, ok := labels["state"]
 	if ok {
 		switch stateLabel {
-		case "delete":
-			err = r.Delete(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			log.Printf("instance %s deleted\n", request.NamespacedName)
-			return reconcile.Result{}, nil
 		case "in_queue":
 			if instance.Status.State == "succeeded" {
 				labels["state"] = "succeeded"
@@ -147,15 +191,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	serviceID := instance.Spec.ServiceID
-	planID := instance.Spec.PlanID
-	instanceID := instance.GetName()
-	bindingID := ""
 	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = resources.SetOwnerReference(instance, expectedResources, r.scheme)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -165,9 +201,11 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	var requeue bool
 	appliedResources, err := resources.ReconcileResources(r, targetClient, expectedResources, instance.Status.CRDs)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
+		requeue = true
 	}
 
 	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
@@ -175,7 +213,33 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{Requeue: requeue}, nil
+}
+
+func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, remainingResource []osbv1alpha1.Source) error {
+	serviceID := instance.Spec.ServiceID
+	planID := instance.Spec.PlanID
+	instanceID := instance.GetName()
+	bindingID := ""
+	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+	if err != nil {
+		log.Printf("error computing properties. %v\n", err)
+		return err
+	}
+	instance.Status.State = properties.Deprovision.State
+	instance.Status.Error = properties.Deprovision.Error
+	instance.Status.Description = properties.Deprovision.Response
+	instance.Status.CRDs = remainingResource
+
+	if instance.Status.State == "succeeded" && len(remainingResource) == 0 {
+		// remove our finalizer from the list and update it.
+		instance.SetFinalizers(removeString(instance.GetFinalizers(), finalizerName))
+	}
+
+	if err := r.Update(context.Background(), instance); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID, planID, namespace string, appliedResources []*unstructured.Unstructured) error {
@@ -212,10 +276,10 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		return err
 	}
 
-	instanceObj.Status.State = properties.Status.State
-	instanceObj.Status.Error = properties.Status.Error
-	instanceObj.Status.Description = properties.Status.Description
-	instanceObj.Status.DashboardURL = properties.Status.DashboardURL
+	instanceObj.Status.State = properties.Provision.State
+	instanceObj.Status.Error = properties.Provision.Error
+	instanceObj.Status.Description = properties.Provision.Response
+	instanceObj.Status.DashboardURL = properties.Provision.DashboardURL
 	if appliedResources != nil {
 		instanceObj.Status.CRDs = CRDs
 	}
@@ -225,4 +289,26 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		return err
 	}
 	return nil
+}
+
+//
+// Helper functions to check and remove string from a slice of strings.
+//
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
 }

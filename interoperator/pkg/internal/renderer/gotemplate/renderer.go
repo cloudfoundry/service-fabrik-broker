@@ -19,13 +19,12 @@ package gotemplate
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"text/template"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer"
 )
-
-var ignoreFileSuffix = [...]string{"NOTES.txt"}
 
 type gotemplateRenderer struct {
 	funcMap template.FuncMap
@@ -68,11 +67,32 @@ func DecodeString(src string) (string, error) {
 	return string(res[:]), err
 }
 
+// UnmarshalJSON converts stringified JSON to a map
+func UnmarshalJSON(src string) (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	err := json.Unmarshal([]byte(src), &res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal %s. %v", src, err)
+	}
+	return res, err
+}
+
+// MarshalJSON converts a map to a stringified JSON
+func MarshalJSON(src map[string]interface{}) (string, error) {
+	options, err := json.Marshal(src)
+	if err != nil {
+		return "", err
+	}
+	return string(options[:]), err
+}
+
 // New creates a new gotemplate Renderer object.
 func New() (renderer.Renderer, error) {
 	funcMap := template.FuncMap{
-		"b64enc": EncodeToString,
-		"b64dec": DecodeString,
+		"b64enc":        EncodeToString,
+		"b64dec":        DecodeString,
+		"unmarshalJSON": UnmarshalJSON,
+		"marshalJSON":   MarshalJSON,
 	}
 	return &gotemplateRenderer{funcMap: funcMap}, nil
 }

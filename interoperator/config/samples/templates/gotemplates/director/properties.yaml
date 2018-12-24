@@ -1,0 +1,70 @@
+{{ $name := "" }}
+{{- with .director.metadata.name }}
+  {{- $name = . }}
+{{- end }}
+{{- $stateString := "in progress" }}
+{{- $response := "" }}
+{{- $error := "" }}
+{{- with .director.status.lastOperation }}
+  {{- $lastOperation := ( unmarshalJSON . ) }}
+  {{- $response = $lastOperation.description }}
+{{- end }}
+{{- with .director.status }} 
+  {{- if eq .state "succeeded" }}
+    {{- $stateString = "succeeded" }}
+    {{- $response = $lastOperation.description }}
+  {{- else }}
+    {{- if eq .state "failed"}}
+      {{- $stateString = "failed" }}
+      {{- $error =  .error }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if eq $response "" }}
+  {{- if eq $stateString "succeeded" }}
+    {{- $response = (printf "Service Instance %s provision in progress" $name) }}
+  {{- else }}
+    {{- if eq $stateString "in progress" }}
+      {{- $response = (printf "Service Instance %s provision in progress" $name) }}
+    {{- else }}
+      {{- $response = (printf "Service Instance %s provision failed" $name) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+provision:
+  state: {{ $stateString }}
+  response: {{ $response }}
+{{- if eq $ stateString "failed" }}
+  error: $error
+{{- end }}
+  dashboardUrl: ""
+bind:
+  state: ""
+  error: ""
+  response: ""
+unbind:
+  state: ""
+  error: ""
+{{- with .director.status.lastOperation }}
+  {{- $lastOperation := ( unmarshalJSON . ) }}
+  {{- $response = $lastOperation.description }}
+{{- end }}
+{{- $stateString = "in progress" }} 
+{{- with .director }}
+  {{- if eq .status.state "delete" }}
+    {{- $stateString = "in progress" }}
+  {{- else }}
+    {{- if eq .status.state "failed" }}
+      {{- $stateString = "failed" }}
+      {{- $error =  .status.error }}
+    {{- else }}
+  {{- end }}
+{{- else }}
+  {{- $stateString = "succeeded" }}
+{{- end }}
+deprovision:
+  state: {{ $stateString }}
+{{- if eq $ stateString "failed" }}
+  error: $error
+{{- end }}
+  response: {{ $response }}

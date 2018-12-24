@@ -10,14 +10,12 @@ import (
 
 // InstanceStatus defines template provided by the service for provision response
 type InstanceStatus struct {
+	GenericStatus
 	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
-	State        string `yaml:"state" json:"state"`
-	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
-	Description  string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
-// BindingStatus defines template provided by the service for binding response
-type BindingStatus struct {
+// GenericStatus defines template provided by the service for binding response
+type GenericStatus struct {
 	State    string `yaml:"state" json:"state"`
 	Error    string `yaml:"error,omitempty" json:"error,omitempty"`
 	Response string `yaml:"response,omitempty" json:"response,omitempty"`
@@ -26,8 +24,10 @@ type BindingStatus struct {
 // Properties is all the data to be read by interoperator from
 // services. properties.yaml file is unmarshalled to this struct
 type Properties struct {
-	Status  InstanceStatus `yaml:"status" json:"status"`
-	Binding BindingStatus  `yaml:"binding" json:"binding"`
+	Provision   InstanceStatus `yaml:"provision" json:"provision"`
+	Bind        GenericStatus  `yaml:"bind" json:"bind"`
+	Unbind      GenericStatus  `yaml:"unbind" json:"unbind"`
+	Deprovision GenericStatus  `yaml:"deprovision" json:"deprovision"`
 }
 
 // ParseSources decodes sources yaml into a map
