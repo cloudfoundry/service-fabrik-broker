@@ -19,7 +19,6 @@ package gotemplate
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"text/template"
 
@@ -56,45 +55,9 @@ func NewInput(url, content, name string, values map[string]interface{}) renderer
 	return nil
 }
 
-// EncodeToString converts a string to base64 encoded string
-func EncodeToString(src string) string {
-	return base64.StdEncoding.EncodeToString([]byte(src))
-}
-
-// DecodeString converts base64 encoded string to string
-func DecodeString(src string) (string, error) {
-	res, err := base64.StdEncoding.DecodeString(src)
-	return string(res[:]), err
-}
-
-// UnmarshalJSON converts stringified JSON to a map
-func UnmarshalJSON(src string) (map[string]interface{}, error) {
-	res := make(map[string]interface{})
-	err := json.Unmarshal([]byte(src), &res)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal %s. %v", src, err)
-	}
-	return res, err
-}
-
-// MarshalJSON converts a map to a stringified JSON
-func MarshalJSON(src map[string]interface{}) (string, error) {
-	options, err := json.Marshal(src)
-	if err != nil {
-		return "", err
-	}
-	return string(options[:]), err
-}
-
 // New creates a new gotemplate Renderer object.
 func New() (renderer.Renderer, error) {
-	funcMap := template.FuncMap{
-		"b64enc":        EncodeToString,
-		"b64dec":        DecodeString,
-		"unmarshalJSON": UnmarshalJSON,
-		"marshalJSON":   MarshalJSON,
-	}
-	return &gotemplateRenderer{funcMap: funcMap}, nil
+	return &gotemplateRenderer{funcMap: getFuncMap()}, nil
 }
 
 // Render loads the chart from the given location <chartPath> and calls the Render() function

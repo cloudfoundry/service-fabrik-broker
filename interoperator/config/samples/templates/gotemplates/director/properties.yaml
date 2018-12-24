@@ -12,7 +12,7 @@
 {{- with .director.status }} 
   {{- if eq .state "succeeded" }}
     {{- $stateString = "succeeded" }}
-    {{- $response = $lastOperation.description }}
+    {{- $response = $response }}
   {{- else }}
     {{- if eq .state "failed"}}
       {{- $stateString = "failed" }}
@@ -34,7 +34,7 @@
 provision:
   state: {{ $stateString }}
   response: {{ $response }}
-{{- if eq $ stateString "failed" }}
+{{- if eq $stateString "failed" }}
   error: $error
 {{- end }}
   dashboardUrl: ""
@@ -51,20 +51,22 @@ unbind:
 {{- end }}
 {{- $stateString = "in progress" }} 
 {{- with .director }}
-  {{- if eq .status.state "delete" }}
-    {{- $stateString = "in progress" }}
-  {{- else }}
-    {{- if eq .status.state "failed" }}
-      {{- $stateString = "failed" }}
-      {{- $error =  .status.error }}
+  {{- with .status }}
+    {{- if eq .state "delete" }}
+      {{- $stateString = "in progress" }}
     {{- else }}
+      {{- if eq .state "failed" }}
+        {{- $stateString = "failed" }}
+        {{- $error =  .error }}
+      {{- end }}
+    {{- end }}
   {{- end }}
 {{- else }}
   {{- $stateString = "succeeded" }}
 {{- end }}
 deprovision:
   state: {{ $stateString }}
-{{- if eq $ stateString "failed" }}
+{{- if eq $stateString "failed" }}
   error: $error
 {{- end }}
   response: {{ $response }}
