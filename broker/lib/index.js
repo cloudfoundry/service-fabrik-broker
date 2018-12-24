@@ -25,7 +25,7 @@ function bootstrap() {
 }
 
 function loadServices() {
-  if (_.isEmpty(config.services)) {
+  if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
     const eventmesh = require('../../data-access-layer/eventmesh');
     return eventmesh.apiServerClient.getAllServices()
       .tap(services => {

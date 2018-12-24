@@ -151,6 +151,7 @@ defaults: &defaults
   # APISERVER SETTINGS #
   ##############################
   apiserver:
+    # isServiceDefinitionAvailableOnApiserver: false
     # enable_resource_isolation: false
     ip: '10.244.14.252'
     port: 8443
