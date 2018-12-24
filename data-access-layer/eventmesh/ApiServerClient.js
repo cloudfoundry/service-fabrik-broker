@@ -899,6 +899,36 @@ class ApiServerClient {
 
   }
 
+
+  /**
+   * @description Create Service/Plan Resource in Apiserver with given crd
+   */
+  createOrUpdateServicePlan(crd) {
+    logger.debug(`Creating service/plan resource with CRD: `, crd);
+    assert.ok(crd, `Property 'crd' is required to create Service/Plan Resource`);
+    const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
+    return Promise.try(() => this.init())
+      .then(() => apiserver
+        .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({
+          body: crd
+        }))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      })
+      .catch(Conflict, () => apiserver
+        .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType](crd.metadata.name).patch({
+          body: crd,
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        }))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
 }
 
 module.exports = ApiServerClient;

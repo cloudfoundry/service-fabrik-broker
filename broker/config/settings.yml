@@ -484,6 +484,7 @@ defaults: &defaults
   ####################
   # SERVICES CATALOG #
   ####################
+  # isServiceDefinitionAvailableOnApiserver: false
   services:
   #####################
   # BLUEPRINT SERVICE #

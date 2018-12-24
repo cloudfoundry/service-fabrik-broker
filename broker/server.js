@@ -8,6 +8,7 @@ const routes = require('../api-controllers/routes');
 const HttpServer = require('../common/HttpServer');
 const ExpressApp = require('../common/ExpressApp');
 const config = require('../common/config');
+const utils = require('../common/utils');
 
 async function init() {
   // TODO- Move it to docker operator
@@ -15,7 +16,8 @@ async function init() {
     lib.bootstrap();
   }
 
-  await lib.loadServices();
+  await utils.loadServices();
+  await utils.pushServicePlanToApiServer();
 
   // internal app
   if (config.internal) {

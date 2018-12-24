@@ -10,6 +10,8 @@ const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
 const CONST = require('../constants');
+const catalog = require('../models').catalog;
+const logger = require('../logger');
 const RetryOperation = require('./RetryOperation');
 const randomBytes = Promise.promisify(crypto.randomBytes);
 const EventLogRiemannClient = require('./EventLogRiemannClient');
@@ -59,6 +61,8 @@ exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeploym
 exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
 exports.getPlatformManager = getPlatformManager;
+exports.loadServices = loadServices;
+exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -604,5 +608,139 @@ function getPlatformManager(context) {
     return new BasePlatformManager(platform);
   } else {
     return new PlatformManager(platform);
+  }
+}
+
+function loadServices() {
+  if (_.isEmpty(config.services)) {
+    const eventmesh = require('../../data-access-layer/eventmesh');
+    return eventmesh.apiServerClient.getAllServices()
+      .tap(services => {
+        config.services = services;
+      })
+      .then((services) => {
+        return Promise.all(Promise.each(services, service => {
+          return eventmesh.apiServerClient.getAllPlansForService(service.id)
+            .then(plans => {
+              service.plans = plans;
+            });
+        }));
+      })
+      .then(() => catalog.reload())
+      .tap(() => logger.silly('Loaded Services in catalog Are ', catalog.services))
+      .tap(() => logger.silly('Loaded Plans in catalog Are ', catalog.plans));
+  }
+}
+
+function pushServicePlanToApiServer() {
+  if (!config.isServiceDefinitionAvailableOnApiserver) {
+    const planTemplate = function (plan, service) {
+      assert.ok(plan.name, 'plan.name is required to generate plan crd');
+      assert.ok(plan.id, 'plan.id is required to generate plan crd');
+      assert.ok(plan.description, 'plan.description is required to generate plan crd');
+      // assert.ok(plan.templates, 'plan.templates is required to generate plan crd');
+
+      let planCRD = {
+        apiVersion: 'osb.servicefabrik.io/v1alpha1',
+        kind: 'SFPlan',
+        metadata: {
+          name: plan.name,
+          labels: {
+            'controller-tools.k8s.io': '1.0',
+            serviceId: service.id
+          }
+        },
+        spec: {
+          name: plan.name,
+          id: plan.id,
+          serviceId: service.id,
+          description: plan.description,
+          free: plan.free ? true : service.free ? true : false,
+          bindable: plan.bindable ? plan.bindable : service.bindable ? service.bindable : false,
+          planUpdatable: plan.bindable ? true : false,
+          templates: plan.templates ? plan.templates : []
+        }
+      };
+      if (plan.metadata) {
+        planCRD.spec.metadata = plan.metadata;
+      }
+      if (plan.manager) {
+        planCRD.spec.manager = plan.manager;
+      }
+      if (plan.context) {
+        planCRD.spec.context = plan.context;
+      }
+      if (plan.actions) {
+        planCRD.spec.actions = plan.actions;
+      }
+      if (plan.async_ops_supporting_parallel_sync_ops) {
+        planCRD.spec.asyncOpsSupportingParallelSyncOps = plan.async_ops_supporting_parallel_sync_ops;
+      }
+      return planCRD;
+    };
+
+    const serviceTemplate = function (service) {
+      assert.ok(service.name, 'service.name is required to generate plan crd');
+      assert.ok(service.id, 'service.id is required to generate plan crd');
+      assert.ok(service.description, 'service.description is required to generate plan crd');
+      assert.ok(service.bindable, 'service.bindable is required to generate plan crd');
+
+      let serviceCRD = {
+        apiVersion: 'osb.servicefabrik.io/v1alpha1',
+        kind: 'SFService',
+        metadata: {
+          name: service.name,
+          labels: {
+            'controller-tools.k8s.io': '1.0',
+            serviceId: service.id
+          }
+        },
+        spec: {
+          name: service.name,
+          id: service.id,
+          bindable: service.bindable,
+          description: service.description
+        }
+      };
+      if (service.metadata) {
+        serviceCRD.spec.metadata = service.metadata;
+      }
+      if (service.tags) {
+        serviceCRD.spec.tags = service.tags;
+      }
+      if (service.dashboard_client) {
+        serviceCRD.spec.dashboardClient = service.dashboard_client;
+      }
+      if (service.plan_updateable) {
+        serviceCRD.spec.planUpdateable = service.plan_updateable;
+      }
+      if (service.supported_platform) {
+        serviceCRD.spec.supportedPlatform = service.supported_platform;
+      }
+      if (service.actions) {
+        serviceCRD.spec.actions = service.actions;
+      }
+      if (service.backup_interval) {
+        serviceCRD.spec.backupInterval = service.backup_interval;
+      }
+      if (service.pitr) {
+        serviceCRD.spec.pitr = service.pitr;
+      }
+      return serviceCRD;
+    };
+
+    if (!config.isServiceDefinitionAvailableOnApiserver) {
+      const eventmesh = require('../../data-access-layer/eventmesh');
+      let promiseList = [];
+      _.each(config.services, service => {
+        const servicePromise = eventmesh.apiServerClient.createOrUpdateServicePlan(serviceTemplate(service));
+        promiseList.push(servicePromise);
+        _.each(service.plans, plan => {
+          const planPromise = eventmesh.apiServerClient.createOrUpdateServicePlan(planTemplate(plan, service));
+          promiseList.push(planPromise);
+        });
+      });
+      return Promise.all(promiseList);
+    }
   }
 }
