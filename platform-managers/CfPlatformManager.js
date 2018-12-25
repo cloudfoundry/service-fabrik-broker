@@ -51,7 +51,6 @@ class CfPlatformManager extends BasePlatformManager {
   }
 
   preBindOperations(options) {
-    console.log("---------------------->", JSON.stringify(options));
     const isSharing = this.isInstanceSharingRequest(options);
     const instanceSharingEnabled = _.get(config, 'feature.AllowInstanceSharing', true);
 
