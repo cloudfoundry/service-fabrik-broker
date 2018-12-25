@@ -135,10 +135,10 @@ describe('fabrik', function () {
       });
     });
 
-    describe('#bindOperations', function(){
+    describe('#bindOperations', function () {
       let cfPlatformManager = new CfPlatformManager('cf');
 
-      it('should be true if binding is for shared instance', function(){
+      it('should be true if binding is for shared instance', function () {
         let options = {
           bind_resource: {
             space_guid: 'abcd',

@@ -44,7 +44,7 @@ class CfPlatformManager extends BasePlatformManager {
       .then(targetSpaceDetails => options.context.organization_guid === targetSpaceDetails.entity.organization_guid);
   }
 
-  preUnbindOperations(options){
+  preUnbindOperations(options) {
     return this.deleteSecurityGroupForShare(options);
   }
 
@@ -162,7 +162,7 @@ class CfPlatformManager extends BasePlatformManager {
       });
   }
 
-  deleteSecurityGroupForShare(options){
+  deleteSecurityGroupForShare(options) {
     const name = this.getSecurityGroupName(options.bindingId);
     return this.deleteApplicationSecurityGroup(name);
   }

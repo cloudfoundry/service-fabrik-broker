@@ -715,7 +715,7 @@ class DirectorService extends BaseDirectorService {
         bindingId: params.binding_id,
         ipRuleOptions: this.buildIpRules()
       }))
-      .then(()=> bindingCredentials)
+      .then(() => bindingCredentials)
       .tap(() => {
         if (this.platformManager.platformName === CONST.PLATFORM.CF) {
           return this
