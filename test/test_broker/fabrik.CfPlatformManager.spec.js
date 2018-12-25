@@ -135,6 +135,23 @@ describe('fabrik', function () {
       });
     });
 
+    describe('#bindOperations', function(){
+      let cfPlatformManager = new CfPlatformManager('cf');
+
+      it('should be true if binding is for shared instance', function(){
+        let options = {
+          bind_resource: {
+            space_guid: 'abcd',
+            app_guid: 'app'
+          },
+          context: {
+            space_guid: 'abcd'
+          }
+        };
+        expect(cfPlatformManager.isInstanceSharingRequest(options)).to.equal(false);
+      });
+    });
+
     describe('multiAzEnablement', function () {
       const multi_az_internal_config = {
         multi_az_enabled: CONST.INTERNAL,
