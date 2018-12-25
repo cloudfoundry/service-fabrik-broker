@@ -19,10 +19,9 @@ describe('fabrik', function () {
       let sandbox, createSecurityGroupStub, deleteSecurityGroupStub, ensureSecurityGroupExistsStub;
 
       before(function () {
-
         _.set(config, 'feature.EnableSecurityGroupsOps', false);
         sandbox = sinon.sandbox.create();
-        createSecurityGroupStub = sandbox.stub(cfPlatformManager, 'createSecurityGroup');
+        createSecurityGroupStub = sandbox.stub(cfPlatformManager, 'createSecurityGroupForInstance');
         createSecurityGroupStub
           .withArgs({
             'dummy': 'dummy'
@@ -33,7 +32,7 @@ describe('fabrik', function () {
             };
           }));
 
-        deleteSecurityGroupStub = sandbox.stub(cfPlatformManager, 'deleteSecurityGroup');
+        deleteSecurityGroupStub = sandbox.stub(cfPlatformManager, 'deleteSecurityGroupForInstance');
         deleteSecurityGroupStub
           .withArgs({
             'dummy': 'dummy'
@@ -135,10 +134,10 @@ describe('fabrik', function () {
       });
     });
 
-    describe('#bindOperations', function () {
+    describe('#isInstanceSharingRequest', function () {
       let cfPlatformManager = new CfPlatformManager('cf');
 
-      it('should be true if binding is for shared instance', function () {
+      it('should be false for normal service binding', function () {
         let options = {
           bind_resource: {
             space_guid: 'abcd',
@@ -149,6 +148,171 @@ describe('fabrik', function () {
           }
         };
         expect(cfPlatformManager.isInstanceSharingRequest(options)).to.equal(false);
+      });
+      it('should be true for binding for shared instance', function () {
+        let options = {
+          bind_resource: {
+            space_guid: 'abcd',
+            app_guid: 'app'
+          },
+          context: {
+            space_guid: 'source'
+          }
+        };
+        expect(cfPlatformManager.isInstanceSharingRequest(options)).to.equal(true);
+      });
+      it('should be false for service key', function () {
+        let options = {
+          bind_resource: {},
+          context: {
+            space_guid: 'source'
+          }
+        };
+        expect(cfPlatformManager.isInstanceSharingRequest(options)).to.equal(false);
+      });
+    });
+
+    describe('#ensureValidShareRequest', function () {
+      const allow_org_sharing = {
+        AllowCrossOrganizationSharing: true
+      };
+      const disallow_org_sharing = {
+        AllowCrossOrganizationSharing: false
+      };
+      const CfPlatformManagerAllowOrgSharing = proxyquire('../../platform-managers/CfPlatformManager', {
+        '../common/config': allow_org_sharing
+      });
+      const CfPlatformManagerDisallowOrgSharing = proxyquire('../../platform-managers/CfPlatformManager', {
+        '../common/config': disallow_org_sharing
+      });
+      let getSpaceStub;
+      before(function () {
+        getSpaceStub = sinon.stub(cloudController, 'getSpace', () => {
+          return Promise.resolve({
+            entity: {
+              organization_guid: 'target'
+            }
+          });
+        });
+      });
+      after(function () {
+        getSpaceStub.restore();
+      });
+
+      it('should be true if cross organization sharing is enabled', function () {
+        let options = {};
+        let cfPlatformManager = new CfPlatformManagerAllowOrgSharing('cf');
+        return cfPlatformManager.ensureValidShareRequest(options)
+          .then(res => expect(res).to.equal(true));
+      });
+      it('should be false if cross organization sharing is disabled and cross org binding is received', function () {
+        let options = {
+          bind_resource: {
+            space_guid: 'abcd',
+            app_guid: 'app'
+          },
+          context: {
+            space_guid: 'source',
+            organization_guid: 'source'
+          }
+        };
+        let cfPlatformManager = new CfPlatformManagerDisallowOrgSharing('cf');
+        return cfPlatformManager.ensureValidShareRequest(options)
+          .then(res => {
+            expect(res).to.equal(false);
+          });
+      });
+      it('should be true if cross organization sharing is disabled and same org binding is received', function () {
+        let options = {
+          bind_resource: {
+            space_guid: 'abcd',
+            app_guid: 'app'
+          },
+          context: {
+            space_guid: 'source',
+            organization_guid: 'target'
+          }
+        };
+        let cfPlatformManager = new CfPlatformManagerDisallowOrgSharing('cf');
+        return cfPlatformManager.ensureValidShareRequest(options)
+          .then(res => {
+            expect(res).to.equal(true);
+          });
+      });
+    });
+
+    describe('#postBindOperations', function () {
+      const cfPlatformManager = new CfPlatformManager('cf');
+
+      it('should create security group for sharing', () => {
+        cfPlatformManager.isInstanceSharingRequest = () => true;
+        cfPlatformManager.createSecurityGroupForShare = () => Promise.resolve(123);
+
+        return cfPlatformManager.postBindOperations({})
+          .then(res => {
+            expect(res).to.equal(123);
+          });
+      });
+
+      it('should not create security group for non-sharing', () => {
+        cfPlatformManager.isInstanceSharingRequest = () => false;
+        cfPlatformManager.createSecurityGroupForShare = () => Promise.resolve(123);
+
+        return cfPlatformManager.postBindOperations({})
+          .then(res => {
+            expect(res).to.not.equal(123);
+          });
+      });
+    });
+
+    describe('#preBindOperations', function () {
+      const allowSharingConfig = {
+        feature: {
+          AllowInstanceSharing: true
+        }
+      };
+      const disallowSharingConfig = {
+        feature: {
+          AllowInstanceSharing: false
+        }
+      };
+      const CfPlatformManagerAllowSharing = proxyquire('../../platform-managers/CfPlatformManager', {
+        '../common/config': allowSharingConfig
+      });
+      const CfPlatformManagerDisallowSharing = proxyquire('../../platform-managers/CfPlatformManager', {
+        '../common/config': disallowSharingConfig
+      });
+
+      it('should run successfully for shared instance and enabled sharing', function () {
+        let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
+        cfPlatformManager.isInstanceSharingRequest = () => true;
+        cfPlatformManager.ensureValidShareRequest = () => Promise.resolve(true);
+        return cfPlatformManager.preBindOperations({});
+      });
+
+      it('should run successfully for non-shared instance and enabled sharing', function () {
+        let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
+        cfPlatformManager.isInstanceSharingRequest = () => false;
+        return cfPlatformManager.preBindOperations({});
+      });
+
+      it('should fail for enabled sharing and invalid sharing request', function () {
+        let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
+        cfPlatformManager.isInstanceSharingRequest = () => true;
+        cfPlatformManager.ensureValidShareRequest = () => Promise.resolve(false);
+        return cfPlatformManager.preBindOperations({})
+          .catch(err => {
+            expect(err instanceof errors.CrossOrganizationSharingNotAllowed).to.equal(true);
+          });
+      });
+
+      it('should fail for disabled sharing and invalid sharing request', function () {
+        let cfPlatformManager = new CfPlatformManagerDisallowSharing('cf');
+        cfPlatformManager.isInstanceSharingRequest = () => true;
+        return cfPlatformManager.preBindOperations({})
+          .catch(err => {
+            expect(err instanceof errors.InstanceSharingNotAllowed).to.equal(true);
+          });
       });
     });
 

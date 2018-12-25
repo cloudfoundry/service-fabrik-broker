@@ -57,8 +57,17 @@ function createSecurityGroup(guid) {
     });
 }
 
-function findSecurityGroupByName(guid) {
+function findSecurityGroupByName(guid, resources) {
   const name = getSecurityGroupName(guid);
+  const defaults = [{
+    metadata: {
+      guid: guid
+    },
+    entity: {
+      name: name
+    }
+  }];
+  resources = resources || defaults;
   return nock(cloudControllerUrl)
     .replyContentLength()
     .get('/v2/security_groups')
@@ -66,14 +75,7 @@ function findSecurityGroupByName(guid) {
       q: `name:${name}`
     })
     .reply(200, {
-      resources: [{
-        metadata: {
-          guid: guid
-        },
-        entity: {
-          name: name
-        }
-      }]
+      resources: resources
     });
 }
 

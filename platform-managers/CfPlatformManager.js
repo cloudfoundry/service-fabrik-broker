@@ -12,6 +12,8 @@ const CONST = require('../common/constants');
 const config = require('../common/config');
 const SecurityGroupNotCreated = errors.SecurityGroupNotCreated;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
+const InstanceSharingNotAllowed = errors.InstanceSharingNotAllowed;
+const CrossOrganizationSharingNotAllowed = errors.CrossOrganizationSharingNotAllowed;
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 
 class CfPlatformManager extends BasePlatformManager {
@@ -27,7 +29,7 @@ class CfPlatformManager extends BasePlatformManager {
   isInstanceSharingRequest(options) {
     const targetContext = options.bind_resource;
     const sourceContext = options.context;
-    if (!_.has(targetContext, 'app_guid')) {
+    if (_.isNil(targetContext) || _.isNil(sourceContext) || !_.has(targetContext, 'app_guid')) {
       //service key creation requests are not part of sharing concept
       return false;
     }
@@ -40,7 +42,7 @@ class CfPlatformManager extends BasePlatformManager {
       return Promise.resolve(true);
     }
     return this.cloudController.getSpace(options.bind_resource.space_guid)
-      .tap(targetSpaceDetails => logger.info(`cross organization sharing/binding not allowed, source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.entity.organization_guid}`))
+      .tap(targetSpaceDetails => logger.info(`shared instance binding: source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.entity.organization_guid}`))
       .then(targetSpaceDetails => options.context.organization_guid === targetSpaceDetails.entity.organization_guid);
   }
 
@@ -49,20 +51,22 @@ class CfPlatformManager extends BasePlatformManager {
   }
 
   preBindOperations(options) {
+    console.log("---------------------->", JSON.stringify(options));
     const isSharing = this.isInstanceSharingRequest(options);
     const instanceSharingEnabled = _.get(config, 'feature.AllowInstanceSharing', true);
 
     return Promise.try(() => {
         if (isSharing) {
           if (!instanceSharingEnabled) {
-            throw new Error('Detected instance sharing:: Instance sharing is not enabled by Service Fabrik');
+            throw new InstanceSharingNotAllowed();
           }
+          return this.ensureValidShareRequest(options);
         }
-        return this.ensureValidShareRequest(options);
+        return true;
       })
       .then(validBind => {
         if (!validBind) {
-          throw new Error('invalid binding request:: source and target organizations do not match');
+          throw new CrossOrganizationSharingNotAllowed();
         }
       });
   }

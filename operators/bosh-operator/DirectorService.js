@@ -765,7 +765,7 @@ class DirectorService extends BaseDirectorService {
       .initialize({
         type: 'unbind'
       })
-      .then(() => this.platform.preUnbindOperations({
+      .then(() => this.platformManager.preUnbindOperations({
         bindingId: params.binding_id
       }))
       .then(() => this.deleteBinding(this.deploymentName, params.binding_id));

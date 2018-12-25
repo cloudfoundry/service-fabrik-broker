@@ -87,6 +87,20 @@ class NotImplementedBySubclass extends BaseError {
 }
 exports.NotImplementedBySubclass = NotImplementedBySubclass;
 
+class InstanceSharingNotAllowed extends BaseError {
+  constructor() {
+    super('Service instance sharing not enabled');
+  }
+}
+exports.InstanceSharingNotAllowed = InstanceSharingNotAllowed;
+
+class CrossOrganizationSharingNotAllowed extends BaseError {
+  constructor() {
+    super('Service instance cannot be shared across Cloud Foundry organizations');
+  }
+}
+exports.CrossOrganizationSharingNotAllowed = CrossOrganizationSharingNotAllowed;
+
 class HttpError extends BaseError {
   constructor(status, reason, message) {
     super(message);
