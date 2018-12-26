@@ -2,15 +2,15 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const logger = require('../../../common/logger');
-const backupStore = require('../../../data-access-layer/iaas').backupStoreForOob;
-const Agent = require('../../../data-access-layer/service-agent');
-const utils = require('../../../common/utils');
-const errors = require('../../../common/errors');
-const bosh = require('../../../data-access-layer/bosh');
+const logger = require('../../common/logger');
+const backupStore = require('../../data-access-layer/iaas').backupStoreForOob;
+const Agent = require('../../data-access-layer/service-agent');
+const utils = require('../../common/utils');
+const errors = require('../../common/errors');
+const bosh = require('../../data-access-layer/bosh');
 const NotFound = errors.NotFound;
 const UnprocessableEntity = errors.UnprocessableEntity;
-const CONST = require('../../../common/constants');
+const CONST = require('../../common/constants');
 
 class OobBackupManager {
 

@@ -9,7 +9,7 @@ const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const BackupService = require('./');
 const BaseOperator = require('../BaseOperator');
-const DBManager = require('../../data-access-layer/db/DBManager').DBManager;
+const DBManager = require('../../data-access-layer/db/DBManager').DbManager;
 
 /* jshint nonew:false */
 new DBManager(); //to log events

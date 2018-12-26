@@ -2,19 +2,19 @@
 
 const _ = require('lodash');
 const Promise = require('bluebird');
-const config = require('../../../common/config');
-const logger = require('../../../common/logger');
-const catalog = require('../../../common/models/catalog');
-const DirectorService = require('../../../operators/bosh-operator/DirectorService');
-const bosh = require('../../../data-access-layer/bosh');
-const utils = require('../../../common/utils');
-const errors = require('../../../common/errors');
+const config = require('../../common/config');
+const logger = require('../../common/logger');
+const catalog = require('../../common/models/catalog');
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const bosh = require('../../data-access-layer/bosh');
+const utils = require('../../common/utils');
+const errors = require('../../common/errors');
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
-const CONST = require('../../../common/constants');
-const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
-const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
-const eventmesh = require('../../../data-access-layer/eventmesh');
+const CONST = require('../../common/constants');
+const dbConnectionManager = require('../../data-access-layer/db/DbConnectionManager');
+const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
+const eventmesh = require('../../data-access-layer/eventmesh');
 
 /**
  * DB can be configured into ServiceFabrik by either providing the URL of already provisioned mongodb via 'config.mongodb.url'
