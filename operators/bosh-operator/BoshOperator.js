@@ -10,7 +10,7 @@ const DirectorService = require('./DirectorService');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
 const config = require('../../common/config');
-const DBManager = require('../../broker/lib/fabrik/DBManager');
+const DBManager = require('../../data-access-layer/db/DBManager').DbManager;
 const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const assert = require('assert');
 

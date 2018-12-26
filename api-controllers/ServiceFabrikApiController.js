@@ -28,7 +28,7 @@ const config = require('../common/config');
 const CONST = require('../common/constants');
 const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
-const fabrik = require('../broker/lib/fabrik');
+const dbManager = require('../data-access-layer/db/DBManager').DBManagerInstance;
 const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
 
 const CloudControllerError = {
@@ -47,7 +47,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
     this.cloudController = cf.cloudController;
     this.uaa = cf.uaa;
     this.backupStore = backupStore;
-    this.fabrik = fabrik;
   }
 
   validateUuid(uuid, description) {
@@ -246,7 +245,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             name: this.serviceBrokerName,
             api_version: this.constructor.version,
             ready: allDockerImagesRetrieved,
-            db_status: this.fabrik.dbManager.getState().status
+            db_status: dbManager.getState().status
           });
       });
   }
