@@ -166,7 +166,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       .spread(assignOrgAndSpace)
       .map(deployment => {
         if (deployment.serviceInstance) {
-          const networkSegmentIndex = deployment.serviceInstance.getNetworkSegmentIndex(deployment.name);//TODO
+          const networkSegmentIndex = deployment.serviceInstance.getNetworkSegmentIndex(deployment.name);
           const plan = deployment.serviceInstance.plan;
           const service = _.omit(plan.service, 'plans');
           deployment = _
@@ -219,7 +219,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getDeployment(req, res) {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
-    Promise.try(() => this.fabrik.createService(req.query.plan_id, this.getInstanceId(deploymentName)))
+    Promise.try(() => DirectorService.createInstance(this.getInstanceId(deploymentName), {plan_id: plan.id}))
       .then(serviceInstance =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
@@ -235,7 +235,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               this.director.getTasks({
                 deployment: deploymentName
               }),
-              serviceInstance.diffManifest(deploymentName, opts).then(utils.unifyDiffResult) //TODO
+              serviceInstance.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
             ])
             .spread((vms, tasks, diff) => ({
               name: deploymentName,
@@ -396,7 +396,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .getServiceInstances(`service_plan_guid IN ${guids}`)
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
-            return Promise.try(() => this.fabrik.createService(plan.id, _.get(instance, 'metadata.guid')))
+            return Promise.try(() => DirectorService.createInstance(_.get(instance, 'metadata.guid'), {plan_id: plan.id}))
             .then(service => _
               .chain(instance)
               .set('serviceInstance', service)
