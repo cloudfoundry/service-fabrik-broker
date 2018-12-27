@@ -305,8 +305,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id
       })
       .then(resource => {
-        const context = req.body.context || _.get(resource, 'spec.options.context');
-        const planId = req.body.plan_id || _.get(resource, 'spec.options.plan_id');
+        const context = req.body.context || _.get(resource, 'status.appliedOptions.context') || _.get(resource, 'spec.options.context');
+        const planId = req.body.plan_id || _.get(resource, 'status.appliedOptions.plan_id') || _.get(resource, 'spec.options.plan_id');
         const backupOptions = {
           guid: backupGuid,
           instance_guid: req.params.instance_id,

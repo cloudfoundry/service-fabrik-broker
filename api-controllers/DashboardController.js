@@ -148,7 +148,7 @@ class DashboardController extends FabrikBaseController {
     const instance_id = req.params.instance_id;
     const instance_type = req.params.instance_type;
     return this._getApiServerResource(instance_id, instance_type)
-      .then(resource => _.get(resource, 'spec.options'))
+      .then(resource => _.get(resource, 'status.appliedOptions') ? _.get(resource, 'status.appliedOptions') : _.get(resource, 'spec.options'))
       .then(resourceOptions => {
         const service_id = _.get(resourceOptions, 'service_id');
         const plan_id = _.get(resourceOptions, 'plan_id');

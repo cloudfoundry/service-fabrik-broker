@@ -90,7 +90,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           resourceId: instanceId
         })
         .catch(errors.NotFound, () => undefined)
-        .then(resource => _.get(resource, 'spec.options'))
+        .then(resource => _.get(resource, 'status.appliedOptions') ? _.get(resource, 'status.appliedOptions') : _.get(resource, 'spec.options'))
         .then(resource => {
           resourceDetails = resource;
           if (resourceDetails === undefined) {
