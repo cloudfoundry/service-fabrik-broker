@@ -53,8 +53,7 @@ class VirtualHostOperator extends BaseOperator {
         resourceId: changeObjectBody.metadata.name,
         status: {
           response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          appliedOptions: changedOptions
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
       }));
   }
@@ -70,8 +69,7 @@ class VirtualHostOperator extends BaseOperator {
         resourceId: changeObjectBody.metadata.name,
         status: {
           response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-          appliedOptions: changedOptions
+          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
       }));
   }
