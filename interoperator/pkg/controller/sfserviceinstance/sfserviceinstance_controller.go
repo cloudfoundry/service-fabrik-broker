@@ -196,6 +196,11 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	err = resources.SetOwnerReference(instance, expectedResources, r.scheme)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
 		return reconcile.Result{}, err
