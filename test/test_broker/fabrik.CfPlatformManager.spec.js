@@ -172,12 +172,12 @@ describe('fabrik', function () {
       });
     });
 
-    describe('#ensureValidShareRequest', function () {
+    describe('#isCrossOrganizationSharingAllowed', function () {
       const allow_org_sharing = {
-        AllowCrossOrganizationSharing: true
+        enable_cross_organization_sharing: true
       };
       const disallow_org_sharing = {
-        AllowCrossOrganizationSharing: false
+        enable_cross_organization_sharing: false
       };
       const CfPlatformManagerAllowOrgSharing = proxyquire('../../platform-managers/CfPlatformManager', {
         '../common/config': allow_org_sharing
@@ -202,7 +202,7 @@ describe('fabrik', function () {
       it('should be true if cross organization sharing is enabled', function () {
         let options = {};
         let cfPlatformManager = new CfPlatformManagerAllowOrgSharing('cf');
-        return cfPlatformManager.ensureValidShareRequest(options)
+        return cfPlatformManager.isCrossOrganizationSharingEnabled(options)
           .then(res => expect(res).to.equal(true));
       });
       it('should be false if cross organization sharing is disabled and cross org binding is received', function () {
@@ -217,9 +217,9 @@ describe('fabrik', function () {
           }
         };
         let cfPlatformManager = new CfPlatformManagerDisallowOrgSharing('cf');
-        return cfPlatformManager.ensureValidShareRequest(options)
-          .then(res => {
-            expect(res).to.equal(false);
+        return cfPlatformManager.isCrossOrganizationSharingEnabled(options)
+          .catch(err => {
+            expect(err instanceof errors.CrossOrganizationSharingNotAllowed).to.equal(true);
           });
       });
       it('should be true if cross organization sharing is disabled and same org binding is received', function () {
@@ -234,7 +234,7 @@ describe('fabrik', function () {
           }
         };
         let cfPlatformManager = new CfPlatformManagerDisallowOrgSharing('cf');
-        return cfPlatformManager.ensureValidShareRequest(options)
+        return cfPlatformManager.isCrossOrganizationSharingEnabled(options)
           .then(res => {
             expect(res).to.equal(true);
           });
@@ -286,7 +286,7 @@ describe('fabrik', function () {
       it('should run successfully for shared instance and enabled sharing', function () {
         let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
         cfPlatformManager.isInstanceSharingRequest = () => true;
-        cfPlatformManager.ensureValidShareRequest = () => Promise.resolve(true);
+        cfPlatformManager.isCrossOrganizationSharingEnabled = () => Promise.resolve(true);
         return cfPlatformManager.preBindOperations({});
       });
 
@@ -299,7 +299,7 @@ describe('fabrik', function () {
       it('should fail for enabled sharing and invalid sharing request', function () {
         let cfPlatformManager = new CfPlatformManagerAllowSharing('cf');
         cfPlatformManager.isInstanceSharingRequest = () => true;
-        cfPlatformManager.ensureValidShareRequest = () => Promise.resolve(false);
+        cfPlatformManager.isCrossOrganizationSharingEnabled = () => Promise.reject(new errors.CrossOrganizationSharingNotAllowed());
         return cfPlatformManager.preBindOperations({})
           .catch(err => {
             expect(err instanceof errors.CrossOrganizationSharingNotAllowed).to.equal(true);

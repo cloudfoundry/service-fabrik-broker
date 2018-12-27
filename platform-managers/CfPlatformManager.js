@@ -36,14 +36,19 @@ class CfPlatformManager extends BasePlatformManager {
     return targetContext.space_guid !== sourceContext.space_guid;
   }
 
-  ensureValidShareRequest(options) {
-    const allowCrossOrgSharing = _.get(config, 'AllowCrossOrganizationSharing', false);
+  isCrossOrganizationSharingEnabled(options) {
+    const allowCrossOrgSharing = _.get(config, 'enable_cross_organization_sharing', false);
     if (allowCrossOrgSharing) {
       return Promise.resolve(true);
     }
     return this.cloudController.getSpace(options.bind_resource.space_guid)
       .tap(targetSpaceDetails => logger.info(`shared instance binding: source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.entity.organization_guid}`))
-      .then(targetSpaceDetails => options.context.organization_guid === targetSpaceDetails.entity.organization_guid);
+      .then(targetSpaceDetails => {
+        if (options.context.organization_guid !== targetSpaceDetails.entity.organization_guid) {
+          throw new CrossOrganizationSharingNotAllowed();
+        }
+        return true;
+      });
   }
 
   preUnbindOperations(options) {
@@ -55,19 +60,13 @@ class CfPlatformManager extends BasePlatformManager {
     const instanceSharingEnabled = _.get(config, 'feature.AllowInstanceSharing', true);
 
     return Promise.try(() => {
-        if (isSharing) {
-          if (!instanceSharingEnabled) {
-            throw new InstanceSharingNotAllowed();
-          }
-          return this.ensureValidShareRequest(options);
+      if (isSharing) {
+        if (!instanceSharingEnabled) {
+          throw new InstanceSharingNotAllowed();
         }
-        return true;
-      })
-      .then(validBind => {
-        if (!validBind) {
-          throw new CrossOrganizationSharingNotAllowed();
-        }
-      });
+        return this.isCrossOrganizationSharingEnabled(options);
+      }
+    });
   }
 
   postBindOperations(options) {
