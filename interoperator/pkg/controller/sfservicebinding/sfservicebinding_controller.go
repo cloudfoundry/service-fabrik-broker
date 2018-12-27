@@ -186,6 +186,10 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 
 	var requeue bool
 	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	var appliedResources []*unstructured.Unstructured
 	if err != nil {
 		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)

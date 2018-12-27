@@ -8,17 +8,19 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// InstanceStatus defines template provided by the service for provision response
-type InstanceStatus struct {
-	GenericStatus
-	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
-}
-
 // GenericStatus defines template provided by the service for binding response
 type GenericStatus struct {
 	State    string `yaml:"state" json:"state"`
 	Error    string `yaml:"error,omitempty" json:"error,omitempty"`
 	Response string `yaml:"response,omitempty" json:"response,omitempty"`
+}
+
+// InstanceStatus defines template provided by the service for provision response
+type InstanceStatus struct {
+	State        string `yaml:"state" json:"state"`
+	Error        string `yaml:"error,omitempty" json:"error,omitempty"`
+	Response     string `yaml:"response,omitempty" json:"response,omitempty"`
+	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
 }
 
 // Properties is all the data to be read by interoperator from

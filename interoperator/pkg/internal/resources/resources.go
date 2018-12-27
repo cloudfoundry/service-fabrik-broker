@@ -449,12 +449,16 @@ func deleteSubResource(client kubernetes.Client, resource *unstructured.Unstruct
 			} else {
 				status = make(map[string]interface{})
 			}
-			status["state"] = "delete"
-			content["status"] = status
-			resource.SetUnstructuredContent(content)
-			err = client.Update(context.TODO(), resource)
-			if err != nil {
-				return err
+
+			state, ok := status["state"]
+			if !ok || state == "succeeded" || state == "failed" {
+				status["state"] = "delete"
+				content["status"] = status
+				resource.SetUnstructuredContent(content)
+				err = client.Update(context.TODO(), resource)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		}
