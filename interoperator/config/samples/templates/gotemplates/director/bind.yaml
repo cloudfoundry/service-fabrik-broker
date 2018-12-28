@@ -1,17 +1,17 @@
 {{ $name := "" }}
-{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
+{{- with .binding.metadata.name }} {{ $name = . }} {{ end }}
 {{- $state := "in_queue" }}
-{{- with .instance.metadata.labels.state }} {{ $state = . }} {{ end }}
+{{- with .binding.metadata.labels.state }} {{ $state = . }} {{ end }}
 {{- $serviceId := "" }}
 {{- $planId := "" }}
 {{- $context := "{}" }}
 {{- $params := "{}" }}
-{{- $acceptsIncomplete := true }}
+{{- $acceptsIncomplete := "true" }}
 {{- $appGuid := "" }}
 {{- $bindResource := "{}" }}
 {{- $id := "" }}
 {{- $instanceId := "" }}
-{{- with .instance.spec }}
+{{- with .binding.spec }}
   {{- with .serviceId }}
     {{- $serviceId = . }}
   {{- end }}
@@ -50,6 +50,6 @@ metadata:
     instance_guid: {{ $instanceId }}
   name: {{ $name }}
 spec:
-  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"app_guid\": \"%s\", \"bind_resource\": \"%s\", \"context\": %s, \"binding_id\": %s, \"parameters\": %s, \"accepts_incomplete\": %s }" $serviceId $planId $appGuid $bindResource $context $bindingId $params $acceptsIncomplete) | quote }}
+  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"app_guid\": \"%s\", \"bind_resource\": %s, \"context\": %s, \"binding_id\": \"%s\", \"parameters\": %s, \"accepts_incomplete\": %s }" $serviceId $planId $appGuid $bindResource $context $id $params $acceptsIncomplete) | quote }}
 status:
   state: {{ $state }}

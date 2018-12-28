@@ -280,7 +280,6 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		log.Printf("error fetching instance. %v\n", err)
 		return err
 	}
-
 	instanceObj.Status.State = properties.Provision.State
 	instanceObj.Status.Error = properties.Provision.Error
 	instanceObj.Status.Description = properties.Provision.Response

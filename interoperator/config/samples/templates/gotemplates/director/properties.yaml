@@ -39,8 +39,7 @@ provision:
 {{- end }}
   dashboardUrl: ""
 {{- with .directorbind.status }}
-  {{- $status := ( unmarshalJSON . ) }}
-  {{- $response = $status.response }}
+  {{- $response = (b64dec .response | quote) }}
 {{- end }}
 {{- $stateString = "in_queue" }} 
 {{- with .directorbind }}
@@ -62,8 +61,7 @@ bind:
 {{- end }}
   response: {{ $response }}
 {{- with .directorbind.status }}
-  {{- $status := ( unmarshalJSON . ) }}
-  {{- $response = $status.response }}
+  {{- $response = (b64dec .response | quote) }}
 {{- end }}
 {{- $stateString = "delete" }} 
 {{- with .directorbind }}
