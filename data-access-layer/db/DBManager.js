@@ -326,5 +326,4 @@ class DBManager {
   }
 }
 
-module.exports.DBManagerInstance = new DBManager();
-module.exports.DbManager = DBManager;
+module.exports = new DBManager();

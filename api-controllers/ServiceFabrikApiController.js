@@ -28,7 +28,7 @@ const config = require('../common/config');
 const CONST = require('../common/constants');
 const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
-const dbManager = require('../data-access-layer/db/DBManager').DBManagerInstance;
+const dbManager = require('../data-access-layer/db/DBManager');
 const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
 
 const CloudControllerError = {
