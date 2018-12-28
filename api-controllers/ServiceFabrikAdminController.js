@@ -84,6 +84,8 @@ class ServiceFabrikAdminController extends FabrikBaseController {
 
     return Promise.try(() => {
       logger.info(`Forbidden Manifest flag set to ${allowForbiddenManifestChanges}`);
+      /* TODO: Conditional statement to fetch resource options below is needed to be backwards compatible 
+       as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
       return eventmesh.apiServerClient.getResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,

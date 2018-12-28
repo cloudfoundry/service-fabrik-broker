@@ -299,6 +299,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
   //TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
 
   getBackupOptions(backupGuid, req) {
+    /* TODO: Conditional statements to fetch context and planId below is needed to be backwards compatible 
+     as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
