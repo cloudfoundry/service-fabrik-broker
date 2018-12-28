@@ -317,19 +317,21 @@ func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.C
 
 	sourceObjects := make(map[string]*unstructured.Unstructured)
 	for key, val := range sources {
-		obj := &unstructured.Unstructured{}
-		obj.SetKind(val.Kind)
-		obj.SetAPIVersion(val.APIVersion)
-		namespacedName := types.NamespacedName{
-			Name:      val.Name,
-			Namespace: name.Namespace,
+		if val.Name != "" {
+			obj := &unstructured.Unstructured{}
+			obj.SetKind(val.Kind)
+			obj.SetAPIVersion(val.APIVersion)
+			namespacedName := types.NamespacedName{
+				Name:      val.Name,
+				Namespace: name.Namespace,
+			}
+			err := targetClient.Get(context.TODO(), namespacedName, obj)
+			if err != nil {
+				log.Printf("failed to fetch resource %v. %v\n", val, err)
+				continue
+			}
+			sourceObjects[key] = obj
 		}
-		err := targetClient.Get(context.TODO(), namespacedName, obj)
-		if err != nil {
-			log.Printf("failed to fetch resource %v. %v\n", val, err)
-			continue
-		}
-		sourceObjects[key] = obj
 	}
 
 	template, err = plan.GetTemplate(osbv1alpha1.PropertiesAction)

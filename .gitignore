@@ -14,6 +14,8 @@
 /store/sessions
 npm-debug.log
 
+*/*/kubeconfig.yaml
+
 # Ignore developer's settings files
 broker/config/settings.*.yml
 common/config/settings.*.yml
