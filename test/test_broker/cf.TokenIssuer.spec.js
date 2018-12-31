@@ -117,9 +117,10 @@ describe('cf', () => {
         this.clock.tick(delay * 1000);
         this.clock.restore();
         setTimeout(() => {
+          /* jshint expr:true */
           expect(loggerErrorStub).to.have.been.called;
           refreshTokenStub.restore();
-          loggerErrorStub.restore();  
+          loggerErrorStub.restore();
           done();
         }, 500);
       }).timeout(4000);
