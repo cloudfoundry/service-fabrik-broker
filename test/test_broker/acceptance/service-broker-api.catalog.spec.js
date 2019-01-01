@@ -45,6 +45,7 @@ describe('service-broker-api', function () {
       }, {
         labelSelector: `serviceId=service1`
       });
+      config.apiserver.isServiceDefinitionAvailableOnApiserver = true;
       return chai.request(app)
         .get(`${baseCFUrl}/catalog`)
         .set('X-Broker-API-Version', CONST.SF_BROKER_API_VERSION_MIN)
@@ -52,6 +53,7 @@ describe('service-broker-api', function () {
         .then(res => {
           config.services = oldServices;
           catalog.reload();
+          config.apiserver.isServiceDefinitionAvailableOnApiserver = false;
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
           expect(res.body.services).to.have.length(1);
@@ -83,7 +85,7 @@ describe('service-broker-api', function () {
         .then(res => {
           expect(res).to.have.status(200);
           expect(res.body.services).to.be.instanceof(Array);
-          expect(res.body.services).to.have.length(2);
+          expect(res.body.services).to.have.length(3);
           expect(res.body.services[0].plans).to.have.length(8);
         });
     });
