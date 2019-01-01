@@ -581,7 +581,7 @@ class ApiServerClient {
     };
     return Promise.try(() => this.init())
       .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
           body: resourceBody
         }))
       .catch(err => {
@@ -593,7 +593,7 @@ class ApiServerClient {
     logger.debug('Get resource with opts: ', configName);
     return Promise.try(() => this.init())
       .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-        .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
+        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
       .then(resource => {
         return resource.body;
       })
@@ -620,7 +620,7 @@ class ApiServerClient {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
         return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-          .namespaces(CONST.APISERVER.NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
+          .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).patch({
             body: resourceBody
           });
       })
