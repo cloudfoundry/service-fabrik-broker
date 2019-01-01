@@ -148,10 +148,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (!_.get(req, 'body.context')) {
           _.set(req, 'body.context', _.get(resourceOptions, 'context'));
         }
-        if (!_.get(req, 'body.space_guid')) {
+        if (!_.get(req, 'body.space_guid') && !_.get(req, 'query.space_guid')) {
           _.set(req, 'body.space_guid', _.get(resourceOptions, 'space_guid'));
         }
-        if (!_.get(req, 'body.plan_id')) {
+        if (!_.get(req, 'body.plan_id') && !_.get(req, 'query.plan_id')) {
           _.set(req, 'body.plan_id', _.get(resourceOptions, 'plan_id'));
         }
       })
@@ -273,7 +273,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         } else if (trigger === CONST.BACKUP.TRIGGER.ON_DEMAND) {
           const options = {
             instance_id: req.params.instance_id,
-            tenant_id: req.entity.tenant_id
+            tenant_id: req.entity.tenant_id,
+            plan_id: req.plan.id
           };
           return this.listBackupFiles(options)
             .then(backupList => {
@@ -758,8 +759,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
             resourceId: options.instance_id
           })
           .then(resource => {
-            options.plan_id = _.isEmpty(_.get(resource, 'status.actualState')) ? resource.spec.options.plan_id
-            : _.get(resource, 'status.actualState.plan_id');
+            options.plan_id = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? resource.spec.options.plan_id
+            : _.get(resource, 'status.appliedOptions.plan_id');
           })
           .catch(NotFound, () => {
             logger.info(`+-> Instance ${options.instance_id} not found, continue listing backups for the deleted instance`);
@@ -938,12 +939,29 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .send({}));
   }
 
+  setInstanceName(req) {
+    let instanceId = req.params.instance_id;
+    let platform = utils.getPlatformFromContext(req.body.context);
+    return Promise.try(() => {
+      switch (platform) {
+        case CONST.PLATFORM.CF:
+          return this.cloudController
+            .getServiceInstance(instanceId)
+            .then(body => _.set(req, 'entity.name', body.entity.name));
+        case CONST.PLATFORM.K8S:
+          /* TODO: Needs to handled */
+          return;
+      }  
+    });
+  }
+
   scheduleUpdate(req, res) {
     if (_.isEmpty(req.body.repeatInterval)) {
       throw new BadRequest('repeatInterval is mandatory');
     }
     return Promise
       .try(() => this.setPlan(req))
+      .then(() => this.setInstanceName(req))
       .then(() => new DirectorService(req.plan, req.params.instance_id))
       .then(directorService => directorService.findDeploymentNameByInstanceId(req.params.instance_id))
       .then(deploymentName => _

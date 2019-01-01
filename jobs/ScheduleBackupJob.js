@@ -87,15 +87,6 @@ class ScheduleBackupJob extends BaseJob {
       return true;
     });
   }
-  /*
-  static isServiceInstanceDeleted(instanceId) {
-    return cloudController.findServicePlanByInstanceId(instanceId)
-      .then(() => false)
-      .catch(ServiceInstanceNotFound, () => {
-        logger.warn(`service instance : ${instanceId} deleted`);
-        return true;
-      });
-  }*/
 
   static deleteOldBackup(job, instanceDeleted) {
     let transactionLogsBefore;
