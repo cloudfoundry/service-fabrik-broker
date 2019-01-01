@@ -33,6 +33,7 @@ exports.jwtTokenInsufficientScopes = jwtTokenInsufficientScopes;
 exports.authorizationCode = authorizationCode;
 exports.getAccessToken = getAccessToken;
 exports.getAuthorizationCode = getAuthorizationCode;
+exports.getAuthorizationCodeLoginHint = getAuthorizationCodeLoginHint;
 exports.getAccessTokenWithAuthorizationCode = getAccessTokenWithAuthorizationCode;
 exports.getUserInfo = getUserInfo;
 exports.tokenKey = tokenKey;
@@ -112,6 +113,28 @@ function getAuthorizationCode(service_id, times) {
         client_id: dashboard_client.id,
         redirect_uri: redirect_uri,
         scope: 'cloud_controller_service_permissions.read openid'
+      })
+      .value()
+    )
+    .times(times || 1)
+    .reply(302, null, {
+      location: req => `${redirect_uri}?code=${authorizationCode}&state=${parseUrl(req.path, true).query.state}`
+    });
+}
+
+function getAuthorizationCodeLoginHint(service_id, times) {
+  const dashboard_client = catalog.getService(service_id).dashboard_client;
+  return nock(authorizationEndpointUrl)
+    .get('/oauth/authorize')
+    .query(query => _
+      .chain(query)
+      .omit('state')
+      .isEqual({
+        response_type: 'code',
+        client_id: dashboard_client.id,
+        redirect_uri: redirect_uri,
+        scope: 'cloud_controller_service_permissions.read openid',
+        login_hint: `{"origin":"uaa"}`
       })
       .value()
     )

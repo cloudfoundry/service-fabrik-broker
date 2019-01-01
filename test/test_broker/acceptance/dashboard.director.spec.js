@@ -44,7 +44,21 @@ describe('dashboard', function () {
       status: {
         state: 'succeeded',
         lastOperation: '{}',
-        response: '{}'
+        response: '{}',
+        appliedOptions: JSON.stringify({
+          service_id: service_id,
+          plan_id: plan_id,
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+            space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
+          },
+          organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
+          space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
+          parameters: {
+            foo: 'bar'
+          }
+        })
       }
     };
 
@@ -179,6 +193,102 @@ describe('dashboard', function () {
         mocks.director.getCurrentTaskEvents(324, {});
         return agent
           .get(`/manage/dashboards/director/instances/${instance_id}`)
+          .set('Accept', 'application/json')
+          .set('X-Forwarded-Proto', 'https')
+          .redirects(2)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(302);
+            const location = parseUrl(res.headers.location);
+            expect(location.pathname).to.equal('/manage/auth/cf/callback');
+            expect(_
+              .chain(res.redirects)
+              .map(parseUrl)
+              .map(url => url.pathname)
+              .value()
+            ).to.eql([
+              '/manage/auth/cf',
+              '/oauth/authorize'
+            ]);
+            return location;
+          })
+          .then(location => agent
+            .get(location.path)
+            .set('Accept', 'application/json')
+            .set('X-Forwarded-Proto', 'https')
+          )
+          .then(res => {
+            expect(res.body.userId).to.equal('me');
+            expect(res.body.instance.metadata.name).to.equal(instance_id);
+            expect(res.body.instance.task.id).to.eql(`${deployment_name}_324`);
+            mocks.verify();
+          });
+      });
+
+      it('should use spec.options to fetch resource data when status.appliedOptions is not present', function () {
+        const agent = chai.request.agent(app);
+        agent.app.listen(0);
+        mocks.uaa.getAuthorizationCode(service_id);
+        mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
+        mocks.uaa.getUserInfo();
+        mocks.cloudController.getServiceInstancePermissions(instance_id);
+        _.unset(resource, 'status.appliedOptions');
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resource, 3);
+        mocks.director.getCurrentTasks(deployment_name, [{
+          'id': 324,
+          'description': 'create deployment succeeded'
+        }]);
+        mocks.director.getCurrentTaskEvents(324, {});
+        return agent
+          .get(`/manage/dashboards/director/instances/${instance_id}`)
+          .set('Accept', 'application/json')
+          .set('X-Forwarded-Proto', 'https')
+          .redirects(2)
+          .catch(err => err.response)
+          .then(res => {
+            expect(res).to.have.status(302);
+            const location = parseUrl(res.headers.location);
+            expect(location.pathname).to.equal('/manage/auth/cf/callback');
+            expect(_
+              .chain(res.redirects)
+              .map(parseUrl)
+              .map(url => url.pathname)
+              .value()
+            ).to.eql([
+              '/manage/auth/cf',
+              '/oauth/authorize'
+            ]);
+            return location;
+          })
+          .then(location => agent
+            .get(location.path)
+            .set('Accept', 'application/json')
+            .set('X-Forwarded-Proto', 'https')
+          )
+          .then(res => {
+            expect(res.body.userId).to.equal('me');
+            expect(res.body.instance.metadata.name).to.equal(instance_id);
+            expect(res.body.instance.task.id).to.eql(`${deployment_name}_324`);
+            mocks.verify();
+            _.set(resource, 'status.appliedOptions', _.get(resource, 'spec.options'));
+          });
+      });
+
+      it('should handle login_hint query param if present', function () {
+        const agent = chai.request.agent(app);
+        agent.app.listen(0);
+        mocks.uaa.getAuthorizationCodeLoginHint(service_id);
+        mocks.uaa.getAccessTokenWithAuthorizationCode(service_id);
+        mocks.uaa.getUserInfo();
+        mocks.cloudController.getServiceInstancePermissions(instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resource, 3);
+        mocks.director.getCurrentTasks(deployment_name, [{
+          'id': 324,
+          'description': 'create deployment succeeded'
+        }]);
+        mocks.director.getCurrentTaskEvents(324, {});
+        return agent
+          .get(`/manage/dashboards/director/instances/${instance_id}?login_hint=uaa`)
           .set('Accept', 'application/json')
           .set('X-Forwarded-Proto', 'https')
           .redirects(2)
