@@ -147,8 +147,10 @@ class DashboardController extends FabrikBaseController {
     /* jshint unused:false */
     const instance_id = req.params.instance_id;
     const instance_type = req.params.instance_type;
+    /* TODO: Conditional statement to fetch resourceOptions below is needed to be backwards compatible 
+     as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
     return this._getApiServerResource(instance_id, instance_type)
-      .then(resource => _.get(resource, 'spec.options'))
+      .then(resource => _.get(resource, 'status.appliedOptions') ? _.get(resource, 'status.appliedOptions') : _.get(resource, 'spec.options'))
       .then(resourceOptions => {
         const service_id = _.get(resourceOptions, 'service_id');
         const plan_id = _.get(resourceOptions, 'plan_id');

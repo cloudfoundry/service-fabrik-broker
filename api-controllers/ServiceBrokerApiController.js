@@ -80,7 +80,8 @@ class ServiceBrokerApiController extends FabrikBaseController {
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
             lastOperation: {},
-            response: {}
+            response: {},
+            appliedOptions: {}
           }
         });
       })

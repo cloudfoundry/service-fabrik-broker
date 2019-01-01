@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const proxyquire = require('proxyquire');
 const TokenIssuer = proxyquire('../../data-access-layer/cf/TokenIssuer', {});
 const assert = require('assert');
+const logger = require('../../common/logger');
 const expiredToken = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
 
 let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
@@ -98,6 +99,31 @@ describe('cf', () => {
           tokenType: 'bearer'
         });
       });
+
+      it('should handle errors(if any) in refreshToken after timeout', (done) => {
+        let tokenExpiresSpecificDate = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM2ODEwNjUxNjh9';
+        let tokenInfoSpecific = {
+          access_token: tokenExpiresSpecificDate,
+          refresh_token: tokenExpiresSpecificDate,
+          token_type: 'bearer'
+        };
+        let refreshTokenStub = sinon.stub(tokenIssuer, 'refreshToken');
+        let errorMessage = 'simulated exception';
+        refreshTokenStub.withArgs().returns(Promise.reject(errorMessage));
+        let loggerErrorStub = sinon.stub(logger, 'error');
+        this.clock = sinon.useFakeTimers(Date.now());
+        tokenIssuer.updateTokenInfo(tokenInfoSpecific);
+        const delay = tokenIssuer.tokenInfo.accessTokenExpiresIn - tokenIssuer.bufferPeriodSeconds;
+        this.clock.tick(delay * 1000);
+        this.clock.restore();
+        setTimeout(() => {
+          /* jshint expr:true */
+          expect(loggerErrorStub).to.have.been.called;
+          refreshTokenStub.restore();
+          loggerErrorStub.restore();
+          done();
+        }, 500);
+      }).timeout(4000);
     });
 
     describe('getAccessToken', () => {

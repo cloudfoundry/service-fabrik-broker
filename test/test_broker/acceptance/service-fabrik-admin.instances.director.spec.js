@@ -68,7 +68,18 @@ describe('service-fabrik-admin', function () {
           status: {
             state: 'succeeded',
             lastOperation: '{}',
-            response: '{}'
+            response: '{}',
+            appliedOptions: JSON.stringify({
+              service_id: service_id,
+              plan_id: planId || plan_unique_id,
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: org_guid,
+                space_guid: space_guid
+              },
+              organization_guid: org_guid,
+              space_guid: space_guid
+            })
           }
         };
       };
@@ -207,6 +218,27 @@ describe('service-fabrik-admin', function () {
             .catch(err => err.response)
             .then(res => {
               expect(res).to.have.status(404);
+              mocks.verify();
+            });
+        });
+        it('should fetch resource information from spec.options when status.appliedOptions is not available', function () {
+          let deploymentResource = resourceDetails();
+          _.unset(deploymentResource, 'status.appliedOptions');
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, deploymentResource);
+          mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+            return body.plan_id === plan_unique_id;
+          }, {
+            status: 202
+          });
+          return chai
+            .request(apps.internal)
+            .post(`${base_url}/deployments/${deployment_name}/update`)
+            .set('Accept', 'application/json')
+            .auth(config.username, config.password)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });

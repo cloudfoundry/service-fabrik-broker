@@ -147,14 +147,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
         resourceId: req.params.instance_id
       })
       .then(resource => {
+        let resourceOptions = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? _.get(resource, 'spec.options') :
+          _.get(resource, 'status.appliedOptions');
         if (!_.get(req, 'body.context')) {
-          _.set(req, 'body.context', _.get(resource, 'spec.options.context'));
+          _.set(req, 'body.context', _.get(resourceOptions, 'context'));
         }
         if (!_.get(req, 'body.space_guid')) {
-          _.set(req, 'body.space_guid', _.get(resource, 'spec.options.space_guid'));
+          _.set(req, 'body.space_guid', _.get(resourceOptions, 'space_guid'));
         }
         if (!_.get(req, 'body.plan_id')) {
-          _.set(req, 'body.plan_id', _.get(resource, 'spec.options.plan_id'));
+          _.set(req, 'body.plan_id', _.get(resourceOptions, 'plan_id'));
         }
       })
       .catch(err => {
@@ -297,14 +299,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
   //TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
 
   getBackupOptions(backupGuid, req) {
+    /* TODO: Conditional statements to fetch context and planId below is needed to be backwards compatible 
+     as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
     return eventmesh.apiServerClient.getResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: req.params.instance_id
       })
       .then(resource => {
-        const context = req.body.context || _.get(resource, 'spec.options.context');
-        const planId = req.body.plan_id || _.get(resource, 'spec.options.plan_id');
+        const context = req.body.context || _.get(resource, 'status.appliedOptions.context') || _.get(resource, 'spec.options.context');
+        const planId = req.body.plan_id || _.get(resource, 'status.appliedOptions.plan_id') || _.get(resource, 'spec.options.plan_id');
         const backupOptions = {
           guid: backupGuid,
           instance_guid: req.params.instance_id,

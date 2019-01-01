@@ -45,6 +45,17 @@ describe('Jobs', function () {
       touch: () => undefined
     };
     const resourceDetails = function (planId) {
+      let currentState = JSON.stringify({
+        service_id: service_id,
+        plan_id: planId || plan_id,
+        context: {
+          platform: 'cloudfoundry',
+          organization_guid: organization_guid,
+          space_guid: space_guid
+        },
+        organization_guid: organization_guid,
+        space_guid: space_guid
+      });
       return {
         apiVersion: 'deployment.servicefabrik.io/v1alpha1',
         kind: 'Director',
@@ -66,22 +77,13 @@ describe('Jobs', function () {
 
         },
         spec: {
-          options: JSON.stringify({
-            service_id: service_id,
-            plan_id: planId || plan_id,
-            context: {
-              platform: 'cloudfoundry',
-              organization_guid: organization_guid,
-              space_guid: space_guid
-            },
-            organization_guid: organization_guid,
-            space_guid: space_guid
-          })
+          options: currentState
         },
         status: {
           state: 'succeeded',
           lastOperation: '{}',
-          response: '{}'
+          response: '{}',
+          appliedOptions: currentState
         }
       };
     };
@@ -288,6 +290,51 @@ describe('Jobs', function () {
         }).catch(done);
     });
 
+    it('if resource does not contain appliedOptions paramater, spec.options is used to fetch the resourceDetails', function (done) {
+      let deploymentResource = resourceDetails();
+      _.unset(deploymentResource, 'status.appliedOptions');
+      expect(deploymentResource.status.appliedOptions).to.eql(undefined);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, deploymentResource);
+      const diff = [
+        ['releases:', null],
+        ['- name: blueprint', null],
+        ['  version: 0.0.10', 'removed'],
+        ['  version: 0.0.11', 'added']
+      ];
+      mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_scheduled_update_blueprint', false);
+      mocks.director.getDeploymentManifest(1);
+      mocks.director.diffDeploymentManifest(1, diff);
+      const expectedResponse = {
+        instance_deleted: false,
+        job_cancelled: false,
+        deployment_outdated: true,
+        update_init: CONST.OPERATION.SUCCEEDED,
+        update_response: {},
+        diff: utils.unifyDiffResult({
+          diff: diff
+        })
+      };
+      mocks.serviceBrokerClient.updateServiceInstance(instance_id, (body) => {
+        return body.plan_id === plan_id && body.parameters.scheduled === true;
+      }, {
+        status: 202
+      });
+      return ServiceInstanceUpdateJob
+        .run(job, () => {})
+        .then(() => {
+          mocks.verify();
+          expect(cancelScheduleStub).not.to.be.called;
+          expect(baseJobLogRunHistoryStub.firstCall.args[0]).to.eql(undefined);
+          expect(baseJobLogRunHistoryStub.firstCall.args[1]).to.eql(expectedResponse);
+          expect(baseJobLogRunHistoryStub.firstCall.args[2].attrs).to.eql(job.attrs);
+          expect(baseJobLogRunHistoryStub.firstCall.args[3]).to.eql(undefined);
+          expect(scheduleRunAtStub).to.be.calledOnce;
+          expect(scheduleRunAtStub.firstCall.args[0]).to.eql(job.attrs.data.instance_id);
+          expect(scheduleRunAtStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+          expect(scheduleRunAtStub.firstCall.args[2]).to.eql(config.scheduler.jobs.reschedule_delay);
+          done();
+        }).catch(done);
+    });
     it(`if instance is outdated and job was created with run_immediately flag set, update must initiated successfully and schedule itself ${config.scheduler.jobs.reschedule_delay}`, function (done) {
       mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resourceDetails());
       job.attrs.data.run_immediately = true;
