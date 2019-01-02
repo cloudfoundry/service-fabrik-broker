@@ -18,6 +18,7 @@ describe('service-fabrik-api-2.0', function () {
       const backup_guid2 = 'abcdefab-66a3-471b-af3c-8bbf1e4180be';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+      const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const container = backupStore.containerName;
       const instance_id = 'ab0ed6d6-42d9-4318-9b65-721f34719499';
       const instance_id1 = '6666666-42d9-4318-9b65-721f34719499';
@@ -185,11 +186,35 @@ describe('service-fabrik-api-2.0', function () {
             });
         });
         it('should return 200 OK - with instance_id parameter, returns only one metadata file data', function () {
+          const resource = {
+            apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+            kind: 'Director',
+            metadata: {
+              name: instance_id,
+              labels: {
+                state: 'succeeded'
+              }
+            },
+            spec: {
+              options: JSON.stringify({
+                service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                },
+                space_guid: space_guid,
+              })
+            },
+            status: {
+              state: 'succeeded',
+              lastOperation: '{}',
+              response: '{}'
+            }
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, undefined, undefined, []);
           mocks.cloudProvider.list(container, prefix, [filename, filename1]);
           mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resource);
           return chai.request(app)
             .get(`${base_url}/backups`)
             .query({
