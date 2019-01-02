@@ -12,6 +12,8 @@ const CONST = require('../common/constants');
 const config = require('../common/config');
 const SecurityGroupNotCreated = errors.SecurityGroupNotCreated;
 const SecurityGroupNotFound = errors.SecurityGroupNotFound;
+const InstanceSharingNotAllowed = errors.InstanceSharingNotAllowed;
+const CrossOrganizationSharingNotAllowed = errors.CrossOrganizationSharingNotAllowed;
 const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
 
 class CfPlatformManager extends BasePlatformManager {
@@ -24,9 +26,61 @@ class CfPlatformManager extends BasePlatformManager {
     return `${CONST.SERVICE_FABRIK_PREFIX}-${guid}`;
   }
 
+  isInstanceSharingRequest(options) {
+    const targetContext = options.bind_resource;
+    const sourceContext = options.context;
+    if (_.isNil(targetContext) || _.isNil(sourceContext) || !_.has(targetContext, 'app_guid')) {
+      //service key creation requests are not part of sharing concept
+      return false;
+    }
+    return targetContext.space_guid !== sourceContext.space_guid;
+  }
+
+  isCrossOrganizationSharingEnabled(options) {
+    const allowCrossOrgSharing = _.get(config, 'enable_cross_organization_sharing', false);
+    if (allowCrossOrgSharing) {
+      return Promise.resolve(true);
+    }
+    return this.cloudController.getSpace(options.bind_resource.space_guid)
+      .tap(targetSpaceDetails => logger.info(`shared instance binding: source instance organization: ${options.context.organization_guid}; target organization: ${targetSpaceDetails.entity.organization_guid}`))
+      .then(targetSpaceDetails => {
+        if (options.context.organization_guid !== targetSpaceDetails.entity.organization_guid) {
+          throw new CrossOrganizationSharingNotAllowed();
+        }
+        return true;
+      });
+  }
+
+  preUnbindOperations(options) {
+    return this.deleteSecurityGroupForShare(options);
+  }
+
+  preBindOperations(options) {
+    const isSharing = this.isInstanceSharingRequest(options);
+    const instanceSharingEnabled = _.get(config, 'feature.AllowInstanceSharing', true);
+
+    return Promise.try(() => {
+      if (isSharing) {
+        if (!instanceSharingEnabled) {
+          throw new InstanceSharingNotAllowed();
+        }
+        return this.isCrossOrganizationSharingEnabled(options);
+      }
+    });
+  }
+
+  postBindOperations(options) {
+    const isSharing = this.isInstanceSharingRequest(options);
+    if (isSharing) {
+      return this.createSecurityGroupForShare(options);
+    } else {
+      return Promise.try(() => logger.info('Binding created in same space as instance- not creating security group'));
+    }
+  }
+
   postInstanceProvisionOperations(options) {
     if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-      return this.createSecurityGroup(options);
+      return this.createSecurityGroupForInstance(options);
     } else {
       return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not creating security groups.'));
     }
@@ -34,7 +88,7 @@ class CfPlatformManager extends BasePlatformManager {
 
   preInstanceDeleteOperations(options) {
     if (_.get(config, 'feature.EnableSecurityGroupsOps', true)) {
-      return this.deleteSecurityGroup(options);
+      return this.deleteSecurityGroupForInstance(options);
     } else {
       return Promise.try(() => logger.info('Feature EnableSecurityGroupsOps set to false. Not deleting security groups.'));
     }
@@ -48,15 +102,13 @@ class CfPlatformManager extends BasePlatformManager {
     }
   }
 
-  createSecurityGroup(options) {
-    const name = this.getSecurityGroupName(options.guid);
-    const rules = _.map(options.ipRuleOptions, opts => this.buildSecurityGroupRules(opts));
+  createApplicationSecurityGroup(name, rules, spaceId) {
     logger.info(`Creating security group '${name}' with rules ...`, rules);
     return utils
       .retry(tries => {
         logger.info(`+-> ${ordinals[tries]} attempt to create security group '${name}'...`);
         return this.cloudController
-          .createSecurityGroup(name, rules, [options.context.space_guid]);
+          .createSecurityGroup(name, rules, [spaceId]);
       }, {
         maxAttempts: 4,
         minDelay: 1000
@@ -69,21 +121,7 @@ class CfPlatformManager extends BasePlatformManager {
       });
   }
 
-  ensureSecurityGroupExists(options) {
-    const name = this.getSecurityGroupName(options.guid);
-    logger.info(`Ensuring existence of security group '${name}'...`);
-    return this.cloudController
-      .findSecurityGroupByName(name)
-      .tap(() => logger.info('+-> Security group exists'))
-      .catch(SecurityGroupNotFound, () => {
-        logger.warn('+-> Security group does not exist. Trying to create it again.');
-        return this.ensureTenantId(options)
-          .then(() => this.createSecurityGroup(options));
-      });
-  }
-
-  deleteSecurityGroup(options) {
-    const name = this.getSecurityGroupName(options.guid);
+  deleteApplicationSecurityGroup(name) {
     logger.info(`Deleting security group '${name}'...`);
     return this.cloudController
       .findSecurityGroupByName(name)
@@ -99,6 +137,41 @@ class CfPlatformManager extends BasePlatformManager {
         logger.error('+-> Failed to delete security group', err);
         throw err;
       });
+  }
+
+  createSecurityGroupForShare(options) {
+    const name = this.getSecurityGroupName(options.bindingId);
+    const rules = _.map(options.ipRuleOptions, opts => this.buildSecurityGroupRules(opts));
+    return this.createApplicationSecurityGroup(name, rules, options.bind_resource.space_guid);
+  }
+
+  createSecurityGroupForInstance(options) {
+    const name = this.getSecurityGroupName(options.guid);
+    const rules = _.map(options.ipRuleOptions, opts => this.buildSecurityGroupRules(opts));
+    return this.createApplicationSecurityGroup(name, rules, options.context.space_guid);
+  }
+
+  ensureSecurityGroupExists(options) {
+    const name = this.getSecurityGroupName(options.guid);
+    logger.info(`Ensuring existence of security group '${name}'...`);
+    return this.cloudController
+      .findSecurityGroupByName(name)
+      .tap(() => logger.info('+-> Security group exists'))
+      .catch(SecurityGroupNotFound, () => {
+        logger.warn('+-> Security group does not exist. Trying to create it again.');
+        return this.ensureTenantId(options)
+          .then(() => this.createSecurityGroupForInstance(options));
+      });
+  }
+
+  deleteSecurityGroupForShare(options) {
+    const name = this.getSecurityGroupName(options.bindingId);
+    return this.deleteApplicationSecurityGroup(name);
+  }
+
+  deleteSecurityGroupForInstance(options) {
+    const name = this.getSecurityGroupName(options.guid);
+    return this.deleteApplicationSecurityGroup(name);
   }
 
   ensureTenantId(options) {

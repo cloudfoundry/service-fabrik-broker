@@ -27,6 +27,18 @@ class BasePlatformManager {
     return modifiedCatalog;
   }
 
+  preUnbindOperations(options) {
+    /* jshint unused:false */
+  }
+
+  preBindOperations(options) {
+    /* jshint unused:false */
+  }
+
+  postBindOperations(options) {
+    /* jshint unused:false */
+  }
+
   postInstanceProvisionOperations(options) {
     /* jshint unused:false */
   }

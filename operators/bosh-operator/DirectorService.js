@@ -694,14 +694,28 @@ class DirectorService extends BaseDirectorService {
   }
 
   bind(params) {
-    return this
-      .initialize({
-        type: 'bind'
+    let bindingCredentials;
+    return this.platformManager.preBindOperations({
+        context: params.context,
+        bind_resource: params.bind_resource,
+        bindingId: params.binding_id
       })
+      .then(() => this
+        .initialize({
+          type: 'bind'
+        }))
       .then(() => this.createBinding(this.deploymentName, {
         id: params.binding_id,
         parameters: params.parameters || {}
       }))
+      .tap(credentials => bindingCredentials = credentials)
+      .then(() => this.platformManager.postBindOperations({
+        context: params.context,
+        bind_resource: params.bind_resource,
+        bindingId: params.binding_id,
+        ipRuleOptions: this.buildIpRules()
+      }))
+      .then(() => bindingCredentials)
       .tap(() => {
         if (this.platformManager.platformName === CONST.PLATFORM.CF) {
           return this
@@ -751,6 +765,9 @@ class DirectorService extends BaseDirectorService {
       .initialize({
         type: 'unbind'
       })
+      .then(() => this.platformManager.preUnbindOperations({
+        bindingId: params.binding_id
+      }))
       .then(() => this.deleteBinding(this.deploymentName, params.binding_id));
   }
 

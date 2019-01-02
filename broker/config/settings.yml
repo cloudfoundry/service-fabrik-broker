@@ -106,9 +106,11 @@ defaults: &defaults
   enable_circuit_breaker: true
   enable_swarm_manager: true
   enable_bosh_rate_limit: false # Global switch to enable/disable rate limiting against BOSH directors
+  enable_cross_organization_sharing: false
   feature:
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
     EnableSecurityGroupsOps: true
+    AllowInstanceSharing: true
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
   http_timeout: 175000
   deployment_action_timeout: 80000
