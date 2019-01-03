@@ -29,6 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
+const (
+	leaderElectionID = "interoperator-leader-election-helper"
+)
+
 func main() {
 	logf.SetLogger(logf.ZapLogger(false))
 	log := logf.Log.WithName("entrypoint")
@@ -41,9 +45,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	options := manager.Options{
+		LeaderElection:          true,
+		LeaderElectionID:        leaderElectionID,
+		LeaderElectionNamespace: "default",
+	}
+
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("setting up manager")
-	mgr, err := manager.New(cfg, manager.Options{})
+	mgr, err := manager.New(cfg, options)
 	if err != nil {
 		log.Error(err, "unable to set up overall controller manager")
 		os.Exit(1)
