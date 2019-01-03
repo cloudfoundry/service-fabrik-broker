@@ -16,13 +16,14 @@
     {{- end }}
   {{- end }}
 {{- end }}
-  {{- if eq $stateString "succeeded" }}
-    {{- $response = (printf "Service Instance %s creation successfull" $name) }}
-  {{- else }}
-      {{- $response = (printf "Service Instance %s provision failed" $name) }}
-    {{- end }}
-  {{- end }}
-#{{- end }}
+{{- if eq $stateString "succeeded" }}
+  {{- $response = (printf "Service Instance %s creation successful" $name) }}
+{{- else }}
+    {{- $response = (printf "Service Instance %s provision failed" $name) }}
+{{- end }}
+{{- if eq $stateString "in_queue" }}
+  {{- $response = "" }}
+{{- end }}
 provision:
   state: {{ $stateString }}
   response: {{ $response }}

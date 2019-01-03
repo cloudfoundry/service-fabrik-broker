@@ -77,12 +77,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
-	director := &unstructured.Unstructured{}
-	director.SetKind("DirectorBind")
-	director.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
+	directorBind := &unstructured.Unstructured{}
+	directorBind.SetKind("DirectorBind")
+	directorBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
+	dockerBind := &unstructured.Unstructured{}
+	dockerBind.SetKind("DockerBind")
+	dockerBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
+	postgresqlMtsBind := &unstructured.Unstructured{}
+	postgresqlMtsBind.SetKind("PostgresqlMTBind")
+	postgresqlMtsBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
+	vhostMtsBind := &unstructured.Unstructured{}
+	vhostMtsBind.SetKind("VirtualHostBind")
+	vhostMtsBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
 	subresources := []runtime.Object{
 		postgres,
-		director,
+		directorBind,
+		dockerBind,
+		postgresqlMtsBind,
+		vhostMtsBind,
 	}
 
 	for _, subresource := range subresources {
@@ -114,6 +126,9 @@ type ReconcileSFServiceBinding struct {
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=directorbind,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=dockerbind,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=postgresqlmtbind,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=virtualhostbind,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
