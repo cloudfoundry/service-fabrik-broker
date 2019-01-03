@@ -97,6 +97,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		postgres,
 		postgres2,
 		director,
+		docker,
+		postgresqlmts,
+		vhostmts,
 	}
 
 	for _, subresource := range subresources {
