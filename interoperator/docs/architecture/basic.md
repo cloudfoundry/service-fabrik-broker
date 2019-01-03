@@ -379,6 +379,8 @@ spec:
     url: "https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/feature/inter-operator/interoperator/config/samples/templates/gotemplates/postgres/postgres.yaml"
 ```
 
+Please note that the URLs have to be accessible for the Service Fabrik inter-operator. This is especially relevent in the private cloud scenario.
+
 ##### In-line templates
 
 Since service operators are expected to [feature-complete](#context) in their API, it would be very common scenario that an OSB action maps to a single (possibly the same) Kubernetes resource of the service operator.
