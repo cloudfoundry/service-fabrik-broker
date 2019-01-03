@@ -19,7 +19,6 @@ const cf = require('../data-access-layer/cf');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const UnprocessableEntity = errors.UnprocessableEntity;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const JsonWebTokenError = jwt.JsonWebTokenError;
 const ContinueWithNext = errors.ContinueWithNext;
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
@@ -754,17 +753,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => {
         if (options.instance_id && !options.plan_id) {
           return eventmesh.apiServerClient.getResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: options.instance_id
-          })
-          .then(resource => {
-            options.plan_id = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? resource.spec.options.plan_id
-            : _.get(resource, 'status.appliedOptions.plan_id');
-          })
-          .catch(NotFound, () => {
-            logger.info(`+-> Instance ${options.instance_id} not found, continue listing backups for the deleted instance`);
-          })
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+              resourceId: options.instance_id
+            })
+            .then(resource => {
+              options.plan_id = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? resource.spec.options.plan_id :
+                _.get(resource, 'status.appliedOptions.plan_id');
+            })
+            .catch(NotFound, () => {
+              logger.info(`+-> Instance ${options.instance_id} not found, continue listing backups for the deleted instance`);
+            });
         }
       })
       .then(() => {
@@ -888,29 +887,29 @@ class ServiceFabrikApiController extends FabrikBaseController {
         if (platform === CONST.PLATFORM.CF) {
           //Fetch details needed for backup report.
           return this.cloudController.getOrgAndSpaceDetails(data.instance_id, data.tenant_id)
-          .then(space => {
-            _.chain(data)
-              .set('space_name', space.space_name)
-              .set('organization_name', space.organization_name)
-              .set('organization_guid', space.organization_guid)
-              .value();
-          })
+            .then(space => {
+              _.chain(data)
+                .set('space_name', space.space_name)
+                .set('organization_name', space.organization_name)
+                .set('organization_guid', space.organization_guid)
+                .value();
+            });
         } else if (platform === CONST.PLATFORM.K8S) {
           //TODO: Add K8S specific paramaters in 'data' which will appear in backup report.
           return;
         }
       })
-      .then(() => 
+      .then(() =>
         ScheduleManager
-          .schedule(
-            req.params.instance_id,
-            CONST.JOB.SCHEDULED_BACKUP,
-            req.body.repeatInterval,
-            data,
-            req.user)
-          .then(body => res
-            .status(CONST.HTTP_STATUS_CODE.CREATED)
-            .send(body))
+        .schedule(
+          req.params.instance_id,
+          CONST.JOB.SCHEDULED_BACKUP,
+          req.body.repeatInterval,
+          data,
+          req.user)
+        .then(body => res
+          .status(CONST.HTTP_STATUS_CODE.CREATED)
+          .send(body))
       );
   }
 
@@ -944,14 +943,14 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let platform = utils.getPlatformFromContext(req.body.context);
     return Promise.try(() => {
       switch (platform) {
-        case CONST.PLATFORM.CF:
-          return this.cloudController
-            .getServiceInstance(instanceId)
-            .then(body => _.set(req, 'entity.name', body.entity.name));
-        case CONST.PLATFORM.K8S:
-          /* TODO: Needs to handled */
-          return;
-      }  
+      case CONST.PLATFORM.CF:
+        return this.cloudController
+          .getServiceInstance(instanceId)
+          .then(body => _.set(req, 'entity.name', body.entity.name));
+      case CONST.PLATFORM.K8S:
+        /* TODO: Needs to handled */
+        return;
+      }
     });
   }
 

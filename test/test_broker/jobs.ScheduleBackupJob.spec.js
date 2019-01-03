@@ -59,6 +59,18 @@ describe('Jobs', function () {
       const transactionLogsPathname19 = `/${serviceContainer}/${transactionLogsFileName19Daysprior}`;
       const transactionLogsPathname16 = `/${serviceContainer}/${transactionLogsFileName16DaysPrior}`;
       const transactionLogsPathname18 = `/${serviceContainer}/${transactionLogsFileName18DaysPrior}`;
+      const dummyDeploymentResource = {
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+            },
+            space_guid: space_guid,
+          })
+        }
+      };
       const scheduled_data = {
         trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
         type: 'online',
@@ -169,7 +181,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -235,7 +247,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -304,7 +316,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -370,7 +382,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -441,7 +453,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -500,7 +512,7 @@ describe('Jobs', function () {
         }, {
           status: 500
         });
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         return ScheduleBackupJob.run(job, () => {
           mocks.verify();
           const errStatusCode = 500;
@@ -523,7 +535,7 @@ describe('Jobs', function () {
         }, {
           status: 409
         });
-        mocks.cloudController.findServicePlanByInstanceId(instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         return ScheduleBackupJob.run(job, () => {})
           .then(() => {
             mocks.verify();
@@ -557,7 +569,7 @@ describe('Jobs', function () {
         }, {
           status: 409
         });
-        mocks.cloudController.findServicePlan(failed_instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, failed_instance_id, dummyDeploymentResource);
         return ScheduleBackupJob.run(_.chain(_.cloneDeep(job)).set('attrs.data.attempt', max_attmpts).value(), () => {})
           .then(() => {
             mocks.verify();
@@ -583,7 +595,7 @@ describe('Jobs', function () {
         }, {
           status: 409
         });
-        mocks.cloudController.findServicePlan(failed_instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, failed_instance_id, dummyDeploymentResource);
         return ScheduleBackupJob.run(job, () => {})
           .then(() => {
             mocks.verify();
@@ -604,7 +616,7 @@ describe('Jobs', function () {
         const backupResponse = {
           backup_guid: backup_guid
         };
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
         mocks.serviceFabrikClient.startBackup(instance_id, {
           type: 'online',
           trigger: CONST.BACKUP.TRIGGER.SCHEDULED
@@ -629,7 +641,7 @@ describe('Jobs', function () {
         });
       });
       it('should delete scheduled backup & any on-demand backups even when service instance is deleted', function () {
-        mocks.cloudController.findServicePlan(instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
         mocks.cloudProvider.list(container, prefix, [
           fileName14Daysprior,
           fileName16DaysPrior,
@@ -697,7 +709,7 @@ describe('Jobs', function () {
         });
       });
       it('should cancel backup job (itself) when there are no more backups or transaction-logs to delete & instance is deleted', function () {
-        mocks.cloudController.findServicePlan(instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
         mocks.cloudProvider.list(container, prefix, []);
         mocks.cloudProvider.list(container, prefix, []);
         //Since, all the backups are deleted the list is returning empty.
@@ -725,7 +737,7 @@ describe('Jobs', function () {
       });
       it('should handle errors when cancelling backup job (itself)', function () {
         job.attrs.data.instance_id = failed_instance_id;
-        mocks.cloudController.findServicePlan(failed_instance_id);
+        mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, failed_instance_id, {}, 1, 404);
         mocks.cloudProvider.list(container, failed_prefix, []);
         mocks.cloudProvider.list(container, failed_prefix, []);
         mocks.cloudProvider.listBlobs(serviceContainer, transactionLogsPrefixFailedInstance, [], 2);

@@ -9,9 +9,7 @@ const CONST = require('../common/constants');
 const errors = require('../common/errors');
 const utils = require('../common/utils');
 const retry = utils.retry;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const catalog = require('../common/models').catalog;
-const cloudController = require('../data-access-layer/cf').cloudController;
 const eventmesh = require('../data-access-layer/eventmesh');
 const backupStore = require('../data-access-layer/iaas').backupStore;
 const ScheduleManager = require('./ScheduleManager');
@@ -77,15 +75,15 @@ class ScheduleBackupJob extends BaseJob {
 
   static isServiceInstanceDeleted(instanceId) {
     return eventmesh.apiServerClient.getResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-      resourceId: instanceId
-    })
-    .then(() => false)
-    .catch(errors.NotFound, () => {
-      logger.warn(`service instance : ${instanceId} deleted`);
-      return true;
-    });
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
+      .then(() => false)
+      .catch(errors.NotFound, () => {
+        logger.warn(`service instance : ${instanceId} deleted`);
+        return true;
+      });
   }
 
   static deleteOldBackup(job, instanceDeleted) {
