@@ -82,6 +82,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	director := &unstructured.Unstructured{}
 	director.SetKind("Director")
 	director.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+	docker := &unstructured.Unstructured{}
+	docker.SetKind("Docker")
+	docker.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+	postgresqlmts := &unstructured.Unstructured{}
+	postgresqlmts.SetKind("PostgresqlMT")
+	postgresqlmts.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+	vhostmts := &unstructured.Unstructured{}
+	vhostmts.SetKind("VirtualHost")
+	vhostmts.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
 	subresources := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
@@ -120,6 +129,9 @@ type ReconcileServiceInstance struct {
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=postgresql,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=director,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=docker,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=postgresqlmt,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=virtualhost,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete

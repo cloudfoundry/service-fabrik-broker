@@ -77,6 +77,42 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - bind.servicefabrik.io
+  resources:
+  - dockerbind
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - bind.servicefabrik.io
+  resources:
+  - postgresqlmtbind
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - bind.servicefabrik.io
+  resources:
+  - virtualhostbind
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - ""
   resources:
   - configmap
@@ -140,6 +176,42 @@ rules:
   - deployment.servicefabrik.io
   resources:
   - director
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - deployment.servicefabrik.io
+  resources:
+  - docker
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - deployment.servicefabrik.io
+  resources:
+  - postgresqlmt
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - deployment.servicefabrik.io
+  resources:
+  - virtualhost
   verbs:
   - get
   - list
