@@ -39,6 +39,10 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Hybrid Landscape Scenario](#hybrid-landscape-scenario)
         * [Pros](#pros-6)
         * [Cons](#cons-6)
+    * [Three Dimensions for Comparison](#three-dimensions-for-comparison)
+      * [One Cluster vs\. Multiple Clusters](#one-cluster-vs-multiple-clusters)
+      * [Dedicated Clusters vs\. Shared Clusters](#dedicated-clusters-vs-shared-clusters)
+      * [Degrees of isolation](#degrees-of-isolation)
     * [Recommended Landscape Scenario](#recommended-landscape-scenario)
   * [Managing the Cluster Landscape](#managing-the-cluster-landscape)
     * [An analogy to kube\-scheduler](#an-analogy-to-kube-scheduler)
@@ -238,13 +242,81 @@ Here, the Service Fabrik instance is shared but the Kubernetes clusters are dedi
 
 In this axis, we can compare the different cluster landscape scenarios based on whether there will be only one Kubernetes cluster hosting all the services in a landscape or there will be multiple Kubernetes clusters per landscape.
 
-| One Cluster | Multiple Clusters |
-|---|---|
-|<ul><li>[Simple dedicated](#a-simple-dedicated-landscape-scenario)</li><li>[Simple shared](#a-simple-shared-landscape-scenario) |<ul><li>[Conservative dedicated](#a-conervative-dedicated-landscape-scenario)</li><li>[Conservative shared](#a-conservative-shared-landscape-scenario)
+Clearly, with a single Kubernetes cluster the number of service instances as well as the scale of those instances become coupled with the size of the hosting Kubernetes cluster. Today, a Gardner shoot cluster can grow to approximately 100 nodes. This limit will improve over time. But still there will always be a limit on the number of nodes in a cluster.
+
+Also, in the case of stateful services, the CPU and memory are not the only resources that constrain the ability to optimize the number of instances in a Kubernetes node/cluster. Other resources, such as the number of disk volumes or network bandwidth or perhaps more obscure kernel level resources could be additional constraints.
+
+Assuming todays cluster size of 100 nodes, for a service like Postgres, how many instances can be expect to host in a single Kubernetes cluster?
+If they are large sized instances, maybe we should expect the number of service instances to be less than the number of nodes. So, less than 100.
+If they are very very small instances, may be we can expect 5x number of instance. So, around 500 instances.
+Can we expect to host drastically more than 5x instances? Or 10x perhaps? It is difficult to imagine more than that.
+
+For a service like Postgres, for which we can expect a large number of service instances, the above size may not suffice. Perhaps not even for the medium term.
+
+For other services like the Application Logging Service, the number of services instances per cluster could be even smaller because of the larger size of the individual service instances and its `pods`.
+
+So, a single Kubernetes cluster for the whole landscape for even a single service seems to be not workable for at least some of the services. And if multiple Kubernetes clusters are required for any one service, then Service Fabrik inter-operator would need to support that scenario.
+
+This chain of reasoning can be used to eliminate the single Kubernetes cluster scenarios except for the short term. This eliminates all the dedicated, shared and hybrid variations of the single cluster landscape scenario. Only the optimal (many service instances in a Kubernetes cluster but many such Kubernetes clusters) and the conservative (each service instance in its own Kubernetes cluster) remain (in their dedicated, shared and hybrid variants).
 
 #### Dedicated Clusters vs. Shared Clusters
 
-#### Isolation
+As seen [above](#one-cluster-vs-multiple-clusters) the single cluster scenarios have been eliminated as viable options.
+Now, we can go into the axis of weighing the pros and cons of having a dedicated set of Kubernetes cluster for each service (say, Postgres and MongoDB) vs. provisioning different services in the same shared pool of Kubernetes clusters.
+
+Operationally, [dedicated clusters](#an-optimal-dedicated-landscape-scenario) for each service would be easier to manage.
+But [shared pool of clusters](#an-optimal-shared-landscape-scenario) to host the instances of multiple services could potentially achieve better resource utilization.
+
+Additionally, there is already a requirement on the services being developed on Kubernetes to move away from the t-shirt size approach and towards a more pay-per-use approach.
+This requires the services to implement a lot more automated and granular scaling than was required before. Such a granular scaling brings additional complexities into scheduling (apart from the complexities of implementing the automatic and granular scaling in the first place).
+
+As was seen [above](#one-cluster-vs-multiple-clusters), fitting a large number of very small instances and a smaller number of larger instances brings different constraints into scheduling and eviction and quality of service guarantees. Not just CPU and memory but other resources such as volumes or network bandwidth or perhaps more obscure kernel level resources could be additional constraints. These resources are currently not supported by Kubernetes or the [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) natively.
+
+This leads us to two options.
+
+1. Enhance the Kubernetes API to capture these additional resources and constraints and also enhance the relevant Kubernetes components such as the [`kubelet`](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) etc. to handle these additional resources and constraints properly.
+This would be the most desirable end-goal. But it could be, potentially, a larger effort.
+1. Leverage existing Kubernetes functionality such as [taints and tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) and/or [affinity and anti-affinity](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity) to influence the scheduling of different sized service instance `pods` on the nodes with the right machine types as well as with the right neighboring `pods` on the same `node`.
+This would be a more a short/medium term solution.
+But could potentially be a smaller effort.
+This kind of addtional scheduling constraints are best encoded in the individual service operator.
+
+If option 2 is chosen, then if we provision service instances of multiple services (say, Postgres and MongoDB), then the service operators do not only have to know about the taints, affinities etc. for their own services but also taints, affinities etcd. for the other services they share the Kubernetes cluster with.
+This would not be desirable. The service operators should be as agnostic of each other as possible unless there are clear dependencies. Preferrably, completely agnostic.
+
+Please note that these arguments are only about the sharing of Kubernetes cluster among different services.
+Sharing of Service Fabrik inter-operator itself is still perfectly fine.
+
+So, if option 2 above is chosen, then sharing the same Kubernetes cluster is not preferrable.
+This leaves optimal (many instances in one cluster but multiple such clusters) and conservative (one instance in its own cluster) with their dedicated and hybrid variations. The shared variations are eliminated.
+
+But if option 1 is chosen, then shared cluster variations might still be considered.
+
+#### Degrees of isolation
+
+In this axis, the comparison is between multiple instances in a cluster (optimal) vs. one instance in its own a cluster (conservative).
+
+* Conservative cluster landscape
+  * Pros
+    * Maximum possible isolation. Potentially at IaaS-level
+    * One-to-one mapping between instance and cluster might be potentially simpler.
+  * Cons
+    * Sub-optimal resource utilization. There will be a cost of the control-plane (both in the Gardener seed and the shoot cluster itself) would be dedicated for each service instance.
+    * Is such isolation really required?
+    * It might be misleading or premature to think that one-to-one mapping between instance and cluster would be simpler. If we consider the full life-cycle including disaster recovery (of the clusters as well), the complexity would be pretty much the same as the optimal landscape.
+    * Largest number of clusters. The number of clusters is, in itself, another kind of complexity.
+* Optimal cluster landscape
+  * Pros
+    * More optimal resource utilization. This can get even better over time as the Gardener cluster size limit is improved incrementally.
+    * A considerable degree of isolation can be achieved as mentioned [here](https://sap.sharepoint.com/:w:/r/teams/CloudDataServices-ProductTeam/_layouts/15/doc2.aspx?sourcedoc=%7bee7b6dc6-d0c3-4b6b-aacd-2a7706b6fd89%7d&action=edit&wdPid=7d12ab3c). This would require review and confirmation by the Security team.
+    * Leads to a more flexible design. The design in the document can work for both optimal and conservative landscapes. The conservative landscape is just a special case for that design. Also, as seen in the cons for the conservative landscape, such a design might anyway be required for the conservative landscape as well.
+    * The loose coupling using the scheduling approach can lead to a more robust system.
+    * Less number of clusters (and potentially progressively lesser) as compared to the conservative landscape.
+  * Cons
+    * Potentially, more complex design than in the case of the conservative landscape. But not necessarily so. As mentioned above.
+    * Lesser degree of isolation. But there is mitigation as mentioned above subject to the review from the Security team.
+
+This could be the reasoning to favour the optimal (many instances in one cluster but multiple such clusters) over the conservative (one instance in its own cluster) with their dedicated and hybrid variations.
 
 ### Recommended Landscape Scenario
 
@@ -274,7 +346,7 @@ In Kubernetes, the [`kube-scheduler`](https://kubernetes.io/docs/reference/comma
 
 1. A [pod](https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/) gets created in the [`kube-apiserver`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/).
 This could be directly (via [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) or the [Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/)).
-Or it could be indirectly (via some other high-order concepts such as [`replicasets`](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/) or other [controllers]((https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller)).
+Or it could be indirectly (via some other high-order concepts such as [`replicasets`](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/) or other [controllers]((https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers)).
 1. The [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) detects that there is a `pod` to be scheduled, inspects the resources requirements of the `pod` and tries to identify the right Kubernetes [`node`](https://kubernetes.io/docs/concepts/architecture/nodes/) where this `pod` can be scheduled.
 The [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) updates the `pod` specification with the information about the `node` where it is to be scheduled.
 1. The [`kubelet`](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) running inside the designated `node` detects the new `pod` that is scheduled to be executed in that particular `node` and triggers the `pod` execution.
@@ -297,21 +369,21 @@ Analogous to the [`pod` scheduling control-flow](#an-analogy-to-kube-scheduler),
 
 The analogous steps would be as follows.
 
-1. A [`ServiceInstance`](basic.md#sfserviceinstance) is created in the `kube-apiserver` of the Service Fabrik inter-operator.
+1. A [`SFServiceInstance`](basic.md#sfserviceinstance) is created in the `kube-apiserver` of the Service Fabrik inter-operator.
 Typically, this would be the eventual result of a [`provision`](basic.md#provision) call to the [Service Fabrik Broker](basic.md#service-fabrik-broker), which, in its turn, would be an eventual result of a `provision` call to the [Service Manager](https://github.com/Peripli/service-manager).
-1. A `ServiceInstance` scheduler detects that there is a new `ServiceInstance` that needs to be scheduled, inspects the resource requirements of the `ServiceInstance` and tries to identify the right Kubernetes cluster where the `ServiceInstance` can be scheduled.
-The `ServiceInstance` scheduler updates the `ServiceInstance` specification with the information about the Kubernetes cluster where the `ServiceInstance` is to be scheduled.
-1. The [Service Fabrik inter-operator](basic.md#service-fabrik-inter-operator) provisions the `ServiceInstance` in the specified Kubernetes cluster.
+1. A `SFServiceInstance` scheduler detects that there is a new `SFServiceInstance` that needs to be scheduled, inspects the resource requirements of the `SFServiceInstance` and tries to identify the right Kubernetes cluster where the `SFServiceInstance` can be scheduled.
+The `SFServiceInstance` scheduler updates the `SFServiceInstance` specification with the information about the Kubernetes cluster where the `SFServiceInstance` is to be scheduled.
+1. The [Service Fabrik inter-operator](basic.md#service-fabrik-inter-operator) provisions the `SFServiceInstance` in the specified Kubernetes cluster.
 
 These steps can be depicted as shown below.
 
 ![Service Instance Scheduling Control-flow](images/serviceinstance-scheduling.png)
 
 There main advantages of this approach are as follows.
-* The scheduling decision is captured explicitly in the `ServiceInstance` resource itself.
-  * All the information about the `ServiceInstance` is located in the resource itself.
+* The scheduling decision is captured explicitly in the `SFServiceInstance` resource itself.
+  * All the information about the `SFServiceInstance` is located in the resource itself.
   This makes it possible to implement the rescheduling of `ServiceInstances` to some other Kubernetes cluster in the future.
-* The complexity of the decision-making process for picking the most suitable Kubernetes cluster is completely decoupled from the more mundane matter of actually provisioning the `ServiceInstance` once the suitable Kubernetes cluster been selected.
+* The complexity of the decision-making process for picking the most suitable Kubernetes cluster is completely decoupled from the more mundane matter of actually provisioning the `SFServiceInstance` once the suitable Kubernetes cluster been selected.
 * Schedulers are decoupled from the vagaries of actual details of provisioning of `serviceinstances`.
 They can be simpler and can concentrate only on the details about the scheduling algorithm.
 This makes writing custom schedulers easier.
@@ -323,7 +395,7 @@ This makes writing custom schedulers easier.
 In the [`pod` scheduling analogy](#an-analogy-to-kube-scheduler), the up-to-date set of available Kubernetes [`nodes`](https://kubernetes.io/docs/concepts/architecture/nodes/) in the Kubernetes cluster is assumed to be present and its members known to both the [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) as well as the individual [`kubelets`](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) running in those `nodes`.
 In Kubernetes, this information is available and kept up-to-date in the form of the [`Node`](https://kubernetes.io/docs/concepts/architecture/nodes/) resource.
 
-Similarly, in the case of [`ServiceInstance` scheduling](#serviceinstance-scheduling), the up-to-date set of available Kubernetes clusters in the landscape is assumed to be present and its members (the individual Kubernetes clusters) are known to both the `ServiceInstance` scheduler and the [Service Fabrik inter-operator](basic.md#service-fabrik-inter-operator).
+Similarly, in the case of [`SFServiceInstance` scheduling](#serviceinstance-scheduling), the up-to-date set of available Kubernetes clusters in the landscape is assumed to be present and its members (the individual Kubernetes clusters) are known to both the `SFServiceInstance` scheduler and the [Service Fabrik inter-operator](basic.md#service-fabrik-inter-operator).
 There is no standard Kubernetes resource that captures this information.
 
 The [Cluster Registry](https://github.com/kubernetes/cluster-registry/) defines the the [`Cluster`](https://github.com/kubernetes/cluster-registry/blob/master/cluster-registry-crd.yaml) resource that can capture the basic information about the available Kubernetes clusters.

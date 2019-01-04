@@ -40,15 +40,16 @@ Architects, Developers, Product Owners, Development Managers who are interested 
         * [Remote Templates](#remote-templates)
         * [In\-line templates](#in-line-templates)
     * [SFServiceInstance](#sfserviceinstance)
+      * [Rationale behind introducing the SFServiceInstance resource](#rationale-behind-introducing-the-sfserviceinstance-resource)
     * [SFServiceBinding](#sfservicebinding)
 
 ## Context
 
 The technical guidelines for developing stateful services natively on Kubernetes are documented [here](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md).
 The high-level approach recommendation is for the individual services to package their service implementation (including automated life-cycle activities) as a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery).
-An operator is a combination of a set of [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes) in Kubernetes and a set of custom controllers which watch, manage and implement a control-loop to take the required action to reconcile the desired state (as specified in the custom resources) with the actual state.
+An operator is a combination of a set of [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in Kubernetes and a set of custom controllers which watch, manage and implement a control-loop to take the required action to reconcile the desired state (as specified in the custom resources) with the actual state.
 
-Typically, the operators are expected to manage their services within a given kubernetes cluster and be feature-complete (via their [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes) in the functionality they provide.
+Typically, the operators are expected to manage their services within a given kubernetes cluster and be feature-complete (via their [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in the functionality they provide.
 
 ## Integration with Service Manager
 
@@ -56,13 +57,13 @@ Typically, the operators are expected to manage their services within a given ku
 
 The guideline for developing stateful kubernetes-native services is to develop a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) for the service. This makes it very close to the paradigm of service development on kubernetes as provide a powerful way to encapsulate both service and life-cycle funcationality in once package.
 
-This makes it necessary to bridge the gap between the Kubernetes [custom resource](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes)-based API of the operators with the [OSB](https://www.openservicebrokerapi.org/) API expected by the [Service Manager](https://github.com/Peripli/service-manager).
+This makes it necessary to bridge the gap between the Kubernetes [custom resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)-based API of the operators with the [OSB](https://www.openservicebrokerapi.org/) API expected by the [Service Manager](https://github.com/Peripli/service-manager).
 
 The inter-operator proposes to bridge this gap using a metadata-based approach and avoid too much of coding for this integration. The following metadata needs to be captured for a given operator so that it can be integrated as an OSB-compatible Service Broker with ServiceManager.
 
 1. OSB Service and Service Plans that are supported by the operator.
-1. Templates of the Kubernetes [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes) of the operator.
-1. Mapping of OSB actions such as `provision`, `deprovision`, `bind`, `unbind` etc. to the templated of Kubernetes [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes) of the operator.
+1. Templates of the Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
+1. Mapping of OSB actions such as `provision`, `deprovision`, `bind`, `unbind` etc. to the templated of Kubernetes [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) of the operator.
 
 ![Inter-operator Design](images/inter-operator.png)
 
@@ -70,11 +71,11 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 
 The Service Fabrik Broker would act as the OSB API Adapter and is the component that intergrates with the Service Manager. It is a lean component that serves OSB API requests and records the requests in a set of OSB-equivalent custom resources [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding).
 
-These custom resources capture all the data sent in their corresponding OSB requests and act as a point of co-ordination between the inter-operator component that would then work to reconcile these OSB resources with the actual operator [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes) based on the templates supplied in the catalog resources [`SFService`](#sfservice) and [`SFPlan`](#sfplan).
+These custom resources capture all the data sent in their corresponding OSB requests and act as a point of co-ordination between the inter-operator component that would then work to reconcile these OSB resources with the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) based on the templates supplied in the catalog resources [`SFService`](#sfservice) and [`SFPlan`](#sfplan).
 
 ### Service Fabrik Inter-operator
 
-The inter-operator is a [custom controller](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
+The inter-operator is a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on the [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding) custom resources and take the actions required as described [below]() to reconcile the corresponding resources of the service operator.
 
 ## Basic Control-flow
 
@@ -225,7 +226,7 @@ spec:
 
 ```
 
-The Service Fabrik Broker, as a [custom controller](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller), keeps a watch on `sfservices` and serves the subsequent `/v2/catalog` request according to the `sfservices` objects maintained as of the time of the request.
+The Service Fabrik Broker, as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers), keeps a watch on `sfservices` and serves the subsequent `/v2/catalog` request according to the `sfservices` objects maintained as of the time of the request.
 
 An operator can register one or more `sfservices`.
 
@@ -327,7 +328,7 @@ spec:
 
 ```
 
-The Service Fabrik Broker, as a [custom controller](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller),
+The Service Fabrik Broker, as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers),
 keeps a watch on `sfplans` and serves the subsequent `/v2/catalog` request according to the `sfplanss` objects maintained as of the time of the request.
 
 An operator can register one or more `sfplans`.
@@ -338,7 +339,7 @@ Deregistration of `sfplans` is handled using Kubernetes [finalizers](https://kub
 
 Service Fabrik inter-operator, currently, assumes that API of the individual service's operator would be Kubernetes Resources.
 Service Fabrik inter-operator does not make any assumptions about the individual service operator's API apart from this.
-Usually, they would be some [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes),
+Usually, they would be some [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/),
 which would give the service operator implementation the full flexibility to implement and expose their functionality.
 
 To enable this independence of API for the service operators, Service Fabrik inter-operator relies on the templates supplied in the [`sfplans`](#sfplan) to map the OSB actions to the specific CRDs or the individual service operators.
@@ -449,9 +450,22 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes).
+The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfserviceinstances` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Deprovision` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
+
+#### Rationale behind introducing the `SFServiceInstance` resource
+
+Technically, the functionality of the Service Fabrik inter-operator can be implemented without using the `SFServiceInstance` resource for simpler use-cases.
+For example, in the [`provision`] control-flow, the Service Fabrik Broker can directly lookup the [`SFPlan`] and apply the right template and create the actual service-specific resources directly without having to create an intermediate `SFServiceIntance` resource first to be picked up by the `Service Fabrik inter-operator.
+This might work well for the scenario where the Service Fabrik in provisioned on the same Kubernetes cluster as where the service operator and it's instances are also eventually provisioned.
+But as discussed in the [cluster landscape document](cluster-landscape.md), there are [reasons](cluster-landscape.md#tree-dimensions-for-comparison) to [recommend](cluster-landscape.md#recommended-landscape-scenario) more dynamic scenarios involving multiple Kubernetes clusters where the Kubernetes cluster where Service Fabrik is provisioned would be different from the Kubernetes cluster where the service operator and the instances are provisioned.
+This would lead to a [design](cluster-landscape.md#service-instance-scheduling) where there a scheduler to provide loose coupling between the scheduling decision (in which Kubernetes cluster a particular service instance is to be provisioned) and the actual details of provisioning.
+Such a design would necessitate two sets of custom resources.
+1. One resource on the Service Fabrik side on which the scheduling decision can be take an recorded.
+1. Another resource (or set of resources) which are to be acted upon by the service operator.
+
+In such a scenario, it makes sense to leverage the first resource on the Service Fabrik side to record the OSB request almost verbatim which leads to the current `SFServiceInstance` design.
 
 ### SFServiceBinding
 
@@ -490,6 +504,6 @@ status:
 
 ```
 
-The inter-operator as a [custom controller](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-controller) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/building-blocks.md#custom-resources---extending-kubernetes).
+The inter-operator as a [custom controller](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#custom-controllers) that keeps a watch on `sfservicebindings` and take action as described [below]() to reconcile the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 `Unbind` is handled using Kubernetes [finalizers](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers).
