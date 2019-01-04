@@ -79,14 +79,10 @@ class MultitenancyBindOperator extends BaseOperator {
     const multitenancyBindService = MTServiceFabrik.getService(this.service);
     return multitenancyBindService.createInstance(instance_guid, changedOptions, this.bindResourceType, this.deploymentResourceType)
       .then(multitenancyBindService => multitenancyBindService.unbind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: this.bindResourceType,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
+        resourceId: changeObjectBody.metadata.name
       }));
   }
 }

@@ -64,14 +64,10 @@ class VirtualHostBindOperator extends BaseOperator {
     logger.info('Triggering unbind for virtualhost with the following options:', changedOptions);
     return VirtualHostService.createVirtualHostService(instance_guid, changedOptions)
       .then(virtualHostService => virtualHostService.unbind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(response => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
+        resourceId: changeObjectBody.metadata.name
       }));
   }
 }
