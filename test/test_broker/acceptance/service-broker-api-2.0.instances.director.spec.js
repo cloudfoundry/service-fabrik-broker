@@ -1,16 +1,12 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = require('../../../broker/lib/fabrik');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
-const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
@@ -62,14 +58,14 @@ describe('service-broker-api-2.0', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        _.unset(fabrik.DirectorManager, plan_id);
+        //_.unset(fabrik.DirectorManager, plan_id);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
         sandbox = sinon.sandbox.create();
         delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
-          fabrik.DirectorManager.load(plan),
+          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });
@@ -1520,7 +1516,7 @@ describe('service-broker-api-2.0', function () {
         });
       });
 
-      describe('#getInfo', function () {
+      /*describe('#getInfo', function () {
         let sandbox, getDeploymentInfoStub, getResourceStub;
 
         const resource = {
@@ -1578,22 +1574,7 @@ describe('service-broker-api-2.0', function () {
           sandbox.restore();
         });
 
-        it('should return object with correct plan and service information', function () {
-          let context = {
-            platform: 'cloudfoundry'
-          };
-          return fabrik
-            .createInstance(instance_id, service_id, plan_id, context)
-            .then(instance => instance.getInfo())
-            .catch(err => err.response)
-            .then(res => {
-              expect(res.title).to.equal('Blueprint Dashboard');
-              expect(res.plan.id).to.equal(plan_id);
-              expect(res.service.id).to.equal(service_id);
-              expect(res.instance.metadata.name).to.equal(instance_id);
-            });
-        });
-      });
+      });*/
     });
   });
 });

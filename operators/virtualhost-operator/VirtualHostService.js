@@ -190,7 +190,7 @@ class VirtualHostService extends BaseService {
       .tap(parts => parts[1] = parts.length ? parseInt(parts[1]) : undefined)
       .value(), 2);
   }
-  
+
   static createVirtualHostService(instanceId, options) {
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);

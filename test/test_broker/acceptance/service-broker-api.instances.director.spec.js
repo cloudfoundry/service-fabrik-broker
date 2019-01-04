@@ -1,11 +1,9 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = require('../../../broker/lib/fabrik');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const ScheduleManager = require('../../../jobs');
@@ -36,12 +34,12 @@ describe('service-broker-api', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        _.unset(fabrik.DirectorManager, plan_id);
+        //_.unset(fabrik.DirectorManager, plan_id);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
         return mocks.setup([
-          fabrik.DirectorManager.load(plan),
+          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });

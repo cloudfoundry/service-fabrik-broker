@@ -1,14 +1,11 @@
 'use strict';
 
-const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').internal;
-const catalog = require('../../../common/models').catalog;
 const docker = require('../../../data-access-layer/docker');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
 const utils = require('../../../common/utils');
-const fabrik = require('../../../broker/lib/fabrik');
 
 describe('service-broker-api', function () {
   describe('instances', function () {
@@ -18,7 +15,6 @@ describe('service-broker-api', function () {
       const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = '466c5078-df6e-427d-8fb2-c76af50c0f56';
-      const plan = catalog.getPlan(plan_id);
       const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const instance_id = 'b3e03cb5-29cc-4fcf-9900-023cf149c554';
@@ -163,13 +159,13 @@ describe('service-broker-api', function () {
       let sandbox, delayStub;
 
       before(function () {
-        _.unset(fabrik.DockerManager, plan_id);
-        mocks.docker.inspectImage();
+        //_.unset(fabrik.DockerManager, plan_id);
+        //mocks.docker.inspectImage();
         mocks.docker.getAllContainers(usedPorts);
         sandbox = sinon.sandbox.create();
         delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
-          fabrik.DockerManager.load(plan),
+          //fabrik.DockerManager.load(plan),
           docker.updatePortRegistry()
         ]);
       });
@@ -858,14 +854,13 @@ describe('service-broker-api', function () {
       });
       describe('docker-deprecated-plans', function () {
         const plan_id = '61a8d1f7-6477-4eb7-a85d-57ac067e80c4';
-        const plan = catalog.getPlan(plan_id);
 
         before(function () {
-          _.unset(fabrik.DockerManager, plan_id);
-          mocks.docker.inspectImage();
+          //_.unset(fabrik.DockerManager, plan_id);
+          //mocks.docker.inspectImage();
           mocks.docker.getAllContainers(usedPorts);
           return mocks.setup([
-            fabrik.DockerManager.load(plan),
+            //fabrik.DockerManager.load(plan),
             docker.updatePortRegistry()
           ]);
         });

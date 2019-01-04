@@ -104,7 +104,7 @@ describe('service-fabrik-admin', function () {
                 }
               })
             }
-          }));
+          }, 2));
           return chai
             .request(apps.internal)
             .get(`${base_url}/deployments/outdated`)

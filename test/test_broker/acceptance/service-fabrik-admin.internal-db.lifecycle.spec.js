@@ -2,8 +2,7 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
-const DBManager = require('../../../broker/lib/fabrik/DBManager');
-const fabrik = require('../../../broker/lib/fabrik');
+require('../../../data-access-layer/db/DBManager');
 const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
@@ -69,7 +68,7 @@ describe('service-fabrik-admin', function () {
       createResourceStub.withArgs().returns(Promise.resolve());
 
       mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
-      fabrik.dbManager = new DBManager();
+      //fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
       backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);

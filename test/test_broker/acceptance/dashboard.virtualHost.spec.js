@@ -4,7 +4,6 @@ const _ = require('lodash');
 const CONST = require('../../../common/constants');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').external;
-const fabrik = require('../../../broker/lib/fabrik');
 
 describe('dashboard', function () {
   describe('virtualHost', function () {
@@ -84,9 +83,9 @@ describe('dashboard', function () {
     };
 
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
-      before(function () {
-        _.unset(fabrik.VirtualHostManager, plan_id);
-      });
+      // before(function () {
+      //   _.unset(fabrik.VirtualHostManager, plan_id);
+      // });
 
       afterEach(function () {
         mocks.reset();
@@ -139,9 +138,9 @@ describe('dashboard', function () {
     });
 
     describe('/manage/dashboards/virtual_host/instances/:instance_id', function () {
-      before(function () {
-        _.unset(fabrik.VirtualHostManager, plan_id);
-      });
+      // before(function () {
+      //   _.unset(fabrik.VirtualHostManager, plan_id);
+      // });
 
 
       afterEach(function () {

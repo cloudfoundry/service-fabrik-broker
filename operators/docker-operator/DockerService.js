@@ -744,7 +744,7 @@ class DockerService extends BaseService {
     }
     return details;
   }
-  
+
   getContainerStatus(state) {
     if (state.Running) {
       return `Up for ${utils.getTimeAgo(state.StartedAt, true)}${state.Paused ? ' (Paused)' : ''}`;
