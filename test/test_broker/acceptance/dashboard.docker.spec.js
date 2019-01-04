@@ -16,7 +16,7 @@ describe('dashboard', function () {
     const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
-    
+
     const resource = {
       apiVersion: 'deployment.servicefabrik.io/v1alpha1',
       kind: 'Docker',
