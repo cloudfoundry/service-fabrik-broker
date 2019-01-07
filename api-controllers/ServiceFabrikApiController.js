@@ -226,6 +226,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .throw(new ContinueWithNext());
   }
 
+  verifySpaceDevPermissions(space_guid, user, auth) {
+    logger.info(`Checking space developer permission for ${space_guid} and ${user.email}`);
+    return this.cloudController
+    .getSpaceDevelopers(space_guid, auth)
+    .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(insufficientPermissions))
+    .then(developers => {
+      const isSpaceDeveloper = _
+      .chain(developers)
+      .findIndex(developer => (developer.metadata.guid === user.id))
+      .gte(0)
+      .value();
+      return isSpaceDeveloper;
+    });
+  }
+
   getInfo(req, res) {
     let allDockerImagesRetrieved = true;
     return Promise.try(() => {
@@ -517,9 +532,15 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
+    const sourceSpaceGuid = _.get(req, 'body.source_space_guid');
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() => {
+        if (sourceSpaceGuid) {
+          return this.verifySpaceDevPermissions(sourceSpaceGuid, req.user);
+        }
+      })
       .then(() => utils.uuidV4())
       .then(guid => {
         serviceId = req.plan.service.id;
@@ -549,12 +570,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
-          tenant_id: tenantId,
+          tenant_id: sourceSpaceGuid ? sourceSpaceGuid : tenantId,
           instance_id: sourceInstanceId,
           service_id: serviceId
         } : {
           backup_guid: backupGuid,
-          tenant_id: tenantId
+          tenant_id: sourceSpaceGuid ? sourceSpaceGuid : tenantId
         };
         if (timeStamp) {
           return this.backupStore
