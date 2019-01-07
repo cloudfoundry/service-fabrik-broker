@@ -17,6 +17,7 @@ const Conflict = errors.Conflict;
 const camelcaseKeys = require('camelcase-keys');
 const InternalServerError = errors.InternalServerError;
 
+// TODO: For K8S get kubeconfig from with the container
 const apiserverConfig = config.apiserver.getConfigInCluster ? kc.config.getInCluster() :
   (config.apiserver.pathToKubeConfig ?
     kc.config.fromKubeconfig(config.apiserver.pathToKubeConfig) : {
