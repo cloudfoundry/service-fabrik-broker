@@ -230,7 +230,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     logger.info(`Checking space developer permission for ${space_guid} and ${user.email}`);
     return this.cloudController
     .getSpaceDevelopers(space_guid, auth)
-    .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(insufficientPermissions))
+    .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(`User '${user.name}' has insufficient permissions`))
     .then(developers => {
       const isSpaceDeveloper = _
       .chain(developers)
@@ -538,7 +538,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
       .then(() => {
         if (sourceSpaceGuid) {
-          return this.verifySpaceDevPermissions(sourceSpaceGuid, req.user);
+          return this.verifySpaceDevPermissions(sourceSpaceGuid, req.user, _.pick(req, 'auth'));
         }
       })
       .then(() => utils.uuidV4())
