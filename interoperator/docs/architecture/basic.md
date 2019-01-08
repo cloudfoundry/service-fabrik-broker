@@ -21,7 +21,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Catalog](#catalog)
       * [Service and Plan registration](#service-and-plan-registration)
       * [Service Fabrik Broker Catalog Cache](#service-fabrik-broker-catalog-cache)
-      * [Integration with Service Manager](#integration-with-service-manager)
+      * [Integration with Service Manager](#integration-with-service-manager-1)
     * [Provision](#provision)
       * [Service Fabrik Broker](#service-fabrik-broker-1)
       * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-1)
@@ -30,6 +30,10 @@ Architects, Developers, Product Owners, Development Managers who are interested 
       * [Service Operator](#service-operator-1)
       * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-2)
       * [Service Fabrik Broker](#service-fabrik-broker-2)
+    * [Bind](#bind)
+      * [Service Fabrik Broker](#service-fabrik-broker-3)
+      * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-3)
+      * [Service Operator](#service-operator-2)
   * [Service Fabrik Inter\-operator Custom Resources](#service-fabrik-inter-operator-custom-resources)
     * [SFService](#sfservice)
     * [SFPlan](#sfplan)
@@ -163,6 +167,37 @@ This section presumes the following steps have already been performed.
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service instance that was provisioned by the Service Fabrik Broker.
 The Service Manager adds some relevant additional context into the request.
 1. The Service Fabrik Broker checks the `status` section of the `SFServiceInstance` and responds with the corresponding status.
+
+### Bind
+
+This section presumes the following steps have already been performed.
+
+1. `SFService` and `sfplans` are already registered as describe [above](#catalog).
+1. A service instance is `provision`ed as described [above](#provision).
+
+![Service Fabrik Inter-operator Basic Control-flow Bind](images/basic-control-flow-bind.png)
+
+#### Service Fabrik Broker
+
+1. An OSB client makes a `bind` call to the [Service Manager](https://github.com/Peripli/service-manager).
+1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `bind` call was for a service, plan and the instance that was provisioned by the Service Fabrik Broker.
+The Service Manager adds some relevant additional context into the request.
+1. The Service Fabrik Broker creates an `SFServiceBinding` capturing all the details passed in the `bind` request from the Service Manager.
+The Service Fabrik Broker returns an asynchronous response.
+
+#### Service Fabrik Inter-operator
+
+1. The inter-operator watches for `sfservicebindings` and notices a newly created `SFServiceBinding`.
+1. It loads the correct `bind` action template from the `SFPlan` corresponding to the `SFServiceBinding`.
+1. It renders and applies the rendered template and creates the individual service's resources as specified in the template.
+
+#### Service Operator
+
+1. The individual service operator watches for its own Kubernetes API resources and notices a newly created set of resources.
+1. It takes the required action to create the service instance.
+1. It updates its Kubernetes API resources to reflect the status.
+
+The binding response would follow a flow similar to the [`last_operation](#last-operation) flow above.
 
 ## Service Fabrik Inter-operator Custom Resources
 
