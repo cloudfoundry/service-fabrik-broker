@@ -82,11 +82,10 @@ func ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, s
 
 	name := types.NamespacedName{
 		Namespace: namespace,
+		Name:      instance.GetName(),
 	}
 
 	switch action {
-	case osbv1alpha1.PropertiesAction:
-		name.Name = instance.GetName()
 	case osbv1alpha1.BindAction:
 		name.Name = binding.GetName()
 	}
@@ -251,11 +250,10 @@ func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.C
 
 	name := types.NamespacedName{
 		Namespace: namespace,
+		Name:      instance.GetName(),
 	}
 
 	switch action {
-	case osbv1alpha1.PropertiesAction:
-		name.Name = instance.GetName()
 	case osbv1alpha1.BindAction:
 		name.Name = binding.GetName()
 	}
