@@ -4,7 +4,7 @@
 
 This document describes the autoscaling aspect of the cluster landscape of the Service Fabrik inter-operator and the different services that it integrates with the [Service Manager](https://github.com/Peripli/service-manager).
 
-This document is about dynamic on-boarding (and off-boarding) new Kubernetes clusters with pre-defined characterestics designed to host the service instances of the different services integrated by a single Service Fabrik inter-operator with the [Service Manager](https://github.com/Peripli/service-manager).
+This document is about dynamic on-boarding (and off-boarding) new Kubernetes clusters with pre-defined characteristics designed to host the service instances of the different services integrated by a single Service Fabrik inter-operator with the [Service Manager](https://github.com/Peripli/service-manager).
 
 This is document is NOT about any of the following autoscaling aspects.
 * The autoscaling of the number of the different kinds of nodes in any given Kubernetes cluster.
@@ -56,7 +56,7 @@ This [control-flow](https://kubernetes.io/docs/tasks/run-application/horizontal-
 
 ## An analogy to the Cluster Autoscaler
 
-In Kubernetes, the [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) performs a role of scaling the number of [`nodes`](https://kubernetes.io/docs/concepts/architecture/nodes/) in the Kubernete cluster that is analogous to the problem of dynamically autoscaling the number of Kubernetes clusters of a pre-defined set of characteristics to host service instances of different individual services.
+In Kubernetes, the [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) performs a role of scaling the number of [`nodes`](https://kubernetes.io/docs/concepts/architecture/nodes/) in the Kubernetes cluster that is analogous to the problem of dynamically autoscaling the number of Kubernetes clusters of a pre-defined set of characteristics to host service instances of different individual services.
 
 1. The Cluster Autoscaler keeps checking for events which indicate that the current number of nodes in the given Kubernetes cluster is not sufficient to host the desired number of [`pods`](https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/).
 Currently, the criteria is a threshold number of `pods` that are marked as [unschedulable](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-service-level-objectives-for-cluster-autoscaler) indicating that there are no [`nodes`](https://kubernetes.io/docs/concepts/architecture/nodes/) available to schedule them.
@@ -64,29 +64,29 @@ This is a passive/re-active approach. But, in the future, such scaling events ca
 1. Among the different `nodegroups` (that define the characteristics of a subset of the `nodes` in the given Kubernetes cluster), the configured [expander](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-expanders) identifies a particular node group to scale up and also the number of `nodes` by which to scale it up so that the desired number of `pods` can be accommodated by the Kubernetes cluster.
 1. The Cluster Autoscaler's [`NodeGroupManager`](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/processors/nodegroups/nodegroup_manager.go) creates a new set of `nodes` which will eventually join the Kubernetes cluster. This will eventually lead the [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) to schedule the previously unschedulable `pods` on the newly available `nodes`.
 
-This control-flow can depicted as below.
+This control-flow can be depicted as below.
 
 ![Cluster Autoscaler Control-flow](images/cluster-autoscaler.png)
 
 ## Cluster Landscape Autoscaling
 
-To autoscale the cluster landscape, in addition to the `Cluster` resource like the one [defined](https://github.com/kubernetes/cluster-registry/blob/master/cluster-registry-crd.yaml) in the [Cluster Registry](https://github.com/kubernetes/cluster-registry/), a new resource (say, `ClusterGroup`) is required, which captures the atleast the following details.
+To autoscale the cluster landscape, in addition to the `Cluster` resource like the one [defined](https://github.com/kubernetes/cluster-registry/blob/master/cluster-registry-crd.yaml) in the [Cluster Registry](https://github.com/kubernetes/cluster-registry/), a new resource (say, `ClusterGroup`) is required, which captures the at least the following details.
 * All the details required to provision new clusters with pre-defined characteristics such as the worker `node`/`machine` types and their autoscaling range.
 * The desired [`scale`](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#scale-subresource)(i.e., the number of `replicas` of such clusters).
 
 With this, the following control-flow becomes feasible.
-1. The Cluster Landscape Autoscaler keeps checking for events which indicate that the current number of clusters in the given cluster landscape is not sufficient to host the desired number of [`serviceinstances`](basic.md#sfserviceinstance) of configured individual services.
-Initially, the criteria could be threshold number of `serviceinstances` that cannot be scheduled.
+1. The Cluster Landscape Autoscaler keeps checking for events which indicate that the current number of clusters in the given cluster landscape is not sufficient to host the desired number of [`sfserviceinstances`](basic.md#sfserviceinstance) of configured individual services.
+Initially, the criteria could be threshold number of `sfserviceinstances` that cannot be scheduled.
 This is a passive/re-active approach.
-A more active approach could be to pre-allocate some number of clusters as way of bufferring.
+A more active approach could be to pre-allocate some number of clusters as way of buffering.
 This can mitigate the latency in in the creation of new Kubernetes clusters.
 But, in the future, such scaling events can be triggered based on even more active (or even predictive) criteria.
-1. Among the different `clustergroups` (that define the characteristics of a subset of the `clusters` in the given Kubernetes cluster landscape), the Cluster Landscape Autoscaler identifies a particular `ClusterGroup` to scale up and also the number of `clusters` by which to scale it up so that the desired number of `serviceinstances` can be accommodated by the Kubernetes cluster landscape.
+1. Among the different `clustergroups` (that define the characteristics of a subset of the `clusters` in the given Kubernetes cluster landscape), the Cluster Landscape Autoscaler identifies a particular `ClusterGroup` to scale up and also the number of `clusters` by which to scale it up so that the desired number of `sfserviceinstances` can be accommodated by the Kubernetes cluster landscape.
 It updates the `scale` of the `ClusterGroup` accordingly.
-1. The Cluster Landscape Autoscaler's `ClusterGroupManager` creates a new set of `clusters` which will eventually join the cluster landscape. This will eventually lead the [`ServiceInstance Scheduler`](cluster-landscape.md#service-instance-scheduling) to schedule the previously unschedulable `serviceinstances` on the newly available `clusters`.
+1. The Cluster Landscape Autoscaler's `ClusterGroupManager` creates a new set of `clusters` which will eventually join the cluster landscape. This will eventually lead the [`SFServiceInstance Scheduler`](cluster-landscape.md#service-instance-scheduling) to schedule the previously unschedulable `sfserviceinstances` on the newly available `clusters`.
 
-This control-flow can depicted as below.
+This control-flow can be depicted as below.
 
 ![Cluster Landscape Autoscaler Control-flow](images/cluster-landscape-autoscaler.png)
 
-Along with the [`ServiceInstance` scheduler](cluster-landscape.md#service-instance-scheduling), this approach can support all the cluster landscape scenarions discussed [here](cluster-landscape.md#cluster-landscape-scenarios).
+Along with the [`SFServiceInstance` scheduler](cluster-landscape.md#service-instance-scheduling), this approach can support all the cluster landscape scenarios discussed [here](cluster-landscape.md#cluster-landscape-scenarios).

@@ -2,7 +2,7 @@
 
 ##  Abstract
 
-This document describes the basic architecture and scope for the Service Fabrik inter-operator. This includes the details about how it integrates with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) on the other. This also includes some details about different possible kubernetes cluster landscapes for hosting the kubernetes-based services and how they can be managed.
+This document describes the basic architecture and scope for the Service Fabrik inter-operator. This includes the details about how it integrates with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) on the other. This also includes some details about different possible Kubernetes cluster landscapes for hosting the Kubernetes-based services and how they can be managed.
 
 ## Target Audience
 
@@ -21,7 +21,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
     * [Catalog](#catalog)
       * [Service and Plan registration](#service-and-plan-registration)
       * [Service Fabrik Broker Catalog Cache](#service-fabrik-broker-catalog-cache)
-      * [Integraton with Service Manager](#integraton-with-service-manager)
+      * [Integration with Service Manager](#integration-with-service-manager)
     * [Provision](#provision)
       * [Service Fabrik Broker](#service-fabrik-broker-1)
       * [Service Fabrik Inter\-operator](#service-fabrik-inter-operator-1)
@@ -49,13 +49,13 @@ The technical guidelines for developing stateful services natively on Kubernetes
 The high-level approach recommendation is for the individual services to package their service implementation (including automated life-cycle activities) as a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery).
 An operator is a combination of a set of [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in Kubernetes and a set of custom controllers which watch, manage and implement a control-loop to take the required action to reconcile the desired state (as specified in the custom resources) with the actual state.
 
-Typically, the operators are expected to manage their services within a given kubernetes cluster and be feature-complete (via their [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in the functionality they provide.
+Typically, the operators are expected to manage their services within a given Kubernetes cluster and be feature-complete (via their [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in the functionality they provide.
 
 ## Integration with Service Manager
 
 [Service Manager](https://github.com/Peripli/service-manager) is a central repository of service brokers and platforms. It integrates with individual service brokers based on the [OSB](https://www.openservicebrokerapi.org/) API standard.
 
-The guideline for developing stateful kubernetes-native services is to develop a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) for the service. This makes it very close to the paradigm of service development on kubernetes as provide a powerful way to encapsulate both service and life-cycle funcationality in once package.
+The guideline for developing stateful Kubernetes-native services is to develop a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) for the service. This makes it very close to the paradigm of service development on Kubernetes as provide a powerful way to encapsulate both service and life-cycle functionality in once package.
 
 This makes it necessary to bridge the gap between the Kubernetes [custom resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)-based API of the operators with the [OSB](https://www.openservicebrokerapi.org/) API expected by the [Service Manager](https://github.com/Peripli/service-manager).
 
@@ -69,7 +69,7 @@ The inter-operator proposes to bridge this gap using a metadata-based approach a
 
 ### Service Fabrik Broker
 
-The Service Fabrik Broker would act as the OSB API Adapter and is the component that intergrates with the Service Manager. It is a lean component that serves OSB API requests and records the requests in a set of OSB-equivalent custom resources [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding).
+The Service Fabrik Broker would act as the OSB API Adapter and is the component that integrates with the Service Manager. It is a lean component that serves OSB API requests and records the requests in a set of OSB-equivalent custom resources [`SFServiceInstance`](#sfserviceinstance) and [`SFServiceBinding`](#sfservicebinding).
 
 These custom resources capture all the data sent in their corresponding OSB requests and act as a point of co-ordination between the inter-operator component that would then work to reconcile these OSB resources with the actual operator [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) based on the templates supplied in the catalog resources [`SFService`](#sfservice) and [`SFPlan`](#sfplan).
 
@@ -98,13 +98,13 @@ As part of the away from t-shirt size approach to plans, it is recommended to mi
 
 Updates to the services and plans can be done as simple updates to the corresponding `sfservices` and `sfplans`. Service and plans can be unregistered by simply deleting the corresponding `sfservices` and `sfplans`.
 
-TODO Backward compatibility existing instances must be handled by the individual service implemementations and the applications properly.
+TODO Backward compatibility existing instances must be handled by the individual service implementations and the applications properly.
 
 #### Service Fabrik Broker Catalog Cache
 
-The Service Fabrik Broker watches for registered `sfservices` and `sfplans`. It reacts to registrations, updates and unregistrations and keeps an up-to-date representation of the information.
+The Service Fabrik Broker watches for registered `sfservices` and `sfplans`. It reacts to registrations, updates and deregistrations and keeps an up-to-date representation of the information.
 
-#### Integraton with Service Manager
+#### Integration with Service Manager
 
 1. An OSB client queries the [Service Manager](https://github.com/Peripli/service-manager) for a catalog of the available services via the `v2/catalog` request.
 1. The Service Manager forwards this call (via some possible intermediaries) to the Service Fabrik Broker. 
@@ -121,7 +121,7 @@ This section presumes that the `SFService` and `sfplans` are already registered 
 1. An OSB client makes a `provision` call to the [Service Manager](https://github.com/Peripli/service-manager).
 1. The Service Manager forwards the call (perhaps via some intermediaries) to Service Fabrik Broker if the `provision` call was for a service and plan that was published by the Service Fabrik Broker.
 The Service Manager adds some relevant additional context into the request.
-1. The Service Fabrik Broker creates an `SFServiceInstance` capturing all the details passed in the the `provision` request from the Service Manager.
+1. The Service Fabrik Broker creates an `SFServiceInstance` capturing all the details passed in the `provision` request from the Service Manager.
 The Service Fabrik Broker returns an asynchronous response.
 
 #### Service Fabrik Inter-operator
@@ -149,7 +149,7 @@ This section presumes the following steps have already been performed.
 
 1. The individual service operator watches for its own Kubernetes API resources as well as all the lower level resources it has created to provision the service instance.
 1. It notices a change in the status of any of the lower level resources and checks if the change in status is significant enough to be propagated to one of its own Kubernetes API resources.
-1. It updates its corresponding Kubernest API resources.
+1. It updates its corresponding Kubernetes API resources.
 
 #### Service Fabrik Inter-operator
 
@@ -380,7 +380,7 @@ spec:
     url: "https://raw.githubusercontent.com/cloudfoundry-incubator/service-fabrik-broker/feature/inter-operator/interoperator/config/samples/templates/gotemplates/postgres/postgres.yaml"
 ```
 
-Please note that the URLs have to be accessible for the Service Fabrik inter-operator. This is especially relevent in the private cloud scenario.
+Please note that the URLs have to be accessible for the Service Fabrik inter-operator. This is especially relevant in the private cloud scenario.
 
 ##### In-line templates
 

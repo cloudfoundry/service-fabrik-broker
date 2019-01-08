@@ -3,7 +3,7 @@
 ##  Abstract
 
 This document describes the cluster landscape aspect of the architecture and scope of the Service Fabrik inter-operator.
-This includes not only the architectural approach to handle the different possible cluster landscapes but also the details about the different landscape scenarions (such as a dedicated v/s shared cluster landscape) and also some rationale for the landscape scenarios as well as the way they influence the architectural approach.
+This includes not only the architectural approach to handle the different possible cluster landscapes but also the details about the different landscape scenarios (such as a dedicated v/s shared cluster landscape) and also some rationale for the landscape scenarios as well as the way they influence the architectural approach.
 
 ## Target Audience
 
@@ -53,7 +53,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
 
 The [context](basic.md#context) mentioned in the [basic architecture](basic.md) is applicable here.
 
-In addition to the above context, continuing the [operator design-pattern](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#high-level-design-pattern) in Kubernetes, the individual service operators are expected to manage the service instances within a kubernetes cluster.
+In addition to the above context, continuing the [operator design-pattern](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#high-level-design-pattern) in Kubernetes, the individual service operators are expected to manage the service instances within a Kubernetes cluster.
 This leaves the responsibility for setting up and managing the landscape of Kubernetes clusters where the individual service operators provision and manage their services instances out of the scope of the individual service operators.
 
 ## Cluster Landscape Scenarios
@@ -95,7 +95,7 @@ As one way of addressing the isolation [issues](#cons) in the [simple landscape 
 
 ##### Pros
 
-* Service instancares are running in a dedicated Kubernetes cluster. This reduces the isolation concerns from the security and performance perspective.
+* Service instances are running in a dedicated Kubernetes cluster. This reduces the isolation concerns from the security and performance perspective.
 * The number of service instances per landscape as well as the scale of the individual service instances is not limited by the architecture and the landscape.
 * The Kubernetes cluster is dedicated for the individual service and its instances.
   * Moderate operational overhead.
@@ -246,9 +246,9 @@ Clearly, with a single Kubernetes cluster the number of service instances as wel
 
 Also, in the case of stateful services, the CPU and memory are not the only resources that constrain the ability to optimize the number of instances in a Kubernetes node/cluster. Other resources, such as the number of disk volumes or network bandwidth or perhaps more obscure kernel level resources could be additional constraints.
 
-Assuming todays cluster size of 100 nodes, for a service like Postgres, how many instances can be expect to host in a single Kubernetes cluster?
+Assuming todays cluster size of 100 nodes, for a service like Postgres, how many instances can be expected to host in a single Kubernetes cluster?
 If they are large sized instances, maybe we should expect the number of service instances to be less than the number of nodes. So, less than 100.
-If they are very very small instances, may be we can expect 5x number of instance. So, around 500 instances.
+If they are very very small instances, maybe we can expect 5x number of instance. So, around 500 instances.
 Can we expect to host drastically more than 5x instances? Or 10x perhaps? It is difficult to imagine more than that.
 
 For a service like Postgres, for which we can expect a large number of service instances, the above size may not suffice. Perhaps not even for the medium term.
@@ -276,18 +276,18 @@ This leads us to two options.
 
 1. Enhance the Kubernetes API to capture these additional resources and constraints and also enhance the relevant Kubernetes components such as the [`kubelet`](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/) [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) etc. to handle these additional resources and constraints properly.
 This would be the most desirable end-goal. But it could be, potentially, a larger effort.
-1. Leverage existing Kubernetes functionality such as [taints and tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) and/or [affinity and anti-affinity](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity) to influence the scheduling of different sized service instance `pods` on the nodes with the right machine types as well as with the right neighboring `pods` on the same `node`.
+1. Leverage existing Kubernetes functionality such as [taints and tolerations](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) and/or [affinity and anti-affinity](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity) to influence the scheduling of different sized service instance `pods` on the nodes with the right machine types as well as with the right neighbouring `pods` on the same `node`.
 This would be a more a short/medium term solution.
 But could potentially be a smaller effort.
-This kind of addtional scheduling constraints are best encoded in the individual service operator.
+This kind of additional scheduling constraints are best encoded in the individual service operator.
 
-If option 2 is chosen, then if we provision service instances of multiple services (say, Postgres and MongoDB), then the service operators do not only have to know about the taints, affinities etc. for their own services but also taints, affinities etcd. for the other services they share the Kubernetes cluster with.
-This would not be desirable. The service operators should be as agnostic of each other as possible unless there are clear dependencies. Preferrably, completely agnostic.
+If option 2 is chosen, then if we provision service instances of multiple services (say, Postgres and MongoDB), then the service operators do not only have to know about the taints, affinities etc. for their own services but also taints, affinities etc. for the other services they share the Kubernetes cluster with.
+This would not be desirable. The service operators should be as agnostic of each other as possible unless there are clear dependencies. Preferably, completely agnostic.
 
 Please note that these arguments are only about the sharing of Kubernetes cluster among different services.
 Sharing of Service Fabrik inter-operator itself is still perfectly fine.
 
-So, if option 2 above is chosen, then sharing the same Kubernetes cluster is not preferrable.
+So, if option 2 above is chosen, then sharing the same Kubernetes cluster is not preferable.
 This leaves optimal (many instances in one cluster but multiple such clusters) and conservative (one instance in its own cluster) with their dedicated and hybrid variations. The shared variations are eliminated.
 
 But if option 1 is chosen, then shared cluster variations might still be considered.
@@ -320,7 +320,7 @@ This could be the reasoning to favour the optimal (many instances in one cluster
 
 ### Recommended Landscape Scenario
 
-Based on the evaluation of the different scenarios, the [optimal dedicated landscape scenario](#an-optimal-dedicated-landscape-scenario) or the [optimal hybrid landscape scenaro](#hybrid-landscape-scenaro) seem to be most suitable for the most common use-cases.
+Based on the evaluation of the different scenarios, the [optimal dedicated landscape scenario](#an-optimal-dedicated-landscape-scenario) or the [optimal hybrid landscape scenario](#hybrid-landscape-scenario) seem to be most suitable for the most common use-cases.
 
 This is mainly because of the following reasons.
 * The [simple](cluster-landscape.md#a-simple-dedicated-landscape-scenario) [scenarios](cluster-landscape.md#a-simple-shared-landscape-scenario) are constrained in scaling the individual service instances as well as the number of service instances by the scale of the hosting Kubernetes cluster.
@@ -333,7 +333,7 @@ The [optimal](cluster-landscape.md#an-optimal-dedicated-landscape-scenario) [lan
 
 The security and isolation issues due to the hosting of multiple service instances on any given Kubernetes cluster can be mitigated using the [security](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and [performance](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#performance) guidelines.
 
-Among the [optimal](cluster-landscape.md#an-optimal-dedicated-landscape-scenario) [landscape](cluster-landscape.md#an-optimal-shared-landscape-scenario) [scenarios](cluster-landscape.md#hybrid-landscape-scenario), the [dedicated](#an-optimal-dedicated-landscape-scenario) and the [hybrid](#hybrid-landscape-scenaro) landscape scenarios are preferred to the [shared](#an-optimal-shared-landscape-scenaro) landscape scenario.
+Among the [optimal](cluster-landscape.md#an-optimal-dedicated-landscape-scenario) [landscape](cluster-landscape.md#an-optimal-shared-landscape-scenario) [scenarios](cluster-landscape.md#hybrid-landscape-scenario), the [dedicated](#an-optimal-dedicated-landscape-scenario) and the [hybrid](#hybrid-landscape-scenario) landscape scenarios are preferred to the [shared](#an-optimal-shared-landscape-scenario) landscape scenario.
 This is because of the operational overhead and difficulty of tuning a shared set of Kubernetes clusters for the needs of the individual services and their service instances.
 
 ## Managing the Cluster Landscape
@@ -342,7 +342,7 @@ The more complex optimal cluster landscape (be it for the [dedicated](#an-optima
 
 ### An analogy to kube-scheduler
 
-In Kubernetes, the [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) performs a role that is analogous to the problem of mapping a service instance to a Kubernets cluster.
+In Kubernetes, the [`kube-scheduler`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/) performs a role that is analogous to the problem of mapping a service instance to a Kubernetes cluster.
 
 1. A [pod](https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/) gets created in the [`kube-apiserver`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/).
 This could be directly (via [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) or the [Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/)).
@@ -382,9 +382,9 @@ These steps can be depicted as shown below.
 There main advantages of this approach are as follows.
 * The scheduling decision is captured explicitly in the `SFServiceInstance` resource itself.
   * All the information about the `SFServiceInstance` is located in the resource itself.
-  This makes it possible to implement the rescheduling of `ServiceInstances` to some other Kubernetes cluster in the future.
+  This makes it possible to implement the rescheduling of `sfserviceinstances` to some other Kubernetes cluster in the future.
 * The complexity of the decision-making process for picking the most suitable Kubernetes cluster is completely decoupled from the more mundane matter of actually provisioning the `SFServiceInstance` once the suitable Kubernetes cluster been selected.
-* Schedulers are decoupled from the vagaries of actual details of provisioning of `serviceinstances`.
+* Schedulers are decoupled from the vagaries of actual details of provisioning of `sfserviceinstances`.
 They can be simpler and can concentrate only on the details about the scheduling algorithm.
 This makes writing custom schedulers easier.
 * Custom schedulers or even multiple schedulers can co-exist in the same Service Fabrik landscape, increasing the power of the decoupling described above.
