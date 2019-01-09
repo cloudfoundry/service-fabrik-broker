@@ -1883,6 +1883,41 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+
+        it('should return 201 OK for k8s platform instances', function () {
+          /* This test case represents an intermediate situation: although instance originates from k8s platform,
+          auth is being done using CF UAA. This will not be situation in the landscape most probably, however test case
+          serves the purpose of verifying rest of the operation (post auth).  
+          */
+          mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                service_id: service_id,
+                plan_id: plan_id,
+                context: {
+                  platform: 'sapcp',
+                  origin: 'kubernetes'
+                },
+                space_guid: space_guid
+              })
+            }
+          });
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql(getJob().value());
+              mocks.verify();
+            });
+        });
       });
 
       describe('#GetBackupSchedule', function () {
@@ -2010,6 +2045,42 @@ describe('service-fabrik-api-sf2.0', function () {
             service_plan_guid: plan_guid
           });
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.director.getDeployments();
+          return chai.request(apps.external)
+            .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeader)
+            .send({
+              type: 'online',
+              repeatInterval: '*/1 * * * *'
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(201);
+              expect(res.body).to.eql(getJob(instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE).value());
+              mocks.verify();
+            });
+        });
+
+        it('should return 201 OK for k8s platform instances', function () {
+          /* This test case represents an intermediate situation: although instance originates from k8s platform,
+          auth is being done using CF UAA. This will not be situation in the landscape most probably, however test case
+          serves the purpose of verifying rest of the operation (post auth).  
+          */
+          mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {
+            spec: {
+              options: JSON.stringify({
+                service_id: service_id,
+                plan_id: plan_id,
+                context: {
+                  platform: 'sapcp',
+                  origin: 'kubernetes'
+                },
+                space_guid: space_guid
+              })
+            }
+          });
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.director.getDeployments();
           return chai.request(apps.external)

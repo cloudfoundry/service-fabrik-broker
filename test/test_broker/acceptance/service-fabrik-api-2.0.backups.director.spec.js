@@ -200,7 +200,7 @@ describe('service-fabrik-api-2.0', function () {
                 context: {
                   platform: 'cloudfoundry',
                 },
-                space_guid: space_guid,
+                space_guid: space_guid
               })
             },
             status: {
@@ -214,6 +214,27 @@ describe('service-fabrik-api-2.0', function () {
           mocks.cloudProvider.list(container, prefix, [filename, filename1]);
           mocks.cloudProvider.download(pathname, data);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resource);
+          return chai.request(app)
+            .get(`${base_url}/backups`)
+            .query({
+              space_guid: space_guid,
+              instance_id: instance_id
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const body = [_.omit(data, 'logs')];
+              expect(res.body).to.eql(body);
+              mocks.verify();
+            });
+        });
+        it('should return 200 OK - with deleted instance', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename, filename1]);
+          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
           return chai.request(app)
             .get(`${base_url}/backups`)
             .query({
