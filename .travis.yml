@@ -54,13 +54,12 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
-        - go get sigs.k8s.io/controller-runtime/pkg/envtest
       install:
         - cd interoperator
         - dep ensure -v
       script:
-        - gofmt -l .
-        - go vet
+        - go fmt ./pkg/... ./cmd/...
+        - go vet ./pkg/... ./cmd/...
         - golint
         - ./scripts/install_test.sh
         - go test ./pkg/apis/osb/v1alpha1 -coverprofile ../cover.out  # Run all the tests with the race detector enabled
