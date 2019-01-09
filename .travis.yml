@@ -52,7 +52,7 @@ matrix:
       git:
         depth: 3
       env:
-        - CODECOV_TOKEN="8ac13844-de4d-4f89-b551-07f9ec6a6e60"
+        - CODECOV_TOKEN="10161f28-1de2-4a9d-afd2-7c82f1785801"
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
