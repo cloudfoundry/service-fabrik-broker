@@ -1,0 +1,49 @@
+apiVersion: osb.servicefabrik.io/v1alpha1
+kind: SFPlan
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+    serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  name: &id 29d7d4c8-6fe2-4c2a-a5ca-a826937d5a88
+spec:
+  name: &name 'v9.4-dev-large'
+  id: *id
+  description: 'Postgresql service running inside a k8s container (for non-productive usage)'
+  metadata:
+    service-inventory-key: SERVICE-161
+    costs:
+    - amount:
+        usd: 0.0
+      unit: 'MONTHLY'
+    bullets:
+    - 'Container Deployment'
+    - '128 MB Memory'
+    - '100 MB Disk'
+  free: true
+  bindable: true
+  planUpdatable: false
+  templates:
+  - action: sources
+    type: gotemplate
+    content: e3stICRuYW1lIDo9ICIiIH19Cnt7LSB3aXRoIC5pbnN0YW5jZS5tZXRhZGF0YS5uYW1lIH19IHt7ICRuYW1lID0gLiB9fSB7eyBlbmQgfX0Ke3stICRuYW1lc3BhY2UgOj0gIiIgfX0Ke3stIHdpdGggLmluc3RhbmNlLm1ldGFkYXRhLm5hbWVzcGFjZSB9fSB7eyAkbmFtZXNwYWNlID0gLiB9fSB7eyBlbmQgfX0KcG9zdGdyZXNxbDoKICBhcGlWZXJzaW9uOiAia3ViZWRiLmNvbS92MWFscGhhMSIKICBraW5kOiBQb3N0Z3JlcwogIG5hbWU6IGtkYi17eyAkbmFtZSB9fS1wZwogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQpzZWNyZXQ6CiAgYXBpVmVyc2lvbjogdjEKICBraW5kOiBTZWNyZXQKICBuYW1lOiBrZGIte3sgJG5hbWUgfX0tcGctYXV0aAogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQpzZXJ2aWNlOgogIGFwaVZlcnNpb246IHYxCiAga2luZDogU2VydmljZQogIG5hbWU6IGtkYi17eyAkbmFtZSB9fS1wZwogIG5hbWVzcGFjZToge3sgJG5hbWVzcGFjZSB9fQ==
+  - action: properties
+    type: gotemplate
+    content: e3sgJHN0YXRlU3RyaW5nIDo9ICJmYWlsZWQiIH19Cnt7LSB3aXRoIC5wb3N0Z3Jlc3FsLnN0YXR1cy5waGFzZSB9fSAKICB7ey0gaWYgZXEgLiAiRmFpbGVkIiB9fQogICAge3stICRzdGF0ZVN0cmluZyA9ICJmYWlsZWQiIH19CiAge3stIGVsc2UgfX0KICAgIHt7LSBpZiBlcSAuICJSdW5uaW5nIn19CiAgICAgIHt7LSAkc3RhdGVTdHJpbmcgPSAic3VjY2VlZGVkIiB9fQogICAge3stIGVsc2UgfX0KICAgICAge3stICRzdGF0ZVN0cmluZyA9ICJpbiBwcm9ncmVzcyIgfX0KICAgIHt7LSBlbmQgfX0KICB7ey0gZW5kIH19Cnt7LSBlbmQgfX0Kc3RhdHVzOgogIHN0YXRlOiB7eyBwcmludGYgIiVzIiAkc3RhdGVTdHJpbmcgfX0KICBkZXNjcmlwdGlvbjoge3sgd2l0aCAucG9zdGdyZXNxbC5zdGF0dXMucmVhc29uIH19IHt7IHByaW50ZiAiJXMiIC4gfX0ge3sgZWxzZSB9fSAiIiB7eyBlbmQgfX0Ke3stICRob3N0IDo9ICIiIH19Cnt7LSB3aXRoIC5zZXJ2aWNlLnNwZWMuY2x1c3RlcklQIH19IHt7ICRob3N0ID0gLiB9fSB7eyBlbmQgfX0Ke3stICRwYXNzIDo9ICIiIH19Cnt7LSB3aXRoIC5zZWNyZXQuZGF0YS5QT1NUR1JFU19QQVNTV09SRCB9fSB7eyAkcGFzcyA9IChiNjRkZWMgLikgfX0ge3sgZW5kIH19Cnt7LSAkc3RhdGVTdHJpbmcgPSAiaW4gcHJvZ3Jlc3MiIH19Cnt7LSBpZiBhbmQgKG5vdCAoZXEgJGhvc3QgIiIpKSAobm90IChlcSAkcGFzcyAiIikpIH19CiAge3stICRzdGF0ZVN0cmluZyA9ICJzdWNjZWVkZWQiIH19Cnt7LSBlbmQgfX0KYmluZGluZzoKICBzdGF0ZToge3sgcHJpbnRmICIlcyIgJHN0YXRlU3RyaW5nIH19CiAgZXJyb3I6ICIiCiAgcmVzcG9uc2U6IHt7IChwcmludGYgYCJ7IFwiaG9zdFwiOiBcIiVzXCIsIFwidXNlcm5hbWVcIjogXCJwb3N0Z3Jlc1wiLCBcInBhc3N3b3JkXCI6IFwiJXNcIiB9ImAgJGhvc3QgICRwYXNzICkgfX0gCnt7LSAkc3RhdGVTdHJpbmcgPSAic3VjY2VlZGVkIiB9fQp1bmJpbmRpbmc6CiAgc3RhdGU6IHt7IHByaW50ZiAiJXMiICRzdGF0ZVN0cmluZyB9fQogIGVycm9yOiAiIgp7ey0gJHN0YXRlU3RyaW5nID0gImluIHByb2dyZXNzIiB9fSAKe3stIHdpdGggLnBvc3RncmVzcWwgfX0ge3sgd2l0aCAubWV0YWRhdGEuZGVsZXRpb25UaW1lc3RhbXAgfX0ge3sgJHN0YXRlU3RyaW5nID0gImluIHByb2dyZXNzIiB9fSB7eyBlbmQgfX0ge3sgZWxzZSB9fSB7eyAkc3RhdGVTdHJpbmcgPSAic3VjY2VlZGVkIiB9fSAge3sgZW5kIH19CmRlcHJvdmlzaW9uOgogIHN0YXRlOiB7eyBwcmludGYgIiVzIiAkc3RhdGVTdHJpbmcgfX0KICBlcnJvcjogIiIKICByZXNwb25zZTogIiI=
+  - action: provision
+    type: gotemplate
+    content: e3stICRuYW1lIDo9ICIiIH19Cnt7LSB3aXRoIC5pbnN0YW5jZS5tZXRhZGF0YS5uYW1lIH19IHt7ICRuYW1lID0gLiB9fSB7eyBlbmQgfX0KYXBpVmVyc2lvbjoga3ViZWRiLmNvbS92MWFscGhhMQpraW5kOiBQb3N0Z3JlcwptZXRhZGF0YToKICBuYW1lOiBrZGIte3sgJG5hbWUgfX0tcGcKc3BlYzoKICB2ZXJzaW9uOiAxMC4yLXYxCiAgc3RvcmFnZVR5cGU6IER1cmFibGUKICBzdG9yYWdlOgogICAgc3RvcmFnZUNsYXNzTmFtZTogZGVmYXVsdAogICAgYWNjZXNzTW9kZXM6CiAgICAtIFJlYWRXcml0ZU9uY2UKICAgIHJlc291cmNlczoKICAgICAgcmVxdWVzdHM6CiAgICAgICAgc3RvcmFnZTogNTBNaQogIHRlcm1pbmF0aW9uUG9saWN5OiBXaXBlT3V0
+  serviceId: '24731fb8-7b84-5f57-914f-c3d55d793dd4'
+  manager:
+    async: true
+  context:
+    operator:
+      image: "servicefabrikjenkins/blueprint"
+      tag: "latest"
+      port: 8080
+      memory: '128m'
+      persistent_volumes:
+      - name: 'data'
+        path: '/data'
+        size: '100m'
+    serviceFabrik:
+      backupEnabled: false
