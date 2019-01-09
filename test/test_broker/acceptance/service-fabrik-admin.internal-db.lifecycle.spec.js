@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const app = require('../support/apps').internal;
-require('../../../data-access-layer/db/DBManager');
+const dbManager = require('../../../data-access-layer/db/DBManager');
 const config = require('../../../common/config');
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
@@ -71,6 +71,7 @@ describe('service-fabrik-admin', function () {
       //fabrik.dbManager = new DBManager();
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
+      dbManager.initialize();
       backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
       mocks.cloudProvider.auth();
       mocks.cloudProvider.getContainer(container);
