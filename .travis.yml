@@ -62,4 +62,7 @@ matrix:
         - go vet ./pkg/... ./cmd/...
         - golint
         - ./scripts/install_test.sh
-        - go test ./pkg/apis/osb/v1alpha1 -coverprofile ../cover.out  # Run all the tests with the race detector enabled
+        - go test ./pkg/apis/osb/v1alpha1 -race -coverprofile=../coverage.txt -covermode=atomic
+      after_success:
+        - cd ..
+        - bash <(curl -s https://codecov.io/bash)
