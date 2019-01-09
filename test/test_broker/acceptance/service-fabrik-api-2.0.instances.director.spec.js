@@ -295,6 +295,43 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
+        it('should fail if resource could not be fetched from ApiServer and request does not contain plan_id', function(done) {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1 , 404);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type,
+              space_guid: space_guid
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+              done();
+            });
+        });
+
+        it('should fail if resource could not be fetched from ApiServer and request does not contain space_guid', function(done) {
+          mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1 , 404);
+          return chai
+            .request(apps.external)
+            .post(`${base_url}/service_instances/${instance_id}/backup`)
+            .set('Authorization', authHeader)
+            .send({
+              type: type
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(422);
+              mocks.verify();
+              done();
+            });
+        });
 
         it('should initiate a start-backup operation with optional space_guid', function (done) {
           mocks.uaa.tokenKey();
