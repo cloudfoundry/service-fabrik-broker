@@ -18,6 +18,12 @@ describe('models', function () {
       name: name,
       metadata: metadata,
       manager: {
+        resource_mappings: {
+          bind: {
+            resource_group: 'bind',
+            resource_type: 'directorbind'
+          }
+        },
         settings: {
           update_predecessors: update_predecessors,
           agent: {
@@ -33,7 +39,28 @@ describe('models', function () {
         expect(plan).to.have.property('id', id);
       });
     });
-
+    describe('#stemcell', function () {
+      it('ensures default stemcell is correct', function () {
+        expect(plan.stemcell).to.eql({
+          alias: 'ubuntu-trusty',
+          name: 'bosh-warden-boshlite-ubuntu-trusty-go_agent',
+          version: 'latest'
+        });
+      });
+    });
+    describe('#releases', function () {
+      it('ensures default release is correct', function () {
+        expect(plan.releases).to.eql([]);
+      });
+    });
+    describe('#bind', function () {
+      it('ensures bind resourcegroup is correct', function () {
+        expect(plan.bindResourceGroup).to.eql('bind');
+      });
+      it('ensures bind resourcetype is correct', function () {
+        expect(plan.bindResourceType).to.eql('directorbind');
+      });
+    });
     describe('#toJSON', function () {
       it('should return the JSON representation of the plan', function () {
         expect(plan.toJSON()).to.eql({
