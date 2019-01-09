@@ -1,0 +1,40 @@
+{{ $name := "" }}
+{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
+{{- $state := "in_queue" }}
+{{- with .instance.metadata.labels.state }} {{ $state = . }} {{ end }}
+{{- $serviceId := "" }}
+{{- $planId := "" }}
+{{- $organizationGuid := "" }}
+{{- $spaceGuid := "" }}
+{{- $context := "{}" }}
+{{- $params := "{}" }}
+{{- with .instance.spec }}
+  {{- with .serviceId }}
+    {{- $serviceId = . }}
+  {{- end }}
+  {{- with .planId }}
+    {{- $planId = . }}
+  {{- end }}
+  {{- with .organizationGuid }}
+    {{- $organizationGuid = . }}
+  {{- end }}
+  {{- with .spaceGuid }}
+    {{- $spaceGuid = . }}
+  {{- end }}
+  {{- with .context }}
+    {{- $context = (marshalJSON .) }}
+  {{- end }}
+  {{- with .parameters }}
+    {{- $params = (marshalJSON .) }}
+  {{- end }}
+{{- end }}
+apiVersion: deployment.servicefabrik.io/v1alpha1
+kind: Docker
+metadata:
+  labels:
+    state: {{ $state }}
+  name: {{ $name }}
+spec:
+  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}
+status:
+  state: {{ $state }}
