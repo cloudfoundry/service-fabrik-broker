@@ -8,6 +8,7 @@
 {{- $spaceGuid := "" }}
 {{- $context := "{}" }}
 {{- $params := "{}" }}
+{{- $previousValues := "{}" }}
 {{- with .instance.spec }}
   {{- with .serviceId }}
     {{- $serviceId = . }}
@@ -27,6 +28,13 @@
   {{- with .parameters }}
     {{- $params = (marshalJSON .) }}
   {{- end }}
+  {{- with .previousValues }}
+    {{- $previousValues = (marshalJSON .) }}
+  {{- end }}
+{{- end }}
+{{- $options := (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}
+{{- with .instance.spec.previousValues }}
+  {{- $options = (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s, \"previous_values\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params $previousValues ) | quote  }}
 {{- end }}
 apiVersion: deployment.servicefabrik.io/v1alpha1
 kind: Director
@@ -35,6 +43,6 @@ metadata:
     state: {{ $state }}
   name: {{ $name }}
 spec:
-  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}
+  options: {{ $options }}
 status:
   state: {{ $state }}
