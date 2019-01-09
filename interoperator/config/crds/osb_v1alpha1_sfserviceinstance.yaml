@@ -31,15 +31,6 @@ spec:
             planId:
               type: string
             previousValues:
-              properties:
-                organizationGuid:
-                  type: string
-                planId:
-                  type: string
-                serviceId:
-                  type: string
-                spaceGuid:
-                  type: string
               type: object
             serviceId:
               type: string
@@ -62,15 +53,6 @@ spec:
                 planId:
                   type: string
                 previousValues:
-                  properties:
-                    organizationGuid:
-                      type: string
-                    planId:
-                      type: string
-                    serviceId:
-                      type: string
-                    spaceGuid:
-                      type: string
                   type: object
                 serviceId:
                   type: string

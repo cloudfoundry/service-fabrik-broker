@@ -36,14 +36,6 @@ func (r Source) String() string {
 	return fmt.Sprintf("%s/%s (%s %s)", r.Namespace, r.Name, r.Kind, r.APIVersion)
 }
 
-// PreviousValues stores information about the Service Instance prior to the update.
-type PreviousValues struct {
-	ServiceID        string `json:"serviceId,omitempty"`
-	PlanID           string `json:"planId,omitempty"`
-	OrganizationGUID string `json:"organizationGuid,omitempty"`
-	SpaceGUID        string `json:"spaceGuid,omitempty"`
-}
-
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
 type SFServiceInstanceSpec struct {
 	ServiceID        string                `json:"serviceId"`
@@ -52,7 +44,7 @@ type SFServiceInstanceSpec struct {
 	OrganizationGUID string                `json:"organizationGuid,omitempty"`
 	SpaceGUID        string                `json:"spaceGuid,omitempty"`
 	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
-	PreviousValues   PreviousValues        `json:"previousValues,omitempty"`
+	PreviousValues   *runtime.RawExtension `json:"previousValues,omitempty"`
 }
 
 // SFServiceInstanceStatus defines the observed state of SFServiceInstance
