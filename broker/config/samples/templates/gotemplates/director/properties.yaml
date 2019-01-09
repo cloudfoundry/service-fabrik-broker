@@ -7,12 +7,11 @@
 {{- $error := "" }}
 {{- with .director.status.lastOperation }}
   {{- $lastOperation := ( unmarshalJSON . ) }}
-  {{- $response = $lastOperation.description }}
+  {{- $response = $lastOperation.description | quote }}
 {{- end }}
 {{- with .director.status }}
   {{- if eq .state "succeeded" }}
     {{- $stateString = "succeeded" }}
-    {{- $response = $response }}
   {{- else }}
     {{- if eq .state "failed"}}
       {{- $stateString = "failed" }}
@@ -35,7 +34,7 @@ provision:
   state: {{ $stateString }}
   response: {{ $response }}
 {{- if eq $stateString "failed" }}
-  error: {{ $error }}
+  error: {{ $error | quote}}
 {{- end }}
   dashboardUrl: ""
 {{- with .directorbind.status }}
@@ -57,7 +56,7 @@ provision:
 bind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: {{ $error }}
+  error: {{ $error | quote }}
 {{- end }}
   response: {{ $response }}
 {{- with .directorbind.status }}
@@ -81,12 +80,12 @@ bind:
 unbind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: {{ $error }}
+  error: {{ $error | quote }}
 {{- end }}
   response: {{ $response }}
 {{- with .director.status.lastOperation }}
   {{- $lastOperation := ( unmarshalJSON . ) }}
-  {{- $response = $lastOperation.description }}
+  {{- $response = $lastOperation.description | quote }}
 {{- end }}
 {{- $stateString = "in progress" }} 
 {{- with .director }}
@@ -106,6 +105,6 @@ unbind:
 deprovision:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: {{ $error }}
+  error: {{ $error | quote }}
 {{- end }}
   response: {{ $response }}
