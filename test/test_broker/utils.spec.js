@@ -433,7 +433,7 @@ describe('utils', function () {
         platform: 'cloudfoundry',
         organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
         space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-      }
+      };
 
       expect(utils.getPlatformFromContext(context)).to.eql('cloudfoundry');
     });
@@ -444,7 +444,7 @@ describe('utils', function () {
         origin: 'cloudfoundry',
         organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
         space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-      }
+      };
 
       expect(utils.getPlatformFromContext(context)).to.eql('cloudfoundry');
     });

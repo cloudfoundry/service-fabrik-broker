@@ -295,10 +295,10 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should fail if resource could not be fetched from ApiServer and request does not contain plan_id', function(done) {
+        it('should fail if resource could not be fetched from ApiServer and request does not contain plan_id', function (done) {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1 , 404);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
@@ -315,9 +315,9 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
 
-        it('should fail if resource could not be fetched from ApiServer and request does not contain space_guid', function(done) {
+        it('should fail if resource could not be fetched from ApiServer and request does not contain space_guid', function (done) {
           mocks.uaa.tokenKey();
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1 , 404);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/backup`)
