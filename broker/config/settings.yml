@@ -1014,6 +1014,7 @@ defaults: &defaults
       id: 'c41f368b-1eab-4d0f-b740-d9abdd14449f'
       name: 'v9.6-tiny'
       free: false
+      description: 'Postgresql 9.6 service tiny plan'
       # Asynch operations which supports parallel synch operations
       # e.g. bind and unbind (sync) supported during update and backup (async)
       supported_operations: *async_ops_supporting_parallel_sync_ops
