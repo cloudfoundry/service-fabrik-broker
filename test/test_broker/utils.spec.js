@@ -1,6 +1,7 @@
 'use strict';
 
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
 
 describe('utils', function () {
@@ -447,6 +448,17 @@ describe('utils', function () {
       };
 
       expect(utils.getPlatformFromContext(context)).to.eql('cloudfoundry');
+    });
+  });
+  describe('#pushServicePlanToApiServer', function () {
+    it('Push Service and Plans on apiserver', function () {
+      mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, 3);
+      mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, 13);
+      return utils.pushServicePlanToApiServer()
+        .then(res => {
+          expect(res.length).to.eql(16);
+          mocks.verify();
+        });
     });
   });
 });
