@@ -792,7 +792,7 @@ class ApiServerClient {
     }
     // Create Namespace if not default
     const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-      opts.spec.instance_id : opts.resourceId
+      _.get(opts, 'spec.instance_id') : opts.resourceId
     );
     // Create Namespace if not default
     return Promise.try(() => this.init())
@@ -823,7 +823,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
-    assert.ok(opts.metadata || opts.spec || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata'  is required to update resource`);
+    assert.ok(opts.metadata || opts.spec || opts.status, `Property 'metadata' or 'options' or 'status'  is required to update resource`);
     return Promise.try(() => {
         const patchBody = {};
         if (opts.metadata) {
@@ -831,9 +831,6 @@ class ApiServerClient {
         }
         if (opts.spec) {
           patchBody.spec = camelcaseKeys(opts.spec);
-        }
-        if (opts.operatorMetadata) {
-          patchBody.operatorMetadata = opts.operatorMetadata;
         }
         if (opts.status) {
           const statusJson = {};
@@ -852,7 +849,7 @@ class ApiServerClient {
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
         // Create Namespace if not default
         const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-          opts.spec.instance_id : opts.resourceId
+          _.get(opts, 'spec.instance_id') : opts.resourceId
         );
         // Create Namespace if not default
         return Promise.try(() => this.init())
@@ -882,27 +879,17 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
-    assert.ok(opts.metadata || opts.spec || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata' is required to patch resource`);
+    assert.ok(opts.metadata || opts.spec || opts.status, `Property 'metadata' or 'options' or 'status' is required to patch resource`);
     const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-      opts.spec.instance_id : opts.resourceId
+      _.get(opts, 'spec.instance_id') : opts.resourceId
     );
     return this.getResource(_.merge(opts, {
         namespaceId: namespaceId
       }))
       .then(resource => {
-        if (_.get(opts, 'status.response') && resource.status) {
-          const oldResponse = _.get(resource, 'status.response');
-          const response = _.merge(oldResponse, opts.status.response);
-          _.set(opts.status, 'response', response);
-        }
         if (opts.spec && resource.spec) {
           const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
           _.set(opts, 'spec', spec);
-        }
-        if (opts.operatorMetadata && resource.operatorMetadata) {
-          const oldOperatorMetadata = _.get(resource, 'operatorMetadata');
-          const operatorMetadata = _.merge(oldOperatorMetadata, opts.operatorMetadata);
-          _.set(opts, 'operatorMetadata', operatorMetadata);
         }
         return this.updateOSBResource(opts);
       });
