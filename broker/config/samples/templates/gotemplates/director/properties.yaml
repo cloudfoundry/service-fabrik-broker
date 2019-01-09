@@ -35,7 +35,7 @@ provision:
   state: {{ $stateString }}
   response: {{ $response }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error }}
 {{- end }}
   dashboardUrl: ""
 {{- with .directorbind.status }}
@@ -57,7 +57,7 @@ provision:
 bind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error }}
 {{- end }}
   response: {{ $response }}
 {{- with .directorbind.status }}
@@ -81,7 +81,7 @@ bind:
 unbind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error }}
 {{- end }}
   response: {{ $response }}
 {{- with .director.status.lastOperation }}
@@ -106,6 +106,6 @@ unbind:
 deprovision:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error }}
 {{- end }}
   response: {{ $response }}
