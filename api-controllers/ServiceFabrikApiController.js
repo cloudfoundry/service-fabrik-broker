@@ -530,21 +530,38 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  getSpaceGuidOfBackup(backupGuid) {
+    return eventmesh.apiServerClient.deleteResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      resourceId: backupGuid
+    })
+    .then(resource => _.get(resource, 'spec.options.context.space_guid') || 
+    _.get(resource, 'spec.options.args.space_guid'));
+    //TODO: This will need to be handled while supporting BnR for instances from k8s platform
+  }
+
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
+    let backupSpaceGuid = tenantId; 
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
-    const sourceSpaceGuid = _.get(req, 'body.source_space_guid');
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() => this.getSpaceGuidOfBackup(backupGuid))
+      .then(spaceGuid => {
+        if(spaceGuid !== tenantId) {
+          backupSpaceGuid = spaceGuid;
+        }
+      })
       .then(() => {
         let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
-        if (sourceSpaceGuid && !isCloudControllerAdmin) {
-          return this.verifySpaceDevPermissions(sourceSpaceGuid, req.user, _.pick(req, 'auth'));
+        if (backupSpaceGuid !== tenantId && !isCloudControllerAdmin) {
+          return this.verifySpaceDevPermissions(backupSpaceGuid, req.user, _.pick(req, 'auth'));
         }
       })
       .then(() => utils.uuidV4())
@@ -576,12 +593,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
-          tenant_id: sourceSpaceGuid ? sourceSpaceGuid : tenantId,
+          tenant_id: backupSpaceGuid,
           instance_id: sourceInstanceId,
           service_id: serviceId
         } : {
           backup_guid: backupGuid,
-          tenant_id: sourceSpaceGuid ? sourceSpaceGuid : tenantId
+          tenant_id: backupSpaceGuid
         };
         if (timeStamp) {
           return this.backupStore
