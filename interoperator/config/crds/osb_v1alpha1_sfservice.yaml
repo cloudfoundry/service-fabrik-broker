@@ -49,6 +49,14 @@ spec:
               type: string
             planUpdatable:
               type: boolean
+            supportedPlatform:
+              items:
+                type: string
+              type: array
+            backupInterval:
+              type: string
+            pitr:
+              type: boolean
             requires:
               items:
                 type: string
