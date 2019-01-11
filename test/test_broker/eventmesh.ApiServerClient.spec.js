@@ -200,6 +200,23 @@ describe('eventmesh', () => {
       });
     });
 
+    describe('registerInterOperatorCrds', () => {
+      it('Patch already register crds successfully', () => {
+        const sfPlanCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS);
+        const sfServiceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES);
+        const sfServiceInstanceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES);
+        const sfServiceBindingCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfPlanCrdJson.metadata.name, {}, sfPlanCrdJson);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceCrdJson.metadata.name, {}, sfServiceCrdJson);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceInstanceCrdJson.metadata.name, {}, sfServiceInstanceCrdJson);
+        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceBindingCrdJson.metadata.name, {}, sfServiceBindingCrdJson);
+        return apiserver.registerInterOperatorCrds()
+          .then(() => {
+            mocks.verify();
+          });
+      });
+    });
+
     describe('createResource', () => {
       it('Creates resource without label and status', () => {
         const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
