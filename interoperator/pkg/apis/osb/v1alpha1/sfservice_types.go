@@ -21,27 +21,11 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// Context contains the data additional data regarding service/plan
-type Context struct {
-	Operator      *runtime.RawExtension `json:"operator,omitempty"`
-	ServiceFabrik *runtime.RawExtension `json:"serviceFabrik,omitempty"`
-}
-
 // DashboardClient contains the data necessary to activate the Dashboard SSO feature for this service
 type DashboardClient struct {
 	ID          string `json:"id,omitempty"`
 	Secret      string `json:"secret,omitempty"`
 	RedirectURI string `json:"redirectUri,omitempty"`
-}
-
-// ServiceMetadata contains the metadata for the service
-type ServiceMetadata struct {
-	DisplayName         string `json:"displayName,omitempty"`
-	LongDescription     string `json:"longDescription,omitempty"`
-	ProviderDisplayName string `json:"providerDisplayName,omitempty"`
-	DocumentationURL    string `json:"documentationUrl,omitempty"`
-	SupportURL          string `json:"supportUrl,omitempty"`
-	ImageURL            string `json:"imageUrl,omitempty"`
 }
 
 // SFServiceSpec defines the desired state of SFService

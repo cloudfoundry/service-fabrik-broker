@@ -32,10 +32,6 @@ spec:
               type: boolean
             id:
               type: string
-            asyncOpsSupportingParallelSyncOps:
-              type: array
-            actions:
-              type: string
             manager:
               type: object
             metadata:
