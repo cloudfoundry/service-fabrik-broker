@@ -22,7 +22,9 @@ import (
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestStorageSfPlan(t *testing.T) {
@@ -52,6 +54,34 @@ func TestStorageSfPlan(t *testing.T) {
 		Name:      "plan-id",
 		Namespace: "default",
 	}
+	parameters := `{
+		"$schema": "http://json-schema.org/draft-06/schema#",
+		"title": "createServiceInstance",
+		"type": "object",
+		"additionalProperties": false,
+		"properties": null,
+		"foo": {
+			"type": "string",
+			"description": "some description for foo field"
+		},
+		"required": [
+			"foo"
+		]
+	}`
+	re := &runtime.RawExtension{}
+	_ = re.UnmarshalJSON([]byte(parameters))
+	schema := Schema{
+		Parameters: re,
+	}
+	schemas := &ServiceSchemas{
+		Instance: ServiceInstanceSchema{
+			Create: schema,
+			Update: schema,
+		},
+		Binding: ServiceBindingSchema{
+			Create: schema,
+		},
+	}
 	created := &SFPlan{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "plan-id",
@@ -61,15 +91,15 @@ func TestStorageSfPlan(t *testing.T) {
 			Name:          "plan-name",
 			ID:            "plan-id",
 			Description:   "description",
-			Metadata:      nil,
+			Metadata:      re,
 			Free:          false,
 			Bindable:      true,
 			PlanUpdatable: true,
-			Schemas:       nil,
+			Schemas:       schemas,
 			Templates:     templateSpec,
 			ServiceID:     "service-id",
-			RawContext:    nil,
-			Manager:       nil,
+			RawContext:    re,
+			Manager:       re,
 		},
 		Status: SFPlanStatus{},
 	}
@@ -89,12 +119,45 @@ func TestStorageSfPlan(t *testing.T) {
 	g.Expect(err).To(gomega.HaveOccurred())
 
 	// Test Updating the Labels
-	updated := fetched.DeepCopy()
+	updatedObject := fetched.DeepCopyObject()
+	updated := updatedObject.(*SFPlan)
 	updated.Labels = map[string]string{"hello": "world"}
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(updated))
+
+	// Test listing
+	planList := &SFPlanList{}
+	labels := make(map[string]string)
+	labels["hello"] = "world"
+	options := kubernetes.MatchingLabels(labels)
+	options.Namespace = "default"
+	g.Expect(c.List(context.TODO(), options, planList)).NotTo(gomega.HaveOccurred())
+	g.Expect(len(planList.Items)).To(gomega.Equal(1))
+
+	// Test deepcopy SFPlanList
+	copiedListObject := planList.DeepCopyObject()
+	copiedList := copiedListObject.(*SFPlanList)
+	g.Expect(copiedList).To(gomega.Equal(planList))
+
+	//Test deepcopy SFPlanSpec & SFPlanStatus
+	copiedSpec := updated.Spec.DeepCopy()
+	g.Expect(copiedSpec).To(gomega.Equal(&updated.Spec))
+	copiedStatus := updated.Status.DeepCopy()
+	g.Expect(copiedStatus).To(gomega.Equal(&updated.Status))
+
+	//Test deepcopy
+	copiedSchemas := schemas.DeepCopy()
+	g.Expect(copiedSchemas).To(gomega.Equal(schemas))
+	copiedInstanceSchema := schemas.Instance.DeepCopy()
+	g.Expect(copiedInstanceSchema).To(gomega.Equal(&schemas.Instance))
+	copiedBindingSchemas := schemas.Binding.DeepCopy()
+	g.Expect(copiedBindingSchemas).To(gomega.Equal(&schemas.Binding))
+	copiedSchema := schema.DeepCopy()
+	g.Expect(copiedSchema).To(gomega.Equal(&schema))
+	copiedTemplateSpec := templateSpec[0].DeepCopy()
+	g.Expect(copiedTemplateSpec).To(gomega.Equal(&templateSpec[0]))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
