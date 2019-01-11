@@ -26,6 +26,28 @@ import (
 )
 
 func TestStorageSfPlan(t *testing.T) {
+	templateSpec := []TemplateSpec{
+		TemplateSpec{
+			Action:  "provision",
+			Type:    "gotemplate",
+			Content: "provisioncontent",
+		},
+		TemplateSpec{
+			Action:  "bind",
+			Type:    "gotemplate",
+			Content: "bindcontent",
+		},
+		TemplateSpec{
+			Action:  "properties",
+			Type:    "gotemplate",
+			Content: "propertiescontent",
+		},
+		TemplateSpec{
+			Action:  "sources",
+			Type:    "gotemplate",
+			Content: "sourcescontent",
+		},
+	}
 	key := types.NamespacedName{
 		Name:      "plan-id",
 		Namespace: "default",
@@ -44,17 +66,12 @@ func TestStorageSfPlan(t *testing.T) {
 			Bindable:      true,
 			PlanUpdatable: true,
 			Schemas:       nil,
-			Templates: []TemplateSpec{
-				TemplateSpec{
-					Action:  "provision",
-					Type:    "gotemplate",
-					Content: "content",
-				},
-			},
-			ServiceID:  "service-id",
-			RawContext: nil,
-			Manager:    nil,
+			Templates:     templateSpec,
+			ServiceID:     "service-id",
+			RawContext:    nil,
+			Manager:       nil,
 		},
+		Status: SFPlanStatus{},
 	}
 	g := gomega.NewGomegaWithT(t)
 
@@ -64,6 +81,12 @@ func TestStorageSfPlan(t *testing.T) {
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(created))
+
+	provisionTemplate, _ := fetched.GetTemplate("provision")
+	g.Expect(provisionTemplate.Content).To(gomega.Equal("provisioncontent"))
+
+	_, err := fetched.GetTemplate("unknown")
+	g.Expect(err).To(gomega.HaveOccurred())
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()

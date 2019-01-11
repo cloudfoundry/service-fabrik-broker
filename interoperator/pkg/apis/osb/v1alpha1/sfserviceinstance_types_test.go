@@ -30,11 +30,30 @@ func TestStorageServiceInstance(t *testing.T) {
 		Name:      "foo",
 		Namespace: "default",
 	}
+
+	spec := SFServiceInstanceSpec{}
 	created := &SFServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
-		}}
+		},
+		Spec: spec,
+		Status: SFServiceInstanceStatus{
+			DashboardURL: "",
+			State:        "",
+			Error:        "",
+			Description:  "",
+			AppliedSpec:  spec,
+			CRDs: []Source{
+				{
+					APIVersion: "v1alpha1",
+					Kind:       "Director",
+					Name:       "dddd",
+					Namespace:  "default",
+				},
+			},
+		},
+	}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
@@ -43,6 +62,8 @@ func TestStorageServiceInstance(t *testing.T) {
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(created))
+
+	g.Expect(created.Status.CRDs[0].String()).To(gomega.Equal("default/dddd (Director v1alpha1)"))
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()
