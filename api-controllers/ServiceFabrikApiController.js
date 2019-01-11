@@ -238,6 +238,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .gte(0)
       .value();
       return isSpaceDeveloper;
+    })
+    .then(isSpaceDeveloper => {
+      if (!isSpaceDeveloper) {
+        throw new Forbidden(`User '${user.name}' is not a space-developer for space with guid: ${space_guid}`);
+      }
     });
   }
 
@@ -537,7 +542,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
       .then(() => {
-        if (sourceSpaceGuid) {
+        let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
+        if (sourceSpaceGuid && !isCloudControllerAdmin) {
           return this.verifySpaceDevPermissions(sourceSpaceGuid, req.user, _.pick(req, 'auth'));
         }
       })
