@@ -22,7 +22,9 @@ import (
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestStorageSFService(t *testing.T) {
@@ -30,11 +32,40 @@ func TestStorageSFService(t *testing.T) {
 		Name:      "foo",
 		Namespace: "default",
 	}
+	parameters := `{
+		"foo": "bar",
+		"abc": {
+			"description": "some description for abc field"
+		}
+	}`
+	re := &runtime.RawExtension{}
+	_ = re.UnmarshalJSON([]byte(parameters))
+
 	created := &SFService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
-		}}
+		},
+		Spec: SFServiceSpec{
+			Name:                "service-name",
+			ID:                  "service-id",
+			Description:         "description",
+			Tags:                []string{"foo", "bar"},
+			Requires:            []string{"foo", "bar"},
+			Bindable:            true,
+			InstanceRetrievable: true,
+			BindingRetrievable:  true,
+			Metadata:            re,
+			DashboardClient: DashboardClient{
+				ID:          "id",
+				Secret:      "secret",
+				RedirectURI: "redirecturi",
+			},
+			PlanUpdatable: true,
+			RawContext:    re,
+		},
+		Status: SFServiceStatus{},
+	}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
@@ -45,12 +76,35 @@ func TestStorageSFService(t *testing.T) {
 	g.Expect(fetched).To(gomega.Equal(created))
 
 	// Test Updating the Labels
-	updated := fetched.DeepCopy()
+	updatedObject := fetched.DeepCopyObject()
+	updated := updatedObject.(*SFService)
 	updated.Labels = map[string]string{"hello": "world"}
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(updated))
+
+	// Test listing
+	serviceList := &SFServiceList{}
+	labels := make(map[string]string)
+	labels["hello"] = "world"
+	options := kubernetes.MatchingLabels(labels)
+	options.Namespace = "default"
+	g.Expect(c.List(context.TODO(), options, serviceList)).NotTo(gomega.HaveOccurred())
+	g.Expect(len(serviceList.Items)).To(gomega.Equal(1))
+
+	// Test deepcopy SFServiceList
+	copiedListObject := serviceList.DeepCopyObject()
+	copiedList := copiedListObject.(*SFServiceList)
+	g.Expect(copiedList).To(gomega.Equal(serviceList))
+
+	//Test deepcopy SFServiceSpec, SFServiceStatus and DashboardClient
+	copiedSpec := updated.Spec.DeepCopy()
+	g.Expect(copiedSpec).To(gomega.Equal(&updated.Spec))
+	copiedStatus := updated.Status.DeepCopy()
+	g.Expect(copiedStatus).To(gomega.Equal(&updated.Status))
+	copiedDashboardClient := updated.Spec.DashboardClient.DeepCopy()
+	g.Expect(copiedDashboardClient).To(gomega.Equal(&updated.Spec.DashboardClient))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
