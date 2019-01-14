@@ -19,12 +19,23 @@ func TestGoTemplateFunctions(t *testing.T) {
 	objStr, _ := marshalJSON(obj)
 	g.Expect(objStr).To(gomega.Equal("{\"hello\":\"world\",\"hi\":\"india\"}"))
 
+	complexNum := complex(12, 2)
+	invalidObj := map[string]interface{}{"complex": complexNum}
+	invalidObjStr, err := marshalJSON(invalidObj)
+	g.Expect(invalidObjStr).To(gomega.Equal(""))
+	g.Expect(err).To(gomega.HaveOccurred())
+
 	objStr2 := "{\"hello\":\"world\",\"hi\":\"india\"}"
 	obj2, _ := unmarshalJSON(objStr2)
 	g.Expect(obj2).To(gomega.Equal(map[string]interface{}{
 		"hello": "world",
 		"hi":    "india",
 	}))
+
+	invalidObjStr2 := "{\"hello\":\"world\"\"hi\":\"india\"}"
+	invalidObj2, err2 := unmarshalJSON(invalidObjStr2)
+	g.Expect(invalidObj2).To(gomega.BeNil())
+	g.Expect(err2).To(gomega.HaveOccurred())
 
 	str := `{"hello":"world","hi":"india"}`
 	quotedStr := quote(str)
@@ -33,5 +44,13 @@ func TestGoTemplateFunctions(t *testing.T) {
 	str2 := `{"hello":"world","hi":"india"}`
 	quotedStr2 := squote(str2)
 	g.Expect(quotedStr2).To(gomega.Equal(`'{"hello":"world","hi":"india"}'`))
+
+	str3 := "helloWorld"
+	str3Val := strval(str3)
+	g.Expect(str3Val).To(gomega.Equal("helloWorld"))
+
+	int := 10
+	intVal := strval(int)
+	g.Expect(intVal).To(gomega.Equal("10"))
 
 }
