@@ -60,10 +60,6 @@ describe('dashboard', function () {
       }
     };
 
-    // before(function () {
-    //   _.unset(fabrik.DirectorManager, plan_id);
-    // });
-
     afterEach(function () {
       mocks.reset();
     });

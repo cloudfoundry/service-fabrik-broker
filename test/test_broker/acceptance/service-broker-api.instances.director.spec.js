@@ -34,12 +34,10 @@ describe('service-broker-api', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        //_.unset(fabrik.DirectorManager, plan_id);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
         return mocks.setup([
-          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });

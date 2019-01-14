@@ -83,9 +83,6 @@ describe('dashboard', function () {
     };
 
     describe('/manage/instances/:service_id/:plan_id/:instance_id', function () {
-      // before(function () {
-      //   _.unset(fabrik.VirtualHostManager, plan_id);
-      // });
 
       afterEach(function () {
         mocks.reset();
@@ -138,10 +135,6 @@ describe('dashboard', function () {
     });
 
     describe('/manage/dashboards/virtual_host/instances/:instance_id', function () {
-      // before(function () {
-      //   _.unset(fabrik.VirtualHostManager, plan_id);
-      // });
-
 
       afterEach(function () {
         mocks.reset();

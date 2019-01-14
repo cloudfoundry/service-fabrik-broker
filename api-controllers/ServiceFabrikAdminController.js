@@ -165,9 +165,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       ])
       .spread(assignOrgAndSpace)
       .map(deployment => {
-        if (deployment.serviceInstance) {
-          const networkSegmentIndex = deployment.serviceInstance.getNetworkSegmentIndex(deployment.name);
-          const plan = deployment.serviceInstance.plan;
+        if (deployment.directorService) {
+          const networkSegmentIndex = deployment.directorService.getNetworkSegmentIndex(deployment.name);
+          const plan = deployment.directorService.plan;
           const service = _.omit(plan.service, 'plans');
           deployment = _
             .chain(deployment)
@@ -222,7 +222,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     Promise.try(() => DirectorService.createInstance(this.getInstanceId(deploymentName), {
         plan_id: plan.id
       }))
-      .then(serviceInstance =>
+      .then(directorService =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
           resourceType: plan.resourceType,
@@ -237,7 +237,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               this.director.getTasks({
                 deployment: deploymentName
               }),
-              serviceInstance.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+              directorService.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
             ])
             .spread((vms, tasks, diff) => ({
               name: deploymentName,
@@ -339,7 +339,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found service instance '${deployment.entity.name} [${deployment.metadata.guid}]' without deployment`);
           return false;
         }
-        if (!deployment.serviceInstance) {
+        if (!deployment.directorService) {
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
@@ -351,7 +351,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .then(context => {
             const opts = {};
             opts.context = context;
-            return deployment.serviceInstance
+            return deployment.directorService
               .diffManifest(deployment.name, opts)
               .then(result => _
                 .chain(deployment)
@@ -403,7 +403,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               }))
               .then(service => _
                 .chain(instance)
-                .set('serviceInstance', service)
+                .set('directorService', service)
                 .set('entity.service_plan_id', plan.id)
                 .value()
               );

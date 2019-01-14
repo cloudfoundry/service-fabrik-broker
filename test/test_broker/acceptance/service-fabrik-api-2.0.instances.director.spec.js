@@ -109,14 +109,12 @@ describe('service-fabrik-api-sf2.0', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        //_.unset(fabrik.DirectorManager, plan_id);
         timestampStub = sinon.stub(filename, 'timestamp');
         timestampStub.withArgs().returns(started_at);
         scheduleStub = sinon.stub(ScheduleManager, 'schedule', getJob);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
         cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
         return mocks.setup([
-          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });

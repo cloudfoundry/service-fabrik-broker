@@ -7,7 +7,6 @@ const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
 const config = require('../../../common/config');
 const utils = require('../../../common/utils');
-// const NotFound = errors.NotFound;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = iaas.backupStore.filename;
@@ -83,14 +82,12 @@ describe('service-fabrik-api', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        //_.unset(fabrik.DirectorManager, plan_id);
         timestampStub = sinon.stub(filename, 'timestamp');
         timestampStub.withArgs().returns(started_at);
         scheduleStub = sinon.stub(ScheduleManager, 'schedule', getJob);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
         cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
         return mocks.setup([
-          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });

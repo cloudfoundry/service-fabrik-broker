@@ -58,14 +58,12 @@ describe('service-broker-api-2.0', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        //_.unset(fabrik.DirectorManager, plan_id);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
         sandbox = sinon.sandbox.create();
         delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
-          //fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });
@@ -1516,65 +1514,6 @@ describe('service-broker-api-2.0', function () {
         });
       });
 
-      /*describe('#getInfo', function () {
-        let sandbox, getDeploymentInfoStub, getResourceStub;
-
-        const resource = {
-          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
-          kind: 'Director',
-          metadata: {
-            name: instance_id,
-            labels: {
-              state: 'succeeded'
-            }
-          },
-          spec: {
-            options: {
-              service_id: service_id,
-              plan_id: plan_id,
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-                space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-              },
-              organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-              space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
-              parameters: {
-                foo: 'bar'
-              }
-            }
-          },
-          status: {
-            state: 'succeeded',
-            lastOperation: {},
-            response: {}
-          }
-        };
-        before(function () {
-          sandbox = sinon.sandbox.create();
-          getDeploymentInfoStub = sandbox.stub(DirectorManager.prototype, 'getDeploymentInfo');
-          getResourceStub = sandbox.stub(apiServerClient, 'getResource');
-
-          getResourceStub
-            .withArgs({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-              resourceId: instance_id
-            })
-            .returns(Promise.try(() => resource));
-
-          getDeploymentInfoStub
-            .withArgs(deployment_name)
-            .returns(Promise.try(() => {
-              return {};
-            }));
-        });
-
-        after(function () {
-          sandbox.restore();
-        });
-
-      });*/
     });
   });
 });

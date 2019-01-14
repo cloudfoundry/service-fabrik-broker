@@ -159,13 +159,10 @@ describe('service-broker-api', function () {
       let sandbox, delayStub;
 
       before(function () {
-        //_.unset(fabrik.DockerManager, plan_id);
-        //mocks.docker.inspectImage();
         mocks.docker.getAllContainers(usedPorts);
         sandbox = sinon.sandbox.create();
         delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
         return mocks.setup([
-          //fabrik.DockerManager.load(plan),
           docker.updatePortRegistry()
         ]);
       });
@@ -856,11 +853,8 @@ describe('service-broker-api', function () {
         const plan_id = '61a8d1f7-6477-4eb7-a85d-57ac067e80c4';
 
         before(function () {
-          //_.unset(fabrik.DockerManager, plan_id);
-          //mocks.docker.inspectImage();
           mocks.docker.getAllContainers(usedPorts);
           return mocks.setup([
-            //fabrik.DockerManager.load(plan),
             docker.updatePortRegistry()
           ]);
         });
