@@ -1,7 +1,6 @@
 package helm
 
 import (
-	"bytes"
 	"fmt"
 	"path/filepath"
 )
@@ -9,24 +8,6 @@ import (
 type helmOutput struct {
 	Name  string
 	Files map[string]string
-}
-
-// Manifest returns the manifest of the rendered chart as byte array.
-func (c *helmOutput) Manifest() ([]byte, error) {
-	// Aggregate all valid manifests into one big doc.
-	b := bytes.NewBuffer(nil)
-
-	for k, v := range c.Files {
-		b.WriteString("\n---\n# Source: " + k + "\n")
-		b.WriteString(v)
-	}
-	return b.Bytes(), nil
-}
-
-// ManifestAsString returns the manifest of the rendered chart as string.
-func (c *helmOutput) ManifestAsString() (string, error) {
-	manifest, err := c.Manifest()
-	return string(manifest), err
 }
 
 // FileContent returns explicitly the content of the provided <filename>.

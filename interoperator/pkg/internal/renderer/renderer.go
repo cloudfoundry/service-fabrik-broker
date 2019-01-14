@@ -26,8 +26,6 @@ type Input interface{}
 
 // Output holds rendered templates files
 type Output interface {
-	Manifest() ([]byte, error)
-	ManifestAsString() (string, error)
 	FileContent(filename string) (string, error)
 	ListFiles() ([]string, error)
 }
