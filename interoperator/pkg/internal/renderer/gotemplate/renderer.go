@@ -47,9 +47,6 @@ func NewInput(url, content, name string, values map[string]interface{}) renderer
 			name:    name,
 			values:  values,
 		}
-	} else if url != "" {
-		//TODO
-		//Get content from the url and return.
 	}
 
 	return nil
