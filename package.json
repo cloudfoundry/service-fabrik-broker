@@ -32,7 +32,7 @@
     "service-fabrik"
   ],
   "dependencies": {
-    "agenda": "0.10.0",
+    "agenda": "0.9.0",
     "azure-arm-compute": "4.0.0",
     "azure-storage": "2.8.3",
     "basic-auth": "1.0.4",
