@@ -788,7 +788,6 @@ describe('Jobs', function () {
         }, {
           status: 500
         });
-        mocks.cloudController.findServicePlan(instance_id, plan_id);
         return ScheduleBackupJob.run(job, () => {
           expect(baseJobLogRunHistoryStub).not.to.be.called;
         });

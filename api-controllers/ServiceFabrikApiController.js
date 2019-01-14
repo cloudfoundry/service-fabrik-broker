@@ -758,11 +758,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
               resourceId: options.instance_id
             })
             .then(resource => {
+              /* TODO: Conditional statement to fetch plan_id below is needed to be backwards compatible       
+              as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
               options.plan_id = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? resource.spec.options.plan_id :
                 _.get(resource, 'status.appliedOptions.plan_id');
             })
             .catch(NotFound, () => {
-              logger.info(`+-> Instance ${options.instance_id} not found, continue listing backups for the deleted instance`);
+              logger.info(`+-> Instance ${options.instance_id} not found in ApiServer, continue listing backups for the deleted instance`);
             });
         }
       })

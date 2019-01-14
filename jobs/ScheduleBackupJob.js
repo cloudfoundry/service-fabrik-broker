@@ -79,7 +79,7 @@ class ScheduleBackupJob extends BaseJob {
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceId
       })
-      .then(() => false)
+      .then(resource => _.get(resource, 'metadata.deletionTimestamp') ? true : false)
       .catch(errors.NotFound, () => {
         logger.warn(`service instance : ${instanceId} deleted`);
         return true;
