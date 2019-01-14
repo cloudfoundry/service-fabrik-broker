@@ -4,8 +4,6 @@ const _ = require('lodash');
 const parseUrl = require('url').parse;
 const CONST = require('../../../common/constants');
 const app = require('../support/apps').external;
-const fabrik = require('../../../broker/lib/fabrik');
-
 
 describe('dashboard', function () {
   describe('director', function () {
@@ -61,10 +59,6 @@ describe('dashboard', function () {
         })
       }
     };
-
-    before(function () {
-      _.unset(fabrik.DirectorManager, plan_id);
-    });
 
     afterEach(function () {
       mocks.reset();

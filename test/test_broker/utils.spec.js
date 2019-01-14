@@ -1,12 +1,12 @@
 'use strict';
 
-const DirectorManager = require('../../broker/lib/fabrik').DirectorManager;
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const utils = require('../../common/utils');
 
 describe('utils', function () {
   describe('#deploymentNameRegExp', function () {
     let test_subnet = 'test-subnet';
-    let deployment_name = `${DirectorManager.prefix}_${test_subnet}-1234-5432abcd-1098-abcd-7654-3210abcd9876`;
+    let deployment_name = `${DirectorService.prefix}_${test_subnet}-1234-5432abcd-1098-abcd-7654-3210abcd9876`;
 
     it('should match network index', function () {
       expect(utils.deploymentNameRegExp(test_subnet).exec(deployment_name)[2]).to.eql('1234');
@@ -18,7 +18,7 @@ describe('utils', function () {
     it('should match name and subnet', function () {
       expect(utils.deploymentNameRegExp(test_subnet).exec(deployment_name)[1]).to.eql('service-fabrik_test-subnet');
       // removesubnet 
-      deployment_name = `${DirectorManager.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876`;
+      deployment_name = `${DirectorService.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876`;
       expect(utils.deploymentNameRegExp().exec(deployment_name)[1]).to.eql('service-fabrik');
       expect(utils.deploymentNameRegExp('').exec(deployment_name)[1]).to.eql('service-fabrik');
     });
@@ -26,8 +26,8 @@ describe('utils', function () {
 
   describe('#taskIdRegExp', function () {
     it('should match name and taskId', function () {
-      let prefixedTaskId = `${DirectorManager.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876_12345`;
-      expect(utils.taskIdRegExp().exec(prefixedTaskId)[1]).to.eql(`${DirectorManager.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876`);
+      let prefixedTaskId = `${DirectorService.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876_12345`;
+      expect(utils.taskIdRegExp().exec(prefixedTaskId)[1]).to.eql(`${DirectorService.prefix}-1234-5432abcd-1098-abcd-7654-3210abcd9876`);
       expect(utils.taskIdRegExp().exec(prefixedTaskId)[2]).to.eql('12345');
     });
   });

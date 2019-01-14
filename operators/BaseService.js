@@ -14,6 +14,14 @@ class BaseService {
     return this.plan.manager.settings;
   }
 
+  static get prefix() {
+    return CONST.SERVICE_FABRIK_PREFIX;
+  }
+
+  get name() {
+    return this.plan.manager.name;
+  }
+
   get subnet() {
     return this.settings.subnet || this.service.subnet;
   }

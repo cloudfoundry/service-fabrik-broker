@@ -7,7 +7,7 @@ const BackupStore = require('../../data-access-layer/iaas/BackupStore');
 const Agent = require('../../data-access-layer/service-agent');
 const FabrikBaseController = require('../../api-controllers/FabrikBaseController');
 const CONST = require('../../common/constants');
-const OobBackupManager = require('../../broker/lib/fabrik/OobBackupManager');
+const OobBackupManager = require('../../data-access-layer/oob-manager/OobBackupManager');
 const bosh = require('../../data-access-layer/bosh');
 const backupStoreForOob = require('../../data-access-layer/iaas').backupStoreForOob;
 

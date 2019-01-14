@@ -13,7 +13,7 @@ const utils = require('../common/utils');
 const errors = require('../common/errors');
 const maintenanceManager = require('../maintenance').maintenanceManager;
 const serviceFabrikClient = require('../data-access-layer/cf').serviceFabrikClient;
-require('./lib/fabrik');
+require('../data-access-layer/db/DBManager');
 
 let cpuCount = cpus.length;
 let maxWorkers = 0;

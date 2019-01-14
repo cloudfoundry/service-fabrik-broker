@@ -13,7 +13,8 @@ const backupStore = require('../data-access-layer/iaas').backupStore;
 const cf = require('../data-access-layer/cf');
 const FabrikBaseController = require('./FabrikBaseController');
 const utils = require('../common/utils');
-const fabrik = require('../broker/lib/fabrik');
+const dbManager = require('../data-access-layer/db/DBManager');
+const OobBackupManager = require('../data-access-layer/oob-manager/OobBackupManager');
 const bosh = require('../data-access-layer/bosh');
 const ScheduleManager = require('../jobs');
 const BackupReportManager = require('../reports');
@@ -28,18 +29,12 @@ const Repository = require('../common/db').Repository;
 class ServiceFabrikAdminController extends FabrikBaseController {
   constructor() {
     super();
-    this.fabrik = fabrik;
     this.cloudController = cf.cloudController;
     this.backupStore = backupStore;
   }
 
   getInstanceId(deploymentName) {
-    return _.nth(this.fabrik.DirectorManager.parseDeploymentName(deploymentName), 2);
-  }
-
-  // TODO: This piece of code should be removed; manager code should be imported from Service (Director/Docker) in broker code
-  createManager(plan_id) {
-    return this.fabrik.createManager(this.getPlan(plan_id));
+    return _.nth(DirectorService.parseDeploymentName(deploymentName), 2);
   }
 
   updateDeployment(req, res) {
@@ -170,9 +165,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       ])
       .spread(assignOrgAndSpace)
       .map(deployment => {
-        if (deployment.manager) {
-          const networkSegmentIndex = deployment.manager.getNetworkSegmentIndex(deployment.name);
-          const plan = deployment.manager.plan;
+        if (deployment.directorService) {
+          const networkSegmentIndex = deployment.directorService.getNetworkSegmentIndex(deployment.name);
+          const plan = deployment.directorService.plan;
           const service = _.omit(plan.service, 'plans');
           deployment = _
             .chain(deployment)
@@ -224,9 +219,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   getDeployment(req, res) {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
-    // TODO: Director Service should be used
-    this.createManager(req.query.plan_id)
-      .then(manager =>
+    Promise.try(() => DirectorService.createInstance(this.getInstanceId(deploymentName), {
+        plan_id: plan.id
+      }))
+      .then(directorService =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
           resourceType: plan.resourceType,
@@ -241,7 +237,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
               this.director.getTasks({
                 deployment: deploymentName
               }),
-              manager.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+              directorService.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
             ])
             .spread((vms, tasks, diff) => ({
               name: deploymentName,
@@ -343,7 +339,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           logger.warn(`Found service instance '${deployment.entity.name} [${deployment.metadata.guid}]' without deployment`);
           return false;
         }
-        if (!deployment.manager) {
+        if (!deployment.directorService) {
           logger.warn(`Found deployment '${deployment.name}' without service instance`);
           return false;
         }
@@ -355,7 +351,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .then(context => {
             const opts = {};
             opts.context = context;
-            return deployment.manager
+            return deployment.directorService
               .diffManifest(deployment.name, opts)
               .then(result => _
                 .chain(deployment)
@@ -373,10 +369,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getServiceFabrikDeployments() {
-    const DirectorManager = this.fabrik.DirectorManager;
 
     function extractGuidFromName(deployment) {
-      return (deployment.guid = _.nth(DirectorManager.parseDeploymentName(deployment.name), 2));
+      return (deployment.guid = _.nth(DirectorService.parseDeploymentName(deployment.name), 2));
     }
 
     return this.director
@@ -403,11 +398,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .getServiceInstances(`service_plan_guid IN ${guids}`)
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
-            return this
-              .createManager(plan.id)
-              .then(manager => _
+            return Promise.try(() => DirectorService.createInstance(_.get(instance, 'metadata.guid'), {
+                plan_id: plan.id
+              }))
+              .then(service => _
                 .chain(instance)
-                .set('manager', manager)
+                .set('directorService', service)
                 .set('entity.service_plan_id', plan.id)
                 .value()
               );
@@ -445,9 +441,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   provisionDataBase(req, res) {
-    return this.fabrik.dbManager
+    return dbManager
       .createOrUpdateDbDeployment(true)
-      .then(() => res.status(202).send(this.fabrik.dbManager.getState()))
+      .then(() => res.status(202).send(dbManager.getState()))
       .catch(err => {
         logger.error('Error occurred while provisioning service-fabrik db. More info:', err);
         throw err;
@@ -455,9 +451,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   updateDatabaseDeployment(req, res) {
-    return this.fabrik.dbManager
+    return dbManager
       .createOrUpdateDbDeployment(false)
-      .then(() => res.status(202).send(this.fabrik.dbManager.getState()))
+      .then(() => res.status(202).send(dbManager.getState()))
       .catch(err => {
         logger.error('Error occurred while provisioning service-fabrik db. More info:', err);
         throw err;
@@ -465,7 +461,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getDatabaseInfo(req, res) {
-    return res.status(200).send(this.fabrik.dbManager.getState());
+    return res.status(200).send(dbManager.getState());
   }
 
   startOobBackup(req, res) {
@@ -475,7 +471,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       arguments: _.omit(req.body, 'bosh_director')
     };
     logger.info(`Starting OOB backup for: ${opts.deploymentName}`);
-    const oobBackupManager = fabrik.oobBackupManager.getInstance(req.body.bosh_director);
+    const oobBackupManager = OobBackupManager.getInstance(req.body.bosh_director);
     let body;
     return oobBackupManager
       .startBackup(opts)
@@ -490,7 +486,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getOobBackup(req, res) {
-    const oobBackupManager = fabrik.oobBackupManager.getInstance(req.query.bosh_director);
+    const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
       .getBackup(req.params.name, req.query.backup_guid)
       .map(data => _.omit(data, 'secret', 'agent_ip', 'logs', 'container'))
@@ -512,7 +508,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
-    const oobBackupManager = fabrik.oobBackupManager.getInstance(req.query.bosh_director);
+    const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
       .getLastBackupStatus(options)
       .then(result => {
@@ -537,7 +533,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         }
 
         logger.info(`Starting OOB restore for: ${opts.deploymentName}`);
-        const oobBackupManager = fabrik.oobBackupManager.getInstance(req.body.bosh_director);
+        const oobBackupManager = OobBackupManager.getInstance(req.body.bosh_director);
         let body;
         return oobBackupManager
           .startRestore(opts)
@@ -561,7 +557,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     if (_.isEmpty(options.agent_ip)) {
       throw new errors.BadRequest('Invalid token input');
     }
-    const oobBackupManager = fabrik.oobBackupManager.getInstance(req.query.bosh_director);
+    const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
       .getLastRestoreStatus(options)
       .then(result => {
@@ -571,7 +567,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   getOobRestore(req, res) {
-    const oobBackupManager = fabrik.oobBackupManager.getInstance(req.query.bosh_director);
+    const oobBackupManager = OobBackupManager.getInstance(req.query.bosh_director);
     return oobBackupManager
       .getRestore(req.params.name)
       .then(restoreInfo => {

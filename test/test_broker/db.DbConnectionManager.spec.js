@@ -5,7 +5,7 @@ const Promise = require('bluebird');
 const mongoose = require('mongoose');
 const pubsub = require('pubsub-js');
 const CONST = require('../../common/constants');
-const dbManager = require('../../broker/lib/fabrik').dbManager;
+const dbManager = require('../../data-access-layer/db/DBManager');
 
 const handlers = {};
 const CONNECTION_WAIT_SIMULATED_DELAY = 0;
