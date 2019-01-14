@@ -59,6 +59,7 @@ exports.parseServiceInstanceIdFromDeployment = parseServiceInstanceIdFromDeploym
 exports.verifyFeatureSupport = verifyFeatureSupport;
 exports.isRestorePossible = isRestorePossible;
 exports.getPlatformManager = getPlatformManager;
+exports.getPlatformFromContext = getPlatformFromContext;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -95,6 +96,15 @@ function streamToPromise(stream, options) {
     });
     stream.on('error', reject);
   });
+}
+
+function getPlatformFromContext(context) {
+  let platform = _.get(context, 'platform');
+  if (platform === CONST.PLATFORM.SM) {
+    return _.get(context, 'origin');
+  } else {
+    return platform;
+  }
 }
 
 function initializeEventListener(appConfig, appType) {
@@ -595,10 +605,7 @@ function deploymentStaggered(err) {
 
 function getPlatformManager(context) {
   const BasePlatformManager = require('../../platform-managers/BasePlatformManager');
-  let platform = context.platform;
-  if (platform === CONST.PLATFORM.SM) {
-    platform = context.origin;
-  }
+  let platform = getPlatformFromContext(context);
   const PlatformManager = (platform && CONST.PLATFORM_MANAGER[platform]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[platform]}`) : ((platform && CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]) ? require(`../../platform-managers/${CONST.PLATFORM_MANAGER[CONST.PLATFORM_ALIAS_MAPPINGS[platform]]}`) : undefined);
   if (PlatformManager === undefined) {
     return new BasePlatformManager(platform);

@@ -53,6 +53,18 @@ describe('Jobs', function () {
     const repeatTimezone = 'America/New_York';
     const time = Date.now();
     const username = 'admin';
+    const dummyDeploymentResource = {
+      spec: {
+        options: JSON.stringify({
+          service_id: service_id,
+          plan_id: plan_id,
+          context: {
+            platform: 'cloudfoundry',
+          },
+          space_guid: space_guid,
+        })
+      }
+    };
     const scheduled_data = {
       trigger: CONST.BACKUP.TRIGGER.SCHEDULED,
       type: 'online',
@@ -248,7 +260,7 @@ describe('Jobs', function () {
           throw new NotFound('Schedulde not found.');
         });
       });
-      mocks.cloudController.findServicePlan(instance_id, plan_id);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
       mocks.director.getDeployment(deploymentName, true);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
@@ -297,7 +309,7 @@ describe('Jobs', function () {
           throw new NotFound('Schedulde not found.');
         });
       });
-      mocks.cloudController.findServicePlan(instance_id);
+      mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
       mocks.director.getDeployment(deploymentName, false, undefined, 2);
       return BackupReaperJob.run(job, () => {
         mocks.verify();

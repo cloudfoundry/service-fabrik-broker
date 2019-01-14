@@ -2,6 +2,7 @@
 
 const CONST = require('../common/constants');
 const Agent = require('../data-access-layer/service-agent');
+const utils = require('../common/utils');
 
 class BaseService {
   constructor(plan) {
@@ -18,10 +19,7 @@ class BaseService {
   }
 
   getTenantGuid(context) {
-    let platform = context.platform;
-    if (platform === CONST.PLATFORM.SM) {
-      platform = context.origin;
-    }
+    let platform = utils.getPlatformFromContext(context);
     if (platform === CONST.PLATFORM.CF) {
       return context.space_guid;
     } else if (platform === CONST.PLATFORM.K8S) {
