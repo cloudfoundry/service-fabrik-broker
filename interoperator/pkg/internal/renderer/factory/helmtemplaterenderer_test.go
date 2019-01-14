@@ -130,12 +130,9 @@ func TestHelmTemplateRenderer(t *testing.T) {
 	}
 
 	template, _ := plan.GetTemplate("provision")
-
 	clientSet, _ := kubernetes.NewForConfig(cfg)
-
 	renderer, _ := GetRenderer(template.Type, clientSet)
 	input, _ := GetRendererInput(template, &service, &plan, &instance, &binding, name)
-
 	output, _ := renderer.Render(input)
 	files, _ := output.ListFiles()
 	content, _ := output.FileContent(files[0])
