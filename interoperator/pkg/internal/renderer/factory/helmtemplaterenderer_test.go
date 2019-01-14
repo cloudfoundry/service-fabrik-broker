@@ -1,38 +1,67 @@
 package factory
 
 import (
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-func TestGoTemplateRenderer(t *testing.T) {
+var cfg *rest.Config
+var c client.Client
+
+func TestMain(m *testing.M) {
+	t := &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crds")},
+	}
+
+	var err error
+	if cfg, err = t.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
+		log.Fatal(err)
+	}
+
+	code := m.Run()
+	t.Stop()
+	os.Exit(code)
+}
+
+func TestHelmTemplateRenderer(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
+
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		gopath = "/home/travis/gopath"
+	}
 
 	templateSpec := []osbv1alpha1.TemplateSpec{
 		osbv1alpha1.TemplateSpec{
 			Action: "provision",
-			Type:   "gotemplate",
-			//Content: `{{ (printf "{ (b64enc \"provisioncontent\" | quote) }" ) }}`,
-			Content: "cHJvdmlzaW9uY29udGVudA==",
+			Type:   "helm",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "bind",
-			Type:    "gotemplate",
-			Content: "YmluZGNvbnRlbnQ=",
+			Action: "properties",
+			Type:   "helm",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "properties",
-			Type:    "gotemplate",
-			Content: "cHJvcGVydGllc2NvbnRlbnQ=",
-		},
-		osbv1alpha1.TemplateSpec{
-			Action:  "sources",
-			Type:    "gotemplate",
-			Content: "c291cmNlc2NvbnRlbnQ=",
+			Action: "sources",
+			Type:   "helm",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{
@@ -101,34 +130,32 @@ func TestGoTemplateRenderer(t *testing.T) {
 	}
 
 	template, _ := plan.GetTemplate("provision")
-	renderer, _ := GetRenderer(template.Type, nil)
+
+	clientSet, _ := kubernetes.NewForConfig(cfg)
+
+	renderer, _ := GetRenderer(template.Type, clientSet)
 	input, _ := GetRendererInput(template, &service, &plan, &instance, &binding, name)
+
 	output, _ := renderer.Render(input)
 	files, _ := output.ListFiles()
 	content, _ := output.FileContent(files[0])
 
 	g.Expect(len(files)).To(gomega.Equal(1))
-	g.Expect(files[0]).To(gomega.Equal("main"))
-	g.Expect(content).To(gomega.Equal("provisioncontent"))
-
-	_, err := output.FileContent("nonmain")
-	g.Expect(err).To(gomega.HaveOccurred())
-
-	plan.Spec.Templates[0].Content = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYA"
-	template2, _ := plan.GetTemplate("provision")
-	input2, _ := GetRendererInput(template2, &service, &plan, &instance, &binding, name)
-	g.Expect(input2).To(gomega.BeNil())
-
-	plan.Spec.Templates[0].Content = ""
-	template3, _ := plan.GetTemplate("provision")
-	input3, _ := GetRendererInput(template3, &service, &plan, &instance, &binding, name)
-	g.Expect(input3).To(gomega.BeNil())
-
-	plan.Spec.Templates[0].Content = "provision | unknown_function"
-	template4, _ := plan.GetTemplate("provision")
-	renderer4, _ := GetRenderer(template4.Type, nil)
-	input4, _ := GetRendererInput(template4, &service, &plan, &instance, &binding, name)
-	output4, _ := renderer4.Render(input4)
-	g.Expect(output4).To(gomega.BeNil())
-
+	g.Expect(files[0]).To(gomega.Equal("postgres.yaml"))
+	g.Expect(content).To(gomega.Equal(
+		`apiVersion: kubedb.com/v1alpha1
+kind: Postgres
+metadata:
+  name: kdb-foo-pg
+spec:
+  version: 10.2-v1
+  storageType: Durable
+  storage:
+    storageClassName: default
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 50Mi
+  terminationPolicy: WipeOut`))
 }
