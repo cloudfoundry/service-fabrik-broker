@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"k8s.io/client-go/rest"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -12,6 +13,7 @@ import (
 // ClusterFactory sets up k8s clusters and gets client for them
 type ClusterFactory struct {
 	mgr manager.Manager
+	cfg *rest.Config
 }
 
 // New returns a new ClusterFactory using the provided manager
@@ -27,10 +29,14 @@ func New(mgr manager.Manager) (*ClusterFactory, error) {
 
 // GetCluster gets a cluster and returns a kubernetes client for it
 func (f *ClusterFactory) GetCluster(instanceID, bindingID, serviceID, planID string) (kubernetes.Client, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Printf("unable to get client config %v", err)
-		return nil, err
+	var err error
+	cfg := f.cfg
+	if cfg == nil {
+		cfg, err = config.GetConfig()
+		if err != nil {
+			log.Printf("unable to get client config %v", err)
+			return nil, err
+		}
 	}
 
 	options := kubernetes.Options{
