@@ -5,7 +5,6 @@ const app = require('../support/apps').internal;
 const catalog = require('../../../common/models/catalog');
 const config = require('../../../common/config');
 const CONST = require('../../../common/constants');
-const catalog = require('../../../common/models/catalog');
 
 
 describe('service-broker-api', function () {
