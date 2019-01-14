@@ -197,7 +197,18 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 		if !reflect.DeepEqual(expectedResource.Object[specKey], foundResource.Object[specKey]) {
 			foundResource.Object[specKey] = expectedResource.Object[specKey]
 			if _, ok := expectedResource.Object["status"]; ok {
-				foundResource.Object["status"] = expectedResource.Object["status"]
+				if _, ok := foundResource.Object["status"]; !ok {
+					foundResource.Object["status"] = expectedResource.Object["status"]
+				} else {
+					newStatusObj := dynamic.MapInterfaceToMapString(expectedResource.Object["status"])
+					newStatus := newStatusObj.(map[string]interface{})
+					oldStatusObj := dynamic.MapInterfaceToMapString(foundResource.Object["status"])
+					oldStatus := oldStatusObj.(map[string]interface{})
+					for key, val := range newStatus {
+						oldStatus[key] = val
+					}
+					foundResource.Object["status"] = oldStatus
+				}
 			}
 			log.Printf("Updating %s %s\n", kind, namespacedName)
 			err = targetClient.Update(context.TODO(), foundResource)
