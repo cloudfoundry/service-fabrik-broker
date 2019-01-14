@@ -124,11 +124,18 @@ func TestGoTemplateRenderer(t *testing.T) {
 	input3, _ := GetRendererInput(template3, &service, &plan, &instance, &binding, name)
 	g.Expect(input3).To(gomega.BeNil())
 
-	plan.Spec.Templates[0].Content = "provision | unknown_function"
+	plan.Spec.Templates[0].Content = "e3sgInByb3Zpc2lvbiIgfCB1bmtub3duX2Z1bmN0aW9uIH19" //{{ "provision" | unknown_function }}
 	template4, _ := plan.GetTemplate("provision")
 	renderer4, _ := GetRenderer(template4.Type, nil)
 	input4, _ := GetRendererInput(template4, &service, &plan, &instance, &binding, name)
 	output4, _ := renderer4.Render(input4)
 	g.Expect(output4).To(gomega.BeNil())
+
+	plan.Spec.Templates[0].Content = "provision | unknown_function" //{{ "provision" | unknown_function }}
+	template5, _ := plan.GetTemplate("provision")
+	renderer5, _ := GetRenderer(template5.Type, nil)
+	input5, _ := GetRendererInput(template5, &service, &plan, &instance, &binding, name)
+	output5, _ := renderer5.Render(input5)
+	g.Expect(output5).To(gomega.BeNil())
 
 }
