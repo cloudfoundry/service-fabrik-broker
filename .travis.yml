@@ -51,11 +51,11 @@ matrix:
         - "1.11"
       git:
         depth: 3
-      env:
-        - CODECOV_TOKEN="10161f28-1de2-4a9d-afd2-7c82f1785801"
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
+        - go get github.com/modocache/gover
+        - go get github.com/mattn/goveralls
       install:
         - cd interoperator
         - dep ensure -v
@@ -64,7 +64,8 @@ matrix:
         - go vet ./pkg/... ./cmd/...
         - golint ./pkg/... ./cmd/...
         - ./scripts/install_test.sh
-        - go test ./pkg/apis/osb/v1alpha1 -race -coverprofile=../coverage.txt -covermode=atomic
-      after_success:
+        - go test -v -coverpkg=./pkg/... -coverprofile=../subpkg1.coverprofile ./pkg/apis/osb/v1alpha1
+        - go test -v -coverpkg=./pkg/... -coverprofile=../subpkg2.coverprofile ./pkg/internal/...
         - cd ..
-        - bash <(curl -s https://codecov.io/bash)
+        # - gover
+        # - goveralls -coverprofile gover.coverprofile -service travis-ci
