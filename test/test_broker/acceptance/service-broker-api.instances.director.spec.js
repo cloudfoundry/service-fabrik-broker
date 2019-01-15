@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const config = require('../../../common/config');
