@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').internal;
 const docker = require('../../../data-access-layer/docker');
