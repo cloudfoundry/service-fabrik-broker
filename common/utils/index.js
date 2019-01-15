@@ -621,7 +621,7 @@ function getPlanCrdFromConfig(plan, service) {
   assert.ok(plan.name, 'plan.name is required to generate plan crd');
   assert.ok(plan.id, 'plan.id is required to generate plan crd');
   assert.ok(plan.description, 'plan.description is required to generate plan crd');
- 
+
   let planCRD = {
     apiVersion: 'osb.servicefabrik.io/v1alpha1',
     kind: 'SFPlan',

@@ -45,7 +45,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
         assert.ok(req.params.platform, 'Platform is must while fetching catalog');
         return lib.loadCatalogFromAPIServer();
       })
-      .then(() => utils.getPlatformManager({platform: req.params.platform}).getCatalog())
+      .then(() => utils.getPlatformManager({
+        platform: req.params.platform
+      }).getCatalog(catalog))
       .then(servicePlans => res.status(CONST.HTTP_STATUS_CODE.OK).json(servicePlans));
   }
 
