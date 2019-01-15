@@ -41,10 +41,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
   getCatalog(req, res) {
     /* jshint unused:false */
-    return Promise.try(() => lib.loadServices())
-      .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).json(utils.getPlatformManager({
-        platform: req.params.platform
-      }).getCatalog(catalog)));
+    return Promise.try(() => {
+        assert.ok(req.params.platform, 'Platform is must while fetching catalog');
+        return lib.loadCatalogFromAPIServer();
+      })
+      .then(() => utils.getPlatformManager({platform: req.params.platform}).getCatalog())
+      .then(servicePlans => res.status(CONST.HTTP_STATUS_CODE.OK).json(servicePlans));
   }
 
   putInstance(req, res) {

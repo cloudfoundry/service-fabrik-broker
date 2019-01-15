@@ -3,7 +3,7 @@
 exports.jwt = require('./jwt');
 exports.middleware = require('./middleware');
 exports.bootstrap = bootstrap;
-exports.loadServices = loadServices;
+exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 const config = require('../../common/config');
 if (config.enable_swarm_manager) {
   exports.docker = require('../../data-access-layer/docker');
@@ -23,7 +23,7 @@ function bootstrap() {
     .catch((err) => logger.error('Failed to bootstrap docker client', err));
 }
 
-function loadServices() {
+function loadCatalogFromAPIServer() {
   if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
     const eventmesh = require('../../data-access-layer/eventmesh');
     return eventmesh.apiServerClient.getAllServices()

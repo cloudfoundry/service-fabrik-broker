@@ -238,13 +238,13 @@ class ApiServerClient {
       return;
     }
     const resourceBody = {
-      kind: 'Namespace',
+      kind: CONST.APISERVER.NAMESPACE_OBJECT,
       apiVersion: CONST.APISERVER.NAMESPACE_API_VERSION,
       metadata: {
         name: name
       }
     };
-    return Promise.try(() => this.init())
+    return this.init()
       .then(() => apiserver
         .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns.post({
           body: resourceBody
@@ -257,7 +257,7 @@ class ApiServerClient {
   }
 
   deleteNamespace(name) {
-    return Promise.try(() => this.init())
+    return this.init()
       .then(() => apiserver
         .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
       .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
@@ -277,7 +277,7 @@ class ApiServerClient {
    */
   getSecret(secretId, namespaceId) {
     assert.ok(secretId, `Property 'secretId' is required to get Secret`);
-    return Promise.try(() => this.init())
+    return this.init()
       .then(() => apiserver
         .api[CONST.APISERVER.SECRET_API_VERSION]
         .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
@@ -768,7 +768,7 @@ class ApiServerClient {
    * @param {string} opts.status - status of the resource
    */
   createOSBResource(opts) {
-    logger.info(`Creating resource with opts: `, opts);
+    logger.info(`Creating OSB resource with opts: `, opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
@@ -804,7 +804,7 @@ class ApiServerClient {
       _.get(opts, 'spec.instance_id') : opts.resourceId
     );
     // Create Namespace if not default
-    return Promise.try(() => this.init())
+    return this.init()
       .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
