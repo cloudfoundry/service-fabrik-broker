@@ -273,6 +273,7 @@ module.exports = Object.freeze({
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
     VERSION: '1.9',
     DEFAULT_NAMESPACE: 'default',
+    NAMESPACE_OBJECT: 'Namespace',
     NAMESPACE_API_VERSION: 'v1',
     SECRET_API_VERSION: 'v1',
     API_VERSION: 'v1alpha1',

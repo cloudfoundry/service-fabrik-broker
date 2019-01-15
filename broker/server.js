@@ -18,9 +18,9 @@ async function init() {
     lib.bootstrap();
   }
 
-  await lib.loadServices();
-  await utils.pushServicePlanToApiServer();
   await eventmesh.apiServerClient.registerInterOperatorCrds();
+  await utils.pushServicePlanToApiServer();
+  await lib.loadCatalogFromAPIServer();
 
   // internal app
   if (config.internal) {

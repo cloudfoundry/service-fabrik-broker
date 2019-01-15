@@ -1079,7 +1079,7 @@ describe('eventmesh', () => {
     describe('createNamespace', () => {
       it('Creates namespace successfully', () => {
         const payload = {
-          kind: 'Namespace',
+          kind: CONST.APISERVER.NAMESPACE_OBJECT,
           apiVersion: 'v1',
           metadata: {
             name: 'namespace1'
@@ -1094,7 +1094,7 @@ describe('eventmesh', () => {
       });
       it('Doesnt create namespace if already present', () => {
         const payload = {
-          kind: 'Namespace',
+          kind: CONST.APISERVER.NAMESPACE_OBJECT,
           apiVersion: 'v1',
           metadata: {
             name: 'namespace1'
