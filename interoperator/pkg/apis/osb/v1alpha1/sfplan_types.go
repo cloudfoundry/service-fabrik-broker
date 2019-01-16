@@ -37,9 +37,10 @@ type TemplateSpec struct {
 	Action string `yaml:"action" json:"action"`
 
 	// +kubebuilder:validation:Enum=gotemplate,helm
-	Type    string `yaml:"type" json:"type"`
-	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
-	Content string `yaml:"content,omitempty" json:"content,omitempty"`
+	Type           string `yaml:"type" json:"type"`
+	URL            string `yaml:"url,omitempty" json:"url,omitempty"`
+	Content        string `yaml:"content,omitempty" json:"content,omitempty"`
+	ContentEncoded string `yaml:"contentEncoded,omitempty" json:"contentEncoded,omitempty"`
 }
 
 // Schema definition for the input parameters.
