@@ -18,7 +18,6 @@ package gotemplate
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"text/template"
 
@@ -38,12 +37,8 @@ type gotemplateInput struct {
 // NewInput creates a new gotemplate Renderer input object.
 func NewInput(url, content, name string, values map[string]interface{}) renderer.Input {
 	if content != "" {
-		decodedContent, err := base64.StdEncoding.DecodeString(content)
-		if err != nil {
-			return nil
-		}
 		return gotemplateInput{
-			content: string(decodedContent),
+			content: content,
 			name:    name,
 			values:  values,
 		}

@@ -84,6 +84,8 @@ spec:
                     type: string
                   content:
                     type: string
+                  contentEncoded:
+                    type: string
                   type:
                     enum:
                     - gotemplate
