@@ -576,16 +576,16 @@ defaults: &defaults
       templates: &docker_templates
       - action: sources
         type: gotemplate
-        content: <%= base64_template('samples/templates/gotemplates/docker/sources.yaml')  %>
+        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/sources.yaml')  %>
       - action: properties
         type: gotemplate
-        content: <%= base64_template('samples/templates/gotemplates/docker/properties.yaml') %>
+        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/properties.yaml') %>
       - action: provision
         type: gotemplate
-        content: <%= base64_template('samples/templates/gotemplates/docker/provision.yaml') %>
+        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/provision.yaml') %>
       - action: bind
         type: gotemplate
-        content: <%= base64_template('samples/templates/gotemplates/docker/bind.yaml') %>
+        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/bind.yaml') %>
     - &blueprint_plan2
       id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
       name: 'v1.0-dev-large'
@@ -712,16 +712,16 @@ defaults: &defaults
       templates: &director_templates
       - action: sources
         type: gotemplate
-        content: <%=base64_template('samples/templates/gotemplates/director/sources.yaml') %>
+        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/sources.yaml') %>
       - action: properties
         type: gotemplate
-        content: <%=base64_template('samples/templates/gotemplates/director/properties.yaml') %>
+        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/properties.yaml') %>
       - action: provision
         type: gotemplate
-        content: <%=base64_template('samples/templates/gotemplates/director/provision.yaml') %>
+        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/provision.yaml') %>
       - action: bind
         type: gotemplate
-        content: <%=base64_template('samples/templates/gotemplates/director/bind.yaml') %>
+        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/bind.yaml') %>
     - &blueprint_plan4
       id: 'bc158c9a-7934-401e-94ab-057082a5073e'
       name: 'v1.0-small'

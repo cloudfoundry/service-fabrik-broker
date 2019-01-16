@@ -17,22 +17,22 @@ func TestGoTemplateRenderer(t *testing.T) {
 			Action: "provision",
 			Type:   "gotemplate",
 			//Content: `{{ (printf "{ (b64enc \"provisioncontent\" | quote) }" ) }}`,
-			Content: "cHJvdmlzaW9uY29udGVudA==",
+			ContentEncoded: "cHJvdmlzaW9uY29udGVudA==",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "bind",
-			Type:    "gotemplate",
-			Content: "YmluZGNvbnRlbnQ=",
+			Action:         "bind",
+			Type:           "gotemplate",
+			ContentEncoded: "YmluZGNvbnRlbnQ=",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "properties",
-			Type:    "gotemplate",
-			Content: "cHJvcGVydGllc2NvbnRlbnQ=",
+			Action:         "properties",
+			Type:           "gotemplate",
+			ContentEncoded: "cHJvcGVydGllc2NvbnRlbnQ=",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "sources",
-			Type:    "gotemplate",
-			Content: "c291cmNlc2NvbnRlbnQ=",
+			Action:         "sources",
+			Type:           "gotemplate",
+			ContentEncoded: "c291cmNlc2NvbnRlbnQ=",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{
@@ -114,24 +114,24 @@ func TestGoTemplateRenderer(t *testing.T) {
 	_, err := output.FileContent("nonmain")
 	g.Expect(err).To(gomega.HaveOccurred())
 
-	plan.Spec.Templates[0].Content = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYA"
+	plan.Spec.Templates[0].ContentEncoded = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYA"
 	template2, _ := plan.GetTemplate("provision")
 	input2, _ := GetRendererInput(template2, &service, &plan, &instance, &binding, name)
 	g.Expect(input2).To(gomega.BeNil())
 
-	plan.Spec.Templates[0].Content = ""
+	plan.Spec.Templates[0].ContentEncoded = ""
 	template3, _ := plan.GetTemplate("provision")
 	input3, _ := GetRendererInput(template3, &service, &plan, &instance, &binding, name)
 	g.Expect(input3).To(gomega.BeNil())
 
-	plan.Spec.Templates[0].Content = "e3sgInByb3Zpc2lvbiIgfCB1bmtub3duX2Z1bmN0aW9uIH19" //{{ "provision" | unknown_function }}
+	plan.Spec.Templates[0].ContentEncoded = "e3sgInByb3Zpc2lvbiIgfCB1bmtub3duX2Z1bmN0aW9uIH19" //{{ "provision" | unknown_function }}
 	template4, _ := plan.GetTemplate("provision")
 	renderer4, _ := GetRenderer(template4.Type, nil)
 	input4, _ := GetRendererInput(template4, &service, &plan, &instance, &binding, name)
 	output4, _ := renderer4.Render(input4)
 	g.Expect(output4).To(gomega.BeNil())
 
-	plan.Spec.Templates[0].Content = "provision | unknown_function" //{{ "provision" | unknown_function }}
+	plan.Spec.Templates[0].ContentEncoded = "provision | unknown_function" //{{ "provision" | unknown_function }}
 	template5, _ := plan.GetTemplate("provision")
 	renderer5, _ := GetRenderer(template5.Type, nil)
 	input5, _ := GetRendererInput(template5, &service, &plan, &instance, &binding, name)
