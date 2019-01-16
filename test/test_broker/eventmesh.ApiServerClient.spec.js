@@ -200,23 +200,6 @@ describe('eventmesh', () => {
       });
     });
 
-    describe('registerInterOperatorCrds', () => {
-      it('Patch already register crds successfully', () => {
-        const sfPlanCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS);
-        const sfServiceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES);
-        const sfServiceInstanceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES);
-        const sfServiceBindingCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS);
-        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfPlanCrdJson.metadata.name, {}, sfPlanCrdJson);
-        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceCrdJson.metadata.name, {}, sfServiceCrdJson);
-        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceInstanceCrdJson.metadata.name, {}, sfServiceInstanceCrdJson);
-        mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceBindingCrdJson.metadata.name, {}, sfServiceBindingCrdJson);
-        return apiserver.registerInterOperatorCrds()
-          .then(() => {
-            mocks.verify();
-          });
-      });
-    });
-
     describe('createResource', () => {
       it('Creates resource without label and status', () => {
         const crdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR);
@@ -1102,9 +1085,9 @@ describe('eventmesh', () => {
         };
         mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload, 409);
         return apiserver.createNamespace('namespace1')
-          .then(res => {
-            expect(res).to.eql(undefined);
-            mocks.verify();
+          .catch(err => {
+            expect(err.status).to.eql(409);
+            verify();
           });
       });
     });
@@ -1256,64 +1239,6 @@ describe('eventmesh', () => {
           })
           .catch(err => {
             expect(err.status).to.eql(404);
-            verify();
-          });
-      });
-    });
-
-    describe('getAllServices', () => {
-      it('Gets list of services from apiserver', () => {
-        const expectedResponse = {
-          items: [{
-            spec: {
-              id: 'service1',
-              name: 's1'
-            }
-          }]
-        };
-        mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, expectedResponse);
-        return apiserver.getAllServices()
-          .then(res => {
-            expect(res).to.eql([expectedResponse.items[0].spec]);
-            verify();
-          });
-      });
-      it('Throws error on getting list of services from apiserver', () => {
-        mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, undefined, 1, 500);
-        return apiserver.getAllServices()
-          .catch(err => {
-            expect(err.status).to.eql(500);
-            verify();
-          });
-      });
-    });
-
-    describe('getAllServices', () => {
-      it('Gets list of plans from apiserver', () => {
-        const expectedResponse = {
-          items: [{
-            spec: {
-              id: 'plan1',
-              name: 'p1'
-            }
-          }]
-        };
-        mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, expectedResponse, {
-          labelSelector: `serviceId=service1`
-        });
-        return apiserver.getAllPlansForService('service1')
-          .then(res => {
-            expect(res).to.eql([expectedResponse.items[0].spec]);
-            verify();
-          });
-      });
-      it('Throws error on getting list of plans from apiserver', () => {
-        mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, {
-          labelSelector: `serviceId=service1`
-        }, 1, 500);
-        return apiserver.getAllPlansForService('service1')
-          .catch(err => {
-            expect(err.status).to.eql(500);
             verify();
           });
       });

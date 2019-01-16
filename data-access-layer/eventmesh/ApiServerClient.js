@@ -214,15 +214,6 @@ class ApiServerClient {
       });
   }
 
-  registerInterOperatorCrds() {
-    return Promise.all([
-      this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
-      this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
-      this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
-      this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS)
-    ]);
-  }
-
   getCrdJson(resourceGroup, resourceType) {
     const crdEncodedTemplate = config.apiserver.crds[`${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`];
     logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
@@ -252,8 +243,7 @@ class ApiServerClient {
       .tap(() => logger.debug(`Successfully created namespace ${name}`))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
-      })
-      .catch(Conflict, () => logger.debug(`Namespace ${name} already exists, proceeding...`));
+      });
   }
 
   deleteNamespace(name) {
@@ -392,7 +382,6 @@ class ApiServerClient {
         const namespaceId = this.getNamespaceId(opts.resourceId);
         // Create Namespace if not default
         return Promise.try(() => this.init())
-          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
             .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
@@ -532,12 +521,12 @@ class ApiServerClient {
   }
 
   /**
-   * @description Get Resource in Apiserver with the opts
+   * @description Get Resources in Apiserver with the opts and query param
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
    * @param {object} opts.query - optional query
    */
-  _getResources(opts) {
+  getResources(opts) {
     logger.debug('Get resources with opts: ', opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
@@ -548,8 +537,22 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[opts.resourceType].get(query))
-      .then(response => {
-        const resources = _.get(response, 'body.items', []);
+      .then(response => _.get(response, 'body.items', []))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
+      });
+  }
+
+
+  /**
+   * @description Get Resource in Apiserver with the opts
+   * @param {string} opts.resourceGroup - Unique id of resource
+   * @param {string} opts.resourceType - Name of operation
+   * @param {object} opts.query - optional query
+   */
+  _getParsedResources(opts) {
+    return this.getResources(opts)
+      .then(resources => {
         _.forEach(resources, (resource) => {
           _.forEach(resource.spec, (val, key) => {
             try {
@@ -570,9 +573,6 @@ class ApiServerClient {
           return _.sortBy(resources, ['metadata.creationTimeStamp']);
         }
         return [];
-      })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
       });
   }
 
@@ -657,7 +657,7 @@ class ApiServerClient {
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
     assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
     assert.ok(opts.stateList, `Property 'stateList' is required to fetch resource list`);
-    return this._getResources(_.assign(opts, {
+    return this._getParsedResources(_.assign(opts, {
       query: {
         labelSelector: `state in (${_.join(opts.stateList, ',')})`
       }
@@ -767,6 +767,8 @@ class ApiServerClient {
    * @param {Object} opts.spec - Value to set for spec field of resource
    * @param {string} opts.status - status of the resource
    */
+  // Note:- In this method, keys in ServiceInstance CR are required to be camelcased
+  // Hence while creating resource, osb keys (snakecased) translated into camelcased using camelcase-keys module
   createOSBResource(opts) {
     logger.info(`Creating OSB resource with opts: `, opts);
     assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
@@ -788,16 +790,14 @@ class ApiServerClient {
     };
 
     if (opts.status) {
-      const statusJson = {};
       _.forEach(opts.status, (val, key) => {
         if (key === 'state') {
           resourceBody.metadata.labels = _.merge(resourceBody.metadata.labels, {
             'state': val
           });
         }
-        statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
       });
-      resourceBody.status = statusJson;
+      resourceBody.status = opts.status;
     }
     // Create Namespace if not default
     const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
@@ -842,7 +842,6 @@ class ApiServerClient {
           patchBody.spec = camelcaseKeys(opts.spec);
         }
         if (opts.status) {
-          const statusJson = {};
           _.forEach(opts.status, (val, key) => {
             if (key === 'state') {
               patchBody.metadata = _.merge(patchBody.metadata, {
@@ -851,9 +850,8 @@ class ApiServerClient {
                 }
               });
             }
-            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
           });
-          patchBody.status = statusJson;
+          patchBody.status = opts.status;
         }
         logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
         // Create Namespace if not default
@@ -862,7 +860,6 @@ class ApiServerClient {
         );
         // Create Namespace if not default
         return Promise.try(() => this.init())
-          .then(() => this.createNamespace(namespaceId))
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
             .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
@@ -901,44 +898,6 @@ class ApiServerClient {
           _.set(opts, 'spec', spec);
         }
         return this.updateOSBResource(opts);
-      });
-  }
-
-  getAllServices() {
-    return Promise.try(() => this.init())
-      .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES].get())
-      .then(serviceList => _.get(serviceList, 'body.items'))
-      .then(serviceList => {
-        let services = [];
-        _.forEach(serviceList, service => {
-          services = _.concat(services, [service.spec]);
-        });
-        return services;
-      })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
-      });
-  }
-
-  getAllPlansForService(serviceId) {
-    return Promise.try(() => this.init())
-      .then(() => apiserver.apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS].get({
-          qs: {
-            labelSelector: `serviceId=${serviceId}`
-          }
-        }))
-      .then(planList => planList.body.items)
-      .then(planList => {
-        let plans = [];
-        _.forEach(planList, plan => {
-          plans = _.concat(plans, [plan.spec]);
-        });
-        return plans;
-      })
-      .catch(err => {
-        return convertToHttpErrorAndThrow(err);
       });
   }
 

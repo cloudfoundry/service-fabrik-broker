@@ -5,6 +5,7 @@ exports.middleware = require('./middleware');
 exports.bootstrap = bootstrap;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 const config = require('../../common/config');
+const utils = require('../../common/utils');
 if (config.enable_swarm_manager) {
   exports.docker = require('../../data-access-layer/docker');
 }
@@ -25,14 +26,13 @@ function bootstrap() {
 
 function loadCatalogFromAPIServer() {
   if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
-    const eventmesh = require('../../data-access-layer/eventmesh');
-    return eventmesh.apiServerClient.getAllServices()
+    return utils.getAllServices()
       .tap(services => {
         config.services = services;
       })
       .then((services) => {
         return Promise.all(Promise.each(services, service => {
-          return eventmesh.apiServerClient.getAllPlansForService(service.id)
+          return utils.getAllPlansForService(service.id)
             .then(plans => {
               service.plans = plans;
             });
