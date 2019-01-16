@@ -10,11 +10,6 @@ const ComputeClient = require('./ComputeClient');
 const CONST = require('../../common/constants');
 const BaseCloudClient = require('./BaseCloudClient');
 
-Promise.promisifyAll([
-  pkgcloud.storage.Container,
-  pkgcloud.storage.File
-]);
-
 const NotFound = errors.NotFound;
 const Unauthorized = errors.Unauthorized;
 

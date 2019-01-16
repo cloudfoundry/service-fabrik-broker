@@ -32,7 +32,7 @@
     "service-fabrik"
   ],
   "dependencies": {
-    "agenda": "0.9.0",
+    "agenda": "0.10.0",
     "azure-arm-compute": "4.0.0",
     "azure-storage": "2.8.3",
     "basic-auth": "1.0.4",
@@ -56,7 +56,7 @@
     "moment": "2.19.3",
     "mongoose": "4.8.2",
     "morgan": "1.6.1",
-    "pkgcloud": "1.3.0",
+    "pkgcloud": "1.7.0",
     "pubsub-js": "1.5.4",
     "pug": "2.0.0-beta3",
     "request": "2.84.0",
