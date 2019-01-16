@@ -73,10 +73,7 @@ type ReconcileSfPlan struct {
 
 // Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
 // and what is in the SFPlan.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfplans,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFPlan instance
@@ -93,6 +90,9 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 
 	labels := instance.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	updateRequired := false
 	if serviceID, ok := labels["serviceId"]; !ok || instance.Spec.ServiceID != serviceID {
 		labels["serviceId"] = instance.Spec.ServiceID
@@ -112,9 +112,6 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 
 	err = r.List(context.TODO(), options, services)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return reconcile.Result{}, fmt.Errorf("unable to find service with id %s", serviceID)
-		}
 		return reconcile.Result{}, err
 	}
 	var service *osbv1alpha1.SFService
@@ -135,7 +132,6 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 
 	err = controllerutil.SetControllerReference(service, instance, r.scheme)
 	if err != nil {
-		log.Printf("error setting owner reference for plan %s. %v\n", instance.Spec.ID, err)
 		return reconcile.Result{}, err
 	}
 

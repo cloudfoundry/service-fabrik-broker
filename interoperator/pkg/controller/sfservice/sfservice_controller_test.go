@@ -17,13 +17,13 @@ limitations under the License.
 package sfservice
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
-	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,14 +34,34 @@ import (
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
-var depKey = types.NamespacedName{Name: "foo-deployment", Namespace: "default"}
+var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
+var expectedRequest = reconcile.Request{NamespacedName: serviceKey}
 
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	instance := &osbv1alpha1.SFService{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	instance := &osbv1alpha1.SFService{
+		ObjectMeta: metav1.ObjectMeta{Name: "service-id", Namespace: "default"},
+		Spec: osbv1alpha1.SFServiceSpec{
+			Name:                "service-name",
+			ID:                  "service-id",
+			Description:         "description",
+			Tags:                []string{"foo", "bar"},
+			Requires:            []string{"foo", "bar"},
+			Bindable:            true,
+			InstanceRetrievable: true,
+			BindingRetrievable:  true,
+			Metadata:            nil,
+			DashboardClient: osbv1alpha1.DashboardClient{
+				ID:          "id",
+				Secret:      "secret",
+				RedirectURI: "redirecturi",
+			},
+			PlanUpdatable: true,
+			RawContext:    nil,
+		},
+	}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -51,6 +71,15 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	defer func() {
+		// Drain all requests
+		for len(requests) > 0 {
+			<-requests
+			if len(requests) == 0 {
+				time.Sleep(1 * time.Second)
+			}
+		}
+	}()
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -61,27 +90,41 @@ func TestReconcile(t *testing.T) {
 
 	// Create the SFService object and expect the Reconcile and Deployment to be created
 	err = c.Create(context.TODO(), instance)
-	// The instance object may not be a valid object because it might be missing some required fields.
-	// Please modify the instance object by adding required fields and then remove the following if statement.
 	if apierrors.IsInvalid(err) {
 		t.Logf("failed to create object, got an invalid object error: %v", err)
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+
+	// Get the service
+	service := &osbv1alpha1.SFService{}
+
+	// Reconciler add labels
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 
-	deploy := &appsv1.Deployment{}
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
+	// Verify the labels are present
+	g.Eventually(func() error { return c.Get(context.TODO(), serviceKey, service) }, timeout).
 		Should(gomega.Succeed())
+	labels := service.GetLabels()
+	g.Expect(labels).Should(gomega.HaveKeyWithValue("serviceId", "service-id"))
 
-	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
+	// Drain all requests
+	for len(requests) > 0 {
+		<-requests
+	}
+	// Delete the service
+	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		Should(gomega.Succeed())
 
-	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
-
+	// Service should disappear from api server
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), serviceKey, service)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return fmt.Errorf("not deleted")
+	}, timeout).Should(gomega.Succeed())
 }
