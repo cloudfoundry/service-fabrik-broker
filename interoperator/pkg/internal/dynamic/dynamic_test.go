@@ -31,6 +31,22 @@ kind: Postgres`,
 			want:    []*unstructured.Unstructured{output},
 			wantErr: false,
 		},
+		{
+			name: "test2",
+			args: args{
+				contentString: `apiVersion`,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test3",
+			args: args{
+				contentString: `\\\\{"foo": 123, "bar": -123, "baz": "123"}`,
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -67,6 +83,34 @@ func TestMapInterfaceToMapString(t *testing.T) {
 				"Name": "Wednesday",
 				"Age":  6,
 			},
+		},
+		{
+			name: "test2",
+			args: args{
+				v: map[interface{}]interface{}{
+					6: 7,
+					7: 8,
+				},
+			},
+			want: map[string]interface{}{
+				"6": 7,
+				"7": 8,
+			},
+		},
+		{
+			name: "test3",
+			args: args{
+				v: []interface{}{
+					map[interface{}]interface{}{
+						"Name": "Wednesday",
+						"Age":  6,
+					},
+				},
+			},
+			want: []interface{}{map[string]interface{}{
+				"Name": "Wednesday",
+				"Age":  6,
+			}},
 		},
 	}
 	for _, tt := range tests {
@@ -107,6 +151,22 @@ func TestObjectToMapInterface(t *testing.T) {
 				"Address": "Bangalore",
 			},
 			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				obj: "Name",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test3",
+			args: args{
+				obj: make(chan int),
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

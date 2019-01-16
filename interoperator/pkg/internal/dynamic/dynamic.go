@@ -55,11 +55,6 @@ func MapInterfaceToMapString(v interface{}) interface{} {
 		for i, v2 := range x {
 			x[i] = MapInterfaceToMapString(v2)
 		}
-
-	case map[string]interface{}:
-		for k, v2 := range x {
-			x[k] = MapInterfaceToMapString(v2)
-		}
 	}
 
 	return v
