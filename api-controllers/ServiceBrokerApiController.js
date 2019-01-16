@@ -24,6 +24,16 @@ class ServiceBrokerApiController extends FabrikBaseController {
     super();
   }
 
+  removeFinalizersFromOSBResource(resourceType, resourceId, namespaceId) {
+    return eventmesh.apiServerClient.removeFinalizers({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: resourceType,
+      resourceId: resourceId,
+      namespaceId: namespaceId,
+      finalizer: CONST.APISERVER.FINALIZERS.BROKER
+    });
+  }
+
   apiVersion(req, res) {
     /* jshint unused:false */
     const minVersion = CONST.SF_BROKER_API_VERSION_MIN;
@@ -179,35 +189,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         } else {
           return eventmesh.apiServerClient.patchOSBResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-              resourceId: req.params.instance_id,
-              metadata: {
-                finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
-              },
-              spec: params,
-              status: {
-                state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-                description: ''
-              }
-            })
-            .catch(NotFound, () => {
-              logger.info(`Resource resourceGroup: ${CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR},` +
-                `resourceType: ${CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES}, resourceId: ${req.params.instance_id} not found, Creating now...`);
-              return eventmesh.apiServerClient.createOSBResource({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-                resourceId: req.params.instance_id,
-                metadata: {
-                  finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
-                },
-                spec: params,
-                status: {
-                  state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-                  description: ''
-                }
-              });
-            });
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            resourceId: req.params.instance_id,
+            spec: params,
+            status: {
+              state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+              description: ''
+            }
+          });
         }
       })
       .then(() => {
@@ -233,13 +223,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
               'type': 'delete'
             });
           } else {
-            return eventmesh.apiServerClient.removeFinalizers({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-              resourceId: req.params.instance_id,
-              namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
-              finalizer: CONST.APISERVER.FINALIZERS.BROKER
-            });
+            return this.removeFinalizersFromOSBResource(
+              CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+              req.params.instance_id,
+              eventmesh.apiServerClient.getNamespaceId(req.params.instance_id)
+            );
           }
         })
         .then(() => res.status(statusCode).send(body));
@@ -276,7 +264,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           });
         }
       })
-      .then(done)
+      .then(done.bind(this))
       .catch(NotFound, gone);
   }
 
@@ -294,14 +282,12 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }
       logger.debug('returning ..', body);
       return Promise.try(() => {
-          if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED) {
-            return eventmesh.apiServerClient.removeFinalizers({
-              resourceGroup: resourceGroup,
-              resourceType: resourceType,
-              resourceId: resourceId,
-              finalizer: CONST.APISERVER.FINALIZERS.BROKER,
-              namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
-            });
+          if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
+            return this.removeFinalizersFromOSBResource(
+              resourceType,
+              resourceId,
+              eventmesh.apiServerClient.getNamespaceId(resourceId)
+            );
           }
         })
         .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send(body));
@@ -334,7 +320,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES ? eventmesh.apiServerClient.getNamespaceId(resourceId) : undefined
       })
       .tap(() => logger.debug(`Returning state of operation: ${operation.serviceflow_id}, ${resourceGroup}, ${resourceType}`))
-      .then(done)
+      .then(done.bind(this))
       .catch(NotFound, notFound);
   }
 
@@ -399,13 +385,11 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .value();
 
     function done() {
-      return eventmesh.apiServerClient.removeFinalizers({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-          resourceId: params.binding_id,
-          finalizer: CONST.APISERVER.FINALIZERS.BROKER,
-          namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
-        })
+      return this.removeFinalizersFromOSBResource(
+          CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+          params.binding_id,
+          eventmesh.apiServerClient.getNamespaceId(params.instance_id)
+        )
         .then(() => res.status(CONST.HTTP_STATUS_CODE.OK).send({}));
     }
 
@@ -428,7 +412,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
-      .then(done)
+      .then(done.bind(this))
       .catch(NotFound, gone);
   }
 

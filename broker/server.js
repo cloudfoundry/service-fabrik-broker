@@ -8,8 +8,6 @@ const routes = require('../api-controllers/routes');
 const HttpServer = require('../common/HttpServer');
 const ExpressApp = require('../common/ExpressApp');
 const config = require('../common/config');
-const CONST = require('../common/constants');
-const eventmesh = require('../data-access-layer/eventmesh');
 const utils = require('../common/utils');
 
 async function init() {
@@ -18,7 +16,7 @@ async function init() {
     lib.bootstrap();
   }
 
-  await eventmesh.apiServerClient.registerInterOperatorCrds();
+  await utils.registerInterOperatorCrds();
   await utils.pushServicePlanToApiServer();
   await lib.loadCatalogFromAPIServer();
 

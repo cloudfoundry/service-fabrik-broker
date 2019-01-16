@@ -3,6 +3,7 @@
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const CONST = require('../../common/constants');
 const utils = require('../../common/utils');
+const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 
 describe('utils', function () {
   describe('#deploymentNameRegExp', function () {
@@ -456,9 +457,85 @@ describe('utils', function () {
       mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, 13);
       return utils.pushServicePlanToApiServer()
         .then(res => {
-          expect(res.length).to.eql(16);
+          expect(res.length).to.eql(3);
           mocks.verify();
         });
     });
   });
+
+  describe('#registerInterOperatorCrds', () => {
+    it('Patch already register crds successfully', () => {
+      const sfPlanCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS);
+      const sfServiceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES);
+      const sfServiceInstanceCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES);
+      const sfServiceBindingCrdJson = apiserver.getCrdJson(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfPlanCrdJson.metadata.name, {}, sfPlanCrdJson);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceCrdJson.metadata.name, {}, sfServiceCrdJson);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceInstanceCrdJson.metadata.name, {}, sfServiceInstanceCrdJson);
+      mocks.apiServerEventMesh.nockPatchCrd(CONST.APISERVER.CRD_RESOURCE_GROUP, sfServiceBindingCrdJson.metadata.name, {}, sfServiceBindingCrdJson);
+      return utils.registerInterOperatorCrds()
+        .then(() => {
+          mocks.verify();
+        });
+    });
+  });
+
+  describe('#getAllServices', () => {
+    it('Gets list of services from apiserver', () => {
+      const expectedResponse = {
+        items: [{
+          spec: {
+            id: 'service1',
+            name: 's1'
+          }
+        }]
+      };
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, expectedResponse);
+      return utils.getAllServices()
+        .then(res => {
+          expect(res).to.eql([expectedResponse.items[0].spec]);
+          mocks.verify();
+        });
+    });
+    it('Throws error on getting list of services from apiserver', () => {
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, undefined, 1, 500);
+      return utils.getAllServices()
+        .catch(err => {
+          expect(err.status).to.eql(500);
+          mocks.verify();
+        });
+    });
+  });
+
+  describe('#getAllPlansForService', () => {
+    it('Gets list of plans from apiserver', () => {
+      const expectedResponse = {
+        items: [{
+          spec: {
+            id: 'plan1',
+            name: 'p1'
+          }
+        }]
+      };
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, expectedResponse, {
+        labelSelector: `serviceId=service1`
+      });
+      return utils.getAllPlansForService('service1')
+        .then(res => {
+          expect(res).to.eql([expectedResponse.items[0].spec]);
+          mocks.verify();
+        });
+    });
+    it('Throws error on getting list of plans from apiserver', () => {
+      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, {
+        labelSelector: `serviceId=service1`
+      }, 1, 500);
+      return utils.getAllPlansForService('service1')
+        .catch(err => {
+          expect(err.status).to.eql(500);
+          mocks.verify();
+        });
+    });
+  });
+
 });

@@ -63,6 +63,9 @@ exports.getPlatformFromContext = getPlatformFromContext;
 exports.pushServicePlanToApiServer = pushServicePlanToApiServer;
 exports.getPlanCrdFromConfig = getPlanCrdFromConfig;
 exports.getServiceCrdFromConfig = getServiceCrdFromConfig;
+exports.registerInterOperatorCrds = registerInterOperatorCrds;
+exports.getAllServices = getAllServices;
+exports.getAllPlansForService = getAllPlansForService;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -640,24 +643,12 @@ function getPlanCrdFromConfig(plan, service) {
       free: plan.free ? true : service.free ? true : false,
       bindable: plan.bindable ? plan.bindable : service.bindable ? service.bindable : false,
       planUpdatable: plan.bindable ? true : false,
-      templates: plan.templates ? plan.templates : []
+      templates: plan.templates ? plan.templates : [],
+      metadata: plan.metadata,
+      manager: plan.manager,
+      context: plan.context
     }
   };
-  if (plan.metadata) {
-    planCRD.spec.metadata = plan.metadata;
-  }
-  if (plan.manager) {
-    planCRD.spec.manager = plan.manager;
-  }
-  if (plan.context) {
-    planCRD.spec.context = plan.context;
-  }
-  if (plan.actions) {
-    planCRD.spec.actions = plan.actions;
-  }
-  if (plan.async_ops_supporting_parallel_sync_ops) {
-    planCRD.spec.asyncOpsSupportingParallelSyncOps = plan.async_ops_supporting_parallel_sync_ops;
-  }
   return planCRD;
 }
 
@@ -681,50 +672,66 @@ function getServiceCrdFromConfig(service) {
       name: service.name,
       id: service.id,
       bindable: service.bindable,
-      description: service.description
+      description: service.description,
+      metadata: service.metadata,
+      tags: service.tags,
+      dashboardClient: service.dashboard_client,
+      planUpdateable: service.plan_updateable
     }
   };
-  if (service.metadata) {
-    serviceCRD.spec.metadata = service.metadata;
-  }
-  if (service.tags) {
-    serviceCRD.spec.tags = service.tags;
-  }
-  if (service.dashboard_client) {
-    serviceCRD.spec.dashboardClient = service.dashboard_client;
-  }
-  if (service.plan_updateable) {
-    serviceCRD.spec.planUpdateable = service.plan_updateable;
-  }
-  if (service.supported_platform) {
-    serviceCRD.spec.supportedPlatform = service.supported_platform;
-  }
-  if (service.actions) {
-    serviceCRD.spec.actions = service.actions;
-  }
-  if (service.backup_interval) {
-    serviceCRD.spec.backupInterval = service.backup_interval;
-  }
-  if (service.pitr) {
-    serviceCRD.spec.pitr = service.pitr;
-  }
   return serviceCRD;
 }
 
 function pushServicePlanToApiServer() {
   if (!config.apiserver.isServiceDefinitionAvailableOnApiserver) {
-    if (!config.apiserver.isServiceDefinitionAvailableOnApiserver) {
-      const eventmesh = require('../../data-access-layer/eventmesh');
-      let promiseList = [];
-      _.each(config.services, service => {
-        const servicePromise = eventmesh.apiServerClient.createOrUpdateServicePlan(getServiceCrdFromConfig(service));
-        promiseList.push(servicePromise);
-        _.each(service.plans, plan => {
-          const planPromise = eventmesh.apiServerClient.createOrUpdateServicePlan(getPlanCrdFromConfig(plan, service));
-          promiseList.push(planPromise);
-        });
-      });
-      return Promise.all(promiseList);
-    }
+    const eventmesh = require('../../data-access-layer/eventmesh');
+    return Promise.map(config.services, service => {
+      const servicePromise = eventmesh.apiServerClient.createOrUpdateServicePlan(getServiceCrdFromConfig(service));
+      return Promise.map(service.plans, plan => eventmesh.apiServerClient.createOrUpdateServicePlan(getPlanCrdFromConfig(plan, service))
+        .then(() => servicePromise));
+    });
   }
+}
+
+function registerInterOperatorCrds() {
+  const eventmesh = require('../../data-access-layer/eventmesh');
+  return Promise.all([
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES),
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS),
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES),
+    eventmesh.apiServerClient.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS)
+  ]);
+}
+
+function getAllServices() {
+  const eventmesh = require('../../data-access-layer/eventmesh');
+  return eventmesh.apiServerClient.getResources({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES
+    })
+    .then(serviceList => {
+      let services = [];
+      _.forEach(serviceList, service => {
+        services = _.concat(services, [service.spec]);
+      });
+      return services;
+    });
+}
+
+function getAllPlansForService(serviceId) {
+  const eventmesh = require('../../data-access-layer/eventmesh');
+  return eventmesh.apiServerClient.getResources({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
+      query: {
+        labelSelector: `serviceId=${serviceId}`
+      }
+    })
+    .then(planList => {
+      let plans = [];
+      _.forEach(planList, plan => {
+        plans = _.concat(plans, [plan.spec]);
+      });
+      return plans;
+    });
 }

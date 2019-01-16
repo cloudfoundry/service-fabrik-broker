@@ -31,21 +31,21 @@
   "strict": true,
   "trailing": true,
   "white": true,
+  "validthis": true, // Tolerate using this in a non-constructor
   "globals": {
     "Promise": true
   },
   "predef": [
-      "describe",
-      "it",
-      "before",
-      "after",
-      "beforeEach",
-      "afterEach",
-      "chai",
-      "expect",
-      "sinon",
-      "mocks",
-      "support"
+    "describe",
+    "it",
+    "before",
+    "after",
+    "beforeEach",
+    "afterEach",
+    "chai",
+    "expect",
+    "sinon",
+    "mocks",
+    "support"
   ]
 }
-

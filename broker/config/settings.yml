@@ -573,6 +573,19 @@ defaults: &defaults
         - 'Container Deployment'
         - '128 MB Memory'
         - '100 MB Disk'
+      templates: &docker_templates
+      - action: sources
+        type: gotemplate
+        content: <%= base64_template('samples/templates/gotemplates/docker/sources.yaml')  %>
+      - action: properties
+        type: gotemplate
+        content: <%= base64_template('samples/templates/gotemplates/docker/properties.yaml') %>
+      - action: provision
+        type: gotemplate
+        content: <%= base64_template('samples/templates/gotemplates/docker/provision.yaml') %>
+      - action: bind
+        type: gotemplate
+        content: <%= base64_template('samples/templates/gotemplates/docker/bind.yaml') %>
     - &blueprint_plan2
       id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
       name: 'v1.0-dev-large'
@@ -607,6 +620,7 @@ defaults: &defaults
         - 'Container Deployment'
         - '256 MB Memory'
         - '200 MB Disk'
+      templates: *docker_templates
     - &blueprint_plan7
       id: '61a8d1f7-6477-4eb7-a85d-57ac067e80c4'
       name: 'v1.0-container-large-deprecated'
@@ -642,6 +656,7 @@ defaults: &defaults
         - 'Container Deployment'
         - '256 MB Memory'
         - '200 MB Disk'
+      templates: *docker_templates
     ###########################
     # DEDICATED SERVICE PLANS #
     ###########################
@@ -694,6 +709,19 @@ defaults: &defaults
       - k8s
       - cf
       - sm
+      templates: &director_templates
+      - action: sources
+        type: gotemplate
+        content: <%=base64_template('samples/templates/gotemplates/director/sources.yaml') %>
+      - action: properties
+        type: gotemplate
+        content: <%=base64_template('samples/templates/gotemplates/director/properties.yaml') %>
+      - action: provision
+        type: gotemplate
+        content: <%=base64_template('samples/templates/gotemplates/director/provision.yaml') %>
+      - action: bind
+        type: gotemplate
+        content: <%=base64_template('samples/templates/gotemplates/director/bind.yaml') %>
     - &blueprint_plan4
       id: 'bc158c9a-7934-401e-94ab-057082a5073e'
       name: 'v1.0-small'
@@ -729,6 +757,7 @@ defaults: &defaults
       - k8s
       - cf
       - sm
+      templates: *director_templates
     - &blueprint_plan5
       id: 'd616b00a-5949-4b1c-bc73-0d3c59f3954a'
       name: 'v1.0-large'
@@ -765,6 +794,7 @@ defaults: &defaults
       - k8s
       - cf
       - sm
+      templates: *director_templates
     - &blueprint_plan8
       id: 'gd158c9a-7934-401e-94ab-057082a5073e'
       name: 'v2.0-xsmall'
@@ -800,6 +830,7 @@ defaults: &defaults
       - k8s
       - cf
       - sm
+      templates: *director_templates
     - &blueprint_plan6
       id: 'b91d9512-b5c9-4c4a-922a-fa54ae67d235'
       name: 'v1.0-dedicated-large-deprecated'
@@ -832,6 +863,7 @@ defaults: &defaults
         - '1 vCPUs'
         - '2 GB Memory'
         - '2 GB Disk'
+      templates: *director_templates
   ####################
   # RABBITMQ SERVICE #
   ####################
