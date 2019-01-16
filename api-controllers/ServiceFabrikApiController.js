@@ -531,7 +531,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
   }
 
   getSpaceGuidOfBackup(backupGuid) {
-    return eventmesh.apiServerClient.deleteResource({
+    return eventmesh.apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
       resourceId: backupGuid
@@ -552,7 +552,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
-      .then(() => this.getSpaceGuidOfBackup(backupGuid))
+      .then(() => backupGuid ? this.getSpaceGuidOfBackup(backupGuid) : tenantId)
       .then(spaceGuid => {
         if(spaceGuid !== tenantId) {
           backupSpaceGuid = spaceGuid;
