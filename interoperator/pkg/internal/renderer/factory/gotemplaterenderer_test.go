@@ -138,4 +138,15 @@ func TestGoTemplateRenderer(t *testing.T) {
 	output5, _ := renderer5.Render(input5)
 	g.Expect(output5).To(gomega.BeNil())
 
+	plan.Spec.Templates[0].Content = "provisioncontent"
+	template6, _ := plan.GetTemplate("provision")
+	renderer6, _ := GetRenderer(template6.Type, nil)
+	input6, _ := GetRendererInput(template6, &service, &plan, &instance, &binding, name)
+	output6, _ := renderer6.Render(input6)
+	files6, _ := output6.ListFiles()
+	content6, _ := output6.FileContent(files6[0])
+
+	g.Expect(len(files)).To(gomega.Equal(1))
+	g.Expect(files[0]).To(gomega.Equal("main"))
+	g.Expect(content6).To(gomega.Equal("provisioncontent"))
 }

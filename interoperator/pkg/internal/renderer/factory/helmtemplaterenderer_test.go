@@ -155,4 +155,30 @@ spec:
       requests:
         storage: 50Mi
   terminationPolicy: WipeOut`))
+
+	clientSet2, _ := kubernetes.NewForConfig(cfg)
+	renderer2, _ := GetRenderer(template.Type, clientSet2)
+	input2, _ := GetRendererInput(template, &service, &plan, &instance, &binding, name)
+	output2, _ := renderer2.Render(input2)
+	files2, _ := output2.ListFiles()
+	content2, _ := output2.FileContent(files2[0])
+
+	g.Expect(len(files2)).To(gomega.Equal(1))
+	g.Expect(files2[0]).To(gomega.Equal("postgres.yaml"))
+	g.Expect(content2).To(gomega.Equal(
+		`apiVersion: kubedb.com/v1alpha1
+kind: Postgres
+metadata:
+  name: kdb-foo-pg
+spec:
+  version: 10.2-v1
+  storageType: Durable
+  storage:
+    storageClassName: default
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 50Mi
+  terminationPolicy: WipeOut`))
 }
