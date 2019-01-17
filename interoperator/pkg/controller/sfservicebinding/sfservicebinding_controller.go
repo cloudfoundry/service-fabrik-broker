@@ -47,16 +47,17 @@ const (
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+	return add(mgr, newReconciler(mgr, resources.New()))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager) reconcile.Reconciler {
 	clusterFactory, _ := clusterFactory.New(mgr)
 	return &ReconcileSFServiceBinding{
-		Client:         mgr.GetClient(),
-		scheme:         mgr.GetScheme(),
-		clusterFactory: clusterFactory,
+		Client:          mgr.GetClient(),
+		scheme:          mgr.GetScheme(),
+		clusterFactory:  clusterFactory,
+		resourceManager: resourceManager,
 	}
 }
 
@@ -115,8 +116,9 @@ var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}
 // ReconcileSFServiceBinding reconciles a SFServiceBinding object
 type ReconcileSFServiceBinding struct {
 	client.Client
-	scheme         *runtime.Scheme
-	clusterFactory *clusterFactory.ClusterFactory
+	scheme          *runtime.Scheme
+	clusterFactory  *clusterFactory.ClusterFactory
+	resourceManager resources.ResourceManager
 }
 
 // Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
@@ -168,7 +170,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			remainingResource, _ := resources.DeleteSubResources(targetClient, binding.Status.CRDs)
+			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, binding.Status.CRDs)
 			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -200,11 +202,11 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	}
 
 	var requeue bool
-	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = resources.SetOwnerReference(binding, expectedResources, r.scheme)
+	err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.scheme)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -214,7 +216,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	appliedResources, err = resources.ReconcileResources(r, targetClient, expectedResources, binding.Status.CRDs)
+	appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.CRDs)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 		requeue = true
@@ -233,7 +235,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	planID := binding.Spec.PlanID
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
-	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
@@ -269,7 +271,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		CRDs = append(CRDs, resource)
 	}
 
-	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err

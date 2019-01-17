@@ -46,16 +46,17 @@ const (
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+	return add(mgr, newReconciler(mgr, resources.New()))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager) reconcile.Reconciler {
 	clusterFactory, _ := clusterFactory.New(mgr)
 	return &ReconcileServiceInstance{
-		Client:         mgr.GetClient(),
-		scheme:         mgr.GetScheme(),
-		clusterFactory: clusterFactory,
+		Client:          mgr.GetClient(),
+		scheme:          mgr.GetScheme(),
+		clusterFactory:  clusterFactory,
+		resourceManager: resourceManager,
 	}
 }
 
@@ -120,8 +121,9 @@ var _ reconcile.Reconciler = &ReconcileServiceInstance{}
 // ReconcileServiceInstance reconciles a ServiceInstance object
 type ReconcileServiceInstance struct {
 	client.Client
-	scheme         *runtime.Scheme
-	clusterFactory *clusterFactory.ClusterFactory
+	scheme          *runtime.Scheme
+	clusterFactory  *clusterFactory.ClusterFactory
+	resourceManager resources.ResourceManager
 }
 
 // Reconcile reads that state of the cluster for a ServiceInstance object and makes changes based on the state read
@@ -175,7 +177,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			remainingResource, _ := resources.DeleteSubResources(targetClient, instance.Status.CRDs)
+			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, instance.Status.CRDs)
 			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -206,12 +208,12 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		}
 	}
 
-	expectedResources, err := resources.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+	expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = resources.SetOwnerReference(instance, expectedResources, r.scheme)
+	err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -222,7 +224,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var requeue bool
-	appliedResources, err := resources.ReconcileResources(r, targetClient, expectedResources, instance.Status.CRDs)
+	appliedResources, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.CRDs)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 		requeue = true
@@ -241,7 +243,7 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
 	bindingID := ""
-	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
@@ -278,7 +280,7 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		CRDs = append(CRDs, resource)
 	}
 
-	properties, err := resources.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
