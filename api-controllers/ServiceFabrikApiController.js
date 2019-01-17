@@ -164,6 +164,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const user = req.user;
     const opts = _.pick(req, 'auth');
     const httpMethod = _.toUpper(req.method);
+    const insufficientPermissions = `User '${user.name}' has insufficient permissions`;
     let isCloudControllerAdmin = false;
     if (_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
       isCloudControllerAdmin = true;
@@ -202,13 +203,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
           spaceGuid: space_guid,
           user: user,
           auth: opts
-        });
-      })
-      .then(isSpaceDeveloper => {
-        if (httpMethod !== 'GET' && !isSpaceDeveloper) {
-          throw new Forbidden(insufficientPermissions);
-        }
-        logger.info('space developers verification done.');
+        })
+        .then(isSpaceDeveloper => {
+          if (httpMethod !== 'GET' && !isSpaceDeveloper) {
+            throw new Forbidden(insufficientPermissions);
+          }
+          logger.info('space developers verification done.');
+        });  
       })
       .catch(err => {
         logger.warn('Verification of user permissions failed');
@@ -226,10 +227,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
    * @param {string} opts.auth - auth token used to communicate to CC (obtained from request itself)
    */
   verifySpaceDevPermissions(options) {
-    logger.info(`Checking space developer permission for `, options);
     let spaceGuid = options.spaceGuid;
     let user = options.user;
     let auth = options.auth;
+    logger.info(`Checking space developer permissions for ${spaceGuid} and ${user.email}`);
     return this.cloudController
     .getSpaceDevelopers(spaceGuid, auth)
     .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(`User '${user.name}' has insufficient permissions`))
