@@ -164,7 +164,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const user = req.user;
     const opts = _.pick(req, 'auth');
     const httpMethod = _.toUpper(req.method);
-    const insufficientPermissions = `User '${user.name}' has insufficient permissions`;
     let isCloudControllerAdmin = false;
     if (_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
       isCloudControllerAdmin = true;
@@ -199,24 +198,17 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return;
         }
         //TODO: Need to handle this separately for k8s consumption
-        return this.cloudController
-          .getSpaceDevelopers(space_guid, opts)
-          .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(insufficientPermissions));
+        return this.verifySpaceDevPermissions({
+          spaceGuid: space_guid,
+          user: user,
+          auth: opts
+        });
       })
-      .tap(developers => {
-        if (isCloudControllerAdmin) {
-          logger.info(`User ${user.email} has cloud_controller.admin scope. SpaceDeveloper validation will be skipped`);
-          return;
-        }
-        const isSpaceDeveloper = _
-          .chain(developers)
-          .findIndex(developer => (developer.metadata.guid === user.id))
-          .gte(0)
-          .value();
+      .then(isSpaceDeveloper => {
         if (httpMethod !== 'GET' && !isSpaceDeveloper) {
           throw new Forbidden(insufficientPermissions);
         }
-        logger.info('space develoopers done');
+        logger.info('space developers verification done.');
       })
       .catch(err => {
         logger.warn('Verification of user permissions failed');
@@ -225,11 +217,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .throw(new ContinueWithNext());
   }
-
-  verifySpaceDevPermissions(space_guid, user, auth) {
-    logger.info(`Checking space developer permission for ${space_guid} and ${user.email}`);
+  
+  /**
+   * Verify that the options.user is a space developer for options.spaceGuid
+   * @param {object} options - Object containing options
+   * @param {string} opts.spaceGuid - Space guid for which permissions need to be checked
+   * @param {string} opts.user - User details obtained from request
+   * @param {string} opts.auth - auth token used to communicate to CC (obtained from request itself)
+   */
+  verifySpaceDevPermissions(options) {
+    logger.info(`Checking space developer permission for `, options);
+    let spaceGuid = options.spaceGuid;
+    let user = options.user;
+    let auth = options.auth;
     return this.cloudController
-    .getSpaceDevelopers(space_guid, auth)
+    .getSpaceDevelopers(spaceGuid, auth)
     .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(`User '${user.name}' has insufficient permissions`))
     .then(developers => {
       const isSpaceDeveloper = _
@@ -238,11 +240,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .gte(0)
       .value();
       return isSpaceDeveloper;
-    })
-    .then(isSpaceDeveloper => {
-      if (!isSpaceDeveloper) {
-        throw new Forbidden(`User '${user.name}' is not a space-developer for space with guid: ${space_guid}`);
-      }
     });
   }
 
@@ -561,7 +558,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => {
         let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
         if (backupSpaceGuid !== tenantId && !isCloudControllerAdmin) {
-          return this.verifySpaceDevPermissions(backupSpaceGuid, req.user, _.pick(req, 'auth'));
+          return this.verifySpaceDevPermissions({
+            spaceGuid: backupSpaceGuid, 
+            user: req.user, 
+            auth: _.pick(req, 'auth')
+          })
+          .then(isSpaceDeveloper => {
+            if (!isSpaceDeveloper) {
+              throw new Forbidden(`User '${req.user.name}' is not a space-developer for space with guid: ${backupSpaceGuid}`);
+            }
+          });
         }
       })
       .then(() => utils.uuidV4())
