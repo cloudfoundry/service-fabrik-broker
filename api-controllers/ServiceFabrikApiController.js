@@ -1026,6 +1026,22 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .send(body));
   }
 
+  cancelScheduledUpdate(req, res) {
+    if (!_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
+      throw new Forbidden(`Permission denined. Cancelling of scheduled updates can only be done by user with cloud_controller.admin scope.`);
+    }
+    // Cancel schedule and all onetime jobs as well
+    // e.g. cancel both jobs 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate and 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate_30minutesfromnow_1543823280862
+    const useRegex = true; 
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => ScheduleManager
+        .cancelSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, useRegex))
+      .then(() => res
+        .status(CONST.HTTP_STATUS_CODE.OK)
+        .send({}));
+  }
+
   static get version() {
     return '1.0';
   }
