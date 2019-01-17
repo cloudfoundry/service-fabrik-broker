@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -20,9 +19,6 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 
 	err := client.List(context.TODO(), options, services)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, nil, fmt.Errorf("unable to find service with id %s", serviceID)
-		}
 		return nil, nil, err
 	}
 	var service *osbv1alpha1.SFService
@@ -44,9 +40,6 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 
 	err = client.List(context.TODO(), options, plans)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, nil, fmt.Errorf("unable to find plan with service id %s and plan id %s", serviceID, planID)
-		}
 		return nil, nil, err
 	}
 
