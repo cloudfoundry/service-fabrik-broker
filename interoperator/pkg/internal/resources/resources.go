@@ -26,7 +26,24 @@ const (
 	defaultNamespace = "default"
 )
 
-func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, namespace string) (*osbv1alpha1.SFServiceInstance, *osbv1alpha1.SFServiceBinding, *osbv1alpha1.SFService, *osbv1alpha1.SFPlan, error) {
+// ResourceManager defines the interface implemented by resources
+type ResourceManager interface {
+	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)
+	SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error
+	ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error)
+	ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error)
+	DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
+}
+
+type resourceManager struct {
+}
+
+// New creates a new ResourceManager object.
+func New() ResourceManager {
+	return resourceManager{}
+}
+
+func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, namespace string) (*osbv1alpha1.SFServiceInstance, *osbv1alpha1.SFServiceBinding, *osbv1alpha1.SFService, *osbv1alpha1.SFPlan, error) {
 	var instance *osbv1alpha1.SFServiceInstance
 	var binding *osbv1alpha1.SFServiceBinding
 	var service *osbv1alpha1.SFService
@@ -69,8 +86,8 @@ func fetchResources(client kubernetes.Client, instanceID, bindingID, serviceID, 
 }
 
 // ComputeExpectedResources computes expected resources
-func ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error) {
-	instance, binding, service, plan, err := fetchResources(client, instanceID, bindingID, serviceID, planID, namespace)
+func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error) {
+	instance, binding, service, plan, err := r.fetchResources(client, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
 		log.Printf("error getting resource. %v\n", err)
 		return nil, err
@@ -143,7 +160,7 @@ func ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, s
 }
 
 // SetOwnerReference updates the owner reference for all the resources
-func SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
+func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
 	for _, obj := range resources {
 		if err := controllerutil.SetControllerReference(owner, obj, scheme); err != nil {
 			log.Printf("error setting owner reference for resource. %v\n", err)
@@ -154,7 +171,7 @@ func SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructur
 }
 
 // ReconcileResources setups all resources according to expectation
-func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error) {
+func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error) {
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
 		foundResource := &unstructured.Unstructured{}
@@ -228,7 +245,7 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 		oldResource.SetAPIVersion(lastResource.APIVersion)
 		oldResource.SetName(lastResource.Name)
 		oldResource.SetNamespace(lastResource.Namespace)
-		if ok := findUnstructuredObject(foundResources, oldResource); !ok {
+		if ok := r.findUnstructuredObject(foundResources, oldResource); !ok {
 			err := targetClient.Delete(context.TODO(), oldResource)
 			if err != nil {
 				// Not failing here. Add the outdated resource to foundResource
@@ -243,7 +260,7 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 	return foundResources, nil
 }
 
-func findUnstructuredObject(list []*unstructured.Unstructured, item *unstructured.Unstructured) bool {
+func (r resourceManager) findUnstructuredObject(list []*unstructured.Unstructured, item *unstructured.Unstructured) bool {
 	for _, object := range list {
 		if object.GetKind() == item.GetKind() && object.GetAPIVersion() == item.GetAPIVersion() && object.GetName() == item.GetName() && object.GetNamespace() == item.GetNamespace() {
 			return true
@@ -253,8 +270,8 @@ func findUnstructuredObject(list []*unstructured.Unstructured, item *unstructure
 }
 
 // ComputeProperties computes properties template
-func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
-	instance, binding, service, plan, err := fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
+func (r resourceManager) ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
+	instance, binding, service, plan, err := r.fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
 		log.Printf("error getting resource. %v\n", err)
 		return nil, err
@@ -408,7 +425,7 @@ func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.C
 }
 
 // DeleteSubResources setups all resources according to expectation
-func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error) {
+func (r resourceManager) DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error) {
 	//
 	// delete the external dependency here
 	//
@@ -424,7 +441,7 @@ func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Sou
 		resource.SetAPIVersion(subResource.APIVersion)
 		resource.SetName(subResource.Name)
 		resource.SetNamespace(subResource.Namespace)
-		err := deleteSubResource(client, resource)
+		err := r.deleteSubResource(client, resource)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				log.Printf("deleted completed for resource %v", subResource)
@@ -441,7 +458,7 @@ func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Sou
 	return remainingResource, lastError
 }
 
-func deleteSubResource(client kubernetes.Client, resource *unstructured.Unstructured) error {
+func (r resourceManager) deleteSubResource(client kubernetes.Client, resource *unstructured.Unstructured) error {
 	// Special delete handling for sf operators for delete
 	var specialDelete = [...]string{"deployment.servicefabrik.io/v1alpha1", "bind.servicefabrik.io/v1alpha1"}
 	apiVersion := resource.GetAPIVersion()
