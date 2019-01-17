@@ -242,13 +242,6 @@ spec:
     secret: postgresql-dashboard-client-secret
     redirectURI: 'https://sap.com/'
   planUpdatable: true
-  context:
-    serviceFabrik:
-      backupEnabled: false
-    operator:
-      image: "servicefabrikjenkins/postgresql"
-      tag: "latest"
-      port: 8080
 
   # The following details are context input for Service Fabrik and the individual service operators.
   context:

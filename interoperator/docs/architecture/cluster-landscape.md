@@ -37,12 +37,16 @@ Architects, Developers, Product Owners, Development Managers who are interested 
         * [Pros](#pros-5)
         * [Cons](#cons-5)
     * [Hybrid Landscape Scenario](#hybrid-landscape-scenario)
-        * [Pros](#pros-6)
-        * [Cons](#cons-6)
-    * [Three Dimensions for Comparison](#three-dimensions-for-comparison)
+      * [Pros](#pros-6)
+      * [Cons](#cons-6)
+    * [Customer Specific Landscape Scenario](#customer-specific-landscape-scenario)
+      * [Pros](#pros-7)
+      * [Cons](#cons-7)
+    * [Four Dimensions for Comparison](#four-dimensions-for-comparison)
       * [One Cluster vs\. Multiple Clusters](#one-cluster-vs-multiple-clusters)
       * [Dedicated Clusters vs\. Shared Clusters](#dedicated-clusters-vs-shared-clusters)
       * [Degrees of isolation](#degrees-of-isolation)
+      * [Customer Specificity](#customer-specificity)
     * [Recommended Landscape Scenario](#recommended-landscape-scenario)
   * [Managing the Cluster Landscape](#managing-the-cluster-landscape)
     * [An analogy to kube\-scheduler](#an-analogy-to-kube-scheduler)
@@ -219,7 +223,7 @@ Due to the [limitations](#cons-5) of the [optimal shared landscape scenario](#an
 
 Here, the Service Fabrik instance is shared but the Kubernetes clusters are dedicated for the individual services.
 
-##### Pros
+#### Pros
 
 * More optimal resource-utilization. Many service instances are hosted on any given Kubernetes cluster. This distributes the usage of the Kubernetes control-plane across multiple service instances.
 * The number of service instances in the landscape as well as the scale of the individual service instances is not limited by the architecture and the landscape.
@@ -227,7 +231,7 @@ Here, the Service Fabrik instance is shared but the Kubernetes clusters are dedi
   * Moderate operational overhead.
   * The clusters can be tuned and configured to be optimal for the needs of the service and its instances.
 
-##### Cons
+#### Cons
 
 * The cluster landscape is more complex.
 * The Service Fabrik inter-operator is shared between the different services and their instances.
@@ -236,7 +240,25 @@ Here, the Service Fabrik instance is shared but the Kubernetes clusters are dedi
 * Multiple service instances are still running in any given Kubernetes cluster.
   * Service implementation and the cluster configuration must be strengthened to ensure good isolation from the perspective of both [security](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and [performance](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#performance).
 
-### Three Dimensions for Comparison
+Only the optimal variant is shown above. The conservative variation of dedicated clusters for each service instance also would be possible.
+
+### Customer Specific Landscape Scenario
+
+Another possibility is to allocate clusters by customers.
+
+![Customer-specific Landscape Scenario](images/customer-landscape-simple.png)
+
+#### Pros
+
+* Isolation aspect could be less severe as the impact of break of isolation is limited to a customer.
+* Better resource utilization than the conservative approach but worse utilization than the dedicated or shared optimal scenarios.
+
+#### Cons
+
+* Resource utilization might vary based on the number of services per customer. Not good utilization if the number of service instances per customer is small and better utilization if it is larger.
+* Probably more operational overhead.
+
+### Four Dimensions for Comparison
 
 #### One Cluster vs. Multiple Clusters
 
@@ -317,6 +339,41 @@ In this axis, the comparison is between multiple instances in a cluster (optimal
     * Lesser degree of isolation. But there is mitigation as mentioned above subject to the review from the Security team.
 
 This could be the reasoning to favour the optimal (many instances in one cluster but multiple such clusters) over the conservative (one instance in its own cluster) with their dedicated and hybrid variations.
+
+#### Customer Specificity
+
+In the above dimensions, the landscape was independent of the number of customers.
+However, there is also the possibility to allocate parts of the landscape to individual customers.
+
+The granularity for the concept of the customer could vary along different parameters such as below.
+1. Global Account
+1. Sub-account
+1. Tenant (this is not very well-defined yet).
+
+* Simple Shared Customer Specific Landscape
+  * A simple variation of this approach is shown [above](#customer-specific-landscape-scenario).
+  * This can somewhat mitigate isolation concerns by limiting the impact of a break in isolation to only the customer.
+  * The number of service instances per customer is linked to the size of the Kubernetes cluster.
+  * This has the [scheduling problems](#dedicated-clusters-vs-shared-clusters) listed with the [shared cluster](#an-optimal-shared-landscape-scenario).
+
+* Conservative Customer Specific Dedicated of Shared Cluster Landscape
+  * This is not very different from the conservative scenarios in all the other dimensions.
+
+* Optimal Customer Specific Shared Cluster Landscape
+  * This can somewhat mitigate isolation concerns by limiting the impact of a break in isolation to only the customer.
+  * The number of service instances per customer is not limited.
+  * This has the [scheduling problems](#dedicated-clusters-vs-shared-clusters) listed with the [shared cluster](#an-optimal-shared-landscape-scenario).
+
+* Optimal Customer Specific Dedicated Cluster Landscape
+  * This can somewhat mitigate isolation concerns by limiting the impact of a break in isolation to only the customer.
+  * The number of service instances per customer is not limited.
+  * This does NOT have the [scheduling problems](#dedicated-clusters-vs-shared-clusters) listed with the [shared cluster](#an-optimal-shared-landscape-scenario).
+  * It has worse resource utilization than the shared scenario above.
+
+The optimal scenarios listed above somewhat mitigate isolation concerns but have worse resource utilization.
+One potential problem with this approach could be the following.
+* If the number of service instances per customer is small then isolation concerns are less and resource utilization is worse.
+* If the number of service instances per customer is large then isolation concerns would be comparable to the optimal [dedicated](#an-optimal-dedicated-landscape-scenario) or [hybrid](#hybrid-landscape-scenario) scenario and the resource utilization would be better.
 
 ### Recommended Landscape Scenario
 
