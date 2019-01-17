@@ -40,7 +40,6 @@
     "body-parser": "1.15.1",
     "connect-timeout": "1.9.0",
     "dockerode": "2.2.10",
-    "etcd3": "0.2.10",
     "express": "4.13.4",
     "express-interceptor": "1.2.0",
     "express-jwt": "5.3.1",
