@@ -125,13 +125,13 @@ func ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, s
 		subResourcesString, err := output.FileContent(file)
 		if err != nil {
 			log.Printf("error getting file content %s. %v\n", file, err)
-			continue
+			return nil, err
 		}
 
 		subresources, err := dynamic.StringToUnstructured(subResourcesString)
 		if err != nil {
 			log.Printf("error converting file content to unstructured %s. %v\n", file, err)
-			continue
+			return nil, err
 		}
 
 		for _, obj := range subresources {
@@ -147,7 +147,7 @@ func SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructur
 	for _, obj := range resources {
 		if err := controllerutil.SetControllerReference(owner, obj, scheme); err != nil {
 			log.Printf("error setting owner reference for resource. %v\n", err)
-			continue
+			return err
 		}
 	}
 	return nil
@@ -231,6 +231,8 @@ func ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.
 		if ok := findUnstructuredObject(foundResources, oldResource); !ok {
 			err := targetClient.Delete(context.TODO(), oldResource)
 			if err != nil {
+				// Not failing here. Add the outdated resource to foundResource
+				// Delete will be retried on next reconcile
 				log.Printf("failed to delete outdated resource %v. %v", lastResource, err)
 				foundResources = append(foundResources, oldResource)
 				continue
@@ -339,6 +341,7 @@ func ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.C
 			}
 			err := targetClient.Get(context.TODO(), namespacedName, obj)
 			if err != nil {
+				// Not failing here as the resource might not exist
 				log.Printf("failed to fetch resource %v. %v\n", val, err)
 				continue
 			}
@@ -439,6 +442,7 @@ func DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Sou
 }
 
 func deleteSubResource(client kubernetes.Client, resource *unstructured.Unstructured) error {
+	// Special delete handling for sf operators for delete
 	var specialDelete = [...]string{"deployment.servicefabrik.io/v1alpha1", "bind.servicefabrik.io/v1alpha1"}
 	apiVersion := resource.GetAPIVersion()
 
