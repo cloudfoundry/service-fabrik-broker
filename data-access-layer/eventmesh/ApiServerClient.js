@@ -90,6 +90,7 @@ class ApiServerClient {
       }
     });
   }
+
   /**
    * Poll for Status until opts.start_state changes
    * @param {object} opts - Object containing options
@@ -146,7 +147,6 @@ class ApiServerClient {
       });
   }
 
-
   /**
    * @description Register watcher for (resourceGroup , resourceType)
    * @param {string} resourceGroup - Name of the resource
@@ -175,6 +175,7 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       });
   }
+
   parseResourceDetailsFromSelfLink(selfLink) {
     // self links are typically: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/d-7
     const linkParts = _.split(selfLink, '/');
@@ -219,6 +220,7 @@ class ApiServerClient {
     logger.debug(`Getting crd json for: ${resourceGroup}_${CONST.APISERVER.API_VERSION}_${resourceType}.yaml`);
     return yaml.safeLoad(Buffer.from(crdEncodedTemplate, 'base64'));
   }
+
   /**
    * @description Create Namespace of given name
    * @param {string} name - Name of resource group ex. backup.servicefabrik.io
@@ -257,7 +259,7 @@ class ApiServerClient {
   }
 
   getNamespaceId(resourceId) {
-    return _.get(config, 'apiserver.enable_resource_isolation') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
+    return _.get(config, 'apiserver.enable_namespace') ? `sf-${resourceId}` : CONST.APISERVER.DEFAULT_NAMESPACE;
   }
 
   /**
@@ -395,6 +397,7 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       });
   }
+
   /**
    * @description Patches Resource in Apiserver with the opts
    * Use this method when you want to append something in status.response or spec.options
@@ -524,6 +527,7 @@ class ApiServerClient {
    * @description Get Resources in Apiserver with the opts and query param
    * @param {string} opts.resourceGroup - Unique id of resource
    * @param {string} opts.resourceType - Name of operation
+   * @param {string} opts.namespaceId - namesapce Id: optional
    * @param {object} opts.query - optional query
    */
   getResources(opts) {
@@ -534,15 +538,15 @@ class ApiServerClient {
     if (opts.query) {
       query.qs = opts.query;
     }
+    const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[opts.resourceType].get(query))
+        .namespaces(namespaceId)[opts.resourceType].get(query))
       .then(response => _.get(response, 'body.items', []))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
   }
-
 
   /**
    * @description Get Resource in Apiserver with the opts
@@ -816,8 +820,6 @@ class ApiServerClient {
       });
   }
 
-
-
   /**
    * @description Update OSB Resource in Apiserver with the opts
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
@@ -873,6 +875,7 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       });
   }
+
   /**
    * @description Patches OSB Resource in Apiserver with the opts
    * Use this method when you want to append something in status.response or spec.options
@@ -925,7 +928,6 @@ class ApiServerClient {
 
   }
 
-
   /**
    * @description Create Service/Plan Resource in Apiserver with given crd
    */
@@ -954,7 +956,6 @@ class ApiServerClient {
         return convertToHttpErrorAndThrow(err);
       });
   }
-
 }
 
 module.exports = ApiServerClient;

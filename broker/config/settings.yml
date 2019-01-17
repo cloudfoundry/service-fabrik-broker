@@ -154,7 +154,7 @@ defaults: &defaults
   ##############################
   apiserver:
     # isServiceDefinitionAvailableOnApiserver: false
-    # enable_resource_isolation: false
+    # enable_namespace: false
     ip: '10.244.14.252'
     port: 8443
     encryption:
