@@ -333,19 +333,19 @@ class Scheduler {
       });
   }
 
-  cancelJob(name, jobType, useRegex) {
+  cancelJob(name, jobType, cancelAllJobs) {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
           logger.error('Scheduler not yet initialized! MongoDB not operational');
           throw new ServiceUnavailable('MongoDB not operational');
         }
-        logger.info(`Cancelling schedule for job ${name} - ${jobType}, using regex : ${useRegex}`);
+        logger.info(`Cancelling schedule for job ${name} - ${jobType}, with cancelAllJobs : ${cancelAllJobs}`);
         const criteria = {
           name: jobType
         };
         const jobName = `${name}_${jobType}`;
-        if (useRegex) {
+        if (cancelAllJobs) {
           criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = {
             $regex: `^${jobName}.*`
           };
