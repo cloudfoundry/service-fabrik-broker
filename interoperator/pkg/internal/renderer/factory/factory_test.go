@@ -17,28 +17,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// var cfg *rest.Config
-// var c client.Client
-
-// func TestMain(m *testing.M) {
-// 	t := &envtest.Environment{
-// 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "config", "crds")},
-// 	}
-
-// 	var err error
-// 	if cfg, err = t.Start(); err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	code := m.Run()
-// 	t.Stop()
-// 	os.Exit(code)
-// }
-
 func TestGetRenderer(t *testing.T) {
 	type args struct {
 		rendererType string
