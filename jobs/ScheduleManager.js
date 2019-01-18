@@ -128,7 +128,7 @@ class ScheduleManager {
       typeCriteria = {
         $regex: `^${jobType}.*`
       };
-    } 
+    }
     const criteria = {
       name: name,
       type: typeCriteria

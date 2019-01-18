@@ -1976,6 +1976,18 @@ describe('service-fabrik-api-sf2.0', function () {
               mocks.verify();
             });
         });
+        it('should return 403 Forbidden if not admin', function () {
+          mocks.uaa.tokenKey();
+          return chai.request(apps.external)
+            .delete(`${base_url}/service_instances/${instance_id}/schedule_backup`)
+            .set('Authorization', authHeaderInsufficientScopes)
+            .catch(err => err.response)
+            .then(res => {
+              expect(cancelScheduleStub).to.be.not.called;
+              expect(res).to.have.status(403);
+              mocks.verify();
+            });
+        });
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
@@ -1984,6 +1996,9 @@ describe('service-fabrik-api-sf2.0', function () {
             .set('Authorization', adminAuthHeader)
             .catch(err => err.response)
             .then(res => {
+              expect(cancelScheduleStub).to.be.calledOnce;
+              expect(cancelScheduleStub.firstCall.args[0]).to.eql(instance_id);
+              expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
               expect(res).to.have.status(200);
               expect(res.body).to.eql({});
               mocks.verify();
@@ -2119,6 +2134,7 @@ describe('service-fabrik-api-sf2.0', function () {
             });
         });
       });
+
       describe('#GetUpdateSchedule', function () {
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
@@ -2174,6 +2190,38 @@ describe('service-fabrik-api-sf2.0', function () {
                 diff: diff
               }));
               expect(res.body).to.eql(expectedJobResponse);
+              mocks.verify();
+            });
+        });
+      });
+
+      describe('#CancelUpdateSchedule', function () {
+        it('should return 200 OK', function () {
+          mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          return chai.request(apps.external)
+            .delete(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', adminAuthHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(cancelScheduleStub).to.be.calledOnce;
+              expect(cancelScheduleStub.firstCall.args[0]).to.eql(instance_id);
+              expect(cancelScheduleStub.firstCall.args[1]).to.eql(CONST.JOB.SERVICE_INSTANCE_UPDATE);
+              expect(cancelScheduleStub.firstCall.args[2]).to.eql(true);
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({});
+              mocks.verify();
+            });
+        });
+        it('should return 403 Forbidden if not admin', function () {
+          mocks.uaa.tokenKey();
+          return chai.request(apps.external)
+            .delete(`${base_url}/service_instances/${instance_id}/schedule_update`)
+            .set('Authorization', authHeaderInsufficientScopes)
+            .catch(err => err.response)
+            .then(res => {
+              expect(cancelScheduleStub).to.be.not.called;
+              expect(res).to.have.status(403);
               mocks.verify();
             });
         });

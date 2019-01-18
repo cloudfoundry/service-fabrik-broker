@@ -1032,7 +1032,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     }
     // Cancel repeat and all onetime jobs as well
     // e.g. cancel both jobs 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate and 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate_30minutesfromnow_1543823280862
-    const cancelAllJobs = true; 
+    const cancelAllJobs = true;
     return Promise
       .try(() => this.setPlan(req))
       .then(() => ScheduleManager
