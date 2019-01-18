@@ -14,7 +14,7 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *ClusterFactory
+		want    ClusterFactory
 		wantErr bool
 	}{
 		{
@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 			args: args{
 				mgr: mgr,
 			},
-			want: &ClusterFactory{
+			want: &clusterFactory{
 				mgr: mgr,
 			},
 			wantErr: false,
@@ -51,7 +51,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestClusterFactory_GetCluster(t *testing.T) {
-	factory := &ClusterFactory{
+	factory := &clusterFactory{
 		mgr: mgr,
 		cfg: cfg,
 	}
@@ -63,14 +63,14 @@ func TestClusterFactory_GetCluster(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		f       *ClusterFactory
+		f       ClusterFactory
 		args    args
 		want    bool
 		wantErr bool
 	}{
 		{
 			name: "error on no config",
-			f: &ClusterFactory{
+			f: &clusterFactory{
 				mgr: mgr,
 			},
 			args: args{
