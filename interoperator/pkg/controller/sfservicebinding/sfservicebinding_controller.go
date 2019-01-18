@@ -117,7 +117,7 @@ var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}
 type ReconcileSFServiceBinding struct {
 	client.Client
 	scheme          *runtime.Scheme
-	clusterFactory  *clusterFactory.ClusterFactory
+	clusterFactory  clusterFactory.ClusterFactory
 	resourceManager resources.ResourceManager
 }
 

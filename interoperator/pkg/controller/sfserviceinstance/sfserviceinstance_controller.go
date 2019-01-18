@@ -46,12 +46,12 @@ const (
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr, resources.New()))
+	clusterFactory, _ := clusterFactory.New(mgr)
+	return add(mgr, newReconciler(mgr, resources.New(), clusterFactory))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager) reconcile.Reconciler {
-	clusterFactory, _ := clusterFactory.New(mgr)
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterFactory clusterFactory.ClusterFactory) reconcile.Reconciler {
 	return &ReconcileServiceInstance{
 		Client:          mgr.GetClient(),
 		scheme:          mgr.GetScheme(),
@@ -122,7 +122,7 @@ var _ reconcile.Reconciler = &ReconcileServiceInstance{}
 type ReconcileServiceInstance struct {
 	client.Client
 	scheme          *runtime.Scheme
-	clusterFactory  *clusterFactory.ClusterFactory
+	clusterFactory  clusterFactory.ClusterFactory
 	resourceManager resources.ResourceManager
 }
 
