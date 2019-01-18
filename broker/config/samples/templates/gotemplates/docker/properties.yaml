@@ -17,7 +17,7 @@
   {{- end }}
 {{- end }}
 {{- if eq $stateString "succeeded" }}
-  {{- $response = (printf "Service Instance %s creation successful" $name) }}
+  {{- $response = (printf "Service Instance %s creation successfull" $name) }}
 {{- else }}
     {{- $response = (printf "Service Instance %s provision failed" $name) }}
 {{- end }}
@@ -28,7 +28,7 @@ provision:
   state: {{ $stateString }}
   response: {{ $response }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error | quote}}
 {{- end }}
   dashboardUrl: ""
 {{- with .dockerbind.status }}
@@ -50,7 +50,7 @@ provision:
 bind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error | quote}}
 {{- end }}
   response: {{ $response }}
 {{- with .dockerbind.status }}
@@ -74,7 +74,7 @@ bind:
 unbind:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error | quote}}
 {{- end }}
   response: {{ $response }}
 {{- $response := "" }}
@@ -96,6 +96,6 @@ unbind:
 deprovision:
   state: {{ $stateString }}
 {{- if eq $stateString "failed" }}
-  error: $error
+  error: {{ $error | quote}}
 {{- end }}
   response: {{ $response }}

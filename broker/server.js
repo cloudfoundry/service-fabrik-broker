@@ -17,6 +17,7 @@ async function init() {
   }
 
   await utils.registerInterOperatorCrds();
+  // TODO:- To be removed when bosh services also push plan and service CRDs to apiserver
   await utils.pushServicePlanToApiServer();
   await lib.loadCatalogFromAPIServer();
 
