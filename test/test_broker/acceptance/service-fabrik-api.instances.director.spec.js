@@ -362,9 +362,11 @@ describe('service-fabrik-api', function () {
         });
         it('should return 403 Forbidden if not admin', function () {
           mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/schedule_backup`)
-            .set('Authorization', authHeaderInsufficientScopes)
+            .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
               expect(cancelScheduleStub).to.be.not.called;
@@ -562,9 +564,11 @@ describe('service-fabrik-api', function () {
         });
         it('should return 403 Forbidden if not admin', function () {
           mocks.uaa.tokenKey();
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/schedule_update`)
-            .set('Authorization', authHeaderInsufficientScopes)
+            .set('Authorization', authHeader)
             .catch(err => err.response)
             .then(res => {
               expect(cancelScheduleStub).to.be.not.called;
