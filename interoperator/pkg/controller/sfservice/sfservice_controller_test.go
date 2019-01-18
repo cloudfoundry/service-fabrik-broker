@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		for len(requests) > 0 {
 			<-requests
 			if len(requests) == 0 {
-				time.Sleep(1 * time.Second)
+				time.Sleep(2 * time.Second)
 			}
 		}
 	}()
