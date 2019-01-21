@@ -161,7 +161,7 @@ describe('service-broker-api', function () {
       before(function () {
         mocks.docker.getAllContainers(usedPorts);
         sandbox = sinon.sandbox.create();
-        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         return mocks.setup([
           docker.updatePortRegistry()
         ]);

@@ -41,7 +41,7 @@ describe('service-broker-api', function () {
       let sandbox, delayStub;
       before(function () {
         sandbox = sinon.sandbox.create();
-        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
       });
 
       after(function () {
