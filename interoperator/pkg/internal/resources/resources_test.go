@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
+
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
@@ -221,7 +223,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Test1",
+			name: "TestValid",
 			r:    resourceManager{},
 			args: args{
 				client:     c,
@@ -236,6 +238,74 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 			want2:   service,
 			want3:   plan,
 			wantErr: false,
+		},
+		{
+			name: "TestErrorInstanceNotFound",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id2",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				namespace:  "default",
+			},
+			want:    nil,
+			want1:   nil,
+			want2:   nil,
+			want3:   nil,
+			wantErr: true,
+		},
+		{
+			name: "TestErrorBindingNotFound",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id2",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				namespace:  "default",
+			},
+			want:    nil,
+			want1:   nil,
+			want2:   nil,
+			want3:   nil,
+			wantErr: true,
+		},
+		{
+			name: "TestErrorServiceNotFound",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id",
+				serviceID:  "service-id2",
+				planID:     "plan-id",
+				namespace:  "default",
+			},
+			want:    nil,
+			want1:   nil,
+			want2:   nil,
+			want3:   nil,
+			wantErr: true,
+		},
+		{
+			name: "TestErrorPlanNotFound",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id2",
+				namespace:  "default",
+			},
+			want:    nil,
+			want1:   nil,
+			want2:   nil,
+			want3:   nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -252,10 +322,10 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 			if !reflect.DeepEqual(got1, tt.want1) {
 				t.Errorf("resourceManager.fetchResources() got1 = %v, want %v", got1, tt.want1)
 			}
-			if !reflect.DeepEqual(got2.Spec, tt.want2.Spec) {
+			if tt.want2 != nil && !reflect.DeepEqual(got2.Spec, tt.want2.Spec) {
 				t.Errorf("resourceManager.fetchResources() got2 = %v, want %v", got2.Spec, tt.want2.Spec)
 			}
-			if !reflect.DeepEqual(got3.Spec, tt.want3.Spec) {
+			if tt.want3 != nil && !reflect.DeepEqual(got3.Spec, tt.want3.Spec) {
 				t.Errorf("resourceManager.fetchResources() got3 = %v, want %v", got3.Spec, tt.want3.Spec)
 			}
 		})
@@ -274,7 +344,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 		osbv1alpha1.TemplateSpec{
 			Action:         "bind",
 			Type:           "gotemplate",
-			ContentEncoded: "YmluZGNvbnRlbnQ=",
+			ContentEncoded: "YXBpVmVyc2lvbjoga3ViZWRiLmNvbS92MWFscGhhMQpraW5kOiBQb3N0Z3Jlcw==",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action:         "properties",
@@ -419,7 +489,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Test1",
+			name: "TestValidProvision",
 			r:    resourceManager{},
 			args: args{
 				client:     c,
@@ -432,6 +502,51 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 			},
 			want:    []*unstructured.Unstructured{output},
 			wantErr: false,
+		},
+		{
+			name: "TestValidBind",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				action:     "bind",
+				namespace:  "default",
+			},
+			want:    []*unstructured.Unstructured{output},
+			wantErr: false,
+		},
+		{
+			name: "TestErrorFetchResourceNotFound",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id2",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				action:     "provision",
+				namespace:  "default",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "TestInValidTemplate",
+			r:    resourceManager{},
+			args: args{
+				client:     c,
+				instanceID: "instance-id",
+				bindingID:  "binding-id",
+				serviceID:  "service-id",
+				planID:     "plan-id",
+				action:     "provisionInvalid",
+				namespace:  "default",
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -512,21 +627,20 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 	}
 }
 
-func Test_resourceManager_ReconcileResources(t *testing.T) {
+func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
+	resource := &unstructured.Unstructured{}
+	resource.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+	resource.SetKind("Director")
+	resource.SetNamespace("default")
+	resource.SetName("instance-id")
+	defer c.Delete(context.TODO(), resource)
+
 	type args struct {
 		sourceClient      kubernetes.Client
 		targetClient      kubernetes.Client
 		expectedResources []*unstructured.Unstructured
 		lastResources     []osbv1alpha1.Source
 	}
-
-	resource := &unstructured.Unstructured{}
-	resource.SetAPIVersion("osb.servicefabrik.io/v1alpha1")
-	resource.SetKind("SFServiceInstance")
-	resource.SetNamespace("default")
-	resource.SetName("instance-id")
-
-	defer c.Delete(context.TODO(), resource)
 
 	tests := []struct {
 		name    string
@@ -545,6 +659,129 @@ func Test_resourceManager_ReconcileResources(t *testing.T) {
 				lastResources:     nil,
 			},
 			want:    []*unstructured.Unstructured{resource},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := resourceManager{}
+			got, err := r.ReconcileResources(tt.args.sourceClient, tt.args.targetClient, tt.args.expectedResources, tt.args.lastResources)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("resourceManager.ReconcileResources() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got[0].GetAPIVersion(), tt.want[0].GetAPIVersion()) {
+				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+			}
+			if !reflect.DeepEqual(got[0].GetKind(), tt.want[0].GetKind()) {
+				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+			}
+			if !reflect.DeepEqual(got[0].GetName(), tt.want[0].GetName()) {
+				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+			}
+			if !reflect.DeepEqual(got[0].GetNamespace(), tt.want[0].GetNamespace()) {
+				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_resourceManager_ReconcileResources_ResourceExists(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	foundResources, err := dynamic.StringToUnstructured(`apiVersion: deployment.servicefabrik.io/v1alpha1
+kind: Director
+metadata:
+  name: instance-id
+  namespace: default
+  labels:
+    state: in_progress
+spec:
+  options: old-hello
+status:
+  state: in_progress`)
+
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(len(foundResources)).To(gomega.Equal(1))
+
+	var foundResourceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
+
+	expectedResources, err2 := dynamic.StringToUnstructured(`apiVersion: deployment.servicefabrik.io/v1alpha1
+kind: Director
+metadata:
+  generation: 1
+  labels:
+    state: succeeded
+  name: instance-id
+  namespace: default
+  selfLink: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/instance-id
+  uid: 94f7beaf-0f5f-11e9-b07e-023f5e553a48
+spec:
+  options: new-hello
+status:
+  state: succeeded`)
+
+	g.Expect(err2).NotTo(gomega.HaveOccurred())
+	g.Expect(len(foundResources)).To(gomega.Equal(1))
+
+	g.Expect(c.Create(context.TODO(), foundResources[0])).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), foundResources[0])
+	g.Eventually(func() error { return c.Get(context.TODO(), foundResourceKey, foundResources[0]) }, timeout).
+		Should(gomega.Succeed())
+
+	lastResource1 := osbv1alpha1.Source{}
+	lastResource1.APIVersion = "deployment.servicefabrik.io/v1alpha1"
+	lastResource1.Kind = "Director"
+	lastResource1.Namespace = "default"
+	lastResource1.Name = "instance-id"
+
+	lastResource2 := osbv1alpha1.Source{}
+	lastResource2.APIVersion = "deployment.servicefabrik.io/v1alpha1"
+	lastResource2.Kind = "Docker"
+	lastResource2.Namespace = "default"
+	lastResource2.Name = "instance-id"
+
+	oldResource := &unstructured.Unstructured{}
+	oldResource.SetKind(lastResource2.Kind)
+	oldResource.SetAPIVersion(lastResource2.APIVersion)
+	oldResource.SetName(lastResource2.Name)
+	oldResource.SetNamespace(lastResource2.Namespace)
+
+	type args struct {
+		sourceClient      kubernetes.Client
+		targetClient      kubernetes.Client
+		expectedResources []*unstructured.Unstructured
+		lastResources     []osbv1alpha1.Source
+	}
+
+	tests := []struct {
+		name    string
+		r       resourceManager
+		args    args
+		want    []*unstructured.Unstructured
+		wantErr bool
+	}{
+		{
+			name: "Test1",
+			r:    resourceManager{},
+			args: args{
+				sourceClient:      c,
+				targetClient:      c,
+				expectedResources: expectedResources,
+				lastResources:     []osbv1alpha1.Source{lastResource1, lastResource2},
+			},
+			want:    append(foundResources, oldResource),
+			wantErr: false,
+		},
+		{
+			name: "Test2",
+			r:    resourceManager{},
+			args: args{
+				sourceClient:      c,
+				targetClient:      c,
+				expectedResources: expectedResources,
+				lastResources:     []osbv1alpha1.Source{lastResource1},
+			},
+			want:    foundResources,
 			wantErr: false,
 		},
 	}
@@ -1009,7 +1246,23 @@ directorbind:
 		wantErr bool
 	}{
 		{
-			name: "Test1",
+			name: "TestInvalidInstanceError",
+			r:    resourceManager{},
+			args: args{
+				sourceClient: c,
+				targetClient: c,
+				instanceID:   "instance-id2",
+				bindingID:    "binding-id",
+				serviceID:    "service-id",
+				planID:       "plan-id",
+				action:       osbv1alpha1.ProvisionAction,
+				namespace:    "default",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "TestValid",
 			r:    resourceManager{},
 			args: args{
 				sourceClient: c,
@@ -1033,7 +1286,7 @@ directorbind:
 				t.Errorf("resourceManager.ComputeProperties() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Provision, *tt.want) {
+			if !tt.wantErr && !reflect.DeepEqual(got.Provision, *tt.want) {
 				t.Errorf("resourceManager.ComputeProperties() = %v, want %v", got.Provision, *tt.want)
 			}
 		})
@@ -1041,365 +1294,6 @@ directorbind:
 }
 
 func Test_resourceManager_DeleteSubResources(t *testing.T) {
-
-	g := gomega.NewGomegaWithT(t)
-
-	templateSpec := []osbv1alpha1.TemplateSpec{
-		osbv1alpha1.TemplateSpec{
-			Action: "bind",
-			Type:   "gotemplate",
-			Content: `{{ $name := "" }}
-{{- with .binding.metadata.name }} {{ $name = . }} {{ end }}
-{{- $state := "in_queue" }}
-{{- with .binding.metadata.labels.state }} {{ $state = . }} {{ end }}
-{{- $serviceId := "" }}
-{{- $planId := "" }}
-{{- $context := "{}" }}
-{{- $params := "{}" }}
-{{- $acceptsIncomplete := "true" }}
-{{- $appGuid := "" }}
-{{- $bindResource := "{}" }}
-{{- $id := "" }}
-{{- $instanceId := "" }}
-{{- with .binding.spec }}
-  {{- with .serviceId }}
-    {{- $serviceId = . }}
-  {{- end }}
-  {{- with .planId }}
-    {{- $planId = . }}
-  {{- end }}
-  {{- with .context }}
-    {{- $context = (marshalJSON .) }}
-  {{- end }}
-  {{- with .parameters }}
-    {{- $params = (marshalJSON .) }}
-  {{- end }}
-  {{- with .acceptsIncomplete }}
-    {{- $acceptsIncomplete = . }}
-  {{- end }}
-  {{- with .appGuid }}
-    {{- $appGuid = . }}
-  {{- end }}
-  {{- with .bindResource }}
-    {{- $bindResource = (marshalJSON .) }}
-  {{- end }}
-  {{- with .id }}
-    {{- $id = . }}
-  {{- end }}
-  {{- with .instanceId }}
-    {{- $instanceId = . }}
-  {{- end }}
-{{- end }}
-
-
-apiVersion: bind.servicefabrik.io/v1alpha1
-kind: DirectorBind
-metadata:
-  labels:
-    state: {{ $state }}
-    instance_guid: {{ $instanceId }}
-  name: {{ $name }}
-spec:
-  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"app_guid\": \"%s\", \"bind_resource\": %s, \"context\": %s, \"binding_id\": \"%s\", \"parameters\": %s, \"accepts_incomplete\": %s }" $serviceId $planId $appGuid $bindResource $context $id $params $acceptsIncomplete) | quote }}
-status:
-  state: {{ $state }}`,
-		},
-		osbv1alpha1.TemplateSpec{
-			Action: "provision",
-			Type:   "gotemplate",
-			Content: `{{ $name := "" }}
-{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
-{{- $state := "in_queue" }}
-{{- with .instance.metadata.labels.state }} {{ $state = . }} {{ end }}
-{{- $serviceId := "" }}
-{{- $planId := "" }}
-{{- $organizationGuid := "" }}
-{{- $spaceGuid := "" }}
-{{- $context := "{}" }}
-{{- $params := "{}" }}
-{{- $previousValues := "{}" }}
-{{- with .instance.spec }}
-  {{- with .serviceId }}
-    {{- $serviceId = . }}
-  {{- end }}
-  {{- with .planId }}
-    {{- $planId = . }}
-  {{- end }}
-  {{- with .organizationGuid }}
-    {{- $organizationGuid = . }}
-  {{- end }}
-  {{- with .spaceGuid }}
-    {{- $spaceGuid = . }}
-  {{- end }}
-  {{- with .context }}
-    {{- $context = (marshalJSON .) }}
-  {{- end }}
-  {{- with .parameters }}
-    {{- $params = (marshalJSON .) }}
-  {{- end }}
-  {{- with .previousValues }}
-    {{- $previousValues = (marshalJSON .) }}
-  {{- end }}
-{{- end }}
-{{- $options := (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params ) | quote }}
-{{- with .instance.spec.previousValues }}
-  {{- $options = (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"organization_guid\": \"%s\", \"space_guid\": \"%s\", \"context\": %s, \"parameters\": %s, \"previous_values\": %s }" $serviceId $planId $organizationGuid $spaceGuid $context $params $previousValues ) | quote  }}
-{{- end }}
-apiVersion: deployment.servicefabrik.io/v1alpha1
-kind: Director
-metadata:
-  labels:
-    state: {{ $state }}
-  name: {{ $name }}
-spec:
-  options: {{ $options }}
-status:
-  state: {{ $state }}`,
-		},
-		osbv1alpha1.TemplateSpec{
-			Action: "properties",
-			Type:   "gotemplate",
-			Content: `{{ $name := "" }}
-{{- with .director.metadata.name }}
-  {{- $name = . }}
-{{- end }}
-{{- $stateString := "in progress" }}
-{{- $response := "" }}
-{{- $error := "" }}
-{{- with .director.status.lastOperation }}
-  {{- $lastOperation := ( unmarshalJSON . ) }}
-  {{- $response = $lastOperation.description | quote }}
-{{- end }}
-{{- with .director.status }}
-  {{- if eq .state "succeeded" }}
-    {{- $stateString = "succeeded" }}
-  {{- else }}
-    {{- if eq .state "failed"}}
-      {{- $stateString = "failed" }}
-      {{- $error =  .error }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-{{- if eq $response "" }}
-  {{- if eq $stateString "succeeded" }}
-    {{- $response = (printf "Service Instance %s creation successfull" $name) }}
-  {{- else }}
-    {{- if eq $stateString "in progress" }}
-      {{- $response = (printf "Service Instance %s provision in progress" $name) }}
-    {{- else }}
-      {{- $response = (printf "Service Instance %s provision failed" $name) }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-provision:
-  state: {{ $stateString }}
-  response: {{ $response }}
-{{- if eq $stateString "failed" }}
-  error: {{ $error | quote}}
-{{- end }}
-  dashboardUrl: ""
-{{- with .directorbind.status }}
-  {{- $response = (b64dec .response | quote) }}
-{{- end }}
-{{- $stateString = "in_queue" }} 
-{{- with .directorbind }}
-  {{- with .status }}
-    {{- if eq .state "succeeded" }}
-      {{- $stateString = "succeeded" }}
-    {{- else }}
-      {{- if eq .state "failed" }}
-        {{- $stateString = "failed" }}
-        {{- $error =  .error }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-bind:
-  state: {{ $stateString }}
-{{- if eq $stateString "failed" }}
-  error: {{ $error | quote }}
-{{- end }}
-  response: {{ $response }}
-{{- with .directorbind.status }}
-  {{- $response = (b64dec .response | quote) }}
-{{- end }}
-{{- $stateString = "delete" }} 
-{{- with .directorbind }}
-  {{- with .status }}
-    {{- if eq .state "succeeded" }}
-      {{- $stateString = "succeeded" }}
-    {{- else }}
-      {{- if eq .state "failed" }}
-        {{- $stateString = "failed" }}
-        {{- $error =  .error }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- else }}
-  {{- $stateString = "succeeded" }}
-{{- end }}
-unbind:
-  state: {{ $stateString }}
-{{- if eq $stateString "failed" }}
-  error: {{ $error | quote }}
-{{- end }}
-  response: {{ $response }}
-{{- with .director.status.lastOperation }}
-  {{- $lastOperation := ( unmarshalJSON . ) }}
-  {{- $response = $lastOperation.description | quote }}
-{{- end }}
-{{- $stateString = "in progress" }} 
-{{- with .director }}
-  {{- with .status }}
-    {{- if eq .state "delete" }}
-      {{- $stateString = "in progress" }}
-    {{- else }}
-      {{- if eq .state "failed" }}
-        {{- $stateString = "failed" }}
-        {{- $error =  .error }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- else }}
-  {{- $stateString = "succeeded" }}
-{{- end }}
-deprovision:
-  state: {{ $stateString }}
-{{- if eq $stateString "failed" }}
-  error: {{ $error | quote }}
-{{- end }}
-  response: {{ $response }}`,
-		},
-		osbv1alpha1.TemplateSpec{
-			Action: "sources",
-			Type:   "gotemplate",
-			Content: `{{- $name := "" }}
-{{- $binding := "" }}
-{{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
-{{- with .binding.metadata.name }} {{ $binding = . }} {{ end }}
-{{- $namespace := "default" }}
-director:
-  apiVersion: "deployment.servicefabrik.io/v1alpha1"
-  kind: Director
-  name: {{ $name }}
-  namespace: {{ $namespace }}
-directorbind:
-  apiVersion: "bind.servicefabrik.io/v1alpha1"
-  kind: DirectorBind
-  name: {{ $binding }}
-  namespace: {{ $namespace }}`,
-		},
-	}
-	plan := &osbv1alpha1.SFPlan{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "SFPlan",
-			APIVersion: "osb.servicefabrik.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "plan-id",
-			Namespace: "default",
-			Labels:    map[string]string{"serviceId": "service-id", "planId": "plan-id"},
-		},
-		Spec: osbv1alpha1.SFPlanSpec{
-			Name:          "plan-name",
-			ID:            "plan-id",
-			Description:   "description",
-			Metadata:      nil,
-			Free:          false,
-			Bindable:      true,
-			PlanUpdatable: true,
-			Schemas:       nil,
-			Templates:     templateSpec,
-			ServiceID:     "service-id",
-			RawContext:    nil,
-			Manager:       nil,
-		},
-		Status: osbv1alpha1.SFPlanStatus{},
-	}
-	service := &osbv1alpha1.SFService{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "SFService",
-			APIVersion: "osb.servicefabrik.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "service-id",
-			Namespace: "default",
-			Labels:    map[string]string{"serviceId": "service-id"},
-		},
-		Spec: osbv1alpha1.SFServiceSpec{
-			Name:                "service-name",
-			ID:                  "service-id",
-			Description:         "description",
-			Tags:                []string{"foo", "bar"},
-			Requires:            []string{"foo", "bar"},
-			Bindable:            true,
-			InstanceRetrievable: true,
-			BindingRetrievable:  true,
-			Metadata:            nil,
-			DashboardClient: osbv1alpha1.DashboardClient{
-				ID:          "id",
-				Secret:      "secret",
-				RedirectURI: "redirecturi",
-			},
-			PlanUpdatable: true,
-			RawContext:    nil,
-		},
-	}
-
-	spec := osbv1alpha1.SFServiceInstanceSpec{}
-	instance := &osbv1alpha1.SFServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "instance-id",
-			Namespace: "default",
-		},
-		Spec: spec,
-		Status: osbv1alpha1.SFServiceInstanceStatus{
-			DashboardURL: "",
-			State:        "",
-			Error:        "",
-			Description:  "",
-			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
-				{
-					APIVersion: "deployment.servicefabrik.io/v1alpha1",
-					Kind:       "Director",
-					Name:       "instance-id",
-					Namespace:  "default",
-				},
-			},
-		},
-	}
-
-	binding := &osbv1alpha1.SFServiceBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "binding-id",
-			Namespace: "default",
-		},
-	}
-
-	var serviceKey = types.NamespacedName{Name: "service-id", Namespace: "default"}
-	var planKey = types.NamespacedName{Name: "plan-id", Namespace: "default"}
-	var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
-	var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
-
-	g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Create(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), service)
-	defer c.Delete(context.TODO(), plan)
-	defer c.Delete(context.TODO(), instance)
-	defer c.Delete(context.TODO(), binding)
-
-	g.Eventually(func() error { return c.Get(context.TODO(), serviceKey, service) }, timeout).
-		Should(gomega.Succeed())
-	g.Eventually(func() error { return c.Get(context.TODO(), planKey, plan) }, timeout).
-		Should(gomega.Succeed())
-	g.Eventually(func() error { return c.Get(context.TODO(), instanceKey, instance) }, timeout).
-		Should(gomega.Succeed())
-	g.Eventually(func() error { return c.Get(context.TODO(), bindingKey, binding) }, timeout).
-		Should(gomega.Succeed())
-
 	type args struct {
 		client       kubernetes.Client
 		subResources []osbv1alpha1.Source
@@ -1415,11 +1309,65 @@ directorbind:
 			name: "Test1",
 			r:    resourceManager{},
 			args: args{
-				client:       c,
-				subResources: instance.Status.CRDs,
+				client: c,
+				subResources: []osbv1alpha1.Source{
+					{
+						APIVersion: "deployment.servicefabrik.io/v1alpha1",
+						Kind:       "Director",
+						Name:       "instance-id",
+						Namespace:  "default",
+					},
+				},
 			},
 			want:    nil,
 			wantErr: false,
+		},
+		{
+			name: "TestValidCRD",
+			r:    resourceManager{},
+			args: args{
+				client: c,
+				subResources: []osbv1alpha1.Source{
+					{
+						APIVersion: "deployment.servicefabrik.io/v1alpha1",
+						Kind:       "Director",
+						Name:       "instance-id",
+						Namespace:  "default",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "TestInvalidCRD",
+			r:    resourceManager{},
+			args: args{
+				client: c,
+				subResources: []osbv1alpha1.Source{
+					{
+						APIVersion: "deployment.servicefabrik.io/v1alpha1",
+						Kind:       "Director",
+						Name:       "instance-id",
+						Namespace:  "default",
+					},
+					{
+						APIVersion: "deployment.servicefabrik.io/v1alpha1",
+						Kind:       "Director2",
+						Name:       "instance-id",
+						Namespace:  "default",
+					},
+				},
+			},
+			want: []osbv1alpha1.Source{
+				{
+					APIVersion: "deployment.servicefabrik.io/v1alpha1",
+					Kind:       "Director2",
+					Name:       "instance-id",
+					Namespace:  "default",
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

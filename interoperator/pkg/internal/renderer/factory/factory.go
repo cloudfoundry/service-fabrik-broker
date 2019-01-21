@@ -100,7 +100,17 @@ func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, name types.N
 		input := helm.NewInput(template.URL, name.Name, name.Namespace, values)
 		return input, nil
 	case "gotemplate", "Gotemplate", "GoTemplate", "GOTEMPLATE":
-		input := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
+		var content string
+		if template.Content != "" {
+			content = template.Content
+		} else if template.ContentEncoded != "" {
+			decodedContent, err := base64.StdEncoding.DecodeString(template.ContentEncoded)
+			content = string(decodedContent)
+			if err != nil {
+				return nil, fmt.Errorf("unable to decode base64 content %v", err)
+			}
+		}
+		input := gotemplate.NewInput(template.URL, content, name.Name, values)
 		return input, nil
 	default:
 		return nil, fmt.Errorf("unable to create renderer for type %s. not implemented", rendererType)

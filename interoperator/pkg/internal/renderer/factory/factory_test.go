@@ -432,7 +432,7 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 		values2[key] = val.Object
 	}
 
-	gotemplateInput := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
+	//gotemplateInput := gotemplate.NewInput(template.URL, template.Content, name.Name, values)
 
 	tests := []struct {
 		name    string
@@ -467,7 +467,7 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 				name:     name,
 				sources:  sourceObjects2,
 			},
-			want:    gotemplateInput,
+			want:    gotemplate.NewInput(template.URL, "propertiescontent", "foo", values2),
 			wantErr: false,
 		},
 	}
