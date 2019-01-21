@@ -25,6 +25,10 @@ class CloudProviderClient extends BaseCloudClient {
     this.storage.getFilesAsync = Promise.promisify(this.storage.getFiles, {
       multiArgs: true
     });
+    this.storage.getContainerAsync = Promise.promisify(this.storage.getContainer, {
+    });
+    this.storage.removeFileAsync = Promise.promisify(this.storage.removeFile, {
+    });
     this.blockstorage = this.constructor.createComputeClient(_
       .chain(this.settings)
       .set('provider', this.provider)
@@ -184,7 +188,7 @@ class CloudProviderClient extends BaseCloudClient {
       const pattern = new RegExp(`\/${options.keystoneAuthVersion}\/?$`);
       options.authUrl = options.authUrl.replace(pattern, '');
     }
-    return Promise.promisifyAll(pkgcloud.storage.createClient(options));
+    return pkgcloud.storage.createClient(options);
   }
 
   static createComputeClient(settings) {

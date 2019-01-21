@@ -322,7 +322,7 @@ describe('iaas', function () {
         const snapshotName = 'snapshot1';
         mocks.azureClient.auth();
         mocks.azureClient.deleteSnapshot(
-          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2016-04-30-preview`, {
+          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
             status: 204,
             headers: {
               'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
@@ -342,7 +342,7 @@ describe('iaas', function () {
         const errorMessageExpected = 'fake-snap not found';
         mocks.azureClient.auth();
         mocks.azureClient.deleteSnapshot(
-          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2016-04-30-preview`,
+          `/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`,
           undefined, errorMessageExpected);
         return client.deleteSnapshot(snapshotName)
           .catch(err => expect(err.message).to.equal(errorMessageExpected));
