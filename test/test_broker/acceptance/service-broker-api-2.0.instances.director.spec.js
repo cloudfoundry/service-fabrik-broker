@@ -54,8 +54,7 @@ describe('service-broker-api-2.0', function () {
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
-      let getScheduleStub;
-      let sandbox, delayStub;
+      let getScheduleStub, delayStub;
 
       before(function () {
         enableServiceFabrikV2();
@@ -66,8 +65,7 @@ describe('service-broker-api-2.0', function () {
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
-        sandbox = sinon.sandbox.create();
-        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        delayStub = sinon.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         return mocks.setup([
           fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
@@ -530,7 +528,7 @@ describe('service-broker-api-2.0', function () {
         let utilsStub;
 
         before(function () {
-          utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(workflowId));
+          utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(workflowId));
         });
         after(function () {
           utilsStub.restore();
@@ -1521,8 +1519,6 @@ describe('service-broker-api-2.0', function () {
       });
 
       describe('#getInfo', function () {
-        let sandbox, getDeploymentInfoStub, getResourceStub;
-
         const resource = {
           apiVersion: 'deployment.servicefabrik.io/v1alpha1',
           kind: 'Director',
@@ -1555,9 +1551,8 @@ describe('service-broker-api-2.0', function () {
           }
         };
         before(function () {
-          sandbox = sinon.sandbox.create();
-          getDeploymentInfoStub = sandbox.stub(DirectorManager.prototype, 'getDeploymentInfo');
-          getResourceStub = sandbox.stub(apiServerClient, 'getResource');
+          getDeploymentInfoStub = sinon.stub(DirectorManager.prototype, 'getDeploymentInfo');
+          getResourceStub = sinon.stub(apiServerClient, 'getResource');
 
           getResourceStub
             .withArgs({
@@ -1575,7 +1570,7 @@ describe('service-broker-api-2.0', function () {
         });
 
         after(function () {
-          sandbox.restore();
+          sinon.restore();
         });
 
         it('should return object with correct plan and service information', function () {

@@ -91,15 +91,14 @@ describe('JobScheduler', function () {
   });
 
   describe('#Start', function () {
-    let publishStub, sandbox, clock, processExitStub;
+    let publishStub, clock, processExitStub;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
-      publishStub = sandbox.stub(pubsub, 'publish');
+      publishStub = sinon.stub(pubsub, 'publish');
       clock = sinon.useFakeTimers(new Date().getTime());
     });
     beforeEach(function () {
-      processExitStub = sandbox.stub(process, 'exit');
+      processExitStub = sinon.stub(process, 'exit');
     });
     afterEach(function () {
       publishStub.reset();
@@ -114,22 +113,19 @@ describe('JobScheduler', function () {
     });
     after(function () {
       clock.restore();
-      sandbox.restore();
+      sinon.restore();
     });
 
     describe('#NotInMaintenance', function () {
       let maintenaceManagerStub;
-      before(function () {
-        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve({
+      beforeEach(function () {
+        maintenaceManagerStub = sinon.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => Promise.resolve({
           createdAt: new Date(),
           updatedAt: new Date(),
           state: CONST.OPERATION.SUCCEEDED
         }));
       });
       afterEach(function () {
-        maintenaceManagerStub.reset();
-      });
-      after(function () {
         maintenaceManagerStub.restore();
       });
 
@@ -145,7 +141,7 @@ describe('JobScheduler', function () {
             clock.tick(0);
             const EXPECTED_NUM_OF_WORKERS = 4 - 1;
             //Fork should be invoked 1 less than number of cpus.
-            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++ , delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
             return Promise.try(() => {
@@ -164,7 +160,7 @@ describe('JobScheduler', function () {
         const js = JobScheduler
           .ready
           .then(() => {
-            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++ , delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
             workerExitHandlers[0]({
@@ -192,7 +188,7 @@ describe('JobScheduler', function () {
           .ready
           .then(() => {
             clock.tick(0);
-            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++ , delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
             logger.info('count is>>', count);
@@ -218,7 +214,7 @@ describe('JobScheduler', function () {
         const js = JobScheduler
           .ready
           .then(() => {
-            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++, delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
+            for (let x = 0, delay = 0; x < EXPECTED_NUM_OF_WORKERS; x++ , delay += CONST.JOB_SCHEDULER.WORKER_CREATE_DELAY) {
               clock.tick(delay);
             }
             delete workers[1];
@@ -248,17 +244,14 @@ describe('JobScheduler', function () {
 
     describe('#MaintenanceStateNotDetermined', function () {
       let getMaintenanceStub;
-      before(function () {
-        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => {
+      beforeEach(function () {
+        getMaintenanceStub = sinon.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => {
           return Promise.try(() => {
             throw new Error('Error occurred while fetching maintenance state...');
           });
         });
       });
       afterEach(function () {
-        getMaintenanceStub.reset();
-      });
-      after(function () {
         getMaintenanceStub.restore();
       });
       it('JobScheduler starts & if it cannot fetch maintenance window info, then exits the process', function () {
@@ -283,8 +276,8 @@ describe('JobScheduler', function () {
       let getMaintenanceStub, updateMaintStub, updateStatus, sfClientStub;
       let sfConnectedToDB = true,
         sfIsDown = false;
-      before(function () {
-        sfClientStub = sandbox.stub(serviceFabrikClient, 'getInfo', () => {
+      beforeEach(function () {
+        sfClientStub = sinon.stub(serviceFabrikClient, 'getInfo').callsFake(() => {
           return Promise.try(() => {
             if (sfIsDown) {
               throw new Error('Service Fabrik unreachable');
@@ -308,8 +301,8 @@ describe('JobScheduler', function () {
       beforeEach(function () {
         sfIsDown = false;
         sfConnectedToDB = true;
-        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState');
-        updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
+        getMaintenanceStub = sinon.stub(maintenanceManager, 'getLastMaintenaceState');
+        updateMaintStub = sinon.stub(maintenanceManager, 'updateMaintenace').callsFake(() => {
           return Promise.try(() => {
             if (updateStatus) {
               return {};
@@ -337,9 +330,6 @@ describe('JobScheduler', function () {
       afterEach(function () {
         getMaintenanceStub.restore();
         updateMaintStub.restore();
-        sfClientStub.reset();
-      });
-      after(function () {
         sfClientStub.restore();
       });
 
@@ -357,7 +347,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
           return jb;
@@ -383,7 +373,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           return jb;
         });
@@ -422,7 +412,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -461,7 +451,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -501,7 +491,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
           clock.tick(schedulerConfig.maintenance_check_interval);
@@ -536,7 +526,7 @@ describe('JobScheduler', function () {
             JobScheduler.unhook();
           });
         clock.tick(schedulerConfig.start_delay);
-        return Promise.try(() => {}).then(() => {
+        return Promise.try(() => { }).then(() => {
           clock.tick(schedulerConfig.maintenance_check_interval);
           return jb;
         });
@@ -545,14 +535,13 @@ describe('JobScheduler', function () {
   });
 
   describe('#Shutdown', function () {
-    let processOnStub, sandbox, publishStub, maintenaceManagerStub, clock, processExitStub;
+    let processOnStub, publishStub, maintenaceManagerStub, clock, processExitStub;
     let eventHandlers = {};
     let sigIntHandler, sigTermHandler, unhandledRejectHandler, messageHandler;
     before(function () {
-      sandbox = sinon.sandbox.create();
-      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve(null));
-      processExitStub = sandbox.stub(process, 'exit');
-      processOnStub = sandbox.stub(process, 'on', (name, callback) => {
+      maintenaceManagerStub = sinon.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => Promise.resolve(null));
+      processExitStub = sinon.stub(process, 'exit');
+      processOnStub = sinon.stub(process, 'on').callsFake((name, callback) => {
         eventHandlers[name] = callback;
         if (name === 'SIGINT') {
           logger.info('int handler...');
@@ -569,14 +558,14 @@ describe('JobScheduler', function () {
           messageHandler = callback;
         }
       });
-      publishStub = sandbox.stub(pubsub, 'publish');
+      publishStub = sinon.stub(pubsub, 'publish');
       clock = sinon.useFakeTimers(new Date().getTime());
     });
     afterEach(function () {
       eventHandlers = {};
     });
     after(function () {
-      sandbox.restore();
+      sinon.restore();
       clock.restore();
     });
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {
