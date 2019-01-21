@@ -196,6 +196,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .tap(space_guid => _.set(req, 'entity.tenant_id', space_guid))
       .then(space_guid => {
         if (isCloudControllerAdmin) {
+          logger.info(`User ${user.email} has cloud_controller.admin scope. SpaceDeveloper validation will be skipped`);
           return;
         }
         //TODO: Need to handle this separately for k8s consumption
@@ -586,7 +587,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             })
             .then(isSpaceDeveloper => {
               if (!isSpaceDeveloper) {
-                throw new Forbidden(`User '${req.user.name}' is not a space-developer for space with guid: ${backupSpaceGuid}`);
+                throw new Forbidden(`User '${req.user.name}' is not a space-developer for space with guid ${backupSpaceGuid}`);
               }
             });
         }
