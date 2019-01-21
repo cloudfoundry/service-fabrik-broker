@@ -1,7 +1,7 @@
 'use strict';
 
 const catalog = require('../../common/models').catalog;
-const DirectorManager = require('../../broker/lib/fabrik').DirectorManager;
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const BoshDirectorClient = require('../../data-access-layer/bosh').BoshDirectorClient;
 
 const proxyquire = require('proxyquire');
@@ -99,32 +99,32 @@ describe('bosh', () => {
       });
     });
 
-    let manager = null;
+    let directorService = null;
     before(function () {
-      manager = new DirectorManager(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
+      directorService = new DirectorService(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
     });
     describe('#getUsedIndices', () => {
 
       it('returns an array that contains two four-digit integers', () => {
         let expectedUsedIndices = [1234, 9876];
         let usedIndices = NetworkSegmentIndex.getUsedIndices([{
-            name: `${DirectorManager.prefix}-${expectedUsedIndices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
+            name: `${DirectorService.prefix}-${expectedUsedIndices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
           },
-          `${DirectorManager.prefix}-${expectedUsedIndices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`,
+          `${DirectorService.prefix}-${expectedUsedIndices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`,
           'no-match'
-        ], manager.service.subnet);
+        ], directorService.service.subnet);
         expect(usedIndices).to.eql(expectedUsedIndices);
       });
 
       it('return indices used by public deployments alone', () => {
         let indices = [1234, 9876, 3456, 5678];
         let usedIndices = NetworkSegmentIndex.getUsedIndices([{
-            name: `${DirectorManager.prefix}-${indices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
+            name: `${DirectorService.prefix}-${indices[0]}-5432abcd-1098-abcd-7654-3210abcd9876`
           },
-          `${DirectorManager.prefix}-${indices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`, {
-            name: `${DirectorManager.prefix}_public-${indices[2]}-5432abcd-1098-abcd-7654-3210abcd9876`
+          `${DirectorService.prefix}-${indices[1]}-5678abcd-9012-abcd-3456-7890abcd1234`, {
+            name: `${DirectorService.prefix}_public-${indices[2]}-5432abcd-1098-abcd-7654-3210abcd9876`
           },
-          `${DirectorManager.prefix}_public-${indices[3]}-5678abcd-9012-abcd-3456-7890abcd1234`,
+          `${DirectorService.prefix}_public-${indices[3]}-5678abcd-9012-abcd-3456-7890abcd1234`,
           'no-match'
         ], 'public');
         expect(usedIndices).to.eql(indices.splice(2, 3));
@@ -134,16 +134,16 @@ describe('bosh', () => {
 
     describe('#getFreeIndices', () => {
       it('returns an array that contains 1234 indices', () => {
-        manager.service.subnet = null;
+        directorService.service.subnet = null;
         setDefaultConfig();
         let freeIndices = NetworkSegmentIndex
-          .getFreeIndices([`${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager.service.subnet);
+          .getFreeIndices([`${DirectorService.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], directorService.service.subnet);
         expect(freeIndices).to.have.length(1234);
       });
       it('returns an array that contains 2045 indices', () => {
         updateStub(-1);
         let freeIndices = NetworkSegmentIndex
-          .getFreeIndices([`${DirectorManager.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public');
+          .getFreeIndices([`${DirectorService.prefix}_public-1234-5678abcd-9012-abcd-3456-7890abcd1234`], 'public');
         expect(freeIndices).to.have.length(2045);
       });
     });
@@ -152,8 +152,8 @@ describe('bosh', () => {
       it('returns 2', () => {
         setDefaultConfig();
         expect(NetworkSegmentIndex.findFreeIndex([{
-          name: `${DirectorManager.prefix}-9876-5432abcd-1098-abcd-7654-3210abcd9876`
-        }, `${DirectorManager.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], manager)).to.eql(2);
+          name: `${DirectorService.prefix}-9876-5432abcd-1098-abcd-7654-3210abcd9876`
+        }, `${DirectorService.prefix}-1234-5678abcd-9012-abcd-3456-7890abcd1234`], directorService)).to.eql(2);
       });
     });
   });

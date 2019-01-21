@@ -4,8 +4,8 @@ const _ = require('lodash');
 const nock = require('nock');
 const config = require('../../../common/config');
 const cloudControllerUrl = config.cf.url;
-const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
 const prefix = 'service-fabrik';
+const DirectorService = require('../../../operators/bosh-operator/DirectorService');
 
 exports.url = cloudControllerUrl;
 exports.getInfo = getInfo;
@@ -272,7 +272,7 @@ function getServiceInstances(plan_guid, size, space_guid, org_guid) {
     .chain(mocks.director.getDeploymentNames(size))
     .map(deployment => ({
       metadata: {
-        guid: _.nth(DirectorManager.parseDeploymentName(deployment.name), 2)
+        guid: _.nth(DirectorService.parseDeploymentName(deployment.name), 2)
       },
       entity: {
         service_plan_guid: plan_guid,

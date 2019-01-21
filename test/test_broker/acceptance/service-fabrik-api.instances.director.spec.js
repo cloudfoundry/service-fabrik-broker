@@ -5,11 +5,8 @@ const Promise = require('bluebird');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
 const apps = require('../support/apps');
-const catalog = require('../../../common/models').catalog;
 const config = require('../../../common/config');
-const fabrik = require('../../../broker/lib/fabrik');
 const utils = require('../../../common/utils');
-// const NotFound = errors.NotFound;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 const filename = iaas.backupStore.filename;
@@ -27,7 +24,6 @@ describe('service-fabrik-api', function () {
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
       const plan_guid = '60750c9c-8937-4caf-9e94-c38cbbbfd191';
-      const plan = catalog.getPlan(plan_id);
       const instance_id = mocks.director.uuidByIndex(index);
       const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
       const organization_guid = 'c84c8e58-eedc-4706-91fb-e8d97b333481';
@@ -41,9 +37,19 @@ describe('service-fabrik-api', function () {
       const repeatTimezone = 'America/New_York';
       const dummyDeploymentResource = {
         metadata: {
-          annotations: {
-            labels: 'dummy'
+          labels: {
+            last_backup_defaultbackups: backup_guid
           }
+        },
+        spec: {
+          options: JSON.stringify({
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+            },
+            space_guid: space_guid,
+          })
         }
       };
       const getJob = (name, type) => {
@@ -76,14 +82,12 @@ describe('service-fabrik-api', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        _.unset(fabrik.DirectorManager, plan_id);
         timestampStub = sinon.stub(filename, 'timestamp');
         timestampStub.withArgs().returns(started_at);
         scheduleStub = sinon.stub(ScheduleManager, 'schedule', getJob);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
         cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
         return mocks.setup([
-          fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });
@@ -112,13 +116,8 @@ describe('service-fabrik-api', function () {
             number_of_files: 5
           };
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource, 2);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
@@ -240,10 +239,7 @@ describe('service-fabrik-api', function () {
           delete config.mongodb.url;
           delete config.mongodb.provision;
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -265,10 +261,7 @@ describe('service-fabrik-api', function () {
 
         it('should return 400 - Bad request on skipping mandatory params', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -284,16 +277,11 @@ describe('service-fabrik-api', function () {
 
         it('should return 201 OK', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            service_guid: service_id,
-            space_guid: space_guid,
-            service_plan_guid: plan_id
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpace(space_guid, {
             organization_guid: organization_guid
           });
           mocks.cloudController.getOrganization(organization_guid);
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
           mocks.cloudController.getSpaceDevelopers(space_guid);
 
           return chai.request(apps.external)
@@ -319,10 +307,7 @@ describe('service-fabrik-api', function () {
           const mongodbprovision = config.mongodb.provision;
           mocks.uaa.tokenKey();
           delete config.mongodb.provision;
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -339,11 +324,7 @@ describe('service-fabrik-api', function () {
         });
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -364,10 +345,7 @@ describe('service-fabrik-api', function () {
           delete config.mongodb.url;
           delete config.mongodb.provision;
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/schedule_backup`)
@@ -384,11 +362,7 @@ describe('service-fabrik-api', function () {
         });
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           return chai.request(apps.external)
             .delete(`${base_url}/service_instances/${instance_id}/schedule_backup`)
             .set('Authorization', adminAuthHeader)
@@ -408,10 +382,7 @@ describe('service-fabrik-api', function () {
           delete config.mongodb.url;
           delete config.mongodb.provision;
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
@@ -433,10 +404,7 @@ describe('service-fabrik-api', function () {
 
         it('should return 400 - Badrequest on skipping mandatory params', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .put(`${base_url}/service_instances/${instance_id}/schedule_update`)
@@ -456,7 +424,7 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.director.getDeployments();
           return chai.request(apps.external)
@@ -479,7 +447,7 @@ describe('service-fabrik-api', function () {
             space_guid: space_guid,
             service_plan_guid: plan_guid
           });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.director.getDeployments();
           return chai.request(apps.external)
@@ -501,11 +469,7 @@ describe('service-fabrik-api', function () {
       describe('#GetUpdateSchedule', function () {
         it('should return 200 OK', function () {
           mocks.uaa.tokenKey();
-          mocks.cloudController.getServiceInstance(instance_id, {
-            space_guid: space_guid,
-            service_plan_guid: plan_guid
-          });
-          mocks.cloudController.findServicePlan(instance_id, plan_id);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/schedule_update`)
@@ -528,7 +492,8 @@ describe('service-fabrik-api', function () {
                   space_guid: space_guid,
                   organization_guid: organization_guid
                 },
-                plan_id: plan_id
+                plan_id: plan_id,
+                space_guid: space_guid
               })
             }
           }, 2);

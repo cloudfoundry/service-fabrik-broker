@@ -9,10 +9,7 @@ const config = require('../../common/config');
 const CONST = require('../../common/constants');
 const BackupService = require('./');
 const BaseOperator = require('../BaseOperator');
-const DBManager = require('../../broker/lib/fabrik/DBManager');
-
-/* jshint nonew:false */
-new DBManager(); //to log events
+require('../../data-access-layer/db/DBManager');
 
 class DefaultBackupOperator extends BaseOperator {
 

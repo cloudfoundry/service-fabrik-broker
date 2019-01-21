@@ -185,11 +185,56 @@ describe('service-fabrik-api-2.0', function () {
             });
         });
         it('should return 200 OK - with instance_id parameter, returns only one metadata file data', function () {
+          const resource = {
+            apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+            kind: 'Director',
+            metadata: {
+              name: instance_id,
+              labels: {
+                state: 'succeeded'
+              }
+            },
+            spec: {
+              options: JSON.stringify({
+                service_id: service_id,
+                context: {
+                  platform: 'cloudfoundry',
+                },
+                space_guid: space_guid
+              })
+            },
+            status: {
+              state: 'succeeded',
+              lastOperation: '{}',
+              response: '{}'
+            }
+          };
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
-          mocks.cloudController.findServicePlanByInstanceId(instance_id, undefined, undefined, []);
           mocks.cloudProvider.list(container, prefix, [filename, filename1]);
           mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, resource);
+          return chai.request(app)
+            .get(`${base_url}/backups`)
+            .query({
+              space_guid: space_guid,
+              instance_id: instance_id
+            })
+            .set('Authorization', authHeader)
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              const body = [_.omit(data, 'logs')];
+              expect(res.body).to.eql(body);
+              mocks.verify();
+            });
+        });
+        it('should return 200 OK - with deleted instance', function () {
+          mocks.uaa.tokenKey();
+          mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.cloudProvider.list(container, prefix, [filename, filename1]);
+          mocks.cloudProvider.download(pathname, data);
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {}, 1, 404);
           return chai.request(app)
             .get(`${base_url}/backups`)
             .query({

@@ -3,10 +3,8 @@
 const _ = require('lodash');
 const parseUrl = require('url').parse;
 const app = require('../support/apps').external;
-const catalog = require('../../../common/models').catalog;
 const CONST = require('../../../common/constants');
 const docker = require('../../../data-access-layer/docker');
-const fabrik = require('../../../broker/lib/fabrik');
 
 
 describe('dashboard', function () {
@@ -18,7 +16,6 @@ describe('dashboard', function () {
     const service_plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
     const organization_guid = 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a';
     const space_guid = 'e7c0a437-7585-4d75-addf-aa4d45b49f3a';
-    const plan = catalog.getPlan(plan_id);
 
     const resource = {
       apiVersion: 'deployment.servicefabrik.io/v1alpha1',
@@ -53,11 +50,8 @@ describe('dashboard', function () {
     };
 
     before(function () {
-      _.unset(fabrik.DockerManager, plan_id);
-      mocks.docker.inspectImage();
       mocks.docker.getAllContainers([]);
       return mocks.setup([
-        fabrik.DockerManager.load(plan),
         docker.updatePortRegistry()
       ]);
     });
@@ -83,6 +77,7 @@ describe('dashboard', function () {
         mocks.docker.inspectContainer();
         mocks.docker.listContainerProcesses();
         mocks.docker.getContainerLogs();
+        mocks.docker.inspectImage();
         return agent
           .get(`/manage/instances/${service_id}/${plan_id}/${instance_id}`)
           .set('Accept', 'application/json')

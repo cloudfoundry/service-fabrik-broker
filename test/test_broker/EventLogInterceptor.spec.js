@@ -2,8 +2,8 @@
 
 const Promise = require('bluebird');
 const logger = require('../../common/logger');
-const DirectorManager = require('../../broker/lib/fabrik/DirectorManager');
-const DockerManager = require('../../broker/lib/fabrik/DockerManager');
+const DirectorService = require('../../operators/bosh-operator/DirectorService');
+const DockerService = require('../../operators/docker-operator/DockerService');
 const catalog = require('../../common/models/catalog');
 const utils = require('../../common/utils');
 const config = require('../../common/config');
@@ -32,8 +32,9 @@ const EventLogInterceptor = proxyquire('../../common/EventLogInterceptor', {
 
 describe('EventLogInterceptor', function () {
   /* jshint expr:true */
-  const directorManager = new DirectorManager(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
-  const dockerManager = new DockerManager(catalog.getPlan('466c5078-df6e-427d-8fb2-c76af50c0f56'));
+  let dummyInstanceGuid = 'fd93a58c-7cef-43bd-81bc-bd38efc85ff6';
+  const directorService = new DirectorService(catalog.getPlan('bc158c9a-7934-401e-94ab-057082a5073f'));
+  const dockerService = new DockerService(dummyInstanceGuid, catalog.getPlan('466c5078-df6e-427d-8fb2-c76af50c0f56'));
   const internalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
   const externalAppEventLogInterceptor = EventLogInterceptor.getInstance(config.external.event_type, 'external');
   let pubSubSpy;
@@ -47,7 +48,7 @@ describe('EventLogInterceptor', function () {
     pubSubSpy.restore();
   });
 
-  function buildExpectedRequestArgs(method, url, route, queryParams, pathParams, reqBody, manager, respBody, statusCode) {
+  function buildExpectedRequestArgs(method, url, route, queryParams, pathParams, reqBody, service, respBody, statusCode) {
     let response = {};
     let request = {};
     request.originalUrl = url;
@@ -55,7 +56,7 @@ describe('EventLogInterceptor', function () {
     request.params = pathParams;
     request.query = queryParams;
     request.method = method;
-    request.manager = manager;
+    request.service = service;
     request.ip = '192.168.32.10';
     request.user = {
       name: 'broker'
@@ -76,7 +77,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, dockerManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, dockerService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -89,7 +90,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerManager.name}.create_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerService.name}.create_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -101,7 +102,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/5a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, dockerManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, dockerService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -114,7 +115,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('5a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerManager.name}.delete_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${dockerService.name}.delete_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -126,7 +127,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -139,7 +140,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -151,7 +152,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -164,7 +165,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -178,7 +179,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('PATCH', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('PATCH', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -191,7 +192,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.update_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.update_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -208,7 +209,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14';
       const route = '/api/v1/service_instances/:instance_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorService, respBody, 200);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -222,7 +223,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
           expect(testResult.request.plan_id).to.eql('bc158c9a-7934-401e-94ab-057082a5073f');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.service_instance_info`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.service_instance_info`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -237,7 +238,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/service_bindings/082da7c8-c557-4b3d-b698-3b0a9a3ca947';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id/service_bindings/:binding_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorManager, respBody, 201);
+      const [request, response] = buildExpectedRequestArgs('PUT', url, route, {}, pathParams, {}, directorService, respBody, 201);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -251,7 +252,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
           expect(testResult.request.binding_id).to.eql('082da7c8-c557-4b3d-b698-3b0a9a3ca947');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_binding`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_binding`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -264,7 +265,7 @@ describe('EventLogInterceptor', function () {
       const url = '/cf/v2/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/service_bindings/082da7c8-c557-4b3d-b698-3b0a9a3ca947';
       const route = '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id/service_bindings/:binding_id';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -278,7 +279,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
           expect(testResult.request.binding_id).to.eql('082da7c8-c557-4b3d-b698-3b0a9a3ca947');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_binding`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_binding`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -292,7 +293,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/backup';
       const route = '/api/v1/service_instances/:instance_id/backup';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('POST', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('POST', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -305,7 +306,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_backup`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_backup`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -317,7 +318,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/backup';
       const route = '/api/v1/service_instances/:instance_id/backup';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, {}, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, {}, pathParams, {}, directorService, respBody, 200);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -330,7 +331,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.instance_backup_info`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.instance_backup_info`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -342,7 +343,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/backup';
       const route = '/api/v1/service_instances/:instance_id/backup';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -355,7 +356,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.abort_backup`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.abort_backup`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -370,7 +371,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/backup';
       const route = '/api/v1/service_instances/:operation(backup|restore)';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorService, respBody, 200);
       request.user = {
         'name': 'admin'
       };
@@ -387,7 +388,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.space_guid).to.eql('b0194fc0-3906-496c-8618-b1772c488ac');
           expect(testResult.request.user.name).to.eql('admin');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.list_last_backups`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.list_last_backups`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -400,7 +401,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/backups';
       const route = '/api/v1/backups';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorService, respBody, 200);
       request.user = {
         'name': 'admin'
       };
@@ -417,7 +418,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.space_guid).to.eql('b0194fc0-3906-496c-8618-b1772c488ac');
           expect(testResult.request.user.name).to.eql('admin');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.list_all_backups`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.list_all_backups`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -432,7 +433,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/backups/f7a9cc40-b5ca-4a72-a093-9dbce9778e9b';
       const route = '/api/v1/backups/:backup_guid';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorService, respBody, 200);
       request.user = {
         'name': 'admin'
       };
@@ -451,7 +452,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.request.space_guid).to.eql('b0194fc0-3906-496c-8618-b1772c488ac');
           expect(testResult.request.backup_guid).to.eql('f7a9cc40-b5ca-4a72-a093-9dbce9778e9b');
           expect(testResult.request.user.name).to.eql('admin');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.get_backup_by_guid`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.get_backup_by_guid`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -466,7 +467,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/backups/f7a9cc40-b5ca-4a72-a093-9dbce9778e9b';
       const route = '/api/v1/backups/:backup_guid';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, query, pathParams, {}, directorService, respBody, 200);
       request.user = {
         'name': 'admin'
       };
@@ -484,7 +485,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.request.space_guid).to.eql('b0194fc0-3906-496c-8618-b1772c488ac');
           expect(testResult.request.backup_guid).to.eql('f7a9cc40-b5ca-4a72-a093-9dbce9778e9b');
           expect(testResult.request.user.name).to.eql('admin');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_backup_by_guid`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_backup_by_guid`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -498,7 +499,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/restore';
       const route = '/api/v1/service_instances/:instance_id/restore';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('POST', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('POST', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -511,7 +512,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.restore_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.restore_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -523,7 +524,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/restore';
       const route = '/api/v1/service_instances/:instance_id/restore';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, {}, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, {}, pathParams, {}, directorService, respBody, 200);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -536,7 +537,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.instance_restore_info`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.instance_restore_info`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -548,7 +549,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/4a6e7c34-d97c-4fc0-95e6-7a3bc8030b14/restore';
       const route = '/api/v1/service_instances/:instance_id/restore';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorManager, respBody, 202);
+      const [request, response] = buildExpectedRequestArgs('DELETE', url, route, {}, pathParams, {}, directorService, respBody, 202);
       return Promise
         .try(() => {
           externalAppEventLogInterceptor.execute(request, response, respBody);
@@ -561,7 +562,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.inprogress_state);
           expect(testResult.metric).to.eql(config.monitoring.inprogress_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.abort_restore`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.abort_restore`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -576,7 +577,7 @@ describe('EventLogInterceptor', function () {
       const url = '/api/v1/service_instances/restore';
       const route = '/api/v1/service_instances/:operation(backup|restore)';
       const respBody = {};
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, {}, directorService, respBody, 200);
       request.user = {
         'name': 'admin'
       };
@@ -593,7 +594,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.space_guid).to.eql('b0194fc0-3906-496c-8618-b1772c488ac');
           expect(testResult.request.user.name).to.eql('admin');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.list_last_restore`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.list_last_restore`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -621,7 +622,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -634,7 +635,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -660,7 +661,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -673,7 +674,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.update_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.update_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -699,7 +700,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 500);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 500);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -712,7 +713,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.failure_state);
           expect(testResult.metric).to.eql(config.monitoring.failure_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -738,7 +739,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 500);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 500);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -751,7 +752,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.failure_state);
           expect(testResult.metric).to.eql(config.monitoring.failure_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.update_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.update_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -777,7 +778,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -790,7 +791,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -813,7 +814,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 410);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 410);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -826,7 +827,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -852,7 +853,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -865,7 +866,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.failure_state);
           expect(testResult.metric).to.eql(config.monitoring.failure_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.delete_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.delete_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -894,7 +895,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -907,7 +908,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_backup`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_backup`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -936,7 +937,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 500);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 500);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -949,7 +950,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.failure_state);
           expect(testResult.metric).to.eql(config.monitoring.failure_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.create_backup`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.create_backup`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -978,7 +979,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 200);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 200);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -991,7 +992,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.success_state);
           expect(testResult.metric).to.eql(config.monitoring.success_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.restore_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.restore_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });
@@ -1020,7 +1021,7 @@ describe('EventLogInterceptor', function () {
         plan_id: 'bc158c9a-7934-401e-94ab-057082a5073f',
         service_id: '24731fb8-7b84-4f57-914f-c3d55d793dd4'
       };
-      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorManager, respBody, 500);
+      const [request, response] = buildExpectedRequestArgs('GET', url, route, query, pathParams, reqBody, directorService, respBody, 500);
       return Promise
         .try(() => {
           internalAppEventLogInterceptor.execute(request, response, respBody);
@@ -1033,7 +1034,7 @@ describe('EventLogInterceptor', function () {
           expect(testResult.state).to.eql(config.monitoring.failure_state);
           expect(testResult.metric).to.eql(config.monitoring.failure_metric);
           expect(testResult.request.instance_id).to.eql('4a6e7c34-d97c-4fc0-95e6-7a3bc8030b15');
-          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorManager.name}.restore_instance`;
+          const expectedEvtName = `${config.monitoring.event_name_prefix}.${directorService.name}.restore_instance`;
           expect(testResult.eventName).to.eql(expectedEvtName);
         });
     });

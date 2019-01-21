@@ -8,14 +8,13 @@ const CONST = require('../common/constants');
 const moment = require('moment');
 const BaseJob = require('./BaseJob');
 const errors = require('../common/errors');
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const NotFound = errors.NotFound;
-const cloudController = require('../data-access-layer/cf').cloudController;
 const backupStoreForInstance = require('../data-access-layer/iaas').backupStore;
 const backupStoreForOob = require('../data-access-layer/iaas').backupStoreForOob;
 const ScheduleManager = require('./ScheduleManager');
 const EventLogInterceptor = require('../common/EventLogInterceptor');
 const bosh = require('../data-access-layer/bosh');
+const eventmesh = require('../data-access-layer/eventmesh');
 
 class BackupReaperJob extends BaseJob {
 
@@ -57,9 +56,13 @@ class BackupReaperJob extends BaseJob {
   }
 
   static isServiceInstanceDeleted(instanceId) {
-    return cloudController.findServicePlanByInstanceId(instanceId)
-      .then(() => false)
-      .catch(ServiceInstanceNotFound, () => {
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
+      .then(resource => _.get(resource, 'metadata.deletionTimestamp') ? true : false)
+      .catch(errors.NotFound, () => {
         logger.warn(`service instance : ${instanceId} deleted`);
         return true;
       });

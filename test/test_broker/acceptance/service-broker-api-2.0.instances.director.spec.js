@@ -1,16 +1,12 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const app = require('../support/apps').internal;
 const utils = require('../../../common/utils');
 const config = require('../../../common/config');
 const catalog = require('../../../common/models').catalog;
-const fabrik = require('../../../broker/lib/fabrik');
 const ScheduleManager = require('../../../jobs');
 const CONST = require('../../../common/constants');
-const DirectorManager = require('../../../broker/lib/fabrik').DirectorManager;
-const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 const iaas = require('../../../data-access-layer/iaas');
 const backupStore = iaas.backupStore;
 
@@ -53,7 +49,7 @@ describe('service-broker-api-2.0', function () {
       const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
-      Promise.onPossiblyUnhandledRejection(() => {});
+      Promise.onPossiblyUnhandledRejection(() => { });
       let getScheduleStub, delayStub;
 
       before(function () {
@@ -61,13 +57,11 @@ describe('service-broker-api-2.0', function () {
         backupStore.cloudProvider = new iaas.CloudProviderClient(config.backup.provider);
         mocks.cloudProvider.auth();
         mocks.cloudProvider.getContainer(container);
-        _.unset(fabrik.DirectorManager, plan_id);
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
         delayStub = sinon.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         return mocks.setup([
-          fabrik.DirectorManager.load(plan),
           backupStore.cloudProvider.getContainer()
         ]);
       });
@@ -1518,77 +1512,6 @@ describe('service-broker-api-2.0', function () {
         });
       });
 
-      describe('#getInfo', function () {
-        const resource = {
-          apiVersion: 'deployment.servicefabrik.io/v1alpha1',
-          kind: 'Director',
-          metadata: {
-            name: instance_id,
-            labels: {
-              state: 'succeeded'
-            }
-          },
-          spec: {
-            options: {
-              service_id: service_id,
-              plan_id: plan_id,
-              context: {
-                platform: 'cloudfoundry',
-                organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-                space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a'
-              },
-              organization_guid: 'b8cbbac8-6a20-42bc-b7db-47c205fccf9a',
-              space_guid: 'e7c0a437-7585-4d75-addf-aa4d45b49f3a',
-              parameters: {
-                foo: 'bar'
-              }
-            }
-          },
-          status: {
-            state: 'succeeded',
-            lastOperation: {},
-            response: {}
-          }
-        };
-        before(function () {
-          getDeploymentInfoStub = sinon.stub(DirectorManager.prototype, 'getDeploymentInfo');
-          getResourceStub = sinon.stub(apiServerClient, 'getResource');
-
-          getResourceStub
-            .withArgs({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-              resourceId: instance_id
-            })
-            .returns(Promise.try(() => resource));
-
-          getDeploymentInfoStub
-            .withArgs(deployment_name)
-            .returns(Promise.try(() => {
-              return {};
-            }));
-        });
-
-        after(function () {
-          sinon.restore();
-        });
-
-        it('should return object with correct plan and service information', function () {
-          let context = {
-            platform: 'cloudfoundry'
-          };
-          return fabrik
-            .createInstance(instance_id, service_id, plan_id, context)
-            .then(instance => instance.getInfo())
-            .catch(err => err.response)
-            .then(res => {
-              expect(res.title).to.equal('Blueprint Dashboard');
-              expect(res.plan.id).to.equal(plan_id);
-              expect(res.service.id).to.equal(service_id);
-              expect(res.instance.metadata.name).to.equal(instance_id);
-            });
-        });
-      });
     });
   });
 });

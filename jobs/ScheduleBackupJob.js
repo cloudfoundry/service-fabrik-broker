@@ -9,9 +9,8 @@ const CONST = require('../common/constants');
 const errors = require('../common/errors');
 const utils = require('../common/utils');
 const retry = utils.retry;
-const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const catalog = require('../common/models').catalog;
-const cloudController = require('../data-access-layer/cf').cloudController;
+const eventmesh = require('../data-access-layer/eventmesh');
 const backupStore = require('../data-access-layer/iaas').backupStore;
 const ScheduleManager = require('./ScheduleManager');
 //Above reference to schedulemanager leads to the below cyclic dependency:
@@ -75,9 +74,13 @@ class ScheduleBackupJob extends BaseJob {
   }
 
   static isServiceInstanceDeleted(instanceId) {
-    return cloudController.findServicePlanByInstanceId(instanceId)
-      .then(() => false)
-      .catch(ServiceInstanceNotFound, () => {
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
+      .then(resource => _.get(resource, 'metadata.deletionTimestamp') ? true : false)
+      .catch(errors.NotFound, () => {
         logger.warn(`service instance : ${instanceId} deleted`);
         return true;
       });

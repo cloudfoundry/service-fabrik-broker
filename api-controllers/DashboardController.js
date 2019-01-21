@@ -13,10 +13,13 @@ const utils = require('../common/utils');
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const cf = require('../data-access-layer/cf');
-const fabrik = require('../broker/lib/fabrik');
+const DirectorService = require('../operators/bosh-operator/DirectorService');
+const DockerService = require('../operators/docker-operator/DockerService');
+const VirtualHostService = require('../operators/virtualhost-operator/VirtualHostService');
 const FabrikBaseController = require('./FabrikBaseController');
 const Forbidden = errors.Forbidden;
 const ContinueWithNext = errors.ContinueWithNext;
+const assert = require('assert');
 
 Promise.promisifyAll(crypto, Session.prototype);
 
@@ -25,17 +28,16 @@ class DashboardController extends FabrikBaseController {
     super();
     this.cloudController = cf.cloudController;
     this.uaa = cf.uaa;
-    this.fabrik = fabrik;
   }
 
   show(req, res) {
-    const managerType = req.instance.plan.manager.name;
-    return req.instance
+    const managerType = req.service.plan.manager.name;
+    return req.service
       .getInfo()
       .then(info => {
         let additional_info = {};
-        if (req.instance.plan.manager.settings.dashboard_template) {
-          additional_info = yaml.safeLoad(_.template(Buffer.from(req.instance.plan.manager.settings.dashboard_template, 'base64'))(info));
+        if (req.service.plan.manager.settings.dashboard_template) {
+          additional_info = yaml.safeLoad(_.template(Buffer.from(req.service.plan.manager.settings.dashboard_template, 'base64'))(info));
         }
         info = _.assign({
           userId: req.session.user_id,
@@ -134,11 +136,10 @@ class DashboardController extends FabrikBaseController {
     return this.cloudController.getPlanIdFromInstanceId(instance_id)
       .then(current_plan_id => {
         logger.info(`plan_id in Dashboard URL was ${plan_id} and actual plan_id is ${current_plan_id}`);
-        return this.fabrik.createInstance(instance_id, service_id, current_plan_id, context);
+        return createService(current_plan_id, instance_id, context);
       })
-      .then(instance => {
-        req.instance = instance;
-        req.manager = instance.manager;
+      .then(service => {
+        req.service = service;
       })
       .throw(new ContinueWithNext());
   }
@@ -157,11 +158,10 @@ class DashboardController extends FabrikBaseController {
         const context = _.get(resourceOptions, 'context');
         req.session.service_id = service_id;
         req.session.plan_id = plan_id;
-        return this.fabrik.createInstance(instance_id, service_id, plan_id, context);
+        return createService(plan_id, instance_id, context);
       })
-      .then(instance => {
-        req.instance = instance;
-        req.manager = instance.manager;
+      .then(service => {
+        req.service = service;
       })
       .then(() => saveSession(req.session))
       .throw(new ContinueWithNext());
@@ -275,6 +275,29 @@ function saveSession(session) {
 
 function manageInstancePath(session) {
   return session.instance_type ? `/manage/dashboards/${session.instance_type}/instances/${session.instance_id}` : `/manage/instances/${session.service_id}/${session.plan_id}/${session.instance_id}`;
+}
+
+function createService(plan_id, instance_id, context) {
+  const plan = catalog.getPlan(plan_id);
+  const options = {
+    plan_id: plan_id,
+    context: context
+  };
+  switch (plan.manager.name) {
+  case CONST.INSTANCE_TYPE.DIRECTOR:
+    return DirectorService.createInstance(instance_id, options);
+  case CONST.INSTANCE_TYPE.DOCKER:
+    if (config.enable_swarm_manager) {
+      return DockerService.createInstance(instance_id, options);
+    } else {
+      assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
+    }
+    break;
+  case CONST.INSTANCE_TYPE.VIRTUAL_HOST:
+    return VirtualHostService.createVirtualHostService(instance_id, options);
+  default:
+    assert.fail(plan.manager.name, [CONST.INSTANCE_TYPE.DIRECTOR, CONST.INSTANCE_TYPE.DOCKER, CONST.INSTANCE_TYPE.VIRTUAL_HOST], undefined, 'in');
+  }
 }
 
 module.exports = DashboardController;
