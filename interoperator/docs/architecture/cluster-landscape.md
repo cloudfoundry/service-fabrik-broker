@@ -25,7 +25,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
       * [Cluster Maintenance](#cluster-maintenance)
       * [Cluster Disposability](#cluster-disposability)
       * [SLA](#sla)
-      * [Cross\-platform](#cross-platform)
+      * [Cross\-platform Consumption](#cross-platform-consumption)
     * [Dedicated Service Fabrik Inter\-operator](#dedicated-service-fabrik-inter-operator)
       * [A simple dedicated landscape scenario](#a-simple-dedicated-landscape-scenario)
         * [Pros](#pros)
@@ -74,7 +74,7 @@ This leaves the responsibility for setting up and managing the landscape of Kube
 
 ### A Summary of Comparison of Cluster Landscape Scenarios
 
-| Sl. No. | Cluster Landscape Scenario | [Scalability](#scalability) | [Networking Complexity](#networking-complexity) | [Security Isolation](#security-isolation) | [Resource Utilization](#resource-utilization) | [Cluster Topology](#cluster-topology) | [Cluster Maintenance](#cluster-maintenance) | [Cluster Disposability](#cluster-disposability) | [SLA](#sla) | [Cross-platform](#cross-platform) |
+| Sl. No. | Cluster Landscape Scenario | [Scalability](#scalability) | [Networking Complexity](#networking-complexity) | [Security Isolation](#security-isolation) | [Resource Utilization](#resource-utilization) | [Cluster Topology](#cluster-topology) | [Cluster Maintenance](#cluster-maintenance) | [Cluster Disposability](#cluster-disposability) | [SLA](#sla) | [Cross-platform Consumption](#cross-platform-consumption) |
 | ---:| --- | ---| --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | [Single Dedicated Cluster per Service](#a-simple-dedicated-landscape-scenario) | Limited to the hosting cluster | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | Low | Possible | Possible |
 | 2 | [Conservative Dedicated Clusters per Service](#a-conservative-dedicated-landscape-scenario) | Unlimited | Complex | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible |
@@ -127,9 +127,9 @@ The dependencies of different services and applications on different features an
 Service Level Agreements might require some sort of control over changes made to the service instances.
 Or at least some mitigation in terms of granular audit logging.
 
-#### Cross-platform
+#### Cross-platform Consumption
 
-Some scenarios might be more amenable for hosting service instances on Kubernetes to be consumed from platforms other than Kubernetes.
+Some scenarios might be more amenable for hosting service instances on Kubernetes to be consumed from platforms other than Kubernetes and some less.
 
 ### Dedicated Service Fabrik Inter-operator
 
