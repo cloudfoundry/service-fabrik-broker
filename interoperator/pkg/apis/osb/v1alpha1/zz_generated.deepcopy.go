@@ -298,8 +298,8 @@ func (in *SFServiceBindingStatus) DeepCopyInto(out *SFServiceBindingStatus) {
 	*out = *in
 	out.Response = in.Response
 	in.AppliedSpec.DeepCopyInto(&out.AppliedSpec)
-	if in.CRDs != nil {
-		in, out := &in.CRDs, &out.CRDs
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
 		*out = make([]Source, len(*in))
 		copy(*out, *in)
 	}
@@ -412,8 +412,8 @@ func (in *SFServiceInstanceSpec) DeepCopy() *SFServiceInstanceSpec {
 func (in *SFServiceInstanceStatus) DeepCopyInto(out *SFServiceInstanceStatus) {
 	*out = *in
 	in.AppliedSpec.DeepCopyInto(&out.AppliedSpec)
-	if in.CRDs != nil {
-		in, out := &in.CRDs, &out.CRDs
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
 		*out = make([]Source, len(*in))
 		copy(*out, *in)
 	}

@@ -111,7 +111,7 @@ func TestHelmTemplateRenderer(t *testing.T) {
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
+			Resources: []osbv1alpha1.Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",

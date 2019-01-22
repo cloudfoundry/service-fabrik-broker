@@ -69,7 +69,7 @@ func TestParseProperties(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Properties
+		want    *Status
 		wantErr bool
 	}{
 		{
@@ -92,7 +92,7 @@ unbind:
 deprovision:
   state: state`,
 			},
-			want: &Properties{
+			want: &Status{
 				Provision: InstanceStatus{
 					State: "state",
 				},
@@ -105,7 +105,7 @@ deprovision:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseProperties(tt.args.propertiesString)
+			got, err := ParseStatus(tt.args.propertiesString)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseProperties() error = %v, wantErr %v", err, tt.wantErr)
 				return

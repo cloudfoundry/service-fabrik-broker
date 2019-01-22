@@ -62,7 +62,13 @@ spec:
               - serviceId
               - planId
               type: object
-            crds:
+            dashboardUrl:
+              type: string
+            description:
+              type: string
+            error:
+              type: string
+            resources:
               items:
                 properties:
                   apiVersion:
@@ -80,12 +86,6 @@ spec:
                 - namespace
                 type: object
               type: array
-            dashboardUrl:
-              type: string
-            description:
-              type: string
-            error:
-              type: string
             state:
               type: string
           required:

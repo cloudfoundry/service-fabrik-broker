@@ -82,19 +82,19 @@ func (mr *MockResourceManagerMockRecorder) ReconcileResources(sourceClient, targ
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileResources", reflect.TypeOf((*MockResourceManager)(nil).ReconcileResources), sourceClient, targetClient, expectedResources, lastResources)
 }
 
-// ComputeProperties mocks base method
-func (m *MockResourceManager) ComputeProperties(sourceClient, targetClient client.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
+// ComputeStatus mocks base method
+func (m *MockResourceManager) ComputeStatus(sourceClient, targetClient client.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ComputeProperties", sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
-	ret0, _ := ret[0].(*properties.Properties)
+	ret := m.ctrl.Call(m, "ComputeStatus", sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
+	ret0, _ := ret[0].(*properties.Status)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ComputeProperties indicates an expected call of ComputeProperties
-func (mr *MockResourceManagerMockRecorder) ComputeProperties(sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace interface{}) *gomock.Call {
+// ComputeStatus indicates an expected call of ComputeStatus
+func (mr *MockResourceManagerMockRecorder) ComputeStatus(sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeProperties", reflect.TypeOf((*MockResourceManager)(nil).ComputeProperties), sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeStatus", reflect.TypeOf((*MockResourceManager)(nil).ComputeStatus), sourceClient, targetClient, instanceID, bindingID, serviceID, planID, action, namespace)
 }
 
 // DeleteSubResources mocks base method

@@ -84,7 +84,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 			ContentEncoded: "YmluZGNvbnRlbnQ=",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:         "properties",
+			Action:         "status",
 			Type:           "gotemplate",
 			ContentEncoded: "cHJvcGVydGllc2NvbnRlbnQ=",
 		},
@@ -163,7 +163,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
+			Resources: []osbv1alpha1.Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
@@ -347,7 +347,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 			ContentEncoded: "YXBpVmVyc2lvbjoga3ViZWRiLmNvbS92MWFscGhhMQpraW5kOiBQb3N0Z3Jlcw==",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:         "properties",
+			Action:         "status",
 			Type:           "gotemplate",
 			ContentEncoded: "cHJvcGVydGllc2NvbnRlbnQ=",
 		},
@@ -426,7 +426,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
+			Resources: []osbv1alpha1.Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
@@ -589,7 +589,7 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
+			Resources: []osbv1alpha1.Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
@@ -862,7 +862,7 @@ func Test_resourceManager_findUnstructuredObject(t *testing.T) {
 	}
 }
 
-func Test_resourceManager_ComputeProperties(t *testing.T) {
+func Test_resourceManager_ComputeStatus(t *testing.T) {
 
 	g := gomega.NewGomegaWithT(t)
 
@@ -979,7 +979,7 @@ status:
   state: {{ $state }}`,
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "properties",
+			Action: "status",
 			Type:   "gotemplate",
 			Content: `{{ $name := "" }}
 {{- with .director.metadata.name }}
@@ -1181,7 +1181,7 @@ directorbind:
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []osbv1alpha1.Source{
+			Resources: []osbv1alpha1.Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
@@ -1281,13 +1281,13 @@ directorbind:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			got, err := r.ComputeProperties(tt.args.sourceClient, tt.args.targetClient, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.action, tt.args.namespace)
+			got, err := r.ComputeStatus(tt.args.sourceClient, tt.args.targetClient, tt.args.instanceID, tt.args.bindingID, tt.args.serviceID, tt.args.planID, tt.args.action, tt.args.namespace)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("resourceManager.ComputeProperties() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("resourceManager.ComputeStatus() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr && !reflect.DeepEqual(got.Provision, *tt.want) {
-				t.Errorf("resourceManager.ComputeProperties() = %v, want %v", got.Provision, *tt.want)
+				t.Errorf("resourceManager.ComputeStatus() = %v, want %v", got.Provision, *tt.want)
 			}
 		})
 	}

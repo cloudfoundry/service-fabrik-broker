@@ -577,9 +577,9 @@ defaults: &defaults
       - action: sources
         type: gotemplate
         contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/sources.yaml')  %>
-      - action: properties
+      - action: status
         type: gotemplate
-        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/properties.yaml') %>
+        contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/status.yaml') %>
       - action: provision
         type: gotemplate
         contentEncoded: <%= base64_template('samples/templates/gotemplates/docker/provision.yaml') %>
@@ -713,9 +713,9 @@ defaults: &defaults
       - action: sources
         type: gotemplate
         contentEncoded: <%=base64_template('samples/templates/gotemplates/director/sources.yaml') %>
-      - action: properties
+      - action: status
         type: gotemplate
-        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/properties.yaml') %>
+        contentEncoded: <%=base64_template('samples/templates/gotemplates/director/status.yaml') %>
       - action: provision
         type: gotemplate
         contentEncoded: <%=base64_template('samples/templates/gotemplates/director/provision.yaml') %>

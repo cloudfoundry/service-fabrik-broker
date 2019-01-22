@@ -62,7 +62,7 @@ func TestStorageServiceInstance(t *testing.T) {
 			Error:        "",
 			Description:  "",
 			AppliedSpec:  spec,
-			CRDs: []Source{
+			Resources: []Source{
 				{
 					APIVersion: "v1alpha1",
 					Kind:       "Director",
@@ -81,7 +81,7 @@ func TestStorageServiceInstance(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(fetched).To(gomega.Equal(created))
 
-	g.Expect(created.Status.CRDs[0].String()).To(gomega.Equal("default/dddd (Director v1alpha1)"))
+	g.Expect(created.Status.Resources[0].String()).To(gomega.Equal("default/dddd (Director v1alpha1)"))
 
 	// Test Updating the Labels
 	updatedObject := fetched.DeepCopyObject()
@@ -113,8 +113,8 @@ func TestStorageServiceInstance(t *testing.T) {
 	g.Expect(copiedStatus).To(gomega.Equal(&updated.Status))
 
 	//Test deepcopy Source
-	copiedSource := updated.Status.CRDs[0].DeepCopy()
-	g.Expect(copiedSource).To(gomega.Equal(&updated.Status.CRDs[0]))
+	copiedSource := updated.Status.Resources[0].DeepCopy()
+	g.Expect(copiedSource).To(gomega.Equal(&updated.Status.Resources[0]))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
