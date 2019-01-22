@@ -170,7 +170,16 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, binding.Status.Resources)
+
+			// Explicitly delete BindSecret
+			secretName := "sf-" + bindingID
+			bindSecret := osbv1alpha1.Source{}
+			bindSecret.Kind = "Secret"
+			bindSecret.APIVersion = "v1"
+			bindSecret.Name = secretName
+			bindSecret.Namespace = binding.GetNamespace()
+			resourceRefs := append(binding.Status.Resources, bindSecret)
+			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
 			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
