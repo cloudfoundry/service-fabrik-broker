@@ -140,3 +140,9 @@ defaults:
     description: Schedule update for a service instance
     tags:
     - schedule_update
+  DELETE:
+    enabled: true
+    event_name: cancel_automated_update
+    description: Cancel automated scheduled update for a service instance
+    tags:
+    - schedule_update

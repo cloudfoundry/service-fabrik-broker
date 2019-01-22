@@ -333,18 +333,25 @@ class Scheduler {
       });
   }
 
-  cancelJob(name, jobType) {
+  cancelJob(name, jobType, cancelAllJobs) {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
           logger.error('Scheduler not yet initialized! MongoDB not operational');
           throw new ServiceUnavailable('MongoDB not operational');
         }
-        logger.info(`Cancelling schedule for job ${name} - ${jobType}`);
+        logger.info(`Cancelling schedule for job ${name} - ${jobType}, with cancelAllJobs : ${cancelAllJobs}`);
         const criteria = {
           name: jobType
         };
-        criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = `${name}_${jobType}`;
+        const jobName = `${name}_${jobType}`;
+        if (cancelAllJobs) {
+          criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = {
+            $regex: `^${jobName}.*`
+          };
+        } else {
+          criteria[`data.${CONST.JOB_NAME_ATTRIB}`] = `${name}_${jobType}`;
+        }
         return this
           .agenda
           .cancelAsync(criteria)

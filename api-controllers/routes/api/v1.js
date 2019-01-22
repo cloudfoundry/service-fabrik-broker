@@ -60,7 +60,8 @@ instanceRouter.route('/schedule_update')
   .all(middleware.isFeatureEnabled(CONST.FEATURE.SCHEDULED_UPDATE))
   .put(controller.handler('scheduleUpdate'))
   .get(controller.handler('getUpdateSchedule'))
-  .all(commonMiddleware.methodNotAllowed(['PUT', 'GET']));
+  .delete(controller.handler('cancelScheduledUpdate'))
+  .all(commonMiddleware.methodNotAllowed(['PUT', 'GET', 'DELETE']));
 
 /* Backup Router */
 backupRouter.use(controller.handler('verifyTenantPermission'));

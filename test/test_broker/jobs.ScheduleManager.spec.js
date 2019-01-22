@@ -510,7 +510,7 @@ describe('Jobs', function () {
     });
 
     describe('#cancelJobSchedule', function () {
-      it('should cancel the schedule for input job in agenda and delete the job from mongodb successfully', function () {
+      it('should cancel the schedule for only repeat job (not all jobs) in agenda and delete the job from mongodb successfully', function () {
         return ScheduleManager
           .cancelSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP)
           .then((jobResponse) => {
@@ -518,6 +518,29 @@ describe('Jobs', function () {
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql(instance_id);
             expect(schedulerSpy.cancelJob.firstCall.args[0][1]).to.eql(jobType);
+            expect(schedulerSpy.cancelJob.firstCall.args[0][2]).to.eql(undefined);
+            expect(repoSpy.delete).to.be.calledOnce;
+            expect(repoSpy.delete.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.delete.firstCall.args[0][1]).to.eql(criteria);
+          });
+      });
+
+      it('should cancel the schedule for all jobs in agenda and delete the job from mongodb successfully', function () {
+        const cancelAllJobs = true;
+        const criteria = {
+          name: instance_id,
+          type: {
+            $regex: `^${jobType}.*`
+          }
+        };
+        return ScheduleManager
+          .cancelSchedule(instance_id, CONST.JOB.SCHEDULED_BACKUP, cancelAllJobs)
+          .then((jobResponse) => {
+            expect(jobResponse).to.eql(DELETE_RESPONSE);
+            expect(schedulerSpy.cancelJob).to.be.calledOnce;
+            expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql(instance_id);
+            expect(schedulerSpy.cancelJob.firstCall.args[0][1]).to.eql(jobType);
+            expect(schedulerSpy.cancelJob.firstCall.args[0][2]).to.eql(true);
             expect(repoSpy.delete).to.be.calledOnce;
             expect(repoSpy.delete.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.delete.firstCall.args[0][1]).to.eql(criteria);
@@ -532,6 +555,7 @@ describe('Jobs', function () {
             expect(schedulerSpy.cancelJob).to.be.calledOnce;
             expect(schedulerSpy.cancelJob.firstCall.args[0][0]).to.eql('0625-6252-7654-9999');
             expect(schedulerSpy.cancelJob.firstCall.args[0][1]).to.eql(jobType);
+            expect(schedulerSpy.cancelJob.firstCall.args[0][2]).to.eql(undefined);
             expect(repoSpy.delete).to.be.calledOnce;
             expect(repoSpy.delete.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
             expect(repoSpy.delete.firstCall.args[0][1]).to.eql(_.set(criteria, 'name', '0625-6252-7654-9999'));

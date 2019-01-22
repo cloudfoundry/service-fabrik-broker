@@ -842,7 +842,7 @@ describe('Jobs', function () {
     });
 
     describe('#cancelJobSchedule', function () {
-      it('should cancel the schedule for input job successfully', function () {
+      it('should cancel only the repeat schedule (not all jobs) for input job successfully', function () {
         const scheduler = new Scheduler();
         expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
         scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
@@ -855,23 +855,33 @@ describe('Jobs', function () {
             .then(job => {
               expect(job).to.eql({});
               expect(agendaSpy.cancelAsync).to.be.calledOnce;
-              const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
-              const criteria = [];
-              criteria.push({
-                lastFinishedAt: {
-                  $lt: retentionDate
-                }
-              });
-              criteria.push({
-                nextRunAt: null
-              });
-              //nextRunAt null indicates that its a one time job which will not run in future.
-              criteria.push({
-                type: 'normal'
-              });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': `9999-8888-7777-6666_${CONST.JOB.SCHEDULED_BACKUP}`
+              });
+            });
+        });
+      });
+
+      it('should cancel all jobs for input job successfully', function () {
+        const scheduler = new Scheduler();
+        expect(scheduler.initialized).to.eql(MONGO_TO_BE_INITIALIZED);
+        scheduler.initialize(CONST.TOPIC.MONGO_INIT_SUCCEEDED, {
+          mongoose: mongooseConnectionStub
+        });
+        return scheduler.startScheduler().then(() => {
+          expect(scheduler.initialized).to.eql(MONGO_INIT_SUCCEEDED);
+          const cancelAllJobs = true;
+          return scheduler
+            .cancelJob('9999-8888-7777-6666', CONST.JOB.SCHEDULED_BACKUP, cancelAllJobs)
+            .then(job => {
+              expect(job).to.eql({});
+              expect(agendaSpy.cancelAsync).to.be.calledOnce;
+              expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
+                name: 'ScheduledBackup',
+                'data._n_a_m_e_': {
+                  '$regex': `^9999-8888-7777-6666_${CONST.JOB.SCHEDULED_BACKUP}.*`
+                }
               });
             });
         });
@@ -890,20 +900,6 @@ describe('Jobs', function () {
             .then(job => {
               expect(job).to.eql({});
               expect(agendaSpy.cancelAsync).to.be.calledOnce;
-              const retentionDate = new Date(moment().subtract(schedulerConfig.job_history_retention_in_days, 'days').toISOString());
-              const criteria = [];
-              criteria.push({
-                lastFinishedAt: {
-                  $lt: retentionDate
-                }
-              });
-              criteria.push({
-                nextRunAt: null
-              });
-              //nextRunAt null indicates that its a one time job which will not run in future.
-              criteria.push({
-                type: 'normal'
-              });
               expect(agendaSpy.cancelAsync.firstCall.args[0]).to.be.eql({
                 name: 'ScheduledBackup',
                 'data._n_a_m_e_': '1212-8888-9999-6666_ScheduledBackup'

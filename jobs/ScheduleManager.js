@@ -114,18 +114,24 @@ class ScheduleManager {
       .then(jobInDB => this.getJobAttrs(jobInDB, agendaJob));
   }
 
-  static cancelSchedule(name, jobType) {
-    logger.debug(`cancelling schedule : ${name}_${jobType}`);
+  static cancelSchedule(name, jobType, cancelAllJobs) {
+    logger.debug(`cancelling schedule : ${name}_${jobType}, with cancelAllJobs : ${cancelAllJobs}`);
     return scheduler
-      .cancelJob(name, jobType)
-      .then(() => this.deleteJob(name, jobType));
+      .cancelJob(name, jobType, cancelAllJobs)
+      .then(() => this.deleteJob(name, jobType, cancelAllJobs));
   }
 
-  static deleteJob(name, jobType) {
-    logger.debug(`Deleting Job : ${name}_${jobType}`);
+  static deleteJob(name, jobType, cancelAllJobs) {
+    logger.debug(`Deleting Job : ${name}_${jobType}, with cancelAllJobs : ${cancelAllJobs}`);
+    let typeCriteria = jobType;
+    if (cancelAllJobs) {
+      typeCriteria = {
+        $regex: `^${jobType}.*`
+      };
+    }
     const criteria = {
       name: name,
-      type: jobType
+      type: typeCriteria
     };
     return Repository.delete(CONST.DB_MODEL.JOB, criteria);
   }
