@@ -1570,7 +1570,7 @@ describe('service-fabrik-api-sf2.0', function () {
           }
         };
         before(function () {
-          sandbox = sinon.sandbox.create();
+          sandbox = sinon.createSandbox();
           delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         });
 

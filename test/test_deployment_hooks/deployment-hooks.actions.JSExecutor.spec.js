@@ -7,7 +7,7 @@ describe('action', function () {
   describe('JSExecutor', function () {
     let sandbox, processExitStub, initialProcessArgv, proxyLibs, consoleErrorStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     beforeEach(function () {
       processExitStub = sandbox.stub(process, 'exit');

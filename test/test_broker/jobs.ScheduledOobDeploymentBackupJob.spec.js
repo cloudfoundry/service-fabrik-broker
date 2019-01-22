@@ -65,14 +65,14 @@ describe('Jobs', function () {
       mocks.cloudProvider.getContainer(container);
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule').callsFake(() => Promise.resolve({}));
       return mocks.setup([backupStore.cloudProvider.getContainer()]);
     });
 
     afterEach(function () {
       mocks.reset();
-      cancelScheduleStub.reset();
-      baseJobLogRunHistoryStub.reset();
+      cancelScheduleStub.resetHistory();
+      baseJobLogRunHistoryStub.resetHistory();
     });
 
     after(function () {

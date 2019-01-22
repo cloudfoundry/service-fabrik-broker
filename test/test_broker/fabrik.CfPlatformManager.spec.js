@@ -20,7 +20,7 @@ describe('fabrik', function () {
 
       before(function () {
         _.set(config, 'feature.EnableSecurityGroupsOps', false);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         createSecurityGroupStub = sandbox.stub(cfPlatformManager, 'createSecurityGroupForInstance');
         createSecurityGroupStub
           .withArgs({

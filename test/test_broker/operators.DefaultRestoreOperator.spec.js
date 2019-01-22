@@ -52,7 +52,7 @@ describe('operators', function () {
       _processAbortStub;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       registerWatcherStub = sandbox.stub(BaseOperator.prototype, 'registerWatcher');
       registerCrdsStub = sandbox.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve({}));
       abortLastRestoreStub = sandbox.stub(RestoreService.prototype, 'abortLastRestore').callsFake(() => Promise.resolve({}));

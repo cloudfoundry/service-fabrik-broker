@@ -316,10 +316,10 @@ describe('iaas', function () {
     describe('#BlobOperations', function () {
       let sandbox, client;
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         client = new GcpClient(settings);
         sandbox.stub(GcpStorage.prototype, 'bucket').withArgs(settings.container).returns(bucketStub);
-        sandbox.stub(utils, 'streamToPromise', utilsStreamToPromiseStub);
+        sandbox.stub(utils, 'streamToPromise').callsFake(utilsStreamToPromiseStub);
       });
       after(function () {
         sandbox.restore();
@@ -504,7 +504,7 @@ describe('iaas', function () {
     describe('#ComputeOperations', function () {
       let sandbox, client;
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         client = new GcpClient(settings);
         sandbox.stub(GcpCompute.prototype, 'snapshot').returns(snapshotStub);
       });

@@ -96,7 +96,7 @@ describe('operators', function () {
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       createVirtualHostServiceSpy = sinon.spy(VirtualHostOperatorDummy, 'createVirtualHostServiceDummy');
       createSpy = sinon.spy(VirtualHostOperatorDummy, 'createDummy');
       updateSpy = sinon.spy(VirtualHostOperatorDummy, 'updateDummy');

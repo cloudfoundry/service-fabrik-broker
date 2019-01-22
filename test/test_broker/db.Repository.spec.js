@@ -65,7 +65,7 @@ describe('db', function () {
     let modelStub, mongooseStub, sandbox, modelThat;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       modelStub = function () {
         this.saveAsync = mongoModel.saveAsync;
         //All the below extension methods will not be inherited as they are not assigned against prototype.

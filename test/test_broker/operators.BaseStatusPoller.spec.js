@@ -38,7 +38,7 @@ describe('operators', function () {
 
     let sandbox, registerWatcherStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     after(function () {
       sandbox.restore();

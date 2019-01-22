@@ -18,7 +18,7 @@ describe('iaas', function () {
       const service_instance_backup_started_at_suffix = new Date((new Date()).getTime() - 1000 * 600).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
       const operation = 'backup';
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         listStub = sandbox.stub(CloudProviderClient.prototype, 'list');
         listStub.returns(Promise.resolve([{
           name: `${CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME}/${operation}/${deployment_name}.${oob_backup_guid}.${oob_backup_started_at_suffix}.json`

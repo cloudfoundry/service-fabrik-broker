@@ -166,7 +166,7 @@ describe('cf', () => {
       it('should make explicit request for access token (access token expires soon)', (done) => {
         /* jshint expr:true */
         tokenIssuer.tokenInfo.update(tokenInfoExpired);
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let scheduleAccessTokenStub = sandbox.stub(tokenIssuer, 'scheduleNextRequestAccessToken');
         tokenIssuer.getAccessTokenBoshUAA().then(content => {
           expect(content).to.eql(tokenNotExpired);
@@ -188,7 +188,7 @@ describe('cf', () => {
           token_type: 'bearer'
         };
         tokenIssuer.updateTokenInfo(tokenInfoSpecific);
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let setTimeoutStub = sandbox.stub(global, 'setTimeout');
         tokenIssuer.scheduleNextRequestAccessToken();
         expect(setTimeoutStub).to.be.calledOnce;

@@ -120,7 +120,7 @@ describe('fabrik', function () {
     };
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       getDeploymentVMsStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentVms');
       getDeploymentInstancesStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentInstances');
       getDeploymentManifestStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentManifest');

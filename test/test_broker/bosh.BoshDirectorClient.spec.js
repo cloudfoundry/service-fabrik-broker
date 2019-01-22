@@ -748,7 +748,7 @@ describe('bosh', () => {
       let sandbox, getDirectorConfigStub, request, response;
       let mockBoshDirectorClient;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         request = {
           method: 'PUT',
           url: `/deployments/${deployment_name}/jobs/*`,
@@ -787,7 +787,7 @@ describe('bosh', () => {
       let sandbox, getDirectorConfigStub, request, response;
       let mockBoshDirectorClient;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         request = {
           method: 'PUT',
           url: `/deployments/${deployment_name}/jobs/*`,
@@ -985,7 +985,7 @@ describe('bosh', () => {
 
         mockBoshDirectorClient = new MockBoshDirectorClient(request, response);
 
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getDirectorConfigStub = sandbox.stub(mockBoshDirectorClient, 'getDirectorConfig');
         getDirectorConfigStub
           .withArgs(deployment_name)
@@ -1143,7 +1143,7 @@ describe('bosh', () => {
             'uaa_auth': true
           }
         }];
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let processExitStub = sandbox.stub(process, 'exit');
         let mock = new MockBoshDirectorClient();
         expect(processExitStub).to.be.calledOnce;
@@ -1229,7 +1229,7 @@ describe('bosh', () => {
         let tokenNotExpired = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjM4MzQ4NjQwMDB9';
         //create actual boshDirectorClient
         let dummyBoshDirectorClient = new BoshDirectorClient();
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let getAccessTokenBoshUAAStub = sandbox.stub(dummyBoshDirectorClient.uaaObjects[directorConfig.name].tokenIssuer, 'getAccessTokenBoshUAA');
         let requestStub = sandbox.stub(HttpClient.prototype, 'request');
         getAccessTokenBoshUAAStub.returns(tokenNotExpired);
@@ -1255,7 +1255,7 @@ describe('bosh', () => {
             }
           }
         };
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
         getResourceStub.returns(Promise.resolve(dummyResource));
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
@@ -1275,7 +1275,7 @@ describe('bosh', () => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
         dummyBoshDirectorClient.deploymentIpsCache[deploymentName] = ['10.244.10.216', '10.244.10.217'];
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let getDeploymentIpsFromResourceStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentIpsFromResource');
         let getDeploymentIpsFromDirectorStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentIpsFromDirector');
 
@@ -1292,7 +1292,7 @@ describe('bosh', () => {
       it('should make call to ApiServer if entry doesn\'t exist in cache', (done) => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let getDeploymentIpsFromDirectorStub = sandbox.stub(dummyBoshDirectorClient, 'getDeploymentIpsFromDirector');
         let dummyResource = {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703',
@@ -1317,7 +1317,7 @@ describe('bosh', () => {
       it('should make call to director if entry not found in ApiServer', (done) => {
         let dummyBoshDirectorClient = new MockBoshDirectorClient();
         let deploymentName = 'service-fabrik-0026-4aa31303-127b-4004-b134-e9ffa4a39703';
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         let dummyResource = {
           name: '4aa31303-127b-4004-b134-e9ffa4a39703'
         };

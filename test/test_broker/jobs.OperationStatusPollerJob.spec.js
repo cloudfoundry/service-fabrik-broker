@@ -56,7 +56,7 @@ describe('Jobs', function () {
 
     before(function () {
       mocks.reset();
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');

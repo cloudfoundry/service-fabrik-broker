@@ -74,7 +74,7 @@ describe('operators', function () {
 
     let sandbox, backupOperationStub, registerWatcherStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       const registerWatcherFake = function () {
         return Promise.resolve(true);
       };

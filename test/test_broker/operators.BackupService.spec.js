@@ -86,7 +86,7 @@ describe('operators', function () {
       mocks.reset();
       scheduleStub.resetHistory();
       cancelScheduleStub.resetHistory();
-      getBackupLastOperationStub.reset();
+      getBackupLastOperationStub.resetHistory();
       getBackupLogsStub.resetHistory();
       patchBackupFileStub.resetHistory();
       getFileStub.resetHistory();

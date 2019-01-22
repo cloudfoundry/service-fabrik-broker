@@ -229,7 +229,7 @@ describe('Jobs', function () {
   describe('Scheduler', function () {
     let agendaSpy, subscribeSpy, publishSpy, agendaSpyInit, mongooseConnectionStub, sandbox, jobSpy, logSpy, osCpuStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mongooseConnectionStub = sandbox.stub(mongoose);
       logSpy = sinon.spy(logger, 'error');
       agendaSpy = sandbox.stub(agendaStub);
@@ -936,7 +936,7 @@ describe('Jobs', function () {
       let jobTypesOld;
 
       before(function () {
-        runSandBox = sinon.sandbox.create();
+        runSandBox = sinon.createSandbox();
         baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory', () => Promise.resolve({}));
         maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo',
           () => maintenanceStatus === 0 ? Promise.resolve(null) :

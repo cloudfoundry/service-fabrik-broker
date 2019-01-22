@@ -602,7 +602,7 @@ describe('Jobs', function () {
 
       let sandbox, cancelStub, scheduleStub, subStub, startSchedulerHandler, getScheduleStub, notFound;
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         subStub = sandbox.stub(pubsub, 'subscribe').callsFake((topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
         ScheduleManager2 = proxyquire('../../jobs/ScheduleManager', {

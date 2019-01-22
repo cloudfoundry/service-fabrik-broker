@@ -277,7 +277,7 @@ describe('service-fabrik-admin', function () {
         }
 
         before(function () {
-          sandbox = sinon.sandbox.create();
+          sandbox = sinon.createSandbox();
           findOneStub = sandbox.stub(Repository, 'findOne').callsFake(() => Promise.resolve(getMaintenaceInfo()));
           saveStub = sandbox.stub(Repository, 'save').callsFake(() => Promise.resolve(saveMaintenance()));
           searchStub = sandbox.stub(Repository, 'search').callsFake(() => Promise.resolve(({
