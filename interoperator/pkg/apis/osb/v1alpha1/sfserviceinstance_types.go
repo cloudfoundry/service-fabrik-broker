@@ -54,7 +54,7 @@ type SFServiceInstanceStatus struct {
 	Error        string                `yaml:"error,omitempty" json:"error,omitempty"`
 	Description  string                `yaml:"description,omitempty" json:"description,omitempty"`
 	AppliedSpec  SFServiceInstanceSpec `yaml:"appliedSpec,omitempty" json:"appliedSpec,omitempty"`
-	CRDs         []Source              `yaml:"crds,omitempty" json:"crds,omitempty"`
+	Resources    []Source              `yaml:"resources,omitempty" json:"resources,omitempty"`
 }
 
 // +genclient

@@ -78,7 +78,7 @@ spec:
                   action:
                     enum:
                     - provision
-                    - properties
+                    - status
                     - bind
                     - sources
                     type: string

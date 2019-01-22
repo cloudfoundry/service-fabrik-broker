@@ -170,7 +170,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, binding.Status.CRDs)
+			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, binding.Status.Resources)
 			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -216,7 +216,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.CRDs)
+	appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 		requeue = true
@@ -235,14 +235,14 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	planID := binding.Spec.PlanID
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
-	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
 	}
-	binding.Status.State = properties.Unbind.State
-	binding.Status.Error = properties.Unbind.Error
-	binding.Status.CRDs = remainingResource
+	binding.Status.State = computedStatus.Unbind.State
+	binding.Status.Error = computedStatus.Unbind.Error
+	binding.Status.Resources = remainingResource
 
 	if binding.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
@@ -261,17 +261,17 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 
-	CRDs := make([]osbv1alpha1.Source, 0, len(appliedResources))
+	resourceRefs := make([]osbv1alpha1.Source, 0, len(appliedResources))
 	for _, appliedResource := range appliedResources {
 		resource := osbv1alpha1.Source{}
 		resource.Kind = appliedResource.GetKind()
 		resource.APIVersion = appliedResource.GetAPIVersion()
 		resource.Name = appliedResource.GetName()
 		resource.Namespace = appliedResource.GetNamespace()
-		CRDs = append(CRDs, resource)
+		resourceRefs = append(resourceRefs, resource)
 	}
 
-	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
@@ -289,7 +289,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
-		bindingStatus := properties.Bind
+		bindingStatus := computedStatus.Bind
 		if bindingStatus.State == "succeeded" {
 			secretName := "sf-" + bindingID
 
@@ -318,7 +318,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		}
 		bindingObj.Status.State = bindingStatus.State
 		if appliedResources != nil {
-			bindingObj.Status.CRDs = CRDs
+			bindingObj.Status.Resources = resourceRefs
 		}
 		err = r.Update(context.Background(), bindingObj)
 		if err != nil {

@@ -72,7 +72,9 @@ spec:
               - planId
               - serviceId
               type: object
-            crds:
+            error:
+              type: string
+            resources:
               items:
                 properties:
                   apiVersion:
@@ -90,8 +92,6 @@ spec:
                 - namespace
                 type: object
               type: array
-            error:
-              type: string
             response:
               properties:
                 secretRef:

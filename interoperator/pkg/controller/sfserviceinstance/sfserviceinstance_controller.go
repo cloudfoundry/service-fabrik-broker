@@ -177,7 +177,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, instance.Status.CRDs)
+			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
 			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -224,7 +224,7 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	}
 
 	var requeue bool
-	appliedResources, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.CRDs)
+	appliedResources, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
 	if err != nil {
 		log.Printf("Reconcile error %v\n", err)
 		requeue = true
@@ -243,15 +243,15 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
 	bindingID := ""
-	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
 	}
-	instance.Status.State = properties.Deprovision.State
-	instance.Status.Error = properties.Deprovision.Error
-	instance.Status.Description = properties.Deprovision.Response
-	instance.Status.CRDs = remainingResource
+	instance.Status.State = computedStatus.Deprovision.State
+	instance.Status.Error = computedStatus.Deprovision.Error
+	instance.Status.Description = computedStatus.Deprovision.Response
+	instance.Status.Resources = remainingResource
 
 	if instance.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
@@ -270,17 +270,17 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		return err
 	}
 
-	CRDs := make([]osbv1alpha1.Source, 0, len(appliedResources))
+	resourceRefs := make([]osbv1alpha1.Source, 0, len(appliedResources))
 	for _, appliedResource := range appliedResources {
 		resource := osbv1alpha1.Source{}
 		resource.Kind = appliedResource.GetKind()
 		resource.APIVersion = appliedResource.GetAPIVersion()
 		resource.Name = appliedResource.GetName()
 		resource.Namespace = appliedResource.GetNamespace()
-		CRDs = append(CRDs, resource)
+		resourceRefs = append(resourceRefs, resource)
 	}
 
-	properties, err := r.resourceManager.ComputeProperties(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing properties. %v\n", err)
 		return err
@@ -297,12 +297,12 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		log.Printf("error fetching instance. %v\n", err)
 		return err
 	}
-	instanceObj.Status.State = properties.Provision.State
-	instanceObj.Status.Error = properties.Provision.Error
-	instanceObj.Status.Description = properties.Provision.Response
-	instanceObj.Status.DashboardURL = properties.Provision.DashboardURL
+	instanceObj.Status.State = computedStatus.Provision.State
+	instanceObj.Status.Error = computedStatus.Provision.Error
+	instanceObj.Status.Description = computedStatus.Provision.Response
+	instanceObj.Status.DashboardURL = computedStatus.Provision.DashboardURL
 	if appliedResources != nil {
-		instanceObj.Status.CRDs = CRDs
+		instanceObj.Status.Resources = resourceRefs
 	}
 	err = r.Update(context.Background(), instanceObj)
 	if err != nil {

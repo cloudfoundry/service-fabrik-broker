@@ -32,7 +32,7 @@ type ResourceManager interface {
 	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)
 	SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error
 	ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error)
-	ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error)
+	ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error)
 	DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
 }
 
@@ -270,8 +270,8 @@ func (r resourceManager) findUnstructuredObject(list []*unstructured.Unstructure
 	return false
 }
 
-// ComputeProperties computes properties template
-func (r resourceManager) ComputeProperties(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Properties, error) {
+// ComputeStatus computes properties template
+func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
 	instance, binding, service, plan, err := r.fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
 		log.Printf("error getting resource. %v\n", err)
@@ -367,7 +367,7 @@ func (r resourceManager) ComputeProperties(sourceClient kubernetes.Client, targe
 		}
 	}
 
-	template, err = plan.GetTemplate(osbv1alpha1.PropertiesAction)
+	template, err = plan.GetTemplate(osbv1alpha1.StatusAction)
 	if err != nil {
 		log.Printf("plan %s does not have properties template. %v\n", planID, err)
 		return nil, err
@@ -416,7 +416,7 @@ func (r resourceManager) ComputeProperties(sourceClient kubernetes.Client, targe
 		return nil, err
 	}
 
-	properties, err := properties.ParseProperties(propertiesString)
+	properties, err := properties.ParseStatus(propertiesString)
 	if err != nil {
 		log.Printf("error parsing file content of properties.yaml. %v\n", err)
 		return nil, err

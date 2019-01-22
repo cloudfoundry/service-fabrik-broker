@@ -61,7 +61,7 @@ func TestStorageSFServiceBinding(t *testing.T) {
 			Response: BindingResponse{
 				SecretRef: "secret-ref",
 			},
-			CRDs: []Source{
+			Resources: []Source{
 				Source{
 					APIVersion: "apiversion",
 					Kind:       "kind",
