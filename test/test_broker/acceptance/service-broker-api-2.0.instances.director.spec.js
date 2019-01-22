@@ -49,7 +49,7 @@ describe('service-broker-api-2.0', function () {
       const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
-      Promise.onPossiblyUnhandledRejection(() => { });
+      Promise.onPossiblyUnhandledRejection(() => {});
       let getScheduleStub, delayStub;
 
       before(function () {
@@ -68,7 +68,7 @@ describe('service-broker-api-2.0', function () {
 
       afterEach(function () {
         mocks.reset();
-        getScheduleStub.reset();
+        getScheduleStub.resetHistory();
       });
 
       after(function () {

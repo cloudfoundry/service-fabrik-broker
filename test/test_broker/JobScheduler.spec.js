@@ -102,8 +102,8 @@ describe('JobScheduler', function () {
       processExitStub = sandbox.stub(process, 'exit');
     });
     afterEach(function () {
-      publishStub.reset();
-      processExitStub.reset();
+      publishStub.resetHistory();
+      processExitStub.resetHistory();
       processExitStub.restore();
       for (let attr in workers) {
         if (workers.hasOwnProperty(attr)) {
@@ -114,6 +114,7 @@ describe('JobScheduler', function () {
     });
     after(function () {
       clock.restore();
+      publishStub.restore();
       sandbox.restore();
     });
 
@@ -577,6 +578,7 @@ describe('JobScheduler', function () {
     });
     after(function () {
       sandbox.restore();
+      publishStub.restore();
       clock.restore();
     });
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {

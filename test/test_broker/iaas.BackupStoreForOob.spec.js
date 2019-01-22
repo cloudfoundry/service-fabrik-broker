@@ -36,7 +36,7 @@ describe('iaas', function () {
         }]));
       });
       afterEach(function () {
-        listStub.reset();
+        listStub.resetHistory();
       });
       after(function () {
         sandbox.restore();
@@ -97,7 +97,7 @@ describe('iaas', function () {
         }]));
       });
       afterEach(function () {
-        listStub.reset();
+        listStub.resetHistory();
       });
       after(function () {
         sandbox.restore();

@@ -57,7 +57,7 @@ describe('Jobs', function () {
     before(function () {
       mocks.reset();
       sandbox = sinon.createSandbox();
-      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule').callsFake(() => Promise.resolve({}));
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       patchBackupFileStub = sandbox.stub(BackupStore.prototype, 'patchBackupFile');
       patchRestoreFileStub = sandbox.stub(BackupStore.prototype, 'patchRestoreFile');
@@ -69,9 +69,9 @@ describe('Jobs', function () {
 
     afterEach(function () {
       mocks.reset();
-      cancelScheduleStub.reset();
-      baseJobLogRunHistoryStub.reset();
-      patchBackupFileStub.reset();
+      cancelScheduleStub.resetHistory();
+      baseJobLogRunHistoryStub.resetHistory();
+      patchBackupFileStub.resetHistory();
     });
 
     after(function () {

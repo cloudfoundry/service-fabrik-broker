@@ -62,7 +62,7 @@ describe('common', function () {
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
       expect(registerWatcherStub.firstCall.args[3]).to.eql(`state notin (${CONST.APISERVER.RESOURCE_STATE.UNLOCKED})`);
       expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
-      registerWatcherStub.reset();
+      registerWatcherStub.resetHistory();
       registerWatcherStub.restore();
       done();
     });
@@ -121,7 +121,7 @@ describe('common', function () {
           expect(registerWatcherStub.firstCall.args[3]).to.eql(`state notin (${CONST.APISERVER.RESOURCE_STATE.UNLOCKED})`);
           mocks.verify();
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -171,7 +171,7 @@ describe('common', function () {
           mocks.verify();
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(1);
           UnlockResourcePoller.clearPoller('lockid1', UnlockResourcePoller.pollers.lockid1);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -215,7 +215,7 @@ describe('common', function () {
           expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
           mocks.verify();
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -270,7 +270,7 @@ describe('common', function () {
           expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
           mocks.verify();
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -318,7 +318,7 @@ describe('common', function () {
           expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS);
           expect(registerWatcherStub.firstCall.args[2].name).to.eql('startPoller');
           expect(_.size(UnlockResourcePoller.pollers)).to.eql(0);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });

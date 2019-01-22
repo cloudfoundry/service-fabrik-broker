@@ -16,9 +16,9 @@ describe('action', function () {
       process.argv = [];
     });
     afterEach(function () {
-      processExitStub.reset();
+      processExitStub.resetHistory();
       processExitStub.restore();
-      consoleErrorStub.reset();
+      consoleErrorStub.resetHistory();
       consoleErrorStub.restore();
       process.argv = initialProcessArgv;
     });

@@ -170,7 +170,7 @@ describe('operators', function () {
             }));
           });
           afterEach(function () {
-            updateResourceStub.reset();
+            updateResourceStub.resetHistory();
           });
           after(function () {
             getStatusStub.restore();

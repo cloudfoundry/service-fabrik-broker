@@ -239,7 +239,7 @@ describe('Jobs', function () {
       }));
       subscribeSpy = sandbox.stub(pubSubStub, 'subscribe');
       publishSpy = sandbox.stub(pubSubStub, 'publish');
-      osCpuStub = sandbox.stub(os, 'cpus', () => ({
+      osCpuStub = sandbox.stub(os, 'cpus').callsFake(() => ({
         length: 8
       }));
     });
@@ -937,8 +937,8 @@ describe('Jobs', function () {
 
       before(function () {
         runSandBox = sinon.createSandbox();
-        baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory', () => Promise.resolve({}));
-        maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo',
+        baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory').callsFake(() => Promise.resolve({}));
+        maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo').callsFake(
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
           (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
             maintenance: true,
@@ -951,8 +951,8 @@ describe('Jobs', function () {
       });
       afterEach(function () {
         maintenanceStatus = 0;
-        baseJobLogRunHistoryStub.reset();
-        processExitStub.reset();
+        baseJobLogRunHistoryStub.resetHistory();
+        processExitStub.resetHistory();
         jobDoneSpy.reset();
       });
       after(function () {
