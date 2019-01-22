@@ -1037,6 +1037,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => this.setPlan(req))
       .then(() => ScheduleManager
         .cancelSchedule(req.params.instance_id, CONST.JOB.SERVICE_INSTANCE_UPDATE, cancelAllJobs))
+      .tap(() => logger.info(`Scheduled update cancelled for '${req.params.instance_id}' by user '${req.user.name}'`))
       .then(() => res
         .status(CONST.HTTP_STATUS_CODE.OK)
         .send({}));
