@@ -203,37 +203,31 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 			return nil, err
 		}
 
-		toBeUpdated := false
-		//Only these fields we are reconciling
-		updateKeys := []string{"spec", "data", "status"}
-		for _, updateKey := range updateKeys {
-			//Reconcile of if the field is generated from template
-			if _, ok := expectedResource.Object[updateKey]; ok {
-				//If the existing resource doesnot have the field add it
-				if _, ok := foundResource.Object[updateKey]; !ok {
-					foundResource.Object[updateKey] = expectedResource.Object[updateKey]
-					toBeUpdated = true
-				} else {
-					//Existing resource has the filed
-					newFieldObj := dynamic.MapInterfaceToMapString(expectedResource.Object[updateKey])
-					newField := newFieldObj.(map[string]interface{})
-					oldFieldObj := dynamic.MapInterfaceToMapString(foundResource.Object[updateKey])
-					oldField := oldFieldObj.(map[string]interface{})
-					//Iterate over individual subfields from template
-					for key, val := range newField {
-						oldVal, ok := oldField[key]
-						//Update only if at least one subfield is updated
-						if !ok || !reflect.DeepEqual(val, oldVal) {
-							oldField[key] = val
-							toBeUpdated = true
-						}
-					}
-					foundResource.Object[updateKey] = oldField
-				}
+		var specKey string
+		specKeys := []string{"spec", "Spec", "data", "Data"}
+		for _, key := range specKeys {
+			if _, ok := expectedResource.Object[key]; ok {
+				specKey = key
+				break
 			}
 		}
 
-		if toBeUpdated {
+		if !reflect.DeepEqual(expectedResource.Object[specKey], foundResource.Object[specKey]) {
+			foundResource.Object[specKey] = expectedResource.Object[specKey]
+			if _, ok := expectedResource.Object["status"]; ok {
+				if _, ok := foundResource.Object["status"]; !ok {
+					foundResource.Object["status"] = expectedResource.Object["status"]
+				} else {
+					newStatusObj := dynamic.MapInterfaceToMapString(expectedResource.Object["status"])
+					newStatus := newStatusObj.(map[string]interface{})
+					oldStatusObj := dynamic.MapInterfaceToMapString(foundResource.Object["status"])
+					oldStatus := oldStatusObj.(map[string]interface{})
+					for key, val := range newStatus {
+						oldStatus[key] = val
+					}
+					foundResource.Object["status"] = oldStatus
+				}
+			}
 			log.Printf("Updating %s %s\n", kind, namespacedName)
 			err = targetClient.Update(context.TODO(), foundResource)
 			if err != nil {
