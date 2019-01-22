@@ -17,6 +17,15 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   * [Context](#context)
   * [Cluster Landscape Scenarios](#cluster-landscape-scenarios)
     * [A Summary of Comparison of Cluster Landscape Scenarios](#a-summary-of-comparison-of-cluster-landscape-scenarios)
+      * [Scalability](#scalability)
+      * [Networking Complexity](#networking-complexity)
+      * [Security Isolation](#security-isolation)
+      * [Resource Utilization](#resource-utilization)
+      * [Cluster Topology](#cluster-topology)
+      * [Cluster Maintenance](#cluster-maintenance)
+      * [Cluster Disposability](#cluster-disposability)
+      * [SLA](#sla)
+      * [Cross\-plaltform](#cross-plaltform)
     * [Dedicated Service Fabrik Inter\-operator](#dedicated-service-fabrik-inter-operator)
       * [A simple dedicated landscape scenario](#a-simple-dedicated-landscape-scenario)
         * [Pros](#pros)
@@ -65,7 +74,7 @@ This leaves the responsibility for setting up and managing the landscape of Kube
 
 ### A Summary of Comparison of Cluster Landscape Scenarios
 
-| Cluster Landscape Scenario | Scalability | Networking Complexity | Security Isolation | Resource Utilization | Cluster Topology | Cluster Maintenance | Cluster Disposability | SLA | Cross-platform |
+| Cluster Landscape Scenario | [Scalability](#scalability) | [Networking Complexity](#networking-complelxity) | [Security Isolation](#security-isolation) | [Resource Utilization](#resource-utilization) | [Cluster Topology](#cluster-topology) | [Cluster Maintenance](#cluster-maintenance) | [Cluster Disposability](#cluster-disposability) | [SLA](#sla) | [Cross-platform](#cross-platform) |
 | --- | ---| --- | --- | --- | --- | --- | --- | --- | --- |
 | [Single Dedicated Cluster per Service](#a-simple-dedicated-landscape-scenario) | Limited to the hosting cluster | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | Low | Possible | Possible |
 | [Conservative Dedicated Clusters per Service](#a-conservative-dedicated-landscape-scenario) | Unlimited | Complex | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible |
@@ -79,6 +88,48 @@ This leaves the responsibility for setting up and managing the landscape of Kube
 | Optimal Dedicated Clusters per Customer per Service | Unlimited | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High if there are a large number of service instances of a given service type for a given customer | Easy to enforce | Independently manageable | High | Possible | Possible |
 | Single Dedicated Cluster per Customer but shared among Services | Limited to the hosting cluster but the need for scalability might be less | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between services | Requires co-ordination between services | High | Possible | Possible |
 | Optimal Dedicated Cluster per Customer but shared among Services | Unlimited | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between services | Requires co-ordination between services | High | Possible | Possible |
+
+#### Scalability
+
+Scalability of both the individual service instances as well as, if applicable, the number of service instances in a landscape.
+
+#### Networking Complexity
+
+The complexity of setting up the network access between the consuming application and the service instance.
+
+#### Security Isolation
+
+The isolation between the service instances. If applicable, between service instances of different customers.
+This could be at different levels such as the Kubernetes API, network access and node or operating system level.
+
+#### Resource Utilization
+
+Utilization of resources such as nodes/machines or even at a lower granularity of CPU, memory, disk, network bandwidth etc.
+
+#### Cluster Topology
+
+Individual services might require different types and quantity of machines, hardware resources also multiple availability zones etc.
+Such requriements might vary from service to service.
+
+#### Cluster Maintenance
+
+Maintenance activity on the hosting Kubernetes cluster might have to be co-ordinated with the applications and services running on the Kubernetes cluster.
+The dependencies of different services and applications on different features and hence, the version of Kubernetes might complicate things more.
+
+#### Cluster Disposability
+
+1. How easy is to move a service instance from one cluster to another?
+1. How easy is it to migrate all services of a cluster to another?
+1. How easy is it to recover from a cluster failure?
+
+#### SLA
+
+Service Level Agreements might require some sort of control over changes made to the service instances.
+Or at least some mitigation in terms of granular audit logging.
+
+#### Cross-plaltform
+
+Some scenarios might be more amenable for hosting service instances on Kubernetes to be consumed from platforms other than Kubernetes.
 
 ### Dedicated Service Fabrik Inter-operator
 
