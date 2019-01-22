@@ -259,7 +259,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
             namespaceId: eventmesh.apiServerClient.getNamespaceId(req.params.instance_id),
-            start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
             started_at: new Date()
           });
         }
