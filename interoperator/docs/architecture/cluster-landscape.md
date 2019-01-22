@@ -16,6 +16,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   * [Table of Content](#table-of-content)
   * [Context](#context)
   * [Cluster Landscape Scenarios](#cluster-landscape-scenarios)
+    * [A Summary of Comparison of Cluster Landscape Scenarios](#a-summary-of-comparison-of-cluster-landscape-scenarios)
     * [Dedicated Service Fabrik Inter\-operator](#dedicated-service-fabrik-inter-operator)
       * [A simple dedicated landscape scenario](#a-simple-dedicated-landscape-scenario)
         * [Pros](#pros)
@@ -61,6 +62,23 @@ In addition to the above context, continuing the [operator design-pattern](https
 This leaves the responsibility for setting up and managing the landscape of Kubernetes clusters where the individual service operators provision and manage their services instances out of the scope of the individual service operators.
 
 ## Cluster Landscape Scenarios
+
+### A Summary of Comparison of Cluster Landscape Scenarios
+
+| Cluster Landscape Scenario | Scalability | Networking Complexity | Security Isolation | Resource Utilization | Cluster Topology | Cluster Maintenance | Cluster Disposability | SLA | Cross-platform |
+| --- | ---| --- | --- | --- | --- | --- | --- | --- | --- |
+| [Single Dedicated Cluster per Service](#a-simple-dedicated-landscape-scenario) | Limited to the hosting cluster | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | Low | Possible | Possible |
+| [Conservative Dedicated Clusters per Service](#a-conservative-dedicated-landscape-scenario) | Unlimited | Complex | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible |
+| [Optimal Dedicated Clusters per Service](#an-optimal-dedicated-landscape-scenario) | Unlimited | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | High | Possible | Possible |
+| [Single Shared Cluster](#a-simple-dedicated-landscape-scenario) | Limited to the hosting cluster | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Enforcing requires co-ordination between services | Requires co-ordination between services | Low | Possible | Possible |
+| [Conservative Shared Clusters](#a-conservative-shared-landscape-scenario) | Unlimited | Complex | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible |
+| [Optimal Shared Clusters](#an-optimal-shared-landscape-scenario) | Unlimited | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Enforcing requires co-ordination between services | Requires co-ordination between services | High | Possible | Possible |
+| Service instance provisioned in the Consuming Cluster | Limited to the hosting cluster but the need for scalability might be less | Simple | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High | Hard to enforce | Requires co-ordination between the services and apps running in the hosting cluster | Low | Hard because of admin access to the cluster for the consumer | Restricted to Kubernetes |
+| Single Dedicated Cluster per Customer per Service | Limited to the hosting cluster but the need for scalability might be less | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances of a given service type for a given customer | Easy to enforce | Independently manageable | High | Possible | Possible |
+| Conservative Dedicated Clusters per Customer per Service | Unlimited | Potentially simpler | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible |
+| Optimal Dedicated Clusters per Customer per Service | Unlimited | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High if there are a large number of service instances of a given service type for a given customer | Easy to enforce | Independently manageable | High | Possible | Possible |
+| Single Dedicated Cluster per Customer but shared among Services | Limited to the hosting cluster but the need for scalability might be less | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between services | Requires co-ordination between services | High | Possible | Possible |
+| Optimal Dedicated Cluster per Customer but shared among Services | Unlimited | Potentially simpler | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between services | Requires co-ordination between services | High | Possible | Possible |
 
 ### Dedicated Service Fabrik Inter-operator
 
