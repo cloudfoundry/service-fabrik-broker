@@ -33,22 +33,22 @@ class GcpClient extends BaseCloudClient {
   getDiskMetadata(diskCid, zone) {
     return Promise.try(() =>
       this.computeClient
-        .zone(zone)
-        .disk(diskCid)
-        .get()
-        .then(diskData => diskData[0].metadata)
-        .then(metadata => {
-          return {
-            volumeId: metadata.name,
-            size: metadata.sizeGb,
-            zone: metadata.zone.substring(metadata.zone.lastIndexOf('/') + 1),
-            type: metadata.type.substring(metadata.type.lastIndexOf('/') + 1),
-            extra: {
-              tags: metadata.labels,
-              type: metadata.type
-            }
-          };
-        })
+      .zone(zone)
+      .disk(diskCid)
+      .get()
+      .then(diskData => diskData[0].metadata)
+      .then(metadata => {
+        return {
+          volumeId: metadata.name,
+          size: metadata.sizeGb,
+          zone: metadata.zone.substring(metadata.zone.lastIndexOf('/') + 1),
+          type: metadata.type.substring(metadata.type.lastIndexOf('/') + 1),
+          extra: {
+            tags: metadata.labels,
+            type: metadata.type
+          }
+        };
+      })
     );
   }
 
@@ -106,12 +106,12 @@ class GcpClient extends BaseCloudClient {
     }
     return Promise.try(() =>
       this.storageClient
-        .bucket(container)
-        .get()
-        .then(result => {
-          // return the bucket metadata
-          return result[1];
-        })
+      .bucket(container)
+      .get()
+      .then(result => {
+        // return the bucket metadata
+        return result[1];
+      })
     );
   }
 
@@ -127,14 +127,14 @@ class GcpClient extends BaseCloudClient {
     queryOptions.autoPaginate = true;
     return Promise.try(() =>
       this.storageClient
-        .bucket(container)
-        .getFiles(queryOptions)
-        .then(results => {
-          return _.get(results, 0, []).map(file => ({
-            name: file.name,
-            lastModified: file.metadata.updated
-          }));
-        })
+      .bucket(container)
+      .getFiles(queryOptions)
+      .then(results => {
+        return _.get(results, 0, []).map(file => ({
+          name: file.name,
+          lastModified: file.metadata.updated
+        }));
+      })
     );
   }
 
@@ -145,12 +145,12 @@ class GcpClient extends BaseCloudClient {
     }
     logger.debug(`Deleting file ${file} in container ${container} `);
     return Promise.try(() =>
-      this.storageClient
+        this.storageClient
         .bucket(container)
         .file(file)
         .delete()
         .then(() => logger.info(`Deleted file ${file} in container ${container}`))
-    )
+      )
       .catchThrow(BaseCloudClient.providerErrorTypes.Unauthorized,
         new Unauthorized(`Authorization at google cloud storage provider failed while deleting blob ${file} in container ${container}`))
       .catchThrow(BaseCloudClient.providerErrorTypes.Forbidden,
@@ -161,9 +161,9 @@ class GcpClient extends BaseCloudClient {
 
   download(options) {
     return utils.streamToPromise(this.storageClient
-      .bucket(options.container)
-      .file(options.remote)
-      .createReadStream())
+        .bucket(options.container)
+        .file(options.remote)
+        .createReadStream())
       .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
   }
 

@@ -51,6 +51,68 @@ class CloudProviderClient extends BaseCloudClient {
     });
   }
 
+  createDiskFromSnapshot(snapshotId, zones, options = {}) {
+    let tags = [];
+    if (options.tags) {
+      tags.push({
+        ResourceType: 'volume',
+        Tags: _.keys(options.tags).map(tagKey => ({
+          Key: tagKey,
+          Value: options.tags[tagKey]
+        }))
+      });
+    }
+    return Promise.try(() => {
+        return this.blockstorage
+          .createVolume({
+            AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
+            SnapshotId: snapshotId,
+            VolumeType: _.get(options, 'volumeType', 'gp2'),
+            TagSpecifications: tags
+          })
+          .promise();
+      })
+      .then(diskResponse => diskResponse.Volumes[0])
+      .then(volume => {
+        const describeReq = {
+          VolumeIds: [volume.VolumeId]
+        };
+        return this.blockstorage.waitFor('volumeAvailable', describeReq).promise();
+      })
+      .then(volResponse => volResponse.Volumes[0])
+      .then(volume => ({
+        volumeId: volume.VolumeId,
+        size: volume.Size,
+        zone: volume.AvailabilityZone,
+        type: volume.VolumeType,
+        extra: {
+          volumeType: volume.VolumeType,
+          tags: {}
+        }
+      }));
+  }
+
+  getDiskMetadata(diskCid) {
+    return Promise.try(() => {
+        return this.blockstorage
+          .describeVolumes({
+            VolumeIds: [diskCid]
+          })
+          .promise();
+      })
+      .then(diskResponse => diskResponse.Volumes[0])
+      .then(volume => ({
+        volumeId: volume.VolumeId,
+        size: volume.Size,
+        zone: volume.AvailabilityZone,
+        type: volume.VolumeType,
+        extra: {
+          volumeType: volume.VolumeType,
+          tags: {}
+        }
+      }));
+  }
+
   getContainer(container) {
     if (arguments.length < 1) {
       container = this.containerName;
