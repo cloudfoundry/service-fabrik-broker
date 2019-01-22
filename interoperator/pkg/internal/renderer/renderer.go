@@ -18,6 +18,7 @@ package renderer
 
 // Renderer is an interface for rendering templates from path, name, namespace and values.
 type Renderer interface {
+	// TODO Consider using streams (io.Writer or io.Reader) in the API instead of buffers.
 	Render(input Input) (Output, error)
 }
 
@@ -26,6 +27,7 @@ type Input interface{}
 
 // Output holds rendered templates files
 type Output interface {
+	// TODO Consider using streams (io.Writer or io.Reader) in the API instead of buffers.
 	FileContent(filename string) (string, error)
 	ListFiles() ([]string, error)
 }

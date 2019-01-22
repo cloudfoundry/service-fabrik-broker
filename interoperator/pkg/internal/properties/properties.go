@@ -23,9 +23,9 @@ type InstanceStatus struct {
 	DashboardURL string `yaml:"dashboardUrl,omitempty" json:"dashboardUrl,omitempty"`
 }
 
-// Properties is all the data to be read by interoperator from
-// services. properties.yaml file is unmarshalled to this struct
-type Properties struct {
+// Status is all the data to be read by interoperator from
+// services. status template is unmarshalled to this struct
+type Status struct {
 	Provision   InstanceStatus `yaml:"provision" json:"provision"`
 	Bind        GenericStatus  `yaml:"bind" json:"bind"`
 	Unbind      GenericStatus  `yaml:"unbind" json:"unbind"`
@@ -42,12 +42,12 @@ func ParseSources(sourcesString string) (map[string]osbv1alpha1.Source, error) {
 	return sources, nil
 }
 
-// ParseProperties decodes properties yaml into a Proberties struct
-func ParseProperties(propertiesString string) (*Properties, error) {
-	properties := &Properties{}
-	err := yaml.Unmarshal([]byte(propertiesString), properties)
+// ParseStatus decodes status template into a Status struct
+func ParseStatus(propertiesString string) (*Status, error) {
+	status := &Status{}
+	err := yaml.Unmarshal([]byte(propertiesString), status)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s. %v", propertiesString, err)
 	}
-	return properties, nil
+	return status, nil
 }

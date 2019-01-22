@@ -60,9 +60,9 @@ func TestFindServiceInfo(t *testing.T) {
 			ContentEncoded: "YmluZGNvbnRlbnQ=",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:         "properties",
+			Action:         "status",
 			Type:           "gotemplate",
-			ContentEncoded: "cHJvcGVydGllc2NvbnRlbnQ=",
+			ContentEncoded: "c3RhdHVzY29udGVudA==",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action:         "sources",

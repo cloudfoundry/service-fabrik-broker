@@ -13,6 +13,7 @@ import (
 // ClusterFactory sets up k8s clusters and gets client for them
 //go:generate mockgen -source factory.go -destination ./mock_factory/mock_factory.go
 type ClusterFactory interface {
+	// TODO pass the entire SFServiceInstance and SfServiceBinding
 	GetCluster(instanceID, bindingID, serviceID, planID string) (kubernetes.Client, error)
 }
 

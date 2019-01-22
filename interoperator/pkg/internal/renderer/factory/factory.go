@@ -86,8 +86,8 @@ func GetRendererInput(template *osbv1alpha1.TemplateSpec, service *osbv1alpha1.S
 	}
 }
 
-// GetPropertiesRendererInput contructs the input required for the renderer
-func GetPropertiesRendererInput(template *osbv1alpha1.TemplateSpec, name types.NamespacedName, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
+// GetStatusRendererInput contructs the input required for the renderer
+func GetStatusRendererInput(template *osbv1alpha1.TemplateSpec, name types.NamespacedName, sources map[string]*unstructured.Unstructured) (renderer.Input, error) {
 	rendererType := template.Type
 	values := make(map[string]interface{})
 
