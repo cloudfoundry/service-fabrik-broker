@@ -860,7 +860,6 @@ class ApiServerClient {
         const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
           _.get(opts, 'spec.instance_id') : opts.resourceId
         );
-        // Create Namespace if not default
         return Promise.try(() => this.init())
           .then(() => apiserver
             .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
@@ -878,7 +877,7 @@ class ApiServerClient {
 
   /**
    * @description Patches OSB Resource in Apiserver with the opts
-   * Use this method when you want to append something in status.response or spec.options
+   * Use this method when you want to append something in status.response or spec
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
