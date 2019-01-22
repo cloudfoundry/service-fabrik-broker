@@ -27,6 +27,58 @@ class AzureClient extends BaseCloudClient {
       .value()
     );
     Promise.promisifyAll(this.computeClient.snapshots);
+    Promise.promisifyAll(this.computeClient.disks);
+  }
+
+  getSnapshot(snapshotId) {
+    return this.computeClient.snapshots.getAsync(this.settings.resource_group, snapshotId)
+      .then(snapshotResponse => _.pick(snapshotResponse, ['location', 'creationData', 'id']));
+  }
+
+  createDiskFromSnapshot(snapshotId, zones, opts = {}) {
+    const diskName = this.getRandomDiskId();
+    return Promise.try(() => this.getSnapshot(snapshotId))
+      .then(snapshotData => {
+        const options = {
+          zones: _.isArray(zones) ? zones : [zones],
+          location: snapshotData.location,
+          tags: _.assign({}, opts.tags || {}, {
+            createdBy: 'service-fabrik'
+          }),
+          sku: _.assign({}, opts.sku || {}, {
+            name: 'Premium_LRS',
+            tier: 'Premium'
+          }),
+          creationData: {
+            createOption: 'Copy',
+            sourceUri: snapshotData.id
+          }
+        };
+        return this.computeClient.disks.createOrUpdateAsync(this.settings.resource_group, diskName, options);
+      })
+      .then(diskResponse => ({
+        volumeId: diskResponse.name,
+        size: diskResponse.diskSizeGB,
+        zone: diskResponse.zones[0],
+        type: diskResponse.sku ? diskResponse.sku.name : '',
+        extra: {
+          sku: diskResponse.sku
+        }
+      }));
+  }
+
+  getDiskMetadata(diskCid) {
+    return this.computeClient.disks
+      .getAsync(this.settings.resource_group, diskCid)
+      .then(diskResponse => ({
+        volumeId: diskResponse.name,
+        size: diskResponse.diskSizeGB,
+        zone: diskResponse.zones[0],
+        type: diskResponse.sku ? diskResponse.sku.name : '',
+        extra: {
+          sku: diskResponse.sku
+        }
+      }));
   }
 
   getContainer(container) {

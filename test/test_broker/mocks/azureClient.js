@@ -36,13 +36,16 @@ exports.getContainer = getContainer;
 exports.list = list;
 exports.remove = remove;
 exports.deleteSnapshot = deleteSnapshot;
+exports.getSnapshot = getSnapshot;
+exports.createDisk = createDisk;
+exports.getDisk = getDisk;
 exports.config = config;
 
 function encodePath(pathname) {
   return pathname.replace(/:/g, '%3A');
 }
 
-function auth() {
+function auth(times) {
   const token = {
     type: 'update',
     parameters: {},
@@ -51,6 +54,7 @@ function auth() {
   return nock('https://login.microsoftonline.com')
     .replyContentLength()
     .post(`/${provider.tenant_id}/oauth2/token?api-version=1.0`, body => _.isObject(body))
+    .times(times || 1)
     .reply(200, '{\"token_type\":\"Bearer\",\"resource\":\"https://management.core.windows.net/\",\"access_token\":\"' + utils.encodeBase64(token) + '\"}', {
       'cache-control': 'no-cache, no-store',
       pragma: 'no-cache',
@@ -123,6 +127,43 @@ function deleteSnapshot(remote, expectedResponse, errorMessage) {
   } else {
     return nock('https://management.azure.com')
       .delete(remote)
+      .replyWithError(errorMessage);
+  }
+}
+
+function getSnapshot(remote, expectedResponse, errorMessage) {
+  if (errorMessage === undefined) {
+    return nock('https://management.azure.com')
+      .get(remote)
+      .reply(expectedResponse.status || 200, expectedResponse.body, expectedResponse.headers);
+  } else {
+    return nock('https://management.azure.com')
+      .get(remote)
+      .replyWithError(errorMessage);
+  }
+}
+
+function getDisk(remote, expectedResponse, errorMessage) {
+  if (errorMessage === undefined) {
+    return nock('https://management.azure.com')
+      .get(remote)
+      .reply(expectedResponse.status || 200, expectedResponse.body, expectedResponse.headers);
+  } else {
+    return nock('https://management.azure.com')
+      .get(remote)
+      .replyWithError(errorMessage);
+  }
+}
+
+function createDisk(remote, requestBody, expectedResponse, errorMessage) {
+  if (errorMessage === undefined) {
+    return nock('https://management.azure.com')
+      .replyContentLength()
+      .put(remote, requestBody)
+      .reply(expectedResponse.status || 200, expectedResponse.body, expectedResponse.headers);
+  } else {
+    return nock('https://management.azure.com')
+      .put(remote, requestBody)
       .replyWithError(errorMessage);
   }
 }
