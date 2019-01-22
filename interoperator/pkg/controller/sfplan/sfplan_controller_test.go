@@ -53,9 +53,9 @@ func TestReconcile(t *testing.T) {
 			Content: "bindcontent",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:  "properties",
+			Action:  "status",
 			Type:    "gotemplate",
-			Content: "propertiescontent",
+			Content: "statuscontent",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action:  "sources",

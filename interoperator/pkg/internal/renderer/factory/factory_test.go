@@ -76,14 +76,14 @@ func TestGetRendererInput(t *testing.T) {
 			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "properties",
+			Action: "status",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action: "sources",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{
@@ -238,14 +238,14 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "properties",
+			Action: "status",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action: "sources",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{
@@ -283,9 +283,9 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 			ContentEncoded: "YmluZGNvbnRlbnQ=",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action:         "properties",
+			Action:         "status",
 			Type:           "gotemplate",
-			ContentEncoded: "cHJvcGVydGllc2NvbnRlbnQ=",
+			ContentEncoded: "c3RhdHVzY29udGVudA==",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action:         "sources",
@@ -467,13 +467,13 @@ func TestGetPropertiesRendererInput(t *testing.T) {
 				name:     name,
 				sources:  sourceObjects2,
 			},
-			want:    gotemplate.NewInput(template.URL, "propertiescontent", "foo", values2),
+			want:    gotemplate.NewInput(template.URL, "statuscontent", "foo", values2),
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetPropertiesRendererInput(tt.args.template, tt.args.name, tt.args.sources)
+			got, err := GetStatusRendererInput(tt.args.template, tt.args.name, tt.args.sources)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetPropertiesRendererInput() error = %v, wantErr %v", err, tt.wantErr)
 				return

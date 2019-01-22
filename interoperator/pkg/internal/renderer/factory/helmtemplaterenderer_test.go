@@ -54,14 +54,14 @@ func TestHelmTemplateRenderer(t *testing.T) {
 			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresql",
 		},
 		osbv1alpha1.TemplateSpec{
-			Action: "properties",
+			Action: "status",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 		osbv1alpha1.TemplateSpec{
 			Action: "sources",
 			Type:   "helm",
-			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlProperties",
+			URL:    gopath + "/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/config/samples/templates/helmtemplates/postgresqlStatus",
 		},
 	}
 	plan := osbv1alpha1.SFPlan{

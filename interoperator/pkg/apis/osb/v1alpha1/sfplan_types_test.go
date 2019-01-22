@@ -40,9 +40,9 @@ func TestStorageSfPlan(t *testing.T) {
 			Content: "bindcontent",
 		},
 		TemplateSpec{
-			Action:  "properties",
+			Action:  "status",
 			Type:    "gotemplate",
-			Content: "propertiescontent",
+			Content: "statuscontent",
 		},
 		TemplateSpec{
 			Action:  "sources",

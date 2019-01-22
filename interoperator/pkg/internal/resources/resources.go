@@ -270,7 +270,7 @@ func (r resourceManager) findUnstructuredObject(list []*unstructured.Unstructure
 	return false
 }
 
-// ComputeStatus computes properties template
+// ComputeStatus computes status template
 func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
 	instance, binding, service, plan, err := r.fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
@@ -369,7 +369,7 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 
 	template, err = plan.GetTemplate(osbv1alpha1.StatusAction)
 	if err != nil {
-		log.Printf("plan %s does not have properties template. %v\n", planID, err)
+		log.Printf("plan %s does not have status template. %v\n", planID, err)
 		return nil, err
 	}
 
@@ -379,15 +379,15 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 		return nil, err
 	}
 
-	input, err = rendererFactory.GetPropertiesRendererInput(template, name, sourceObjects)
+	input, err = rendererFactory.GetStatusRendererInput(template, name, sourceObjects)
 	if err != nil {
-		log.Printf("error creating properties renderer input of type %s. %v\n", template.Type, err)
+		log.Printf("error creating status renderer input of type %s. %v\n", template.Type, err)
 		return nil, err
 	}
 
 	output, err = renderer.Render(input)
 	if err != nil {
-		log.Printf("error renderering properties for service %s. %v\n", serviceID, err)
+		log.Printf("error renderering status for service %s. %v\n", serviceID, err)
 		return nil, err
 	}
 
@@ -398,31 +398,31 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 	}
 
 	if len(files) == 0 {
-		log.Printf("properties template did not genarate any file. %v\n", err)
+		log.Printf("status template did not genarate any file. %v\n", err)
 		return nil, err
 	}
 
-	propertiesFileName := files[0]
+	statusFileName := files[0]
 	for _, file := range files {
-		if file == "properties.yaml" {
-			propertiesFileName = file
+		if file == "status.yaml" {
+			statusFileName = file
 			break
 		}
 	}
 
-	propertiesString, err := output.FileContent(propertiesFileName)
+	statusString, err := output.FileContent(statusFileName)
 	if err != nil {
-		log.Printf("error getting file content of properties.yaml. %v\n", err)
+		log.Printf("error getting file content of status.yaml. %v\n", err)
 		return nil, err
 	}
 
-	properties, err := properties.ParseStatus(propertiesString)
+	status, err := properties.ParseStatus(statusString)
 	if err != nil {
-		log.Printf("error parsing file content of properties.yaml. %v\n", err)
+		log.Printf("error parsing file content of status.yaml. %v\n", err)
 		return nil, err
 	}
 
-	return properties, nil
+	return status, nil
 }
 
 // DeleteSubResources setups all resources according to expectation

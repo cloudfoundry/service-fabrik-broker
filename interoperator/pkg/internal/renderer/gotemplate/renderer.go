@@ -54,6 +54,7 @@ func New() (renderer.Renderer, error) {
 
 // Render loads the chart from the given location <chartPath> and calls the Render() function
 // to convert it into a renderer.Output object.
+// TODO Consider using streams (io.Writer or io.Reader) in the API instead of buffers.
 func (r *gotemplateRenderer) Render(rawInput renderer.Input) (renderer.Output, error) {
 	input, ok := rawInput.(gotemplateInput)
 	if !ok {
