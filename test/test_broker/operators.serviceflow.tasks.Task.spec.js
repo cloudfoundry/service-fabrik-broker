@@ -26,8 +26,8 @@ describe('operators', function () {
           instance_id: instanceId
         };
         before(function () {
-          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve(taskDetails));
-          apiServerClientLastOpStub = sinon.stub(apiServerClient, 'getResourceStatus', () => Promise.resolve({
+          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve(taskDetails));
+          apiServerClientLastOpStub = sinon.stub(apiServerClient, 'getResourceStatus').callsFake(() => Promise.resolve({
             state: CONST.OPERATION.IN_PROGRESS,
             description: 'Task in Progress..'
           }));

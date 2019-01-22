@@ -40,7 +40,7 @@ describe('common', function () {
   describe('UnlockResourcePoller', function () {
     let sandbox, registerWatcherStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     after(function () {
       sandbox.restore();
@@ -54,7 +54,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       expect(registerWatcherStub.callCount).to.equal(1);
       expect(registerWatcherStub.firstCall.args[0]).to.eql(CONST.APISERVER.RESOURCE_GROUPS.LOCK);
@@ -110,7 +110,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -160,7 +160,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -205,7 +205,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -260,7 +260,7 @@ describe('common', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePoller.start();
       return Promise.try(() => jsonStream.write(JSON.stringify(changeObject)))
         .delay(500).then(() => {
@@ -309,7 +309,7 @@ describe('common', function () {
           }
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       UnlockResourcePollerNew.start();
       return Promise.delay(700)
         .then(() => {

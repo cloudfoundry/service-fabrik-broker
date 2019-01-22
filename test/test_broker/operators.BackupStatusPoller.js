@@ -78,7 +78,7 @@ describe('operators', function () {
       const registerWatcherFake = function () {
         return Promise.resolve(true);
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       backupOperationStub = sandbox.stub(BackupService.prototype, 'getOperationState');
     });
 
@@ -88,8 +88,8 @@ describe('operators', function () {
       expect(registerWatcherStub.firstCall.args[1]).to.eql(CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP);
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound startPoller');
       expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS},${CONST.APISERVER.RESOURCE_STATE.ABORTING})`);
-      registerWatcherStub.reset();
-      backupOperationStub.reset();
+      registerWatcherStub.resetHistory();
+      backupOperationStub.resetHistory();
     });
 
     after(function () {

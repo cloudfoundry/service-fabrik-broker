@@ -44,21 +44,21 @@ describe('operators', function () {
         };
         before(function () {
           /* jshint unused: false */
-          registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', (resourceGroup, resourceType, validStateList, handler) => {
+          registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher').callsFake((resourceGroup, resourceType, validStateList, handler) => {
             startTaskStatusPollerCallBack = handler;
             return Promise.resolve(true);
           });
-          registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
+          registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
           TaskOperator = require('../../operators/serviceflow-operator/task/TaskOperator');
-          updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve({
+          updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve({
             body: changeObject.object
           }));
           clock = sinon.useFakeTimers(new Date().getTime());
         });
         afterEach(function () {
-          registerWatcherStub.reset();
-          registerCRDStub.reset();
-          updateResourceStub.reset();
+          registerWatcherStub.resetHistory();
+          registerCRDStub.resetHistory();
+          updateResourceStub.resetHistory();
         });
         after(function () {
           registerWatcherStub.restore();
@@ -132,7 +132,7 @@ describe('operators', function () {
 
                   const promiseResp = new Promise((resolve, reject) => {
                     /* jshint unused:false */
-                    const pollStatusStub = sinon.stub(to, 'pollTaskStatus', (event, intervalId, task, taskDetails) => {
+                    const pollStatusStub = sinon.stub(to, 'pollTaskStatus').callsFake((event, intervalId, task, taskDetails) => {
                       return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
                         .then(resp => {
                           expect(resp).to.equal(true);
@@ -187,7 +187,7 @@ describe('operators', function () {
 
                 const promiseResp = new Promise((resolve, reject) => {
                   /* jshint unused:false */
-                  const pollStatusStub = sinon.stub(to, 'pollTaskStatus', (event, intervalId, task, taskDetails) => {
+                  const pollStatusStub = sinon.stub(to, 'pollTaskStatus').callsFake((event, intervalId, task, taskDetails) => {
                     return pollStatusImpl.apply(to, [event, intervalId, task, taskDetails])
                       .then(resp => {
                         expect(resp).to.equal(false);

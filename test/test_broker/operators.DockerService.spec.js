@@ -30,7 +30,7 @@ describe('docker-operator', function () {
     /* jshint expr:true */
     before(function () {
       service = createDockerService(instance_id, catalog.getPlan(plan_id));
-      sampleStub = sinon.stub(portRegistry, 'sample', () => ports.shift());
+      sampleStub = sinon.stub(portRegistry, 'sample').callsFake(() => ports.shift());
       willBeExhaustedSoonSpy = sinon.spy(portRegistry, 'willBeExhaustedSoon');
     });
 

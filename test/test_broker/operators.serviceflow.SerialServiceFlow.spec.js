@@ -77,13 +77,13 @@ describe('operators', function () {
       };
       let relayTaskCallBack;
       before(function () {
-        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', (resourceGroup, resourceType, validStateList, handler) => {
+        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher').callsFake((resourceGroup, resourceType, validStateList, handler) => {
           relayTaskCallBack = handler;
           Promise.resolve(true);
         });
-        registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
+        registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
         SerialServiceFlowOperator = require('../../operators/serviceflow-operator/SerialServiceFlowOperator');
-        updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => {
+        updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => {
           return Promise.try(() => {
             if (throwExceptionOnUpdate) {
               throw new errors.Conflict(`Task ${task_id} already exists`);
@@ -95,16 +95,16 @@ describe('operators', function () {
             });
           });
         });
-        createResourceStub = sinon.stub(apiServerClient, 'createResource', () => Promise.resolve(true));
+        createResourceStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(true));
         clock = sinon.useFakeTimers(new Date().getTime());
-        utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(task_id));
+        utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(task_id));
       });
       afterEach(function () {
-        registerWatcherStub.reset();
-        registerCRDStub.reset();
-        createResourceStub.reset();
-        updateResourceStub.reset();
-        utilsStub.reset();
+        registerWatcherStub.resetHistory();
+        registerCRDStub.resetHistory();
+        createResourceStub.resetHistory();
+        updateResourceStub.resetHistory();
+        utilsStub.resetHistory();
       });
       after(function () {
         registerWatcherStub.restore();

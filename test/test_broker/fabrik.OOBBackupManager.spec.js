@@ -157,22 +157,22 @@ describe('fabrik', function () {
     });
 
     afterEach(function () {
-      getDeploymentManifestStub.reset();
-      getDeploymentInstancesStub.reset();
-      getDeploymentVMsStub.reset();
-      getHostStub.reset();
-      startBackupStub.reset();
-      startRestoreStub.reset();
-      getBackupLastOperationStub.reset();
-      getBackupLogsStub.reset();
-      getRestoreLastOperationStub.reset();
-      getRestoreLogsStub.reset();
-      putFileStub.reset();
-      getFileStub.reset();
-      patchBackupFileStub.reset();
-      patchRestoreFileStub.reset();
-      listOobBackupFilesStub.reset();
-      getRestoreFileStub.reset();
+      getDeploymentManifestStub.resetHistory();
+      getDeploymentInstancesStub.resetHistory();
+      getDeploymentVMsStub.resetHistory();
+      getHostStub.resetHistory();
+      startBackupStub.resetHistory();
+      startRestoreStub.resetHistory();
+      getBackupLastOperationStub.resetHistory();
+      getBackupLogsStub.resetHistory();
+      getRestoreLastOperationStub.resetHistory();
+      getRestoreLogsStub.resetHistory();
+      putFileStub.resetHistory();
+      getFileStub.resetHistory();
+      patchBackupFileStub.resetHistory();
+      patchRestoreFileStub.resetHistory();
+      listOobBackupFilesStub.resetHistory();
+      getRestoreFileStub.resetHistory();
     });
 
     after(function () {

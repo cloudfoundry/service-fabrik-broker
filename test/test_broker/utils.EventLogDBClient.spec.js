@@ -19,7 +19,7 @@ describe('utils', function () {
     let subscribeStub, saveStub, processAppEventHandler, initializeHandler, shutDownHandler;
 
     before(function () {
-      subscribeStub = sinon.stub(pubsub, 'subscribe', (eventType, handler) => {
+      subscribeStub = sinon.stub(pubsub, 'subscribe').callsFake((eventType, handler) => {
         if (eventType === CONST.TOPIC.MONGO_OPERATIONAL) {
           initializeHandler = handler;
         } else if (eventType === CONST.TOPIC.APP_SHUTTING_DOWN) {
@@ -32,8 +32,8 @@ describe('utils', function () {
       saveStub = sinon.stub(Repository, 'save');
     });
     afterEach(function () {
-      subscribeStub.reset();
-      saveStub.reset();
+      subscribeStub.resetHistory();
+      saveStub.resetHistory();
     });
     after(function () {
       subscribeStub.restore();

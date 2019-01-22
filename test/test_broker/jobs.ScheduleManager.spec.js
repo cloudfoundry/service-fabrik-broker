@@ -210,9 +210,9 @@ describe('Jobs', function () {
     let clock, randomIntStub, repoSinonStub;
     before(function () {
       clock = sinon.useFakeTimers();
-      randomIntStub = sinon.stub(utils, 'getRandomInt', () => 0);
+      randomIntStub = sinon.stub(utils, 'getRandomInt').callsFake(() => 0);
       //randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
-      repoSinonStub = sinon.stub(Repo, 'search', () => {
+      repoSinonStub = sinon.stub(Repo, 'search').callsFake(() => {
         return Promise.try(() => {
           const runStatus = _.cloneDeep(lastRunStatus);
           runStatus.response.diff = [];
@@ -603,14 +603,14 @@ describe('Jobs', function () {
       let sandbox, cancelStub, scheduleStub, subStub, startSchedulerHandler, getScheduleStub, notFound;
       before(function () {
         sandbox = sinon.sandbox.create();
-        subStub = sandbox.stub(pubsub, 'subscribe', (topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
+        subStub = sandbox.stub(pubsub, 'subscribe').callsFake((topicName, handler) => topicName === CONST.TOPIC.SCHEDULER_STARTED ?
           startSchedulerHandler = handler : {});
         ScheduleManager2 = proxyquire('../../jobs/ScheduleManager', {
           '../common/config': systemJobConfig
         });
         cancelStub = sandbox.stub(ScheduleManager2, 'cancelSchedule');
         scheduleStub = sandbox.stub(ScheduleManager2, 'schedule');
-        getScheduleStub = sandbox.stub(ScheduleManager2, 'getSchedule', (name) => {
+        getScheduleStub = sandbox.stub(ScheduleManager2, 'getSchedule').callsFake((name) => {
           return Promise.try(() => {
             if (notFound) {
               return {};
@@ -624,9 +624,9 @@ describe('Jobs', function () {
 
       });
       afterEach(function () {
-        cancelStub.reset();
-        scheduleStub.reset();
-        getScheduleStub.reset();
+        cancelStub.resetHistory();
+        scheduleStub.resetHistory();
+        getScheduleStub.resetHistory();
         notFound = false;
       });
       after(function () {

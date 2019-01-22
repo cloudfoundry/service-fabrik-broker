@@ -35,7 +35,7 @@ describe('utils', function () {
   describe('#Random', function () {
     let randomIntStub;
     before(function () {
-      randomIntStub = sinon.stub(utils, 'getRandomInt', () => 1);
+      randomIntStub = sinon.stub(utils, 'getRandomInt').callsFake(() => 1);
     });
     after(function () {
       randomIntStub.restore();
