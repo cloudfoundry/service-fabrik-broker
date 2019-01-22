@@ -74,6 +74,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// TODO dynamically setup rbac rules and watches
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
@@ -128,8 +129,6 @@ type ReconcileServiceInstance struct {
 
 // Reconcile reads that state of the cluster for a ServiceInstance object and makes changes based on the state read
 // and what is in the ServiceInstance.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=postgresql,verbs=get;list;watch;create;update;patch;delete
@@ -140,6 +139,7 @@ type ReconcileServiceInstance struct {
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
+// TODO dynamically setup rbac rules and watches
 func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance
 	instance := &osbv1alpha1.SFServiceInstance{}
@@ -245,7 +245,7 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 	bindingID := ""
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 	if err != nil {
-		log.Printf("error computing properties. %v\n", err)
+		log.Printf("error computing status. %v\n", err)
 		return err
 	}
 	instance.Status.State = computedStatus.Deprovision.State
@@ -282,7 +282,7 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
-		log.Printf("error computing properties. %v\n", err)
+		log.Printf("error computing status. %v\n", err)
 		return err
 	}
 

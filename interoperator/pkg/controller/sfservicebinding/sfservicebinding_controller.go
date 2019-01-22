@@ -75,6 +75,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// TODO dynamically setup rbac rules and watches
 	postgres := &unstructured.Unstructured{}
 	postgres.SetKind("Postgres")
 	postgres.SetAPIVersion("kubedb.com/v1alpha1")
@@ -123,8 +124,6 @@ type ReconcileSFServiceBinding struct {
 
 // Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
 // and what is in the SFServiceBinding.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=directorbind,verbs=get;list;watch;create;update;patch;delete
@@ -134,6 +133,7 @@ type ReconcileSFServiceBinding struct {
 // +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
+// TODO dynamically setup rbac rules and watches
 func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFServiceBinding instance
 	binding := &osbv1alpha1.SFServiceBinding{}
@@ -237,7 +237,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	bindingID := binding.GetName()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
-		log.Printf("error computing properties. %v\n", err)
+		log.Printf("error computing status. %v\n", err)
 		return err
 	}
 	binding.Status.State = computedStatus.Unbind.State
@@ -273,7 +273,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
-		log.Printf("error computing properties. %v\n", err)
+		log.Printf("error computing status. %v\n", err)
 		return err
 	}
 

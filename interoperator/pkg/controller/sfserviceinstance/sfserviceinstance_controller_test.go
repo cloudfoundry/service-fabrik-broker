@@ -55,9 +55,9 @@ var templateSpec = []osbv1alpha1.TemplateSpec{
 		Content: "bindcontent",
 	},
 	osbv1alpha1.TemplateSpec{
-		Action:  "properties",
+		Action:  "status",
 		Type:    "gotemplate",
-		Content: "propertiescontent",
+		Content: "statuscontent",
 	},
 	osbv1alpha1.TemplateSpec{
 		Action:  "sources",
