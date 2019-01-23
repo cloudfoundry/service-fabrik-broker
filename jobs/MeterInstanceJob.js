@@ -143,7 +143,7 @@ class MeterInstanceJob extends BaseJob {
   static sendEvent(event) {
     const eventGuid = _.get(event, 'spec.options.id');
     if (this.isServicePlanExcluded(event.spec.options)) {
-      return Promise.try(() => this.updateMeterState(CONST.OPERATION.EXCLUDED, eventGuid, event))
+      return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, eventGuid, event))
       .return(true)
     }
     return Promise
@@ -152,13 +152,14 @@ class MeterInstanceJob extends BaseJob {
         logger.debug('Sending document:', enriched_usage_doc);
         return maas.client.putUsageRecord(enriched_usage_doc);
       })
-      .then(validEvent => validEvent ? this.updateMeterState(CONST.OPERATION.SUCCEEDED, eventGuid, event) : false)
+      .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, eventGuid, event) : false)
       .return(true)
       .catch(err => {
         logger.error('Error occurred while metering event : ', event);
         logger.error('Error Details - ', err);
+        // TODO add fail count failed
         return this
-          .updateMeterState(CONST.OPERATION.FAILED, eventGuid, event)
+          .updateMeterState(CONST.METER_STATE.FAILED, eventGuid, event)
           .return(false);
       });
   }

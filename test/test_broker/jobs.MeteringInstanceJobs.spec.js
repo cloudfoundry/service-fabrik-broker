@@ -57,7 +57,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.OPERATION.EXCLUDED
+            meter_state: CONST.METER_STATE.EXCLUDED
           }
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
@@ -77,7 +77,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.OPERATION.SUCCEEDED
+            meter_state: CONST.METER_STATE.METERED
           }
         };
         const mock_token = 'mock_token_string';
@@ -104,7 +104,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.OPERATION.FAILED
+            meter_state: CONST.METER_STATE.FAILED
           }
         };
         const mock_token = 'mock_token_string';
@@ -136,7 +136,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.OPERATION.SUCCEEDED
+            meter_state: CONST.METER_STATE.METERED
           }
         };
         mocks.metering.mockAuthCall(mock_token);
@@ -173,19 +173,21 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.OPERATION.SUCCEEDED
+            meter_state: CONST.METER_STATE.METERED
           }
         };
         const payload_failure = {
           status: {
-            meter_state: CONST.OPERATION.FAILED
+            meter_state: CONST.METER_STATE.FAILED
           }
         };
         mocks.metering.mockAuthCall(mock_token);
+        // mock successfull put req
         mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         mocks.metering.mockAuthCall(mock_token);
+        // mock failed put req
         mocks.metering.mockPutUsageRecord(mock_token, mock_response_code_failure, () => {
           return true;
         });
@@ -203,7 +205,6 @@ describe('Jobs', () => {
             expect(res.success).to.eql(1);
             expect(res.failed).to.eql(1);
           })
-          .catch(err => expect(err).to.be.undefined);
       });
     });
   });
