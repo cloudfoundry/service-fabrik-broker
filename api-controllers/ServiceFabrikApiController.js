@@ -206,7 +206,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
             auth: opts
           })
           .then(isSpaceDeveloper => {
-            if (httpMethod !== 'GET' && !isSpaceDeveloper) {
+            if (httpMethod !== CONST.HTTP_METHOD.GET && !isSpaceDeveloper) {
               throw new Forbidden(insufficientPermissions);
             }
             logger.info('space developers verification done.');
@@ -573,11 +573,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       })
       .then(() => backupGuid ? this.getSpaceGuidOfBackup(backupGuid) : tenantId)
       .then(spaceGuid => {
-        if (spaceGuid !== tenantId) {
-          backupSpaceGuid = spaceGuid;
-        }
-      })
-      .then(() => {
+        backupSpaceGuid = spaceGuid;
         let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
         if (backupSpaceGuid !== tenantId && !isCloudControllerAdmin) {
           return this.verifySpaceDevPermissions({
