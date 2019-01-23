@@ -143,7 +143,8 @@ class MeterInstanceJob extends BaseJob {
   static sendEvent(event) {
     const eventGuid = _.get(event, 'spec.options.id');
     if (this.isServicePlanExcluded(event.spec.options)) {
-      return Promise.try(() => this.updateMeterState(CONST.OPERATION.EXCLUDED, eventGuid, event));
+      return Promise.try(() => this.updateMeterState(CONST.OPERATION.EXCLUDED, eventGuid, event))
+      .return(true)
     }
     return Promise
       .try(() => this.enrichEvent(event.spec.options))
