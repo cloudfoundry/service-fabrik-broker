@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const MeterInstanceJob = require('../../jobs/MeteringInstanceJob');
+const MeterInstanceJob = require('../../jobs/MeterInstanceJob');
 const CONST = require('../../common/constants');
 
 const meterGuid = 'meter-guid';
@@ -70,7 +70,6 @@ describe('Jobs', () => {
             expect(res).to.eql(true);
             mocks.verify();
           })
-          .catch(err => expect(err).to.be.undefined);
       });
       it('should send document to metering and update state in apiserver', () => {
         const expectedResponse = {
