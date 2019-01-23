@@ -926,8 +926,7 @@ class BoshDirectorClient extends HttpClient {
       }, 302, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
-        logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. \
-      Task Id: ${taskId}.`);
+        logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
         return taskId;
       });
   }
@@ -946,7 +945,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered disk attachment with paramaters --> \
-      deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}`);
+        deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
         return taskId;
       });
   }
