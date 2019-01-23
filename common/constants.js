@@ -61,7 +61,6 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     IN_PROGRESS: 'in progress',
     ABORTING: 'aborting',
-    EXCLUDED: 'excluded'
   },
   SF_BROKER_API_VERSION_MIN: '2.12',
   OPERATION_TYPE: {
@@ -316,9 +315,6 @@ module.exports = Object.freeze({
       SFEVENT: 'sfevents',
       TASK: 'tasks'
     },
-    FINALIZERS: {
-      METERING: 'meter.servicefabrik.io'
-    },
     RESOURCE_STATE: {
       IN_QUEUE: 'in_queue',
       IN_PROGRESS: 'in_progress',
@@ -336,7 +332,8 @@ module.exports = Object.freeze({
       UNLOCKED: 'unlocked'
     },
     FINALIZERS: {
-      BROKER: 'broker.servicefabrik.io'
+      BROKER: 'broker.servicefabrik.io',
+      METERING: 'meter.servicefabrik.io'
     },
     TASK_TYPE: {
       SERVICE_INSTANCE_BACKUP: 'ServiceInstanceBackupTask',
@@ -359,6 +356,7 @@ module.exports = Object.freeze({
   METER_STATE: {
     TO_BE_METERED: 'TO_BE_METERED',
     METERED: 'METERED',
+    EXCLUDED: 'excluded',
     FAILED: 'FAILED'
   },
   SERVICE_KEYS: {
