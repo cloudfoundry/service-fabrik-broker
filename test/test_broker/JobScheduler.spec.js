@@ -256,7 +256,7 @@ describe('JobScheduler', function () {
           });
         });
       });
-      after(function () {
+      afterEach(function () {
         getMaintenanceStub.resetHistory();
       });
       after(function () {
