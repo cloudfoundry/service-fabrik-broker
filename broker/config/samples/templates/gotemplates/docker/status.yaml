@@ -1,0 +1,101 @@
+{{ $name := "" }}
+{{- with .docker.metadata.name }}
+  {{- $name = . }}
+{{- end }}
+{{- $stateString := "in_queue" }}
+{{- $response := "" }}
+{{- $error := "" }}
+{{- with .docker.status }}
+  {{- if eq .state "succeeded" }}
+    {{- $stateString = "succeeded" }}
+    {{- $response = $response }}
+  {{- else }}
+    {{- if eq .state "failed"}}
+      {{- $stateString = "failed" }}
+      {{- $error =  .error }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if eq $stateString "succeeded" }}
+  {{- $response = (printf "Service Instance %s creation successfull" $name) }}
+{{- else }}
+    {{- $response = (printf "Service Instance %s provision failed" $name) }}
+{{- end }}
+{{- if eq $stateString "in_queue" }}
+  {{- $response = "" }}
+{{- end }}
+provision:
+  state: {{ $stateString }}
+  response: {{ $response }}
+{{- if eq $stateString "failed" }}
+  error: {{ $error | quote}}
+{{- end }}
+  dashboardUrl: ""
+{{- with .dockerbind.status }}
+  {{- $response = (b64dec .response | quote) }}
+{{- end }}
+{{- $stateString = "in_queue" }} 
+{{- with .dockerbind }}
+  {{- with .status }}
+    {{- if eq .state "succeeded" }}
+      {{- $stateString = "succeeded" }}
+    {{- else }}
+      {{- if eq .state "failed" }}
+        {{- $stateString = "failed" }}
+        {{- $error =  .error }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+bind:
+  state: {{ $stateString }}
+{{- if eq $stateString "failed" }}
+  error: {{ $error | quote}}
+{{- end }}
+  response: {{ $response }}
+{{- with .dockerbind.status }}
+  {{- $response = (b64dec .response | quote) }}
+{{- end }}
+{{- $stateString = "delete" }} 
+{{- with .dockerbind }}
+  {{- with .status }}
+    {{- if eq .state "succeeded" }}
+      {{- $stateString = "succeeded" }}
+    {{- else }}
+      {{- if eq .state "failed" }}
+        {{- $stateString = "failed" }}
+        {{- $error =  .error }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- else }}
+  {{- $stateString = "succeeded" }}
+{{- end }}
+unbind:
+  state: {{ $stateString }}
+{{- if eq $stateString "failed" }}
+  error: {{ $error | quote}}
+{{- end }}
+  response: {{ $response }}
+{{- $response := "" }}
+{{- $stateString = "delete" }} 
+{{- with .docker }}
+  {{- with .status }}
+    {{- if eq .state "delete" }}
+      {{- $stateString = "delete" }}
+    {{- else }}
+      {{- if eq .state "failed" }}
+        {{- $stateString = "failed" }}
+        {{- $error =  .error }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- else }}
+  {{- $stateString = "succeeded" }}
+{{- end }}
+deprovision:
+  state: {{ $stateString }}
+{{- if eq $stateString "failed" }}
+  error: {{ $error | quote}}
+{{- end }}
+  response: {{ $response }}

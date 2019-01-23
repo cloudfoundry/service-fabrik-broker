@@ -5,6 +5,7 @@ const apiserver = require('../../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../../common/constants');
 const config = require('../../common/config');
 const logger = require('../../common/logger');
+const utils = require('../../common/utils');
 
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
@@ -112,19 +113,19 @@ function nockGetResource(resourceGroup, resourceType, id, response, expectedExpe
 
 function nockCreateConfigMap(response, expectedStatusCode, payload) {
   nock(apiServerHost)
-    .post(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps`, JSON.stringify(payload))
+    .post(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps`, JSON.stringify(payload))
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockGetConfigMap(response, expectedStatusCode) {
   nock(apiServerHost)
-    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`)
     .reply(expectedStatusCode || 200, response);
 }
 
 function nockUpdateConfigMap(response, expectedStatusCode, payload) {
   nock(apiServerHost)
-    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
+    .patch(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`, JSON.stringify(payload))
     .reply(expectedStatusCode || 200, response);
 }
 
@@ -140,9 +141,10 @@ function nockCreateResource(resourceGroup, resourceType, response, payload, expe
     .reply(expectedExpectedCode || 201, response);
 }
 
-function nockDeleteResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
+function nockDeleteResource(resourceGroup, resourceType, id, namespaceId, response, expectedExpectedCode) {
+  const namespace = namespaceId ? namespaceId : 'default';
   nock(apiServerHost)
-    .delete(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
+    .delete(`/apis/${resourceGroup}/v1alpha1/namespaces/${namespace}/${resourceType}/${id}`)
     .reply(expectedExpectedCode || 200, response);
 }
 
@@ -673,7 +675,7 @@ describe('eventmesh', () => {
     describe('deleteResource', () => {
       it('Deletes resource', () => {
         const expectedResponse = {};
-        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse);
+        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', undefined, expectedResponse);
         return apiserver.deleteResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -685,8 +687,24 @@ describe('eventmesh', () => {
             verify();
           });
       });
+      it('Deletes interoperator resource along with namespace', () => {
+        const expectedResponse = {};
+        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace', expectedResponse);
+        mocks.apiServerEventMesh.nockDeleteNamespace('namespace', {}, 1);
+        return apiserver.deleteResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            namespaceId: 'namespace'
+          })
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            verify();
+          });
+      });
       it('Throws error when delete fails', () => {
-        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', {}, 404);
+        nockDeleteResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', undefined, {}, 404);
         return apiserver.deleteResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -892,7 +910,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -931,7 +949,7 @@ describe('eventmesh', () => {
             });
             expect(res.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.metadata.resourceVersion).to.eql('370255');
-            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -990,7 +1008,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -1020,7 +1038,7 @@ describe('eventmesh', () => {
             });
             expect(res.body.kind).to.eql(CONST.APISERVER.CONFIG_MAP.RESOURCE_KIND);
             expect(res.body.metadata.resourceVersion).to.eql('370255');
-            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
+            expect(res.body.metadata.selfLink).to.eql(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps/${CONST.CONFIG.RESOURCE_NAME}`);
             verify();
           });
       });
@@ -1041,6 +1059,224 @@ describe('eventmesh', () => {
           });
       });
     });
+    describe('createNamespace', () => {
+      it('Creates namespace successfully', () => {
+        const payload = {
+          kind: CONST.APISERVER.NAMESPACE_OBJECT,
+          apiVersion: 'v1',
+          metadata: {
+            name: 'namespace1'
+          }
+        };
+        mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload);
+        return apiserver.createNamespace('namespace1')
+          .then(res => {
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Doesnt create namespace if already present', () => {
+        const payload = {
+          kind: CONST.APISERVER.NAMESPACE_OBJECT,
+          apiVersion: 'v1',
+          metadata: {
+            name: 'namespace1'
+          }
+        };
+        mocks.apiServerEventMesh.nockCreateNamespace('namespace1', {}, 1, payload, 409);
+        return apiserver.createNamespace('namespace1')
+          .catch(err => {
+            expect(err.status).to.eql(409);
+            verify();
+          });
+      });
+    });
 
+    describe('deleteNamespace', () => {
+      it('Deletes namespace successfully', () => {
+        mocks.apiServerEventMesh.nockDeleteNamespace('namespace1', {}, 1);
+        return apiserver.deleteNamespace('namespace1')
+          .then(res => {
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Throws error if delete namespace fails', () => {
+        mocks.apiServerEventMesh.nockDeleteNamespace('namespace1', {}, 1, undefined, 500);
+        return apiserver.deleteNamespace('namespace1')
+          .catch(err => {
+            expect(err.status).to.eql(500);
+            verify();
+          });
+      });
+    });
+    describe('getSecret', () => {
+      it('Gets secret successfully with namespace', () => {
+        mocks.apiServerEventMesh.nockGetSecret('secret', 'namespace', {}, 1);
+        return apiserver.getSecret('secret', 'namespace')
+          .then(res => {
+            expect(res).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Gets secret successfully without namespace', () => {
+        mocks.apiServerEventMesh.nockGetSecret('secret', 'default', {}, 1);
+        return apiserver.getSecret('secret')
+          .then(res => {
+            expect(res).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Throws error if get secret call fails', () => {
+        mocks.apiServerEventMesh.nockGetSecret('secret', 'default', {}, 1, 500);
+        return apiserver.getSecret('secret')
+          .catch(err => {
+            expect(err.status).to.eql(500);
+            verify();
+          });
+      });
+    });
+    describe('patchOSBResource', () => {
+      it('Patches osb resource with spec and status', () => {
+        const expectedGetResponse = {
+          spec: {
+            plan_id: 'plan1',
+            params: {
+              foo: 'bar'
+            },
+            context: {
+              organization_guid: 'org1',
+              space_guid: 'space1'
+            }
+          },
+          status: {
+            state: 'in_queue',
+            description: 'desc'
+          }
+        };
+        const expectedResponse = {};
+        const payload = {
+          spec: {
+            planId: 'plan2',
+            params: {
+              foo: 'bar'
+            },
+            context: {
+              organization_guid: 'org2',
+              space_guid: 'space2'
+            },
+            serviceId: 'service2'
+          },
+          metadata: {
+            labels: {
+              state: 'in_progress'
+            }
+          },
+          status: {
+            state: 'in_progress',
+            description: ''
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedResponse, payload);
+        return apiserver.patchOSBResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            spec: {
+              plan_id: 'plan2',
+              service_id: 'service2',
+              context: {
+                organization_guid: 'org2',
+                space_guid: 'space2'
+              }
+            },
+            status: {
+              state: 'in_progress',
+              description: ''
+            }
+          })
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            verify();
+          });
+      });
+      it('Patches osb resource fails with error', () => {
+        const expectedGetResponse = {
+          spec: {
+            plan_id: 'plan1',
+            params: {
+              foo: 'bar'
+            },
+            context: {
+              organization_guid: 'org1',
+              space_guid: 'space1'
+            }
+          },
+          status: {
+            state: 'in_queue',
+            description: 'desc'
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedGetResponse);
+        return apiserver.patchOSBResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            spec: {
+              plan_id: 'plan2',
+              service_id: 'service2',
+              context: {
+                organization_guid: 'org2',
+                space_guid: 'space2'
+              }
+            },
+            status: {
+              state: 'in_progress',
+              description: ''
+            }
+          })
+          .catch(err => {
+            expect(err.status).to.eql(404);
+            verify();
+          });
+      });
+    });
+
+    describe('createOrUpdateServicePlan', () => {
+      it('Create service crd successfully for first time', () => {
+        const crdJson = utils.getServiceCrdFromConfig(config.services[0]);
+        mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, 1, crdJson);
+        return apiserver.createOrUpdateServicePlan(crdJson)
+          .then(res => {
+            expect(res.statusCode).to.eql(201);
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Patches service crd successfully', () => {
+        const crdJson = utils.getServiceCrdFromConfig(config.services[0]);
+        mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, 1, crdJson, 409);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, crdJson.metadata.name, {}, 1, crdJson);
+
+        return apiserver.createOrUpdateServicePlan(crdJson)
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            mocks.verify();
+          });
+      });
+      it('Throws error service crd patch fails', () => {
+        const crdJson = utils.getServiceCrdFromConfig(config.services[0]);
+        mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, 1, crdJson, 409);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, crdJson.metadata.name, {}, 1, crdJson, 500);
+        return apiserver.createOrUpdateServicePlan(crdJson)
+          .catch(err => {
+            expect(err.status).to.eql(500);
+            mocks.verify();
+          });
+      });
+    });
   });
 });

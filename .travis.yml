@@ -1,44 +1,70 @@
 ---
-language: node_js
-node_js:
-  - "8.14"
-before_install:
-  - pip install --user truffleHog==2.0.89
-  - |
-    pushd /tmp
-    git clone --depth 1 https://github.com/awslabs/git-secrets
-    cd git-secrets
-    sudo make install
-    popd
-env:
-  - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
-script:
-  - |
-     git secrets --install
-     git secrets --register-aws --global
-     git secrets --list
-     IFS='' CHANGED_FILES=$(npm run -s jsformat -- | grep -v "unchanged")
-     [[ -z $CHANGED_FILES ]] && NUM_CHANGED_FILES=0 || NUM_CHANGED_FILES=$(echo $CHANGED_FILES | wc -l)
-     echo "Code formatting to be fixed in $NUM_CHANGED_FILES file(s)..."
-     if [[ $NUM_CHANGED_FILES -gt 0 ]]; then
-       echo "Listing modifications required.."
-       git diff
-       echo "FAILED: Run js-beautify(npm run jsformat)" && exit 1;
-     else
-       echo "No changes to the code formatting required.. "
-     fi
-  - "npm run -s jshint-ci"
-  - "npm run -s test-coverall"
-  - "npm run -s jsdoc"
-  - |
-     git secrets --scan-history || exit 1
-  # - |
-  #    echo "Full repo scan of truffleHog"
-  #    # truffleHog only scans git endpoints which have a ref.
-  #    # truffleHog check fails to detect changed because travis merge creates a detached HEAD
-  #    # Creating a branch to fix this issue
-  #    git checkout -b travis-merge
-  #    INITIAL_COMMIT="26697a04e6890c0fc2226cf8c4e228c95586254c"
-  #    high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
-  #    echo "Truffle hog output : $high_entropy"
-  #    if [[ "$high_entropy" != "" ]] ; then exit 1; fi
+matrix:
+  include:
+    - language: node_js
+      node_js:
+        - "8.14"
+      before_install:
+        - pip install --user truffleHog==2.0.89
+        - |
+          pushd /tmp
+          git clone --depth 1 https://github.com/awslabs/git-secrets
+          cd git-secrets
+          sudo make install
+          popd
+      env:
+        - SETTINGS_PATH="$(pwd)/broker/config/settings.yml"
+      script:
+        - |
+          git secrets --install
+          git secrets --register-aws --global
+          git secrets --list
+          IFS='' CHANGED_FILES=$(npm run -s jsformat -- | grep -v "unchanged")
+          [[ -z $CHANGED_FILES ]] && NUM_CHANGED_FILES=0 || NUM_CHANGED_FILES=$(echo $CHANGED_FILES | wc -l)
+          echo "Code formatting to be fixed in $NUM_CHANGED_FILES file(s)..."
+          if [[ $NUM_CHANGED_FILES -gt 0 ]]; then
+            echo "Listing modifications required.."
+            git diff
+            echo "FAILED: Run js-beautify(npm run jsformat)" && exit 1;
+          else
+            echo "No changes to the code formatting required.. "
+          fi
+        - "npm run -s jshint-ci"
+        - "npm run -s test-coverall"
+        - "npm run -s jsdoc"
+        - |
+          git secrets --scan-history || exit 1
+    # - |
+    #    echo "Full repo scan of truffleHog"
+    #    # truffleHog only scans git endpoints which have a ref.
+    #    # truffleHog check fails to detect changed because travis merge creates a detached HEAD
+    #    # Creating a branch to fix this issue
+    #    git checkout -b travis-merge
+    #    INITIAL_COMMIT="26697a04e6890c0fc2226cf8c4e228c95586254c"
+    #    high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
+    #    echo "Truffle hog output : $high_entropy"
+    #    if [[ "$high_entropy" != "" ]] ; then exit 1; fi
+    - language: go
+      os:
+        - linux
+      go:
+        - "1.11"
+      git:
+        depth: 3
+      before_install:
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - go get golang.org/x/lint/golint
+        - go get github.com/modocache/gover
+        - go get github.com/mattn/goveralls
+      install:
+        - cd interoperator
+        - dep ensure -v
+      script:
+        - go fmt ./pkg/... ./cmd/...
+        - go vet ./pkg/... ./cmd/...
+        - golint ./pkg/... ./cmd/...
+        - ./scripts/install_test.sh
+        - go test -v -coverpkg=./pkg/... -coverprofile=../subpkg1.coverprofile ./pkg/...
+        - cd ..
+        # - gover
+        # - goveralls -coverprofile gover.coverprofile -service travis-ci
