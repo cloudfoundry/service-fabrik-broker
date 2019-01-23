@@ -822,6 +822,81 @@ describe('bosh', () => {
       });
     });
 
+    describe('#errands', () => {
+      it('should return errands array for the deployment', () => {
+        const req = {
+          method: 'GET',
+          url: `/deployments/${deployment_name}/errands`
+        };
+        const res = {
+          statusCode: 200,
+          body: JSON.stringify(['smoke-tests', 'status'])
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.getDeploymentErrands(deployment_name)
+          .then(errands => {
+            expect(errands).to.deep.equal(['smoke-tests', 'status']);
+          });
+      });
+
+      it('should return task id for errand', () => {
+        let instances = [{
+          'group': 'zookeeper',
+          'id': '1'
+        }];
+        let errandName = 'status';
+        const req = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/errands/${errandName}/runs`,
+          body: {
+            'keep-alive': true,
+            'instances': instances
+          }
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.runDeploymentErrand(deployment_name, errandName, instances)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+
+    });
+
+    describe('#disks', () => {
+      it('should return task id for disk attachment task', () => {
+        let jobName = 'dummy_job';
+        let diskCid = 'dummy_disk';
+        let instanceId = 'dummy_instance';
+        const req = {
+          method: 'PUT',
+          url: `/disks/${diskCid}/attachments`,
+          qs: {
+            deployment: deployment_name,
+            job: jobName,
+            instance_id: instanceId,
+            disk_properties: 'copy'
+          }
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshClient = new MockBoshDirectorClient(req, res);
+        return mockBoshClient.createDiskAttachment(deployment_name, diskCid, jobName, instanceId)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+    });
+
     describe('#createOrUpdateDeploymentProperty', () => {
       it('returns correct status code', (done) => {
         let request = {
