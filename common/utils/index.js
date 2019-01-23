@@ -8,7 +8,6 @@ const moment = require('moment');
 const uuid = require('uuid');
 const crypto = require('crypto');
 const logger = require('../logger');
-const eventmesh = require('../../data-access-layer/eventmesh');
 const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
