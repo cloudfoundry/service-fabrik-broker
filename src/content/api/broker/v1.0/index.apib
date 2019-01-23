@@ -404,3 +404,12 @@ The below API can be used to retrieve the automated update schedule interval of 
 
 + Response 403
 <!-- include(responses/403.apib) -->
+
+## Cancel Automated Updates [DELETE /service_instances/{instance_guid}/schedule_update]
+[Note : This api can only be executed by users with 'cloud_controller.admin' scope.
+API mainly provided for clean up hooks in automated test scripts. It deletes all 
+update jobs (repeat and one-time retry jobs).]
++ Parameters
+    + instance_guid - the guid of the service instance
+
++ Response 200
