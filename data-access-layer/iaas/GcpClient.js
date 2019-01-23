@@ -30,11 +30,11 @@ class GcpClient extends BaseCloudClient {
     );
   }
 
-  getDiskMetadata(diskCid, zone) {
+  getDiskMetadata(diskId, zone) {
     return Promise.try(() =>
       this.computeClient
       .zone(zone)
-      .disk(diskCid)
+      .disk(diskId)
       .get()
       .then(diskData => diskData[0].metadata)
       .then(metadata => {
@@ -57,10 +57,10 @@ class GcpClient extends BaseCloudClient {
       const diskName = this.getRandomDiskId();
       const options = {
         sourceSnapshot: `global/snapshots/${snapshotId}`,
-        description: 'disk created via service fabrik for bosh restore',
+        description: 'disk created via service fabrik',
         type: opts.type || `projects/${this.settings.projectId || this.settings.credentials.project_id}/zones/${zone}/pd-ssd`,
         labels: _.assign({}, opts.tags || {}, {
-          operation: 'bosh restore'
+          createdBy: 'service-fabrik'
         })
       };
 
@@ -75,7 +75,7 @@ class GcpClient extends BaseCloudClient {
 
       const oncomplete = () => {
         cleanup();
-        logger.info(`created disk ${diskName}`);
+        logger.info(`created disk ${diskName} from snapshot ${snapshotId}`);
         this.getDiskMetadata(diskName, zone)
           .then(disk => resolve(disk))
           .catch(err => reject(err));

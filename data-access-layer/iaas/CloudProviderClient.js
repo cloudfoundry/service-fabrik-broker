@@ -54,20 +54,25 @@ class CloudProviderClient extends BaseCloudClient {
   createDiskFromSnapshot(snapshotId, zones, options = {}) {
     let tags = [];
     if (options.tags) {
-      tags.push({
-        ResourceType: 'volume',
-        Tags: _.keys(options.tags).map(tagKey => ({
-          Key: tagKey,
-          Value: options.tags[tagKey]
-        }))
-      });
+      options.tags.createdBy = 'service-fabrik';
+    } else {
+      options.tags = {
+        createdBy: 'service-fabrik'
+      };
     }
+    tags.push({
+      ResourceType: 'volume',
+      Tags: _.keys(options.tags).map(tagKey => ({
+        Key: tagKey,
+        Value: options.tags[tagKey]
+      }))
+    });
     return Promise.try(() => {
         return this.blockstorage
           .createVolume({
             AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
             SnapshotId: snapshotId,
-            VolumeType: _.get(options, 'volumeType', 'gp2'),
+            VolumeType: _.get(options, 'type', 'gp2'),
             TagSpecifications: tags
           })
           .promise();
@@ -80,37 +85,51 @@ class CloudProviderClient extends BaseCloudClient {
         return this.blockstorage.waitFor('volumeAvailable', describeReq).promise();
       })
       .then(volResponse => volResponse.Volumes[0])
-      .then(volume => ({
-        volumeId: volume.VolumeId,
-        size: volume.Size,
-        zone: volume.AvailabilityZone,
-        type: volume.VolumeType,
-        extra: {
-          volumeType: volume.VolumeType,
-          tags: {}
-        }
-      }));
+      .then(volume => {
+        const responseTags = volume.Tags || [];
+        const outTags = {};
+        _.forEach(responseTags, tag => {
+          outTags[tag.Key] = tag.Value;
+        });
+        return {
+          volumeId: volume.VolumeId,
+          size: volume.Size,
+          zone: volume.AvailabilityZone,
+          type: volume.VolumeType,
+          extra: {
+            type: volume.VolumeType,
+            tags: outTags
+          }
+        };
+      });
   }
 
-  getDiskMetadata(diskCid) {
+  getDiskMetadata(diskId) {
     return Promise.try(() => {
         return this.blockstorage
           .describeVolumes({
-            VolumeIds: [diskCid]
+            VolumeIds: [diskId]
           })
           .promise();
       })
       .then(diskResponse => diskResponse.Volumes[0])
-      .then(volume => ({
-        volumeId: volume.VolumeId,
-        size: volume.Size,
-        zone: volume.AvailabilityZone,
-        type: volume.VolumeType,
-        extra: {
-          volumeType: volume.VolumeType,
-          tags: {}
-        }
-      }));
+      .then(volume => {
+        const responseTags = volume.Tags || [];
+        const outTags = {};
+        _.forEach(responseTags, tag => {
+          outTags[tag.Key] = tag.Value;
+        });
+        return {
+          volumeId: volume.VolumeId,
+          size: volume.Size,
+          zone: volume.AvailabilityZone,
+          type: volume.VolumeType,
+          extra: {
+            type: volume.VolumeType,
+            tags: outTags
+          }
+        };
+      });
   }
 
   getContainer(container) {

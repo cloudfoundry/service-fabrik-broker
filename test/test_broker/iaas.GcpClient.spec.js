@@ -591,6 +591,10 @@ describe('iaas', function () {
           expect(disk.zone).to.equal('europe-west1-c');
           expect(disk.type).to.equal('pd-ssd');
           expect(disk.size).to.equal('4');
+          expect(disk.extra.tags).to.deep.equal({
+            operation: 'testboshrestore'
+          });
+          expect(disk.extra.type).to.equal('https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/diskTypes/pd-ssd');
         });
       });
 
@@ -611,6 +615,10 @@ describe('iaas', function () {
                 expect(disk.zone).to.equal('europe-west1-c');
                 expect(disk.type).to.equal('pd-ssd');
                 expect(disk.size).to.equal('4');
+                expect(disk.extra.tags).to.deep.equal({
+                  operation: 'testboshrestore'
+                });
+                expect(disk.extra.type).to.equal('https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/diskTypes/pd-ssd');
               })
               .catch(() => {
                 throw new Error('expected create disk to be successful');

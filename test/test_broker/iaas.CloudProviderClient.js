@@ -23,7 +23,14 @@ describe('iaas', function () {
           VolumeId: diskId,
           Size: '4',
           AvailabilityZone: 'zone',
-          VolumeType: 'type'
+          VolumeType: 'type',
+          Tags: [{
+            Key: 'k1',
+            Value: 'v1'
+          }, {
+            Key: 'k2',
+            Value: 'v2'
+          }]
         }]
       };
       it('should create disk from snapshot for aws', function () {
@@ -43,6 +50,9 @@ describe('iaas', function () {
             Tags: [{
               Key: 'customkey',
               Value: 'customvalue'
+            }, {
+              Key: 'createdBy',
+              Value: 'service-fabrik'
             }]
           }]
         }).returns({
@@ -67,6 +77,13 @@ describe('iaas', function () {
             expect(disk.size).to.eql('4');
             expect(disk.zone).to.eql('zone');
             expect(disk.type).to.eql('type');
+            expect(disk.extra).to.deep.equal({
+              type: 'type',
+              tags: {
+                k1: 'v1',
+                k2: 'v2'
+              }
+            });
           });
       });
       it('should fail on creating disk from snapshot for aws', function () {
@@ -86,6 +103,9 @@ describe('iaas', function () {
             Tags: [{
               Key: 'customkey',
               Value: 'customvalue'
+            }, {
+              Key: 'createdBy',
+              Value: 'service-fabrik'
             }]
           }]
         }).returns({
@@ -119,6 +139,9 @@ describe('iaas', function () {
             Tags: [{
               Key: 'customkey',
               Value: 'customvalue'
+            }, {
+              Key: 'createdBy',
+              Value: 'service-fabrik'
             }]
           }]
         }).returns({
@@ -151,7 +174,14 @@ describe('iaas', function () {
           VolumeId: diskId,
           Size: '4',
           AvailabilityZone: 'zone',
-          VolumeType: 'type'
+          VolumeType: 'type',
+          Tags: [{
+            Key: 'k1',
+            Value: 'v1'
+          }, {
+            Key: 'k2',
+            Value: 'v2'
+          }]
         }]
       };
       it('should fetch disk metadata for aws', function () {
@@ -174,6 +204,13 @@ describe('iaas', function () {
             expect(disk.size).to.eql('4');
             expect(disk.zone).to.eql('zone');
             expect(disk.type).to.eql('type');
+            expect(disk.extra).to.deep.equal({
+              type: 'type',
+              tags: {
+                k1: 'v1',
+                k2: 'v2'
+              }
+            });
           });
       });
 

@@ -45,7 +45,7 @@ class AzureClient extends BaseCloudClient {
           tags: _.assign({}, opts.tags || {}, {
             createdBy: 'service-fabrik'
           }),
-          sku: _.assign({}, opts.sku || {}, {
+          sku: _.assign({}, opts.type || {
             name: 'Premium_LRS',
             tier: 'Premium'
           }),
@@ -62,21 +62,25 @@ class AzureClient extends BaseCloudClient {
         zone: diskResponse.zones[0],
         type: diskResponse.sku ? diskResponse.sku.name : '',
         extra: {
-          sku: diskResponse.sku
+          type: diskResponse.sku,
+          sku: diskResponse.sku,
+          tags: diskResponse.tags
         }
       }));
   }
 
-  getDiskMetadata(diskCid) {
+  getDiskMetadata(diskId) {
     return this.computeClient.disks
-      .getAsync(this.settings.resource_group, diskCid)
+      .getAsync(this.settings.resource_group, diskId)
+      .tap(o => console.log(o))
       .then(diskResponse => ({
         volumeId: diskResponse.name,
         size: diskResponse.diskSizeGB,
         zone: diskResponse.zones[0],
         type: diskResponse.sku ? diskResponse.sku.name : '',
         extra: {
-          sku: diskResponse.sku
+          sku: diskResponse.sku,
+          type: diskResponse.sku
         }
       }));
   }

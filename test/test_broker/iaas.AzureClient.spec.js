@@ -52,6 +52,10 @@ describe('iaas', function () {
         tier: 'premium'
       };
       const loc = 'westeurope';
+      const createData = {
+        createOption: 'Copy',
+        sourceUri: 'test/test'
+      };
       let sandbox;
 
       before(() => {
@@ -66,6 +70,31 @@ describe('iaas', function () {
 
       afterEach(() => {
         mocks.reset();
+      });
+
+      it('should fetch volume snapshot successfully', function () {
+        mocks.azureClient.auth();
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+          status: 200,
+          body: {
+            id: 'testId',
+            location: 'westeurope',
+            properties: {
+              creationData: createData
+            }
+          },
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          }
+        });
+        return client.getSnapshot(snapshotName)
+          .then(snapshot => {
+            expect(snapshot.id).to.equal('testId');
+            expect(snapshot.location).to.equal('westeurope');
+            expect(snapshot.creationData).to.deep.equal(createData);
+          });
       });
 
       it('should bubble up error if get disk fails', function () {
@@ -83,17 +112,27 @@ describe('iaas', function () {
           body: {
             name: diskName,
             zones: [zone],
-            sku: sku
+            sku: sku,
+            properties: {
+              diskSizeGB: '4',
+              timeCreated: new Date().toString()
+            }
           }
         });
         return client.getDiskMetadata(diskName).then(res => {
           expect(res.volumeId).to.equal(diskName);
           expect(res.zone).to.equal(zone);
+          expect(res.size).to.equal('4');
+          expect(res.type).to.equal('Premium_LRS');
+          expect(res.extra).to.deep.equal({
+            sku: sku,
+            type: sku
+          });
           mocks.verify();
         });
       });
 
-      it('should bubble up error if get snapshot fails', function () {
+      it('should bubble up error if get snapshot fails in create disk', function () {
         mocks.azureClient.auth();
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
         return client.createDiskFromSnapshot(snapshotName, zone, {
@@ -165,14 +204,15 @@ describe('iaas', function () {
             date: new Date().toISOString()
           }
         });
+        const tags = {
+          name: 'value',
+          createdBy: 'service-fabrik'
+        };
 
         mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
           zones: [zone],
           location: loc,
-          tags: {
-            name: 'value',
-            createdBy: 'service-fabrik'
-          },
+          tags: tags,
           sku: {
             name: 'Premium_LRS'
           },
@@ -194,7 +234,9 @@ describe('iaas', function () {
             location: loc,
             zones: [zone],
             sku: sku,
+            tags: tags,
             properties: {
+              diskSizeGB: '4',
               provisioningState: 'Succeeded',
               creationData: {
                 createOption: 'Copy',
@@ -213,6 +255,12 @@ describe('iaas', function () {
             expect(result.volumeId).to.equal(diskName);
             expect(result.zone).to.equal(zone);
             expect(result.type).to.equal('Premium_LRS');
+            expect(result.size).to.equal('4');
+            expect(result.extra).to.deep.equal({
+              sku: sku,
+              type: sku,
+              tags: tags
+            });
             mocks.verify();
           });
       });
