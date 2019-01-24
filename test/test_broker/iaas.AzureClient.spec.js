@@ -113,6 +113,9 @@ describe('iaas', function () {
             name: diskName,
             zones: [zone],
             sku: sku,
+            tags: {
+              createdBy: 'service-fabrik'
+            },
             properties: {
               diskSizeGB: '4',
               timeCreated: new Date().toString()
@@ -126,7 +129,10 @@ describe('iaas', function () {
           expect(res.type).to.equal('Premium_LRS');
           expect(res.extra).to.deep.equal({
             sku: sku,
-            type: sku
+            type: sku,
+            tags: {
+              createdBy: 'service-fabrik'
+            }
           });
           mocks.verify();
         });
