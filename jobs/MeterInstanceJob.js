@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const moment = require('moment');
 const Promise = require('bluebird');
 const logger = require('../common/logger');
 const BaseJob = require('./BaseJob');
@@ -32,7 +31,7 @@ class MeterInstanceJob extends BaseJob {
         labelSelector: `meter_state=${CONST.METER_STATE.TO_BE_METERED}`
       }
     };
-    return apiServerClient._getResources(options);
+    return apiServerClient.getResources(options);
   }
 
   static meter(events) {
@@ -71,8 +70,10 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static isServicePlanExcluded(options) {
+    options = JSON.parse(options);
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
+    logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
     const serviceName = this.getServiceNameFromServiceGUID(serviceId);
     const planName = this.getPlanSKUFromPlanGUID(serviceId, planId);
     const excluded_service_names = _.map(config.metering.excluded_service_plans, p => p.service_name);
@@ -93,13 +94,13 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static enrichEvent(options) {
-    // Add region , service name and plan sku name and fix timestamp of the event
+    // Add region , service name and plan sku name of the event
+    options = JSON.parse(options);
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
-    const timestamp = _.get(options, 'timestamp');
+    logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
     options.service.id = this.getServiceNameFromServiceGUID(serviceId);
     options.service.plan = this.getPlanSKUFromPlanGUID(serviceId, planId);
-    options.timestamp = moment(timestamp).format('YYYY-MM-DDTHH:mm:ss.SSS');
     options.consumer.region = config.metering.region;
     return options;
   }
@@ -113,6 +114,7 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static getPlanSKUFromPlanGUID(serviceGuid, planGuid) {
+    logger.info(`Getting Plan SKU for service ${serviceGuid}, plan: ${planGuid}`);
     const service = _.chain(catalog.toJSON().services)
       .map((s) => s.id === serviceGuid ? s : undefined)
       .filter(s => s !== undefined)
@@ -141,34 +143,37 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static sendEvent(event) {
-    const eventGuid = _.get(event, 'spec.options.id');
+    logger.info('Sending event:', event);
     if (this.isServicePlanExcluded(event.spec.options)) {
-      return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, eventGuid, event))
-      .return(true)
+      return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, event))
+        .return(true);
     }
     return Promise
       .try(() => this.enrichEvent(event.spec.options))
       .then(enriched_usage_doc => {
         logger.debug('Sending document:', enriched_usage_doc);
-        return maas.client.putUsageRecord(enriched_usage_doc);
+        return maas.client.putUsageRecord({
+          usage: [enriched_usage_doc]
+        });
       })
-      .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, eventGuid, event) : false)
+      .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, event) : false)
       .return(true)
       .catch(err => {
         logger.error('Error occurred while metering event : ', event);
         logger.error('Error Details - ', err);
-        // TODO add fail count failed
+        // TODO add fail count , remove meter state failed
         return this
-          .updateMeterState(CONST.METER_STATE.FAILED, eventGuid, event)
+          .updateMeterState(CONST.METER_STATE.FAILED, event)
           .return(false);
       });
   }
 
-  static updateMeterState(status, eventGuid, event) {
+  static updateMeterState(status, event) {
+    logger.debug(`Updating meter state for event`, event);
     return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
-        resourceId: `${event.spec.options.id}`,
+        resourceId: `${event.metadata.name}`,
         status: {
           meter_state: status
         }

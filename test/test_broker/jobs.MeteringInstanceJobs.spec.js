@@ -5,48 +5,53 @@ const MeterInstanceJob = require('../../jobs/MeterInstanceJob');
 const CONST = require('../../common/constants');
 
 const meterGuid = 'meter-guid';
-const not_excluded_plan = 'bc158c9a-7934-401e-94ab-057082a5073f'
-let dummy_event = {
-  apiVersion: 'instance.servicefabrik.io/v1alpha1',
-  kind: 'Sfevent',
-  metadata: {
-    clusterName: '',
-    creationTimestamp: '2019-01-21T11:00:43Z',
-    generation: 1,
-    labels: {
-      meter_state: 'TO_BE_METERED'
-    },
-    name: '48eb2e1e-dbfa-4554-9663-273418437e90',
-    namespace: 'default',
-    resourceVersion: '326999',
-    selfLink: '/apis/instance.servicefabrik.io/v1alpha1/namespaces/default/sfevents/48eb2e1e-dbfa-4554-9663-273418437e90',
-    uid: 'cbf0c777-1d6b-11e9-806d-0e655bfa3b31'
+const not_excluded_plan = 'bc158c9a-7934-401e-94ab-057082a5073f';
+let options_json = {
+  id: meterGuid,
+  timestamp: '2019-01-21T11:00:42.384518Z',
+  service: {
+    id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+    plan: not_excluded_plan
   },
-  spec: {
-    metadata: {
-      creationTimestamp: null
-    },
-    options: {
-      id: meterGuid,
-      timestamp: '2019-01-21T11:00:42.384518Z',
-      service: {
-        id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
-        plan: not_excluded_plan
-      },
-      consumer: {
-        environment: '',
-        region: '',
-        org: '33915d88-6002-4e83-b154-9ec2075e1435',
-        space: 'bd78dbbb-5225-4dfa-94e0-816a4de9b7c9',
-        instance: '4e099918-1b37-42a8-9dbd-a752225fcd07'
-      },
-      measues: [{
-        id: 'instances',
-        value: 'start'
-      }]
-    }
-  }
+  consumer: {
+    environment: '',
+    region: '',
+    org: '33915d88-6002-4e83-b154-9ec2075e1435',
+    space: 'bd78dbbb-5225-4dfa-94e0-816a4de9b7c9',
+    instance: '4e099918-1b37-42a8-9dbd-a752225fcd07'
+  },
+  measues: [{
+    id: 'instances',
+    value: 'start'
+  }]
 };
+
+function getDummyEvent(options_json) {
+  let dummy_event = {
+    apiVersion: 'instance.servicefabrik.io/v1alpha1',
+    kind: 'Sfevent',
+    metadata: {
+      clusterName: '',
+      creationTimestamp: '2019-01-21T11:00:43Z',
+      generation: 1,
+      labels: {
+        meter_state: 'TO_BE_METERED'
+      },
+      name: meterGuid,
+      namespace: 'default',
+      resourceVersion: '326999',
+      selfLink: '/apis/instance.servicefabrik.io/v1alpha1/namespaces/default/sfevents/48eb2e1e-dbfa-4554-9663-273418437e90',
+      uid: 'cbf0c777-1d6b-11e9-806d-0e655bfa3b31'
+    },
+    spec: {
+      metadata: {
+        creationTimestamp: null
+      },
+      options: JSON.stringify(options_json)
+    }
+  };
+  return dummy_event;
+}
 
 describe('Jobs', () => {
   describe('MeterInstanceJobs', () => {
@@ -63,13 +68,14 @@ describe('Jobs', () => {
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         // updated the dummy event with exluded plans
-        dummy_event.spec.options.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-                dummy_event.spec.options.service.plan= '466c5078-df6e-427d-8fb2-c76af50c0f56';
+        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan = '466c5078-df6e-427d-8fb2-c76af50c0f56';
+        const dummy_event = getDummyEvent(options_json);
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
             expect(res).to.eql(true);
             mocks.verify();
-          })
+          });
       });
       it('should send document to metering and update state in apiserver', () => {
         const expectedResponse = {
@@ -89,8 +95,9 @@ describe('Jobs', () => {
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         // updated the dummy event with not exluded plans
-        dummy_event.spec.options.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-                dummy_event.spec.options.service.plan= not_excluded_plan;
+        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan = not_excluded_plan;
+        const dummy_event = getDummyEvent(options_json);
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
             expect(res).to.eql(true);
@@ -114,8 +121,9 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        dummy_event.spec.options.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-                dummy_event.spec.options.service.plan= not_excluded_plan;
+        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan = not_excluded_plan;
+        const dummy_event = getDummyEvent(options_json);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         return MeterInstanceJob.sendEvent(dummy_event)
@@ -148,8 +156,9 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        dummy_event.spec.options.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-                dummy_event.spec.options.service.plan= not_excluded_plan;
+        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan = not_excluded_plan;
+        const dummy_event = getDummyEvent(options_json);
         // update apiserver for the 2 events
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
@@ -192,8 +201,9 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        dummy_event.spec.options.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        dummy_event.spec.options.service.plan= not_excluded_plan;
+        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan = not_excluded_plan;
+        const dummy_event = getDummyEvent(options_json);
         // update apiserver for the 2 events
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
@@ -204,7 +214,7 @@ describe('Jobs', () => {
             expect(res.totalEvents).to.eql(2);
             expect(res.success).to.eql(1);
             expect(res.failed).to.eql(1);
-          })
+          });
       });
     });
   });
