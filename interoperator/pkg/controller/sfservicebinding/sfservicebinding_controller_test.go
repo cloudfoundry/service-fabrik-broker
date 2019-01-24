@@ -17,30 +17,155 @@ limitations under the License.
 package sfservicebinding
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
+	mock_clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory/mock_factory"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources/mock_resources"
+	"github.com/golang/mock/gomock"
+
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var templateSpec = []osbv1alpha1.TemplateSpec{
+	osbv1alpha1.TemplateSpec{
+		Action:  "provision",
+		Type:    "gotemplate",
+		Content: "provisioncontent",
+	},
+	osbv1alpha1.TemplateSpec{
+		Action:  "bind",
+		Type:    "gotemplate",
+		Content: "bindcontent",
+	},
+	osbv1alpha1.TemplateSpec{
+		Action:  "status",
+		Type:    "gotemplate",
+		Content: "statuscontent",
+	},
+	osbv1alpha1.TemplateSpec{
+		Action:  "sources",
+		Type:    "gotemplate",
+		Content: "sourcescontent",
+	},
+}
+
+var service = &osbv1alpha1.SFService{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "service-id",
+		Namespace: "default",
+		Labels:    map[string]string{"serviceId": "service-id"},
+	},
+	Spec: osbv1alpha1.SFServiceSpec{
+		Name:                "service-name",
+		ID:                  "service-id",
+		Description:         "description",
+		Tags:                []string{"foo", "bar"},
+		Requires:            []string{"foo", "bar"},
+		Bindable:            true,
+		InstanceRetrievable: true,
+		BindingRetrievable:  true,
+		Metadata:            nil,
+		DashboardClient: osbv1alpha1.DashboardClient{
+			ID:          "id",
+			Secret:      "secret",
+			RedirectURI: "redirecturi",
+		},
+		PlanUpdatable: true,
+		RawContext:    nil,
+	},
+}
+
+var plan = &osbv1alpha1.SFPlan{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "plan-id",
+		Namespace: "default",
+		Labels: map[string]string{
+			"serviceId": "service-id",
+			"planId":    "plan-id",
+		},
+	},
+	Spec: osbv1alpha1.SFPlanSpec{
+		Name:          "plan-name",
+		ID:            "plan-id",
+		Description:   "description",
+		Metadata:      nil,
+		Free:          false,
+		Bindable:      true,
+		PlanUpdatable: true,
+		Schemas:       nil,
+		Templates:     templateSpec,
+		ServiceID:     "service-id",
+		RawContext:    nil,
+		Manager:       nil,
+	},
+}
+
+var serviceInstance = &osbv1alpha1.SFServiceInstance{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "instance-id",
+		Namespace: "default",
+		Labels: map[string]string{
+			"state": "in_queue",
+		},
+	},
+	Spec: osbv1alpha1.SFServiceInstanceSpec{
+		ServiceID:        "service-id",
+		PlanID:           "plan-id",
+		RawContext:       nil,
+		OrganizationGUID: "organization-guid",
+		SpaceGUID:        "space-guid",
+		RawParameters:    nil,
+		PreviousValues:   nil,
+	},
+}
+
+var binding = &osbv1alpha1.SFServiceBinding{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "binding-id",
+		Namespace: "default",
+		Labels: map[string]string{
+			"state": "in_queue",
+		},
+	},
+	Spec: osbv1alpha1.SFServiceBindingSpec{
+		ID:                "binding-id",
+		InstanceID:        "instance-id",
+		PlanID:            "plan-id",
+		ServiceID:         "service-id",
+		AcceptsIncomplete: true,
+	},
+}
+
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
+var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: "default"}}
 
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	instance := &osbv1alpha1.SFServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var expectedResources = []*unstructured.Unstructured{nil}
+	var appliedResources = []*unstructured.Unstructured{
+		&unstructured.Unstructured{},
+	}
+	err1 := fmt.Errorf("Some error")
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -48,7 +173,24 @@ func TestReconcile(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
 
-	recFn, requests := SetupTestReconcile(newReconciler(mgr, resources.New()))
+	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
+	mockClusterFactory := mock_clusterFactory.NewMockClusterFactory(ctrl)
+	reconciler := newReconciler(mgr, mockResourceManager, mockClusterFactory)
+
+	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(expectedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockClusterFactory.EXPECT().GetCluster("instance-id", "binding-id", "service-id", "plan-id").Return(reconciler, nil).AnyTimes()
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(&properties.Status{
+		Bind: properties.GenericStatus{
+			State:    "succeeded",
+			Response: "foo",
+		},
+	}, nil).AnyTimes()
+	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
+
+	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
@@ -58,15 +200,69 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create the SFServiceBinding object and expect the Reconcile and Deployment to be created
-	err = c.Create(context.TODO(), instance)
-	// The instance object may not be a valid object because it might be missing some required fields.
-	// Please modify the instance object by adding required fields and then remove the following if statement.
+	// Create the SFServiceBinding object and expect the Reconcile
+	err = c.Create(context.TODO(), binding)
 	if apierrors.IsInvalid(err) {
 		t.Logf("failed to create object, got an invalid object error: %v", err)
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+
+	// Reconciler recives the request and updates status and labels
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Get the serviceBinding
+	serviceBinding := &osbv1alpha1.SFServiceBinding{}
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), bindingKey, serviceBinding)
+		if err != nil {
+			return err
+		}
+		labels := serviceBinding.GetLabels()
+		if state, ok := labels["state"]; !ok || state != "succeeded" {
+			return fmt.Errorf("label not updated")
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("succeeded"))
+	labels := serviceBinding.GetLabels()
+	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
+
+	secret := &corev1.Secret{}
+	secretRef := serviceBinding.Status.Response.SecretRef
+	secretKey := types.NamespacedName{Name: secretRef, Namespace: "default"}
+	g.Expect(c.Get(context.TODO(), secretKey, secret)).NotTo(gomega.HaveOccurred())
+	g.Expect(secret.Data).Should(gomega.HaveKeyWithValue("response", []byte("foo")))
+
+	// Delete the service binding
+	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
+
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Binding should disappear from api server
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), bindingKey, serviceBinding)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return fmt.Errorf("not deleted")
+	}, timeout).Should(gomega.Succeed())
+}
+
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
+	// Drain all requests
+	start := time.Now()
+	select {
+	case <-requests:
+		diff := time.Now().Sub(start)
+		if diff < remainingTime {
+			return 1 + drainAllRequests(requests, remainingTime-diff)
+		}
+		return 1
+	case <-time.After(remainingTime):
+		return 0
+	}
 }

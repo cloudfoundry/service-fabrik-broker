@@ -85,21 +85,19 @@ class ServiceBrokerApiController extends FabrikBaseController {
     }
 
     req.operation_type = CONST.OPERATION_TYPE.CREATE;
-    return Promise
-      .try(() => {
-        return eventmesh.apiServerClient.createOSBResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-          resourceId: req.params.instance_id,
-          metadata: {
-            finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
-          },
-          spec: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
-          }
-        });
-      })
+    return Promise.try(() => eventmesh.apiServerClient.createNamespace(eventmesh.apiServerClient.getNamespaceId(req.params.instance_id)))
+      .then(() => eventmesh.apiServerClient.createOSBResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: req.params.instance_id,
+        metadata: {
+          finalizers: [`${CONST.APISERVER.FINALIZERS.BROKER}`]
+        },
+        spec: params,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
+        }
+      }))
       .then(() => {
         if (!plan.manager.async) {
           return eventmesh.apiServerClient.getResourceOperationStatus({

@@ -31,8 +31,8 @@ provision:
   error: {{ $error | quote}}
 {{- end }}
   dashboardUrl: ""
-{{- with .dockerbind.status }}
-  {{- $response = (b64dec .response | quote) }}
+{{- with .dockerbind.status.response }}
+  {{- $response = (b64dec . | quote) }}
 {{- end }}
 {{- $stateString = "in_queue" }} 
 {{- with .dockerbind }}
@@ -53,8 +53,8 @@ bind:
   error: {{ $error | quote}}
 {{- end }}
   response: {{ $response }}
-{{- with .dockerbind.status }}
-  {{- $response = (b64dec .response | quote) }}
+{{- with .dockerbind.status.response }}
+  {{- $response = (b64dec . | quote) }}
 {{- end }}
 {{- $stateString = "delete" }} 
 {{- with .dockerbind }}
