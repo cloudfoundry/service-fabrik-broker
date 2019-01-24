@@ -42,6 +42,236 @@ describe('iaas', function () {
       });
     });
 
+    describe('#DiskOperations', function () {
+      const client = new AzureClient(settings);
+      const diskName = 'sample-disk';
+      const snapshotName = 'sample-snapshot';
+      const zone = '2';
+      const sku = {
+        name: 'Premium_LRS',
+        tier: 'premium'
+      };
+      const loc = 'westeurope';
+      const createData = {
+        createOption: 'Copy',
+        sourceUri: 'test/test'
+      };
+      let sandbox;
+
+      before(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(AzureClient.prototype, 'getRandomDiskId').returns(diskName);
+      });
+
+      after(() => {
+        sandbox.restore();
+        mocks.reset();
+      });
+
+      afterEach(() => {
+        mocks.reset();
+      });
+
+      it('should fetch volume snapshot successfully', function () {
+        mocks.azureClient.auth();
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+          status: 200,
+          body: {
+            id: 'testId',
+            location: 'westeurope',
+            properties: {
+              creationData: createData
+            }
+          },
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          }
+        });
+        return client.getSnapshot(snapshotName)
+          .then(snapshot => {
+            expect(snapshot.id).to.equal('testId');
+            expect(snapshot.location).to.equal('westeurope');
+            expect(snapshot.creationData).to.deep.equal(createData);
+          });
+      });
+
+      it('should bubble up error if get disk fails', function () {
+        mocks.azureClient.auth();
+        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, null, 'diskfailed');
+        return client.getDiskMetadata(diskName).catch(err => {
+          expect(err.message).to.equal('diskfailed');
+          mocks.verify();
+        });
+      });
+
+      it('should fetch disk metadata successfully', function () {
+        mocks.azureClient.auth();
+        mocks.azureClient.getDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+          body: {
+            name: diskName,
+            zones: [zone],
+            sku: sku,
+            tags: {
+              createdBy: 'service-fabrik'
+            },
+            properties: {
+              diskSizeGB: '4',
+              timeCreated: new Date().toString()
+            }
+          }
+        });
+        return client.getDiskMetadata(diskName).then(res => {
+          expect(res.volumeId).to.equal(diskName);
+          expect(res.zone).to.equal(zone);
+          expect(res.size).to.equal('4');
+          expect(res.type).to.equal('Premium_LRS');
+          expect(res.extra).to.deep.equal({
+            sku: sku,
+            type: sku,
+            tags: {
+              createdBy: 'service-fabrik'
+            }
+          });
+          mocks.verify();
+        });
+      });
+
+      it('should bubble up error if get snapshot fails in create disk', function () {
+        mocks.azureClient.auth();
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
+        return client.createDiskFromSnapshot(snapshotName, zone, {
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
+          .catch((err) => {
+            expect(err.message).to.equal('failure');
+            mocks.verify();
+          });
+      });
+
+      it('should bubble up error if create disk from snapshot fails', function () {
+        mocks.azureClient.auth(2);
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+          status: 200,
+          body: {
+            id: 'testId',
+            location: 'westeurope'
+          },
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          }
+        });
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+          zones: [zone],
+          location: loc,
+          tags: {
+            name: 'value',
+            createdBy: 'service-fabrik'
+          },
+          sku: {
+            name: 'Premium_LRS'
+          },
+          properties: {
+            creationData: {
+              createOption: 'Copy',
+              sourceUri: 'testId'
+            }
+          }
+        }, null, 'diskfailed');
+        return client.createDiskFromSnapshot(snapshotName, zone, {
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
+          .catch((err) => {
+            expect(err.message).to.equal('diskfailed');
+            mocks.verify();
+          });
+      });
+
+      it('should create disk from snapshot successfully', function () {
+        mocks.azureClient.auth(2);
+        mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
+          status: 200,
+          body: {
+            id: 'testId',
+            location: 'westeurope'
+          },
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          }
+        });
+        const tags = {
+          name: 'value',
+          createdBy: 'service-fabrik'
+        };
+
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+          zones: [zone],
+          location: loc,
+          tags: tags,
+          sku: {
+            name: 'Premium_LRS'
+          },
+          properties: {
+            creationData: {
+              createOption: 'Copy',
+              sourceUri: 'testId'
+            }
+          }
+        }, {
+          status: 200,
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          },
+          body: {
+            name: diskName,
+            location: loc,
+            zones: [zone],
+            sku: sku,
+            tags: tags,
+            properties: {
+              diskSizeGB: '4',
+              provisioningState: 'Succeeded',
+              creationData: {
+                createOption: 'Copy',
+                sourceResourceId: 'customResource'
+              }
+            }
+          }
+        });
+        return client.createDiskFromSnapshot(snapshotName, zone, {
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
+          .then((result) => {
+            expect(result.volumeId).to.equal(diskName);
+            expect(result.zone).to.equal(zone);
+            expect(result.type).to.equal('Premium_LRS');
+            expect(result.size).to.equal('4');
+            expect(result.extra).to.deep.equal({
+              sku: sku,
+              type: sku,
+              tags: tags
+            });
+            mocks.verify();
+          });
+      });
+    });
+
     describe('#BlobOperations', function () {
       const client = new AzureClient(settings);
       const blobName = 'blob1';

@@ -45,6 +45,64 @@ const storageUrl = 'https://myaccounts.com/storage/v1';
 const bucketUrl = '/b';
 const region = 'EUROPE-WEST1';
 const storageClass = 'REGIONAL';
+const diskMetadataResponse = [{
+  metadata: {
+    kind: 'compute#disk',
+    id: 'sample-disk',
+    creationTimestamp: '2019-01-20T22:53:39.112-08:00',
+    name: 'disk-sample',
+    description: 'disk sample',
+    sizeGb: '4',
+    zone: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c',
+    status: 'READY',
+    sourceSnapshot: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/snapshots/snappy',
+    sourceSnapshotId: 'sample-snapshot',
+    selfLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/disks/disk-sample',
+    type: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/diskTypes/pd-ssd',
+    labels: {
+      operation: 'testboshrestore'
+    }
+  }
+}, {}];
+let createDiskEventHandlers = {};
+const createDiskFailedMsg = 'disk create failed';
+const createDiskResponse = [{
+  on: (event, callback) => {
+    _.set(createDiskEventHandlers, event, callback);
+    return true;
+  },
+  removeAllListeners: () => {
+    createDiskEventHandlers = {};
+    return true;
+  }
+}, diskMetadataResponse];
+const diskStub = {
+  get: () => {
+    return Promise.resolve(diskMetadataResponse);
+  }
+};
+const diskFailedStub = {
+  get: () => {
+    return Promise.reject(new Error('diskFailed'));
+  }
+};
+const zoneFailedStub = {
+  disk: () => {
+    return diskFailedStub;
+  },
+  createDisk: () => {
+    return Promise.reject(new Error(createDiskFailedMsg));
+  }
+};
+const zoneStub = {
+  disk: () => {
+    return diskStub;
+  },
+  createDisk: () => {
+    return Promise.resolve(createDiskResponse);
+  }
+};
+
 const bucketMetadataResponse = [{
     /* Bucket Object */
   },
@@ -503,16 +561,99 @@ describe('iaas', function () {
 
     describe('#ComputeOperations', function () {
       let sandbox, client;
-      before(function () {
+      const diskName = 'disk-sample';
+      const zone = 'zone';
+      const snapshotName = 'snappy';
+      beforeEach(function () {
         sandbox = sinon.sandbox.create();
         client = new GcpClient(settings);
         sandbox.stub(GcpCompute.prototype, 'snapshot').returns(snapshotStub);
-      });
-      after(function () {
-        sandbox.restore();
+        sandbox.stub(GcpCompute.prototype, 'zone').returns(zoneStub);
+        sandbox.stub(GcpClient.prototype, 'getRandomDiskId').returns(diskName);
       });
       afterEach(function () {
         deleteSnapshotEventHandlers = {};
+        sandbox.restore();
+      });
+
+      it('disk metadata should fail if get fails', function () {
+        sandbox.restore();
+        sandbox.stub(GcpCompute.prototype, 'zone').returns(zoneFailedStub);
+        return client.getDiskMetadata(diskName, zone)
+          .catch(err => {
+            expect(err.message).to.equal('diskFailed');
+          });
+      });
+
+      it('disk metadata should be fetched successfully', function () {
+        return client.getDiskMetadata(diskName, zone).then(disk => {
+          expect(disk.volumeId).to.equal(diskName);
+          expect(disk.zone).to.equal('europe-west1-c');
+          expect(disk.type).to.equal('pd-ssd');
+          expect(disk.size).to.equal('4');
+          expect(disk.extra.tags).to.deep.equal({
+            operation: 'testboshrestore'
+          });
+          expect(disk.extra.type).to.equal('https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/diskTypes/pd-ssd');
+        });
+      });
+
+      it('disk should be created successfully', function () {
+        let createDiskPromise = client.createDiskFromSnapshot(snapshotName, zone);
+        return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
+          .then(() => {
+            if (createDiskEventHandlers.complete && _.isFunction(createDiskEventHandlers.complete)) {
+              return createDiskEventHandlers.complete.call(createDiskEventHandlers.complete);
+            } else {
+              throw new Error('Event handlers not registered in create disk from snapshot');
+            }
+          })
+          .then(() => {
+            return createDiskPromise
+              .then(disk => {
+                expect(disk.volumeId).to.equal(diskName);
+                expect(disk.zone).to.equal('europe-west1-c');
+                expect(disk.type).to.equal('pd-ssd');
+                expect(disk.size).to.equal('4');
+                expect(disk.extra.tags).to.deep.equal({
+                  operation: 'testboshrestore'
+                });
+                expect(disk.extra.type).to.equal('https://myaccounts.com/compute/v1/projects/my-gcp-dev/zones/europe-west1-c/diskTypes/pd-ssd');
+              })
+              .catch(() => {
+                throw new Error('expected create disk to be successful');
+              });
+          });
+      });
+
+      it('disk create should fail', function () {
+        let createDiskPromise = client.createDiskFromSnapshot(snapshotName, zone);
+        return Promise.delay(CONNECTION_WAIT_SIMULATED_DELAY)
+          .then(() => {
+            if (createDiskEventHandlers.error && _.isFunction(createDiskEventHandlers.error)) {
+              return createDiskEventHandlers.error.call(createDiskEventHandlers.error, createDiskFailedMsg);
+            } else {
+              throw new Error('Event Handlers not registered in create disk from snapshot');
+            }
+          })
+          .then(() => {
+            return createDiskPromise
+              .then(() => {
+                throw new Error('expected disk create to fail');
+              })
+              .catch(err => expect(err).to.eql(createDiskFailedMsg));
+          });
+      });
+
+      it('disk create should fail if promise throws', function () {
+        sandbox.restore();
+        sandbox.stub(GcpCompute.prototype, 'zone').returns(zoneFailedStub);
+
+        return client.createDiskFromSnapshot(snapshotName, zone)
+          .then(() => {
+            throw new Error('expected disk create request to fail');
+          })
+          .catch(err => expect(err.message).to.eql(createDiskFailedMsg));
       });
 
       it('snapshot should be deleted successfully', function () {
