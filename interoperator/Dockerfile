@@ -3,9 +3,10 @@ FROM golang:1.11.2 as builder
 
 # Copy in the go src
 WORKDIR /go/src/github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator
-COPY pkg/    pkg/
-COPY cmd/    cmd/
-COPY vendor/ vendor/
+COPY . .
+# Install dep
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+RUN dep ensure
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
