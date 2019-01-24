@@ -356,7 +356,7 @@ module.exports = Object.freeze({
   METER_STATE: {
     TO_BE_METERED: 'TO_BE_METERED',
     METERED: 'METERED',
-    EXCLUDED: 'excluded',
+    EXCLUDED: 'EXCLUDED',
     FAILED: 'FAILED'
   },
   SERVICE_KEYS: {

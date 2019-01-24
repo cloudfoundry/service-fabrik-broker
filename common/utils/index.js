@@ -1,13 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const pubsub = require('pubsub-js');
 const assert = require('assert');
 const Promise = require('bluebird');
 const moment = require('moment');
 const uuid = require('uuid');
 const crypto = require('crypto');
-const logger = require('../logger');
 const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
