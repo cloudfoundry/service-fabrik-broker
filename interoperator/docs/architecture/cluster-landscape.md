@@ -17,6 +17,13 @@ Architects, Developers, Product Owners, Development Managers who are interested 
   * [Context](#context)
   * [Cluster Landscape Scenarios](#cluster-landscape-scenarios)
     * [A Summary of Comparison of Cluster Landscape Scenarios](#a-summary-of-comparison-of-cluster-landscape-scenarios)
+      * [No\. of Managed Clusters per Landscape](#no-of-managed-clusters-per-landscape)
+      * [No\. Managed Clusters per Service Type](#no-managed-clusters-per-service-type)
+      * [No\. of Managed Clusters per Customer](#no-of-managed-clusters-per-customer)
+      * [No\. of Managed Clusters per Customer per Service Type](#no-of-managed-clusters-per-customer-per-service-type)
+      * [No\. of Service Types in a Cluster](#no-of-service-types-in-a-cluster)
+      * [No\. of Customers in a Cluster](#no-of-customers-in-a-cluster)
+      * [No\. of Service Instances per Cluster](#no-of-service-instances-per-cluster)
       * [Scalability](#scalability)
       * [Networking Complexity](#networking-complexity)
       * [Security Isolation](#security-isolation)
@@ -26,6 +33,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
       * [Cluster Disposability](#cluster-disposability)
       * [SLA](#sla)
       * [Cross\-platform Consumption](#cross-platform-consumption)
+      * [Service Administration and Life Cycle Management](#service-administration-and-life-cycle-management)
     * [Dedicated Service Fabrik Inter\-operator](#dedicated-service-fabrik-inter-operator)
       * [A simple dedicated landscape scenario](#a-simple-dedicated-landscape-scenario)
         * [Pros](#pros)
@@ -74,8 +82,8 @@ This leaves the responsibility for setting up and managing the landscape of Kube
 
 ### A Summary of Comparison of Cluster Landscape Scenarios
 
-| Sl. No. | No. of Managed Clusters per Landscape | No. Managed Clusters per Service Type | No. of Managed Clusters per Customer | No. of Managed Clusters per Customer per Service Type | No. of Service Types in a Cluster |  No. of Customers in a Cluster | No. of Service Instances per Cluster | [Scalability](#scalability) | [Networking Complexity](#networking-complexity) | [Security Isolation](#security-isolation) | [Resource Utilization](#resource-utilization) | [Cluster Topology](#cluster-topology) | [Cluster Maintenance](#cluster-maintenance) | [Cluster Disposability](#cluster-disposability) | [SLA](#sla) | [Cross-platform Consumption](#cross-platform-consumption) | Service Administration and Life Cycle Management |
-| ---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sl. No. | [No\. of Managed Clusters per Landscape](#no-of-managed-clusters-per-landscape) | [No\. Managed Clusters per Service Type](#no-managed-clusters-per-service-type) | [No\. of Managed Clusters per Customer](#no-of-managed-clusters-per-customer) | [No\. of Managed Clusters per Customer per Service Type](#no-of-managed-clusters-per-customer-per-service-type) | [No\. of Service Types in a Cluster](#no-of-service-types-in-a-cluster) | [No\. of Customers in a Cluster](#no-of-customers-in-a-cluster) | [No\. of Service Instances per Cluster](#no-of-service-instances-per-cluster) | [Scalability](#scalability) | [Networking Complexity](#networking-complexity) | [Security Isolation](#security-isolation) | [Resource Utilization](#resource-utilization) | [Cluster Topology](#cluster-topology) | [Cluster Maintenance](#cluster-maintenance) | [Cluster Disposability](#cluster-disposability) | [SLA](#sla) | [Cross-platform Consumption](#cross-platform-consumption) | [Service Administration and Life Cycle Management](#service-administration-and-life-cycle-management) |
+| ---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [1](#a-simple-dedicated-landscape-scenario) | N | 1 | N/A | N/A | 1 | N | N | Limited to the hosting cluster | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | Low | Possible | Possible | Possibly centrally |
 | [2](#a-conservative-dedicated-landscape-scenario) | N | N/A | N/A | N/A | 1 | 1 | 1 | Unlimited | Complex | High | Low | Easy to enforce | Independently manageable | High | Possible | Possible | Possible centrally |
 | [3](#an-optimal-dedicated-landscape-scenario) | N | N | N/A | N/A | 1 | N | N | Unlimited | Complex | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High | Easy to enforce | Independently manageable | Possibly high | Possible | Possible | Possible centrally |
@@ -86,6 +94,34 @@ This leaves the responsibility for setting up and managing the landscape of Kube
 | 8 | N | N/A | N | N | 1 | 1 | N | Unlimited | Potentially simple | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) | High if there are a large number of service instances of a given service type for a given customer | Easy to enforce | Independently manageable | Possibly high | Possible | Possible | Possible centrally |
 | 9 | N | N/A | 1 | N/A | N | 1 | N | Limited to the hosting cluster but the need for scalability might be less | Potentially simple | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between service types | Requires co-ordination between service types | Possibly high | Possible | Possible | Possible centrally |
 | 10 | N | N/A | N | N/A | N | 1 | N | Unlimited | Potentially simple | High with [proper mitigation](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#security) and security isolation requirement might be less | High if there are a large number of service instances for the customer | Enforcing requires co-ordination between service types | Requires co-ordination between service types | Possibly high | Possible | Possible | Possible centrally |
+
+#### No. of Managed Clusters per Landscape 
+
+The number of managed clusters per landscape is one indication of the scale of the landscape. It also indicates the complexity of managing the landscape.
+
+#### No. Managed Clusters per Service Type
+
+The number of managed clusters per service type indicates the scale of the landscape dedicated to any given service type. It also indicates the degree of fragmentation of the landscape per service type.
+
+#### No. of Managed Clusters per Customer
+
+The number of managed clusters per customer indicates the scale of the landscape dedicated to any given customer. It also indicates the degree of fragmentation of the landscape per customer.
+
+#### No. of Managed Clusters per Customer per Service Type
+
+The number of managed clusters per customer per service type indicates the scale of the landscale dedicated to any particular combination of a given customer and service type. It also indicates the degree of fragmentation of the landscape per customer per service type.
+
+#### No. of Service Types in a Cluster
+
+The number of service types in a cluster indicates the complexity of managing different services in any given Kubernetes cluster such as awareness and enforcing of cluster topology.
+
+#### No. of Customers in a Cluster
+
+The number of customers in a cluster indicates the complexity and importance of isolation between service instances hosted in the cluster.
+
+#### No. of Service Instances per Cluster
+
+The number of instances in a cluster indicates the scale of the cluster. It also indicates the complexity of the isolation between service instances.
 
 #### Scalability
 
@@ -128,6 +164,10 @@ Or at least some mitigation in terms of granular audit logging.
 #### Cross-platform Consumption
 
 Some scenarios might be more amenable for hosting service instances on Kubernetes to be consumed from platforms other than Kubernetes and some less.
+
+#### Service Administration and Life Cycle Management
+
+Administering services and managing their life cycle involves monitoring and reconciling provisioned services as well as managing the upgrades and other life cycle operations.
 
 ### Dedicated Service Fabrik Inter-operator
 
