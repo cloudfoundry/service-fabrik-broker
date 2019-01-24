@@ -72,7 +72,6 @@ class AzureClient extends BaseCloudClient {
   getDiskMetadata(diskId) {
     return this.computeClient.disks
       .getAsync(this.settings.resource_group, diskId)
-      .tap(o => console.log(o))
       .then(diskResponse => ({
         volumeId: diskResponse.name,
         size: diskResponse.diskSizeGB,
@@ -80,7 +79,8 @@ class AzureClient extends BaseCloudClient {
         type: diskResponse.sku ? diskResponse.sku.name : '',
         extra: {
           sku: diskResponse.sku,
-          type: diskResponse.sku
+          type: diskResponse.sku,
+          tags: diskResponse.tags
         }
       }));
   }
@@ -145,7 +145,7 @@ class AzureClient extends BaseCloudClient {
 
   download(options) {
     return utils.streamToPromise(this.storage.createReadStream(
-        options.container, options.remote))
+      options.container, options.remote))
       .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
   }
 
