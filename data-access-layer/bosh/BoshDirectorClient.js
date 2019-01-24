@@ -897,7 +897,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
