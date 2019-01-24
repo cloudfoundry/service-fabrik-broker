@@ -164,7 +164,8 @@ func TestReconcile(t *testing.T) {
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterFactory.EXPECT().GetCluster("instance-id", "", "service-id", "plan-id").Return(reconciler, nil).AnyTimes()
-	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).AnyTimes()
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(&properties.Status{
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
@@ -174,7 +175,6 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-	defer drainAllRequests(requests, timeout)
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -191,8 +191,8 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// Reconciler recives the request and updates status
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	// Reconciler recives the request and updates status and label
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
 	// Get the serviceInstance
 	serviceInstance := &osbv1alpha1.SFServiceInstance{}
@@ -201,39 +201,21 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if serviceInstance.Status.State == "succeeded" {
-			return nil
-
-		}
-		return fmt.Errorf("Failed")
-	}, timeout).Should(gomega.Succeed())
-	g.Expect(serviceInstance.Status.State).Should(gomega.Equal("succeeded"))
-
-	// Reconciler called when status is updated and updates label
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), instanceKey, serviceInstance)
-		if err != nil {
-			return err
-		}
 		labels := serviceInstance.GetLabels()
 		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("Failed")
+			return fmt.Errorf("label not updated")
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
+	g.Expect(serviceInstance.Status.State).Should(gomega.Equal("succeeded"))
 	labels := serviceInstance.GetLabels()
 	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
-
-	drainAllRequests(requests, timeout)
 
 	// Delete the service instance
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 
-	// Remove finalizers
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
-	drainAllRequests(requests, timeout)
 	// Service should disappear from api server
 	g.Eventually(func() error {
 		err := c.Get(context.TODO(), instanceKey, serviceInstance)
@@ -245,19 +227,19 @@ func TestReconcile(t *testing.T) {
 		}
 		return fmt.Errorf("not deleted")
 	}, timeout).Should(gomega.Succeed())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
-	drainAllRequests(requests, timeout)
 }
 
-func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) {
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	for len(requests) > 0 {
-		<-requests
-	}
-	time.Sleep(100 * time.Millisecond)
-	remainingTime = remainingTime - (100 * time.Millisecond)
-	if remainingTime > 0 {
-		drainAllRequests(requests, remainingTime)
+	start := time.Now()
+	select {
+	case <-requests:
+		diff := time.Now().Sub(start)
+		if diff < remainingTime {
+			return 1 + drainAllRequests(requests, remainingTime-diff)
+		}
+		return 1
+	case <-time.After(remainingTime):
+		return 0
 	}
 }

@@ -180,7 +180,8 @@ func TestReconcile(t *testing.T) {
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterFactory.EXPECT().GetCluster("instance-id", "binding-id", "service-id", "plan-id").Return(reconciler, nil).AnyTimes()
-	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).AnyTimes()
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "binding-id", "service-id", "plan-id", osbv1alpha1.BindAction, "default").Return(&properties.Status{
 		Bind: properties.GenericStatus{
 			State:    "succeeded",
@@ -191,7 +192,6 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-	defer drainAllRequests(requests, timeout)
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -208,10 +208,8 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// Reconciler recives the request and updates status
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
-	drainAllRequests(requests, timeout)
+	// Reconciler recives the request and updates status and labels
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
 	// Get the serviceBinding
 	serviceBinding := &osbv1alpha1.SFServiceBinding{}
@@ -220,12 +218,15 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if serviceBinding.Status.State == "succeeded" {
-			return nil
+		labels := serviceBinding.GetLabels()
+		if state, ok := labels["state"]; !ok || state != "succeeded" {
+			return fmt.Errorf("label not updated")
 		}
-		return fmt.Errorf("Failed")
+		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("succeeded"))
+	labels := serviceBinding.GetLabels()
+	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
 
 	secret := &corev1.Secret{}
 	secretRef := serviceBinding.Status.Response.SecretRef
@@ -233,31 +234,10 @@ func TestReconcile(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), secretKey, secret)).NotTo(gomega.HaveOccurred())
 	g.Expect(secret.Data).Should(gomega.HaveKeyWithValue("response", []byte("foo")))
 
-	// Reconciler called when status is updated and updates label
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error {
-		err := c.Get(context.TODO(), bindingKey, serviceBinding)
-		if err != nil {
-			return err
-		}
-		labels := serviceBinding.GetLabels()
-		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("Failed")
-		}
-		return nil
-	}, timeout).Should(gomega.Succeed())
-	labels := serviceBinding.GetLabels()
-	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
-
-	drainAllRequests(requests, timeout)
-
 	// Delete the service binding
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
 
-	// Remove finalizers
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
-	drainAllRequests(requests, timeout)
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
 	// Binding should disappear from api server
 	g.Eventually(func() error {
@@ -270,22 +250,19 @@ func TestReconcile(t *testing.T) {
 		}
 		return fmt.Errorf("not deleted")
 	}, timeout).Should(gomega.Succeed())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-
-	// Secret should get deleted as the deletion is mocked
-	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())
-
-	drainAllRequests(requests, timeout)
 }
 
-func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) {
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	for len(requests) > 0 {
-		<-requests
-	}
-	time.Sleep(100 * time.Millisecond)
-	remainingTime = remainingTime - (100 * time.Millisecond)
-	if remainingTime > 0 {
-		drainAllRequests(requests, remainingTime)
+	start := time.Now()
+	select {
+	case <-requests:
+		diff := time.Now().Sub(start)
+		if diff < remainingTime {
+			return 1 + drainAllRequests(requests, remainingTime-diff)
+		}
+		return 1
+	case <-time.After(remainingTime):
+		return 0
 	}
 }

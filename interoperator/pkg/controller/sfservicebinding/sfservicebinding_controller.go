@@ -316,10 +316,26 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 				log.Printf("error setting owner reference for secret. %v\n", err)
 				return err
 			}
-			err = r.Create(context.TODO(), secret)
-			if err != nil {
-				log.Printf("error creating secret. %v\n", err)
+			secretNamespacedName := types.NamespacedName{
+				Name:      secretName,
+				Namespace: namespace,
+			}
+			foundSecret := &corev1.Secret{}
+			err = r.Get(context.TODO(), secretNamespacedName, foundSecret)
+			if err != nil && errors.IsNotFound(err) {
+				err = r.Create(context.TODO(), secret)
+				if err != nil {
+					log.Printf("error creating secret. %v\n", err)
+					return err
+				}
+			} else if err != nil {
 				return err
+			} else {
+				err = r.Update(context.TODO(), secret)
+				if err != nil {
+					log.Printf("error updating secret. %v\n", err)
+					return err
+				}
 			}
 			bindingObj.Status.Response.SecretRef = secretName
 		} else if bindingStatus.State == "failed" {

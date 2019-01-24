@@ -151,7 +151,7 @@ func TestReconcile(t *testing.T) {
 	plan := &osbv1alpha1.SFPlan{}
 
 	// Reconciler add labels
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
 	// Verify the labels are present
 	g.Eventually(func() error { return c.Get(context.TODO(), planKey, plan) }, timeout).
@@ -160,13 +160,10 @@ func TestReconcile(t *testing.T) {
 	g.Expect(labels).Should(gomega.HaveKeyWithValue("serviceId", "service-id"))
 	g.Expect(labels).Should(gomega.HaveKeyWithValue("planId", "plan-id"))
 
-	// Drain all requests
-	for len(requests) > 0 {
-		<-requests
-	}
 	// Delete the plan
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
 	// Plan should disappear from api server
 	g.Eventually(func() error {
@@ -179,4 +176,19 @@ func TestReconcile(t *testing.T) {
 		}
 		return fmt.Errorf("not deleted")
 	}, timeout).Should(gomega.Succeed())
+}
+
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
+	// Drain all requests
+	start := time.Now()
+	select {
+	case <-requests:
+		diff := time.Now().Sub(start)
+		if diff < remainingTime {
+			return 1 + drainAllRequests(requests, remainingTime-diff)
+		}
+		return 1
+	case <-time.After(remainingTime):
+		return 0
+	}
 }
