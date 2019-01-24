@@ -145,7 +145,7 @@ class AzureClient extends BaseCloudClient {
 
   download(options) {
     return utils.streamToPromise(this.storage.createReadStream(
-      options.container, options.remote))
+        options.container, options.remote))
       .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
   }
 
