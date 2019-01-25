@@ -73,14 +73,10 @@ class DockerBindOperator extends BaseOperator {
     logger.info('Triggering docker unbind with the following options:', changedOptions);
     return DockerService.createInstance(instance_guid, changedOptions)
       .then(dockerService => dockerService.unbind(changedOptions))
-      .then(response => eventmesh.apiServerClient.updateResource({
+      .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DOCKER_BIND,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          response: response,
-          state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-        }
+        resourceId: changeObjectBody.metadata.name
       }));
   }
 }

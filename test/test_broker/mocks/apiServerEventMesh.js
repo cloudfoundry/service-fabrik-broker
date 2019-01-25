@@ -18,6 +18,10 @@ exports.nockPatchResourceRegex = nockPatchResourceRegex;
 exports.nockGetResourceListByState = nockGetResourceListByState;
 exports.nockCreateCrd = nockCreateCrd;
 exports.nockPatchCrd = nockPatchCrd;
+exports.nockGetResources = nockGetResources;
+exports.nockCreateNamespace = nockCreateNamespace;
+exports.nockGetSecret = nockGetSecret;
+exports.nockDeleteNamespace = nockDeleteNamespace;
 
 const expectedGetConfigMapResponseEnabled = {
   apiVersion: 'v1',
@@ -73,6 +77,20 @@ function nockCreateCrd(resourceGroup, resourceType, response, times) {
     .reply(201, response);
 }
 
+function nockCreateNamespace(name, response, times, verifier, expectedStatusCode) {
+  nock(apiServerHost)
+    .post(`/api/v1/namespaces`, verifier)
+    .times(times || 1)
+    .reply(expectedStatusCode || 201, response);
+}
+
+function nockDeleteNamespace(name, response, times, verifier, expectedStatusCode) {
+  nock(apiServerHost)
+    .delete(`/api/v1/namespaces/${name}`, verifier)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
 function nockPatchCrd(resourceGroup, resourceType, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .patch(`/apis/${resourceGroup}/v1beta1/customresourcedefinitions/${resourceType}`)
@@ -90,7 +108,7 @@ function nockCreateResource(resourceGroup, resourceType, response, times, verifi
 
 function nockGetConfigMap(expectedStatusCode, enabled) {
   nock(apiServerHost)
-    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.NAMESPACE}/configmaps`)
+    .get(`/api/${CONST.APISERVER.CONFIG_MAP.API_VERSION}/namespaces/${CONST.APISERVER.DEFAULT_NAMESPACE}/configmaps`)
     .reply(expectedStatusCode || 200, enabled ? expectedGetConfigMapResponseEnabled : expectedGetConfigMapResponseDisabled);
 }
 
@@ -131,6 +149,21 @@ function nockDeleteResource(resourceGroup, resourceType, id, response, times, ex
 function nockGetResource(resourceGroup, resourceType, id, response, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetSecret(secretName, namespaceId, response, times, expectedStatusCode, payload) {
+  nock(apiServerHost)
+    .get(`/api/v1/namespaces/${namespaceId}/secrets/${secretName}`, payload)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetResources(resourceGroup, resourceType, response, query, times, expectedStatusCode) {
+  nock(apiServerHost)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`)
+    .query(query)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
 }

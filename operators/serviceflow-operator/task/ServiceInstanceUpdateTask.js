@@ -24,15 +24,14 @@ class ServiceInstanceUpdateTask extends Task {
         .merge()
         .value();
       params.parameters = _.merge(params.parameters, taskInfo);
-      return apiServerClient.updateResource({
-          resourceGroup: plan.manager.resource_mappings.resource_group,
-          resourceType: plan.manager.resource_mappings.resource_type,
+      return apiServerClient.updateOSBResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
           resourceId: taskDetails.instance_id,
-          options: params,
+          spec: params,
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-            lastOperation: {},
-            response: {}
+            description: ''
           }
         })
         .tap(() => {

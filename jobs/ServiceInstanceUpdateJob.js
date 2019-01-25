@@ -194,7 +194,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
           parameters: {
             scheduled: true,
             _runImmediately: runImmediately || false,
-            'service-fabrik-operation': true
+            'service-fabrik-operation': true,
+            // Adding this key to make every patch call unique
+            // inorder to make interoperator react on spec change
+            'service-fabrik-operation-timestamp': new Date(Date.now()).toISOString()
           }
         })
       );
