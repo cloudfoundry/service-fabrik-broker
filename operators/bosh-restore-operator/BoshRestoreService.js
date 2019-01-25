@@ -11,6 +11,7 @@ const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const Promise = require('bluebird');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
+const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
@@ -21,6 +22,7 @@ class BoshRestoreService extends BaseDirectorService {
     this.plan = plan;
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
+    this.cloudProvider = cloudProvider;
   }
 
   async startRestore(changeObjectBody) {
@@ -29,6 +31,7 @@ class BoshRestoreService extends BaseDirectorService {
       logger.debug('Starting restore with options:', opts);
       const args = opts.arguments;
       const backupMetadata = _.get(args, 'backup');
+      const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid);
 
       const backup = {
         guid: args.backup_guid,
@@ -49,7 +52,9 @@ class BoshRestoreService extends BaseDirectorService {
           agent_ip: undefined,
           started_at: new Date().toISOString(),
           finished_at: null,
-          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
+          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid,
+          snapshotId: _.get(backupMetadata, 'snapshotId'),
+          deploymentName: deploymentName
         })
         .value();
 
@@ -89,30 +94,64 @@ class BoshRestoreService extends BaseDirectorService {
   }
 
   async processBoshStop(changeObjectBody) {
-    //1. Get deployment name from resource
-    const opts = JSON.parse(changeObjectBody.spec.options);
-    const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid);
+    try {
+      //1. Get deployment name from resource
+      const resource = JSON.parse(changeObjectBody);
+      const deploymentName = _.get(resource, 'status.response.deploymentName');
 
-    //2. Stop the bosh deployment and poll for the result
-    const taskId  = await this.director.stopDeployment(deploymentName);
-    const task = await this.director.pollTaskStatusTillComplete(taskId);
-    //3. Update the resource with next step
-    
+      //2. Stop the bosh deployment and poll for the result
+      const taskId  = await this.director.stopDeployment(deploymentName);
+      const task = await this.director.pollTaskStatusTillComplete(taskId);
+      //3. Update the resource with next step
+    } catch (err) {
+      //Handle failure/rollback
+    }
   }
 
   async processCreateDisk(changeObjectBody) {
+    try {
+      //1. get snapshot id from backup metadata
+      const resource = JSON.parse(changeObjectBody);
+      const snapshotId = _.get(resource, 'status.response.snapshotId');
 
+      //2. create persistent disk from snapshot
+      const diskData = await this.cloudProvider.createDiskFromSnapshot(snapshotId); //TODO: Add zones and required options
+      //3. Store persistent disk information in resource to be used later
+      //4. Update state
+    } catch (err) {
+      //Handle failure/rollback
+    }
   }
 
   async processAttachDisk(changeObjectBody) {
+    try { 
+      //1. Get new disk CID from resource state
+      const resource = JSON.parse(changeObjectBody);
+      const diskCid = _.get(resource, 'status.response.newDiskCid');
+      const deploymentName = _.get(resource, 'status.response.deploymentName');
 
+      //2. Get job/instance pairs from config/resource to which new disk needs to be attached
+      const jobInstancePairs = []; //TODO: Finalize on how to obtain it
+
+    } catch (err) {
+
+    }
   }
 
   async processRunErrands(changeObjectBody) {
+    try {
 
+    } catch (err) {
+
+    }
   }
 
   async processBoshStart(changeObjectBody) {
+    try {
+
+    } catch (err) {
+
+    }
   }
 
   static createService(plan) {
