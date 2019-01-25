@@ -430,6 +430,7 @@ module.exports = Object.freeze({
     TYPE: {
       BLUEPRINT_SERVICEFLOW: 'blueprint_serviceflow',
       UPGRADE_MULTI_AZ: 'upgrade_to_multi_az',
+      DOWNGRADE_TO_SINGLE_AZ: 'downgrade_to_single_az',
       MAJOR_VERSION_UPGRADE: 'major_version_upgrade'
     }
   },
