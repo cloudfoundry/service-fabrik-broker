@@ -20,8 +20,12 @@ class ServiceFlowMapper {
   _checkForMultiAz(params) {
     logger.debug(`Checking for multi-az-migrate - `);
     if (_.get(params, 'parameters.multi_az') !== undefined) {
-      logger.info(`Multi-AZ_Upgrade Service Flow is to be executed`);
-      return CONST.SERVICE_FLOW.TYPE.UPGRADE_MULTI_AZ;
+      if (_.get(params, 'parameters.multi_az') === true || _.get(params, 'parameters.multi_az') === 'true') {
+        logger.info(`Multi-AZ_Upgrade Service Flow is to be executed`);
+        return CONST.SERVICE_FLOW.TYPE.UPGRADE_MULTI_AZ;
+      }
+      logger.info(`Multi-AZ_Downgrade Service Flow is to be executed`);
+      return CONST.SERVICE_FLOW.TYPE.DOWNGRADE_TO_SINGLE_AZ;
     }
     return undefined;
   }
