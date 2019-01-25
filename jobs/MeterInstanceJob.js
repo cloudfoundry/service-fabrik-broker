@@ -6,6 +6,7 @@ const logger = require('../common/logger');
 const BaseJob = require('./BaseJob');
 const catalog = require('../common/models/catalog');
 const config = require('../common/config');
+const utils = require('../common/utils');
 const maas = require('../data-access-layer/metering');
 
 const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
@@ -28,7 +29,7 @@ class MeterInstanceJob extends BaseJob {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
       query: {
-        labelSelector: `meter_state=${CONST.METER_STATE.TO_BE_METERED}`
+        labelSelector: `meter_state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
       }
     };
     return apiServerClient.getResources(options);
@@ -159,23 +160,23 @@ class MeterInstanceJob extends BaseJob {
       .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, event) : false)
       .return(true)
       .catch(err => {
-        logger.error('Error occurred while metering event : ', event);
-        logger.error('Error Details - ', err);
-        // TODO add fail count , remove meter state failed
+        logger.error('Error occured while metering:', err);
+        // TODO remove meter state failed
         return this
-          .updateMeterState(CONST.METER_STATE.FAILED, event)
+          .updateMeterState(CONST.METER_STATE.FAILED, event, err)
           .return(false);
       });
   }
 
-  static updateMeterState(status, event) {
+  static updateMeterState(status, event, err) {
     logger.debug(`Updating meter state for event`, event);
     return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
         resourceId: `${event.metadata.name}`,
         status: {
-          meter_state: status
+          meter_state: status,
+          error: utils.buildErrorJson(err)
         }
       })
       .tap((response) => logger.info('Successfully updated meter state : ', response));
