@@ -182,8 +182,8 @@ class HttpClient {
           try {
             const errResponse = JSON.parse(body);
             err.error = errResponse;
-          } catch (err) {
-            logger.info('Error occurred while parsing http response- ', err.error);
+          } catch (parseErr) {
+            err.message = `${err.message}. ${body}`
           }
         }
         throw err;
