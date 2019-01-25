@@ -898,6 +898,71 @@ class BoshDirectorClient extends HttpClient {
       });
   }
 
+  getDeploymentErrands(deploymentName) {
+    return this.makeRequest({
+        method: 'GET',
+        url: `/deployments/${deploymentName}/errands`
+      }, 200, deploymentName)
+      .then(res => JSON.parse(res.body));
+  }
+
+  /**
+   * Trigger the errand on specific instances and get the task id correspnding to errand
+   * @param {string} deploymentName - Deployment on which errand is to be started
+   * @param {string} errandName - errand name
+   * @param {Object[]}  instances - array of the instances on which the errand is to be triggered
+   * @param {string}  instances[].group - instance group
+   * @param {string}  instances[].id - instance index or id
+   */
+
+  runDeploymentErrand(deploymentName, errandName, instances = []) {
+    return this.makeRequest({
+        method: 'POST',
+        url: `/deployments/${deploymentName}/errands/${errandName}/runs`,
+        body: {
+          'keep-alive': true,
+          'instances': instances
+        }
+      }, 302, deploymentName)
+      .then(res => {
+        const taskId = this.lastSegment(res.headers.location);
+        logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
+        return taskId;
+      });
+  }
+
+  createDiskAttachment(deploymentName, diskCid, jobName, instanceId, diskProperties = 'copy') {
+    return this.makeRequest({
+        method: 'PUT',
+        url: `/disks/${diskCid}/attachments`,
+        qs: {
+          deployment: deploymentName,
+          job: jobName,
+          instance_id: instanceId,
+          disk_properties: diskProperties || 'copy'
+        }
+      }, 302, deploymentName)
+      .then(res => {
+        const taskId = this.lastSegment(res.headers.location);
+        logger.info(`Triggered disk attachment with paramaters --> \
+        deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
+        return taskId;
+      });
+  }
+
+  getPersistentDisks(deploymentName, instanceFilter = []) {
+    if (!instanceFilter || !_.isArray(instanceFilter)) {
+      instanceFilter = [];
+    }
+    return this.getDeploymentVmsVitals(deploymentName)
+      .then(instances => _.filter(instances, instance => _.includes(instanceFilter, instance.job_name)))
+      .then(filteredInstances => {
+        return _.chain(filteredInstances)
+          .map(i => _.pick(i, ['job_name', 'id', 'disk_cid', 'az']))
+          .value();
+      });
+  }
+
   getTaskEvents(taskId) {
     const splitArray = this.parseTaskid(taskId);
     if (splitArray === null) {

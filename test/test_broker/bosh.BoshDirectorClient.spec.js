@@ -698,6 +698,167 @@ describe('bosh', () => {
       });
     });
 
+    describe('#errands', () => {
+      it('should return errands array for the deployment', () => {
+        const req = {
+          method: 'GET',
+          url: `/deployments/${deployment_name}/errands`
+        };
+        const res = {
+          statusCode: 200,
+          body: JSON.stringify(['smoke-tests', 'status'])
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.getDeploymentErrands(deployment_name)
+          .then(errands => {
+            expect(errands).to.deep.equal(['smoke-tests', 'status']);
+          });
+      });
+
+      it('should return task id for errand', () => {
+        let instances = [{
+          'group': 'zookeeper',
+          'id': '1'
+        }];
+        let errandName = 'status';
+        const req = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/errands/${errandName}/runs`,
+          body: {
+            'keep-alive': true,
+            'instances': instances
+          }
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.runDeploymentErrand(deployment_name, errandName, instances)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+
+    });
+
+    describe('#disks', () => {
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should get persistent disks for deployment', () => {
+        const response = [{
+            vm_cid: 'vmid1',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              availability_zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol1',
+            disk_cids: ['vol1'],
+            ips: ['1.2.3.4'],
+            job_name: 'postgresql',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          },
+          {
+            vm_cid: 'vmid2',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              availability_zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol2',
+            disk_cids: ['vol2'],
+            ips: ['1.2.3.4'],
+            job_name: 'pgpool',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          }
+        ];
+
+        let mockBoshClient = new MockBoshDirectorClient();
+        let getDeploymentVmsVitalsStub = sandbox.stub(mockBoshClient, 'getDeploymentVmsVitals');
+        getDeploymentVmsVitalsStub
+          .withArgs(deployment_name)
+          .returns(Promise.resolve(response));
+        return mockBoshClient.getPersistentDisks(deployment_name, ['postgresql'])
+          .then(disks => {
+            expect(disks.length).to.equal(1);
+            expect(disks[0].disk_cid).to.eql('vol1');
+            expect(disks[0].job_name).to.eql('postgresql');
+            expect(disks[0].id).to.eql('abcd');
+            expect(disks[0].az).to.eql('z1');
+          });
+      });
+
+      it('should return task id for disk attachment task', () => {
+        let jobName = 'dummy_job';
+        let diskCid = 'dummy_disk';
+        let instanceId = 'dummy_instance';
+        const req = {
+          method: 'PUT',
+          url: `/disks/${diskCid}/attachments`,
+          qs: {
+            deployment: deployment_name,
+            job: jobName,
+            instance_id: instanceId,
+            disk_properties: 'copy'
+          }
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshClient = new MockBoshDirectorClient(req, res);
+        return mockBoshClient.createDiskAttachment(deployment_name, diskCid, jobName, instanceId)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+    });
+
     describe('#createDeploymentProperty', () => {
       it('returns correct status code', (done) => {
         let request = {
