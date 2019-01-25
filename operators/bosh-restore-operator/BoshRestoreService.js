@@ -49,21 +49,27 @@ class BoshRestoreService extends BaseDirectorService {
           backup_guid: backup.guid,
           time_stamp: backup.timeStamp,
           state: 'processing',
-          agent_ip: undefined,
           started_at: new Date().toISOString(),
           finished_at: null,
-          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid,
-          snapshotId: _.get(backupMetadata, 'snapshotId'),
-          deploymentName: deploymentName
+          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
         })
         .value();
 
+        const jobs = []; //Obtain the jobs from service catalog
+        const persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
+        const optionsData = _
+          .assign({
+            snapshotId: _.get(backupMetadata, 'snapshotId'),
+            deploymentName: deploymentName,
+            deploymentInstancesInfo: persistentDiskInfo
+          });
         //create the restoreFile
         //update resource state to bosh_stop along with needed information
-        return eventmesh.apiServerClient.updateResource({
+        return eventmesh.apiServerClient.patchResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, //TODO:
           resourceId: opts.restore_guid,
+          options: optionsData,
           status: {
             'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
             'response': data
@@ -96,8 +102,8 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStop(changeObjectBody) {
     try {
       //1. Get deployment name from resource
-      const resource = JSON.parse(changeObjectBody);
-      const deploymentName = _.get(resource, 'status.response.deploymentName');
+      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
+      const deploymentName = _.get(resourceOptions, 'deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
       const taskId  = await this.director.stopDeployment(deploymentName);
@@ -111,13 +117,23 @@ class BoshRestoreService extends BaseDirectorService {
   async processCreateDisk(changeObjectBody) {
     try {
       //1. get snapshot id from backup metadata
-      const resource = JSON.parse(changeObjectBody);
-      const snapshotId = _.get(resource, 'status.response.snapshotId');
+      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
+      const snapshotId = _.get(resourceOptions, 'snapshotId');
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'deploymentInstancesInfo')); 
+      //2. create persistent disks from snapshot
+      _.forEach(deploymentInstancesInfo, (instance) => {
+        let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az);
+        _.set(instance, 'createDiskPromise', promise);
+      });
 
-      //2. create persistent disk from snapshot
-      const diskData = await this.cloudProvider.createDiskFromSnapshot(snapshotId); //TODO: Add zones and required options
-      //3. Store persistent disk information in resource to be used later
-      //4. Update state
+      //3. Await for all the disk creations to complete
+      _.forEach(deploymentInstancesInfo, (instance) => {
+        instance.newDiskInfo = await instance.createDiskPromise;
+        _.unset(instance, 'createDiskPromise');
+      });
+
+      //4. Update the resource with deploymentInstancesInfo and next state 
+
     } catch (err) {
       //Handle failure/rollback
     }
@@ -126,13 +142,25 @@ class BoshRestoreService extends BaseDirectorService {
   async processAttachDisk(changeObjectBody) {
     try { 
       //1. Get new disk CID from resource state
-      const resource = JSON.parse(changeObjectBody);
-      const diskCid = _.get(resource, 'status.response.newDiskCid');
-      const deploymentName = _.get(resource, 'status.response.deploymentName');
+      const resourceOptions = JSON.parse(changeObjectBody);
+      const deploymentName = _.get(resourceOptions, 'deploymentName');
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'deploymentInstancesInfo'));
 
-      //2. Get job/instance pairs from config/resource to which new disk needs to be attached
-      const jobInstancePairs = []; //TODO: Finalize on how to obtain it
+      //2. attach disk to all the given instances
+      _.forEach(deploymentInstancesInfo, (instance) => {
+        let taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
+          instance.job_name, instance_id);
+        _.set(instance, 'attachDiskTaskId', taskId);
+        let pollingPromise = this.director.pollTaskStatusTillComplete(taskId); //TODO: determine other polling parameters
+        _.set(instance, 'attachDiskPollingPromise', pollingPromise);
+      });
 
+      _.forEach(deploymentInstancesInfo, (instance) => {
+        instance.attachDiskTaskResult = await instance.pollingPromise;
+        _.unset(instance, 'pollingPromise');
+      });
+
+      //3. Update the resource with deploymentInstanceInfo and next state
     } catch (err) {
 
     }
