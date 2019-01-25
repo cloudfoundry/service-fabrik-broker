@@ -12,48 +12,59 @@ const BoshRestoreService = require('./');
 class DefaultBoshRestoreOperator extends BaseOperator {
 
   init() {
-    const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.OPERATION.ABORT, CONST.APISERVER.RESOURCE_STATE.DELETE];
+    const RESTORE_STATES = [
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`,
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`,
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`,
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
+      `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ROLLBACK`
+    ];    
+    const defaultValidStatelist = [
+      CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+      CONST.OPERATION.ABORT
+    ]; //TODO: check abort for mongodb + delete in general
+    const validStateList = defaultValidStatelist.concat(RESTORE_STATES);
+    //TODO: Update correct resource type here
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE)
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, validStateList));
   }
 
-  processRequest(requestObjectBody) {
-    return Promise.try(() => {
-        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return DefaultRestoreOperator._processRestore(requestObjectBody);
-        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.ABORT) {
-          return DefaultRestoreOperator._processAbort(requestObjectBody);
-        }
-      })
-      .catch(err => {
-        logger.error('Error occurred in processing request by DefaultRestoreOperator', err);
-        return eventmesh.apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-          resourceId: requestObjectBody.metadata.name,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(err)
-          }
-        });
-      });
+  async processRequest(requestObjectBody) {
+    if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+      return processInQueueRequest(requestObjectBody);
+    }
+    else {
+      //TODO: handle abort later
+      return processInProgressRequest(requestObjectBody)
+    }
   }
 
-  static _processRestore(changeObjectBody) {
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering restore with the following options:', changedOptions);
-    const plan = catalog.getPlan(changedOptions.plan_id);
-    return BoshRestoreService.createService(plan)
-      .then(service => service.startRestore(changedOptions));
+  async processInQueueRequest(changeObjectBody) {
+    try {
+      const changedOptions = JSON.parse(changeObjectBody.spec.options);
+      logger.info('Triggering restore with the following options:', changedOptions);
+      const plan = catalog.getPlan(changedOptions.plan_id);
+      let service = await BoshRestoreService.createService(plan)
+      return service.startRestore(changeObjectBody); //pass entire object and not just spec.options
+    } catch (err) {
+      //Restore failed even before it properly started
+      //Update the resource with state failure
+    }
   }
 
-  static _processAbort(changeObjectBody) {
-    const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Triggering abort restore with the following options:', changedOptions);
-    const plan = catalog.getPlan(changedOptions.plan_id);
-    return BoshRestoreService.createService(plan)
-      .then(service => service.abortLastRestore(changedOptions));
+  async processInProgressRequest(changeObjectBody) {
+    try {
+      const changedOptions = JSON.parse(changeObjectBody.spec.options);
+      logger.info('Triggering restore with the following options:', changedOptions);
+      const plan = catalog.getPlan(changedOptions.plan_id);
+      let service = await BoshRestoreService.createService(plan)
+      return service.processState(changeObjectBody); //pass entire object and not just spec.options
+    } catch (err) {
+      //Restore failed in some intermediate state. Exception should be handled by the service 
+      //log the error and taks no action here.
+    }
   }
-
 }
+
 module.exports = DefaultBoshRestoreOperator;
