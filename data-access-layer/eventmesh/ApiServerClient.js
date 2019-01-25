@@ -228,7 +228,7 @@ class ApiServerClient {
   createNamespace(name) {
     assert.ok(name, `Property 'name' is required to create namespace`);
     if (name === CONST.APISERVER.DEFAULT_NAMESPACE) {
-      return;
+      return Promise.resolve();
     }
     const resourceBody = {
       kind: CONST.APISERVER.NAMESPACE_OBJECT,
@@ -327,7 +327,6 @@ class ApiServerClient {
     const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
     return Promise.try(() => this.init())
-      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType].post({
@@ -809,7 +808,6 @@ class ApiServerClient {
     );
     // Create Namespace if not default
     return this.init()
-      .then(() => this.createNamespace(namespaceId))
       .then(() => apiserver
         .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType].post({

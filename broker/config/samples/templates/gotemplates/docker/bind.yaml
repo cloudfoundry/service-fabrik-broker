@@ -6,7 +6,7 @@
 {{- $planId := "" }}
 {{- $context := "{}" }}
 {{- $params := "{}" }}
-{{- $acceptsIncomplete := "true" }}
+{{- $acceptsIncomplete := false }}
 {{- $appGuid := "" }}
 {{- $bindResource := "{}" }}
 {{- $id := "" }}
@@ -50,6 +50,6 @@ metadata:
     instance_guid: {{ $instanceId }}
   name: {{ $name }}
 spec:
-  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"app_guid\": \"%s\", \"bind_resource\": %s, \"context\": %s, \"binding_id\": \"%s\", \"parameters\": %s, \"accepts_incomplete\": %s }" $serviceId $planId $appGuid $bindResource $context $id $params $acceptsIncomplete) | quote }}
+  options: {{ (printf "{ \"service_id\": \"%s\", \"plan_id\": \"%s\", \"app_guid\": \"%s\", \"bind_resource\": %s, \"context\": %s, \"binding_id\": \"%s\", \"parameters\": %s, \"accepts_incomplete\": %t }" $serviceId $planId $appGuid $bindResource $context $id $params $acceptsIncomplete) | quote }}
 status:
   state: {{ $state }}

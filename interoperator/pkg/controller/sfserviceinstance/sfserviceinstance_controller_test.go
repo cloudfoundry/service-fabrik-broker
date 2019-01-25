@@ -17,6 +17,7 @@ limitations under the License.
 package sfserviceinstance
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -121,6 +122,9 @@ var instance = &osbv1alpha1.SFServiceInstance{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "instance-id",
 		Namespace: "default",
+		Labels: map[string]string{
+			"state": "in_queue",
+		},
 	},
 	Spec: osbv1alpha1.SFServiceInstanceSpec{
 		ServiceID:        "service-id",
@@ -133,8 +137,6 @@ var instance = &osbv1alpha1.SFServiceInstance{
 	},
 }
 
-var expectedResources = []*unstructured.Unstructured{nil}
-
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
 var expectedRequest = reconcile.Request{NamespacedName: instanceKey}
 
@@ -142,6 +144,12 @@ func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	var expectedResources = []*unstructured.Unstructured{nil}
+	var appliedResources = []*unstructured.Unstructured{
+		&unstructured.Unstructured{},
+	}
+	err1 := fmt.Errorf("Some error")
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -153,12 +161,17 @@ func TestReconcile(t *testing.T) {
 	mockClusterFactory := mock_clusterFactory.NewMockClusterFactory(ctrl)
 	reconciler := newReconciler(mgr, mockResourceManager, mockClusterFactory)
 
-	// mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil)
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockClusterFactory.EXPECT().GetCluster("instance-id", "", "service-id", "plan-id").Return(reconciler, nil).AnyTimes()
-	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]*unstructured.Unstructured{}, nil).AnyTimes()
-	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(&properties.Status{}, nil).AnyTimes()
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
+	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
+	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(&properties.Status{
+		Provision: properties.InstanceStatus{
+			State: "succeeded",
+		},
+	}, nil).AnyTimes()
+	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
 
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
@@ -172,13 +185,61 @@ func TestReconcile(t *testing.T) {
 
 	// Create the ServiceInstance object and expect the Reconcile and Deployment to be created
 	err = c.Create(context.TODO(), instance)
-	// The instance object may not be a valid object because it might be missing some required fields.
-	// Please modify the instance object by adding required fields and then remove the following if statement.
 	if apierrors.IsInvalid(err) {
 		t.Logf("failed to create object, got an invalid object error: %v", err)
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+
+	// Reconciler recives the request and updates status and label
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Get the serviceInstance
+	serviceInstance := &osbv1alpha1.SFServiceInstance{}
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), instanceKey, serviceInstance)
+		if err != nil {
+			return err
+		}
+		labels := serviceInstance.GetLabels()
+		if state, ok := labels["state"]; !ok || state != "succeeded" {
+			return fmt.Errorf("label not updated")
+		}
+		return nil
+	}, timeout).Should(gomega.Succeed())
+	g.Expect(serviceInstance.Status.State).Should(gomega.Equal("succeeded"))
+	labels := serviceInstance.GetLabels()
+	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
+
+	// Delete the service instance
+	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+
+	// Service should disappear from api server
+	g.Eventually(func() error {
+		err := c.Get(context.TODO(), instanceKey, serviceInstance)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return fmt.Errorf("not deleted")
+	}, timeout).Should(gomega.Succeed())
+}
+
+func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
+	// Drain all requests
+	start := time.Now()
+	select {
+	case <-requests:
+		diff := time.Now().Sub(start)
+		if diff < remainingTime {
+			return 1 + drainAllRequests(requests, remainingTime-diff)
+		}
+		return 1
+	case <-time.After(remainingTime):
+		return 0
+	}
 }
