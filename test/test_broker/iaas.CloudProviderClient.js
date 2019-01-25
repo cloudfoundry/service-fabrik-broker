@@ -10,7 +10,7 @@ describe('iaas', function () {
     const createClientSpy = sinon.spy(pkgcloud.storage, 'createClient');
 
     afterEach(function () {
-      createClientSpy.reset();
+      createClientSpy.resetHistory();
     });
 
     describe('#deleteSnapshot', function () {

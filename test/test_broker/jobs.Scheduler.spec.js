@@ -245,30 +245,30 @@ describe('Jobs', function () {
     });
 
     function resetSpies() {
-      agendaSpy.init.reset();
-      agendaSpy.processEvery.reset();
-      agendaSpy.maxConcurrency.reset();
-      agendaSpy.defaultConcurrency.reset();
-      agendaSpy.defaultLockLifetime.reset();
-      agendaSpy.jobsAsync.reset();
-      agendaSpy.start.reset();
-      agendaSpy.define.reset();
-      agendaSpy.create.reset();
-      agendaSpy.everyAsync.reset();
-      agendaSpy.cancelAsync.reset();
-      agendaSpy.scheduleAsync.reset();
-      agendaSpy.nowAsync.reset();
-      agendaSpy.stop.reset();
-      agendaSpy.on.reset();
-      subscribeSpy.reset();
-      publishSpy.reset();
-      jobSpy.unique.reset();
-      jobSpy.repeatEvery.reset();
-      jobSpy.schedule.reset();
-      jobSpy.computeNextRunAt.reset();
-      jobSpy.runAsync.reset();
-      jobSpy.saveAsync.reset();
-      logSpy.reset();
+      agendaSpy.init.resetHistory();
+      agendaSpy.processEvery.resetHistory();
+      agendaSpy.maxConcurrency.resetHistory();
+      agendaSpy.defaultConcurrency.resetHistory();
+      agendaSpy.defaultLockLifetime.resetHistory();
+      agendaSpy.jobsAsync.resetHistory();
+      agendaSpy.start.resetHistory();
+      agendaSpy.define.resetHistory();
+      agendaSpy.create.resetHistory();
+      agendaSpy.everyAsync.resetHistory();
+      agendaSpy.cancelAsync.resetHistory();
+      agendaSpy.scheduleAsync.resetHistory();
+      agendaSpy.nowAsync.resetHistory();
+      agendaSpy.stop.resetHistory();
+      agendaSpy.on.resetHistory();
+      subscribeSpy.resetHistory();
+      publishSpy.resetHistory();
+      jobSpy.unique.resetHistory();
+      jobSpy.repeatEvery.resetHistory();
+      jobSpy.schedule.resetHistory();
+      jobSpy.computeNextRunAt.resetHistory();
+      jobSpy.runAsync.resetHistory();
+      jobSpy.saveAsync.resetHistory();
+      logSpy.resetHistory();
       agendaEventHandlers = {};
       schedulerStartFailed = false;
     }
@@ -953,7 +953,7 @@ describe('Jobs', function () {
         maintenanceStatus = 0;
         baseJobLogRunHistoryStub.resetHistory();
         processExitStub.resetHistory();
-        jobDoneSpy.reset();
+        jobDoneSpy.resetHistory();
       });
       after(function () {
         runSandBox.restore();

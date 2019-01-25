@@ -225,7 +225,7 @@ describe('fabrik', function () {
     let errorPollTask = false;
     before(function () {
       sandbox = sinon.createSandbox();
-      loggerWarnSpy = sandbox.spy(logger, 'warn');
+      loggerWarnSpy = sinon.spy(logger, 'warn');
       retryStub = sandbox.stub(utils, 'retry').callsFake((callback, options) => callback());
       dbInitializeSpy = sinon.spy(DBManager.prototype, 'initialize');
       dbInitializeForCreateSpy = sinon.spy(DBManagerCreateWithDelayedReconnectRetry.prototype, 'initialize');
@@ -249,11 +249,11 @@ describe('fabrik', function () {
       getDeploymentStub.resetHistory();
       getDeploymentVMsStub.resetHistory();
       pollTaskStatusTillCompleteStub.resetHistory();
-      loggerWarnSpy.reset();
-      dbInitializeSpy.reset();
-      dbInitializeByUrlSpy.reset();
+      loggerWarnSpy.resetHistory();
+      dbInitializeSpy.resetHistory();
+      dbInitializeByUrlSpy.resetHistory();
       retryStub.resetHistory();
-      dbCreateUpdateSucceededSpy.reset();
+      dbCreateUpdateSucceededSpy.resetHistory();
     });
     after(function () {
       sandbox.restore();

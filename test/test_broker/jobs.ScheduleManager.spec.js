@@ -227,14 +227,14 @@ describe('Jobs', function () {
     });
 
     afterEach(function () {
-      schedulerSpy.schedule.reset();
-      schedulerSpy.runAt.reset();
-      schedulerSpy.getJob.reset();
-      schedulerSpy.cancelJob.reset();
-      schedulerSpy.purgeOldFinishedJobs.reset();
-      repoSpy.saveOrUpdate.reset();
-      repoSpy.findOne.reset();
-      repoSpy.delete.reset();
+      schedulerSpy.schedule.resetHistory();
+      schedulerSpy.runAt.resetHistory();
+      schedulerSpy.getJob.resetHistory();
+      schedulerSpy.cancelJob.resetHistory();
+      schedulerSpy.purgeOldFinishedJobs.resetHistory();
+      repoSpy.saveOrUpdate.resetHistory();
+      repoSpy.findOne.resetHistory();
+      repoSpy.delete.resetHistory();
       clock.reset();
     });
 
