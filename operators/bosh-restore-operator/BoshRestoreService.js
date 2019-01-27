@@ -16,6 +16,30 @@ const config = require('../../common/config');
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
 
+/*
+spec.options in CRD can have a structure similar to following:
+spec.options = {
+    ....
+    deploymentName,
+    snapshotId,
+    errandName,
+    boshStopTaskId,
+    boshErrandTaskId,
+    boshStartTaskId,
+    deploymentInstancesInfo = [
+        {
+            job_name,
+            instanceId/instanceIndex,
+            az,
+            old_disk_cid,
+            new_disk_cid,
+            a
+        },
+        {}
+    ]
+    .... //other parameters
+}
+*/
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
@@ -168,7 +192,15 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processRunErrands(changeObjectBody) {
     try {
-
+      //1. Get deploymentName and errandName from resource
+      const resourceOptions = JSON.parse(changeObjectBody);
+      const deploymentName = _.get(resourceOptions, 'deploymentName');
+      const errandName = _.get(resourceOptions, 'errandDetails.name');
+      const instancesForErrands = _.get(resourceOptions, 'errandDetails.instances');
+      const taskIdForErrand = this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
+      //update resource with taskID
+      let taskResult = await this.director.pollTaskStatusTillComplete(taskId);
+      //handle the success/failuer/retries etc
     } catch (err) {
 
     }
@@ -176,6 +208,14 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStart(changeObjectBody) {
     try {
+      //1. Get deployment name from resource
+      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
+      const deploymentName = _.get(resourceOptions, 'deploymentName');
+
+      //2. Stop the bosh deployment and poll for the result
+      const taskId  = await this.director.startDeployment(deploymentName);
+      const task = await this.director.pollTaskStatusTillComplete(taskId);
+      //3. Update the resource with next step
 
     } catch (err) {
 
