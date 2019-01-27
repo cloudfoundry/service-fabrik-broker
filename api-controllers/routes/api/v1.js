@@ -56,6 +56,9 @@ instanceRouter.route('/restore')
   .get(controller.handler('getLastRestore'))
   .delete(controller.handler('abortLastRestore'))
   .all(commonMiddleware.methodNotAllowed(['POST', 'GET', 'DELETE']));
+instanceRouter.route('/boshrestore')
+  .post(controller.handler('startBoshRestore'))
+  .all(commonMiddleware.methodNotAllowed(['POST']));
 instanceRouter.route('/schedule_update')
   .all(middleware.isFeatureEnabled(CONST.FEATURE.SCHEDULED_UPDATE))
   .put(controller.handler('scheduleUpdate'))

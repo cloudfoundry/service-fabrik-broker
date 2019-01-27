@@ -26,8 +26,8 @@ class DefaultBoshRestoreOperator extends BaseOperator {
     ]; //TODO: check abort for mongodb + delete in general
     const validStateList = defaultValidStatelist.concat(RESTORE_STATES);
     //TODO: Update correct resource type here
-    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE)
-      .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, validStateList));
+    return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE)
+      .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, validStateList));
   }
 
   async processRequest(requestObjectBody) {

@@ -62,7 +62,7 @@ class BoshRestoreService extends BaseDirectorService {
         //update resource state to bosh_stop along with needed information
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, //TODO:
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, //TODO:
           resourceId: opts.restore_guid,
           status: {
             'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
@@ -95,14 +95,16 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStop(changeObjectBody) {
     try {
-      //1. Get deployment name from resource
-      const resource = JSON.parse(changeObjectBody);
-      const deploymentName = _.get(resource, 'status.response.deploymentName');
-
-      //2. Stop the bosh deployment and poll for the result
-      const taskId  = await this.director.stopDeployment(deploymentName);
-      const task = await this.director.pollTaskStatusTillComplete(taskId);
-      //3. Update the resource with next step
+      setTimeout(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`,
+          }
+        });
+      }, 60000)
     } catch (err) {
       //Handle failure/rollback
     }
@@ -110,47 +112,69 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processCreateDisk(changeObjectBody) {
     try {
-      //1. get snapshot id from backup metadata
-      const resource = JSON.parse(changeObjectBody);
-      const snapshotId = _.get(resource, 'status.response.snapshotId');
-
-      //2. create persistent disk from snapshot
-      const diskData = await this.cloudProvider.createDiskFromSnapshot(snapshotId); //TODO: Add zones and required options
-      //3. Store persistent disk information in resource to be used later
-      //4. Update state
+      setTimeout(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`,
+          }
+        });
+      }, 60000)
     } catch (err) {
       //Handle failure/rollback
     }
   }
 
   async processAttachDisk(changeObjectBody) {
-    try { 
-      //1. Get new disk CID from resource state
-      const resource = JSON.parse(changeObjectBody);
-      const diskCid = _.get(resource, 'status.response.newDiskCid');
-      const deploymentName = _.get(resource, 'status.response.deploymentName');
-
-      //2. Get job/instance pairs from config/resource to which new disk needs to be attached
-      const jobInstancePairs = []; //TODO: Finalize on how to obtain it
-
+    try {
+      setTimeout(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`,
+          }
+        });
+      }, 60000)
     } catch (err) {
-
+      //Handle failure/rollback
     }
   }
 
   async processRunErrands(changeObjectBody) {
     try {
-
+      setTimeout(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
+          }
+        });
+      }, 60000)
     } catch (err) {
-
+      //Handle failure/rollback
     }
   }
 
   async processBoshStart(changeObjectBody) {
     try {
-
+      setTimeout(() => {
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+          }
+        });
+      }, 60000)
     } catch (err) {
-
+      //Handle failure/rollback
     }
   }
 
