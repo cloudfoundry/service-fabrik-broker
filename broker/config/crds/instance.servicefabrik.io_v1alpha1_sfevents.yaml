@@ -35,8 +35,6 @@ spec:
               type: string
             state:
               type: string
-            meter_state:
-              type: string
           type: object
       type: object
   version: v1alpha1

@@ -29,7 +29,7 @@ class MeterInstanceJob extends BaseJob {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
       query: {
-        labelSelector: `meter_state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
+        labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
       }
     };
     return apiServerClient.getResources(options);
@@ -169,15 +169,18 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static updateMeterState(status, event, err) {
-    logger.debug(`Updating meter state for event`, event);
+    logger.debug(`Updating meter state to ${status} for event`, event);
+    let status_obj = {
+      state: status
+    };
+    if( err !== undefined ) {
+      status_obj.error =  utils.buildErrorJson(err);
+    }
     return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
         resourceId: `${event.metadata.name}`,
-        status: {
-          meter_state: status,
-          error: utils.buildErrorJson(err)
-        }
+        status: status_obj
       })
       .tap((response) => logger.info('Successfully updated meter state : ', response));
   }
