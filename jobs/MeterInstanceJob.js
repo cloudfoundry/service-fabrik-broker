@@ -119,20 +119,6 @@ class MeterInstanceJob extends BaseJob {
       .value();
   }
 
-  static getPlanNameFromPlanGUID(serviceGuid, planGuid) {
-    const service = _.chain(catalog.toJSON().services)
-      .map((s) => s.id === serviceGuid ? s : undefined)
-      .filter(s => s !== undefined)
-      .head()
-      .value();
-    return _
-      .chain(service.plans)
-      .map((p) => p.id === planGuid ? p.name : undefined)
-      .filter(p => p !== undefined)
-      .head()
-      .value();
-  }
-
   static sendEvent(event) {
     logger.info('Sending event:', event);
     if (this.isServicePlanExcluded(event.spec.options)) {
