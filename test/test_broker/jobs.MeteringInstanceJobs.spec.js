@@ -35,7 +35,7 @@ function getDummyEvent(options_json) {
       creationTimestamp: '2019-01-21T11:00:43Z',
       generation: 1,
       labels: {
-        meter_state: 'TO_BE_METERED'
+        state: 'TO_BE_METERED'
       },
       name: meterGuid,
       namespace: 'default',
@@ -62,7 +62,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.METER_STATE.EXCLUDED
+            state: CONST.METER_STATE.EXCLUDED
           }
         };
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
@@ -83,7 +83,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.METER_STATE.METERED
+            state: CONST.METER_STATE.METERED
           }
         };
         const mock_token = 'mock_token_string';
@@ -111,7 +111,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.METER_STATE.FAILED
+            state: CONST.METER_STATE.FAILED
           }
         };
         const mock_token = 'mock_token_string';
@@ -144,7 +144,7 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.METER_STATE.METERED
+            state: CONST.METER_STATE.METERED
           }
         };
         mocks.metering.mockAuthCall(mock_token);
@@ -182,12 +182,12 @@ describe('Jobs', () => {
         };
         const payload = {
           status: {
-            meter_state: CONST.METER_STATE.METERED
+            state: CONST.METER_STATE.METERED
           }
         };
         const payload_failure = {
           status: {
-            meter_state: CONST.METER_STATE.FAILED
+            state: CONST.METER_STATE.FAILED
           }
         };
         mocks.metering.mockAuthCall(mock_token);
