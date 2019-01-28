@@ -14,7 +14,7 @@ const CONST = require('../common/constants');
 class MeterInstanceJob extends BaseJob {
   static run(job, done) {
     return Promise.try(() => {
-      logger.info(`-> Starting MeterInstanceJob -  name: ${jobData[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(jobData)} `);
+      logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
       this.getInstanceEvents()
         .tap(events => logger.info('recieved events -> ', events))
         .then(events => this.meter(events))
