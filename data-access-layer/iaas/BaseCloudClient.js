@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const uuid = require('uuid');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const NotImplementedBySubclass = errors.NotImplementedBySubclass;
@@ -43,6 +44,14 @@ class BaseCloudClient {
     return _.nth(/^(.+)-broker$/.exec(this.containerName), 1);
   }
 
+  createDiskFromSnapshot(snapshotId, zones, options) {
+    throw new NotImplementedBySubclass(`createDiskFromSnapshot - ${snapshotId}, ${zones}, ${options}`);
+  }
+
+  getDiskMetadata(diskCid, zone) {
+    throw new NotImplementedBySubclass(`getDiskMetadata: ${diskCid}, ${zone}`);
+  }
+
   getContainer() {
     throw new NotImplementedBySubclass('getContainer');
   }
@@ -73,6 +82,10 @@ class BaseCloudClient {
 
   deleteSnapshot() {
     throw new NotImplementedBySubclass('deleteSnapshot');
+  }
+
+  getRandomDiskId() {
+    return `sf-disk-${uuid.v4()}`;
   }
 
   static createStorageClient() {

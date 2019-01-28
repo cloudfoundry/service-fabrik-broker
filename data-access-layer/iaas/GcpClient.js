@@ -30,6 +30,76 @@ class GcpClient extends BaseCloudClient {
     );
   }
 
+  getDiskMetadata(diskId, zone) {
+    return Promise.try(() =>
+      this.computeClient
+      .zone(zone)
+      .disk(diskId)
+      .get()
+      .then(diskData => diskData[0].metadata)
+      .then(metadata => {
+        return {
+          volumeId: metadata.name,
+          size: metadata.sizeGb,
+          zone: metadata.zone.substring(metadata.zone.lastIndexOf('/') + 1),
+          type: metadata.type.substring(metadata.type.lastIndexOf('/') + 1),
+          extra: {
+            tags: metadata.labels,
+            type: metadata.type
+          }
+        };
+      })
+    );
+  }
+
+  createDiskFromSnapshot(snapshotId, zone, opts = {}) {
+    return new Promise((resolve, reject) => {
+      const diskName = this.getRandomDiskId();
+      const options = {
+        sourceSnapshot: `global/snapshots/${snapshotId}`,
+        description: 'disk created via service fabrik',
+        type: opts.type || `projects/${this.settings.projectId || this.settings.credentials.project_id}/zones/${zone}/pd-ssd`,
+        labels: _.assign({}, opts.tags || {}, {
+          createdBy: 'service-fabrik'
+        })
+      };
+
+      const cleanup = () => {
+        createDiskOperation.removeAllListeners();
+      };
+
+      const onerror = err => {
+        cleanup();
+        reject(err);
+      };
+
+      const oncomplete = () => {
+        cleanup();
+        logger.info(`created disk ${diskName} from snapshot ${snapshotId}`);
+        this.getDiskMetadata(diskName, zone)
+          .then(disk => resolve(disk))
+          .catch(err => reject(err));
+      };
+
+      let createDiskOperation;
+      this.computeClient
+        .zone(zone)
+        .createDisk(diskName, options)
+        .then(data => {
+          createDiskOperation = data[0];
+          createDiskOperation.on('complete', oncomplete);
+          createDiskOperation.on('error', onerror);
+        })
+        .catch(err => {
+          logger.error(
+            `Error creating disk ${diskName} from snapshot ${snapshotId}`,
+            err
+          );
+          reject(err);
+        });
+    });
+  }
+
   getContainer(container) {
     if (arguments.length < 1) {
       container = this.containerName;
@@ -216,7 +286,7 @@ class GcpClient extends BaseCloudClient {
   }
 
   static createComputeClient(options) {
-    return GcpCompute({
+    return new GcpCompute({
       projectId: options.projectId,
       credentials: options.credentials
     });

@@ -37,8 +37,8 @@ provision:
   error: {{ $error | quote}}
 {{- end }}
   dashboardUrl: ""
-{{- with .directorbind.status }}
-  {{- $response = (b64dec .response | quote) }}
+{{- with .directorbind.status.response }}
+  {{- $response = (b64dec . | quote) }}
 {{- end }}
 {{- $stateString = "in_queue" }} 
 {{- with .directorbind }}
@@ -59,8 +59,8 @@ bind:
   error: {{ $error | quote }}
 {{- end }}
   response: {{ $response }}
-{{- with .directorbind.status }}
-  {{- $response = (b64dec .response | quote) }}
+{{- with .directorbind.status.response }}
+  {{- $response = (b64dec . | quote) }}
 {{- end }}
 {{- $stateString = "delete" }} 
 {{- with .directorbind }}

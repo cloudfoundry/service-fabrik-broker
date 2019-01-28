@@ -47,12 +47,12 @@ const (
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr, resources.New()))
+	clusterFactory, _ := clusterFactory.New(mgr)
+	return add(mgr, newReconciler(mgr, resources.New(), clusterFactory))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager) reconcile.Reconciler {
-	clusterFactory, _ := clusterFactory.New(mgr)
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterFactory clusterFactory.ClusterFactory) reconcile.Reconciler {
 	return &ReconcileSFServiceBinding{
 		Client:          mgr.GetClient(),
 		scheme:          mgr.GetScheme(),
@@ -280,7 +280,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		resourceRefs = append(resourceRefs, resource)
 	}
 
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
 	if err != nil {
 		log.Printf("error computing status. %v\n", err)
 		return err
@@ -316,10 +316,26 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 				log.Printf("error setting owner reference for secret. %v\n", err)
 				return err
 			}
-			err = r.Create(context.TODO(), secret)
-			if err != nil {
-				log.Printf("error creating secret. %v\n", err)
+			secretNamespacedName := types.NamespacedName{
+				Name:      secretName,
+				Namespace: namespace,
+			}
+			foundSecret := &corev1.Secret{}
+			err = r.Get(context.TODO(), secretNamespacedName, foundSecret)
+			if err != nil && errors.IsNotFound(err) {
+				err = r.Create(context.TODO(), secret)
+				if err != nil {
+					log.Printf("error creating secret. %v\n", err)
+					return err
+				}
+			} else if err != nil {
 				return err
+			} else {
+				err = r.Update(context.TODO(), secret)
+				if err != nil {
+					log.Printf("error updating secret. %v\n", err)
+					return err
+				}
 			}
 			bindingObj.Status.Response.SecretRef = secretName
 		} else if bindingStatus.State == "failed" {
