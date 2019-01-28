@@ -8,18 +8,17 @@ const catalog = require('../common/models/catalog');
 const config = require('../common/config');
 const utils = require('../common/utils');
 const maas = require('../data-access-layer/metering');
-
 const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../common/constants');
 
 class MeterInstanceJob extends BaseJob {
   static run(job, done) {
     return Promise.try(() => {
-      logger.debug('Starting MeterInstanceJob Job');
+      logger.info(`-> Starting MeterInstanceJob -  name: ${jobData[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(jobData)} `);
       this.getInstanceEvents()
         .tap(events => logger.info('recieved events -> ', events))
         .then(events => this.meter(events))
-        .then((meterResponse) => this.runSucceeded(meterResponse, job, done))
+        .then(meterResponse => this.runSucceeded(meterResponse, job, done))
         .catch((err) => this.runFailed(err, {}, job, done));
     });
   }
@@ -41,27 +40,26 @@ class MeterInstanceJob extends BaseJob {
       let successCount = 0,
         failureCount = 0,
         failedEvents = [];
-      return Promise.map(events, (event) => {
-          return this
-            .sendEvent(event)
-            .then((status) => {
-              if (status) {
-                successCount++;
-              } else {
-                failureCount++;
-                failedEvents.push(event);
-              }
-            })
-            .catch(err => {
-              logger.error(`Error occurred while metering event : `, err);
-            });
-        }).then(() => {
+      return Promise.map(events, (event) => this
+          .sendEvent(event)
+          .then((status) => {
+            if (status) {
+              successCount++;
+            } else {
+              failureCount++;
+              failedEvents.push(event);
+            }
+          })
+          .catch(err => {
+            logger.error(`Error occurred while metering event : `, err);
+          })
+        ).then(() => {
           return {
             totalEvents: events.length,
             success: successCount,
             failed: failureCount,
             failedEvents: failedEvents
-          };
+          }
         })
         .catch(err => {
           logger.error(`Error occurred while metering all events : `, err);
@@ -75,9 +73,9 @@ class MeterInstanceJob extends BaseJob {
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
-    const serviceName = this.getServiceNameFromServiceGUID(serviceId);
+    const serviceName = catalog.getServiceName(serviceId);
     const planName = this.getPlanSKUFromPlanGUID(serviceId, planId);
-    const excluded_service_names = _.map(config.metering.excluded_service_plans, p => p.service_name);
+    const excluded_service_names = _.map(config.metering.excluded_service_plans, plan => plan.service_name);
     if (_.indexOf(excluded_service_names, serviceName) >= 0) {
       const excluded_plans = _
         .chain(config.metering.excluded_service_plans)
@@ -100,18 +98,10 @@ class MeterInstanceJob extends BaseJob {
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
-    options.service.id = this.getServiceNameFromServiceGUID(serviceId);
+    options.service.id = catalog.getServiceName(serviceId);
     options.service.plan = this.getPlanSKUFromPlanGUID(serviceId, planId);
     options.consumer.region = config.metering.region;
     return options;
-  }
-
-  static getServiceNameFromServiceGUID(serviceGuid) {
-    return _.chain(catalog.toJSON().services)
-      .map((s) => s.id === serviceGuid ? s.name : undefined)
-      .filter(s => s !== undefined)
-      .head()
-      .value();
   }
 
   static getPlanSKUFromPlanGUID(serviceGuid, planGuid) {
@@ -173,8 +163,8 @@ class MeterInstanceJob extends BaseJob {
     let status_obj = {
       state: status
     };
-    if( err !== undefined ) {
-      status_obj.error =  utils.buildErrorJson(err);
+    if (err !== undefined) {
+      status_obj.error = utils.buildErrorJson(err);
     }
     return apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
