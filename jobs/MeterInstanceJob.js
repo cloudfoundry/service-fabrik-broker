@@ -129,7 +129,7 @@ class MeterInstanceJob extends BaseJob {
       .try(() => this.enrichEvent(event.spec.options))
       .then(enrichedUsageDoc => {
         logger.debug('Sending document:', enrichedUsageDoc);
-        return maas.client.putUsageRecord({
+        return maas.client.sendUsageRecord({
           usage: [enrichedUsageDoc]
         });
       })

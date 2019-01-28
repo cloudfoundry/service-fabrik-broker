@@ -89,7 +89,7 @@ describe('Jobs', () => {
         const mock_token = 'mock_token_string';
         const mock_response_code = 200;
         mocks.metering.mockAuthCall(mock_token);
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
@@ -117,7 +117,7 @@ describe('Jobs', () => {
         const mock_token = 'mock_token_string';
         const mock_response_code = 400;
         mocks.metering.mockAuthCall(mock_token);
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         // updated the dummy event with not exluded plans
@@ -148,11 +148,11 @@ describe('Jobs', () => {
           }
         };
         mocks.metering.mockAuthCall(mock_token);
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         mocks.metering.mockAuthCall(mock_token);
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         // updated the dummy event with not exluded plans
@@ -192,12 +192,12 @@ describe('Jobs', () => {
         };
         mocks.metering.mockAuthCall(mock_token);
         // mock successfull put req
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
           return true;
         });
         mocks.metering.mockAuthCall(mock_token);
         // mock failed put req
-        mocks.metering.mockPutUsageRecord(mock_token, mock_response_code_failure, () => {
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code_failure, () => {
           return true;
         });
         // updated the dummy event with not exluded plans

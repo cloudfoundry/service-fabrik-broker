@@ -4,7 +4,7 @@ const nock = require('nock');
 const config = require('../../../common/config');
 
 exports.mockAuthCall = mockAuthCall;
-exports.mockPutUsageRecord = mockPutUsageRecord;
+exports.mockSendUsageRecord = mockSendUsageRecord;
 
 
 function mockAuthCall(mock_token) {
@@ -27,7 +27,7 @@ function mockAuthCall(mock_token) {
     });
 }
 
-function mockPutUsageRecord(token, response_code, test_body_fn) {
+function mockSendUsageRecord(token, response_code, test_body_fn) {
   return nock(config.metering.metering_url, {
       reqheaders: {
         authorization: `Bearer ${token}`

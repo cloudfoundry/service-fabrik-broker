@@ -28,7 +28,7 @@ class MeteringClient extends HttpClient {
     return this
       .request({
         baseUrl: this.tokenUrl,
-        url: '/oauth/token',
+        url: CONST.URL.METERING_AUTH,
         auth: {
           user: this.clientId,
           pass: this.clientSecret
@@ -48,11 +48,11 @@ class MeteringClient extends HttpClient {
       });
   }
 
-  putUsageRecord(usage_records) {
+  sendUsageRecord(usage_records) {
     return Promise
       .try(() => this.getAuthToken())
       .then(accessToken => this.request({
-        url: '/usage/v2/usage/documents',
+        url: CONST.URL.METERING_USAGE,
         method: CONST.HTTP_METHOD.PUT,
         auth: {
           bearer: accessToken
