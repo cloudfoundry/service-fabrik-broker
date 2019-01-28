@@ -6,6 +6,7 @@ const config = require('../../common/config');
 const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
 const logger = require('../../common/logger');
+const CONST = require('../../common/constants');
 
 class MeteringClient extends HttpClient {
 
@@ -17,20 +18,20 @@ class MeteringClient extends HttpClient {
       },
       followRedirect: false
     }, options));
-    this.clientid = config.metering.client_id;
-    this.clientsecret = config.metering.client_secret;
-    this.token_url = config.metering.token_url;
-    this.metering_url = config.metering.metering_url;
+    this.clientId = config.metering.client_id;
+    this.clientSecret = config.metering.client_secret;
+    this.tokenUrl = config.metering.token_url;
+    this.meteringUrl = config.metering.metering_url;
   }
 
   getAuthToken() {
     return this
       .request({
-        baseUrl: this.token_url,
+        baseUrl: this.tokenUrl,
         url: '/oauth/token',
         auth: {
-          user: this.clientid,
-          pass: this.clientsecret
+          user: this.clientId,
+          pass: this.clientSecret
         },
         qs: {
           grant_type: 'client_credentials'
@@ -52,13 +53,13 @@ class MeteringClient extends HttpClient {
       .try(() => this.getAuthToken())
       .then(accessToken => this.request({
         url: '/usage/v2/usage/documents',
-        method: 'PUT',
+        method: CONST.HTTP_METHOD.PUT,
         auth: {
           bearer: accessToken
         },
         body: usage_records,
         json: true
-      }, 200))
+      }, CONST.HTTP_STATUS_CODE.OK))
       .catch(err => {
         logger.error('Error occurred while seding usage to metering service', err);
         throw err;
