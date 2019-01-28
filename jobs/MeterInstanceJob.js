@@ -69,7 +69,6 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static isServicePlanExcluded(options) {
-    options = JSON.parse(options);
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
@@ -94,7 +93,6 @@ class MeterInstanceJob extends BaseJob {
 
   static enrichEvent(options) {
     // Add region , service name and plan sku name of the event
-    options = JSON.parse(options);
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
