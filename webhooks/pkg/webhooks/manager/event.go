@@ -81,7 +81,6 @@ func NewEvent(ar *v1beta1.AdmissionReview) (*Event, error) {
 		glog.Errorf("Could not get the GenericResource object %v", err)
 		return nil, err
 	}
-	crd.Status.LastOperationObj = resources.GetLastOperation(crd)
 	crd.Status.AppliedOptionsObj = resources.GetAppliedOptions(crd)
 
 	var oldCrd resources.GenericResource
@@ -92,7 +91,6 @@ func NewEvent(ar *v1beta1.AdmissionReview) (*Event, error) {
 			glog.Errorf("Could not get the old GenericResource object %v", err)
 			return nil, err
 		}
-		oldCrd.Status.LastOperationObj = resources.GetLastOperation(oldCrd)
 		oldCrd.Status.AppliedOptionsObj = resources.GetAppliedOptions(oldCrd)
 	} else {
 		oldCrd = resources.GenericResource{}
@@ -122,11 +120,13 @@ func (e *Event) isPlanChanged() bool {
 }
 
 func (e *Event) isCreate() bool {
-	return e.crd.Status.LastOperationObj.Type == loCreate
+	lo := e.crd.GetLastOperation()
+	return lo.Type == loCreate
 }
 
 func (e *Event) isUpdate() bool {
-	return e.crd.Status.LastOperationObj.Type == loUpdate
+	lo := e.crd.GetLastOperation()
+	return lo.Type == loUpdate
 }
 
 func (e *Event) isSucceeded() bool {
@@ -211,7 +211,7 @@ func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *Mete
 }
 
 func (e *Event) getEventType() (EventType, error) {
-	lo := e.crd.Status.LastOperationObj
+	lo := e.crd.GetLastOperation()
 	eventType := InvalidEvent
 	if e.crd.Status.State == Delete {
 		eventType = DeleteEvent

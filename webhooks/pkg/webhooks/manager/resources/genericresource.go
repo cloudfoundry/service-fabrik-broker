@@ -8,55 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ContextOptions represents the contex information in GenericOptions
-type ContextOptions struct {
-	Platform         string `json:"platform"`
-	OrganizationGUID string `json:"organization_guid"`
-	SpaceGUID        string `json:"space_guid"`
-}
-
-// GenericOptions represents the option information in Spec
-type GenericOptions struct {
-	ServiceID string         `json:"service_id"`
-	PlanID    string         `json:"plan_id"`
-	Context   ContextOptions `json:"context"`
-}
-
-// GenericLastOperation represents the last option information in Status
-type GenericLastOperation struct {
-	Type  string `json:"type"`
-	State string `json:"state"`
-}
-
-// GenericSpec represents the Spec in GenericResource
-type GenericSpec struct {
-	Options string `json:"options,omitempty"`
-}
-
-func (g *GenericSpec) GetOptions() (GenericOptions, error) {
-	var opts GenericOptions
-	decoder := json.NewDecoder(bytes.NewReader([]byte(g.Options)))
-	err := decoder.Decode(&opts)
-	if err != nil {
-		glog.Errorf("Could not unmarshal raw object: %v", err)
-	}
-	return opts, err
-}
-
-func (g *GenericSpec) SetOptions(options GenericOptions) error {
-	val, err := json.Marshal(options)
-	g.Options = string(val)
-	return err
-}
-
-// GenericStatus type represents the status in GenericResource
-type GenericStatus struct {
-	AppliedOptions    string `json:"appliedOptions"`
-	State             string `json:"state,omitempty"`
-	LastOperationRaw  string `json:"lastOperation,omitempty"`
-	LastOperationObj  GenericLastOperation
-	AppliedOptionsObj GenericOptions
-}
 
 // GenericResource type represents a generic resource
 type GenericResource struct {
@@ -66,17 +17,13 @@ type GenericResource struct {
 	Spec              GenericSpec   `json:"spec,omitempty"`
 }
 
-func GetGenericResource(object []byte) (GenericResource, error) {
-	var crd GenericResource
-	decoder := json.NewDecoder(bytes.NewReader(object))
-	err := decoder.Decode(&crd)
-	if err != nil {
-		glog.Errorf("Could not unmarshal raw object: %v", err)
-	}
-	return crd, err
+func (crd *GenericResource) SetLastOperation(lo GenericLastOperation) error {
+	val, err := json.Marshal(lo)
+	crd.Status.LastOperationRaw = string(val)
+	return err
 }
 
-func GetLastOperation(crd GenericResource) GenericLastOperation {
+func (crd *GenericResource) GetLastOperation() GenericLastOperation {
 	var lo GenericLastOperation
 	// LastOperation could be null during Craete
 	if crd.Status.LastOperationRaw != "" {
@@ -88,6 +35,17 @@ func GetLastOperation(crd GenericResource) GenericLastOperation {
 		lo = GenericLastOperation{}
 	}
 	return lo
+}
+
+
+func GetGenericResource(object []byte) (GenericResource, error) {
+	var crd GenericResource
+	decoder := json.NewDecoder(bytes.NewReader(object))
+	err := decoder.Decode(&crd)
+	if err != nil {
+		glog.Errorf("Could not unmarshal raw object: %v", err)
+	}
+	return crd, err
 }
 
 func GetAppliedOptions(crd GenericResource) GenericOptions {
