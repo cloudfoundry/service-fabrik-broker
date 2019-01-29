@@ -53,7 +53,7 @@ describe('utils', () => {
         return manager.generateSshKeyPair('tmp')
           .then(out => {
             expect(out).to.eql('tmp');
-          })
+          });
       });
     });
   });

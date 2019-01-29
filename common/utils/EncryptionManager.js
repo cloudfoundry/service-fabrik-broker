@@ -17,9 +17,9 @@ class EncryptionManager {
     return decipher.update(text, CONST.ENCRYPTION.OUTPUT_ENCODING, CONST.ENCRYPTION.INPUT_ENCODING);
   }
 
-  async generateSshKeyPair(tempUser) {
+  async generateSshKeyPair(tempUser) { //jshint ignore: line
     const sshKeyGenerator = new RsaKeyGenerator(tempUser);
-    return await sshKeyGenerator.createKeyPair();
+    return await sshKeyGenerator.createKeyPair(); //jshint ignore: line
   }
 }
 

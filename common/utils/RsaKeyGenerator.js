@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Promise = require('bluebird');
 const {
   spawn
@@ -21,24 +20,24 @@ class SshRsaKeyGenerator {
     this.pubFile = `${this.location}.pub`;
   }
 
-  async fileAvailable(loc) {
+  async fileAvailable(loc) { //jshint ignore: line
     let available = true;
     try {
-      await fileExists(loc)
+      await fileExists(loc); //jshint ignore: line
     } catch (err) {
       available = false;
     }
     return available;
   }
 
-  async forceDeleteFiles() {
-    const keyFilePresent = await this.fileAvailable(this.location);
-    const pubFilePresent = await this.fileAvailable(this.pubFile);
+  async forceDeleteFiles() { //jshint ignore: line
+    const keyFilePresent = await this.fileAvailable(this.location); //jshint ignore: line
+    const pubFilePresent = await this.fileAvailable(this.pubFile); //jshint ignore: line
     if (keyFilePresent) {
-      await unlinkFile(this.location);
+      await unlinkFile(this.location); //jshint ignore: line
     }
     if (pubFilePresent) {
-      await unlinkFile(this.pubFile);
+      await unlinkFile(this.pubFile); //jshint ignore: line
     }
   }
 
@@ -56,12 +55,12 @@ class SshRsaKeyGenerator {
     });
   }
 
-  async createKeyPair() {
-    await this.forceDeleteFiles();
-    await this.runSshKeygen();
-    let privateKey = await readFile(this.location, 'utf8');
-    let publicKey = await readFile(this.pubFile, 'utf8');
-    await this.forceDeleteFiles();
+  async createKeyPair() { //jshint ignore: line
+    await this.forceDeleteFiles(); //jshint ignore: line
+    await this.runSshKeygen(); //jshint ignore: line
+    let privateKey = await readFile(this.location, 'utf8'); //jshint ignore: line
+    let publicKey = await readFile(this.pubFile, 'utf8'); //jshint ignore: line
+    await this.forceDeleteFiles(); //jshint ignore: line
     privateKey = privateKey.toString();
     privateKey = privateKey.substring(0, privateKey.lastIndexOf('\n')).trim();
     publicKey = publicKey.toString();
