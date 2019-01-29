@@ -105,9 +105,10 @@ function verify() {
   expect(nock.isDone()).to.be.true;
 }
 
-function nockGetResource(resourceGroup, resourceType, id, response, expectedExpectedCode) {
+function nockGetResource(resourceGroup, resourceType, id, namespaceId, response, expectedExpectedCode) {
+  const namespace = namespaceId ? namespaceId : 'default';
   nock(apiServerHost)
-    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces/${namespace}/${resourceType}/${id}`)
     .reply(expectedExpectedCode || 200, response);
 }
 
@@ -129,9 +130,10 @@ function nockUpdateConfigMap(response, expectedStatusCode, payload) {
     .reply(expectedStatusCode || 200, response);
 }
 
-function nockPatchResource(resourceGroup, resourceType, id, response, payload, expectedExpectedCode) {
+function nockPatchResource(resourceGroup, resourceType, id, namespaceId, response, payload, expectedExpectedCode) {
+  const namespace = namespaceId ? namespaceId : 'default';
   nock(apiServerHost)
-    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}/${id}`, JSON.stringify(payload))
+    .patch(`/apis/${resourceGroup}/v1alpha1/namespaces/${namespace}/${resourceType}/${id}`, JSON.stringify(payload))
     .reply(expectedExpectedCode || 200, response);
 }
 
@@ -368,7 +370,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -399,7 +401,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -431,7 +433,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -474,7 +476,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload1);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -508,7 +510,7 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1, 404);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload1, 404);
         return apiserver.updateResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -542,8 +544,8 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.patchResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -579,8 +581,8 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.patchResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -641,8 +643,8 @@ describe('eventmesh', () => {
             })
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetResponse);
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload1);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload1);
         return apiserver.patchResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -727,7 +729,7 @@ describe('eventmesh', () => {
             }
           }
         };
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.updateLastOperationValue({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -746,7 +748,7 @@ describe('eventmesh', () => {
 
     describe('getResource', () => {
       it('Gets resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -804,7 +806,7 @@ describe('eventmesh', () => {
 
     describe('getLastOperation', () => {
       it('Gets last operation on resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getLastOperationValue({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -821,7 +823,7 @@ describe('eventmesh', () => {
 
     describe('getOperationStatus', () => {
       it('Gets operation status on resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getResourceStatus({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -839,7 +841,7 @@ describe('eventmesh', () => {
 
     describe('getOptions', () => {
       it('Gets options of resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getOptions({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -855,7 +857,7 @@ describe('eventmesh', () => {
 
     describe('getResponse', () => {
       it('Gets response of resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getResponse({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -871,7 +873,7 @@ describe('eventmesh', () => {
 
     describe('getResourceState', () => {
       it('Gets state of resource', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getResourceState({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -1047,7 +1049,7 @@ describe('eventmesh', () => {
 
     describe('getPlatformContext', () => {
       it('Gets getPlatformContext', () => {
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', expectedGetDeploymentResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, 'deployment1', 'default', expectedGetDeploymentResponse);
         return apiserver.getPlatformContext({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -1177,8 +1179,8 @@ describe('eventmesh', () => {
             description: ''
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedGetResponse);
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedResponse, payload);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.patchOSBResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
@@ -1202,6 +1204,74 @@ describe('eventmesh', () => {
             verify();
           });
       });
+
+      it('Patches osb resource in a namespace with spec and status', () => {
+        const expectedGetResponse = {
+          spec: {
+            plan_id: 'plan1',
+            params: {
+              foo: 'bar'
+            },
+            context: {
+              organization_guid: 'org1',
+              space_guid: 'space1'
+            }
+          },
+          status: {
+            state: 'in_queue',
+            description: 'desc'
+          }
+        };
+        const expectedResponse = {};
+        const payload = {
+          spec: {
+            planId: 'plan2',
+            params: {
+              foo: 'bar'
+            },
+            context: {
+              organization_guid: 'org2',
+              space_guid: 'space2'
+            },
+            serviceId: 'service2'
+          },
+          metadata: {
+            labels: {
+              state: 'in_progress'
+            }
+          },
+          status: {
+            state: 'in_progress',
+            description: ''
+          }
+        };
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace-id', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace-id', expectedResponse, payload);
+        return apiserver.patchOSBResource({
+            resourceId: 'deployment1',
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+            namespaceId: 'namespace-id',
+            spec: {
+              plan_id: 'plan2',
+              service_id: 'service2',
+              context: {
+                organization_guid: 'org2',
+                space_guid: 'space2'
+              }
+            },
+            status: {
+              state: 'in_progress',
+              description: ''
+            }
+          })
+          .then(res => {
+            expect(res.statusCode).to.eql(200);
+            expect(res.body).to.eql({});
+            verify();
+          });
+      });
+
       it('Patches osb resource fails with error', () => {
         const expectedGetResponse = {
           spec: {
@@ -1219,7 +1289,7 @@ describe('eventmesh', () => {
             description: 'desc'
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', expectedGetResponse);
+        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedGetResponse);
         return apiserver.patchOSBResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,

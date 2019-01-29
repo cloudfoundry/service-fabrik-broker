@@ -879,6 +879,7 @@ class ApiServerClient {
    * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
    * @param {string} opts.resourceType - Type of resource ex. defaultbackup
    * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
+   * @param {string} opts.namespaceId - Unique id of namespace
    */
   patchOSBResource(opts) {
     logger.info('Patching resource options with opts: ', opts);
@@ -886,9 +887,9 @@ class ApiServerClient {
     assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
     assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
     assert.ok(opts.metadata || opts.spec || opts.status, `Property 'metadata' or 'options' or 'status' is required to patch resource`);
-    const namespaceId = this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+    const namespaceId = opts.namespaceId ? opts.namespaceId : (this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
       _.get(opts, 'spec.instance_id') : opts.resourceId
-    );
+    ));
     return this.getResource(_.merge(opts, {
         namespaceId: namespaceId
       }))
