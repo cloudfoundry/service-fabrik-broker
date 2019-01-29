@@ -129,6 +129,9 @@ describe('service-fabrik-admin', function () {
           }
         }
       }));
+      const response_body = {
+        message: 'Created/Updated disable_scheduled_update_blueprint with value false'
+      };
       return chai
         .request(app)
         .put(`${base_url}/config?key=disable_scheduled_update_blueprint&value=false`)
@@ -137,7 +140,7 @@ describe('service-fabrik-admin', function () {
         .catch(err => err.response)
         .then(res => {
           expect(res).to.have.status(201);
-          expect(res.text).to.be.equal('Created/Updated disable_scheduled_update_blueprint with value false');
+          expect(res.body).to.deep.equal(response_body);
         });
     });
   });

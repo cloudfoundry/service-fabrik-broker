@@ -24,11 +24,7 @@ class Task {
         resourceGroup: task.resourceGroup,
         resourceType: task.resourceType,
         resourceId: task.resourceId,
-        status: {
-          lastOperation: status,
-          response: status.response,
-          state: status.state
-        }
+        status: status
       })
       .tap(() => logger.info(`successfully updated state of task - ${task.resourceId} to ${JSON.stringify(status)}`));
   }

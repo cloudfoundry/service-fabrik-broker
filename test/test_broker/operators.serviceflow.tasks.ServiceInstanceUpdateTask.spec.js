@@ -34,8 +34,8 @@ describe('operators', function () {
           return ServiceInstanceUpdateTask.run(taskId, taskDetails)
             .then(taskResponse => {
               expect(taskResponse.resource).to.eql({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
                 resourceId: instanceId
               });
               expect(taskResponse.response.description.indexOf('TEST_TASK initiated successfully') === 0).to.equal(true);

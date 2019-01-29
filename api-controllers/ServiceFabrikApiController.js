@@ -196,27 +196,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .tap(space_guid => _.set(req, 'entity.tenant_id', space_guid))
       .then(space_guid => {
         if (isCloudControllerAdmin) {
-          return;
-        }
-        //TODO: Need to handle this separately for k8s consumption
-        return this.cloudController
-          .getSpaceDevelopers(space_guid, opts)
-          .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(insufficientPermissions));
-      })
-      .tap(developers => {
-        if (isCloudControllerAdmin) {
           logger.info(`User ${user.email} has cloud_controller.admin scope. SpaceDeveloper validation will be skipped`);
           return;
         }
-        const isSpaceDeveloper = _
-          .chain(developers)
-          .findIndex(developer => (developer.metadata.guid === user.id))
-          .gte(0)
-          .value();
-        if (httpMethod !== 'GET' && !isSpaceDeveloper) {
-          throw new Forbidden(insufficientPermissions);
-        }
-        logger.info('space develoopers done');
+        //TODO: Need to handle this separately for k8s consumption
+        return this.verifySpaceDevPermissions({
+            spaceGuid: space_guid,
+            user: user,
+            auth: opts
+          })
+          .then(isSpaceDeveloper => {
+            if (httpMethod !== CONST.HTTP_METHOD.GET && !isSpaceDeveloper) {
+              throw new Forbidden(insufficientPermissions);
+            }
+            logger.info('space developers verification done.');
+          });
       })
       .catch(err => {
         logger.warn('Verification of user permissions failed');
@@ -224,6 +218,31 @@ class ServiceFabrikApiController extends FabrikBaseController {
         throw err;
       })
       .throw(new ContinueWithNext());
+  }
+
+  /**
+   * Verify that the options.user is a space developer for options.spaceGuid
+   * @param {object} options - Object containing options
+   * @param {string} opts.spaceGuid - Space guid for which permissions need to be checked
+   * @param {string} opts.user - User details obtained from request
+   * @param {string} opts.auth - auth token used to communicate to CC (obtained from request itself)
+   */
+  verifySpaceDevPermissions(options) {
+    let spaceGuid = options.spaceGuid;
+    let user = options.user;
+    let auth = options.auth;
+    logger.info(`Checking space developer permissions for ${spaceGuid} and ${user.email}`);
+    return this.cloudController
+      .getSpaceDevelopers(spaceGuid, auth)
+      .catchThrow(CloudControllerError.NotAuthorized, new Forbidden(`User '${user.name}' has insufficient permissions`))
+      .then(developers => {
+        const isSpaceDeveloper = _
+          .chain(developers)
+          .findIndex(developer => (developer.metadata.guid === user.id))
+          .gte(0)
+          .value();
+        return isSpaceDeveloper;
+      });
   }
 
   getInfo(req, res) {
@@ -510,12 +529,24 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  getSpaceGuidOfBackup(backupGuid) {
+    return eventmesh.apiServerClient.getResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+        resourceId: backupGuid
+      })
+      .then(resource => _.get(resource, 'spec.options.context.space_guid') ||
+        _.get(resource, 'spec.options.args.space_guid'));
+    //TODO: This will need to be handled while supporting BnR for instances from k8s platform
+  }
+
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     let restoreGuid, serviceId, planId;
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
+    let backupSpaceGuid = tenantId;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     return Promise
       .try(() => this.setPlan(req))
@@ -540,6 +571,23 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return this.validateUuid(backupGuid, 'Backup GUID');
         }
       })
+      .then(() => backupGuid ? this.getSpaceGuidOfBackup(backupGuid) : tenantId)
+      .then(spaceGuid => {
+        backupSpaceGuid = spaceGuid;
+        let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
+        if (backupSpaceGuid !== tenantId && !isCloudControllerAdmin) {
+          return this.verifySpaceDevPermissions({
+              spaceGuid: backupSpaceGuid,
+              user: req.user,
+              auth: _.pick(req, 'auth')
+            })
+            .then(isSpaceDeveloper => {
+              if (!isSpaceDeveloper) {
+                throw new Forbidden(`User '${req.user.name}' is not a space-developer for space with guid ${backupSpaceGuid}`);
+              }
+            });
+        }
+      })
       .then(() => this.validateRestoreQuota({
         instance_guid: req.params.instance_id,
         service_id: serviceId,
@@ -549,12 +597,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
-          tenant_id: tenantId,
+          tenant_id: backupSpaceGuid,
           instance_id: sourceInstanceId,
           service_id: serviceId
         } : {
           backup_guid: backupGuid,
-          tenant_id: tenantId
+          tenant_id: backupSpaceGuid
         };
         if (timeStamp) {
           return this.backupStore
