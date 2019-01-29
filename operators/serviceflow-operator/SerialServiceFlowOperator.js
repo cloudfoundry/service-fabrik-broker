@@ -67,7 +67,6 @@ class SerialServiceFlowOperator extends BaseOperator {
           options: _.merge(serviceFlowOptions, tasks[0]),
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            lastOperation: {},
             response: {}
           }
         })
@@ -107,11 +106,11 @@ class SerialServiceFlowOperator extends BaseOperator {
       const relayedStatus = {
         state: previousTaskResponse.state,
         response: previousTaskResponse,
-        message: `Last Task complete.`
+        description: `Last Task complete.`
       };
       if (previousTaskResponse.state !== CONST.OPERATION.SUCCEEDED) {
         logger.info(`Task ${resourceDetails.resourceId} has failed. service flow will be marked as failed.`);
-        relayedStatus.message = `Task - ${taskDetails.task_description} failed and service flow is also marked as failed.`;
+        relayedStatus.description = `Task - ${taskDetails.task_description} failed and service flow is also marked as failed.`;
         return task
           .updateStatus(resourceDetails, relayedStatus)
           .then(() => this.serviceFlowComplete(taskDetails, `${taskDetails.task_description} failed. ${previousTaskResponse.description}`, FAILED));
@@ -142,13 +141,12 @@ class SerialServiceFlowOperator extends BaseOperator {
             options: _.merge(taskDetails, tasks[taskDetails.task_order]),
             status: {
               state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-              lastOperation: {},
               response: {}
             }
           })
           .then(() => {
             logger.info('Created next task in the service flow. Updating the state of current task as Relayed.');
-            relayedStatus.message = `Task complete and next relayed task is ${relayedTaskId}`;
+            relayedStatus.description = `Task complete and next relayed task is ${relayedTaskId}`;
             return task.updateStatus(resourceDetails, relayedStatus);
           })
           .then(() => this.updateServiceFlowStatus(
@@ -167,10 +165,7 @@ class SerialServiceFlowOperator extends BaseOperator {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
       resourceId: taskDetails.serviceflow_id,
-      status: {
-        lastOperation: status,
-        state: status.state
-      }
+      status: status
     });
   }
 

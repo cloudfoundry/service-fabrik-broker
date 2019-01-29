@@ -4,7 +4,6 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const logger = require('../../../common/logger');
 const CONST = require('../../../common/constants');
-const catalog = require('../../../common/models/catalog');
 const Task = require('./Task');
 const apiServerClient = require('../../../data-access-layer/eventmesh').apiServerClient;
 
@@ -16,8 +15,6 @@ class ServiceInstanceUpdateTask extends Task {
       return true;
       //Throw exception if not entitled.
     }).then(() => {
-      const planId = taskDetails.operation_params.plan_id;
-      const plan = catalog.getPlan(planId);
       const params = _.cloneDeep(taskDetails.operation_params);
       const taskInfo = _.chain(taskDetails)
         .omit('operation_params')
@@ -37,8 +34,8 @@ class ServiceInstanceUpdateTask extends Task {
         .tap(() => {
           logger.info(`Update task ${taskDetails.task_description} with task data -  ${JSON.stringify(taskDetails.task_data)} initiated successfully @ ${new Date()}`);
           taskDetails.resource = {
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: taskDetails.instance_id
           };
           taskDetails.response = {
