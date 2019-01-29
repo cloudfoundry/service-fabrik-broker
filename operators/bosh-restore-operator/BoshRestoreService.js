@@ -57,7 +57,7 @@ class BoshRestoreService extends BaseDirectorService {
         .value();
 
         const jobs = []; //Obtain the jobs from service catalog
-        const persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
+        const persistentDiskInfo = await this.stub.getPersistentDisks(deploymentName, jobs);
         const optionsData = _
           .assign({ 
             restoreMetadata: { 
@@ -110,8 +110,8 @@ class BoshRestoreService extends BaseDirectorService {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
-      const taskId  = await this.director.stopDeployment(deploymentName);
-      const task = await this.director.pollTaskStatusTillComplete(taskId);
+      const taskId  = await this.stub.stopDeployment(deploymentName);
+      const task = await this.stub.pollTaskStatusTillComplete(taskId);
       //3. Update the resource with next step
       let stateResult = _.assign({
         statesResults: {
@@ -143,7 +143,7 @@ class BoshRestoreService extends BaseDirectorService {
       //2. create persistent disks from snapshot
       for (let i = 0; i< deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
-        let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az);
+        let promise = this.stub.createDiskFromSnapshot(snapshotId, instance.az);
         _.set(instance, 'createDiskPromise', promise);
       }
 
@@ -182,14 +182,14 @@ class BoshRestoreService extends BaseDirectorService {
       //2. attach disk to all the given instances
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
-        let taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
+        let taskId = await this.stub.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
           instance.job_name, instance_id);
         _.set(instance, 'attachDiskTaskId', taskId);
-        let pollingPromise = this.director.pollTaskStatusTillComplete(taskId); //TODO: determine other polling parameters
+        let pollingPromise = this.stub.pollTaskStatusTillComplete(taskId); //TODO: determine other polling parameters
         _.set(instance, 'attachDiskPollingPromise', pollingPromise);
       };
 
-      for(let i = 0;i < deploymentInstancesInfo.length; i++) {
+      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
         instance.attachDiskTaskResult = await instance.pollingPromise;
         _.unset(instance, 'pollingPromise');
@@ -225,9 +225,9 @@ class BoshRestoreService extends BaseDirectorService {
           'id': instance.id
         };
       });
-      const taskIdForErrand = this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
+      const taskIdForErrand = this.stub.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
       //update resource with taskID
-      let taskResult = await this.director.pollTaskStatusTillComplete(taskId);
+      let taskResult = await this.stub.pollTaskStatusTillComplete(taskId);
       //handle the success/failuer/retries etc
       let stateResult = _.assign({
         statesResults: {
@@ -257,8 +257,8 @@ class BoshRestoreService extends BaseDirectorService {
       const deploymentName = _.get(resourceOptions, 'deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
-      const taskId  = await this.director.startDeployment(deploymentName);
-      const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
+      const taskId  = await this.stub.startDeployment(deploymentName);
+      const taskResult = await this.stub.pollTaskStatusTillComplete(taskId);
       //3. Update the resource with next step
       let stateResult = _.assign({
         statesResults: {
