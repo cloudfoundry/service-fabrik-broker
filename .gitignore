@@ -25,7 +25,7 @@ common/config/settings.*.yml
 my*
 
 # Ignore coverage results
-**coverage*
+/coverage
 .vscode/
 
 

@@ -112,7 +112,14 @@ func (whsvr *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.Admissi
 
 func (whsvr *WebhookServer) meter(ar *v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 	glog.Info("Attempting to meter event")
-	evt, _ := NewEvent(ar)
+	evt, err := NewEvent(ar)
+	if err != nil {
+		return &v1beta1.AdmissionResponse{
+			Result: &metav1.Status{
+				Message: err.Error(),
+			},
+		}
+	}
 	if evt.isMeteringEvent() {
 		cfg, err := config.GetConfig()
 		if err != nil {

@@ -72,8 +72,8 @@ var _ = Describe("Event", func() {
 					State: "in_progress",
 				})
 				evt.oldCrd.Status.State = "in_progress"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(true))
 			})
 			It("Should should return false if update with no plan change succeeds", func() {
@@ -88,8 +88,8 @@ var _ = Describe("Event", func() {
 					State: "in_progress",
 				})
 				evt.oldCrd.Status.State = "in_progress"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "PlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "PlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "PlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "PlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 			It("Should should return false if state does not change", func() {
@@ -104,8 +104,8 @@ var _ = Describe("Event", func() {
 					State: "succeeded",
 				})
 				evt.oldCrd.Status.State = "succeeded"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 			It("Should should return false if update fails", func() {
@@ -120,8 +120,8 @@ var _ = Describe("Event", func() {
 					State: "in_progress",
 				})
 				evt.oldCrd.Status.State = "in_progress"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 		})
@@ -138,8 +138,8 @@ var _ = Describe("Event", func() {
 					State: "in_progress",
 				})
 				evt.oldCrd.Status.State = "in_progress"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "PlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "PlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "PlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "PlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(true))
 			})
 			It("Should should return false if create state change does not change", func() {
@@ -154,18 +154,18 @@ var _ = Describe("Event", func() {
 					State: "succeeded",
 				})
 				evt.oldCrd.Status.State = "succeeded"
-				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlanUUID"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlanUUID"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 			It("Should should return false if create fails", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "create",
+					Type: "create",
 				})
 				evt.crd.Status.State = "failed"
 				evt.oldCrd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "create",
+					Type: "create",
 				})
 				evt.oldCrd.Status.State = "in_progress"
 				Expect(evt.isMeteringEvent()).To(Equal(false))
@@ -202,23 +202,23 @@ var _ = Describe("Event", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.Status.State = "delete"
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				evt.oldCrd.Status.State = "delete"
 				evt.oldCrd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 			It("Should should return false if create fails", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				evt.crd.Status.State = "failed"
 				evt.oldCrd.Status.State = "delete"
 				evt.oldCrd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
@@ -239,12 +239,12 @@ var _ = Describe("Event", func() {
 			It("Should should return false if create fails", func() {
 				evt, _ := NewEvent(&arDockerCreate)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				evt.crd.Status.State = "failed"
 				evt.oldCrd.Status.State = "delete"
 				evt.oldCrd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "delete",
+					Type: "delete",
 				})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
@@ -283,12 +283,12 @@ var _ = Describe("Event", func() {
 			It("Generates two metering docs", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "update",
+					Type: "update",
 				})
 
 				evt.crd.Spec.SetOptions(resources.GenericOptions{PlanID: "new plan in options"})
-				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlan"
-				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlan"
+				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
 
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
@@ -299,7 +299,7 @@ var _ = Describe("Event", func() {
 				docStop = docs[1].Spec.Options
 				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
 				Expect(docStart.InstancesMeasures[0].Value).To(Equal(c.MeterStart))
-				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlan"))
+				Expect(docStop.ServiceInfo.Plan).To(Equal("oldPlanUUID"))
 				Expect(docStop.InstancesMeasures[0].Value).To(Equal(c.MeterStop))
 			})
 		})
@@ -307,7 +307,7 @@ var _ = Describe("Event", func() {
 			It("Generates one metering doc", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
-					Type:  "create",
+					Type: "create",
 				})
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())

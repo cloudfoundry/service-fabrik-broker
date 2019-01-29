@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 // GenericResource type represents a generic resource
 type GenericResource struct {
 	Kind              string `json:"kind"`
@@ -23,20 +22,18 @@ func (crd *GenericResource) SetLastOperation(lo GenericLastOperation) error {
 	return err
 }
 
-func (crd *GenericResource) GetLastOperation() GenericLastOperation {
+func (crd *GenericResource) GetLastOperation() (GenericLastOperation, error) {
 	var lo GenericLastOperation
 	// LastOperation could be null during Craete
 	if crd.Status.LastOperationRaw != "" {
 		loDecoder := json.NewDecoder(bytes.NewReader([]byte(crd.Status.LastOperationRaw)))
 		if err := loDecoder.Decode(&lo); err != nil {
 			glog.Errorf("Could not unmarshal raw object of lastOperation: %v", err)
+			return lo, err
 		}
-	} else {
-		lo = GenericLastOperation{}
 	}
-	return lo
+	return lo, nil
 }
-
 
 func GetGenericResource(object []byte) (GenericResource, error) {
 	var crd GenericResource
@@ -48,9 +45,9 @@ func GetGenericResource(object []byte) (GenericResource, error) {
 	return crd, err
 }
 
-func GetAppliedOptions(crd GenericResource) GenericOptions {
+func (crd *GenericResource) GetAppliedOptions() GenericOptions {
 	var op GenericOptions
-	// LastOperation could be null during Craete
+	// AppliedOptions could be null during Craete
 	if crd.Status.AppliedOptions != "" {
 		opDecoder := json.NewDecoder(bytes.NewReader([]byte(crd.Status.AppliedOptions)))
 		if err := opDecoder.Decode(&op); err != nil {
@@ -60,4 +57,10 @@ func GetAppliedOptions(crd GenericResource) GenericOptions {
 		op = GenericOptions{}
 	}
 	return op
+}
+
+func (crd *GenericResource) SetAppliedOptions(ao GenericOptions) error {
+	val, err := json.Marshal(ao)
+	crd.Status.AppliedOptions = string(val)
+	return err
 }
