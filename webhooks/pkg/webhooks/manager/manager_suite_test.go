@@ -14,7 +14,7 @@ import (
 var testenv *envtest.Environment
 var tcfg *rest.Config
 
-func TestManager(t *testing.T) {
+func TestWebhook(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Manager Suite")
 }

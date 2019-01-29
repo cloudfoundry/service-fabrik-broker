@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
+	"io/ioutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -244,7 +244,7 @@ var _ = Describe("Event", func() {
 				evt, _ := NewEvent(&ar)
 				evt.crd.Status.LastOperationObj.Type = "update"
 
-                evt.crd.Spec.SetOptions( resources.GenericOptions{ PlanID: "new plan in options"} )
+				evt.crd.Spec.SetOptions(resources.GenericOptions{PlanID: "new plan in options"})
 				evt.crd.Status.AppliedOptionsObj.PlanID = "newPlan"
 				evt.oldCrd.Status.AppliedOptionsObj.PlanID = "oldPlan"
 
