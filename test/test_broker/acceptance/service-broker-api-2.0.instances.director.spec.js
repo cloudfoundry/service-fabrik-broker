@@ -520,7 +520,6 @@ describe('service-broker-api-2.0', function () {
           },
           status: {
             state: 'in_queue',
-            lastOperation: '{}',
             response: '{}'
           }
         };
