@@ -94,7 +94,6 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 		InstancesMeasures: []InstancesMeasure{im},
 	}
 	glog.Infof("New metering event for CRD: %s, Metering Id: %s", crd.Name, guid)
-	// meteringOptions, _ := json.Marshal(mo)
 	m := &Metering{
 		Spec: MeteringSpec{
 			Options: mo,
