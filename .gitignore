@@ -13,6 +13,7 @@
 /tmp
 /store/sessions
 npm-debug.log
+package-lock.json
 
 */*/kubeconfig.yaml
 
@@ -24,7 +25,7 @@ common/config/settings.*.yml
 my*
 
 # Ignore coverage results
-/coverage
+**coverage*
 .vscode/
 
 
@@ -35,3 +36,4 @@ deployment_hooks/lib/actions/js/ReserveIps.js
 deployment_hooks/lib/actions/sh/
 
 interoperator/vendor
+webhooks/vendor
