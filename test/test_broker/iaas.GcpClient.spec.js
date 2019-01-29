@@ -104,65 +104,65 @@ const zoneStub = {
 };
 
 const bucketMetadataResponse = [{
-  /* Bucket Object */
-},
-{
-  kind: 'storage#bucket',
-  id: 'sample-container',
-  selfLink: 'https://myaccounts.com/storage/v1/b/sample-container',
-  projectNumber: '00000000000',
-  name: 'sample-container',
-  timeCreated: '2017-12-24T10:23:50.348Z',
-  updated: '2017-12-24T10:23:50.348Z',
-  metageneration: '1',
-  location: 'EUROPE-WEST1',
-  storageClass: 'REGIONAL',
-  etag: 'aaa'
-}
+    /* Bucket Object */
+  },
+  {
+    kind: 'storage#bucket',
+    id: 'sample-container',
+    selfLink: 'https://myaccounts.com/storage/v1/b/sample-container',
+    projectNumber: '00000000000',
+    name: 'sample-container',
+    timeCreated: '2017-12-24T10:23:50.348Z',
+    updated: '2017-12-24T10:23:50.348Z',
+    metageneration: '1',
+    location: 'EUROPE-WEST1',
+    storageClass: 'REGIONAL',
+    etag: 'aaa'
+  }
 ];
 const getFilesResponse = [
   [{
-    name: 'blob1.txt',
-    metadata: {
-      kind: 'storage#object',
-      id: 'sample-container/blob1.txt/1111111',
-      selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob1.txt',
       name: 'blob1.txt',
-      bucket: 'sample-container',
-      generation: '1111111',
-      metageneration: '1',
-      timeCreated: '2018-03-08T14:15:49.655Z',
-      updated: '2018-03-08T14:15:49.655Z',
-      storageClass: 'REGIONAL',
-      timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
-      size: '26877',
-      md5Hash: 'aaaaaaa',
-      mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob1.txt?generation=1111111&alt=media',
-      crc32c: 'aaa',
-      etag: 'bbb'
-    }
-  },
-  {
-    name: 'blob2.txt',
-    metadata: {
-      kind: 'storage#object',
-      id: 'sample-container/blob2.txt/222222',
-      selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob2.txt',
+      metadata: {
+        kind: 'storage#object',
+        id: 'sample-container/blob1.txt/1111111',
+        selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob1.txt',
+        name: 'blob1.txt',
+        bucket: 'sample-container',
+        generation: '1111111',
+        metageneration: '1',
+        timeCreated: '2018-03-08T14:15:49.655Z',
+        updated: '2018-03-08T14:15:49.655Z',
+        storageClass: 'REGIONAL',
+        timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
+        size: '26877',
+        md5Hash: 'aaaaaaa',
+        mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob1.txt?generation=1111111&alt=media',
+        crc32c: 'aaa',
+        etag: 'bbb'
+      }
+    },
+    {
       name: 'blob2.txt',
-      bucket: 'sample-container',
-      generation: '222222',
-      metageneration: '1',
-      timeCreated: '2018-03-08T14:15:49.655Z',
-      updated: '2018-03-08T14:15:49.655Z',
-      storageClass: 'REGIONAL',
-      timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
-      size: '2687',
-      md5Hash: 'bbbbb',
-      mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob2.txt?generation=222222&alt=media',
-      crc32c: 'aaa',
-      etag: 'bbb'
+      metadata: {
+        kind: 'storage#object',
+        id: 'sample-container/blob2.txt/222222',
+        selfLink: 'https://myaccounts.com/storage/v1/b/sample-container/o/blob2.txt',
+        name: 'blob2.txt',
+        bucket: 'sample-container',
+        generation: '222222',
+        metageneration: '1',
+        timeCreated: '2018-03-08T14:15:49.655Z',
+        updated: '2018-03-08T14:15:49.655Z',
+        storageClass: 'REGIONAL',
+        timeStorageClassUpdated: '2018-03-08T14:15:49.655Z',
+        size: '2687',
+        md5Hash: 'bbbbb',
+        mediaLink: 'https://myaccounts.com/download/storage/v1/b/sample-container/o/blob2.txt?generation=222222&alt=media',
+        crc32c: 'aaa',
+        etag: 'bbb'
+      }
     }
-  }
   ]
 ];
 const deleteFileSuccessResponse = [
@@ -193,28 +193,28 @@ const fileForbiddenResponse = {
 };
 let deleteSnapshotEventHandlers = {};
 const deleteSnapshotResponse = [{
-  on: (event, callback) => {
-    _.set(deleteSnapshotEventHandlers, event, callback);
-    return true;
+    on: (event, callback) => {
+      _.set(deleteSnapshotEventHandlers, event, callback);
+      return true;
+    },
+    removeAllListeners: () => {
+      deleteSnapshotEventHandlers = {};
+      return true;
+    }
   },
-  removeAllListeners: () => {
-    deleteSnapshotEventHandlers = {};
-    return true;
+  {
+    kind: 'compute#operation',
+    id: '333333',
+    name: 'operation-xxxxxx',
+    operationType: 'delete',
+    targetLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/snapshots/snapshot-1',
+    targetId: '11111',
+    status: 'PENDING',
+    user: 'my-test-user@my-gcp-dev.iam.myaccounts.com',
+    progress: 0,
+    insertTime: '2018-03-15T08:31:05.592-07:00',
+    selfLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/operations/operation-xxxxxx'
   }
-},
-{
-  kind: 'compute#operation',
-  id: '333333',
-  name: 'operation-xxxxxx',
-  operationType: 'delete',
-  targetLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/snapshots/snapshot-1',
-  targetId: '11111',
-  status: 'PENDING',
-  user: 'my-test-user@my-gcp-dev.iam.myaccounts.com',
-  progress: 0,
-  insertTime: '2018-03-15T08:31:05.592-07:00',
-  selfLink: 'https://myaccounts.com/compute/v1/projects/my-gcp-dev/global/operations/operation-xxxxxx'
-}
 ];
 let streamEventHandlers = {};
 const jsonContent = '{"content": "This is a sample content"}';
@@ -405,13 +405,13 @@ describe('iaas', function () {
           prefix: 'blob'
         };
         const expectedResponse = [{
-          name: 'blob1.txt',
-          lastModified: '2018-03-08T14:15:49.655Z'
-        },
-        {
-          name: 'blob2.txt',
-          lastModified: '2018-03-08T14:15:49.655Z'
-        }
+            name: 'blob1.txt',
+            lastModified: '2018-03-08T14:15:49.655Z'
+          },
+          {
+            name: 'blob2.txt',
+            lastModified: '2018-03-08T14:15:49.655Z'
+          }
         ];
         return client.list(options)
           .then(result => {
