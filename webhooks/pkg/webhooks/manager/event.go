@@ -117,14 +117,20 @@ func (e *Event) isPlanChanged() bool {
 	return appliedOptionsNew.PlanID != appliedOptionsOld.PlanID
 }
 
-func (e *Event) isCreate() bool {
-	lo, _ := e.crd.GetLastOperation()
-	return lo.Type == loCreate
+func (e *Event) isCreate() (bool, error) {
+	lo, err := e.crd.GetLastOperation()
+	if err != nil {
+		return false, err
+	}
+	return lo.Type == loCreate, nil
 }
 
-func (e *Event) isUpdate() bool {
-	lo, _ := e.crd.GetLastOperation()
-	return lo.Type == loUpdate
+func (e *Event) isUpdate() (bool, error) {
+	lo, err := e.crd.GetLastOperation()
+	if err != nil {
+		return false, err
+	}
+	return lo.Type == loUpdate, nil
 }
 
 func (e *Event) isSucceeded() bool {
@@ -139,18 +145,26 @@ func (e *Event) isDocker() bool {
 	return e.crd.Kind == Docker
 }
 
-func (e *Event) isMeteringEvent() bool {
+func (e *Event) isMeteringEvent() (bool, error) {
 	// An event is metering event if
 	// Create succeeded
 	// or Update Succeeded
 	// or Delete Triggered
+	isUpdate, err := e.isUpdate()
+	if err != nil {
+		return false, err
+	}
+	isCreate, err := e.isCreate()
+	if err != nil {
+		return false, err
+	}
 	if e.isDirector() && e.isStateChanged() {
 		if e.isSucceeded() {
-			return (e.isUpdate() && e.isPlanChanged()) || e.isCreate()
+			return (isUpdate && e.isPlanChanged()) || isCreate, nil
 		}
-		return e.isDeleteTriggered()
+		return e.isDeleteTriggered(), nil
 	}
-	return e.isDocker() && e.isStateChanged() && (e.isSucceeded() || e.isDeleteTriggered())
+	return e.isDocker() && e.isStateChanged() && (e.isSucceeded() || e.isDeleteTriggered()), nil
 }
 
 // ObjectToMapInterface converts an Object to map[string]interface{}
@@ -209,8 +223,11 @@ func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *Mete
 }
 
 func (e *Event) getEventType() (EventType, error) {
-	lo, _ := e.crd.GetLastOperation()
 	eventType := InvalidEvent
+	lo, err := e.crd.GetLastOperation()
+	if err != nil {
+		return eventType, err
+	}
 	if e.crd.Status.State == Delete {
 		eventType = DeleteEvent
 	} else if e.isDirector() {
@@ -230,7 +247,10 @@ func (e *Event) getEventType() (EventType, error) {
 }
 
 func (e *Event) getMeteringEvents() ([]*Metering, error) {
-	options, _ := e.crd.Spec.GetOptions()
+	options, err := e.crd.Spec.GetOptions()
+	if err != nil {
+		return nil, err
+	}
 	oldAppliedOptions := e.oldCrd.GetAppliedOptions()
 	var meteringDocs []*Metering
 
