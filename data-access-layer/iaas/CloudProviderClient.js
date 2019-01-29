@@ -65,15 +65,15 @@ class CloudProviderClient extends BaseCloudClient {
       }))
     });
     return Promise.try(() => {
-      return this.blockstorage
-        .createVolume({
-          AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
-          SnapshotId: snapshotId,
-          VolumeType: _.get(options, 'type', 'gp2'),
-          TagSpecifications: tags
-        })
-        .promise();
-    })
+        return this.blockstorage
+          .createVolume({
+            AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
+            SnapshotId: snapshotId,
+            VolumeType: _.get(options, 'type', 'gp2'),
+            TagSpecifications: tags
+          })
+          .promise();
+      })
       .then(diskResponse => diskResponse.Volumes[0])
       .then(volume => {
         const describeReq = {
@@ -103,12 +103,12 @@ class CloudProviderClient extends BaseCloudClient {
 
   getDiskMetadata(diskId) {
     return Promise.try(() => {
-      return this.blockstorage
-        .describeVolumes({
-          VolumeIds: [diskId]
-        })
-        .promise();
-    })
+        return this.blockstorage
+          .describeVolumes({
+            VolumeIds: [diskId]
+          })
+          .promise();
+      })
       .then(diskResponse => diskResponse.Volumes[0])
       .then(volume => {
         const responseTags = volume.Tags || [];
