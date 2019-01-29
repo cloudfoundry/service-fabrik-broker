@@ -47,7 +47,7 @@ function getDummyEvent(options_json) {
       metadata: {
         creationTimestamp: null
       },
-      options: JSON.stringify(options_json)
+      options: options_json
     }
   };
   return dummy_event;
