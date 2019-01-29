@@ -332,7 +332,34 @@ function findServicePlanByInstanceId(instance_id, plan_guid, plan_unique_id, res
     });
 }
 
-function getSpaceDevelopers(space_guid) {
+function getSpaceDevelopers(space_guid, includeUser) {
+  let resources = [{
+    metadata: {
+      guid: 'me',
+    },
+    entity: {
+      username: 'me',
+    }
+  }, {
+    metadata: {
+      guid: 'admin',
+    },
+    entity: {
+      username: 'admin',
+    }
+  }];
+
+  if (includeUser) {
+    resources.push({
+      metadata: {
+        guid: includeUser,
+      },
+      entity: {
+        username: includeUser,
+      }
+    });
+  }
+
   return nock(cloudControllerUrl, {
       reqheaders: {
         authorization: /^bearer/i
@@ -341,20 +368,6 @@ function getSpaceDevelopers(space_guid) {
     .get(`/v2/spaces/${space_guid}/developers`)
     .reply(200, {
       next_url: null,
-      resources: [{
-        metadata: {
-          guid: 'me',
-        },
-        entity: {
-          username: 'me',
-        }
-      }, {
-        metadata: {
-          guid: 'admin',
-        },
-        entity: {
-          username: 'admin',
-        }
-      }]
+      resources: resources
     });
 }
