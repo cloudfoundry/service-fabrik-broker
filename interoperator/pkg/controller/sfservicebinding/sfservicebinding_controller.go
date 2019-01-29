@@ -19,6 +19,7 @@ package sfservicebinding
 import (
 	"context"
 	"log"
+	"strconv"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
@@ -41,7 +42,9 @@ import (
 
 // finalizerName is the name of the finalizer added by interoperator
 const (
-	finalizerName = "interoperator.servicefabrik.io"
+	finalizerName  = "interoperator.servicefabrik.io"
+	errorCountKey  = "interoperator.servicefabrik.io/error"
+	errorThreshold = 10
 )
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -145,7 +148,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return r.handleError(binding, reconcile.Result{}, err)
 	}
 
 	serviceID := binding.Spec.ServiceID
@@ -159,7 +162,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			// then lets add the finalizer and update the object.
 			binding.SetFinalizers(append(binding.GetFinalizers(), finalizerName))
 			if err := r.Update(context.Background(), binding); err != nil {
-				return reconcile.Result{Requeue: true}, nil
+				return r.handleError(binding, reconcile.Result{Requeue: true}, nil)
 			}
 		}
 	} else {
@@ -168,7 +171,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			// our finalizer is present, so lets handle our external dependency
 			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.handleError(binding, reconcile.Result{}, err)
 			}
 
 			// Explicitly delete BindSecret
@@ -181,10 +184,10 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			resourceRefs := append(binding.Status.Resources, bindSecret)
 			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
 			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
-				return reconcile.Result{}, err
+				return r.handleError(binding, reconcile.Result{}, err)
 			}
 			if len(remainingResource) != 0 && binding.Status.State != "failed" {
-				return reconcile.Result{Requeue: true}, nil
+				return r.handleError(binding, reconcile.Result{Requeue: true}, nil)
 			}
 		}
 
@@ -203,7 +206,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 				binding.SetLabels(labels)
 				err = r.Update(context.TODO(), binding)
 				if err != nil {
-					return reconcile.Result{}, err
+					return r.handleError(binding, reconcile.Result{}, err)
 				}
 				log.Printf("binding %s state label updated to succeeded\n", request.NamespacedName)
 			}
@@ -213,16 +216,16 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	var requeue bool
 	expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.handleError(binding, reconcile.Result{}, err)
 	}
 	err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.scheme)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.handleError(binding, reconcile.Result{}, err)
 	}
 	var appliedResources []*unstructured.Unstructured
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.handleError(binding, reconcile.Result{}, err)
 	}
 
 	appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
@@ -233,10 +236,10 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 
 	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace(), appliedResources)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.handleError(binding, reconcile.Result{}, err)
 	}
 
-	return reconcile.Result{Requeue: requeue}, nil
+	return r.handleError(binding, reconcile.Result{Requeue: requeue}, nil)
 }
 
 func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, remainingResource []osbv1alpha1.Source) error {
@@ -374,4 +377,53 @@ func removeString(slice []string, s string) (result []string) {
 		result = append(result, item)
 	}
 	return
+}
+
+func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBinding, result reconcile.Result, inputErr error) (reconcile.Result, error) {
+	annotations := object.GetAnnotations()
+	var count int64
+	id := object.GetName()
+
+	if inputErr == nil {
+		count = 0
+	} else {
+		countString, ok := annotations[errorCountKey]
+		if !ok {
+			count = 0
+		} else {
+			i, err := strconv.ParseInt(countString, 10, 64)
+			if err != nil {
+				count = 0
+			} else {
+				count = i
+			}
+		}
+		count++
+	}
+
+	if count > errorThreshold {
+		log.Printf("Error threshold reached for %s. Ignoring %v\n", id, inputErr)
+		return result, nil
+	}
+
+	annotations[errorCountKey] = strconv.FormatInt(count, 10)
+	object.SetAnnotations(annotations)
+	err := r.Update(context.TODO(), object)
+	if err != nil {
+		log.Printf("Error Updating error count annotation to %d for %s\n", count, id)
+		if errors.IsConflict(err) {
+			err := r.Get(context.TODO(), types.NamespacedName{
+				Name:      object.GetName(),
+				Namespace: object.GetNamespace(),
+			}, object)
+			if err != nil {
+				return result, inputErr
+			}
+			annotations = object.GetAnnotations()
+			annotations[errorCountKey] = strconv.FormatInt(count, 10)
+			object.SetAnnotations(annotations)
+			return r.handleError(object, result, inputErr)
+		}
+	}
+	return result, inputErr
 }
