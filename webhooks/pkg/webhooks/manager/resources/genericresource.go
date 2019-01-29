@@ -44,18 +44,18 @@ func (g *GenericSpec) GetOptions() (GenericOptions, error) {
 }
 
 func (g *GenericSpec) SetOptions(options GenericOptions) error {
-    val, err := json.Marshal(options)
-    g.Options = string(val)
-    return err
+	val, err := json.Marshal(options)
+	g.Options = string(val)
+	return err
 }
 
 // GenericStatus type represents the status in GenericResource
 type GenericStatus struct {
-	AppliedOptions   string `json:"appliedOptions"`
-	State            string `json:"state,omitempty"`
-	LastOperationRaw string `json:"lastOperation,omitempty"`
-	LastOperationObj    GenericLastOperation
-	AppliedOptionsObj   GenericOptions
+	AppliedOptions    string `json:"appliedOptions"`
+	State             string `json:"state,omitempty"`
+	LastOperationRaw  string `json:"lastOperation,omitempty"`
+	LastOperationObj  GenericLastOperation
+	AppliedOptionsObj GenericOptions
 }
 
 // GenericResource type represents a generic resource
@@ -88,15 +88,6 @@ func GetLastOperation(crd GenericResource) GenericLastOperation {
 		lo = GenericLastOperation{}
 	}
 	return lo
-}
-
-func GetOptions(crd GenericResource) GenericOptions {
-	var op GenericOptions
-	opDecoder := json.NewDecoder(bytes.NewReader([]byte(crd.Spec.Options)))
-	if err := opDecoder.Decode(&op); err != nil {
-		glog.Errorf("Could not unmarshal raw object of Options: %v", err)
-	}
-	return op
 }
 
 func GetAppliedOptions(crd GenericResource) GenericOptions {

@@ -23,6 +23,6 @@ const (
 	MeterStateKey = "state"
 	// InstanceAPIVersion : Api version of instance CRD
 	InstanceAPIVersion = "instance.servicefabrik.io/v1alpha1"
-    // DefaultNamespace : the default namespace used by the Apiserver
-    DefaultNamespace = "default"
+	// DefaultNamespace : the default namespace used by the Apiserver
+	DefaultNamespace = "default"
 )
