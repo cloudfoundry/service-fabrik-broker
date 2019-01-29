@@ -29,11 +29,11 @@ spec:
           properties:
             error:
               type: string
-            lastOperation:
-              type: string
             response:
               type: string
             state:
+              type: string
+            description:
               type: string
           type: object
       type: object

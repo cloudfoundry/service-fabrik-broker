@@ -61,11 +61,12 @@ describe('operators', function () {
           };
           const status = {
             state: CONST.OPERATION.SUCCEEDED,
+            response: undefined,
             description: 'Task complete.'
           };
           return Task.updateStatus(taskDetails.resource, status).then(() => {
             expect(apiServerClientUpdateStub.firstCall.args[0].status).to.eql({
-              lastOperation: status,
+              description: 'Task complete.',
               response: undefined,
               state: CONST.OPERATION.SUCCEEDED
             });

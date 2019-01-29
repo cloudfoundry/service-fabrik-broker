@@ -37,8 +37,8 @@ class ServiceInstanceUpdateTask extends Task {
         .tap(() => {
           logger.info(`Update task ${taskDetails.task_description} with task data -  ${JSON.stringify(taskDetails.task_data)} initiated successfully @ ${new Date()}`);
           taskDetails.resource = {
-            resourceGroup: plan.manager.resource_mappings.resource_group,
-            resourceType: plan.manager.resource_mappings.resource_type,
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: taskDetails.instance_id
           };
           taskDetails.response = {
