@@ -6,6 +6,9 @@ const DefaultRestoreOperator = require('./restore-operator/DefaultRestoreOperato
 const RestoreStatusPoller = require('./restore-operator/RestoreStatusPoller');
 const BackupStatusPoller = require('./backup-operator/BackupStatusPoller');
 const defaultRestoreOperator = new DefaultRestoreOperator();
+const DefaultBoshRestoreOperator = require('./bosh-restore-operator/DefaultBoshRestoreOperator');
+const defaultBoshRestoreOperator = new DefaultBoshRestoreOperator();
+defaultBoshRestoreOperator.init();
 defaultBackupOperator.init();
 defaultRestoreOperator.init();
 /* jshint nonew:false */

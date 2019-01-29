@@ -111,7 +111,7 @@ class BoshRestoreService extends BaseDirectorService {
 
       //2. Stop the bosh deployment and poll for the result
       const taskId  = await this.stub.stopDeployment(deploymentName);
-      const task = await this.stub.pollTaskStatusTillComplete(taskId);
+      const taskResult = await this.stub.pollTaskStatusTillComplete(taskId);
       //3. Update the resource with next step
       let stateResult = _.assign({
         statesResults: {
@@ -124,7 +124,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         options: stateResult,
         status: {
           'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`
@@ -158,7 +158,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         options: {
           restoreMetadata: {
             deploymentInstancesInfo: deploymentInstancesInfo
@@ -183,7 +183,7 @@ class BoshRestoreService extends BaseDirectorService {
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
         let taskId = await this.stub.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
-          instance.job_name, instance_id);
+          instance.job_name, instance.id);
         _.set(instance, 'attachDiskTaskId', taskId);
         let pollingPromise = this.stub.pollTaskStatusTillComplete(taskId); //TODO: determine other polling parameters
         _.set(instance, 'attachDiskPollingPromise', pollingPromise);
@@ -191,15 +191,15 @@ class BoshRestoreService extends BaseDirectorService {
 
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
-        instance.attachDiskTaskResult = await instance.pollingPromise;
-        _.unset(instance, 'pollingPromise');
+        instance.attachDiskTaskResult = await instance.attachDiskPollingPromise;
+        _.unset(instance, 'attachDiskPollingPromise');
       };
 
       //3. Update the resource with deploymentInstanceInfo and next state
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         options: {
           restoreMetadata: {
             deploymentInstancesInfo: deploymentInstancesInfo
@@ -225,9 +225,9 @@ class BoshRestoreService extends BaseDirectorService {
           'id': instance.id
         };
       });
-      const taskIdForErrand = this.stub.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
+      const taskIdForErrand = await this.stub.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
       //update resource with taskID
-      let taskResult = await this.stub.pollTaskStatusTillComplete(taskId);
+      let taskResult = await this.stub.pollTaskStatusTillComplete(taskIdForErrand);
       //handle the success/failuer/retries etc
       let stateResult = _.assign({
         statesResults: {
@@ -240,7 +240,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         options: stateResult,
         status: {
           'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
@@ -272,7 +272,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         options: stateResult,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
