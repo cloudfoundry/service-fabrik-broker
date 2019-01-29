@@ -3,6 +3,7 @@
 const parseUrl = require('url').parse;
 const Promise = require('bluebird');
 const _ = require('lodash');
+const uuid = require('uuid');
 const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
@@ -19,7 +20,9 @@ const ServiceUnavailable = errors.ServiceUnavailable;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
+const EncryptionManager = require('../../common/utils/EncryptionManager');
 const eventmesh = require('../eventmesh');
+const BoshSshClient = require('./BoshSshClient');
 
 class BoshDirectorClient extends HttpClient {
   constructor() {
@@ -898,6 +901,67 @@ class BoshDirectorClient extends HttpClient {
       });
   }
 
+  setupSsh(deploymentName, jobName, instanceId, tempUser, publicKey) {
+    return this.makeRequest({ //jshint ignore: line
+      method: 'POST',
+      url: `/deployments/${deploymentName}/ssh`,
+      body: {
+        command: 'setup',
+        deployment_name: deploymentName,
+        target: {
+          job: jobName,
+          ids: [instanceId]
+        },
+        params: {
+          user: tempUser,
+          public_key: publicKey
+        }
+      }
+    }, 200, deploymentName);
+  }
+
+  cleanupSsh(deploymentName, jobName, instanceId, tempUser) {
+    return this.makeRequest({
+      method: 'POST',
+      url: `/deployments/${deploymentName}/ssh`,
+      body: {
+        command: 'cleanup',
+        deployment_name: deploymentName,
+        target: {
+          job: jobName,
+          ids: [instanceId]
+        },
+        params: {
+          user_regex: `^${tempUser}`
+        }
+      }
+    }, 200, deploymentName);
+  }
+
+  async runSsh(deploymentName, jobName, instanceId, command) { //jshint ignore: line
+    const cryptoManager = new EncryptionManager();
+    const tempUser = `service-fabrik-user-${uuid.v4()}`;
+    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); //jshint ignore: line
+    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); //jshint ignore: line
+    const sshSetupTaskId = this.prefixTaskId(deploymentName, sshSetupResponse);
+    await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); //jshint ignore: line
+    const sshSetupResult = await this.getTaskResult(sshSetupTaskId); //jshint ignore: line
+    const sshOptions = {
+      host: sshSetupResult[0].ip,
+      username: tempUser,
+      privateKey: genKeyPair.privateKey
+    };
+    const boshDeploymentOptions = {
+      deploymentName: deploymentName,
+      job: jobName,
+      instanceId: instanceId
+    };
+    const boshSshClient = new BoshSshClient(sshOptions, boshDeploymentOptions);
+    const sshOutput = await boshSshClient.run(command); //jshint ignore: line
+    await this.cleanupSsh(deploymentName, jobName, instanceId, tempUser); //jshint ignore: line
+    return sshOutput;
+  }
+
   getDeploymentErrands(deploymentName) {
     return this.makeRequest({
         method: 'GET',
@@ -914,7 +978,6 @@ class BoshDirectorClient extends HttpClient {
    * @param {string}  instances[].group - instance group
    * @param {string}  instances[].id - instance index or id
    */
-
   runDeploymentErrand(deploymentName, errandName, instances = []) {
     return this.makeRequest({
         method: 'POST',
