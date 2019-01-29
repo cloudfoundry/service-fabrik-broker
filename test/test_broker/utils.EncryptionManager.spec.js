@@ -1,6 +1,20 @@
 'use strict';
 
-const EncryptionManager = require('../../common/utils/EncryptionManager');
+const proxyquire = require('proxyquire');
+
+class MockKeyGenerator {
+  constructor(id) {
+    this.id = id;
+  }
+
+  createKeyPair() {
+    return Promise.resolve(this.id);
+  }
+}
+
+const EncryptionManager = proxyquire('../../common/utils/EncryptionManager', {
+  './RsaKeyGenerator': MockKeyGenerator
+});
 
 describe('utils', () => {
   describe('EncryptionManager', () => {
@@ -31,6 +45,15 @@ describe('utils', () => {
         const encryptedText = manager.encrypt(testText);
         const decryptedText = manager.decrypt(encryptedText);
         expect(JSON.parse(decryptedText)).to.deep.equal(testObj);
+      });
+    });
+    describe('generate-ssh-keypair', () => {
+      it('returns an ssh keypair with private and public keys', () => {
+        const manager = new EncryptionManager();
+        return manager.generateSshKeyPair('tmp')
+          .then(out => {
+            expect(out).to.eql('tmp');
+          })
       });
     });
   });
