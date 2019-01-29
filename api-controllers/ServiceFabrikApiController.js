@@ -643,6 +643,139 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  startBoshRestore(req, res) {
+    let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
+    let restoreGuid, serviceId, planId;
+    const backupGuid = req.body.backup_guid;
+    const timeStamp = req.body.time_stamp;
+    const tenantId = req.entity.tenant_id;
+    const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
+    return Promise
+      .try(() => this.setPlan(req))
+      .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() => utils.uuidV4())
+      .then(guid => {
+        serviceId = req.plan.service.id;
+        planId = req.plan.id;
+        restoreGuid = guid;
+        logger.debug(`Restore options: backupGuid ${backupGuid} at ${timeStamp}`);
+        if (!backupGuid && !timeStamp) {
+          throw new BadRequest('Invalid input as backupGuid or timeStamp not present');
+        } else if (timeStamp) {
+          const service = this.getService(serviceId);
+          const isPitrEnabled = _.get(service, 'pitr');
+          if (!isPitrEnabled) {
+            logger.debug(`Non pitr service : ${serviceId}`);
+            throw new BadRequest(`Time based recovery not supported for service ${_.get(service, 'name')}`);
+          }
+          return this.validateRestoreTimeStamp(timeStamp);
+        } else if (backupGuid) {
+          return this.validateUuid(backupGuid, 'Backup GUID');
+        }
+      })
+      .then(() => this.validateRestoreQuota({
+        instance_guid: req.params.instance_id,
+        service_id: serviceId,
+        plan_id: planId,
+        tenant_id: tenantId
+      }))
+      .then(() => {
+        const backupFileOptions = timeStamp ? {
+          time_stamp: timeStamp,
+          tenant_id: tenantId,
+          instance_id: sourceInstanceId,
+          service_id: serviceId
+        } : {
+          backup_guid: backupGuid,
+          tenant_id: tenantId
+        };
+        if (timeStamp) {
+          return this.backupStore
+            .listBackupsOlderThan(backupFileOptions, new Date(Number(timeStamp)))
+            .then(sortedOldBackups =>
+              _.findLast(sortedOldBackups, backup => backup.state === CONST.OPERATION.SUCCEEDED))
+            .then(successfulBackup => {
+              if (_.isEmpty(successfulBackup)) {
+                logger.error(`No successful backup found for service instance '${sourceInstanceId}' before time_stamp ${new Date(timeStamp)}`);
+                throw new NotFound(`Cannot restore service instance '${sourceInstanceId}' as no successful backup found before time_stamp ${timeStamp}`);
+              } else {
+                return successfulBackup;
+              }
+            });
+        } else {
+          return this.backupStore.getBackupFile(backupFileOptions);
+        }
+      })
+      .catchThrow(NotFound, new UnprocessableEntity(`Cannot restore for guid/timeStamp '${timeStamp || backupGuid}' as no successful backup found in this space.`))
+      .then(metadata => {
+        metadata.restore_guid = restoreGuid;
+        if (metadata.state !== 'succeeded') {
+          throw new UnprocessableEntity(`Can not restore for guid/timeStamp '${timeStamp || backupGuid}' due to state '${metadata.state}'`);
+        }
+        if (!utils.isRestorePossible(metadata.plan_id, req.plan)) {
+          throw new UnprocessableEntity(`Cannot restore for guid/timeStamp: '${timeStamp || backupGuid}' to plan:'${metadata.plan_id}'`);
+        }
+        return metadata;
+      })
+      .then(metadata => this
+        .getRestoreOptions(req, metadata)
+        .then(restoreOptions => {
+          logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
+          return lockManager.lock(req.params.instance_id, {
+              lockedResourceDetails: {
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: restoreGuid,
+                operation: CONST.OPERATION_TYPE.RESTORE
+              }
+            })
+            .then(() => {
+              lockedDeployment = true;
+              return eventmesh.apiServerClient.createResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                //TODO read from plan details
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+                resourceId: restoreGuid,
+                options: restoreOptions,
+                status: {
+                  state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+                  lastOperation: {},
+                  response: {}
+                }
+              });
+            });
+        })
+      )
+      .then(() => {
+        //check if resource exist, else create and then update
+        return eventmesh.apiServerClient.updateLastOperationValue({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          operationName: CONST.OPERATION_TYPE.RESTORE,
+          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          resourceId: req.params.instance_id,
+          value: restoreGuid
+        });
+      })
+      .then(() => {
+        return res.status(CONST.HTTP_STATUS_CODE.ACCEPTED).send({
+          name: CONST.OPERATION_TYPE.RESTORE,
+          guid: restoreGuid
+        });
+      })
+      .catch(err => {
+        if (err instanceof DeploymentAlreadyLocked) {
+          throw err;
+        }
+        if (lockedDeployment) {
+          return lockManager.unlock(req.params.instance_id)
+            .throw(err);
+        }
+        logger.error('Error occurred while starting restore:', err);
+        throw err;
+      });
+  }
+
   getLastRestore(req, res) {
     const instanceId = req.params.instance_id;
 

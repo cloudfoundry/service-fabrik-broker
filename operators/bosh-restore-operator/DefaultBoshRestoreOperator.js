@@ -32,11 +32,11 @@ class DefaultBoshRestoreOperator extends BaseOperator {
 
   async processRequest(requestObjectBody) {
     if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-      return processInQueueRequest(requestObjectBody);
+      return this.processInQueueRequest(requestObjectBody);
     }
     else {
       //TODO: handle abort later
-      return processInProgressRequest(requestObjectBody)
+      return this.processInProgressRequest(requestObjectBody)
     }
   }
 
@@ -46,7 +46,7 @@ class DefaultBoshRestoreOperator extends BaseOperator {
       logger.info('Triggering restore with the following options:', changedOptions);
       const plan = catalog.getPlan(changedOptions.plan_id);
       let service = await BoshRestoreService.createService(plan)
-      return service.startRestore(changeObjectBody); //pass entire object and not just spec.options
+      return service.startRestore(changedOptions); //pass entire object and not just spec.options
     } catch (err) {
       //Restore failed even before it properly started
       //Update the resource with state failure

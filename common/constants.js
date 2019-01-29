@@ -309,6 +309,7 @@ module.exports = Object.freeze({
       POSTGRESQL_MT_BIND: 'postgresqlmtbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
+      DEFAULT_BOSH_RESTORE: 'defaultboshrestores',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
       TASK: 'tasks'
     },

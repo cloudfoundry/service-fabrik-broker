@@ -15,31 +15,8 @@ const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
+const stub = require('./boshBackupStoreStub');
 
-/*
-spec.options in CRD can have a structure similar to following:
-spec.options = {
-    ....
-    deploymentName,
-    snapshotId,
-    errandName,
-    boshStopTaskId,
-    boshErrandTaskId,
-    boshStartTaskId,
-    deploymentInstancesInfo = [
-        {
-            job_name,
-            instanceId/instanceIndex,
-            az,
-            old_disk_cid,
-            new_disk_cid,
-            a
-        },
-        {}
-    ]
-    .... //other parameters
-}
-*/
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
@@ -47,11 +24,11 @@ class BoshRestoreService extends BaseDirectorService {
     this.backupStore = backupStore;
     this.agent = new Agent(this.settings.agent);
     this.cloudProvider = cloudProvider;
+    this.stub = new stub();
   }
 
-  async startRestore(changeObjectBody) {
+  async startRestore(opts) {
     try {
-      const opts = JSON.parse(changeObjectBody.spec.options);
       logger.debug('Starting restore with options:', opts);
       const args = opts.arguments;
       const backupMetadata = _.get(args, 'backup');
@@ -82,16 +59,22 @@ class BoshRestoreService extends BaseDirectorService {
         const jobs = []; //Obtain the jobs from service catalog
         const persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
         const optionsData = _
-          .assign({
-            snapshotId: _.get(backupMetadata, 'snapshotId'),
-            deploymentName: deploymentName,
-            deploymentInstancesInfo: persistentDiskInfo
+          .assign({ 
+            restoreMetadata: { 
+              snapshotId: _.get(backupMetadata, 'snapshotId'),
+              deploymentName: deploymentName,
+              deploymentInstancesInfo: persistentDiskInfo,
+              snapshotId: _.get(backupMetadata, 'snapshotId'),
+              'pre-warming-errand-name': 'dummyErrand', //To be obtained from service catalog
+              'pitr-errand-name': 'dummyErrand' //To be obtained from service catalog
+            },
+            statesResults: {}
           });
-        //create the restoreFile
+        //create/update the restoreFile
         //update resource state to bosh_stop along with needed information
         return eventmesh.apiServerClient.patchResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, //TODO:
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
           resourceId: opts.restore_guid,
           options: optionsData,
           status: {
@@ -100,123 +83,201 @@ class BoshRestoreService extends BaseDirectorService {
           }
         });
     } catch (err) {
-      //Call the rollback function
+
     }
   }
 
   async processState(changeObjectBody) {
     const currentState = changeObjectBody.status.state;
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
     switch (currentState) {
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`:
-        return processBoshStop(changeObjectBody);
+        return this.processBoshStop(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`:
-        return processCreateDisk(changeObjectBody);
+        return this.processCreateDisk(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`:
-        return processAttachDisk(changeObjectBody);
+        return this.processAttachDisk(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`:
-        return processRunErrands(changeObjectBody);
+        return this.processRunErrands(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`:
-        return processBoshStart(changeObjectBody);
-      case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ROLLBACK`:
-      default:
-
+        return this.processBoshStart(changedOptions);
     }
   }
 
-  async processBoshStop(changeObjectBody) {
+  async processBoshStop(resourceOptions) {
     try {
       //1. Get deployment name from resource
-      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
-      const deploymentName = _.get(resourceOptions, 'deploymentName');
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
       const taskId  = await this.director.stopDeployment(deploymentName);
       const task = await this.director.pollTaskStatusTillComplete(taskId);
       //3. Update the resource with next step
+      let stateResult = _.assign({
+        statesResults: {
+          'bosh_stop': {
+            taskId: taskId,
+            taskResult: taskResult
+          }
+        }
+      });
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: stateResult,
+        status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`
+        }
+      });
     } catch (err) {
       //Handle failure/rollback
     }
   }
 
-  async processCreateDisk(changeObjectBody) {
+  async processCreateDisk(resourceOptions) {
     try {
       //1. get snapshot id from backup metadata
-      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
-      const snapshotId = _.get(resourceOptions, 'snapshotId');
-      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'deploymentInstancesInfo')); 
+      const snapshotId = _.get(resourceOptions, 'restoreMetadata.snapshotId');
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo')); 
       //2. create persistent disks from snapshot
-      _.forEach(deploymentInstancesInfo, (instance) => {
+      for (let i = 0; i< deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
         let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az);
         _.set(instance, 'createDiskPromise', promise);
-      });
+      }
 
       //3. Await for all the disk creations to complete
-      _.forEach(deploymentInstancesInfo, (instance) => {
+      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
         instance.newDiskInfo = await instance.createDiskPromise;
         _.unset(instance, 'createDiskPromise');
-      });
+      }
 
       //4. Update the resource with deploymentInstancesInfo and next state 
-
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: {
+          restoreMetadata: {
+            deploymentInstancesInfo: deploymentInstancesInfo
+          }
+        },
+        status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`
+        }
+      });
     } catch (err) {
       //Handle failure/rollback
     }
   }
 
-  async processAttachDisk(changeObjectBody) {
+  async processAttachDisk(resourceOptions) {
     try { 
       //1. Get new disk CID from resource state
-      const resourceOptions = JSON.parse(changeObjectBody);
       const deploymentName = _.get(resourceOptions, 'deploymentName');
-      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'deploymentInstancesInfo'));
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'));
 
       //2. attach disk to all the given instances
-      _.forEach(deploymentInstancesInfo, (instance) => {
+      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
         let taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
           instance.job_name, instance_id);
         _.set(instance, 'attachDiskTaskId', taskId);
         let pollingPromise = this.director.pollTaskStatusTillComplete(taskId); //TODO: determine other polling parameters
         _.set(instance, 'attachDiskPollingPromise', pollingPromise);
-      });
+      };
 
-      _.forEach(deploymentInstancesInfo, (instance) => {
+      for(let i = 0;i < deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
         instance.attachDiskTaskResult = await instance.pollingPromise;
         _.unset(instance, 'pollingPromise');
-      });
+      };
 
       //3. Update the resource with deploymentInstanceInfo and next state
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: {
+          restoreMetadata: {
+            deploymentInstancesInfo: deploymentInstancesInfo
+          }
+        },
+        status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`
+        }
+      });
     } catch (err) {
 
     }
   }
 
-  async processRunErrands(changeObjectBody) {
+  async processRunErrands(resourceOptions) {
     try {
-      //1. Get deploymentName and errandName from resource
-      const resourceOptions = JSON.parse(changeObjectBody);
-      const deploymentName = _.get(resourceOptions, 'deploymentName');
-      const errandName = _.get(resourceOptions, 'errandDetails.name');
-      const instancesForErrands = _.get(resourceOptions, 'errandDetails.instances');
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
+      const errandName = _.get(resourceOptions, 'restoreMetadata.pre-warming-errand-name');
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo')); 
+      const instancesForErrands = _.map(deploymentInstancesInfo, instance => {
+        return {
+          'group': instance.job_name,
+          'id': instance.id
+        };
+      });
       const taskIdForErrand = this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
       //update resource with taskID
       let taskResult = await this.director.pollTaskStatusTillComplete(taskId);
       //handle the success/failuer/retries etc
+      let stateResult = _.assign({
+        statesResults: {
+          'run_errands': {
+            taskId: taskIdForErrand,
+            taskResult: taskResult
+          }
+        }
+      });
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: stateResult,
+        status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
+        }
+      });
     } catch (err) {
 
     }
   }
 
-  async processBoshStart(changeObjectBody) {
+  async processBoshStart(resourceOptions) {
     try {
       //1. Get deployment name from resource
-      const resourceOptions = JSON.parse(changeObjectBody.spec.options);
       const deploymentName = _.get(resourceOptions, 'deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
       const taskId  = await this.director.startDeployment(deploymentName);
-      const task = await this.director.pollTaskStatusTillComplete(taskId);
+      const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
       //3. Update the resource with next step
+      let stateResult = _.assign({
+        statesResults: {
+          'bosh_start': {
+            taskId: taskId,
+            taskResult: taskResult
+          }
+        }
+      });
 
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: stateResult,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        }
+      });
     } catch (err) {
 
     }
