@@ -214,6 +214,7 @@ func meteringToUnstructured(m *Metering) (*unstructured.Unstructured, error) {
 	meteringDoc.SetName(m.getName())
 	labels := make(map[string]string)
 	labels[c.MeterStateKey] = c.ToBeMetered
+	labels[c.InstanceGuidKey] = m.Spec.Options.ConsumerInfo.Instance
 	meteringDoc.SetLabels(labels)
 	return meteringDoc, nil
 }
