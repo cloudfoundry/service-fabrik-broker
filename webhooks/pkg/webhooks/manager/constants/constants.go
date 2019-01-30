@@ -25,8 +25,8 @@ const (
 	InstanceAPIVersion = "instance.servicefabrik.io/v1alpha1"
 	// DefaultNamespace : the default namespace used by the Apiserver
 	DefaultNamespace = "default"
-	// InstanceNameKey : The key used to store instance guid in CRD labels
-	InstanceGuidKey = "instance_guid"
+	// InstanceGUIDKey : The key used to store instance guid in CRD labels
+	InstanceGUIDKey = "instance_guid"
 	// EventTypeKey :
 	EventTypeKey = "event_type"
 )

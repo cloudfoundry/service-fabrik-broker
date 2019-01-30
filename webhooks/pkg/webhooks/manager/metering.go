@@ -51,7 +51,7 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, st
 	m.SetName(guid)
 	labels := make(map[string]string)
 	labels[c.MeterStateKey] = c.ToBeMetered
-	labels[c.InstanceGuidKey] = ci.Instance
+	labels[c.InstanceGUIDKey] = ci.Instance
 	labels[c.EventTypeKey] = string(e)
 	m.SetLabels(labels)
 	return m

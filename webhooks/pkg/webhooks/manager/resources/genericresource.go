@@ -16,12 +16,14 @@ type GenericResource struct {
 	Spec              GenericSpec   `json:"spec,omitempty"`
 }
 
+// SetLastOperation stores the LastOperation as json string
 func (crd *GenericResource) SetLastOperation(lo GenericLastOperation) error {
 	val, err := json.Marshal(lo)
 	crd.Status.LastOperationRaw = string(val)
 	return err
 }
 
+// GetLastOperation unmarshals the json data into GenericLastOperation
 func (crd *GenericResource) GetLastOperation() (GenericLastOperation, error) {
 	var lo GenericLastOperation
 	// LastOperation could be null during Craete
@@ -35,6 +37,7 @@ func (crd *GenericResource) GetLastOperation() (GenericLastOperation, error) {
 	return lo, nil
 }
 
+// GetGenericResource decodes byte array to GenericResource
 func GetGenericResource(object []byte) (GenericResource, error) {
 	var crd GenericResource
 	decoder := json.NewDecoder(bytes.NewReader(object))
@@ -45,6 +48,7 @@ func GetGenericResource(object []byte) (GenericResource, error) {
 	return crd, err
 }
 
+// GetAppliedOptions unmarshals the json data into GenericOptions
 func (crd *GenericResource) GetAppliedOptions() GenericOptions {
 	var op GenericOptions
 	// AppliedOptions could be null during Craete
@@ -59,6 +63,7 @@ func (crd *GenericResource) GetAppliedOptions() GenericOptions {
 	return op
 }
 
+// SetAppliedOptions stores the AppliedOptions as json string
 func (crd *GenericResource) SetAppliedOptions(ao GenericOptions) error {
 	val, err := json.Marshal(ao)
 	crd.Status.AppliedOptions = string(val)
