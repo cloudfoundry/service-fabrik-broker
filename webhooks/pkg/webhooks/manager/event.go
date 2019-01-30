@@ -82,7 +82,7 @@ func NewEvent(ar *v1beta1.AdmissionReview) (*Event, error) {
 		return nil, err
 	}
 
-	var oldCrd resources.GenericResource
+	var oldCrd resources.GenericResource = resources.GenericResource{}
 	if len(ar.Request.OldObject.Raw) != 0 {
 		oldCrd, err = resources.GetGenericResource(ar.Request.OldObject.Raw)
 		if err != nil {
@@ -90,10 +90,7 @@ func NewEvent(ar *v1beta1.AdmissionReview) (*Event, error) {
 			glog.Errorf("Could not get the old GenericResource object %v", err)
 			return nil, err
 		}
-	} else {
-		oldCrd = resources.GenericResource{}
 	}
-
 	return &Event{
 		AdmissionReview: ar,
 		crd:             crd,
@@ -111,10 +108,16 @@ func (e *Event) isDeleteTriggered() bool {
 	return e.crd.Status.State == Delete
 }
 
-func (e *Event) isPlanChanged() bool {
-	appliedOptionsNew := e.crd.GetAppliedOptions()
-	appliedOptionsOld := e.oldCrd.GetAppliedOptions()
-	return appliedOptionsNew.PlanID != appliedOptionsOld.PlanID
+func (e *Event) isPlanChanged() (bool, error) {
+	appliedOptionsNew, err := e.crd.GetAppliedOptions()
+	if err != nil {
+		return false, err
+	}
+	appliedOptionsOld, err := e.oldCrd.GetAppliedOptions()
+	if err != nil {
+		return false, err
+	}
+	return appliedOptionsNew.PlanID != appliedOptionsOld.PlanID, nil
 }
 
 func (e *Event) isCreate() (bool, error) {
@@ -158,9 +161,13 @@ func (e *Event) isMeteringEvent() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	isPlanChanged, err := e.isPlanChanged()
+	if err != nil {
+		return false, err
+	}
 	if e.isDirector() && e.isStateChanged() {
 		if e.isSucceeded() {
-			return (isUpdate && e.isPlanChanged()) || isCreate, nil
+			return (isUpdate && isPlanChanged) || isCreate, nil
 		}
 		return e.isDeleteTriggered(), nil
 	}
@@ -210,7 +217,10 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 	if err != nil {
 		return nil, err
 	}
-	oldAppliedOptions := e.oldCrd.GetAppliedOptions()
+	oldAppliedOptions, err := e.oldCrd.GetAppliedOptions()
+	if err != nil {
+		return nil, err
+	}
 	var meteringDocs []*v1alpha1.Sfevent
 
 	et, err := e.getEventType()

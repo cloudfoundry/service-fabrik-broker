@@ -49,18 +49,17 @@ func GetGenericResource(object []byte) (GenericResource, error) {
 }
 
 // GetAppliedOptions unmarshals the json data into GenericOptions
-func (crd *GenericResource) GetAppliedOptions() GenericOptions {
+func (crd *GenericResource) GetAppliedOptions() (GenericOptions, error) {
 	var op GenericOptions
 	// AppliedOptions could be null during Craete
 	if crd.Status.AppliedOptions != "" {
 		opDecoder := json.NewDecoder(bytes.NewReader([]byte(crd.Status.AppliedOptions)))
 		if err := opDecoder.Decode(&op); err != nil {
 			glog.Errorf("Could not unmarshal raw object of AppliedOptions: %v", err)
+			return op, err
 		}
-	} else {
-		op = GenericOptions{}
 	}
-	return op
+	return op, nil
 }
 
 // SetAppliedOptions stores the AppliedOptions as json string
