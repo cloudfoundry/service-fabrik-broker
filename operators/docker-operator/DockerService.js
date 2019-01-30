@@ -448,14 +448,31 @@ class DockerService extends BaseService {
 
   bind(params) {
     /* jshint unused:false */
-    return this
-      .inspectContainer()
+    let credentials;
+    return this.platformManager.preBindOperations({
+        context: params.context,
+        bind_resource: params.bind_resource,
+        bindingId: params.binding_id
+      })
+      .then(() => this.inspectContainer())
       .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
-      .then(() => this.createCredentials());
+      .then(() => this.createCredentials())
+      .tap(creds => {
+        credentials = creds;
+      })
+      .then(() => this.platformManager.postBindOperations({
+        context: params.context,
+        bind_resource: params.bind_resource,
+        bindingId: params.binding_id,
+        ipRuleOptions: this.buildIpRules()
+      }))
+      .then(() => credentials);
   }
 
   unbind(params) {
-    /* jshint unused:false */
+    return this.platformManager.preUnbindOperations({
+      bindingId: params.binding_id
+    });
   }
 
   buildIpRules() {
