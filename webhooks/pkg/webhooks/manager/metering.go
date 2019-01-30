@@ -33,7 +33,7 @@ type InstancesMeasure struct {
 	Value int    `json:"value"`
 }
 
-// MeteringOptions represents the options field of Metering Resource
+// MeteringOptions represents the options field of Sfevent Resource
 type MeteringOptions struct {
 	ID                string             `json:"id"`
 	Timestamp         string             `json:"timestamp"`
@@ -48,20 +48,20 @@ type MeteringSpec struct {
 	Options           MeteringOptions `json:"options,omitempty"`
 }
 
-// Metering structure holds all the details related to
-// Metering event,  models schema here:
+// Sfevent structure holds all the details related to
+// Sfevent event,  models schema here:
 // https://wiki.wdf.sap.corp/wiki/display/CPC15N/Usage+Document+Detailed+Schema
-type Metering struct {
+type Sfevent struct {
 	Spec MeteringSpec `json:"spec"`
 }
 
-func (m *Metering) getName() string {
+func (m *Sfevent) getName() string {
 	// var meteringOptions MeteringOptions
 	// json.Unmarshal([]byte(m.Spec.Options), &meteringOptions)
 	return m.Spec.Options.ID
 }
 
-func newMetering(opt resources.GenericOptions, crd resources.GenericResource, signal int) *Metering {
+func newMetering(opt resources.GenericOptions, crd resources.GenericResource, signal int) *Sfevent {
 	si := ServiceInfo{
 		ID:   opt.ServiceID,
 		Plan: opt.PlanID,
@@ -93,8 +93,8 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 		ConsumerInfo:      ci,
 		InstancesMeasures: []InstancesMeasure{im},
 	}
-	glog.Infof("New metering event for CRD: %s, Metering Id: %s", crd.Name, guid)
-	m := &Metering{
+	glog.Infof("New metering event for CRD: %s, Sfevent Id: %s", crd.Name, guid)
+	m := &Sfevent{
 		Spec: MeteringSpec{
 			Options: mo,
 		},
