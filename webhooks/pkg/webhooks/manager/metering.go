@@ -33,8 +33,8 @@ type InstancesMeasure struct {
 	Value int    `json:"value"`
 }
 
-// MeteringOptions represents the options field of Sfevent Resource
-type MeteringOptions struct {
+// SfeventOptions represents the options field of Sfevent Resource
+type SfeventOptions struct {
 	ID                string             `json:"id"`
 	Timestamp         string             `json:"timestamp"`
 	ServiceInfo       ServiceInfo        `json:"service"`
@@ -45,7 +45,7 @@ type MeteringOptions struct {
 // MeteringSpec represents the spec field of metering resource
 type MeteringSpec struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Options           MeteringOptions `json:"options,omitempty"`
+	Options           SfeventOptions `json:"options,omitempty"`
 }
 
 // Sfevent structure holds all the details related to
@@ -56,7 +56,7 @@ type Sfevent struct {
 }
 
 func (m *Sfevent) getName() string {
-	// var meteringOptions MeteringOptions
+	// var meteringOptions SfeventOptions
 	// json.Unmarshal([]byte(m.Spec.Options), &meteringOptions)
 	return m.Spec.Options.ID
 }
@@ -86,7 +86,7 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 	}
 	guid := uuid.New().String()
 
-	mo := MeteringOptions{
+	mo := SfeventOptions{
 		ID:                guid,
 		Timestamp:         time.Now().UTC().Format(c.MeteringTimestampFormat),
 		ServiceInfo:       si,
