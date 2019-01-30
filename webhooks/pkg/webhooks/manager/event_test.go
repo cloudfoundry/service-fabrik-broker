@@ -264,7 +264,7 @@ var _ = Describe("Event", func() {
 	Describe("meteringToUnstructured", func() {
 		It("Creates unstructured metering instance", func() {
 			m := Sfevent{
-				Spec: MeteringSpec{
+				Spec: SfeventSpec{
 					Options: SfeventOptions{},
 				},
 			}
