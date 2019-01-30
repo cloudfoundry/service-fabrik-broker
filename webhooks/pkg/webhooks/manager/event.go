@@ -46,7 +46,7 @@ const (
 const (
 	Director string = "Director"
 	Docker   string = "Docker"
-	Sfevent  string = "Sfevent"
+	SfeventKind  string = "Sfevent"
 )
 
 // Event stores the event details
@@ -208,7 +208,7 @@ func meteringToUnstructured(m *Sfevent) (*unstructured.Unstructured, error) {
 	}
 	meteringDoc := &unstructured.Unstructured{}
 	meteringDoc.SetUnstructuredContent(values)
-	meteringDoc.SetKind(Sfevent)
+	meteringDoc.SetKind(SfeventKind)
 	meteringDoc.SetAPIVersion(c.InstanceAPIVersion)
 	meteringDoc.SetNamespace(c.DefaultNamespace)
 	meteringDoc.SetName(m.getName())

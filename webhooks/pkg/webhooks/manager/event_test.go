@@ -265,7 +265,7 @@ var _ = Describe("Event", func() {
 		It("Creates unstructured metering instance", func() {
 			m := Sfevent{
 				Spec: MeteringSpec{
-					Options: MeteringOptions{},
+					Options: SfeventOptions{},
 				},
 			}
 			val, err := meteringToUnstructured(&m)
@@ -293,8 +293,8 @@ var _ = Describe("Event", func() {
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(2))
-				var docStart MeteringOptions
-				var docStop MeteringOptions
+				var docStart SfeventOptions
+				var docStop SfeventOptions
 				docStart = docs[0].Spec.Options
 				docStop = docs[1].Spec.Options
 				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
