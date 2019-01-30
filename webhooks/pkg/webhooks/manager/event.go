@@ -6,6 +6,7 @@ import (
 	"errors"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 
 	"k8s.io/client-go/rest"
 
@@ -200,7 +201,7 @@ func getClient(cfg *rest.Config) (client.Client, error) {
 	return apiserver, err
 }
 
-func meteringToUnstructured(m *Sfevent) (*unstructured.Unstructured, error) {
+func meteringToUnstructured(m *v1alpha1.Sfevent) (*unstructured.Unstructured, error) {
 	values, err := ObjectToMapInterface(m)
 	if err != nil {
 		glog.Errorf("unable convert to map interface %v", err)
@@ -211,7 +212,7 @@ func meteringToUnstructured(m *Sfevent) (*unstructured.Unstructured, error) {
 	meteringDoc.SetKind(SfeventKind)
 	meteringDoc.SetAPIVersion(c.InstanceAPIVersion)
 	meteringDoc.SetNamespace(c.DefaultNamespace)
-	meteringDoc.SetName(m.getName())
+	meteringDoc.SetName(m.GetName())
 	labels := make(map[string]string)
 	labels[c.MeterStateKey] = c.ToBeMetered
 	labels[c.InstanceGuidKey] = m.Spec.Options.ConsumerInfo.Instance
@@ -219,7 +220,7 @@ func meteringToUnstructured(m *Sfevent) (*unstructured.Unstructured, error) {
 	return meteringDoc, nil
 }
 
-func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *Sfevent {
+func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *v1alpha1.Sfevent {
 	return newMetering(opt, e.crd, signal)
 }
 
@@ -247,13 +248,13 @@ func (e *Event) getEventType() (EventType, error) {
 	return eventType, nil
 }
 
-func (e *Event) getMeteringEvents() ([]*Sfevent, error) {
+func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 	options, err := e.crd.Spec.GetOptions()
 	if err != nil {
 		return nil, err
 	}
 	oldAppliedOptions := e.oldCrd.GetAppliedOptions()
-	var meteringDocs []*Sfevent
+	var meteringDocs []*v1alpha1.Sfevent
 
 	et, err := e.getEventType()
 	if err != nil {

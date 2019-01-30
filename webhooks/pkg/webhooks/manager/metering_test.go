@@ -5,6 +5,7 @@ import (
 
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -27,7 +28,7 @@ var _ = Describe("Sfevent", func() {
 			signal := c.MeterStop
 			// Test creating metering object
 			m := newMetering(opt, crd, signal)
-			var unmarsheledSfeventOptions SfeventOptions
+			var unmarsheledSfeventOptions v1alpha1.SfeventOptions
 			unmarsheledSfeventOptions = m.Spec.Options
 			Expect(unmarsheledSfeventOptions.ID).Should(MatchRegexp("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"), "Should be a valid guid")
 			Expect(unmarsheledSfeventOptions.Timestamp).Should(MatchRegexp(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}$`), "The tiemstamp format should match")
