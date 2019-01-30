@@ -18,6 +18,7 @@ package sfservicebinding
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -384,6 +385,10 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 	var count int64
 	id := object.GetName()
 
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	if inputErr == nil {
 		count = 0
 	} else {
@@ -402,7 +407,13 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 	}
 
 	if count > errorThreshold {
-		log.Printf("Error threshold reached for %s. Ignoring %v\n", id, inputErr)
+		log.Printf("Retry threshold reached for %s. Ignoring %v\n", id, inputErr)
+		object.Status.State = "failed"
+		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", id, inputErr.Error())
+		err := r.Update(context.TODO(), object)
+		if err != nil {
+			log.Printf("Error setting state to failed for %s\n", id)
+		}
 		return result, nil
 	}
 
@@ -420,6 +431,9 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 				return result, inputErr
 			}
 			annotations = object.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
 			annotations[errorCountKey] = strconv.FormatInt(count, 10)
 			object.SetAnnotations(annotations)
 			return r.handleError(object, result, inputErr)

@@ -18,6 +18,7 @@ package sfserviceinstance
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -342,6 +343,10 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 	var count int64
 	id := object.GetName()
 
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	if inputErr == nil {
 		count = 0
 	} else {
@@ -360,7 +365,14 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 	}
 
 	if count > errorThreshold {
-		log.Printf("Error threshold reached for %s. Ignoring %v\n", id, inputErr)
+		log.Printf("Retry threshold reached for %s. Ignoring %v\n", id, inputErr)
+		object.Status.State = "failed"
+		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", id, inputErr.Error())
+		object.Status.Description = "Service Broker Error: Something unexpected happened"
+		err := r.Update(context.TODO(), object)
+		if err != nil {
+			log.Printf("Error setting state to failed for %s\n", id)
+		}
 		return result, nil
 	}
 
@@ -378,6 +390,9 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 				return result, inputErr
 			}
 			annotations = object.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
 			annotations[errorCountKey] = strconv.FormatInt(count, 10)
 			object.SetAnnotations(annotations)
 			return r.handleError(object, result, inputErr)
