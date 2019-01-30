@@ -32,11 +32,11 @@ class DefaultBoshRestoreOperator extends BaseOperator {
 
   async processRequest(requestObjectBody) {
     if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-      return processInQueueRequest(requestObjectBody);
+      return this.processInQueueRequest(requestObjectBody);
     }
     else {
       //TODO: handle abort later
-      return processInProgressRequest(requestObjectBody)
+      return this.processInProgressRequest(requestObjectBody)
     }
   }
 
