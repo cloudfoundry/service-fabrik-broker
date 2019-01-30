@@ -317,7 +317,47 @@ describe('docker-operator', function () {
           plan_id: plan_id,
           app_guid: app_guid,
           bind_resource: {
-            app_guid: app_guid
+            app_guid: app_guid,
+            space_guid: space_guid
+          },
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          }
+        };
+        return DockerService.createInstance(instance_id, options)
+          .then(service => service.bind(options))
+          .then(res => {
+            expect(res).to.eql({
+              hostname: docker_url.hostname,
+              username: username,
+              password: password,
+              port: undefined,
+              ports: {
+                '12345/tcp': 12345
+              },
+              uri: `http://${username}:${password}@${docker_url.hostname}`
+            });
+            mocks.verify();
+          });
+      });
+      it('returns 201 Created and creates Security Group for shared instance binding', function () {
+        let target_space_guid = 'target_id';
+        let binding_id = 'binding_id';
+        mocks.docker.inspectContainer(instance_id);
+        mocks.cloudController.getSpace(target_space_guid, {
+          'organization_guid': organization_guid
+        });
+        mocks.cloudController.createSecurityGroup(binding_id);
+        const options = {
+          binding_id: binding_id,
+          service_id: service_id,
+          plan_id: plan_id,
+          app_guid: app_guid,
+          bind_resource: {
+            app_guid: app_guid,
+            space_guid: target_space_guid
           },
           context: {
             platform: 'cloudfoundry',
@@ -345,12 +385,16 @@ describe('docker-operator', function () {
 
     describe('#unbind', function () {
       it('returns 200 OK', function () {
+        let binding_id = 'binding_id';
+        mocks.cloudController.findSecurityGroupByName(binding_id);
+        mocks.cloudController.deleteSecurityGroup(binding_id);
         mocks.docker.inspectContainer(instance_id, {
           Config: {
             Env: ['context={"platform":"cloudfoundry"}']
           }
         });
         const options = {
+          binding_id: binding_id,
           service_id: service_id,
           plan_id: plan_id
         };
@@ -363,8 +407,12 @@ describe('docker-operator', function () {
       });
 
       it('returns 200 OK: for existing deployment not having platfrom-context in environment', function () {
+        let binding_id = 'binding_id';
+        mocks.cloudController.findSecurityGroupByName(binding_id);
+        mocks.cloudController.deleteSecurityGroup(binding_id);
         mocks.docker.inspectContainer(instance_id);
         const options = {
+          binding_id: binding_id,
           service_id: service_id,
           plan_id: plan_id
         };
