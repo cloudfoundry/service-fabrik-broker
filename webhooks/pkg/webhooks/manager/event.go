@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	instanceclient "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/client/clientset/versioned/typed/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/client-go/rest"
 
@@ -166,15 +168,13 @@ func (e *Event) isMeteringEvent() (bool, error) {
 }
 
 func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
-	glog.Infof("Get client for Apiserver")
 	controller, err := instanceclient.NewForConfig(cfg)
 	if err != nil {
 		glog.Errorf("unable to set up overall controller manager %v", err)
 		return nil, err
 	}
-	apiserver := controller.Sfevents(c.DefaultNamespace)
-	//TODO remove nil
-	return apiserver, nil
+	client := controller.Sfevents(c.DefaultNamespace)
+	return client, nil
 }
 
 func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int, et EventType) *v1alpha1.Sfevent {
@@ -229,22 +229,52 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 	return meteringDocs, nil
 }
 
-func (e *Event) createMertering(cfg *rest.Config) error {
-	apiserver, err := getClient(cfg)
-	if err != nil {
-		return err
-	}
-	events, err := e.getMeteringEvents()
-	if err != nil {
-		return err
-	}
-	for _, evt := range events {
-		r, err := apiserver.Create(evt)
+// Checks if the event is already created in apiserver
+// If The event is of type delete
+// check if it is already created
+func isEventMetered(evt *v1alpha1.Sfevent, client instanceclient.SfeventInterface) (bool, error) {
+	labels := evt.GetLabels()
+	if labels[c.EventTypeKey] == string(DeleteEvent) {
+		list, err := client.List(v1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s,%s=%s", c.EventTypeKey, string(DeleteEvent), c.InstanceGUIDKey, evt.Spec.Options.ConsumerInfo.Instance),
+		})
 		if err != nil {
-			glog.Errorf("Error creating event : %v", err)
+			glog.Errorf("Error fetching list : %v", err)
+			return false, err
+		}
+		if len(list.Items) > 0 {
+			glog.Errorf("Delete Already sent %v", list.Items)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (e *Event) createMertering(cfg *rest.Config) error {
+	client, err := getClient(cfg)
+	if err != nil {
+		glog.Errorf("Error creating sfevent client : %v", err)
+		return err
+	}
+	sfevents, err := e.getMeteringEvents()
+	if err != nil {
+		glog.Errorf("Error fetching metering events : %v", err)
+		return err
+	}
+	for _, evt := range sfevents {
+		metered, err := isEventMetered(evt, client)
+		if err != nil {
+			glog.Errorf("Error checking if event is metered : %v", err)
 			return err
 		}
-		glog.Infof("Successfully created metering resource %v", r)
+		if !metered {
+			r, err := client.Create(evt)
+			if err != nil {
+				glog.Errorf("Error creating event : %v", err)
+				return err
+			}
+			glog.Infof("Successfully created metering resource %v", r)
+		}
 	}
 	return nil
 }
