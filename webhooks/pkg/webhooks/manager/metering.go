@@ -42,8 +42,8 @@ type SfeventOptions struct {
 	InstancesMeasures []InstancesMeasure `json:"measures"`
 }
 
-// MeteringSpec represents the spec field of metering resource
-type MeteringSpec struct {
+// SfeventSpec represents the spec field of metering resource
+type SfeventSpec struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Options           SfeventOptions `json:"options,omitempty"`
 }
@@ -52,7 +52,7 @@ type MeteringSpec struct {
 // Sfevent event,  models schema here:
 // https://wiki.wdf.sap.corp/wiki/display/CPC15N/Usage+Document+Detailed+Schema
 type Sfevent struct {
-	Spec MeteringSpec `json:"spec"`
+	Spec SfeventSpec `json:"spec"`
 }
 
 func (m *Sfevent) getName() string {
@@ -95,7 +95,7 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 	}
 	glog.Infof("New metering event for CRD: %s, Sfevent Id: %s", crd.Name, guid)
 	m := &Sfevent{
-		Spec: MeteringSpec{
+		Spec: SfeventSpec{
 			Options: mo,
 		},
 	}
