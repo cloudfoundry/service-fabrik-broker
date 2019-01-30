@@ -177,8 +177,8 @@ func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
 	return apiserver, nil
 }
 
-func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int) *v1alpha1.Sfevent {
-	return newMetering(opt, e.crd, startStop)
+func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int, et EventType) *v1alpha1.Sfevent {
+	return newMetering(opt, e.crd, startStop, et)
 }
 
 func (e *Event) getEventType() (EventType, error) {
@@ -219,12 +219,12 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 	}
 	switch et {
 	case UpdateEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart))
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop))
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, UpdateEvent))
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, UpdateEvent))
 	case CreateEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart))
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, CreateEvent))
 	case DeleteEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop))
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, DeleteEvent))
 	}
 	return meteringDocs, nil
 }

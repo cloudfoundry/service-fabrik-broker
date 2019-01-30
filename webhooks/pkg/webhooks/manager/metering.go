@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func newMetering(opt resources.GenericOptions, crd resources.GenericResource, startStop int) *v1alpha1.Sfevent {
+func newMetering(opt resources.GenericOptions, crd resources.GenericResource, startStop int, e EventType) *v1alpha1.Sfevent {
 	si := v1alpha1.ServiceInfo{
 		ID:   opt.ServiceID,
 		Plan: opt.PlanID,
@@ -52,6 +52,7 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, st
 	labels := make(map[string]string)
 	labels[c.MeterStateKey] = c.ToBeMetered
 	labels[c.InstanceGuidKey] = ci.Instance
+	labels[c.EventTypeKey] = string(e)
 	m.SetLabels(labels)
 	return m
 }

@@ -27,4 +27,6 @@ const (
 	DefaultNamespace = "default"
 	// InstanceNameKey : The key used to store instance guid in CRD labels
 	InstanceGuidKey = "instance_guid"
+	// EventTypeKey :
+	EventTypeKey = "event_type"
 )
