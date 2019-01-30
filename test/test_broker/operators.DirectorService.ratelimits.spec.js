@@ -77,7 +77,7 @@ describe('service', () => {
       lastOpWithoutTaskId = {
         type: 'create'
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       initializeSpy = sandbox.stub();
       initializeSpy.returns(Promise.resolve());
       finalizeSpy = sandbox.stub();
@@ -224,7 +224,7 @@ describe('service', () => {
         task_id: task_id,
         type: 'create'
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       initializeSpy = sandbox.stub();
       initializeSpy.returns(Promise.resolve());
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -493,7 +493,7 @@ describe('service', () => {
     let getDirectorDeploymentsSpy, getInstanceGuidSpy;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       directorOpSpy = sandbox.stub();
       currentTasksSpy = sandbox.stub();
       containsDeploymentSpy = sandbox.stub();

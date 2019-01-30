@@ -75,7 +75,7 @@ describe('Jobs', function () {
       });
 
       afterEach(function () {
-        repositorySaveStub.reset();
+        repositorySaveStub.resetHistory();
       });
 
       after(function () {

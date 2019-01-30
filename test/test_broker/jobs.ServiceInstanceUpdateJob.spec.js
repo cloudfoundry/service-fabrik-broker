@@ -91,11 +91,11 @@ describe('Jobs', function () {
     let sandbox, baseJobLogRunHistoryStub, cancelScheduleStub, scheduleRunAtStub, uuidv4Stub, catalogStub;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       baseJobLogRunHistoryStub = sandbox.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-      cancelScheduleStub = sandbox.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
-      scheduleRunAtStub = sandbox.stub(ScheduleManager, 'runAt', () => Promise.resolve({}));
+      cancelScheduleStub = sandbox.stub(ScheduleManager, 'cancelSchedule').callsFake(() => Promise.resolve({}));
+      scheduleRunAtStub = sandbox.stub(ScheduleManager, 'runAt').callsFake(() => Promise.resolve({}));
       const plan = catalog.getPlan(plan_id);
       const forcedUpdatePlan = _.cloneDeep(plan);
       forcedUpdatePlan.service.force_update = true;
@@ -113,11 +113,11 @@ describe('Jobs', function () {
 
     afterEach(function () {
       mocks.reset();
-      baseJobLogRunHistoryStub.reset();
-      cancelScheduleStub.reset();
-      scheduleRunAtStub.reset();
-      catalogStub.reset();
-      uuidv4Stub.reset();
+      baseJobLogRunHistoryStub.resetHistory();
+      cancelScheduleStub.resetHistory();
+      scheduleRunAtStub.resetHistory();
+      catalogStub.resetHistory();
+      uuidv4Stub.resetHistory();
     });
 
     after(function () {
@@ -755,7 +755,7 @@ describe('Jobs', function () {
       processedBy: 'MAC1'
     };
     before(function () {
-      repositoryStub = sinon.stub(Repository, 'search', () => {
+      repositoryStub = sinon.stub(Repository, 'search').callsFake(() => {
         return Promise.try(() => {
           if (returnResponse === CONST.OPERATION.FAILED) {
             let resp = [];
@@ -868,7 +868,7 @@ describe('Jobs', function () {
     let randomIntStub, randomize, randomInt;
     before(function () {
       randomInt = utils.getRandomInt;
-      randomIntStub = sinon.stub(utils, 'getRandomInt', (min, max) => (randomize ? randomInt(min, max) : 1));
+      randomIntStub = sinon.stub(utils, 'getRandomInt').callsFake((min, max) => (randomize ? randomInt(min, max) : 1));
     });
     after(function () {
       randomIntStub.restore();

@@ -150,12 +150,12 @@ describe('Jobs', function () {
     });
 
     beforeEach(function () {
-      baseJobLogRunHistoryStub.reset();
+      baseJobLogRunHistoryStub.resetHistory();
     });
 
     afterEach(function () {
       mocks.reset();
-      baseJobLogRunHistoryStub.reset();
+      baseJobLogRunHistoryStub.resetHistory();
     });
 
     after(function () {
@@ -189,7 +189,7 @@ describe('Jobs', function () {
       ]);
       mocks.cloudProvider.download(pathname16Oob, scheduled_data_oob, 2);
       //Mocks done
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {
@@ -222,7 +222,7 @@ describe('Jobs', function () {
       mocks.cloudProvider.list(container, `${prefixOob}.${backup_guid2Oob}`, [
         fileName18DaysPriorOob
       ]);
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {
@@ -255,7 +255,7 @@ describe('Jobs', function () {
       mocks.cloudProvider.list(container, `${prefixOob}.${backup_guid2Oob}`, [
         fileName18DaysPriorOob
       ]);
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', () => {
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(() => {
         return Promise.try(() => {
           throw new NotFound('Schedulde not found.');
         });
@@ -304,7 +304,7 @@ describe('Jobs', function () {
       ]);
       mocks.cloudProvider.remove(`/${blueprintContainer}/${backup_guid2Oob}/volume.tgz.enc`);
       mocks.cloudProvider.remove(pathname18Oob);
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', () => {
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(() => {
         return Promise.try(() => {
           throw new NotFound('Schedulde not found.');
         });
@@ -349,7 +349,7 @@ describe('Jobs', function () {
       ]);
       mocks.cloudProvider.download(pathname16Oob, _.chain(scheduled_data_oob).omit('container').value());
       //Mocks done
-      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
+      getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
       return BackupReaperJob.run(job, () => {
         mocks.verify();
         const expectedBackupResponse = {

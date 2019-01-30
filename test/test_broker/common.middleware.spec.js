@@ -22,7 +22,7 @@ class Response {
   }
   reset() {
     this.constructor.methods.forEach((method) => {
-      this[method].reset();
+      this[method].resetHistory();
     });
   }
   static get methods() {
@@ -45,18 +45,18 @@ describe('middleware', () => {
   const next = sinon.spy();
 
   afterEach(function () {
-    next.reset();
+    next.resetHistory();
     res.reset();
   });
 
   describe('#basicAuth', () => {
     const basicAuthMiddleware = commonMiddleware.basicAuth('admin', 'secret');
-    const unauthorizedError = new Unauthorized();
 
     it('should abort with an Unauthorized error', () => {
       basicAuthMiddleware(req, res, next);
       expect(res.set).to.be.calledOnce.calledWith('WWW-Authenticate');
-      expect(next).to.have.been.calledOnce.calledWithExactly(unauthorizedError);
+      expect(next.getCall(0).args[0] instanceof Unauthorized).to.be.true;
+      expect(next).to.have.been.calledOnce;
     });
 
     it('should call the next handler', () => {
@@ -69,22 +69,21 @@ describe('middleware', () => {
   describe('#methodNotAllowed', () => {
     const allow = 'GET';
     const methodNotAllowedMiddleware = commonMiddleware.methodNotAllowed(allow);
-    const methodNotAllowedError = new MethodNotAllowed(req.method, allow);
 
     it('should abort with a MethodNotAllowed error', () => {
       methodNotAllowedMiddleware(req, req, next);
-      expect(next).to.have.been.calledOnce.and.calledWithExactly(methodNotAllowedError);
+      expect(next).to.have.been.calledOnce;
+      expect(next.getCall(0).args[0] instanceof MethodNotAllowed);
     });
   });
 
   describe('#notFound', () => {
     const notFoundMiddleware = commonMiddleware.notFound();
-    const notFoundError = new NotFound(
-      `Unable to find any resource matching the requested path ${req.path}`);
 
     it('should always abort with a NotFound error', () => {
       notFoundMiddleware(req, res, next);
-      expect(next).to.have.been.calledOnce.and.calledWithExactly(notFoundError);
+      expect(next).to.have.been.calledOnce;
+      expect(next.getCall(0).args[0] instanceof NotFound);
     });
   });
 

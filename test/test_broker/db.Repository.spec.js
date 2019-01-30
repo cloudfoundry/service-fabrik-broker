@@ -65,7 +65,7 @@ describe('db', function () {
     let modelStub, mongooseStub, sandbox, modelThat;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       modelStub = function () {
         this.saveAsync = mongoModel.saveAsync;
         //All the below extension methods will not be inherited as they are not assigned against prototype.
@@ -84,15 +84,15 @@ describe('db', function () {
       mongoModel.saveAsync = () => {};
       modelStub.saveAsync = sandbox.stub(mongoModel, 'saveAsync');
       modelStub.findOneAndUpdateAsync = sandbox.stub(mongoModel, 'findOneAndUpdateAsync');
-      modelStub.find = sandbox.stub(mongoModel, 'find', () => modelStub);
-      modelStub.count = sandbox.stub(mongoModel, 'count', () => modelStub);
+      modelStub.find = sandbox.stub(mongoModel, 'find').callsFake(() => modelStub);
+      modelStub.count = sandbox.stub(mongoModel, 'count').callsFake(() => modelStub);
       mongoModel.skip = () => {};
-      modelStub.skip = sandbox.stub(mongoModel, 'skip', () => modelStub);
+      modelStub.skip = sandbox.stub(mongoModel, 'skip').callsFake(() => modelStub);
       mongoModel.limit = () => {};
-      modelStub.limit = sandbox.stub(mongoModel, 'limit', () => modelStub);
+      modelStub.limit = sandbox.stub(mongoModel, 'limit').callsFake(() => modelStub);
       mongoModel.execAsync = () => {};
       modelStub.execAsync = sandbox.stub(mongoModel, 'execAsync');
-      mongooseStub = sandbox.stub(Mongoose, 'model', () => {
+      mongooseStub = sandbox.stub(Mongoose, 'model').callsFake(() => {
         return modelStub;
       });
     });
@@ -111,18 +111,18 @@ describe('db', function () {
     });
 
     afterEach(function () {
-      modelStub.findOne.reset();
-      modelStub.aggregate.reset();
-      modelStub.findByIdAsync.reset();
-      modelStub.populateAsync.reset();
-      modelStub.removeAsync.reset();
-      modelStub.saveAsync.reset();
-      modelStub.findOneAndUpdateAsync.reset();
-      modelStub.find.reset();
-      modelStub.count.reset();
-      modelStub.skip.reset();
-      modelStub.limit.reset();
-      mongoModel.execAsync.reset();
+      modelStub.findOne.resetHistory();
+      modelStub.aggregate.resetHistory();
+      modelStub.findByIdAsync.resetHistory();
+      modelStub.populateAsync.resetHistory();
+      modelStub.removeAsync.resetHistory();
+      modelStub.saveAsync.resetHistory();
+      modelStub.findOneAndUpdateAsync.resetHistory();
+      modelStub.find.resetHistory();
+      modelStub.count.resetHistory();
+      modelStub.skip.resetHistory();
+      modelStub.limit.resetHistory();
+      mongoModel.execAsync.resetHistory();
     });
 
     after(function () {

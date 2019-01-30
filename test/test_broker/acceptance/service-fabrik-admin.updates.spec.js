@@ -159,7 +159,7 @@ describe('service-fabrik-admin', function () {
     });
 
     afterEach(function () {
-      repoSpy.search.reset();
+      repoSpy.search.resetHistory();
       clock.reset();
     });
 

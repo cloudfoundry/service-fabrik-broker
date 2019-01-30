@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",
-    "chai": "^3.5.0",
+    "chai": "^4.0.0",
     "chai-http": "^2.0.1",
     "coveralls": "^3.0.0",
     "docdash": "^0.3.0",
@@ -94,8 +94,8 @@
     "mocha-lcov-reporter": "^1.3.0",
     "nock": "^8.0.0",
     "proxyquire": "^1.7.9",
-    "sinon": "^1.17.4",
-    "sinon-chai": "^2.8.0"
+    "sinon": "^7.1.1",
+    "sinon-chai": "^3.0.0"
   },
   "engines": {
     "node": ">= 6.2.1"

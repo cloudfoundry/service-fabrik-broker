@@ -277,10 +277,10 @@ describe('service-fabrik-admin', function () {
         }
 
         before(function () {
-          sandbox = sinon.sandbox.create();
-          findOneStub = sandbox.stub(Repository, 'findOne', () => Promise.resolve(getMaintenaceInfo()));
-          saveStub = sandbox.stub(Repository, 'save', () => Promise.resolve(saveMaintenance()));
-          searchStub = sandbox.stub(Repository, 'search', () => Promise.resolve(({
+          sandbox = sinon.createSandbox();
+          findOneStub = sandbox.stub(Repository, 'findOne').callsFake(() => Promise.resolve(getMaintenaceInfo()));
+          saveStub = sandbox.stub(Repository, 'save').callsFake(() => Promise.resolve(saveMaintenance()));
+          searchStub = sandbox.stub(Repository, 'search').callsFake(() => Promise.resolve(({
             list: [maintenanceInfo],
             totalRecordCount: 1,
             nextOffset: -1

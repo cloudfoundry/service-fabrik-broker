@@ -25,7 +25,7 @@ describe('operators', function () {
           instance_id: instanceId
         };
         before(function () {
-          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'updateResource', () => Promise.resolve(taskDetails));
+          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => Promise.resolve(taskDetails));
         });
         after(function () {
           apiServerClientUpdateStub.restore();

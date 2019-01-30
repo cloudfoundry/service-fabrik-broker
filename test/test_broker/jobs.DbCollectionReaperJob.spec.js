@@ -25,7 +25,7 @@ describe('Jobs', function () {
       baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
       baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
       repositoryStub = sinon.stub(Repository, 'delete');
-      scheduleMgrStub = sinon.stub(ScheduleManager, 'purgeOldFinishedJobs', () => Promise.try(() => {
+      scheduleMgrStub = sinon.stub(ScheduleManager, 'purgeOldFinishedJobs').callsFake(() => Promise.try(() => {
         if (errorAgendaPurge) {
           throw UnknownError;
         }
@@ -38,9 +38,9 @@ describe('Jobs', function () {
       clockStub = sinon.useFakeTimers(new Date().getTime());
     });
     afterEach(function () {
-      baseJobLogRunHistoryStub.reset();
-      repositoryStub.reset();
-      scheduleMgrStub.reset();
+      baseJobLogRunHistoryStub.resetHistory();
+      repositoryStub.resetHistory();
+      scheduleMgrStub.resetHistory();
     });
     after(function () {
       baseJobLogRunHistoryStub.restore();
