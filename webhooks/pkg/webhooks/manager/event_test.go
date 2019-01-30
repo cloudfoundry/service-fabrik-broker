@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	"io/ioutil"
 
 	. "github.com/onsi/ginkgo"
@@ -263,9 +264,9 @@ var _ = Describe("Event", func() {
 
 	Describe("meteringToUnstructured", func() {
 		It("Creates unstructured metering instance", func() {
-			m := Sfevent{
-				Spec: SfeventSpec{
-					Options: SfeventOptions{},
+			m := v1alpha1.Sfevent{
+				Spec: v1alpha1.SfeventSpec{
+					Options: v1alpha1.SfeventOptions{},
 				},
 			}
 			val, err := meteringToUnstructured(&m)
@@ -293,8 +294,8 @@ var _ = Describe("Event", func() {
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(2))
-				var docStart SfeventOptions
-				var docStop SfeventOptions
+				var docStart v1alpha1.SfeventOptions
+				var docStop v1alpha1.SfeventOptions
 				docStart = docs[0].Spec.Options
 				docStop = docs[1].Spec.Options
 				Expect(docStart.ServiceInfo.Plan).To(Equal("new plan in options"))
