@@ -52,11 +52,17 @@ var _ = Describe("Event", func() {
 			Expect(err).ToNot(BeNil())
 			ar.Request.Object.Raw = temp
 		})
-		It("Should set oldCrd empty if old object cannot be parsed", func() {
+		It("Should set oldCrd empty if old object is empty", func() {
 			ar.Request.OldObject.Raw = []byte("")
 			evt, err := NewEvent(&ar)
 			Expect(evt.oldCrd).To(Equal(resources.GenericResource{}))
 			Expect(err).To(BeNil())
+		})
+		It("Should set oldCrd empty if old object cannot be parsed", func() {
+			ar.Request.OldObject.Raw = []byte("invalid json")
+			evt, err := NewEvent(&ar)
+			Expect(evt).To(BeNil())
+			Expect(err).ToNot(BeNil())
 		})
 	})
 	Describe("isMeteringEvent", func() {
@@ -284,6 +290,15 @@ var _ = Describe("Event", func() {
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
 					Type: "create",
 				})
+				docs, err := evt.getMeteringEvents()
+				Expect(err).To(BeNil())
+				Expect(len(docs)).To(Equal(1))
+			})
+		})
+		Context("when type is delete", func() {
+			It("Generates one metering doc", func() {
+				evt, _ := NewEvent(&ar)
+				evt.crd.Status.State = "delete"
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(1))

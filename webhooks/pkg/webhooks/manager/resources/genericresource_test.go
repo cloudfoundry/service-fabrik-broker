@@ -89,3 +89,47 @@ func TestGenericResource_GetLastOperation(t *testing.T) {
 		})
 	}
 }
+
+func TestGenericResource_GetAppliedOptions(t *testing.T) {
+	type fields struct {
+		Kind       string
+		ObjectMeta metav1.ObjectMeta
+		Status     GenericStatus
+		Spec       GenericSpec
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    GenericOptions
+		wantErr bool
+	}{
+		{
+			"Should throw error for invalid json",
+			fields{
+				Status: GenericStatus{
+					AppliedOptions: `{invalid}`,
+				},
+			},
+			GenericOptions{},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			crd := &GenericResource{
+				Kind:       tt.fields.Kind,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Status:     tt.fields.Status,
+				Spec:       tt.fields.Spec,
+			}
+			got, err := crd.GetAppliedOptions()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenericResource.GetAppliedOptions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GenericResource.GetAppliedOptions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
