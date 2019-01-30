@@ -2,17 +2,15 @@ package main
 
 import (
 	// "encoding/json"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"time"
 )
 
-
-
-func newMetering(opt resources.GenericOptions, crd resources.GenericResource, signal int) *v1alpha1.Sfevent {
+func newMetering(opt resources.GenericOptions, crd resources.GenericResource, startStop int) *v1alpha1.Sfevent {
 	si := v1alpha1.ServiceInfo{
 		ID:   opt.ServiceID,
 		Plan: opt.PlanID,
@@ -33,7 +31,7 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 	}
 	im := v1alpha1.InstancesMeasure{
 		ID:    c.MeasuresID,
-		Value: signal,
+		Value: startStop,
 	}
 	guid := uuid.New().String()
 
@@ -50,5 +48,10 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, si
 			Options: mo,
 		},
 	}
+	m.SetName(guid)
+	labels := make(map[string]string)
+	labels[c.MeterStateKey] = c.ToBeMetered
+	labels[c.InstanceGuidKey] = ci.Instance
+	m.SetLabels(labels)
 	return m
 }

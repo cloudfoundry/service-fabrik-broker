@@ -1,20 +1,17 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
+	instanceclient "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/client/clientset/versioned/typed/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 
 	"k8s.io/client-go/rest"
 
 	"github.com/golang/glog"
 	"k8s.io/api/admission/v1beta1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // EventType denotes the types of metering events
@@ -45,9 +42,9 @@ const (
 
 // CrdKind
 const (
-	Director string = "Director"
-	Docker   string = "Docker"
-	SfeventKind  string = "Sfevent"
+	Director    string = "Director"
+	Docker      string = "Docker"
+	SfeventKind string = "Sfevent"
 )
 
 // Event stores the event details
@@ -168,60 +165,20 @@ func (e *Event) isMeteringEvent() (bool, error) {
 	return e.isDocker() && e.isStateChanged() && (e.isSucceeded() || e.isDeleteTriggered()), nil
 }
 
-// ObjectToMapInterface converts an Object to map[string]interface{}
-func ObjectToMapInterface(obj interface{}) (map[string]interface{}, error) {
-	values := make(map[string]interface{})
-	options, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(options, &values)
-	if err != nil {
-		return nil, err
-	}
-	return values, nil
-}
-
-func getClient(cfg *rest.Config) (client.Client, error) {
+func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
 	glog.Infof("Get client for Apiserver")
-	mgr, err := manager.New(cfg, manager.Options{})
+	controller, err := instanceclient.NewForConfig(cfg)
 	if err != nil {
 		glog.Errorf("unable to set up overall controller manager %v", err)
 		return nil, err
 	}
-	options := client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	}
-	apiserver, err := client.New(cfg, options)
-	if err != nil {
-		glog.Errorf("Unable to create kubernetes client %v", err)
-		return nil, err
-	}
-	return apiserver, err
+	apiserver := controller.Sfevents(c.DefaultNamespace)
+	//TODO remove nil
+	return apiserver, nil
 }
 
-func meteringToUnstructured(m *v1alpha1.Sfevent) (*unstructured.Unstructured, error) {
-	values, err := ObjectToMapInterface(m)
-	if err != nil {
-		glog.Errorf("unable convert to map interface %v", err)
-		return nil, err
-	}
-	meteringDoc := &unstructured.Unstructured{}
-	meteringDoc.SetUnstructuredContent(values)
-	meteringDoc.SetKind(SfeventKind)
-	meteringDoc.SetAPIVersion(c.InstanceAPIVersion)
-	meteringDoc.SetNamespace(c.DefaultNamespace)
-	meteringDoc.SetName(m.GetName())
-	labels := make(map[string]string)
-	labels[c.MeterStateKey] = c.ToBeMetered
-	labels[c.InstanceGuidKey] = m.Spec.Options.ConsumerInfo.Instance
-	meteringDoc.SetLabels(labels)
-	return meteringDoc, nil
-}
-
-func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *v1alpha1.Sfevent {
-	return newMetering(opt, e.crd, signal)
+func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int) *v1alpha1.Sfevent {
+	return newMetering(opt, e.crd, startStop)
 }
 
 func (e *Event) getEventType() (EventType, error) {
@@ -282,17 +239,12 @@ func (e *Event) createMertering(cfg *rest.Config) error {
 		return err
 	}
 	for _, evt := range events {
-		unstructuredDoc, err := meteringToUnstructured(evt)
+		r, err := apiserver.Create(evt)
 		if err != nil {
-			glog.Errorf("Error converting event : %v", err)
+			glog.Errorf("Error creating event : %v", err)
 			return err
 		}
-		err = apiserver.Create(context.TODO(), unstructuredDoc)
-		if err != nil {
-			glog.Errorf("Error creating: %v", err)
-			return err
-		}
-		glog.Infof("Successfully created metering resource")
+		glog.Infof("Successfully created metering resource %v", r)
 	}
 	return nil
 }

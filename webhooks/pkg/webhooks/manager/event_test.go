@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	"io/ioutil"
 
 	. "github.com/onsi/ginkgo"
@@ -171,12 +171,13 @@ var _ = Describe("Event", func() {
 				evt.oldCrd.Status.State = "in_progress"
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
+			// false for create triggered
 		})
 		Context("When Type is Create and kind is Docker", func() {
 			It("Should should return true if create succeeds", func() {
 				evt, _ := NewEvent(&arDockerCreate)
 				evt.crd.Status.State = "succeeded"
-				evt.oldCrd.Status.State = "in_progress"
+				evt.oldCrd.Status.State = ""
 				Expect(evt.isMeteringEvent()).To(Equal(true))
 			})
 			It("Should should return false if create state change does not change", func() {
@@ -188,7 +189,7 @@ var _ = Describe("Event", func() {
 			It("Should should return false if create fails", func() {
 				evt, _ := NewEvent(&arDockerCreate)
 				evt.crd.Status.State = "failed"
-				evt.oldCrd.Status.State = "in_progress"
+				evt.oldCrd.Status.State = ""
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 		})
@@ -237,7 +238,7 @@ var _ = Describe("Event", func() {
 				evt.oldCrd.Status.State = "delete"
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
-			It("Should should return false if create fails", func() {
+			It("Should should return false if delete fails", func() {
 				evt, _ := NewEvent(&arDockerCreate)
 				evt.crd.SetLastOperation(resources.GenericLastOperation{
 					Type: "delete",
@@ -249,33 +250,6 @@ var _ = Describe("Event", func() {
 				})
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
-		})
-	})
-
-	Describe("ObjectToMapInterface", func() {
-		It("Should convert object to map", func() {
-			expected := make(map[string]interface{})
-			expected["options"] = "dummyOptions"
-			Expect(ObjectToMapInterface(resources.GenericSpec{
-				Options: "dummyOptions",
-			})).To(Equal(expected))
-		})
-	})
-
-	Describe("meteringToUnstructured", func() {
-		It("Creates unstructured metering instance", func() {
-			m := v1alpha1.Sfevent{
-				Spec: v1alpha1.SfeventSpec{
-					Options: v1alpha1.SfeventOptions{},
-				},
-			}
-			val, err := meteringToUnstructured(&m)
-			Expect(err).To(BeNil())
-			Expect(val).ToNot(BeNil())
-			Expect(val.GetKind()).To(Equal("Sfevent"))
-			Expect(val.GetAPIVersion()).To(Equal("instance.servicefabrik.io/v1alpha1"))
-			Expect(val.GetLabels()[c.MeterStateKey]).To(Equal(c.ToBeMetered))
-
 		})
 	})
 
