@@ -12,6 +12,7 @@ type GenericSpec struct {
 	Options string `json:"options,omitempty"`
 }
 
+// GetOptions unmarshals the json data into GenericOptions
 func (g *GenericSpec) GetOptions() (GenericOptions, error) {
 	var opts GenericOptions
 	decoder := json.NewDecoder(bytes.NewReader([]byte(g.Options)))
@@ -22,6 +23,7 @@ func (g *GenericSpec) GetOptions() (GenericOptions, error) {
 	return opts, err
 }
 
+// SetOptions stores the options as json string
 func (g *GenericSpec) SetOptions(options GenericOptions) error {
 	val, err := json.Marshal(options)
 	g.Options = string(val)
