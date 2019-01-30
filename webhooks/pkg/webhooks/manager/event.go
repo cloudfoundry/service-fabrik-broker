@@ -200,7 +200,7 @@ func getClient(cfg *rest.Config) (client.Client, error) {
 	return apiserver, err
 }
 
-func meteringToUnstructured(m *Metering) (*unstructured.Unstructured, error) {
+func meteringToUnstructured(m *Sfevent) (*unstructured.Unstructured, error) {
 	values, err := ObjectToMapInterface(m)
 	if err != nil {
 		glog.Errorf("unable convert to map interface %v", err)
@@ -219,7 +219,7 @@ func meteringToUnstructured(m *Metering) (*unstructured.Unstructured, error) {
 	return meteringDoc, nil
 }
 
-func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *Metering {
+func (e *Event) getMeteringEvent(opt resources.GenericOptions, signal int) *Sfevent {
 	return newMetering(opt, e.crd, signal)
 }
 
@@ -247,13 +247,13 @@ func (e *Event) getEventType() (EventType, error) {
 	return eventType, nil
 }
 
-func (e *Event) getMeteringEvents() ([]*Metering, error) {
+func (e *Event) getMeteringEvents() ([]*Sfevent, error) {
 	options, err := e.crd.Spec.GetOptions()
 	if err != nil {
 		return nil, err
 	}
 	oldAppliedOptions := e.oldCrd.GetAppliedOptions()
-	var meteringDocs []*Metering
+	var meteringDocs []*Sfevent
 
 	et, err := e.getEventType()
 	if err != nil {

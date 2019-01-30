@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Metering", func() {
+var _ = Describe("Sfevent", func() {
 	Describe("newMetering", func() {
 		It("it should create the metering object", func() {
 			//Create params
