@@ -18,14 +18,14 @@ type Sfevent struct {
 
 // SfeventSpec is the spec for a Sfevent resource
 type SfeventSpec struct {
-	Options           SfeventOptions `json:"options,omitempty"`
+	Options SfeventOptions `json:"options,omitempty"`
 }
 
 // SfeventStatus is the status for a Sfevent resource
 type SfeventStatus struct {
-    Error string `json:"error,omitempty"`
-    Response string `json:"response,omitempty"`
-    State string `json:"state,omitempty"`
+	Error    string `json:"error,omitempty"`
+	Response string `json:"response,omitempty"`
+	State    string `json:"state,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
