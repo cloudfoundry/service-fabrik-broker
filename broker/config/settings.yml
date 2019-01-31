@@ -558,6 +558,7 @@ defaults: &defaults
       id: '466c5078-df6e-427d-8fb2-c76af50c0f56'
       name: 'v1.0-dev'
       sku_name: 'dev'
+      metered: true
       free: true
       manager:
         name: 'docker'
@@ -611,6 +612,7 @@ defaults: &defaults
       id: '6a252f89-c974-4ef9-a4de-c49f300de39a'
       name: 'v1.0-dev-large'
       sku_name: 'dev'
+      metered: true
       free: true
       manager:
         name: 'docker'
@@ -686,6 +688,7 @@ defaults: &defaults
       id: 'bc158c9a-7934-401e-94ab-057082a5073f'
       name: 'v1.0-xsmall'
       sku_name: 'xsmall'
+      metered: true
       free: false
       # Asynch operations which supports parallel synch operations
       # e.g. bind and unbind (sync) supported during update and backup (async)
