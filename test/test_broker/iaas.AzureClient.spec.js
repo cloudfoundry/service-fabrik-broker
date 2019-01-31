@@ -60,7 +60,7 @@ describe('iaas', function () {
       let sandbox;
 
       before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(uuid, 'v4').returns(diskName);
       });
 
@@ -143,11 +143,11 @@ describe('iaas', function () {
         mocks.azureClient.auth();
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-          sku: sku,
-          tags: {
-            name: 'value'
-          }
-        })
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
           .catch((err) => {
             expect(err.message).to.equal('failure');
             mocks.verify();
@@ -189,11 +189,11 @@ describe('iaas', function () {
           }
         }, null, 'diskfailed');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-          sku: sku,
-          tags: {
-            name: 'value'
-          }
-        })
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
           .catch((err) => {
             expect(err.message).to.equal('diskfailed');
             mocks.verify();
@@ -236,34 +236,34 @@ describe('iaas', function () {
             }
           }
         }, {
-            status: 200,
-            headers: {
-              'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
-              'x-ms-version': '2016-05-31',
-              date: new Date().toISOString()
-            },
-            body: {
-              name: diskName,
-              location: loc,
-              zones: [zone],
-              sku: sku,
-              tags: tags,
-              properties: {
-                diskSizeGB: '4',
-                provisioningState: 'Succeeded',
-                creationData: {
-                  createOption: 'Copy',
-                  sourceResourceId: 'customResource'
-                }
+          status: 200,
+          headers: {
+            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+            'x-ms-version': '2016-05-31',
+            date: new Date().toISOString()
+          },
+          body: {
+            name: diskName,
+            location: loc,
+            zones: [zone],
+            sku: sku,
+            tags: tags,
+            properties: {
+              diskSizeGB: '4',
+              provisioningState: 'Succeeded',
+              creationData: {
+                createOption: 'Copy',
+                sourceResourceId: 'customResource'
               }
             }
-          });
-        return client.createDiskFromSnapshot(snapshotName, zone, {
-          sku: sku,
-          tags: {
-            name: 'value'
           }
-        })
+        });
+        return client.createDiskFromSnapshot(snapshotName, zone, {
+            sku: sku,
+            tags: {
+              name: 'value'
+            }
+          })
           .then((result) => {
             expect(result.volumeId).to.equal(`caching:None%3Bdisk_name:${boshdisk}%3Bresource_group_name:${settings.resource_group}`);
             expect(result.zone).to.equal(zone);
