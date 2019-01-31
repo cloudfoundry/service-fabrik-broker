@@ -6,6 +6,7 @@ const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const moment = require('moment');
+const uuid = require('uuid');
 const filename = require('../../data-access-layer/iaas').backupStore.filename;
 const NotFound = errors.NotFound;
 const Forbidden = errors.Forbidden;
@@ -60,7 +61,7 @@ describe('iaas', function () {
 
       before(() => {
         sandbox = sinon.sandbox.create();
-        sandbox.stub(AzureClient.prototype, 'getRandomDiskId').returns(diskName);
+        sandbox.stub(uuid, 'v4').returns(diskName);
       });
 
       after(() => {
@@ -142,11 +143,11 @@ describe('iaas', function () {
         mocks.azureClient.auth();
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, null, 'failure');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
           .catch((err) => {
             expect(err.message).to.equal('failure');
             mocks.verify();
@@ -154,6 +155,7 @@ describe('iaas', function () {
       });
 
       it('should bubble up error if create disk from snapshot fails', function () {
+        let boshdisk = `bosh-disk-data-${diskName}`;
         mocks.azureClient.auth(2);
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
           status: 200,
@@ -167,12 +169,14 @@ describe('iaas', function () {
             date: new Date().toISOString()
           }
         });
-        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2017-03-30`, {
           zones: [zone],
           location: loc,
           tags: {
             name: 'value',
-            createdBy: 'service-fabrik'
+            createdBy: 'service-fabrik',
+            caching: 'None',
+            resource_group_name: settings.resource_group
           },
           sku: {
             name: 'Premium_LRS'
@@ -185,11 +189,11 @@ describe('iaas', function () {
           }
         }, null, 'diskfailed');
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
           .catch((err) => {
             expect(err.message).to.equal('diskfailed');
             mocks.verify();
@@ -197,6 +201,7 @@ describe('iaas', function () {
       });
 
       it('should create disk from snapshot successfully', function () {
+        let boshdisk = `bosh-disk-data-${diskName}`;
         mocks.azureClient.auth(2);
         mocks.azureClient.getSnapshot(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/snapshots/${snapshotName}?api-version=2017-03-30`, {
           status: 200,
@@ -212,10 +217,12 @@ describe('iaas', function () {
         });
         const tags = {
           name: 'value',
-          createdBy: 'service-fabrik'
+          createdBy: 'service-fabrik',
+          caching: 'None',
+          resource_group_name: settings.resource_group
         };
 
-        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${diskName}?api-version=2017-03-30`, {
+        mocks.azureClient.createDisk(`/subscriptions/${settings.subscription_id}/resourceGroups/${settings.resource_group}/providers/Microsoft.Compute/disks/${boshdisk}?api-version=2017-03-30`, {
           zones: [zone],
           location: loc,
           tags: tags,
@@ -229,36 +236,36 @@ describe('iaas', function () {
             }
           }
         }, {
-          status: 200,
-          headers: {
-            'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
-            'x-ms-version': '2016-05-31',
-            date: new Date().toISOString()
-          },
-          body: {
-            name: diskName,
-            location: loc,
-            zones: [zone],
-            sku: sku,
-            tags: tags,
-            properties: {
-              diskSizeGB: '4',
-              provisioningState: 'Succeeded',
-              creationData: {
-                createOption: 'Copy',
-                sourceResourceId: 'customResource'
+            status: 200,
+            headers: {
+              'x-ms-request-id': '774c96e7-0001-0006-7e01-67617f000000',
+              'x-ms-version': '2016-05-31',
+              date: new Date().toISOString()
+            },
+            body: {
+              name: diskName,
+              location: loc,
+              zones: [zone],
+              sku: sku,
+              tags: tags,
+              properties: {
+                diskSizeGB: '4',
+                provisioningState: 'Succeeded',
+                creationData: {
+                  createOption: 'Copy',
+                  sourceResourceId: 'customResource'
+                }
               }
             }
-          }
-        });
+          });
         return client.createDiskFromSnapshot(snapshotName, zone, {
-            sku: sku,
-            tags: {
-              name: 'value'
-            }
-          })
+          sku: sku,
+          tags: {
+            name: 'value'
+          }
+        })
           .then((result) => {
-            expect(result.volumeId).to.equal(diskName);
+            expect(result.volumeId).to.equal(`caching:None%3Bdisk_name:${boshdisk}%3Bresource_group_name:${settings.resource_group}`);
             expect(result.zone).to.equal(zone);
             expect(result.type).to.equal('Premium_LRS');
             expect(result.size).to.equal('4');
