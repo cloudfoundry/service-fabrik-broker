@@ -708,13 +708,10 @@ status:
 	expectedResources, err2 := dynamic.StringToUnstructured(`apiVersion: deployment.servicefabrik.io/v1alpha1
 kind: Director
 metadata:
-  generation: 1
   labels:
     state: succeeded
   name: instance-id
   namespace: default
-  selfLink: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/instance-id
-  uid: 94f7beaf-0f5f-11e9-b07e-023f5e553a48
 spec:
   options: new-hello
 status:

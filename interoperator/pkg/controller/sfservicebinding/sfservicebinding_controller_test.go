@@ -218,15 +218,12 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		labels := serviceBinding.GetLabels()
-		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("label not updated")
+		if state := serviceBinding.GetState(); state != "succeeded" {
+			return fmt.Errorf("state not updated")
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("succeeded"))
-	labels := serviceBinding.GetLabels()
-	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
 
 	secret := &corev1.Secret{}
 	secretRef := serviceBinding.Status.Response.SecretRef

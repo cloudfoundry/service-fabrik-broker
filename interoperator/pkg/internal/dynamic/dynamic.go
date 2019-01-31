@@ -105,6 +105,16 @@ func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
 			}
 		}
 		return current, toBeUpdated
+	case []map[string]interface{}:
+		current := currentObj.([]map[string]interface{})
+		for i, val := range new {
+			updatedVal, ok := DeepUpdate(current[i], val)
+			if ok {
+				current[i] = updatedVal.(map[string]interface{})
+				toBeUpdated = true
+			}
+		}
+		return current, toBeUpdated
 	default:
 		if !reflect.DeepEqual(currentObj, newObj) {
 			currentObj = newObj
