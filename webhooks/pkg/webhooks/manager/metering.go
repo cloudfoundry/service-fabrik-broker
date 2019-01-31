@@ -47,6 +47,9 @@ func newMetering(opt resources.GenericOptions, crd resources.GenericResource, st
 		Spec: v1alpha1.SfeventSpec{
 			Options: mo,
 		},
+        Status: v1alpha1.SfeventStatus{
+            State: c.ToBeMetered,
+        },
 	}
 	m.SetName(guid)
 	labels := make(map[string]string)
