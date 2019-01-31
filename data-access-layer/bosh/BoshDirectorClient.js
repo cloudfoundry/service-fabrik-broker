@@ -894,7 +894,8 @@ class BoshDirectorClient extends HttpClient {
         body: {
           'keep-alive': true,
           'instances': instances
-        }
+        },
+        json: true
       }, 302, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
@@ -904,9 +905,12 @@ class BoshDirectorClient extends HttpClient {
   }
 
    createDiskAttachment(deploymentName, diskCid, jobName, instanceId, diskProperties = 'copy') {
+    //adding fix for azure
+    let regex = /;/g;
+    let escapedDiskCid = diskCid.replace(regex, '%3B');
     return this.makeRequest({
         method: 'PUT',
-        url: `/disks/${diskCid}/attachments`,
+        url: `/disks/${escapedDiskCid}/attachments`,
         qs: {
           deployment: deploymentName,
           job: jobName,

@@ -39,7 +39,7 @@ class AzureClient extends BaseCloudClient {
   createDiskFromSnapshot(snapshotId, zones, opts = {}) {
     const diskName = `bosh-disk-data-${uuid.v4()}`;
     // BOSH Azure CPI expects the disk cid in the following format for attach-disk to be successful
-    const boshDiskId = `caching:None;${diskName};resource_group_name:${this.settings.resource_group}`;
+    const boshDiskId = `caching:None;disk_name:${diskName};resource_group_name:${this.settings.resource_group}`;
     return Promise.try(() => this.getSnapshot(snapshotId))
       .then(snapshotData => {
         const options = {

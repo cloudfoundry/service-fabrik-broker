@@ -293,7 +293,7 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStart(resourceOptions) {
     try {
       //1. Get deployment name from resource
-      const deploymentName = _.get(resourceOptions, 'deploymentName');
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
 
       //2. Stop the bosh deployment and poll for the result
       const taskId  = await this.director.startDeployment(deploymentName);
