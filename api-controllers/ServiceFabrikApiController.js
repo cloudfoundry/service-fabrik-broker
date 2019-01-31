@@ -347,7 +347,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
-              backup: _.pick(metadata, 'type', 'secret')
+              backup: _.pick(metadata, 'type', 'secret', 'snapshotId')
             },
             req.body, {
               backup_guid: _.get(metadata, 'backup_guid')

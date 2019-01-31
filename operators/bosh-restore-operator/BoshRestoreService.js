@@ -142,7 +142,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
@@ -188,7 +188,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
@@ -199,7 +199,7 @@ class BoshRestoreService extends BaseDirectorService {
   async processAttachDisk(resourceOptions) {
     try { 
       //1. Get new disk CID from resource state
-      const deploymentName = _.get(resourceOptions, 'deploymentName');
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
       let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'));
 
       //2. attach disk to all the given instances
@@ -237,7 +237,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
@@ -282,7 +282,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
@@ -322,7 +322,7 @@ class BoshRestoreService extends BaseDirectorService {
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
+        resourceId: resourceOptions.restore_guid,
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }

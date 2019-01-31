@@ -899,7 +899,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
@@ -918,7 +918,7 @@ class BoshDirectorClient extends HttpClient {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered disk attachment with paramaters --> \
         deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
@@ -930,7 +930,11 @@ class BoshDirectorClient extends HttpClient {
       .then(instances => _.filter(instances, instance => _.includes(instanceFilter, instance.job_name)))
       .then(filteredInstances => {
         return _.chain(filteredInstances)
-          .map(i => _.pick(i, ['job_name', 'id', 'disk_cid', 'az']))
+          .map(i => {
+            let a = _.pick(i, ['job_name', 'id', 'disk_cid'])
+            a.az = i.cloud_properties.availability_zone;
+            return a;
+          })
           .value();
       });
   }
@@ -949,7 +953,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
