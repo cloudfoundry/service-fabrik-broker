@@ -260,7 +260,7 @@ func isEventMetered(evt *v1alpha1.Sfevent, client instanceclient.SfeventInterfac
 	return false, nil
 }
 
-func (e *Event) createMertering(cfg *rest.Config) error {
+func createMertering(e *Event, cfg *rest.Config) error {
 	client, err := getClient(cfg)
 	if err != nil {
 		glog.Errorf("Error creating sfevent client : %v", err)
