@@ -54,24 +54,24 @@ describe('db', function () {
     let mongooseConnectionStub, publishStub, subscribeStub, sandbox, processExitStub;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mongooseConnectionStub = sandbox.stub(mongoStub);
       processExitStub = sandbox.stub(process, 'exit');
-      publishStub = sandbox.stub(pubsub, 'publish', (topic, data) => {
+      publishStub = sandbox.stub(pubsub, 'publish').callsFake((topic, data) => {
         if (handlers[topic] && _.isFunction(handlers[topic])) {
           handlers[topic].call(handlers[topic], data);
         }
       });
-      subscribeStub = sandbox.stub(pubsub, 'subscribe', (topic, handler) => {
+      subscribeStub = sandbox.stub(pubsub, 'subscribe').callsFake((topic, handler) => {
         handlers[topic] = handler;
       });
     });
 
     afterEach(function () {
-      mongooseConnectionStub.connect.reset();
-      mongooseConnectionStub.on.reset();
-      publishStub.reset();
-      subscribeStub.reset();
+      mongooseConnectionStub.connect.resetHistory();
+      mongooseConnectionStub.on.resetHistory();
+      publishStub.resetHistory();
+      subscribeStub.resetHistory();
     });
 
     after(function () {
@@ -114,7 +114,7 @@ describe('db', function () {
           expect(mongooseConnectionStub.on.firstCall.args[0]).to.eql('connected');
           expect(mongooseConnectionStub.on.secondCall.args[0]).to.eql('error');
           expect(mongooseConnectionStub.on.thirdCall.args[0]).to.eql('disconnected');
-          expect(publishStub).to.be.calledAtleastOnce;
+          expect(publishStub).to.be.calledOnce;
           expect(publishStub.firstCall.args[0]).to.eql(CONST.TOPIC.MONGO_INIT_FAILED);
         });
     });

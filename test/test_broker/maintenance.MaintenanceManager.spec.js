@@ -23,15 +23,15 @@ describe('maintenance', function () {
     before(function () {
       inMaintenance = true;
       clock = sinon.useFakeTimers(new Date().getTime());
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       repoSaveStub = sandbox.stub(Repository, 'save');
-      repoSearchStub = sandbox.stub(Repository, 'search', () => Promise.resolve({
+      repoSearchStub = sandbox.stub(Repository, 'search').callsFake(() => Promise.resolve({
         totalRecordCount: maintenaceFound ? 1 : 0,
         list: maintenaceFound ? [{
           state: CONST.OPERATION.SUCCEEDED
         }] : []
       }));
-      findOneStub = sandbox.stub(Repository, 'findOne', () => Promise.try(() => {
+      findOneStub = sandbox.stub(Repository, 'findOne').callsFake(() => Promise.try(() => {
         if (inMaintenance) {
           return _.cloneDeep(maintenanceInfo);
         }
@@ -40,9 +40,9 @@ describe('maintenance', function () {
     });
     afterEach(function () {
       inMaintenance = true;
-      findOneStub.reset();
-      repoSaveStub.reset();
-      repoSearchStub.reset();
+      findOneStub.resetHistory();
+      repoSaveStub.resetHistory();
+      repoSearchStub.resetHistory();
       maintenaceFound = true;
     });
     after(function () {

@@ -29,7 +29,7 @@ describe('iaas', function () {
     };
 
     afterEach(function () {
-      createBlobServiceSpy.reset();
+      createBlobServiceSpy.resetHistory();
     });
 
     const settings = mocks.azureClient.config.backup.provider;

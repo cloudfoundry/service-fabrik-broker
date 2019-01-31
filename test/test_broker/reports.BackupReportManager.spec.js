@@ -117,9 +117,9 @@ describe('BackupReportManager', function () {
     clock = sinon.useFakeTimers();
   });
   afterEach(function () {
-    repoSpy.findOne.reset();
-    repoSpy.search.reset();
-    repoSpy.count.reset();
+    repoSpy.findOne.resetHistory();
+    repoSpy.search.resetHistory();
+    repoSpy.count.resetHistory();
     clock.reset();
   });
   after(function () {

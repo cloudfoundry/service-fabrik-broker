@@ -20,7 +20,7 @@ describe('fabrik', function () {
 
       before(function () {
         _.set(config, 'feature.EnableSecurityGroupsOps', false);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         createSecurityGroupStub = sandbox.stub(cfPlatformManager, 'createSecurityGroupForInstance');
         createSecurityGroupStub
           .withArgs({
@@ -187,7 +187,7 @@ describe('fabrik', function () {
       });
       let getSpaceStub;
       before(function () {
-        getSpaceStub = sinon.stub(cloudController, 'getSpace', () => {
+        getSpaceStub = sinon.stub(cloudController, 'getSpace').callsFake(() => {
           return Promise.resolve({
             entity: {
               organization_guid: 'target'
@@ -360,7 +360,7 @@ describe('fabrik', function () {
 
       let getOrgStub;
       before(function () {
-        getOrgStub = sinon.stub(cloudController, 'getOrganization', () => {
+        getOrgStub = sinon.stub(cloudController, 'getOrganization').callsFake(() => {
           return Promise.resolve({
             entity: {
               name: 'test'

@@ -44,7 +44,7 @@ describe('errors', () => {
     let error = 'error';
     let timeOut = new Timeout(message, error);
     it('sets the class properties correctly', () => {
-      expect(timeOut.error).to.eql(new Error(error));
+      expect(timeOut.name).to.eql('Timeout');
       expect(timeOut.code).to.eql('ETIMEDOUT');
     });
 
@@ -59,7 +59,7 @@ describe('errors', () => {
       let time = 'time';
       const timedOut = Timeout.timedOut(time, error);
       expect(timedOut.message).to.eql(`Operation timed out after ${time} ms`);
-      expect(timedOut.error).to.eql(new Error(error));
+      expect(timedOut.name).to.eql('Timeout');
       expect(timedOut.code).to.eql('ETIMEDOUT');
     });
 
@@ -67,7 +67,7 @@ describe('errors', () => {
       let attempts = 2;
       const tooManyAttempts = Timeout.toManyAttempts(attempts, error);
       expect(tooManyAttempts.message).to.eql(`Operation failed after ${attempts} attempts`);
-      expect(tooManyAttempts.error).to.eql(new Error(error));
+      expect(tooManyAttempts.name).to.eql('Timeout');
       expect(tooManyAttempts.code).to.eql('ETIMEDOUT');
     });
   });
@@ -77,7 +77,7 @@ describe('errors', () => {
     let serviceInMaintenance = new ServiceInMaintenance(message, error);
 
     it('sets the class properties correctly', () => {
-      expect(serviceInMaintenance.error).to.eql(new Error(error));
+      expect(serviceInMaintenance.name).to.eql('ServiceInMaintenance');
       expect(serviceInMaintenance.code).to.eql(CONST.ERR_CODES.SF_IN_MAINTENANCE);
     });
 

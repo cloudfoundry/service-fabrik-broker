@@ -52,8 +52,7 @@ describe('service-broker-api-2.0', function () {
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
-      let getScheduleStub;
-      let sandbox, delayStub;
+      let getScheduleStub, delayStub;
 
       before(function () {
         enableServiceFabrikV2();
@@ -63,8 +62,7 @@ describe('service-broker-api-2.0', function () {
         getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule');
         getScheduleStub.withArgs().returns(deferred.promise);
         plan.service.subnet = null;
-        sandbox = sinon.sandbox.create();
-        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        delayStub = sinon.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         return mocks.setup([
           backupStore.cloudProvider.getContainer()
         ]);
@@ -72,7 +70,7 @@ describe('service-broker-api-2.0', function () {
 
       afterEach(function () {
         mocks.reset();
-        getScheduleStub.reset();
+        getScheduleStub.resetHistory();
       });
 
       after(function () {
@@ -526,7 +524,7 @@ describe('service-broker-api-2.0', function () {
         let utilsStub;
 
         before(function () {
-          utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(workflowId));
+          utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(workflowId));
         });
         after(function () {
           utilsStub.restore();

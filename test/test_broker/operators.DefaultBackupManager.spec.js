@@ -77,7 +77,7 @@ describe('operators', function () {
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       createServiceSpy = sinon.spy(DefaultBackupOperatorDummy, 'createServiceDummy');
       startBackupSpy = sinon.spy(DefaultBackupOperatorDummy, 'startBackupDummy');
       abortBackupSpy = sinon.spy(DefaultBackupOperatorDummy, 'abortBackupDummy');
@@ -90,7 +90,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 

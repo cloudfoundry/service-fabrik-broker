@@ -123,19 +123,19 @@ describe('service-fabrik-api-sf2.0', function () {
         mocks.cloudProvider.getContainer(container);
         timestampStub = sinon.stub(filename, 'timestamp');
         timestampStub.withArgs().returns(started_at);
-        scheduleStub = sinon.stub(ScheduleManager, 'schedule', getJob);
-        getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule', getJob);
-        cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+        scheduleStub = sinon.stub(ScheduleManager, 'schedule').callsFake(getJob);
+        getScheduleStub = sinon.stub(ScheduleManager, 'getSchedule').callsFake(getJob);
+        cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule').callsFake(() => Promise.resolve({}));
         return mocks.setup([
           backupStore.cloudProvider.getContainer()
         ]);
       });
 
       afterEach(function () {
-        timestampStub.reset();
-        cancelScheduleStub.reset();
-        scheduleStub.reset();
-        getScheduleStub.reset();
+        timestampStub.resetHistory();
+        cancelScheduleStub.resetHistory();
+        scheduleStub.resetHistory();
+        getScheduleStub.resetHistory();
         mocks.reset();
       });
 
@@ -809,8 +809,8 @@ describe('service-fabrik-api-sf2.0', function () {
       describe('#backup-abort', function () {
         let sandbox, delayStub;
         before(function () {
-          sandbox = sinon.sandbox.create();
-          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+          sandbox = sinon.createSandbox();
+          delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         });
 
         after(function () {
@@ -1664,8 +1664,8 @@ describe('service-fabrik-api-sf2.0', function () {
           }
         };
         before(function () {
-          sandbox = sinon.sandbox.create();
-          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+          sandbox = sinon.createSandbox();
+          delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         });
 
         after(function () {
@@ -1824,8 +1824,8 @@ describe('service-fabrik-api-sf2.0', function () {
         };
         let sandbox, delayStub;
         before(function () {
-          sandbox = sinon.sandbox.create();
-          delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+          sandbox = sinon.createSandbox();
+          delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
         });
 
         after(function () {
