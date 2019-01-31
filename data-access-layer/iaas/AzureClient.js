@@ -36,14 +36,18 @@ class AzureClient extends BaseCloudClient {
   }
 
   createDiskFromSnapshot(snapshotId, zones, opts = {}) {
-    const diskName = this.getRandomDiskId();
+    const diskName = `bosh-disk-data-${uuid.v4()}`;
+    // BOSH Azure CPI expects the disk cid in the following format for attach-disk to be successful
+    const boshDiskId = `caching:None;${diskName};resource_group_name:${this.settings.resource_group}`;
     return Promise.try(() => this.getSnapshot(snapshotId))
       .then(snapshotData => {
         const options = {
           zones: _.isArray(zones) ? zones : [zones],
           location: snapshotData.location,
           tags: _.assign({}, opts.tags || {}, {
-            createdBy: 'service-fabrik'
+            createdBy: 'service-fabrik',
+            resource_group_name: this.settings.resource_group,
+            caching: 'None'
           }),
           sku: _.assign({}, opts.type || {
             name: 'Premium_LRS',
@@ -57,7 +61,7 @@ class AzureClient extends BaseCloudClient {
         return this.computeClient.disks.createOrUpdateAsync(this.settings.resource_group, diskName, options);
       })
       .then(diskResponse => ({
-        volumeId: diskResponse.name,
+        volumeId: boshDiskId,
         size: diskResponse.diskSizeGB,
         zone: diskResponse.zones[0],
         type: diskResponse.sku ? diskResponse.sku.name : '',
