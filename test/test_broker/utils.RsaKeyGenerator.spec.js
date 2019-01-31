@@ -100,8 +100,8 @@ describe('utils', () => {
       subject = new KeyGenSubject(user);
       failSubject = new KeyGenSubjectFailure(user);
       failSubject2 = new KeyGenSubjectFailure2(user);
-      fileAvailableSpy = sinon.spy(subject, 'fileAvailable');
-      failFileAvailableSpy = sinon.spy(failSubject, 'fileAvailable');
+      fileAvailableSpy = sinon.spy(subject, 'isFileAvailable');
+      failFileAvailableSpy = sinon.spy(failSubject, 'isFileAvailable');
     });
     afterEach(() => {
       fileAvailableSpy.restore();
@@ -114,13 +114,13 @@ describe('utils', () => {
       expect(subject.pubFile).to.eql(path.join(__dirname, 'id_rsa_abcd.pub'));
     });
     it('should return true when file is available', () => {
-      return subject.fileAvailable(filename)
+      return subject.isFileAvailable(filename)
         .then(av => {
           expect(av).to.eql(true);
         });
     });
     it('should return false when file is unavailable', () => {
-      return failSubject.fileAvailable(filename)
+      return failSubject.isFileAvailable(filename)
         .then(av => {
           expect(av).to.eql(false);
         });

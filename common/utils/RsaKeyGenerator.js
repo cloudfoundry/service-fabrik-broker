@@ -13,14 +13,14 @@ const fileExists = Promise.promisify(fs.access);
 const unlinkFile = Promise.promisify(fs.unlink);
 const readFile = Promise.promisify(fs.readFile);
 
-class SshRsaKeyGenerator {
+class RsaKeyGenerator {
   constructor(user) {
     this.user = user || '';
     this.location = path.join(os.tmpdir(), `id_rsa_${uuid.v4()}`);
     this.pubFile = `${this.location}.pub`;
   }
 
-  async fileAvailable(loc) { //jshint ignore: line
+  async isFileAvailable(loc) { //jshint ignore: line
     let available = true;
     try {
       await fileExists(loc); //jshint ignore: line
@@ -31,8 +31,8 @@ class SshRsaKeyGenerator {
   }
 
   async forceDeleteFiles() { //jshint ignore: line
-    const keyFilePresent = await this.fileAvailable(this.location); //jshint ignore: line
-    const pubFilePresent = await this.fileAvailable(this.pubFile); //jshint ignore: line
+    const keyFilePresent = await this.isFileAvailable(this.location); //jshint ignore: line
+    const pubFilePresent = await this.isFileAvailable(this.pubFile); //jshint ignore: line
     if (keyFilePresent) {
       await unlinkFile(this.location); //jshint ignore: line
     }
@@ -72,4 +72,4 @@ class SshRsaKeyGenerator {
   }
 }
 
-module.exports = SshRsaKeyGenerator;
+module.exports = RsaKeyGenerator;
