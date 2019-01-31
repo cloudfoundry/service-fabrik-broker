@@ -57,11 +57,14 @@ matrix:
         - go get github.com/modocache/gover
         - go get github.com/mattn/goveralls
       install:
-        - cd interoperator
+        - pushd interoperator
         - dep ensure -v
-        - cd ../webhooks
+        - popd
+        - pushd webhooks
         - dep ensure -v
+        - popd
       script:
+        - pushd interoperator
         - go fmt ./pkg/... ./cmd/...
         - go vet ./pkg/... ./cmd/...
         - golint ./pkg/... ./cmd/...
@@ -71,12 +74,13 @@ matrix:
         # - gover
         # - goveralls -coverprofile gover.coverprofile -service travis-ci
         - go test -v -coverpkg=./pkg/... -coverprofile=coverage.txt ./pkg/...
-        - cd ../webhooks
+        - popd
+        - pushd webhooks
         - go vet ./pkg/webhooks/manager/... ./pkg/apis/...
         - go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
         - golint ./pkg/webhooks/manager/... ./pkg/apis/...
         - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
-        - cd ..
+        - popd
         - cat interoperator/coverage.txt webhooks/coverage.txt > coverage.txt
       after_success:
         - bash <(curl -s https://codecov.io/bash)
