@@ -148,6 +148,63 @@ class ApiServerClient {
   }
 
   /**
+   * Poll for Status until opts.start_state changes
+   * @param {object} opts - Object containing options
+   * @param {string} opts.resourceGroup - Name of resource group ex. osb.servicefabrik.io
+   * @param {string} opts.resourceType - Type of resource ex. sfserviceinstance
+   * @param {string} opts.resourceId - Id of the operation ex. instance_id
+   * @param {string} opts.start_state - start state of the operation ex. in_queue
+   * @param {object} opts.started_at - Date object specifying operation start time
+   * @param {object} opts.namespaceId - namespace Id of resource
+   */
+  // TODO:- merge getResourceOperationStatus and getOSBResourceOperationStatus after streamlining state conventions
+
+  getOSBResourceOperationStatus(opts) {
+    logger.debug(`Waiting ${CONST.EVENTMESH_POLLER_DELAY} ms to get the operation state`);
+    let finalState;
+    return Promise.delay(CONST.EVENTMESH_POLLER_DELAY)
+      .then(() => this.getResource({
+        resourceGroup: opts.resourceGroup,
+        resourceType: opts.resourceType,
+        resourceId: opts.resourceId,
+        namespaceId: opts.namespaceId
+      }))
+      .then(resource => {
+        const state = _.get(resource, 'status.state');
+        if (state === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+          finalState = state;
+          return _.get(resource, 'status.response');
+        } else if (
+          state === CONST.APISERVER.RESOURCE_STATE.FAILED
+        ) {
+          finalState = state;
+          if (_.get(resource, 'status.error')) {
+            const errorResponse = _.get(resource, 'status.error');
+            logger.info('Operation manager reported error', errorResponse);
+            return convertToHttpErrorAndThrow(errorResponse);
+          }
+        } else {
+          const duration = (new Date() - opts.started_at) / 1000;
+          logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
+          if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
+            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+          }
+          return this.getResourceOperationStatus(opts);
+        }
+      })
+      .then(result => {
+        if (_.get(result, 'state')) {
+          return result;
+        }
+        return {
+          state: finalState,
+          response: result
+        };
+      });
+  }
+
+  /**
    * @description Register watcher for (resourceGroup , resourceType)
    * @param {string} resourceGroup - Name of the resource
    * @param {string} resourceType - Type of the resource
