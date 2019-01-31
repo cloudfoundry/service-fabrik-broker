@@ -17,7 +17,7 @@
   {{- end }}
 {{- end }}
 {{- if eq $stateString "succeeded" }}
-  {{- $response = (printf "Service Instance %s creation successfull" $name) }}
+  {{- $response = (printf "Service Instance %s creation successful" $name) }}
 {{- else }}
     {{- $response = (printf "Service Instance %s provision failed" $name) }}
 {{- end }}
