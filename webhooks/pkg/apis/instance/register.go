@@ -4,5 +4,6 @@
 package instance
 
 const (
+	// GroupName : name of the resource group
 	GroupName = "instance.servicefabrik.io"
 )

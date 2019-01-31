@@ -71,9 +71,3 @@ type SfeventOptions struct {
 	ConsumerInfo      ConsumerInfo       `json:"consumer"`
 	InstancesMeasures []InstancesMeasure `json:"measures"`
 }
-
-func (m *Sfevent) GetName() string {
-	// var meteringOptions SfeventOptions
-	// json.Unmarshal([]byte(m.Spec.Options), &meteringOptions)
-	return m.Spec.Options.ID
-}

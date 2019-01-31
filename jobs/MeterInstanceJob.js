@@ -59,7 +59,7 @@ class MeterInstanceJob extends BaseJob {
             success: successCount,
             failed: failureCount,
             failedEvents: failedEvents
-          }
+          };
         })
         .catch(err => {
           logger.error(`Error occurred while metering all events : `, err);
@@ -72,23 +72,8 @@ class MeterInstanceJob extends BaseJob {
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
-    const serviceName = catalog.getServiceName(serviceId);
-    const planName = this.getPlanSKUFromPlanGUID(serviceId, planId);
-    const excluded_service_names = _.map(config.metering.excluded_service_plans, plan => plan.service_name);
-    if (_.indexOf(excluded_service_names, serviceName) >= 0) {
-      const excluded_plans = _
-        .chain(config.metering.excluded_service_plans)
-        .filter(p => p.service_name === serviceName)
-        .head()
-        .get('plan_sku_names')
-        .value();
-      logger.info(`Excluded plans for ${serviceName}:`, excluded_plans);
-      if (_.indexOf(excluded_plans, planName) >= 0) {
-        logger.info(`The metering event guid: ${options.id} with ${serviceName}, ${planName} is excluded`);
-        return true;
-      }
-    }
-    return false;
+    const plan = catalog.getPlan(planId)
+    return !plan.metered;
   }
 
   static enrichEvent(options) {
@@ -119,7 +104,7 @@ class MeterInstanceJob extends BaseJob {
 
   static sendEvent(event) {
     logger.info('Sending event:', event);
-    if (this.isServicePlanExcluded(event.spec.options)) {
+    if (this.isServicePlanExcluded(event.spec.options) === true) {
       return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, event))
         .return(true);
     }

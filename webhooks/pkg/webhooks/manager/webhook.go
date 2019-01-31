@@ -138,7 +138,7 @@ func (whsvr *WebhookServer) meter(ar *v1beta1.AdmissionReview) *v1beta1.Admissio
 				},
 			}
 		}
-		err = evt.createMertering(cfg)
+		err = createMertering(evt, cfg)
 		if err != nil {
 			return &v1beta1.AdmissionResponse{
 				Result: &metav1.Status{

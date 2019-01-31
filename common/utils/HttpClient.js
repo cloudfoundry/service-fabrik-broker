@@ -183,7 +183,7 @@ class HttpClient {
             const errResponse = JSON.parse(body);
             err.error = errResponse;
           } catch (parseErr) {
-            err.message = `${err.message}. ${body}`
+            err.message = `${err.message}. ${body}`;
           }
         }
         throw err;

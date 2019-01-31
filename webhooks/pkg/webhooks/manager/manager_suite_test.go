@@ -20,15 +20,15 @@ func TestWebhook(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	// testenv = &envtest.Environment{}
+	testenv = &envtest.Environment{}
 	flag.Parse()
 
 	var err error
-	// tcfg, err = testenv.Start()
+	tcfg, err = testenv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	close(done)
 }, 60)
 
 var _ = AfterSuite(func() {
-	// testenv.Stop()
+	testenv.Stop()
 })
