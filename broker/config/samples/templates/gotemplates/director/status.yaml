@@ -40,7 +40,7 @@ provision:
 {{- with .directorbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}
-{{- $stateString = "in_queue" }} 
+{{- $stateString = "in progress" }} 
 {{- with .directorbind }}
   {{- with .status }}
     {{- if eq .state "succeeded" }}
