@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
@@ -10,7 +11,46 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/api/admission/v1beta1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
 )
+
+type clientMock struct {
+	ErrorString string
+	ListItems   *v1alpha1.SfeventList
+}
+
+func (c *clientMock) List(opts v1.ListOptions) (*v1alpha1.SfeventList, error) {
+	if c.ErrorString != "" {
+		return nil, errors.New(c.ErrorString)
+	}
+	return c.ListItems, nil
+}
+func (c *clientMock) Create(sfevent *v1alpha1.Sfevent) (*v1alpha1.Sfevent, error) {
+	return nil, errors.New("Dummy Error")
+}
+func (c *clientMock) Delete(name string, options *v1.DeleteOptions) error {
+	return errors.New("Dummy Error")
+}
+func (c *clientMock) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	return errors.New("Dummy Error")
+}
+func (c *clientMock) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Sfevent, err error) {
+	return nil, errors.New("Dummy Error")
+}
+func (c *clientMock) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	return nil, errors.New("Dummy Error")
+}
+func (c *clientMock) Get(name string, options v1.GetOptions) (result *v1alpha1.Sfevent, err error) {
+	return nil, errors.New("Dummy Error")
+}
+func (c *clientMock) Update(sfevent *v1alpha1.Sfevent) (result *v1alpha1.Sfevent, err error) {
+	return nil, errors.New("Dummy Error")
+}
+func (c *clientMock) UpdateStatus(sfevent *v1alpha1.Sfevent) (result *v1alpha1.Sfevent, err error) {
+	return nil, errors.New("Dummy Error")
+}
 
 var _ = Describe("Event", func() {
 	var (
@@ -312,6 +352,40 @@ var _ = Describe("Event", func() {
 			err := createMertering(evt, tcfg)
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).To(Equal("the server could not find the requested resource (post sfevents.instance.servicefabrik.io)"))
+		})
+	})
+
+	Describe("isEventMetered", func() {
+		It("Should return false if event type is not Delete", func() {
+			evt := v1alpha1.Sfevent{}
+			client := clientMock{}
+			metered, err := isEventMetered(&evt, &client)
+			Expect(err).To(BeNil())
+			Expect(metered).To(Equal(false))
+		})
+		It("Should return error if List call fails", func() {
+			evt := v1alpha1.Sfevent{}
+			labels := make(map[string]string)
+			labels[c.EventTypeKey] = string(DeleteEvent)
+			evt.SetLabels(labels)
+			client := clientMock{}
+			client.ErrorString = "No resource found"
+			metered, err := isEventMetered(&evt, &client)
+			Expect(err.Error()).To(Equal("No resource found"))
+			Expect(metered).To(Equal(false))
+		})
+		It("Should return true if Delete already sent", func() {
+			evt := v1alpha1.Sfevent{}
+			labels := make(map[string]string)
+			labels[c.EventTypeKey] = string(DeleteEvent)
+			evt.SetLabels(labels)
+			client := clientMock{}
+			client.ListItems = &v1alpha1.SfeventList{
+				Items: []v1alpha1.Sfevent{v1alpha1.Sfevent{}},
+			}
+			metered, err := isEventMetered(&evt, &client)
+			Expect(err).To(BeNil())
+			Expect(metered).To(Equal(true))
 		})
 	})
 })
