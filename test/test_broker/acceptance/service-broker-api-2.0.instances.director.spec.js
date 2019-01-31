@@ -1441,7 +1441,7 @@ describe('service-broker-api-2.0', function () {
             });
         });
 
-        it.only('Throws error if bind times out', function (done) {
+        it('Throws error if bind times out', function (done) {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {
             spec: {
               options: '{}'
