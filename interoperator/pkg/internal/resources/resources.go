@@ -204,29 +204,18 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 		}
 
 		toBeUpdated := false
-		//Only these fields we are reconciling
-		updateKeys := []string{"spec", "data"}
-		//status must be always the LAST ITEM in the array
-		updateKeys = append(updateKeys, "status")
-		for _, updateKey := range updateKeys {
-			//Update status only is something else also changed
-			if updateKey == "status" && !toBeUpdated {
-				continue
-			}
-			//Reconcile only if the field is generated from template
-			if _, ok := expectedResource.Object[updateKey]; ok {
-				//If the existing resource doesnot have the field add it
-				if _, ok := foundResource.Object[updateKey]; !ok {
-					foundResource.Object[updateKey] = expectedResource.Object[updateKey]
-					toBeUpdated = true
-				} else {
-					//Existing resource has the filed
-					newFieldObj := dynamic.MapInterfaceToMapString(expectedResource.Object[updateKey])
-					newField := newFieldObj.(map[string]interface{})
-					oldFieldObj := dynamic.MapInterfaceToMapString(foundResource.Object[updateKey])
-					oldField := oldFieldObj.(map[string]interface{})
+		for updateKey, value := range expectedResource.Object {
+			//If the existing resource doesnot have the field add it
+			if foundField, ok := foundResource.Object[updateKey]; !ok {
+				foundResource.Object[updateKey] = value
+				toBeUpdated = true
+			} else {
+				switch expectedField := value.(type) {
+				case map[string]interface{}:
+					//The field has subfields
+					oldField := foundField.(map[string]interface{})
 					//Iterate over individual subfields from template
-					for key, val := range newField {
+					for key, val := range expectedField {
 						oldVal, ok := oldField[key]
 						//Update only if at least one subfield is updated
 						if !ok || !reflect.DeepEqual(val, oldVal) {
@@ -235,6 +224,11 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 						}
 					}
 					foundResource.Object[updateKey] = oldField
+				default:
+					if !reflect.DeepEqual(foundField, expectedField) {
+						foundResource.Object[updateKey] = expectedField
+						toBeUpdated = true
+					}
 				}
 			}
 		}

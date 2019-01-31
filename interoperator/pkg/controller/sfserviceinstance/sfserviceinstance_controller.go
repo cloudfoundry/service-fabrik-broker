@@ -195,43 +195,38 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	labels := instance.GetLabels()
-	stateLabel, ok := labels["state"]
-	if ok {
-		switch stateLabel {
-		case "in_queue", "update":
-			if instance.Status.State == "succeeded" {
-				labels["state"] = "succeeded"
-				instance.SetLabels(labels)
-				err = r.Update(context.TODO(), instance)
-				if err != nil {
-					return r.handleError(instance, reconcile.Result{}, err)
-				}
-				log.Printf("instance %s state label updated to succeeded\n", request.NamespacedName)
+	state := instance.GetState()
+	var requeue bool
+	var appliedResources []*unstructured.Unstructured
+
+	if state != "in progress" {
+		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+
+		err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+
+		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+
+		appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
+		if err != nil {
+			log.Printf("Reconcile error %s\n", err.Error())
+			requeue = true
+		} else if state == "in_queue" || state == "update" || state == "delete" {
+			instance.SetState("in progress")
+			err = r.Update(context.Background(), instance)
+			if err != nil {
+				log.Printf("error updating status to in progress. %s\n", err.Error())
+				requeue = true
 			}
 		}
-	}
-
-	expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
-	if err != nil {
-		return r.handleError(instance, reconcile.Result{}, err)
-	}
-
-	err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
-	if err != nil {
-		return r.handleError(instance, reconcile.Result{}, err)
-	}
-
-	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-	if err != nil {
-		return r.handleError(instance, reconcile.Result{}, err)
-	}
-
-	var requeue bool
-	appliedResources, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
-	if err != nil {
-		log.Printf("Reconcile error %v\n", err)
-		requeue = true
 	}
 
 	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
@@ -339,28 +334,33 @@ func removeString(slice []string, s string) (result []string) {
 }
 
 func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInstance, result reconcile.Result, inputErr error) (reconcile.Result, error) {
-	annotations := object.GetAnnotations()
+	labels := object.GetLabels()
 	var count int64
 	id := object.GetName()
 
-	if annotations == nil {
-		annotations = make(map[string]string)
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	countString, ok := labels[errorCountKey]
+	if !ok {
+		count = 0
+	} else {
+		i, err := strconv.ParseInt(countString, 10, 64)
+		if err != nil {
+			count = 0
+		} else {
+			count = i
+		}
 	}
 
 	if inputErr == nil {
+		if count == 0 {
+			//No change for count
+			return result, inputErr
+		}
 		count = 0
 	} else {
-		countString, ok := annotations[errorCountKey]
-		if !ok {
-			count = 0
-		} else {
-			i, err := strconv.ParseInt(countString, 10, 64)
-			if err != nil {
-				count = 0
-			} else {
-				count = i
-			}
-		}
 		count++
 	}
 
@@ -376,11 +376,10 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 		return result, nil
 	}
 
-	annotations[errorCountKey] = strconv.FormatInt(count, 10)
-	object.SetAnnotations(annotations)
+	labels[errorCountKey] = strconv.FormatInt(count, 10)
+	object.SetLabels(labels)
 	err := r.Update(context.TODO(), object)
 	if err != nil {
-		log.Printf("Error Updating error count annotation to %d for %s\n", count, id)
 		if errors.IsConflict(err) {
 			err := r.Get(context.TODO(), types.NamespacedName{
 				Name:      object.GetName(),
@@ -389,14 +388,15 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 			if err != nil {
 				return result, inputErr
 			}
-			annotations = object.GetAnnotations()
-			if annotations == nil {
-				annotations = make(map[string]string)
+			labels = object.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
 			}
-			annotations[errorCountKey] = strconv.FormatInt(count, 10)
-			object.SetAnnotations(annotations)
+			labels[errorCountKey] = strconv.FormatInt(count, 10)
+			object.SetLabels(labels)
 			return r.handleError(object, result, inputErr)
 		}
+		log.Printf("Error Updating error count label to %d for instance %s\n", count, id)
 	}
 	return result, inputErr
 }

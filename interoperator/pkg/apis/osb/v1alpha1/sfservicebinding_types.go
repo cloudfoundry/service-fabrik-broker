@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"log"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -72,4 +74,20 @@ type SFServiceBindingList struct {
 
 func init() {
 	SchemeBuilder.Register(&SFServiceBinding{}, &SFServiceBindingList{})
+}
+
+// GetState fetches the state of the SFServiceBinding
+func (r *SFServiceBinding) GetState() string {
+	if r == nil || r.Status.State == "" {
+		log.Printf("failed to read state of SFServiceBinding %s", r.GetName())
+		return ""
+	}
+	return r.Status.State
+}
+
+// SetState updates the state of the SFServiceBinding
+func (r *SFServiceBinding) SetState(state string) {
+	if r != nil {
+		r.Status.State = state
+	}
 }
