@@ -3,6 +3,7 @@ package dynamic
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -72,4 +73,43 @@ func ObjectToMapInterface(obj interface{}) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return values, nil
+}
+
+// DeepUpdate copies the different fields from new to old
+func DeepUpdate(currentObj, newObj interface{}) (interface{}, bool) {
+	toBeUpdated := false
+	switch new := newObj.(type) {
+	case map[string]interface{}:
+		current := currentObj.(map[string]interface{})
+		for updateKey, value := range new {
+			//If the existing resource doesnot have the field add it
+			if foundField, ok := current[updateKey]; !ok {
+				current[updateKey] = value
+				toBeUpdated = true
+			} else {
+				updatedVal, ok := DeepUpdate(foundField, value)
+				if ok {
+					current[updateKey] = updatedVal
+					toBeUpdated = true
+				}
+			}
+		}
+		return current, toBeUpdated
+	case []interface{}:
+		current := currentObj.([]interface{})
+		for i, val := range new {
+			updatedVal, ok := DeepUpdate(current[i], val)
+			if ok {
+				current[i] = updatedVal
+				toBeUpdated = true
+			}
+		}
+		return current, toBeUpdated
+	default:
+		if !reflect.DeepEqual(currentObj, newObj) {
+			currentObj = newObj
+			toBeUpdated = true
+		}
+		return currentObj, toBeUpdated
+	}
 }

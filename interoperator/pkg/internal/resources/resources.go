@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
@@ -204,37 +203,10 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 		}
 
 		toBeUpdated := false
-		for updateKey, value := range expectedResource.Object {
-			//If the existing resource doesnot have the field add it
-			if foundField, ok := foundResource.Object[updateKey]; !ok {
-				foundResource.Object[updateKey] = value
-				toBeUpdated = true
-			} else {
-				switch expectedField := value.(type) {
-				case map[string]interface{}:
-					//The field has subfields
-					oldField := foundField.(map[string]interface{})
-					//Iterate over individual subfields from template
-					for key, val := range expectedField {
-						oldVal, ok := oldField[key]
-						//Update only if at least one subfield is updated
-						if !ok || !reflect.DeepEqual(val, oldVal) {
-							oldField[key] = val
-							toBeUpdated = true
-						}
-					}
-					foundResource.Object[updateKey] = oldField
-				default:
-					if !reflect.DeepEqual(foundField, expectedField) {
-						foundResource.Object[updateKey] = expectedField
-						toBeUpdated = true
-					}
-				}
-			}
-		}
-
+		updatedResource, toBeUpdated := dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
 		if toBeUpdated {
 			log.Printf("Updating %s %s\n", kind, namespacedName)
+			foundResource.Object = updatedResource.(map[string]interface{})
 			err = targetClient.Update(context.TODO(), foundResource)
 			if err != nil {
 				log.Printf("error updating %s %s. %v\n", kind, namespacedName, err)
