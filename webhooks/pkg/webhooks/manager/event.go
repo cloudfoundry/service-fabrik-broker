@@ -17,20 +17,6 @@ import (
 	"k8s.io/api/admission/v1beta1"
 )
 
-// EventType denotes the types of metering events
-type EventType string
-
-const (
-	//UpdateEvent signals the update of an instance
-	UpdateEvent EventType = "update"
-	//CreateEvent signals the create of an instance
-	CreateEvent EventType = "create"
-	//DeleteEvent signals the delete of an instance
-	DeleteEvent EventType = "delete"
-	//InvalidEvent is not yet supported
-	InvalidEvent EventType = "default"
-)
-
 //LastOperationType
 const (
 	loUpdate string = "update"
@@ -191,29 +177,29 @@ func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
 	return client, nil
 }
 
-func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int, et EventType) *v1alpha1.Sfevent {
+func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int, et c.EventType) *v1alpha1.Sfevent {
 	return newMetering(opt, e.crd, startStop, et)
 }
 
-func (e *Event) getEventType() (EventType, error) {
-	eventType := InvalidEvent
+func (e *Event) getEventType() (c.EventType, error) {
+	eventType := c.InvalidEvent
 	lo, err := e.crd.GetLastOperation()
 	if err != nil {
 		return eventType, err
 	}
 	if e.crd.Status.State == Delete {
-		eventType = DeleteEvent
+		eventType = c.DeleteEvent
 	} else if e.isDirector() {
 		switch lo.Type {
 		case loUpdate:
-			eventType = UpdateEvent
+			eventType = c.UpdateEvent
 		case loCreate:
-			eventType = CreateEvent
+			eventType = c.CreateEvent
 		}
 	} else if e.isDocker() && e.crd.Status.State == Succeeded {
-		eventType = CreateEvent
+		eventType = c.CreateEvent
 	}
-	if eventType == InvalidEvent {
+	if eventType == c.InvalidEvent {
 		return eventType, errors.New("No supported event found")
 	}
 	return eventType, nil
@@ -235,13 +221,13 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 		return nil, err
 	}
 	switch et {
-	case UpdateEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, UpdateEvent))
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, UpdateEvent))
-	case CreateEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, CreateEvent))
-	case DeleteEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, DeleteEvent))
+	case c.UpdateEvent:
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.UpdateEvent))
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.UpdateEvent))
+	case c.CreateEvent:
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.CreateEvent))
+	case c.DeleteEvent:
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.DeleteEvent))
 	}
 	return meteringDocs, nil
 }
@@ -251,9 +237,9 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 // check if it is already created
 func isEventMetered(evt *v1alpha1.Sfevent, client instanceclient.SfeventInterface) (bool, error) {
 	labels := evt.GetLabels()
-	if labels[c.EventTypeKey] == string(DeleteEvent) {
+	if labels[c.EventTypeKey] == string(c.DeleteEvent) {
 		list, err := client.List(v1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s,%s=%s", c.EventTypeKey, string(DeleteEvent), c.InstanceGUIDKey, evt.Spec.Options.ConsumerInfo.Instance),
+			LabelSelector: fmt.Sprintf("%s=%s,%s=%s", c.EventTypeKey, string(c.DeleteEvent), c.InstanceGUIDKey, evt.Spec.Options.ConsumerInfo.Instance),
 		})
 		if err != nil {
 			glog.Errorf("Error fetching list : %v", err)

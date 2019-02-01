@@ -366,7 +366,7 @@ var _ = Describe("Event", func() {
 		It("Should return error if List call fails", func() {
 			evt := v1alpha1.Sfevent{}
 			labels := make(map[string]string)
-			labels[c.EventTypeKey] = string(DeleteEvent)
+			labels[c.EventTypeKey] = string(c.DeleteEvent)
 			evt.SetLabels(labels)
 			client := clientMock{}
 			client.ErrorString = "No resource found"
@@ -377,7 +377,7 @@ var _ = Describe("Event", func() {
 		It("Should return true if Delete already sent", func() {
 			evt := v1alpha1.Sfevent{}
 			labels := make(map[string]string)
-			labels[c.EventTypeKey] = string(DeleteEvent)
+			labels[c.EventTypeKey] = string(c.DeleteEvent)
 			evt.SetLabels(labels)
 			client := clientMock{}
 			client.ListItems = &v1alpha1.SfeventList{
