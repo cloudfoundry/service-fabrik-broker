@@ -7,6 +7,7 @@ const BaseJob = require('./BaseJob');
 const catalog = require('../common/models/catalog');
 const config = require('../common/config');
 const utils = require('../common/utils');
+const EventLogInterceptor = require('../common/EventLogInterceptor');
 const maas = require('../data-access-layer/metering');
 const apiServerClient = require('../data-access-layer/eventmesh').apiServerClient;
 const CONST = require('../common/constants');
@@ -72,7 +73,7 @@ class MeterInstanceJob extends BaseJob {
     const serviceId = _.get(options, 'service.id');
     const planId = _.get(options, 'service.plan');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
-    const plan = catalog.getPlan(planId)
+    const plan = catalog.getPlan(planId);
     return !plan.metered;
   }
 
@@ -120,11 +121,20 @@ class MeterInstanceJob extends BaseJob {
       .return(true)
       .catch(err => {
         logger.error('Error occured while metering:', err);
-        // TODO remove meter state failed
-        return this
-          .updateMeterState(CONST.METER_STATE.FAILED, event, err)
+        return Promise.try(() => this._logMeteringEvent(err, event))
+          .then(() => this.updateMeterState(CONST.METER_STATE.FAILED, event, err))
           .return(false);
       });
+  }
+
+  static _logMeteringEvent(err, event) {
+    logger.debug(`Publishing log event for error: ${err}, for event:`, event);
+    const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+    const resp = {
+      statusCode: err.status
+    };
+    const check_res_body = false;
+    eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, event, resp, check_res_body);
   }
 
   static updateMeterState(status, event, err) {

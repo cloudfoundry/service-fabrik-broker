@@ -218,3 +218,11 @@ defaults:
     description: update service fabrik mongodb deployment
     tags:
     - servicefabrikdbupdate
+# API used as a place holder to generate event logs for maas
+"/usage/v2/usage/documents":
+  PUT:
+    enabled: true
+    event_name: send_metering_usage
+    description: Send usage data to Metering as a Service
+    tags:
+    - metering
