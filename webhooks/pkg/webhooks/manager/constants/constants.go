@@ -30,3 +30,17 @@ const (
 	// EventTypeKey :
 	EventTypeKey = "event_type"
 )
+
+// EventType denotes the types of metering events
+type EventType string
+
+const (
+	//UpdateEvent signals the update of an instance
+	UpdateEvent EventType = "update"
+	//CreateEvent signals the create of an instance
+	CreateEvent EventType = "create"
+	//DeleteEvent signals the delete of an instance
+	DeleteEvent EventType = "delete"
+	//InvalidEvent is not yet supported
+	InvalidEvent EventType = "default"
+)
