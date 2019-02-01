@@ -356,6 +356,9 @@ defaults: &defaults
     token_url: 'https://service-fabrik.authentication.domain.com'
     metering_url: 'https://metering.cfapps.domain.com/dev'
     region: "asia"
+    # This option is provided to set the maximum timeout after which 
+    # Error in sending a meter job is reported to riemann
+    error_threshold_hours: 1
   ###################
   # BACKUP SETTINGS #
   ###################

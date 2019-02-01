@@ -104,7 +104,7 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static sendEvent(event) {
-    logger.info('Sending event:', event);
+    logger.debug('Event details before enriching:', event);
     if (this.isServicePlanExcluded(event.spec.options) === true) {
       return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, event))
         .return(true);
@@ -112,7 +112,7 @@ class MeterInstanceJob extends BaseJob {
     return Promise
       .try(() => this.enrichEvent(event.spec.options))
       .then(enrichedUsageDoc => {
-        logger.debug('Sending document:', enrichedUsageDoc);
+        logger.info('Sending enriched document:', enrichedUsageDoc);
         return maas.client.sendUsageRecord({
           usage: [enrichedUsageDoc]
         });
@@ -128,13 +128,21 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static _logMeteringEvent(err, event) {
-    logger.debug(`Publishing log event for error: ${err}, for event:`, event);
-    const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
-    const resp = {
-      statusCode: err.status
-    };
-    const check_res_body = false;
-    eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, event, resp, check_res_body);
+    let now = new Date();
+    let secondsSinceEpoch = Math.round(now.getTime() / 1000);
+    let createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) /1000 );
+    logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`)
+    // Threshold needs to be greater than the metering job frequency
+    const thresholdHours = config.metering.error_threshold_hours;
+    if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
+      logger.debug(`Publishing log event for error: ${err}, for event:`, event);
+      const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+      const resp = {
+        statusCode: err.status
+      };
+      const check_res_body = false;
+      return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, event, resp, check_res_body);
+    }
   }
 
   static updateMeterState(status, event, err) {
