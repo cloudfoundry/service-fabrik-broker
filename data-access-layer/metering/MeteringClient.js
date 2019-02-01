@@ -38,7 +38,6 @@ class MeteringClient extends HttpClient {
         }
       }, 200)
       .then(res => {
-        logger.debug('Metering auth response body', res.body);
         const serverResponse = JSON.parse(res.body);
         return serverResponse.access_token;
       })

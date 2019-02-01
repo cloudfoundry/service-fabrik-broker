@@ -110,16 +110,8 @@ func (whsvr *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.Admissi
 	return r
 }
 
-func (whsvr *WebhookServer) meter(ar *v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
+func (whsvr *WebhookServer) meter(evt EventInterface) *v1beta1.AdmissionResponse {
 	glog.Info("Attempting to meter event")
-	evt, err := NewEvent(ar)
-	if err != nil {
-		return &v1beta1.AdmissionResponse{
-			Result: &metav1.Status{
-				Message: err.Error(),
-			},
-		}
-	}
 	isMetering, err := evt.isMeteringEvent()
 	if err != nil {
 		return &v1beta1.AdmissionResponse{
@@ -138,7 +130,7 @@ func (whsvr *WebhookServer) meter(ar *v1beta1.AdmissionReview) *v1beta1.Admissio
 				},
 			}
 		}
-		err = createMertering(evt, cfg)
+		err = evt.createMertering(cfg)
 		if err != nil {
 			return &v1beta1.AdmissionResponse{
 				Result: &metav1.Status{
@@ -189,7 +181,16 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/mutate" {
 			admissionResponse = whsvr.mutate(&ar)
 		} else if r.URL.Path == "/meter" {
-			admissionResponse = whsvr.meter(&ar)
+			evt, err := NewEvent(&ar)
+			if err != nil {
+				admissionResponse = &v1beta1.AdmissionResponse{
+					Result: &metav1.Status{
+						Message: err.Error(),
+					},
+				}
+			} else {
+				admissionResponse = whsvr.meter(evt)
+			}
 		}
 	}
 

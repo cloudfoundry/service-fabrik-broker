@@ -349,7 +349,7 @@ var _ = Describe("Event", func() {
 	Describe("createMertering", func() {
 		It("Should return failure if the CRD is not registered", func() {
 			evt, _ := NewEvent(&ar)
-			err := createMertering(evt, tcfg)
+			err := evt.createMertering(tcfg)
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).To(Equal("the server could not find the requested resource (post sfevents.instance.servicefabrik.io)"))
 		})
