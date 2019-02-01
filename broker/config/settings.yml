@@ -356,12 +356,6 @@ defaults: &defaults
     token_url: 'https://service-fabrik.authentication.domain.com'
     metering_url: 'https://metering.cfapps.domain.com/dev'
     region: "asia"
-    excluded_service_plans: [
-      {
-        service_name: 'blueprint',
-        plan_sku_names: [ 'dev' ]
-      }
-    ]
   ###################
   # BACKUP SETTINGS #
   ###################
