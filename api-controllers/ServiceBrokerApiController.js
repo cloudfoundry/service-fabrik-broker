@@ -100,7 +100,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }))
       .then(() => {
         if (!plan.manager.async) {
-          return eventmesh.apiServerClient.getResourceOperationStatus({
+          return eventmesh.apiServerClient.getOSBResourceOperationStatus({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
@@ -199,7 +199,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       })
       .then(() => {
         if (!plan.manager.async) {
-          return eventmesh.apiServerClient.getResourceOperationStatus(lastOperationState);
+          return eventmesh.apiServerClient.getOSBResourceOperationStatus(lastOperationState);
         }
       })
       .then(done);
@@ -251,7 +251,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       }))
       .then(() => {
         if (!plan.manager.async) {
-          return eventmesh.apiServerClient.getResourceOperationStatus({
+          return eventmesh.apiServerClient.getOSBResourceOperationStatus({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
@@ -358,7 +358,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
           }
         });
       })
-      .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+      .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
@@ -395,13 +395,22 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
 
-    return eventmesh.apiServerClient.deleteResource({
+    return eventmesh.apiServerClient.updateOSBResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+        resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.DELETE
+        }
+      })
+      .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
-      })
-      .then(() => eventmesh.apiServerClient.getResourceOperationStatus({
+      }))
+      .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,

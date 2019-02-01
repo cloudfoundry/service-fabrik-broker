@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
@@ -204,43 +203,10 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 		}
 
 		toBeUpdated := false
-		//Only these fields we are reconciling
-		updateKeys := []string{"spec", "data"}
-		//status must be always the LAST ITEM in the array
-		updateKeys = append(updateKeys, "status")
-		for _, updateKey := range updateKeys {
-			//Update status only is something else also changed
-			if updateKey == "status" && !toBeUpdated {
-				continue
-			}
-			//Reconcile only if the field is generated from template
-			if _, ok := expectedResource.Object[updateKey]; ok {
-				//If the existing resource doesnot have the field add it
-				if _, ok := foundResource.Object[updateKey]; !ok {
-					foundResource.Object[updateKey] = expectedResource.Object[updateKey]
-					toBeUpdated = true
-				} else {
-					//Existing resource has the filed
-					newFieldObj := dynamic.MapInterfaceToMapString(expectedResource.Object[updateKey])
-					newField := newFieldObj.(map[string]interface{})
-					oldFieldObj := dynamic.MapInterfaceToMapString(foundResource.Object[updateKey])
-					oldField := oldFieldObj.(map[string]interface{})
-					//Iterate over individual subfields from template
-					for key, val := range newField {
-						oldVal, ok := oldField[key]
-						//Update only if at least one subfield is updated
-						if !ok || !reflect.DeepEqual(val, oldVal) {
-							oldField[key] = val
-							toBeUpdated = true
-						}
-					}
-					foundResource.Object[updateKey] = oldField
-				}
-			}
-		}
-
+		updatedResource, toBeUpdated := dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
 		if toBeUpdated {
 			log.Printf("Updating %s %s\n", kind, namespacedName)
+			foundResource.Object = updatedResource.(map[string]interface{})
 			err = targetClient.Update(context.TODO(), foundResource)
 			if err != nil {
 				log.Printf("error updating %s %s. %v\n", kind, namespacedName, err)

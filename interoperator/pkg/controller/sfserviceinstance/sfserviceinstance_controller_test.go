@@ -201,15 +201,13 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		labels := serviceInstance.GetLabels()
-		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("label not updated")
+		state := serviceInstance.GetState()
+		if state != "succeeded" {
+			return fmt.Errorf("state not updated")
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(serviceInstance.Status.State).Should(gomega.Equal("succeeded"))
-	labels := serviceInstance.GetLabels()
-	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
 
 	// Delete the service instance
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
