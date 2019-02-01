@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	instanceclient "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/client/clientset/versioned/typed/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
@@ -48,6 +49,12 @@ const (
 	Docker      string = "Docker"
 	SfeventKind string = "Sfevent"
 )
+
+// EventInterface exposes generic functions of any events
+type EventInterface interface {
+	isMeteringEvent() (bool, error)
+	createMertering(cfg *rest.Config) error
+}
 
 // Event stores the event details
 type Event struct {
@@ -260,7 +267,7 @@ func isEventMetered(evt *v1alpha1.Sfevent, client instanceclient.SfeventInterfac
 	return false, nil
 }
 
-func createMertering(e *Event, cfg *rest.Config) error {
+func (e *Event) createMertering(cfg *rest.Config) error {
 	client, err := getClient(cfg)
 	if err != nil {
 		glog.Errorf("Error creating sfevent client : %v", err)
