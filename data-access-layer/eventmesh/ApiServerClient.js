@@ -190,7 +190,7 @@ class ApiServerClient {
             logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
             throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
           }
-          return this.getResourceOperationStatus(opts);
+          return this.getOSBResourceOperationStatus(opts);
         }
       })
       .then(result => {
