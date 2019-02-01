@@ -1,4 +1,4 @@
-package main
+package metering
 
 import (
 	// "encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func newMetering(opt resources.GenericOptions, crd resources.GenericResource, startStop int, e c.EventType) *v1alpha1.Sfevent {
+func NewMetering(opt resources.GenericOptions, crd resources.GenericResource, startStop int, e c.EventType) *v1alpha1.Sfevent {
 	si := v1alpha1.ServiceInfo{
 		ID:   opt.ServiceID,
 		Plan: opt.PlanID,

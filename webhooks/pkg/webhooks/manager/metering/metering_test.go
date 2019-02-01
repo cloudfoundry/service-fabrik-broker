@@ -1,4 +1,4 @@
-package main
+package metering
 
 import (
 	// "encoding/json"
@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Sfevent", func() {
-	Describe("newMetering", func() {
+	Describe("NewMetering", func() {
 		It("it should create the metering object", func() {
 			//Create params
 			co := resources.ContextOptions{
@@ -27,7 +27,7 @@ var _ = Describe("Sfevent", func() {
 			crd := resources.GenericResource{}
 			signal := c.MeterStop
 			// Test creating metering object
-			m := newMetering(opt, crd, signal, c.UpdateEvent)
+			m := NewMetering(opt, crd, signal, c.UpdateEvent)
 			var unmarsheledSfeventOptions v1alpha1.SfeventOptions
 			unmarsheledSfeventOptions = m.Spec.Options
 			Expect(unmarsheledSfeventOptions.ID).Should(MatchRegexp("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"), "Should be a valid guid")
