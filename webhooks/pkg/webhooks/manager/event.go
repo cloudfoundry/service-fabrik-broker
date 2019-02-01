@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/apis/instance/v1alpha1"
 	instanceclient "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/client/clientset/versioned/typed/instance/v1alpha1"
 	c "github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/meter"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -178,7 +179,7 @@ func getClient(cfg *rest.Config) (instanceclient.SfeventInterface, error) {
 }
 
 func (e *Event) getMeteringEvent(opt resources.GenericOptions, startStop int, et c.EventType) *v1alpha1.Sfevent {
-	return newMetering(opt, e.crd, startStop, et)
+	return meter.NewMetering(opt, e.crd, startStop, et)
 }
 
 func (e *Event) getEventType() (c.EventType, error) {

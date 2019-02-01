@@ -1,4 +1,4 @@
-package metering
+package meter
 
 import (
 	// "encoding/json"
