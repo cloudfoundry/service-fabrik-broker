@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -37,9 +38,22 @@ const (
 	admissionWebhookAnnotationStatusKey = "sidecar-injector-webhook.morven.me/status"
 )
 
+// APIServerInterface exposes functions iteract with apiserver
+type APIServerInterface interface {
+	GetConfig() (*rest.Config, error)
+}
+
 // WebhookServer type holds the server details
 type WebhookServer struct {
 	server *http.Server
+}
+
+// APIServer hold apiserver params
+type APIServer struct{}
+
+// GetConfig get the config for apiserver
+func (a *APIServer) GetConfig() (*rest.Config, error) {
+	return config.GetConfig()
 }
 
 // WhSvrParameters hold webhook server parameters
@@ -110,7 +124,7 @@ func (whsvr *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.Admissi
 	return r
 }
 
-func (whsvr *WebhookServer) meter(evt EventInterface) *v1beta1.AdmissionResponse {
+func (whsvr *WebhookServer) meter(evt EventInterface, a APIServerInterface) *v1beta1.AdmissionResponse {
 	glog.Info("Attempting to meter event")
 	isMetering, err := evt.isMeteringEvent()
 	if err != nil {
@@ -121,7 +135,7 @@ func (whsvr *WebhookServer) meter(evt EventInterface) *v1beta1.AdmissionResponse
 		}
 	}
 	if isMetering {
-		cfg, err := config.GetConfig()
+		cfg, err := a.GetConfig()
 		if err != nil {
 			glog.Errorf("Unable to set up client config %v", err)
 			return &v1beta1.AdmissionResponse{
@@ -189,7 +203,8 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 					},
 				}
 			} else {
-				admissionResponse = whsvr.meter(evt)
+				a := &APIServer{}
+				admissionResponse = whsvr.meter(evt, a)
 			}
 		}
 	}

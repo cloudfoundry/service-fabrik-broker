@@ -29,12 +29,21 @@ func (e *MockEvent) createMertering(cfg *rest.Config) error {
 	return e.createMerteringError
 }
 
+type MockAPIServer struct {
+	err error
+}
+
+func (a *MockAPIServer) GetConfig() (*rest.Config, error) {
+	return &rest.Config{}, a.err
+}
+
 func TestWebhookServer_meter(t *testing.T) {
 	type fields struct {
 		server *http.Server
 	}
 	type args struct {
 		evt EventInterface
+		a   APIServerInterface
 	}
 	tests := []struct {
 		name   string
@@ -49,6 +58,9 @@ func TestWebhookServer_meter(t *testing.T) {
 				evt: &MockEvent{
 					isMetering:           false,
 					createMerteringError: nil,
+				},
+				a: &MockAPIServer{
+					err: nil,
 				},
 			},
 			&v1beta1.AdmissionResponse{
@@ -66,6 +78,9 @@ func TestWebhookServer_meter(t *testing.T) {
 					isMetering:           true,
 					createMerteringError: nil,
 				},
+				a: &MockAPIServer{
+					err: nil,
+				},
 			},
 			&v1beta1.AdmissionResponse{
 				UID:       "",
@@ -81,6 +96,9 @@ func TestWebhookServer_meter(t *testing.T) {
 				evt: &MockEvent{
 					isMetering:           true,
 					createMerteringError: errors.New("Dummy failure"),
+				},
+				a: &MockAPIServer{
+					err: nil,
 				},
 			},
 			&v1beta1.AdmissionResponse{
@@ -99,14 +117,15 @@ func TestWebhookServer_meter(t *testing.T) {
 				Patch:     nil,
 				PatchType: nil,
 			},
-		},
-		{
+		}, {
 			"Do not admit Admit if a isMeteringError fails",
 			fields{},
 			args{
 				evt: &MockEvent{
 					isMetering:      false,
 					isMeteringError: errors.New("Dummy isMeteringError failure"),
+				}, a: &MockAPIServer{
+					err: nil,
 				},
 			},
 			&v1beta1.AdmissionResponse{
@@ -125,6 +144,33 @@ func TestWebhookServer_meter(t *testing.T) {
 				Patch:     nil,
 				PatchType: nil,
 			},
+		}, {
+			"Do not admit Admit if a fetching config fails",
+			fields{},
+			args{
+				evt: &MockEvent{
+					isMetering:      true,
+					isMeteringError: nil,
+				}, a: &MockAPIServer{
+					err: errors.New("Fetching config failed"),
+				},
+			},
+			&v1beta1.AdmissionResponse{
+				UID:     "",
+				Allowed: false,
+				Result: &metav1.Status{
+					ListMeta: metav1.ListMeta{
+						SelfLink:        "",
+						ResourceVersion: "",
+						Continue:        "",
+					}, Status: "",
+					Message: "Fetching config failed",
+					Reason:  "",
+					Details: nil,
+					Code:    0},
+				Patch:     nil,
+				PatchType: nil,
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -132,7 +178,7 @@ func TestWebhookServer_meter(t *testing.T) {
 			whsvr := &WebhookServer{
 				server: tt.fields.server,
 			}
-			if got := whsvr.meter(tt.args.evt); !reflect.DeepEqual(got, tt.want) {
+			if got := whsvr.meter(tt.args.evt, tt.args.a); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("WebhookServer.meter() = %v, want %v", got, tt.want)
 			}
 		})
