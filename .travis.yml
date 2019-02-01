@@ -52,7 +52,7 @@ matrix:
           # Creating a branch to fix this issue
           git checkout -b travis-merge
           INITIAL_COMMIT="a1206f7a64978e70441460f9f907c2904909a531"
-          high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
+          high_entropy=$(trufflehog --json --entropy true --max_depth 1 --regex "$TRAVIS_BUILD_DIR")
           echo "Truffle hog output : $high_entropy"
           if [[ "$high_entropy" != "" ]] ; then exit 1; fi
     - language: go
@@ -66,6 +66,7 @@ matrix:
         - go get golang.org/x/lint/golint
       install:
         - cd interoperator
+        - dep ensure -v
       script:
         - go fmt ./pkg/... ./cmd/...
         - go vet ./pkg/... ./cmd/...
