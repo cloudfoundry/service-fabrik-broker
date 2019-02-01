@@ -51,7 +51,7 @@ matrix:
           # truffleHog check fails to detect changed because travis merge creates a detached HEAD
           # Creating a branch to fix this issue
           git checkout -b travis-merge
-          INITIAL_COMMIT="26697a04e6890c0fc2226cf8c4e228c95586254c"
+          INITIAL_COMMIT="a1206f7a64978e70441460f9f907c2904909a531"
           high_entropy=$(trufflehog --json --entropy true --since_commit "$INITIAL_COMMIT" --regex "$TRAVIS_BUILD_DIR")
           echo "Truffle hog output : $high_entropy"
           if [[ "$high_entropy" != "" ]] ; then exit 1; fi
@@ -64,6 +64,8 @@ matrix:
         depth: 3
       before_install:
         - go get golang.org/x/lint/golint
+      install:
+        - cd interoperator
       script:
         - go fmt ./pkg/... ./cmd/...
         - go vet ./pkg/... ./cmd/...
