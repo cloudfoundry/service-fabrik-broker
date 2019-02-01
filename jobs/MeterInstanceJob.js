@@ -105,20 +105,22 @@ class MeterInstanceJob extends BaseJob {
 
   static sendEvent(event) {
     logger.debug('Event details before enriching:', event);
-    if (this.isServicePlanExcluded(event.spec.options) === true) {
-      return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, event))
-        .return(true);
-    }
-    return Promise
-      .try(() => this.enrichEvent(event.spec.options))
-      .then(enrichedUsageDoc => {
-        logger.info('Sending enriched document:', enrichedUsageDoc);
-        return maas.client.sendUsageRecord({
-          usage: [enrichedUsageDoc]
-        });
+    return Promise.try(() => {
+        if (this.isServicePlanExcluded(event.spec.options) === true) {
+          return Promise.try(() => this.updateMeterState(CONST.METER_STATE.EXCLUDED, event))
+            .return(true);
+        }
+        return Promise
+          .try(() => this.enrichEvent(event.spec.options))
+          .then(enrichedUsageDoc => {
+            logger.info('Sending enriched document:', enrichedUsageDoc);
+            return maas.client.sendUsageRecord({
+              usage: [enrichedUsageDoc]
+            });
+          })
+          .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, event) : false)
+          .return(true);
       })
-      .then(validEvent => validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, event) : false)
-      .return(true)
       .catch(err => {
         logger.error('Error occured while metering:', err);
         return Promise.try(() => this._logMeteringEvent(err, event))
@@ -130,8 +132,8 @@ class MeterInstanceJob extends BaseJob {
   static _logMeteringEvent(err, event) {
     let now = new Date();
     let secondsSinceEpoch = Math.round(now.getTime() / 1000);
-    let createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) /1000 );
-    logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`)
+    let createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
+    logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
     // Threshold needs to be greater than the metering job frequency
     const thresholdHours = config.metering.error_threshold_hours;
     if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
