@@ -275,7 +275,7 @@ Finally, once in the SSH session, [these bash functions](https://docs.travis-ci.
 
 ## LICENSE
 
-This project is licensed under the Apache Software License, v. 2 except as noted otherwise in the [LICENSE](LICENSE) file.
+This project is licensed under the Apache Software License, v.2 except as noted otherwise in the [LICENSE](LICENSE) file.
 
 [hub]: https://github.com/github/hub
 [git secrets]: https://github.com/awslabs/git-secrets
