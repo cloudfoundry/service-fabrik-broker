@@ -985,7 +985,8 @@ class BoshDirectorClient extends HttpClient {
         body: {
           'keep-alive': true,
           'instances': instances
-        }
+        },
+        json: true
       }, 302, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
@@ -1021,7 +1022,12 @@ class BoshDirectorClient extends HttpClient {
       .then(instances => _.filter(instances, instance => _.includes(instanceFilter, instance.job_name)))
       .then(filteredInstances => {
         return _.chain(filteredInstances)
-          .map(i => _.pick(i, ['job_name', 'id', 'disk_cid', 'az']))
+          .map(i => ({
+            job_name: _.get(i, 'job_name'),
+            id: _.get(i, 'id'),
+            disk_cid: _.get(i, 'disk_cid'),
+            az: _.get(i, 'cloud_properties.availability_zone')
+          }))
           .value();
       });
   }

@@ -729,7 +729,8 @@ describe('bosh', () => {
           body: {
             'keep-alive': true,
             'instances': instances
-          }
+          },
+          json: true
         };
         const res = {
           statusCode: 302,
@@ -829,7 +830,7 @@ describe('bosh', () => {
             expect(disks[0].disk_cid).to.eql('vol1');
             expect(disks[0].job_name).to.eql('postgresql');
             expect(disks[0].id).to.eql('abcd');
-            expect(disks[0].az).to.eql('z1');
+            expect(disks[0].az).to.eql('zone');
           });
       });
 
