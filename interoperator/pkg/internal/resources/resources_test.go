@@ -708,13 +708,10 @@ status:
 	expectedResources, err2 := dynamic.StringToUnstructured(`apiVersion: deployment.servicefabrik.io/v1alpha1
 kind: Director
 metadata:
-  generation: 1
   labels:
     state: succeeded
   name: instance-id
   namespace: default
-  selfLink: /apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/instance-id
-  uid: 94f7beaf-0f5f-11e9-b07e-023f5e553a48
 spec:
   options: new-hello
 status:
@@ -1004,7 +1001,7 @@ status:
 {{- end }}
 {{- if eq $response "" }}
   {{- if eq $stateString "succeeded" }}
-    {{- $response = (printf "Service Instance %s creation successfull" $name) }}
+    {{- $response = (printf "Service Instance %s creation successful" $name) }}
   {{- else }}
     {{- if eq $stateString "in progress" }}
       {{- $response = (printf "Service Instance %s provision in progress" $name) }}
@@ -1396,7 +1393,7 @@ func Test_resourceManager_deleteSubResource(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
