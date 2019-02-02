@@ -17,6 +17,13 @@ describe('metering', () => {
             return mocks.verify();
           });
       });
+      it('should log and throw error if auth fails', () => {
+        const metering_client = new MeteringClient();
+        return metering_client.getAuthToken()
+          .catch(err => {
+            expect(err).to.be.an('object');
+          });
+      });
     });
 
     describe('#sendUsageRecord', () => {

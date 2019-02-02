@@ -55,6 +55,81 @@ function getDummyEvent(options_json) {
 
 describe('Jobs', () => {
   describe('MeterInstanceJobs', () => {
+
+    describe('#run', () => {
+      it('run the job', () => {
+        const index = mocks.director.networkSegmentIndex;
+        const instance_id = mocks.director.uuidByIndex(index);
+        const job = {
+          attrs: {
+            name: `${instance_id}_${CONST.JOB.METER_INSTANCE}`,
+            data: {
+              delete_delay: 0
+            },
+            lastRunAt: new Date(),
+            nextRunAt: new Date(),
+            repeatInterval: '*/1 * * * *',
+            lockedAt: null,
+            repeatTimezone: 'America/New_York'
+          },
+          fail: () => undefined,
+          save: () => undefined,
+          touch: () => undefined
+        };
+        // Expected calls
+        const dummy_events = [getDummyEvent(options_json)];
+        // Call to apiserver to get resources
+        mocks.apiServerEventMesh.nockGetResources(
+          CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, {
+            items: dummy_events
+          }, {
+            labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
+          }, 1, 200);
+        // Call to MaaS to get token
+        const mock_token = 'mock_token_string';
+        const mock_response_code = 200;
+        mocks.metering.mockAuthCall(mock_token);
+        // Call to MaaS to send usage record
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
+          return true;
+        });
+        // call to apiserver to patch
+        const expectedResponse = {
+          status: 200
+        };
+        const payload = {
+          status: {
+            state: CONST.METER_STATE.METERED
+          }
+        };
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
+        return MeterInstanceJob.run(job, () => {
+          mocks.verify();
+        });
+      });
+    });
+
+    describe('#getInstanceEvents', () => {
+      it('should get all instance evetnts', () => {
+        const dummy_events = [getDummyEvent(options_json)];
+        mocks.apiServerEventMesh.nockGetResources(
+          CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, {
+            items: dummy_events
+          }, {
+            labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
+          }, 1, 200);
+        return MeterInstanceJob.getInstanceEvents()
+          .then(evts => {
+            mocks.verify();
+            expect(evts[0].metadata.creationTimestamp).to.equal(dummy_events[0].metadata.creationTimestamp);
+          });
+      });
+    });
+
+
     describe('#sendEvent', () => {
       it('should not send metering event for excluded plans', () => {
         const expectedResponse = {
