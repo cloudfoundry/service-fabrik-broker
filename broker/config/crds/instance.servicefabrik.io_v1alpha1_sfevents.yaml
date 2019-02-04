@@ -22,8 +22,6 @@ spec:
           type: object
         spec:
           properties:
-            instance:
-              type: string
             options:
               type: object
           type: object
