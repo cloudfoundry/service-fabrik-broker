@@ -1026,7 +1026,7 @@ class BoshDirectorClient extends HttpClient {
             job_name: _.get(i, 'job_name'),
             id: _.get(i, 'id'),
             disk_cid: _.get(i, 'disk_cid'),
-            az: _.get(i, 'cloud_properties.availability_zone')
+            az: _.get(i, 'cloud_properties.availability_zone') || _.get(i, 'cloud_properties.zone')
           }))
           .value();
       });
