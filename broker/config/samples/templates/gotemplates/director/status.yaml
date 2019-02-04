@@ -62,7 +62,7 @@ bind:
 {{- with .directorbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}
-{{- $stateString = "delete" }} 
+{{- $stateString = "in progress" }} 
 {{- with .directorbind }}
   {{- with .status }}
     {{- if eq .state "succeeded" }}

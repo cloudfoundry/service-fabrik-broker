@@ -147,6 +147,9 @@ var binding = &osbv1alpha1.SFServiceBinding{
 		ServiceID:         "service-id",
 		AcceptsIncomplete: true,
 	},
+	Status: osbv1alpha1.SFServiceBindingStatus{
+		State: "in_queue",
+	},
 }
 
 var c client.Client
@@ -233,6 +236,11 @@ func TestReconcile(t *testing.T) {
 
 	// Delete the service binding
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
+	serviceBinding.SetState("delete")
+	g.Expect(c.Update(context.TODO(), serviceBinding)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
