@@ -126,7 +126,7 @@ Scalability of both the individual service instances as well as, if applicable, 
 
 #### Networking Complexity
 
-The complexity of setting up the network access between the consuming application and the service instance.
+The complexity of setting up and maintaining the network access between the consuming application and the service instance.
 
 #### Security Isolation
 
@@ -140,7 +140,7 @@ Utilization of resources such as nodes/machines or even at a lower granularity o
 #### Cluster Topology
 
 Individual services might require different types and quantity of machines, hardware resources also multiple availability zones etc.
-Such requriements might vary from service to service.
+Such requirements might vary from service to service.
 
 #### Cluster Maintenance
 
