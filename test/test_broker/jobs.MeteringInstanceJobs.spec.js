@@ -245,7 +245,7 @@ describe('Jobs', () => {
             expect(res.success).to.eql(2);
             expect(res.failed).to.eql(0);
           })
-        .catch(err => expect(err).to.be.undefined);
+          .catch(err => expect(err).to.be.undefined);
       });
       it('Should keep tab of failed events', () => {
         //Send doucments to metering service 2 times
