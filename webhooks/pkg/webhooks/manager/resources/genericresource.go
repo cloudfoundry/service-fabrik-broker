@@ -19,8 +19,11 @@ type GenericResource struct {
 // SetLastOperation stores the LastOperation as json string
 func (crd *GenericResource) SetLastOperation(lo GenericLastOperation) error {
 	val, err := json.Marshal(lo)
+	if err != nil {
+		return err
+	}
 	crd.Status.LastOperationRaw = string(val)
-	return err
+	return nil
 }
 
 // GetLastOperation unmarshals the json data into GenericLastOperation
@@ -65,6 +68,9 @@ func (crd *GenericResource) GetAppliedOptions() (GenericOptions, error) {
 // SetAppliedOptions stores the AppliedOptions as json string
 func (crd *GenericResource) SetAppliedOptions(ao GenericOptions) error {
 	val, err := json.Marshal(ao)
+	if err != nil {
+		return err
+	}
 	crd.Status.AppliedOptions = string(val)
-	return err
+	return nil
 }

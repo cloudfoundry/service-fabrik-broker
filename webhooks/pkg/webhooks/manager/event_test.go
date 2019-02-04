@@ -297,6 +297,51 @@ var _ = Describe("Event", func() {
 				Expect(evt.isMeteringEvent()).To(Equal(false))
 			})
 		})
+		It("should return error if isUpdate fails", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.LastOperationRaw = "invalid json"
+			res, err := evt.isMeteringEvent()
+			Expect(res).To(Equal(false))
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return error if isPlanChanged fails", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.AppliedOptions = "invalid json"
+			res, err := evt.isMeteringEvent()
+			Expect(res).To(Equal(false))
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	Describe("isUpdate", func() {
+		It("Should throw error if GetLastOpertaion fails", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.LastOperationRaw = "invalid json"
+			_, err := evt.isUpdate()
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	Describe("isCreate", func() {
+		It("Should throw error if GetLastOpertaion fails", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.LastOperationRaw = "invalid json"
+			_, err := evt.isCreate()
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	Describe("isPlanChanged", func() {
+		It("Should throw error if GetAppliedOption fails for new resource", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.AppliedOptions = "invalid json"
+			_, err := evt.isPlanChanged()
+			Expect(err).To(HaveOccurred())
+		})
+		It("Should throw error if GetAppliedOption fails for old resource", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.oldCrd.Status.AppliedOptions = "invalid json"
+			_, err := evt.isPlanChanged()
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Describe("getMeteringEvents", func() {
