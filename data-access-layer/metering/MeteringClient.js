@@ -1,7 +1,8 @@
+// Ignored this as jshint currently does not support async await
+/* jshint ignore:start */
 'use strict';
 
 const _ = require('lodash');
-const Promise = require('bluebird');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
@@ -24,33 +25,32 @@ class MeteringClient extends HttpClient {
     this.meteringUrl = config.metering.metering_url;
   }
 
-  getAuthToken() {
-    return this
-      .request({
-        baseUrl: this.tokenUrl,
-        url: CONST.URL.METERING_AUTH,
-        auth: {
-          user: this.clientId,
-          pass: this.clientSecret
-        },
-        qs: {
-          grant_type: 'client_credentials'
-        }
-      }, 200)
-      .then(res => {
-        const serverResponse = JSON.parse(res.body);
-        return serverResponse.access_token;
-      })
-      .catch(err => {
-        logger.error('Error occurred while fetching metering auth token', err);
-        throw err;
-      });
+  async getAuthToken() {
+    try {
+      let res = await this
+        .request({
+          baseUrl: this.tokenUrl,
+          url: CONST.URL.METERING_AUTH,
+          auth: {
+            user: this.clientId,
+            pass: this.clientSecret
+          },
+          qs: {
+            grant_type: 'client_credentials'
+          }
+        }, 200);
+      const serverResponse = JSON.parse(res.body);
+      return serverResponse.access_token;
+    } catch (err) {
+      logger.error('Error occurred while fetching metering auth token', err);
+      throw err;
+    }
   }
 
-  sendUsageRecord(usage_records) {
-    return Promise
-      .try(() => this.getAuthToken())
-      .then(accessToken => this.request({
+  async sendUsageRecord(usage_records) {
+    try {
+      let accessToken = await this.getAuthToken();
+      return this.request({
         url: CONST.URL.METERING_USAGE,
         method: CONST.HTTP_METHOD.PUT,
         auth: {
@@ -58,12 +58,13 @@ class MeteringClient extends HttpClient {
         },
         body: usage_records,
         json: true
-      }, CONST.HTTP_STATUS_CODE.OK))
-      .catch(err => {
-        logger.error('Error occurred while seding usage to metering service', err);
-        throw err;
-      });
+      }, CONST.HTTP_STATUS_CODE.OK);
+    } catch (err) {
+      logger.error('Error occurred while seding usage to metering service', err);
+      throw err;
+    };
   }
 }
 
 module.exports = MeteringClient;
+/* jshint ignore:end */
