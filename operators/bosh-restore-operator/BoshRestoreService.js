@@ -56,7 +56,20 @@ class BoshRestoreService extends BaseDirectorService {
         .value();
 
         const jobs = ['blueprint']; //Obtain the jobs from service catalog
-        const persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
+        let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
+
+        //Get disk metadata of old disks
+        for (let i = 0;i < persistentDiskInfo.length; i++) {
+          let diskCid = persistentDiskInfo[i].disk_cid;
+          let az = persistentDiskInfo[i].az;
+          persistentDiskInfo[i].getDiskMetadataPromise = this.cloudProvider.getDiskMetadata(diskCid, az);
+        }
+
+        for (let i = 0;i < persistentDiskInfo.length; i++) {
+          persistentDiskInfo[i].oldDiskInfo = await persistentDiskInfo[i].getDiskMetadataPromise;
+          _.unset(persistentDiskInfo[i], 'getDiskMetadataPromise');
+        }
+
         const optionsData = _
           .assign({ 
             restoreMetadata: { 
@@ -158,7 +171,8 @@ class BoshRestoreService extends BaseDirectorService {
       //2. create persistent disks from snapshot
       for (let i = 0; i< deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
-        let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az);
+
+        let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az, {type: instance.oldDiskInfo.type});
         _.set(instance, 'createDiskPromise', promise);
       }
 

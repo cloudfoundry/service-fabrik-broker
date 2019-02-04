@@ -936,7 +936,7 @@ class BoshDirectorClient extends HttpClient {
         return _.chain(filteredInstances)
           .map(i => {
             let a = _.pick(i, ['job_name', 'id', 'disk_cid'])
-            a.az = i.cloud_properties.availability_zone;
+            a.az = i.cloud_properties.availability_zone || i.cloud_properties.zone;
             return a;
           })
           .value();
