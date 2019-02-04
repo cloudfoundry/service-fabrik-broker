@@ -26,6 +26,14 @@ class BaseError extends Error {
 }
 exports.BaseError = BaseError;
 
+class SshConnectionFailed extends BaseError {
+  constructor(message) {
+    super(message);
+    this.code = 'ETIMEDOUT';
+  }
+}
+exports.SshConnectionFailed = SshConnectionFailed;
+
 class DeploymentDelayed extends BaseError {
   constructor(deploymentName) {
     super(deploymentName);

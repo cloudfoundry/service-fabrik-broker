@@ -12,11 +12,13 @@ const BadRequest = errors.BadRequest;
 const InternalServerError = errors.InternalServerError;
 const ServiceUnavailable = errors.ServiceUnavailable;
 const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
+const BoshSshClient = require('../../data-access-layer/bosh/BoshSshClient');
 const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
 const UaaClient = require('../../data-access-layer/cf/UaaClient');
 const TokenIssuer = require('../../data-access-layer/cf/TokenIssuer');
 const eventmesh = require('../../data-access-layer/eventmesh');
+const EncryptionManager = require('../../common/utils/EncryptionManager');
 const yaml = require('js-yaml');
 const assert = require('assert');
 const id = uuid.v4();
@@ -698,6 +700,246 @@ describe('bosh', () => {
       });
     });
 
+    describe('#errands', () => {
+      it('should return errands array for the deployment', () => {
+        const req = {
+          method: 'GET',
+          url: `/deployments/${deployment_name}/errands`
+        };
+        const res = {
+          statusCode: 200,
+          body: JSON.stringify(['smoke-tests', 'status'])
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.getDeploymentErrands(deployment_name)
+          .then(errands => {
+            expect(errands).to.deep.equal(['smoke-tests', 'status']);
+          });
+      });
+
+      it('should return task id for errand', () => {
+        let instances = [{
+          'group': 'zookeeper',
+          'id': '1'
+        }];
+        let errandName = 'status';
+        const req = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/errands/${errandName}/runs`,
+          body: {
+            'keep-alive': true,
+            'instances': instances
+          },
+          json: true
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
+        return mockBoshDirectorClient.runDeploymentErrand(deployment_name, errandName, instances)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+
+    });
+
+    describe('#disks', () => {
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should get persistent disks for deployment where cloud properties show availability zone', () => {
+        const response = [{
+            vm_cid: 'vmid1',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              availability_zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol1',
+            disk_cids: ['vol1'],
+            ips: ['1.2.3.4'],
+            job_name: 'postgresql',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          },
+          {
+            vm_cid: 'vmid2',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              availability_zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol2',
+            disk_cids: ['vol2'],
+            ips: ['1.2.3.4'],
+            job_name: 'pgpool',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          }
+        ];
+
+        let mockBoshClient = new MockBoshDirectorClient();
+        let getDeploymentVmsVitalsStub = sandbox.stub(mockBoshClient, 'getDeploymentVmsVitals');
+        getDeploymentVmsVitalsStub
+          .withArgs(deployment_name)
+          .returns(Promise.resolve(response));
+        return mockBoshClient.getPersistentDisks(deployment_name, ['postgresql'])
+          .then(disks => {
+            expect(disks.length).to.equal(1);
+            expect(disks[0].disk_cid).to.eql('vol1');
+            expect(disks[0].job_name).to.eql('postgresql');
+            expect(disks[0].id).to.eql('abcd');
+            expect(disks[0].az).to.eql('zone');
+          });
+      });
+
+      it('should get persistent disks for deployment where cloud properties show zone', () => {
+        const response = [{
+            vm_cid: 'vmid1',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol1',
+            disk_cids: ['vol1'],
+            ips: ['1.2.3.4'],
+            job_name: 'postgresql',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          },
+          {
+            vm_cid: 'vmid2',
+            active: true,
+            vm_created_at: '2019-01-16T10:52:18Z',
+            cloud_properties: {
+              zone: 'zone',
+              ephemeral_disk: {
+                size: 10240,
+                type: 'gp2'
+              },
+              instance_type: 't2.large'
+            },
+            disk_cid: 'vol2',
+            disk_cids: ['vol2'],
+            ips: ['1.2.3.4'],
+            job_name: 'pgpool',
+            index: 0,
+            job_state: 'running',
+            state: 'started',
+            vm_type: 'service_fabrik_vm_large',
+            vitals: {
+              stuff: true
+            },
+            processes: {
+              stuff: true
+            },
+            resurrection_paused: false,
+            az: 'z1',
+            id: 'abcd'
+          }
+        ];
+
+        let mockBoshClient = new MockBoshDirectorClient();
+        let getDeploymentVmsVitalsStub = sandbox.stub(mockBoshClient, 'getDeploymentVmsVitals');
+        getDeploymentVmsVitalsStub
+          .withArgs(deployment_name)
+          .returns(Promise.resolve(response));
+        return mockBoshClient.getPersistentDisks(deployment_name, ['postgresql'])
+          .then(disks => {
+            expect(disks.length).to.equal(1);
+            expect(disks[0].disk_cid).to.eql('vol1');
+            expect(disks[0].job_name).to.eql('postgresql');
+            expect(disks[0].id).to.eql('abcd');
+            expect(disks[0].az).to.eql('zone');
+          });
+      });
+
+      it('should return task id for disk attachment task', () => {
+        let jobName = 'dummy_job';
+        let diskCid = 'dummy_disk';
+        let instanceId = 'dummy_instance';
+        const req = {
+          method: 'PUT',
+          url: `/disks/${diskCid}/attachments`,
+          qs: {
+            deployment: deployment_name,
+            job: jobName,
+            instance_id: instanceId,
+            disk_properties: 'copy'
+          }
+        };
+        const res = {
+          statusCode: 302,
+          headers: {
+            location: '/tasks/taskId'
+          }
+        };
+        let mockBoshClient = new MockBoshDirectorClient(req, res);
+        return mockBoshClient.createDiskAttachment(deployment_name, diskCid, jobName, instanceId)
+          .then(taskId => {
+            expect(taskId).to.equal('taskId');
+          });
+      });
+    });
+
     describe('#createDeploymentProperty', () => {
       it('returns correct status code', (done) => {
         let request = {
@@ -1266,6 +1508,359 @@ describe('bosh', () => {
             expect(getResourceStub).to.be.calledOnce;
             sandbox.restore();
             done();
+          });
+      });
+    });
+
+    describe('#cleanupSsh', () => {
+      const job_name = 'postgresql';
+      const instance_id = 'uuid';
+      const user = 'tmp';
+      it('should clean up bosh ssh successfully', () => {
+        let request = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/ssh`,
+          body: {
+            command: 'cleanup',
+            deployment_name: deployment_name,
+            target: {
+              job: job_name,
+              ids: [instance_id]
+            },
+            params: {
+              user_regex: '^' + user
+            }
+          }
+        };
+        let response = {
+          body: {},
+          statusCode: 200,
+          headers: {
+            location: '/tasks/1234'
+          }
+        };
+        let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).then((content) => {
+          expect(content).to.eql(response);
+        });
+      });
+      it('should fail if response status code is incorrect', () => {
+        let request = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/ssh`,
+          body: {
+            command: 'cleanup',
+            deployment_name: deployment_name,
+            target: {
+              job: job_name,
+              ids: [instance_id]
+            },
+            params: {
+              user_regex: '^' + user
+            }
+          }
+        };
+        let response = {
+          body: {},
+          statusCode: 500
+        };
+        let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        return dummyBoshDirectorClient.cleanupSsh(deployment_name, job_name, instance_id, user).catch((error) => {
+          expect(error instanceof InternalServerError).to.eql(true);
+        });
+      });
+    });
+
+    describe('#setupSsh', () => {
+      const job_name = 'postgresql';
+      const instance_id = 'uuid';
+      const user = 'tmp';
+      const key = 'pub';
+      it('should set up bosh ssh successfully', () => {
+        let request = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/ssh`,
+          body: {
+            command: 'setup',
+            deployment_name: deployment_name,
+            target: {
+              job: job_name,
+              ids: [instance_id]
+            },
+            params: {
+              user: user,
+              public_key: key
+            }
+          }
+        };
+        let response = {
+          body: {},
+          statusCode: 200,
+          headers: {
+            location: '/tasks/1234'
+          }
+        };
+        let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).then((content) => {
+          expect(content).to.eql(response);
+        });
+      });
+      it('should fail if response status code is incorrect', () => {
+        let request = {
+          method: 'POST',
+          url: `/deployments/${deployment_name}/ssh`,
+          body: {
+            command: 'setup',
+            deployment_name: deployment_name,
+            target: {
+              job: job_name,
+              ids: [instance_id]
+            },
+            params: {
+              user: user,
+              public_key: key
+            }
+          }
+        };
+        let response = {
+          body: {},
+          statusCode: 500
+        };
+        let dummyBoshDirectorClient = new MockBoshDirectorClient(request, response);
+        return dummyBoshDirectorClient.setupSsh(deployment_name, job_name, instance_id, user, key).catch((error) => {
+          expect(error instanceof InternalServerError).to.eql(true);
+        });
+      });
+    });
+
+    describe('#runSsh', () => {
+      let sandbox;
+      let uuidStub;
+      let dummyBoshDirectorClient;
+      let job_name = 'job',
+        instance_id = 'instance',
+        command = 'fancy';
+      beforeEach(() => {
+        dummyBoshDirectorClient = new MockBoshDirectorClient();
+        sandbox = sinon.sandbox.create();
+        uuidStub = sandbox.stub(uuid, 'v4');
+        uuidStub.returns('abcd');
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+      it('it should fail if ssh keypair generation fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.reject('cryptoerror'));
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('cryptoerror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+          });
+      });
+      it('it should fail if bosh ssh setup fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        dummyBoshDirectorClient.setupSsh = () => Promise.reject('setuperror');
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('setuperror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+          });
+      });
+      it('it should fail if polling for ssh setup fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        let setupStub = sandbox.stub(dummyBoshDirectorClient, 'setupSsh');
+        setupStub.returns(Promise.resolve({
+          headers: {
+            location: '/tasks/1234'
+          }
+        }));
+        let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
+        pollStub.returns(Promise.reject('pollerror'));
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('pollerror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(setupStub.callCount).to.eql(1);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(pollStub.callCount).to.eql(1);
+            expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+          });
+      });
+      it('it should fail if getting task result for ssh setup fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        let setupStub = sandbox.stub(dummyBoshDirectorClient, 'setupSsh');
+        setupStub.returns(Promise.resolve({
+          headers: {
+            location: '/tasks/1234'
+          }
+        }));
+        let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
+        pollStub.returns(Promise.resolve('pollsuccess'));
+        let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
+        getTaskResultStub.returns(Promise.reject('taskerror'));
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('taskerror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(setupStub.callCount).to.eql(1);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(pollStub.callCount).to.eql(1);
+            expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(getTaskResultStub.callCount).to.eql(1);
+            expect(getTaskResultStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+          });
+      });
+      it('it should fail if bosh ssh fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        let setupStub = sandbox.stub(dummyBoshDirectorClient, 'setupSsh');
+        setupStub.returns(Promise.resolve({
+          headers: {
+            location: '/tasks/1234'
+          }
+        }));
+        let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
+        pollStub.returns(Promise.resolve('pollsuccess'));
+        let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
+        getTaskResultStub.returns(Promise.resolve([{
+          command: 'setup',
+          status: 'success',
+          ip: '1.2.3.4',
+          host_public_key: 'ssh-rsa key',
+          id: instance_id,
+          index: 0,
+          job: 'postgresql'
+        }]));
+        let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
+        boshSshStub.returns(Promise.reject('sshconnectionerror'));
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('sshconnectionerror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(setupStub.callCount).to.eql(1);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(pollStub.callCount).to.eql(1);
+            expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(getTaskResultStub.callCount).to.eql(1);
+            expect(getTaskResultStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(boshSshStub.callCount).to.eql(1);
+            expect(boshSshStub.firstCall.args[0]).to.eql(command);
+          });
+      });
+      it('it should fail if cleanup of bosh ssh fails', () => {
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        let setupStub = sandbox.stub(dummyBoshDirectorClient, 'setupSsh');
+        setupStub.returns(Promise.resolve({
+          headers: {
+            location: '/tasks/1234'
+          }
+        }));
+        let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
+        pollStub.returns(Promise.resolve('pollsuccess'));
+        let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
+        getTaskResultStub.returns(Promise.resolve([{
+          command: 'setup',
+          status: 'success',
+          ip: '1.2.3.4',
+          host_public_key: 'ssh-rsa key',
+          id: instance_id,
+          index: 0,
+          job: 'postgresql'
+        }]));
+        let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
+        boshSshStub.returns(Promise.resolve({}));
+        let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
+        boshCleanupSshStub.returns(Promise.reject('cleanuperror'));
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .catch(err => {
+            expect(err).to.eql('cleanuperror');
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(setupStub.callCount).to.eql(1);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(pollStub.callCount).to.eql(1);
+            expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(getTaskResultStub.callCount).to.eql(1);
+            expect(getTaskResultStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(boshSshStub.callCount).to.eql(1);
+            expect(boshSshStub.firstCall.args[0]).to.eql(command);
+            expect(boshCleanupSshStub.callCount).to.eql(1);
+            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd']);
+          });
+      });
+      it('it should pass successfully', () => {
+        let sshout = {
+          code: 0,
+          stdout: 'done',
+          stderr: null
+        };
+        let cryptoStub = sandbox.stub(EncryptionManager.prototype, 'generateSshKeyPair');
+        cryptoStub.returns(Promise.resolve({
+          privateKey: 'p1',
+          publicKey: 'p2'
+        }));
+        let setupStub = sandbox.stub(dummyBoshDirectorClient, 'setupSsh');
+        setupStub.returns(Promise.resolve({
+          headers: {
+            location: '/tasks/1234'
+          }
+        }));
+        let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
+        pollStub.returns(Promise.resolve('pollsuccess'));
+        let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
+        getTaskResultStub.returns(Promise.resolve([{
+          command: 'setup',
+          status: 'success',
+          ip: '1.2.3.4',
+          host_public_key: 'ssh-rsa key',
+          id: instance_id,
+          index: 0,
+          job: 'postgresql'
+        }]));
+        let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
+        boshSshStub.returns(Promise.resolve(sshout));
+        let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
+        boshCleanupSshStub.returns(Promise.resolve());
+        return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
+          .then(out => {
+            expect(out).to.deep.eql(sshout);
+            expect(cryptoStub.callCount).to.eql(1);
+            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(setupStub.callCount).to.eql(1);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(pollStub.callCount).to.eql(1);
+            expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(getTaskResultStub.callCount).to.eql(1);
+            expect(getTaskResultStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
+            expect(boshSshStub.callCount).to.eql(1);
+            expect(boshSshStub.firstCall.args[0]).to.eql(command);
+            expect(boshCleanupSshStub.callCount).to.eql(1);
+            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd']);
           });
       });
     });

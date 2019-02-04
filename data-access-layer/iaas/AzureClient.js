@@ -5,6 +5,7 @@ const azureStorage = require('azure-storage');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
+const uuid = require('uuid');
 const ComputeClient = require('./ComputeClient');
 const BaseCloudClient = require('./BaseCloudClient');
 const NotFound = errors.NotFound;
@@ -36,14 +37,18 @@ class AzureClient extends BaseCloudClient {
   }
 
   createDiskFromSnapshot(snapshotId, zones, opts = {}) {
-    const diskName = this.getRandomDiskId();
+    const diskName = `bosh-disk-data-${uuid.v4()}`;
+    const boshDiskSegments = ['caching:None', `disk_name:${diskName}`, `resource_group_name:${this.settings.resource_group}`];
+    const boshDiskName = _.join(boshDiskSegments, encodeURIComponent(';'));
     return Promise.try(() => this.getSnapshot(snapshotId))
       .then(snapshotData => {
         const options = {
           zones: _.isArray(zones) ? zones : [zones],
           location: snapshotData.location,
           tags: _.assign({}, opts.tags || {}, {
-            createdBy: 'service-fabrik'
+            createdBy: 'service-fabrik',
+            caching: 'None',
+            resource_group_name: this.settings.resource_group
           }),
           sku: _.assign({}, opts.type || {
             name: 'Premium_LRS',
@@ -57,7 +62,7 @@ class AzureClient extends BaseCloudClient {
         return this.computeClient.disks.createOrUpdateAsync(this.settings.resource_group, diskName, options);
       })
       .then(diskResponse => ({
-        volumeId: diskResponse.name,
+        volumeId: boshDiskName,
         size: diskResponse.diskSizeGB,
         zone: diskResponse.zones[0],
         type: diskResponse.sku ? diskResponse.sku.name : '',
