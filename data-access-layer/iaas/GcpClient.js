@@ -60,7 +60,7 @@ class GcpClient extends BaseCloudClient {
         description: 'disk created via service fabrik',
         type: `projects/${this.settings.projectId || this.settings.credentials.project_id}/zones/${zone}/diskTypes/${opts.type}`,
         labels: _.assign({}, opts.tags || {}, {
-          createdBy: 'service-fabrik'
+          createdby: 'service-fabrik'
         })
       };
 
