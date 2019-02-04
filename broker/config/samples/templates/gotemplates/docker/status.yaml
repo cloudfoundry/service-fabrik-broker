@@ -56,7 +56,7 @@ bind:
 {{- with .dockerbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}
-{{- $stateString = "delete" }} 
+{{- $stateString = "in progress" }} 
 {{- with .dockerbind }}
   {{- with .status }}
     {{- if eq .state "succeeded" }}
@@ -78,11 +78,11 @@ unbind:
 {{- end }}
   response: {{ $response }}
 {{- $response := "" }}
-{{- $stateString = "delete" }} 
+{{- $stateString = "in progress" }} 
 {{- with .docker }}
   {{- with .status }}
     {{- if eq .state "delete" }}
-      {{- $stateString = "delete" }}
+      {{- $stateString = "in progress" }}
     {{- else }}
       {{- if eq .state "failed" }}
         {{- $stateString = "failed" }}
