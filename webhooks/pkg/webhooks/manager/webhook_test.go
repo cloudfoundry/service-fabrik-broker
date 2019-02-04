@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -222,6 +224,9 @@ func TestWebhookServer_mutate(t *testing.T) {
 	var ar v1beta1.AdmissionReview
 	var arInvalid v1beta1.AdmissionReview
 	dat, err := ioutil.ReadFile("test_resources/admission_request.json")
+	if err != nil {
+		panic(err)
+	}
 	err = json.Unmarshal(dat, &ar)
 	if err != nil {
 		panic(err)
@@ -293,6 +298,85 @@ func TestWebhookServer_mutate(t *testing.T) {
 			}
 			if got := whsvr.mutate(tt.args.ar); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("WebhookServer.mutate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestWebhookServer_serve(t *testing.T) {
+	dat, err := ioutil.ReadFile("test_resources/admission_request.json")
+	if err != nil {
+		panic(err)
+	}
+	type fields struct {
+		server *http.Server
+	}
+	type args struct {
+		w *httptest.ResponseRecorder
+		r *http.Request
+	}
+	testReq := httptest.NewRequest("GET", "/meter", bytes.NewReader(dat))
+	testReq.Header.Set("Content-Type", "application/json")
+
+	testInvalidReq := httptest.NewRequest("GET", "/meter", bytes.NewReader([]byte("invalid")))
+	testInvalidReq.Header.Set("Content-Type", "application/json")
+	tests := []struct {
+		name           string
+		fields         fields
+		args           args
+		wantStatusCode int
+		wantBody       string
+	}{
+		{
+			"Return 400 if request body is empty",
+			fields{},
+			args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest("GET", "/meter", nil),
+			},
+			400,
+			"empty body\n",
+		}, {
+			"Should return error if content type is not set",
+			fields{},
+			args{
+				w: httptest.NewRecorder(),
+				r: httptest.NewRequest("GET", "/meter", bytes.NewReader(dat)),
+			},
+			415,
+			"invalid Content-Type, expect `application/json`\n",
+		}, {
+			"Should create mutation for a valid request",
+			fields{},
+			args{
+				w: httptest.NewRecorder(),
+				r: testReq,
+			},
+			200,
+			"{\"response\":{\"uid\":\"8f676fb0-13ce-11e9-b037-0e655bfa3b31\",\"allowed\":true}}",
+		}, {
+			"Should thow an error for invalid body",
+			fields{},
+			args{
+				w: httptest.NewRecorder(),
+				r: testInvalidReq,
+			},
+			200,
+			`{"response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"couldn't get version/kind; json parse error: json: cannot unmarshal string into Go value of type struct { APIVersion string \"json:\\\"apiVersion,omitempty\\\"\"; Kind string \"json:\\\"kind,omitempty\\\"\" }"}}}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			whsvr := &WebhookServer{
+				server: tt.fields.server,
+			}
+			whsvr.serve(tt.args.w, tt.args.r)
+			result := tt.args.w.Result()
+			if got := result.StatusCode; !reflect.DeepEqual(got, tt.wantStatusCode) {
+				t.Errorf("WebhookServer.server() = %v, want %v", result, tt)
+			}
+			if gotBody := tt.args.w.Body.String(); !reflect.DeepEqual(gotBody, tt.wantBody) {
+				t.Errorf("Result Body recieved = %v, want %v", gotBody, tt.wantBody)
 			}
 		})
 	}
