@@ -66,7 +66,7 @@ const diskMetadataResponse = [{
 }, {}];
 let createDiskEventHandlers = {};
 const createDiskFailedMsg = 'disk create failed';
-const createDiskResponse = [{
+const createDiskResponse = [diskMetadataResponse[0], {
   on: (event, callback) => {
     _.set(createDiskEventHandlers, event, callback);
     return true;
