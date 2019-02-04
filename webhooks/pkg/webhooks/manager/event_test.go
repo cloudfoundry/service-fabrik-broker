@@ -329,6 +329,29 @@ var _ = Describe("Event", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+	Describe("getEventType", func() {
+		It("Should throw error if GetLastOpertaion fails", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Status.LastOperationRaw = "invalid json"
+			_, err := evt.getEventType()
+			Expect(err).To(HaveOccurred())
+		})
+		It("Should detect docker create event", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Kind = "Docker"
+			evt.crd.Status.State = "succeeded"
+			etype, err := evt.getEventType()
+			Expect(etype).To(Equal(c.CreateEvent))
+			Expect(err).To(BeNil())
+		})
+		It("Should return error if no condition matches", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Kind = "Docker"
+			etype, err := evt.getEventType()
+			Expect(etype).To(Equal(c.InvalidEvent))
+			Expect(err).To(HaveOccurred())
+		})
+	})
 	Describe("isPlanChanged", func() {
 		It("Should throw error if GetAppliedOption fails for new resource", func() {
 			evt, _ := NewEvent(&arDockerCreate)
@@ -388,6 +411,27 @@ var _ = Describe("Event", func() {
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(1))
 			})
+		})
+		It("Should throw error when getting Options fails", func() {
+			evt, _ := NewEvent(&ar)
+			evt.crd.Spec.Options = "invalid string"
+			docs, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(docs).To(BeNil())
+		})
+		It("Should throw error when getting old AppliedOption fails", func() {
+			evt, _ := NewEvent(&ar)
+			evt.oldCrd.Status.AppliedOptions = "invalid string"
+			docs, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(docs).To(BeNil())
+		})
+		It("Should return error if no condition matches", func() {
+			evt, _ := NewEvent(&arDockerCreate)
+			evt.crd.Kind = "Docker"
+			docs, err := evt.getMeteringEvents()
+			Expect(docs).To(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
