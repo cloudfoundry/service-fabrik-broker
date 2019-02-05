@@ -11,11 +11,22 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
-        - cd interoperator
+        - pushd interoperator
         - dep ensure -v
+        - popd
+        - pushd webhooks
+        - dep ensure -v
+        - popd
       script:
+        - pushd interoperator
         - ./scripts/install_test.sh
         - go test -v -coverpkg=./pkg/... -coverprofile=coverage.txt ./pkg/...
+        - popd
+        - pushd webhooks
+        - go test -v -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/...
+        - popd
+        - cat interoperator/coverage.txt webhooks/coverage.txt > coverage.txt
+      after_success:
         - bash <(curl -s https://codecov.io/bash)
     - language: go
       os:
@@ -26,14 +37,10 @@ matrix:
         depth: 3
       before_install:
         - go get golang.org/x/lint/golint
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-      install:
-        - cd interoperator
-        - dep ensure -v
       script:
-        - go fmt ./pkg/... ./cmd/...
-        - go vet ./pkg/... ./cmd/...
-        - golint ./pkg/... ./cmd/...
+        - go fmt ./interoperator/pkg/... ./interoperator/cmd/... ./webhooks/pkg/webhooks/manager/... ./webhooks/pkg/apis/... 
+        - go vet ./interoperator/pkg/... ./interoperator/cmd/... ./webhooks/pkg/webhooks/manager/... ./webhooks/pkg/apis/... 
+        - golint ./interoperator/pkg/... ./interoperator/cmd/... ./webhooks/pkg/webhooks/manager/... ./webhooks/pkg/apis/... 
     - language: node_js
       node_js:
         - "8.14"
