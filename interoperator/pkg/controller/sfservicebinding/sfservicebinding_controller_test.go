@@ -157,7 +157,7 @@ var c client.Client
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: "default"}}
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -189,6 +189,9 @@ func TestReconcile(t *testing.T) {
 		Bind: properties.GenericStatus{
 			State:    "succeeded",
 			Response: "foo",
+		},
+		Unbind: properties.GenericStatus{
+			State: "succeeded",
 		},
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
@@ -259,14 +262,9 @@ func TestReconcile(t *testing.T) {
 
 func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	start := time.Now()
 	select {
 	case <-requests:
-		diff := time.Now().Sub(start)
-		if diff < remainingTime {
-			return 1 + drainAllRequests(requests, remainingTime-diff)
-		}
-		return 1
+		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
 	}
