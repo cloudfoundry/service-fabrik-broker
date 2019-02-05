@@ -124,7 +124,8 @@ describe('iaas', function () {
           }
         });
         return client.getDiskMetadata(diskName).then(res => {
-          expect(res.volumeId).to.equal(diskName);
+          const expectedVolId = client.convertToBoshDiskFormat(diskName);
+          expect(res.volumeId).to.equal(expectedVolId);
           expect(res.zone).to.equal(zone);
           expect(res.size).to.equal('4');
           expect(res.type).to.equal('Premium_LRS');
