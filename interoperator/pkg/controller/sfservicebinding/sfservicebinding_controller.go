@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"strconv"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
@@ -200,7 +201,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 				log.Printf("Delete sub resources error %s\n", err.Error())
 				requeue = true
 			} else {
-				err = r.setInProgress(binding, state)
+				err = r.setInProgress(request.NamespacedName, state)
 				if err != nil {
 					requeue = true
 				} else {
@@ -223,7 +224,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			log.Printf("Reconcile error %s\n", err.Error())
 			requeue = true
 		} else {
-			err = r.setInProgress(binding, state)
+			err = r.setInProgress(request.NamespacedName, state)
 			if err != nil {
 				requeue = true
 			} else {
@@ -261,8 +262,14 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	return r.handleError(binding, reconcile.Result{Requeue: requeue}, nil)
 }
 
-func (r *ReconcileSFServiceBinding) setInProgress(binding *osbv1alpha1.SFServiceBinding, state string) error {
+func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.NamespacedName, state string) error {
 	if state == "in_queue" || state == "update" || state == "delete" {
+		binding := &osbv1alpha1.SFServiceBinding{}
+		err := r.Get(context.TODO(), namespacedName, binding)
+		if err != nil {
+			log.Printf("error updating status to in progress. %s\n", err.Error())
+			return err
+		}
 		binding.SetState("in progress")
 		labels := binding.GetLabels()
 		if labels == nil {
@@ -270,12 +277,12 @@ func (r *ReconcileSFServiceBinding) setInProgress(binding *osbv1alpha1.SFService
 		}
 		labels[lastOperationKey] = state
 		binding.SetLabels(labels)
-		err := r.Update(context.Background(), binding)
+		err = r.Update(context.Background(), binding)
 		if err != nil {
 			log.Printf("error updating status to in progress. %s\n", err.Error())
 			return err
 		}
-		log.Printf("Updated status to in progress for state %s\n", state)
+		log.Printf("Updated status to in progress for operation %s\n", state)
 	}
 	return nil
 }
@@ -285,23 +292,46 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	planID := binding.Spec.PlanID
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
+	namespace := binding.GetNamespace()
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
 	if err != nil {
 		log.Printf("error computing status. %v\n", err)
 		return err
 	}
-	binding.Status.State = computedStatus.Unbind.State
-	binding.Status.Error = computedStatus.Unbind.Error
-	binding.Status.Resources = remainingResource
+
+	bindingObj := &osbv1alpha1.SFServiceBinding{}
+	namespacedName := types.NamespacedName{
+		Name:      bindingID,
+		Namespace: namespace,
+	}
+	err = r.Get(context.TODO(), namespacedName, bindingObj)
+	if err != nil {
+		log.Printf("error fetching binding. %v\n", err.Error())
+		return err
+	}
+
+	updateRequired := false
+	updatedStatus := binding.Status.DeepCopy()
+	updatedStatus.State = computedStatus.Unbind.State
+	updatedStatus.Error = computedStatus.Unbind.Error
+	updatedStatus.Resources = remainingResource
+	if !reflect.DeepEqual(&binding.Status, updatedStatus) {
+		updatedStatus.DeepCopyInto(&binding.Status)
+		updateRequired = true
+	}
 
 	if binding.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
-		log.Printf("binding %s deleted\n", bindingID)
+		log.Printf("binding %s removing finalizer\n", bindingID)
 		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
+		updateRequired = true
 	}
 
-	if err := r.Update(context.Background(), binding); err != nil {
-		return err
+	if updateRequired {
+		if err := r.Update(context.Background(), binding); err != nil {
+			log.Printf("error updating unbind status %s. %s.\n", bindingID, err.Error())
+			return err
+		}
 	}
 	return nil
 }
@@ -340,6 +370,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 		return err
 	}
 	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
+		updatedStatus := bindingObj.Status.DeepCopy()
 		bindingStatus := computedStatus.Bind
 		if bindingStatus.State == "succeeded" {
 			secretName := "sf-" + bindingID
@@ -379,18 +410,22 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serv
 					return err
 				}
 			}
-			bindingObj.Status.Response.SecretRef = secretName
+			updatedStatus.Response.SecretRef = secretName
 		} else if bindingStatus.State == "failed" {
-			bindingObj.Status.Error = bindingStatus.Error
+			updatedStatus.Error = bindingStatus.Error
 		}
-		bindingObj.Status.State = bindingStatus.State
+		updatedStatus.State = bindingStatus.State
 		if appliedResources != nil {
-			bindingObj.Status.Resources = resourceRefs
+			updatedStatus.Resources = resourceRefs
 		}
-		err = r.Update(context.Background(), bindingObj)
-		if err != nil {
-			log.Printf("error updating status. %v\n", err)
-			return err
+		if !reflect.DeepEqual(&bindingObj.Status, updatedStatus) {
+			updatedStatus.DeepCopyInto(&bindingObj.Status)
+			log.Printf("Updating bind status from template for %s\n", namespacedName)
+			err = r.Update(context.Background(), bindingObj)
+			if err != nil {
+				log.Printf("error updating status. %v\n", err)
+				return err
+			}
 		}
 	}
 	return nil
