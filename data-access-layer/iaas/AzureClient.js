@@ -55,9 +55,8 @@ class AzureClient extends BaseCloudClient {
             caching: 'None',
             resource_group_name: this.settings.resource_group
           }),
-          sku: _.assign({}, opts.type || {
-            name: 'Premium_LRS',
-            tier: 'Premium'
+          sku: _.assign({}, {
+            name: opts.type || 'Premium_LRS'
           }),
           creationData: {
             createOption: 'Copy',
