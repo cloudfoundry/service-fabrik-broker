@@ -135,6 +135,9 @@ var instance = &osbv1alpha1.SFServiceInstance{
 		RawParameters:    nil,
 		PreviousValues:   nil,
 	},
+	Status: osbv1alpha1.SFServiceInstanceStatus{
+		State: "in_queue",
+	},
 }
 
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
@@ -211,6 +214,10 @@ func TestReconcile(t *testing.T) {
 
 	// Delete the service instance
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), instanceKey, serviceInstance)).NotTo(gomega.HaveOccurred())
+	serviceInstance.SetState("delete")
+	g.Expect(c.Update(context.TODO(), serviceInstance)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 

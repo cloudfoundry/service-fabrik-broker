@@ -42,9 +42,10 @@ import (
 
 // finalizerName is the name of the finalizer added by interoperator
 const (
-	finalizerName  = "interoperator.servicefabrik.io"
-	errorCountKey  = "interoperator.servicefabrik.io/error"
-	errorThreshold = 10
+	finalizerName    = "interoperator.servicefabrik.io"
+	errorCountKey    = "interoperator.servicefabrik.io/error"
+	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
+	errorThreshold   = 10
 )
 
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -163,6 +164,15 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
 	bindingID := ""
+	state := instance.GetState()
+	labels := instance.GetLabels()
+	lastOperation, ok := labels[lastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	var requeue bool
+	var appliedResources []*unstructured.Unstructured
+	var remainingResource []osbv1alpha1.Source
 
 	if instance.GetDeletionTimestamp().IsZero() {
 		if !containsString(instance.GetFinalizers(), finalizerName) {
@@ -173,33 +183,31 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 				return r.handleError(instance, reconcile.Result{Requeue: true}, nil)
 			}
 		}
-	} else {
+	}
+
+	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	if err != nil {
+		return r.handleError(instance, reconcile.Result{}, err)
+	}
+
+	if state == "delete" && !instance.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
 		if containsString(instance.GetFinalizers(), finalizerName) {
 			// our finalizer is present, so lets handle our external dependency
-			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+			remainingResource, err = r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
 			if err != nil {
-				return r.handleError(instance, reconcile.Result{}, err)
-			}
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
-			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
-				return r.handleError(instance, reconcile.Result{}, err)
-			}
-			if len(remainingResource) != 0 && instance.Status.State != "failed" {
-				return r.handleError(instance, reconcile.Result{Requeue: true}, nil)
+				log.Printf("Delete sub resources error %s\n", err.Error())
+				requeue = true
+			} else {
+				err = r.setInProgress(instance, state)
+				if err != nil {
+					requeue = true
+				} else {
+					lastOperation = state
+				}
 			}
 		}
-
-		// Our finalizer has finished, so the reconciler can do nothing.
-		log.Printf("instance %s deleted\n", request.NamespacedName)
-		return reconcile.Result{}, nil
-	}
-
-	state := instance.GetState()
-	var requeue bool
-	var appliedResources []*unstructured.Unstructured
-
-	if state != "in progress" {
+	} else if state == "in_queue" || state == "update" {
 		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
 		if err != nil {
 			return r.handleError(instance, reconcile.Result{}, err)
@@ -210,31 +218,66 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			return r.handleError(instance, reconcile.Result{}, err)
 		}
 
-		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-		if err != nil {
-			return r.handleError(instance, reconcile.Result{}, err)
-		}
-
 		appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
 		if err != nil {
 			log.Printf("Reconcile error %s\n", err.Error())
 			requeue = true
-		} else if state == "in_queue" || state == "update" || state == "delete" {
-			instance.SetState("in progress")
-			err = r.Update(context.Background(), instance)
+		} else {
+			err = r.setInProgress(instance, state)
 			if err != nil {
-				log.Printf("error updating status to in progress. %s\n", err.Error())
 				requeue = true
+			} else {
+				lastOperation = state
 			}
 		}
 	}
 
-	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
-	if err != nil {
-		return r.handleError(instance, reconcile.Result{}, err)
+	if lastOperation == "delete" {
+		remainingResource = []osbv1alpha1.Source{}
+		for _, subResource := range instance.Status.Resources {
+			resource := &unstructured.Unstructured{}
+			resource.SetKind(subResource.Kind)
+			resource.SetAPIVersion(subResource.APIVersion)
+			resource.SetName(subResource.Name)
+			resource.SetNamespace(subResource.Namespace)
+			namespacedName := types.NamespacedName{
+				Name:      resource.GetName(),
+				Namespace: resource.GetNamespace(),
+			}
+			err := targetClient.Get(context.TODO(), namespacedName, resource)
+			if !errors.IsNotFound(err) {
+				remainingResource = append(remainingResource, subResource)
+			}
+		}
+		if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+	} else if lastOperation == "in_queue" || lastOperation == "update" {
+		err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
 	}
-
 	return r.handleError(instance, reconcile.Result{Requeue: requeue}, nil)
+}
+
+func (r *ReconcileServiceInstance) setInProgress(instance *osbv1alpha1.SFServiceInstance, state string) error {
+	if state == "in_queue" || state == "update" || state == "delete" {
+		instance.SetState("in progress")
+		labels := instance.GetLabels()
+		if labels == nil {
+			labels = make(map[string]string)
+		}
+		labels[lastOperationKey] = state
+		instance.SetLabels(labels)
+		err := r.Update(context.Background(), instance)
+		if err != nil {
+			log.Printf("error updating status to in progress. %s\n", err.Error())
+			return err
+		}
+		log.Printf("Updated status to in progress for state %s\n", state)
+	}
+	return nil
 }
 
 func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, remainingResource []osbv1alpha1.Source) error {
@@ -254,6 +297,7 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 
 	if instance.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
+		log.Printf("instance %s deleted\n", instanceID)
 		instance.SetFinalizers(removeString(instance.GetFinalizers(), finalizerName))
 	}
 

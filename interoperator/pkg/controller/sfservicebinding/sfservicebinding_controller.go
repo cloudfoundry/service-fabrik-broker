@@ -43,9 +43,10 @@ import (
 
 // finalizerName is the name of the finalizer added by interoperator
 const (
-	finalizerName  = "interoperator.servicefabrik.io"
-	errorCountKey  = "interoperator.servicefabrik.io/error"
-	errorThreshold = 10
+	finalizerName    = "interoperator.servicefabrik.io"
+	errorCountKey    = "interoperator.servicefabrik.io/error"
+	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
+	errorThreshold   = 10
 )
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -156,6 +157,15 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	planID := binding.Spec.PlanID
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
+	state := binding.GetState()
+	labels := binding.GetLabels()
+	lastOperation, ok := labels[lastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	var requeue bool
+	var appliedResources []*unstructured.Unstructured
+	var remainingResource []osbv1alpha1.Source
 
 	if binding.GetDeletionTimestamp().IsZero() {
 		if !containsString(binding.GetFinalizers(), finalizerName) {
@@ -166,15 +176,17 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 				return r.handleError(binding, reconcile.Result{Requeue: true}, nil)
 			}
 		}
-	} else {
+	}
+
+	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	if err != nil {
+		return r.handleError(binding, reconcile.Result{}, err)
+	}
+
+	if state == "delete" && !binding.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
 		if containsString(binding.GetFinalizers(), finalizerName) {
 			// our finalizer is present, so lets handle our external dependency
-			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-			if err != nil {
-				return r.handleError(binding, reconcile.Result{}, err)
-			}
-
 			// Explicitly delete BindSecret
 			secretName := "sf-" + bindingID
 			bindSecret := osbv1alpha1.Source{}
@@ -183,25 +195,20 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			bindSecret.Name = secretName
 			bindSecret.Namespace = binding.GetNamespace()
 			resourceRefs := append(binding.Status.Resources, bindSecret)
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
-			if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
-				return r.handleError(binding, reconcile.Result{}, err)
-			}
-			if len(remainingResource) != 0 && binding.Status.State != "failed" {
-				return r.handleError(binding, reconcile.Result{Requeue: true}, nil)
+			remainingResource, err = r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
+			if err != nil {
+				log.Printf("Delete sub resources error %s\n", err.Error())
+				requeue = true
+			} else {
+				err = r.setInProgress(binding, state)
+				if err != nil {
+					requeue = true
+				} else {
+					lastOperation = state
+				}
 			}
 		}
-
-		// Our finalizer has finished, so the reconciler can do nothing.
-		log.Printf("binding %s deleted\n", request.NamespacedName)
-		return reconcile.Result{}, nil
-	}
-
-	state := binding.GetState()
-	var requeue bool
-	var appliedResources []*unstructured.Unstructured
-
-	if state != "in progress" {
+	} else if state == "in_queue" || state == "update" {
 		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 		if err != nil {
 			return r.handleError(binding, reconcile.Result{}, err)
@@ -211,31 +218,66 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 			return r.handleError(binding, reconcile.Result{}, err)
 		}
 
-		targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-		if err != nil {
-			return r.handleError(binding, reconcile.Result{}, err)
-		}
-
 		appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
 		if err != nil {
 			log.Printf("Reconcile error %s\n", err.Error())
 			requeue = true
-		} else if state == "in_queue" || state == "update" || state == "delete" {
-			binding.SetState("in progress")
-			err = r.Update(context.Background(), binding)
+		} else {
+			err = r.setInProgress(binding, state)
 			if err != nil {
-				log.Printf("error updating status to in progress. %s\n", err.Error())
 				requeue = true
+			} else {
+				lastOperation = state
 			}
 		}
 	}
 
-	err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace(), appliedResources)
-	if err != nil {
-		return r.handleError(binding, reconcile.Result{}, err)
+	if lastOperation == "delete" {
+		remainingResource = []osbv1alpha1.Source{}
+		for _, subResource := range binding.Status.Resources {
+			resource := &unstructured.Unstructured{}
+			resource.SetKind(subResource.Kind)
+			resource.SetAPIVersion(subResource.APIVersion)
+			resource.SetName(subResource.Name)
+			resource.SetNamespace(subResource.Namespace)
+			namespacedName := types.NamespacedName{
+				Name:      resource.GetName(),
+				Namespace: resource.GetNamespace(),
+			}
+			err := targetClient.Get(context.TODO(), namespacedName, resource)
+			if !errors.IsNotFound(err) {
+				remainingResource = append(remainingResource, subResource)
+			}
+		}
+		if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
+			return r.handleError(binding, reconcile.Result{}, err)
+		}
+	} else if lastOperation == "in_queue" || lastOperation == "update" {
+		err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace(), appliedResources)
+		if err != nil {
+			return r.handleError(binding, reconcile.Result{}, err)
+		}
 	}
-
 	return r.handleError(binding, reconcile.Result{Requeue: requeue}, nil)
+}
+
+func (r *ReconcileSFServiceBinding) setInProgress(binding *osbv1alpha1.SFServiceBinding, state string) error {
+	if state == "in_queue" || state == "update" || state == "delete" {
+		binding.SetState("in progress")
+		labels := binding.GetLabels()
+		if labels == nil {
+			labels = make(map[string]string)
+		}
+		labels[lastOperationKey] = state
+		binding.SetLabels(labels)
+		err := r.Update(context.Background(), binding)
+		if err != nil {
+			log.Printf("error updating status to in progress. %s\n", err.Error())
+			return err
+		}
+		log.Printf("Updated status to in progress for state %s\n", state)
+	}
+	return nil
 }
 
 func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, remainingResource []osbv1alpha1.Source) error {
@@ -254,6 +296,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 
 	if binding.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
+		log.Printf("binding %s deleted\n", bindingID)
 		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
 	}
 

@@ -235,7 +235,14 @@ class ServiceBrokerApiController extends FabrikBaseController {
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
     req.operation_type = CONST.OPERATION_TYPE.DELETE;
-    return eventmesh.apiServerClient.patchOSBResource({
+    // Delete resource before patching state to delete
+    // As interoperator reacts on state change and deletionTimeStamp
+    return eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: req.params.instance_id
+      })
+      .then(() => eventmesh.apiServerClient.patchOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
         resourceId: req.params.instance_id,
@@ -243,11 +250,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
           state: CONST.APISERVER.RESOURCE_STATE.DELETE,
           description: ''
         }
-      })
-      .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-        resourceId: req.params.instance_id
       }))
       .then(() => {
         if (!plan.manager.async) {
@@ -394,8 +396,15 @@ class ServiceBrokerApiController extends FabrikBaseController {
       /* jshint unused:false */
       res.status(CONST.HTTP_STATUS_CODE.GONE).send({});
     }
-
-    return eventmesh.apiServerClient.updateOSBResource({
+    // Delete resource before patching state to delete
+    // As interoperator reacts on state change and deletionTimeStamp
+    return eventmesh.apiServerClient.deleteResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
+        resourceId: params.binding_id,
+        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
+      })
+      .then(() => eventmesh.apiServerClient.updateOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
         resourceId: params.binding_id,
@@ -403,12 +412,6 @@ class ServiceBrokerApiController extends FabrikBaseController {
         status: {
           state: CONST.APISERVER.RESOURCE_STATE.DELETE
         }
-      })
-      .then(() => eventmesh.apiServerClient.deleteResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS,
-        resourceId: params.binding_id,
-        namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id)
       }))
       .then(() => eventmesh.apiServerClient.getOSBResourceOperationStatus({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
