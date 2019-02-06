@@ -175,7 +175,7 @@ describe('Jobs', () => {
           .then(res => {
             expect(res).to.eql(true);
             mocks.verify();
-          })
+          });
       });
       it('should update state in apiserver if sending document fails', () => {
         const expectedResponse = {
