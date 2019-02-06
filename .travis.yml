@@ -1,8 +1,7 @@
 ---
 matrix:
   include:
-    - name: "Go Unit Tests"
-      language: go
+    - language: go
       os:
         - linux
       go:
