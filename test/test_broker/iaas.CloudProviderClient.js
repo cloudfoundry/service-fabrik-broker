@@ -19,20 +19,19 @@ describe('iaas', function () {
       const volType = 'gp2';
       const zone = 'zone';
       const response = {
-        Volumes: [{
-          VolumeId: diskId,
-          Size: '4',
-          AvailabilityZone: 'zone',
-          VolumeType: 'type',
-          Tags: [{
-            Key: 'k1',
-            Value: 'v1'
-          }, {
-            Key: 'k2',
-            Value: 'v2'
-          }]
+        VolumeId: diskId,
+        Size: '4',
+        AvailabilityZone: 'zone',
+        VolumeType: 'type',
+        Tags: [{
+          Key: 'k1',
+          Value: 'v1'
+        }, {
+          Key: 'k2',
+          Value: 'v2'
         }]
       };
+      const waitForResponse = { Volumes: [response] };
       it('should create disk from snapshot for aws', function () {
         const client = new CloudProviderClient({
           name: 'aws',
@@ -60,10 +59,10 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-            VolumeIds: [diskId]
-          })
+          VolumeIds: [diskId]
+        })
           .returns({
-            promise: () => Promise.resolve(response)
+            promise: () => Promise.resolve(waitForResponse)
           });
         return client
           .createDiskFromSnapshot(snapshotId, zone, {
@@ -149,8 +148,8 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-            VolumeIds: [diskId]
-          })
+          VolumeIds: [diskId]
+        })
           .returns({
             promise: () => Promise.reject(new Error('diskwaiterror'))
           });
