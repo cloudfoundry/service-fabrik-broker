@@ -74,7 +74,6 @@ class CloudProviderClient extends BaseCloudClient {
           })
           .promise();
       })
-      .then(diskResponse => diskResponse.Volumes[0])
       .then(volume => {
         const describeReq = {
           VolumeIds: [volume.VolumeId]

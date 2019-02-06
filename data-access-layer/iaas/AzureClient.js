@@ -36,10 +36,15 @@ class AzureClient extends BaseCloudClient {
       .then(snapshotResponse => _.pick(snapshotResponse, ['location', 'creationData', 'id']));
   }
 
-  createDiskFromSnapshot(snapshotId, zones, opts = {}) {
-    const diskName = `bosh-disk-data-${uuid.v4()}`;
+  convertToBoshDiskFormat(diskName) {
     const boshDiskSegments = ['caching:None', `disk_name:${diskName}`, `resource_group_name:${this.settings.resource_group}`];
     const boshDiskName = _.join(boshDiskSegments, encodeURIComponent(';'));
+    return boshDiskName;
+  }
+
+  createDiskFromSnapshot(snapshotId, zones, opts = {}) {
+    const diskName = `bosh-disk-data-${uuid.v4()}`;
+    const boshDiskName = this.convertToBoshDiskFormat(diskName);
     return Promise.try(() => this.getSnapshot(snapshotId))
       .then(snapshotData => {
         const options = {
@@ -50,9 +55,8 @@ class AzureClient extends BaseCloudClient {
             caching: 'None',
             resource_group_name: this.settings.resource_group
           }),
-          sku: _.assign({}, opts.type || {
-            name: 'Premium_LRS',
-            tier: 'Premium'
+          sku: _.assign({}, {
+            name: opts.type || 'Premium_LRS'
           }),
           creationData: {
             createOption: 'Copy',
@@ -75,10 +79,23 @@ class AzureClient extends BaseCloudClient {
   }
 
   getDiskMetadata(diskId) {
+    const decodedDiskId = decodeURIComponent(diskId);
+    const boshDiskSegments = _.split(decodedDiskId, ';');
+    let diskName;
+    if (boshDiskSegments.length > 1) {
+      diskName = _.chain(boshDiskSegments)
+        .filter(seg => _.startsWith(seg, 'disk_name:'))
+        .head()
+        .split(':')
+        .last()
+        .value();
+    } else {
+      diskName = decodedDiskId;
+    }
     return this.computeClient.disks
-      .getAsync(this.settings.resource_group, diskId)
+      .getAsync(this.settings.resource_group, diskName)
       .then(diskResponse => ({
-        volumeId: diskResponse.name,
+        volumeId: this.convertToBoshDiskFormat(diskResponse.name),
         size: diskResponse.diskSizeGB,
         zone: diskResponse.zones[0],
         type: diskResponse.sku ? diskResponse.sku.name : '',

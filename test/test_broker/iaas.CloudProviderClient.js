@@ -19,19 +19,20 @@ describe('iaas', function () {
       const volType = 'gp2';
       const zone = 'zone';
       const response = {
-        Volumes: [{
-          VolumeId: diskId,
-          Size: '4',
-          AvailabilityZone: 'zone',
-          VolumeType: 'type',
-          Tags: [{
-            Key: 'k1',
-            Value: 'v1'
-          }, {
-            Key: 'k2',
-            Value: 'v2'
-          }]
+        VolumeId: diskId,
+        Size: '4',
+        AvailabilityZone: 'zone',
+        VolumeType: 'type',
+        Tags: [{
+          Key: 'k1',
+          Value: 'v1'
+        }, {
+          Key: 'k2',
+          Value: 'v2'
         }]
+      };
+      const waitForResponse = {
+        Volumes: [response]
       };
       it('should create disk from snapshot for aws', function () {
         const client = new CloudProviderClient({
@@ -63,7 +64,7 @@ describe('iaas', function () {
             VolumeIds: [diskId]
           })
           .returns({
-            promise: () => Promise.resolve(response)
+            promise: () => Promise.resolve(waitForResponse)
           });
         return client
           .createDiskFromSnapshot(snapshotId, zone, {
