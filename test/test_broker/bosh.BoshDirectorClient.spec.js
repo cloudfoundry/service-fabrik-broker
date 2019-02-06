@@ -1020,7 +1020,7 @@ describe('bosh', () => {
       it('sends start signal for deployment', () => {
         return mockBoshDirectorClient.stopDeployment(id)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
@@ -1059,7 +1059,7 @@ describe('bosh', () => {
       it('sends start signal for deployment', () => {
         return mockBoshDirectorClient.startDeployment(id)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
