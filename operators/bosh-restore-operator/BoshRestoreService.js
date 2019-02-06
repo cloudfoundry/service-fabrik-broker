@@ -15,6 +15,7 @@ const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
+const catalog = require('../common/models/catalog');
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -70,9 +71,12 @@ class BoshRestoreService extends BaseDirectorService {
           _.unset(persistentDiskInfo[i], 'getDiskMetadataPromise');
         }
 
+        const service = catalog.getService(service_id);
         const optionsData = _
           .assign({ 
-            restoreMetadata: { 
+            restoreMetadata: {
+              timeStamp: args.time_stamp,
+              filePath: _.get(service, 'restore_operation.filesystem_path'), 
               snapshotId: _.get(backupMetadata, 'snapshotId'),
               deploymentName: deploymentName,
               deploymentInstancesInfo: persistentDiskInfo,
@@ -117,6 +121,8 @@ class BoshRestoreService extends BaseDirectorService {
         return this.processCreateDisk(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`:
         return this.processAttachDisk(changedOptions);
+      case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`:
+        return this.processPutFile(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`:
         return this.processRunErrands(changedOptions);
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`:
@@ -243,9 +249,57 @@ class BoshRestoreService extends BaseDirectorService {
           }
         },
         status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`
+        }
+      });
+    } catch (err) {
+      logger.error(`Error occurred: ${err}`);
+      return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.FAILED
+        }
+      });
+    }
+  }
+
+  async processPutFile(resourceOptions) {
+    try {
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
+      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'));
+
+      //TODO: finalize command for PITR and non-PITR case
+      const filePath;
+      const timeStamp;
+      const cmd;
+
+      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
+        instance.sshPromise = this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
+      }
+
+      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
+        let instance = deploymentInstancesInfo[i];
+        instance.sshResult = await instance.sshPromise;
+        _.unset(instance, 'sshPromise');
+      }
+
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        options: {
+          restoreMetadata: {
+            deploymentInstancesInfo: deploymentInstancesInfo
+          }
+        },
+        status: {
           'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`
         }
       });
+
     } catch (err) {
       logger.error(`Error occurred: ${err}`);
       return eventmesh.apiServerClient.updateResource({
@@ -344,6 +398,21 @@ class BoshRestoreService extends BaseDirectorService {
     }
   }
 
+  async processPostStart(resourceOptions) {
+    try {
+      const service = catalog.getService(_.get(resourceOptions,'service_id'));
+    } catch (err) {
+      logger.error(`Error occurred: ${err}`);
+      return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.FAILED
+        }
+      }); 
+    }
+  }
   static createService(plan) {
     if (!this[plan.id]) {
       this[plan.id] = new this(plan);
