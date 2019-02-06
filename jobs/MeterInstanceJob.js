@@ -20,7 +20,7 @@ class MeterInstanceJob extends BaseJob {
     try {
       logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
       const events = await this.getInstanceEvents()
-      logger.info('received events -> ', events)
+      logger.debug('Received metering events -> ', events)
       let meterResponse = await this.meter(events)
       return this.runSucceeded(meterResponse, job, done)
     } catch (err) {
@@ -78,21 +78,6 @@ class MeterInstanceJob extends BaseJob {
     options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
     return options;
-  }
-
-  static getPlanSKUFromPlanGUID(serviceGuid, planGuid) {
-    logger.info(`Getting Plan SKU for service ${serviceGuid}, plan: ${planGuid}`);
-    const service = _.chain(catalog.toJSON().services)
-      .map((s) => s.id === serviceGuid ? s : undefined)
-      .filter(s => s !== undefined)
-      .head()
-      .value();
-    return _
-      .chain(service.plans)
-      .map((p) => p.id === planGuid ? p.sku_name : undefined)
-      .filter(p => p !== undefined)
-      .head()
-      .value();
   }
 
   /* jshint ignore:start */

@@ -87,7 +87,6 @@ describe('Jobs', () => {
             labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
           }, 1, 200);
         // Call to MaaS to get token
-        const mock_token = 'mock_token_string';
         const mock_response_code = 200;
         mocks.metering.mockAuthCall(mock_token);
         // Call to MaaS to send usage record
@@ -161,7 +160,6 @@ describe('Jobs', () => {
             state: CONST.METER_STATE.METERED
           }
         };
-        const mock_token = 'mock_token_string';
         const mock_response_code = 200;
         mocks.metering.mockAuthCall(mock_token);
         mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
@@ -178,7 +176,6 @@ describe('Jobs', () => {
             expect(res).to.eql(true);
             mocks.verify();
           })
-          .catch(err => expect(err).to.be.undefined);
       });
       it('should update state in apiserver if sending document fails', () => {
         const expectedResponse = {
@@ -189,7 +186,6 @@ describe('Jobs', () => {
             state: CONST.METER_STATE.FAILED
           }
         };
-        const mock_token = 'mock_token_string';
         const mock_response_code = 400;
         mocks.metering.mockAuthCall(mock_token);
         mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
@@ -237,10 +233,10 @@ describe('Jobs', () => {
     });
 
 
+    const mock_token = 'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjB9';
     describe('#meter', () => {
       it('Should send event for all documents', () => {
         //Send doucments to metering service 2 times
-        const mock_token = 'mock_token_string';
         const mock_response_code = 200;
         const expectedResponse = {
           status: 200
@@ -277,7 +273,6 @@ describe('Jobs', () => {
       });
       it('Should keep tab of failed events', () => {
         //Send doucments to metering service 2 times
-        const mock_token = 'mock_token_string';
         const mock_response_code = 200;
         const mock_response_code_failure = 400;
         const expectedResponse = {

@@ -8,6 +8,7 @@ const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
 const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
+const TokenInfo = require('../../quota/TokenInfo');
 
 class MeteringClient extends HttpClient {
 
@@ -23,6 +24,7 @@ class MeteringClient extends HttpClient {
     this.clientSecret = config.metering.client_secret;
     this.tokenUrl = config.metering.token_url;
     this.meteringUrl = config.metering.metering_url;
+    this.tokenInfo = new TokenInfo()
   }
 
   async getAuthToken() {
@@ -49,14 +51,14 @@ class MeteringClient extends HttpClient {
 
   async sendUsageRecord(usageRecords) {
     try {
-      if (this.accessToken === undefined) {
-        this.accessToken = await this.getAuthToken();
+      if (this.tokenInfo.expiresSoon(this.tokenInfo.accessToken) == true) {
+        this.tokenInfo.accessToken = await this.getAuthToken();
       }
       return this.request({
         url: CONST.URL.METERING_USAGE,
         method: CONST.HTTP_METHOD.PUT,
         auth: {
-          bearer: this.accessToken
+          bearer: this.tokenInfo.accessToken
         },
         body: usageRecords,
         json: true
