@@ -40,10 +40,11 @@ type SfeventList struct {
 
 // ServiceInfo holds the service id and plan id
 type ServiceInfo struct {
-	// The id mentioned is the SKU name of service
-	// like redis, postgresql and not uutd
-	ID   string `json:"id"`
-	Plan string `json:"plan"`
+    // Store the service guid and plan guid here
+    // will be enriched to servcie name and plan sku
+    //.before sending to metering
+	ID   string `json:"service_guid"`
+	Plan string `json:"plan_guid"`
 }
 
 // ConsumerInfo holds the consumer related details

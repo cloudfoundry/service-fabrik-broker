@@ -10,8 +10,8 @@ let options_json = {
   id: meterGuid,
   timestamp: '2019-01-21T11:00:42.384518Z',
   service: {
-    id: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
-    plan: not_excluded_plan
+    service_guid: '24731fb8-7b84-4f57-914f-c3d55d793dd4',
+    plan_guid: not_excluded_plan
   },
   consumer: {
     environment: '',
@@ -143,8 +143,8 @@ describe('Jobs', () => {
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         // updated the dummy event with exluded plans
-        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan = '466c5078-df6e-427d-8fb2-c76af50c0f56';
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = '466c5078-df6e-427d-8fb2-c76af50c0f56';
         const dummy_event = getDummyEvent(options_json);
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
@@ -170,8 +170,8 @@ describe('Jobs', () => {
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         // updated the dummy event with not exluded plans
-        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan = not_excluded_plan;
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
         const dummy_event = getDummyEvent(options_json);
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
@@ -196,8 +196,8 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan = not_excluded_plan;
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
         const dummy_event = getDummyEvent(options_json);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
@@ -209,6 +209,34 @@ describe('Jobs', () => {
           .catch(err => expect(err).to.be.undefined);
       });
     });
+
+    describe('#enrichEvent', () => {
+      it('Should create new object with service id and plan sku', () => {
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
+        expect(MeterInstanceJob.enrichEvent(options_json)).to.eql({
+          'consumer': {
+            'environment': '',
+            'instance': '4e099918-1b37-42a8-9dbd-a752225fcd07',
+            'org': '33915d88-6002-4e83-b154-9ec2075e1435',
+            'region': 'asia',
+            'space': 'bd78dbbb-5225-4dfa-94e0-816a4de9b7c9'
+          },
+          'id': 'meter-guid',
+          'measues': [{
+            'id': 'instances',
+            'value': 'start'
+          }],
+          'service': {
+            'id': 'blueprint',
+            'plan': 'xsmall'
+          },
+          'timestamp': '2019-01-21T11:00:42.384518Z'
+        });
+      });
+    });
+
+
     describe('#meter', () => {
       it('Should send event for all documents', () => {
         //Send doucments to metering service 2 times
@@ -231,8 +259,8 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan = not_excluded_plan;
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
         const dummy_event = getDummyEvent(options_json);
         // update apiserver for the 2 events
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
@@ -276,8 +304,8 @@ describe('Jobs', () => {
           return true;
         });
         // updated the dummy event with not exluded plans
-        options_json.service.id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
-        options_json.service.plan = not_excluded_plan;
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
         const dummy_event = getDummyEvent(options_json);
         // update apiserver for the 2 events
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,

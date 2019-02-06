@@ -43,6 +43,21 @@ class Catalog {
       services: _.filter(this.services, service => service.name.indexOf('-fabrik-internal') === -1)
     };
   }
+
+  getPlanSKUFromPlanGUID(serviceGuid, planGuid) {
+    const service = _.chain(this.toJSON().services)
+      .map(s => s.id === serviceGuid ? s : undefined)
+      .filter(s => s !== undefined)
+      .head()
+      .value();
+    return _
+      .chain(service.plans)
+      .map(p => p.id === planGuid ? p.sku_name : undefined)
+      .filter(p => p !== undefined)
+      .head()
+      .value();
+  }
+
 }
 
 module.exports = new Catalog();

@@ -61,8 +61,8 @@ class MeterInstanceJob extends BaseJob {
   /* jshint ignore:end */
 
   static isServicePlanExcluded(options) {
-    const serviceId = _.get(options, 'service.id');
-    const planId = _.get(options, 'service.plan');
+    const serviceId = _.get(options, 'service.service_guid');
+    const planId = _.get(options, 'service.plan_guid');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
     const plan = catalog.getPlan(planId);
     return !plan.metered;
@@ -70,11 +70,12 @@ class MeterInstanceJob extends BaseJob {
 
   static enrichEvent(options) {
     // Add region , service name and plan sku name of the event
-    const serviceId = _.get(options, 'service.id');
-    const planId = _.get(options, 'service.plan');
+    const serviceId = _.get(options, 'service.service_guid');
+    const planId = _.get(options, 'service.plan_guid');
     logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
     options.service.id = catalog.getServiceName(serviceId);
-    options.service.plan = this.getPlanSKUFromPlanGUID(serviceId, planId);
+    options.service.plan = catalog.getPlanSKUFromPlanGUID(serviceId, planId);
+    options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
     return options;
   }
@@ -97,12 +98,12 @@ class MeterInstanceJob extends BaseJob {
   /* jshint ignore:start */
   static async sendEvent(event) {
     try {
-      logger.debug('Event details before enriching:', event);
+      logger.debug('Metering Event details before enriching:', event);
       if (this.isServicePlanExcluded(event.spec.options) === true) {
         await this.updateMeterState(CONST.METER_STATE.EXCLUDED, event);
         return true;
       }
-      let enrichedUsageDoc = await this.enrichEvent(event.spec.options);
+      let enrichedUsageDoc = await this.enrichEvent(_.get(event.spec,'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
       let validEvent = await maas.client.sendUsageRecord({
         usage: [enrichedUsageDoc]
