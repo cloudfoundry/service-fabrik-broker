@@ -31,7 +31,9 @@ describe('iaas', function () {
           Value: 'v2'
         }]
       };
-      const waitForResponse = { Volumes: [response] };
+      const waitForResponse = {
+        Volumes: [response]
+      };
       it('should create disk from snapshot for aws', function () {
         const client = new CloudProviderClient({
           name: 'aws',
@@ -59,8 +61,8 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-          VolumeIds: [diskId]
-        })
+            VolumeIds: [diskId]
+          })
           .returns({
             promise: () => Promise.resolve(waitForResponse)
           });
@@ -148,8 +150,8 @@ describe('iaas', function () {
         });
         const waitForStub = sinon.stub(client.blockstorage, 'waitFor');
         waitForStub.withArgs('volumeAvailable', {
-          VolumeIds: [diskId]
-        })
+            VolumeIds: [diskId]
+          })
           .returns({
             promise: () => Promise.reject(new Error('diskwaiterror'))
           });
