@@ -347,7 +347,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
-              backup: _.pick(metadata, 'type', 'secret', 'snapshotId')
+              backup: _.pick(metadata, 'type', 'secret', 'snapshotId', 'started_at', 'finished_at')
             },
             req.body, {
               backup_guid: _.get(metadata, 'backup_guid')
@@ -546,7 +546,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
-    const restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
+    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     let backupSpaceGuid = tenantId;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     return Promise
@@ -671,7 +671,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           operationName: CONST.OPERATION_TYPE.RESTORE,
-          operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          operationType: restoreType,
           resourceId: req.params.instance_id,
           value: restoreGuid
         });

@@ -55,9 +55,10 @@ class BoshRestoreService extends BaseDirectorService {
           tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
         })
         .value();
-
-        const jobs = ['blueprint']; //Obtain the jobs from service catalog
-        let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, jobs);
+        const service = catalog.getService(service_id);
+        
+        const instanceGroups = _.get(service, 'restore_operation.instance_group'); 
+        let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups);
 
         //Get disk metadata of old disks
         for (let i = 0;i < persistentDiskInfo.length; i++) {
@@ -71,7 +72,6 @@ class BoshRestoreService extends BaseDirectorService {
           _.unset(persistentDiskInfo[i], 'getDiskMetadataPromise');
         }
 
-        const service = catalog.getService(service_id);
         const optionsData = _
           .assign({ 
             restoreMetadata: {
@@ -81,12 +81,22 @@ class BoshRestoreService extends BaseDirectorService {
               deploymentName: deploymentName,
               deploymentInstancesInfo: persistentDiskInfo,
               snapshotId: _.get(backupMetadata, 'snapshotId'),
-              'pre-warming-errand-name': 'pre-warm-simulation', //To be obtained from service catalog
-              'pitr-errand-name': 'dummyErrand' //To be obtained from service catalog
+              baseBackupErrand: {
+                name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
+                instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
+              },
+              pointInTimeErrand: {
+                name: _.get(service, 'restore_operation.errands.point_in_time.name'),
+                instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
+              },
+              postStartErrand: {
+                name: _.get(service, 'restore_operation.errands.post_start.name'),
+                instances: _.get(service, 'restore_operation.errands.post_start.instances')
+              }
             },
             statesResults: {}
           });
-        //create/update the restoreFile
+        //TODO:create/update the restoreFile
         //update resource state to bosh_stop along with needed information
         return eventmesh.apiServerClient.patchResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -130,6 +140,7 @@ class BoshRestoreService extends BaseDirectorService {
     }
   }
 
+  //TODO: check whether stopped deployment can again be stopped [poll for task from resource options > stop > poll]
   async processBoshStop(resourceOptions) {
     try {
       //1. Get deployment name from resource
@@ -168,7 +179,8 @@ class BoshRestoreService extends BaseDirectorService {
       });
     }
   }
-
+//TODO: add logging to find out the failure location 
+//TODO: Store the logs in restorefile or not?
   async processCreateDisk(resourceOptions) {
     try {
       //1. get snapshot id from backup metadata
@@ -188,7 +200,7 @@ class BoshRestoreService extends BaseDirectorService {
         instance.newDiskInfo = await instance.createDiskPromise;
         _.unset(instance, 'createDiskPromise');
       }
-
+      //TODO: add information for stateResults field also
       //4. Update the resource with deploymentInstancesInfo and next state 
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -237,7 +249,7 @@ class BoshRestoreService extends BaseDirectorService {
         instance.attachDiskTaskResult = await instance.attachDiskPollingPromise;
         _.unset(instance, 'attachDiskPollingPromise');
       };
-
+      //TODO: add information for stateResults field also
       //3. Update the resource with deploymentInstanceInfo and next state
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -273,8 +285,13 @@ class BoshRestoreService extends BaseDirectorService {
       //TODO: finalize command for PITR and non-PITR case
       const filePath;
       const timeStamp;
-      const cmd;
-
+      const cmd = `
+      rm -rf ${service.restore_operation.filesystem_path}
+      touch ${service.restore_operation.filesystem_path}
+      echo ${JSON.stringify(resourceOptions)} > ${service.restore_operation.filesystem_path}
+      sync
+      `;
+      //TODO: add retries
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
         instance.sshPromise = this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
@@ -312,7 +329,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     }
   }
-
+  //TODO: Handle the task id already present scenario. Also patch the task id immediately
   async processRunErrands(resourceOptions) {
     try {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
@@ -357,7 +374,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     }
   }
-
+//TODO: Handle the task id already present scenario. Also patch the task id immediately
   async processBoshStart(resourceOptions) {
     try {
       //1. Get deployment name from resource
@@ -398,6 +415,7 @@ class BoshRestoreService extends BaseDirectorService {
     }
   }
 
+ //TODO: Handle the task id already present scenario. Also patch the task id immediately 
   async processPostStart(resourceOptions) {
     try {
       const service = catalog.getService(_.get(resourceOptions,'service_id'));
