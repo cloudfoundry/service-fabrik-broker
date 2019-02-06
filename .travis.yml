@@ -11,7 +11,11 @@ matrix:
       before_install:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       install:
-        - { cd interoperator ; dep ensure } & { cd webhooks ; dep ensure } &
+        - cd interoperator
+        - dep ensure -v
+        - cd ../webhooks
+        - dep ensure -v
+        - cd ..
       script:
         - pushd interoperator
         - ./scripts/install_test.sh
@@ -34,7 +38,11 @@ matrix:
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - go get golang.org/x/lint/golint
       install:
-        - { cd interoperator ; dep ensure } & { cd webhooks ; dep ensure } &
+        - cd interoperator
+        - dep ensure -v
+        - cd ../webhooks
+        - dep ensure -v
+        - cd ..
       script:
         - pushd interoperator
         - go fmt ./pkg/... ./cmd/...
