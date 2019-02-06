@@ -224,16 +224,16 @@ describe('fabrik', function () {
     const deferred = Promise.defer();
     let errorPollTask = false;
     before(function () {
-      sandbox = sinon.sandbox.create();
-      loggerWarnSpy = sandbox.spy(logger, 'warn');
-      retryStub = sandbox.stub(utils, 'retry', (callback, options) => callback());
+      sandbox = sinon.createSandbox();
+      loggerWarnSpy = sinon.spy(logger, 'warn');
+      retryStub = sandbox.stub(utils, 'retry').callsFake((callback, options) => callback());
       dbInitializeSpy = sinon.spy(DBManager.prototype, 'initialize');
       dbInitializeForCreateSpy = sinon.spy(DBManagerCreateWithDelayedReconnectRetry.prototype, 'initialize');
       dbInitializeByUrlSpy = sinon.spy(DBManagerByUrl.prototype, 'initialize');
       dbCreateUpdateSucceededSpy = sandbox.spy(DBManagerForUpdate.prototype, 'dbCreateUpdateSucceeded');
       getDeploymentVMsStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeploymentVms');
       getDeploymentStub = sandbox.stub(BoshDirectorClient.prototype, 'getDeployment');
-      pollTaskStatusTillCompleteStub = sandbox.stub(BoshDirectorClient.prototype, 'pollTaskStatusTillComplete',
+      pollTaskStatusTillCompleteStub = sandbox.stub(BoshDirectorClient.prototype, 'pollTaskStatusTillComplete').callsFake(
         () => Promise.try(() => {
           if (errorPollTask) {
             throw new errors.ServiceUnavailable('Bosh Down...');
@@ -246,14 +246,14 @@ describe('fabrik', function () {
     });
 
     afterEach(function () {
-      getDeploymentStub.reset();
-      getDeploymentVMsStub.reset();
-      pollTaskStatusTillCompleteStub.reset();
-      loggerWarnSpy.reset();
-      dbInitializeSpy.reset();
-      dbInitializeByUrlSpy.reset();
-      retryStub.reset();
-      dbCreateUpdateSucceededSpy.reset();
+      getDeploymentStub.resetHistory();
+      getDeploymentVMsStub.resetHistory();
+      pollTaskStatusTillCompleteStub.resetHistory();
+      loggerWarnSpy.resetHistory();
+      dbInitializeSpy.resetHistory();
+      dbInitializeByUrlSpy.resetHistory();
+      retryStub.resetHistory();
+      dbCreateUpdateSucceededSpy.resetHistory();
     });
     after(function () {
       sandbox.restore();
@@ -262,7 +262,7 @@ describe('fabrik', function () {
     describe('#Initialize', function () {
       let configStub, initSandbox, proxyDBUrl;
       before(function () {
-        initSandbox = sinon.sandbox.create();
+        initSandbox = sinon.createSandbox();
         configStub = sandbox.stub(config);
       });
       beforeEach(function () {

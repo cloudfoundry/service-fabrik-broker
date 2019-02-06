@@ -53,11 +53,7 @@ class TaskOperator extends BaseOperator {
             resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
             resourceId: resource.metadata.name,
             options: taskDetails,
-            status: {
-              response: taskDetails.response,
-              lastOperation: status,
-              state: status.state
-            }
+            status: status
           });
         })
         .tap(() => logger.info(`Status of task ${taskDetails.task_type} for ${resource.metadata.name} is now set to in-progress.`));
@@ -89,7 +85,7 @@ class TaskOperator extends BaseOperator {
         const state = _.get(operationStatus, 'state');
         if (utils.isServiceFabrikOperationFinished(state)) {
           logger.info(`TASK COMPLETE - on resource - ${taskDetails.task_type} - ${object.metadata.name} - ${JSON.stringify(resourceDetails)}  - ${JSON.stringify(taskDetails.resource)}`);
-          let description = _.get(operationStatus, 'lastOperation.description');
+          let description = _.get(operationStatus, 'description');
           description = description || _.get(operationStatus, 'response.description');
           const status = {
             description: description,

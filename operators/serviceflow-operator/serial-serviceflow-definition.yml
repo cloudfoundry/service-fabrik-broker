@@ -22,6 +22,17 @@ upgrade_to_multi_az:
     task_description: 'phase: scale down'
     task_data:
       vms_scale: downgrade
+downgrade_to_single_az:
+  description: 'Downgrade deployment back to single availability zone'
+  tasks: 
+  - task_type: ServiceInstanceUpdateTask
+    task_description: 'Deployment update for single-az, phase: scale up'
+    task_data:
+      vms_scale: upgrade
+  - task_type: ServiceInstanceUpdateTask
+    task_description: 'phase: scale down'
+    task_data:
+      vms_scale: downgrade
 major_version_upgrade:
   description: 'Major version upgrade'
   tasks: 

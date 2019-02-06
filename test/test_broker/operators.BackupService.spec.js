@@ -53,9 +53,9 @@ describe('operators', function () {
 
 
     before(function () {
-      sandbox = sinon.sandbox.create();
-      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
-      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule', () => Promise.resolve({}));
+      sandbox = sinon.createSandbox();
+      scheduleStub = sinon.stub(ScheduleManager, 'schedule').callsFake(() => Promise.resolve({}));
+      cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule').callsFake(() => Promise.resolve({}));
       getBackupLastOperationStub = sandbox.stub(Agent.prototype, 'getBackupLastOperation');
       getBackupLastOperationStub.withArgs().returns(Promise.resolve(backup_state));
       getBackupLogsStub = sandbox.stub(Agent.prototype, 'getBackupLogs');
@@ -84,12 +84,12 @@ describe('operators', function () {
     });
     afterEach(function () {
       mocks.reset();
-      scheduleStub.reset();
-      cancelScheduleStub.reset();
-      getBackupLastOperationStub.reset();
-      getBackupLogsStub.reset();
-      patchBackupFileStub.reset();
-      getFileStub.reset();
+      scheduleStub.resetHistory();
+      cancelScheduleStub.resetHistory();
+      getBackupLastOperationStub.resetHistory();
+      getBackupLogsStub.resetHistory();
+      patchBackupFileStub.resetHistory();
+      getFileStub.resetHistory();
     });
     after(function () {
       scheduleStub.restore();

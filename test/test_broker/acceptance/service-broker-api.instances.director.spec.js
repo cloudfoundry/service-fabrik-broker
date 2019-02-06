@@ -44,7 +44,7 @@ describe('service-broker-api', function () {
 
       afterEach(function () {
         mocks.reset();
-        getScheduleStub.reset();
+        getScheduleStub.resetHistory();
       });
 
       after(function () {

@@ -145,7 +145,7 @@ describe('Jobs', function () {
         mocks.cloudProvider.getContainer(container);
         baseJobLogRunHistoryStub = sinon.stub(BaseJob, 'logRunHistory');
         baseJobLogRunHistoryStub.withArgs().returns(Promise.resolve({}));
-        delayStub = sinon.stub(Promise, 'delay', () => Promise.resolve());
+        delayStub = sinon.stub(Promise, 'delay').callsFake(() => Promise.resolve());
         cancelScheduleStub = sinon.stub(ScheduleManager, 'cancelSchedule');
         cancelScheduleStub.withArgs(failed_instance_id).returns(Promise.reject(new errors.ServiceUnavailable('Scheduler Unavailable')));
         cancelScheduleStub.returns(Promise.resolve({}));
@@ -160,11 +160,11 @@ describe('Jobs', function () {
 
       afterEach(function () {
         job.attrs.data.instance_id = instance_id;
-        baseJobLogRunHistoryStub.reset();
-        cancelScheduleStub.reset();
-        runAtStub.reset();
-        scheduleStub.reset();
-        delayStub.reset();
+        baseJobLogRunHistoryStub.resetHistory();
+        cancelScheduleStub.resetHistory();
+        runAtStub.resetHistory();
+        scheduleStub.resetHistory();
+        delayStub.resetHistory();
         job.attrs.data.attempt = 1;
         saveJobFailure = false;
       });

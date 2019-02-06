@@ -8,9 +8,9 @@ const BackupStatusPoller = require('./backup-operator/BackupStatusPoller');
 const defaultRestoreOperator = new DefaultRestoreOperator();
 const DefaultBoshRestoreOperator = require('./bosh-restore-operator/DefaultBoshRestoreOperator');
 const defaultBoshRestoreOperator = new DefaultBoshRestoreOperator();
-defaultBoshRestoreOperator.init();
 defaultBackupOperator.init();
 defaultRestoreOperator.init();
+defaultBoshRestoreOperator.init();
 /* jshint nonew:false */
 new BackupStatusPoller();
 /* jshint nonew:false */

@@ -27,8 +27,8 @@ describe('operators', function () {
           user: CONST.SYSTEM_USER
         };
         before(function () {
-          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'createResource', () => Promise.resolve(taskDetails));
-          utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(taskId));
+          apiServerClientUpdateStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(taskDetails));
+          utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(taskId));
         });
         after(function () {
           apiServerClientUpdateStub.restore();

@@ -61,7 +61,7 @@ describe('operators', function () {
     };
     let sandbox, initStub, clearPollerStub, createStub, updateStub, deleteStub;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       initStub = sandbox.stub(BaseStatusPoller.prototype, 'init');
       clearPollerStub = sandbox.stub(BaseStatusPoller.prototype, 'clearPoller');
       createStub = sandbox.stub();

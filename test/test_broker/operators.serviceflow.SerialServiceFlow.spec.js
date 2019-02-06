@@ -77,13 +77,13 @@ describe('operators', function () {
       };
       let relayTaskCallBack;
       before(function () {
-        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher', (resourceGroup, resourceType, validStateList, handler) => {
+        registerWatcherStub = sinon.stub(BaseOperator.prototype, 'registerWatcher').callsFake((resourceGroup, resourceType, validStateList, handler) => {
           relayTaskCallBack = handler;
           Promise.resolve(true);
         });
-        registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds', () => Promise.resolve(true));
+        registerCRDStub = sinon.stub(BaseOperator.prototype, 'registerCrds').callsFake(() => Promise.resolve(true));
         SerialServiceFlowOperator = require('../../operators/serviceflow-operator/SerialServiceFlowOperator');
-        updateResourceStub = sinon.stub(apiServerClient, 'updateResource', () => {
+        updateResourceStub = sinon.stub(apiServerClient, 'updateResource').callsFake(() => {
           return Promise.try(() => {
             if (throwExceptionOnUpdate) {
               throw new errors.Conflict(`Task ${task_id} already exists`);
@@ -95,16 +95,16 @@ describe('operators', function () {
             });
           });
         });
-        createResourceStub = sinon.stub(apiServerClient, 'createResource', () => Promise.resolve(true));
+        createResourceStub = sinon.stub(apiServerClient, 'createResource').callsFake(() => Promise.resolve(true));
         clock = sinon.useFakeTimers(new Date().getTime());
-        utilsStub = sinon.stub(utils, 'uuidV4', () => Promise.resolve(task_id));
+        utilsStub = sinon.stub(utils, 'uuidV4').callsFake(() => Promise.resolve(task_id));
       });
       afterEach(function () {
-        registerWatcherStub.reset();
-        registerCRDStub.reset();
-        createResourceStub.reset();
-        updateResourceStub.reset();
-        utilsStub.reset();
+        registerWatcherStub.resetHistory();
+        registerCRDStub.resetHistory();
+        createResourceStub.resetHistory();
+        updateResourceStub.resetHistory();
+        utilsStub.resetHistory();
       });
       after(function () {
         registerWatcherStub.restore();
@@ -162,10 +162,7 @@ describe('operators', function () {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
               resourceId: serviceflow_id,
-              status: {
-                lastOperation: status,
-                state: status.state
-              }
+              status: status
             });
           });
       });
@@ -196,7 +193,6 @@ describe('operators', function () {
               }),
               status: {
                 state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-                lastOperation: {},
                 response: {}
               }
             });
@@ -206,10 +202,7 @@ describe('operators', function () {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
               resourceId: serviceflow_id,
-              status: {
-                lastOperation: status,
-                state: status.state
-              }
+              status: status
             });
           });
       });
@@ -224,19 +217,12 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.SUCCEEDED,
-                  response: {
-                    state: CONST.OPERATION.SUCCEEDED,
-                    description: ''
-                  },
-                  message: 'Last Task complete.'
-                },
                 response: {
                   state: CONST.OPERATION.SUCCEEDED,
                   description: ''
                 },
-                state: CONST.OPERATION.SUCCEEDED
+                state: CONST.OPERATION.SUCCEEDED,
+                description: 'Last Task complete.'
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
@@ -244,11 +230,8 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
               resourceId: serviceflow_id,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.SUCCEEDED,
-                  description: `Blueprint Service Flow succeeded @ ${new Date()}`
-                },
-                state: CONST.OPERATION.SUCCEEDED
+                state: CONST.OPERATION.SUCCEEDED,
+                description: `Blueprint Service Flow succeeded @ ${new Date()}`
               }
             });
           });
@@ -268,19 +251,12 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: `${serviceflow_id}.0`,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.SUCCEEDED,
-                  response: {
-                    state: CONST.OPERATION.SUCCEEDED,
-                    description: ''
-                  },
-                  message: `Task complete and next relayed task is ${serviceflow_id}.1`
-                },
                 response: {
                   state: CONST.OPERATION.SUCCEEDED,
                   description: ''
                 },
-                state: CONST.OPERATION.SUCCEEDED
+                state: CONST.OPERATION.SUCCEEDED,
+                description: `Task complete and next relayed task is ${serviceflow_id}.1`
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
@@ -288,11 +264,8 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
               resourceId: serviceflow_id,
               status: {
-                lastOperation: {
-                  state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-                  description: `Void blueprint task is complete. Initiated Void blueprint task2 @ ${new Date()}`
-                },
-                state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+                state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+                description: `Void blueprint task is complete. Initiated Void blueprint task2 @ ${new Date()}`
               }
             });
           });
@@ -314,19 +287,12 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: `${serviceflow_id}.0`,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.SUCCEEDED,
-                  response: {
-                    state: CONST.OPERATION.SUCCEEDED,
-                    description: ''
-                  },
-                  message: `Task complete and next relayed task is ${serviceflow_id}.1`
-                },
                 response: {
                   state: CONST.OPERATION.SUCCEEDED,
                   description: ''
                 },
-                state: CONST.OPERATION.SUCCEEDED
+                state: CONST.OPERATION.SUCCEEDED,
+                description: `Task complete and next relayed task is ${serviceflow_id}.1`
               }
             });
           });
@@ -345,19 +311,12 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
               resourceId: task_id,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.FAILED,
-                  response: {
-                    state: CONST.OPERATION.FAILED,
-                    description: 'Task Failed'
-                  },
-                  message: 'Task - Void blueprint task failed and service flow is also marked as failed.'
-                },
                 response: {
                   state: CONST.OPERATION.FAILED,
                   description: 'Task Failed'
                 },
-                state: CONST.OPERATION.FAILED
+                state: CONST.OPERATION.FAILED,
+                description: 'Task - Void blueprint task failed and service flow is also marked as failed.'
               }
             });
             expect(updateResourceStub.secondCall.args[0]).to.eql({
@@ -365,11 +324,8 @@ describe('operators', function () {
               resourceType: CONST.APISERVER.RESOURCE_TYPES.SERIAL_SERVICE_FLOW,
               resourceId: serviceflow_id,
               status: {
-                lastOperation: {
-                  state: CONST.OPERATION.FAILED,
-                  description: `Void blueprint task failed. ${failedTask.object.status.response.description}`
-                },
-                state: CONST.OPERATION.FAILED
+                state: CONST.OPERATION.FAILED,
+                description: `Void blueprint task failed. ${failedTask.object.status.response.description}`
               }
             });
           });

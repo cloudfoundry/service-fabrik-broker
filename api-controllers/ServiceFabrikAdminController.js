@@ -758,9 +758,12 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       key: req.query.key,
       value: req.query.value
     };
+    const body = {
+      message: `Created/Updated ${req.query.key} with value ${req.query.value}`
+    };
     return eventmesh.apiServerClient.createUpdateConfigMapResource(CONST.CONFIG.RESOURCE_NAME, config)
       .then(() => {
-        return res.status(201).send(`Created/Updated ${req.query.key} with value ${req.query.value}`);
+        return res.status(201).send(body);
       });
   }
 

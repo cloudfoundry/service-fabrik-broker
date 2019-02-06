@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -81,4 +82,20 @@ type SFServiceInstanceList struct {
 
 func init() {
 	SchemeBuilder.Register(&SFServiceInstance{}, &SFServiceInstanceList{})
+}
+
+// GetState fetches the state of the SFServiceInstance
+func (r *SFServiceInstance) GetState() string {
+	if r == nil || r.Status.State == "" {
+		log.Printf("failed to read state of SFServiceInstance %s", r.GetName())
+		return ""
+	}
+	return r.Status.State
+}
+
+// SetState updates the state of the SFServiceInstance
+func (r *SFServiceInstance) SetState(state string) {
+	if r != nil {
+		r.Status.State = state
+	}
 }

@@ -2,7 +2,7 @@
 {{- with .docker.metadata.name }}
   {{- $name = . }}
 {{- end }}
-{{- $stateString := "in_queue" }}
+{{- $stateString := "in progress" }}
 {{- $response := "" }}
 {{- $error := "" }}
 {{- with .docker.status }}
@@ -17,11 +17,11 @@
   {{- end }}
 {{- end }}
 {{- if eq $stateString "succeeded" }}
-  {{- $response = (printf "Service Instance %s creation successfull" $name) }}
+  {{- $response = (printf "Service Instance %s creation successful" $name) }}
 {{- else }}
     {{- $response = (printf "Service Instance %s provision failed" $name) }}
 {{- end }}
-{{- if eq $stateString "in_queue" }}
+{{- if eq $stateString "in progress" }}
   {{- $response = "" }}
 {{- end }}
 provision:
@@ -34,7 +34,7 @@ provision:
 {{- with .dockerbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}
-{{- $stateString = "in_queue" }} 
+{{- $stateString = "in progress" }} 
 {{- with .dockerbind }}
   {{- with .status }}
     {{- if eq .state "succeeded" }}

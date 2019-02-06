@@ -175,7 +175,7 @@ describe('utils', () => {
       });
       let sandbox, commandFactoryStub, commandStub;
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         commandStub = sandbox.stub(Command.prototype);
         commandFactoryStub = sandbox.stub(CommandsFactory, 'getOrCreate');
         const cmd = new Command();
@@ -203,16 +203,16 @@ describe('utils', () => {
         };
       });
       afterEach(function () {
-        commandFactoryStub.reset();
-        commandStub.circuitBreakerErrorThresholdPercentage.reset();
-        commandStub.timeout.reset();
-        commandStub.run.reset();
-        commandStub.circuitBreakerRequestVolumeThreshold.reset();
-        commandStub.circuitBreakerSleepWindowInMilliseconds.reset();
-        commandStub.statisticalWindowLength.reset();
-        commandStub.statisticalWindowNumberOfBuckets.reset();
-        commandStub.errorHandler.reset();
-        commandStub.build.reset();
+        commandFactoryStub.resetHistory();
+        commandStub.circuitBreakerErrorThresholdPercentage.resetHistory();
+        commandStub.timeout.resetHistory();
+        commandStub.run.resetHistory();
+        commandStub.circuitBreakerRequestVolumeThreshold.resetHistory();
+        commandStub.circuitBreakerSleepWindowInMilliseconds.resetHistory();
+        commandStub.statisticalWindowLength.resetHistory();
+        commandStub.statisticalWindowNumberOfBuckets.resetHistory();
+        commandStub.errorHandler.resetHistory();
+        commandStub.build.resetHistory();
       });
 
       after(function () {
