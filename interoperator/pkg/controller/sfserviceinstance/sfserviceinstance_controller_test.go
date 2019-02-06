@@ -42,7 +42,7 @@ import (
 
 var c client.Client
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
 	osbv1alpha1.TemplateSpec{
@@ -173,6 +173,9 @@ func TestReconcile(t *testing.T) {
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
 		},
+		Deprovision: properties.GenericStatus{
+			State: "succeeded",
+		},
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
 
@@ -236,14 +239,9 @@ func TestReconcile(t *testing.T) {
 
 func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	start := time.Now()
 	select {
 	case <-requests:
-		diff := time.Now().Sub(start)
-		if diff < remainingTime {
-			return 1 + drainAllRequests(requests, remainingTime-diff)
-		}
-		return 1
+		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
 	}
