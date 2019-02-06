@@ -47,16 +47,18 @@ class MeteringClient extends HttpClient {
     }
   }
 
-  async sendUsageRecord(usage_records) {
+  async sendUsageRecord(usageRecords) {
     try {
-      let accessToken = await this.getAuthToken();
+      if (this.accessToken === undefined) {
+        this.accessToken = await this.getAuthToken();
+      }
       return this.request({
         url: CONST.URL.METERING_USAGE,
         method: CONST.HTTP_METHOD.PUT,
         auth: {
-          bearer: accessToken
+          bearer: this.accessToken
         },
-        body: usage_records,
+        body: usageRecords,
         json: true
       }, CONST.HTTP_STATUS_CODE.OK);
     } catch (err) {

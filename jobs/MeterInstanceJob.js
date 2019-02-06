@@ -19,8 +19,8 @@ class MeterInstanceJob extends BaseJob {
   static async run(job, done) {
     try {
       logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
-      let events = await this.getInstanceEvents()
-      logger.info('recieved events -> ', events)
+      const events = await this.getInstanceEvents()
+      logger.info('received events -> ', events)
       let meterResponse = await this.meter(events)
       return this.runSucceeded(meterResponse, job, done)
     } catch (err) {
@@ -46,9 +46,9 @@ class MeterInstanceJob extends BaseJob {
       logger.info(`Number of events to be metered in this run - ${events.length}`);
       // Adding this comment as we are transitioning to async/await
       // Note: The below Promise is not bluebird promise
-      let promiseArray = await Promise.all(_.map(events, async (event) =>
+      const resultArray = await Promise.all(_.map(events, async (event) =>
         await this.sendEvent(event)));
-      let successCount = promiseArray.filter(r => r === true).length;
+      const successCount = resultArray.filter(r => r === true).length;
       return {
         totalEvents: events.length,
         success: successCount,
@@ -103,16 +103,18 @@ class MeterInstanceJob extends BaseJob {
         await this.updateMeterState(CONST.METER_STATE.EXCLUDED, event);
         return true;
       }
-      let enrichedUsageDoc = await this.enrichEvent(_.get(event.spec,'options'));
+      const enrichedUsageDoc = await this.enrichEvent(_.get(event.spec, 'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
-      let validEvent = await maas.client.sendUsageRecord({
+      const validEvent = await maas.client.sendUsageRecord({
         usage: [enrichedUsageDoc]
       });
-      validEvent ? this.updateMeterState(CONST.METER_STATE.METERED, event) : false;
+      if (validEvent !== undefined) {
+        this.updateMeterState(CONST.METER_STATE.METERED, event);
+      }
       return true;
     } catch (err) {
       logger.error('Error occured while metering:', err);
-      await this._logMeteringEvent(err, event);
+      await MeterInstanceJob._logMeteringEvent(err, event);
       await this.updateMeterState(CONST.METER_STATE.FAILED, event, err);
       return false;
     }
@@ -120,9 +122,9 @@ class MeterInstanceJob extends BaseJob {
   /* jshint ignore:end */
 
   static _logMeteringEvent(err, event) {
-    let now = new Date();
-    let secondsSinceEpoch = Math.round(now.getTime() / 1000);
-    let createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
+    const now = new Date();
+    const secondsSinceEpoch = Math.round(now.getTime() / 1000);
+    const createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
     logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
     // Threshold needs to be greater than the metering job frequency
     const thresholdHours = config.metering.error_threshold_hours;
