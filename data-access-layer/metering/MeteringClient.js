@@ -28,45 +28,35 @@ class MeteringClient extends HttpClient {
   }
 
   async getAuthToken() {
-    try {
-      let res = await this
-        .request({
-          baseUrl: this.tokenUrl,
-          url: CONST.URL.METERING_AUTH,
-          auth: {
-            user: this.clientId,
-            pass: this.clientSecret
-          },
-          qs: {
-            grant_type: 'client_credentials'
-          }
-        }, 200);
-      const serverResponse = JSON.parse(res.body);
-      return serverResponse.access_token;
-    } catch (err) {
-      logger.error('Error occurred while fetching metering auth token', err);
-      throw err;
-    }
+    let res = await this
+      .request({
+        baseUrl: this.tokenUrl,
+        url: CONST.URL.METERING_AUTH,
+        auth: {
+          user: this.clientId,
+          pass: this.clientSecret
+        },
+        qs: {
+          grant_type: 'client_credentials'
+        }
+      }, 200);
+    const serverResponse = JSON.parse(res.body);
+    return serverResponse.access_token;
   }
 
   async sendUsageRecord(usageRecords) {
-    try {
-      if (this.tokenInfo.expiresSoon(this.tokenInfo.accessToken) == true) {
-        this.tokenInfo.accessToken = await this.getAuthToken();
-      }
-      return this.request({
-        url: CONST.URL.METERING_USAGE,
-        method: CONST.HTTP_METHOD.PUT,
-        auth: {
-          bearer: this.tokenInfo.accessToken
-        },
-        body: usageRecords,
-        json: true
-      }, CONST.HTTP_STATUS_CODE.OK);
-    } catch (err) {
-      logger.error('Error occurred while seding usage to metering service', err);
-      throw err;
-    };
+    if (this.tokenInfo.expiresSoon(this.tokenInfo.accessToken) == true) {
+      this.tokenInfo.accessToken = await this.getAuthToken();
+    }
+    return this.request({
+      url: CONST.URL.METERING_USAGE,
+      method: CONST.HTTP_METHOD.PUT,
+      auth: {
+        bearer: this.tokenInfo.accessToken
+      },
+      body: usageRecords,
+      json: true
+    }, CONST.HTTP_STATUS_CODE.OK);
   }
 }
 
