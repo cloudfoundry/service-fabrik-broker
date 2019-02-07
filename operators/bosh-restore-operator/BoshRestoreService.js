@@ -203,7 +203,7 @@ class BoshRestoreService extends BaseDirectorService {
   async processCreateDisk(resourceOptions) {
     try {
       const snapshotId = _.get(resourceOptions, 'restoreMetadata.snapshotId');
-      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo')); 
+      let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'); 
       for (let i = 0; i< deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
         logger.info(`Triggering disk creation with snapshotId: ${snapshotId}, az: ${instance.az} and type: ${instance.oldDiskInfo.type}`);
@@ -246,16 +246,31 @@ class BoshRestoreService extends BaseDirectorService {
   async processAttachDisk(resourceOptions) {
     try { 
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'));
+      let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
 
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
-        let taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
-          instance.job_name, instance.id);
-        _.set(instance, 'attachDiskTaskId', taskId);
+        let taskId = _.get(instance, 'attachDiskTaskId', undefined);
+        if(_.isEmpty(taskId)) {
+          taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
+            instance.job_name, instance.id);
+          _.set(instance, 'attachDiskTaskId', taskId);
+
+        }
         let pollingPromise = this.director.pollTaskStatusTillComplete(taskId);
         _.set(instance, 'attachDiskPollingPromise', pollingPromise);
       };
+      //TODO: remove promise from deploymentInstancesInfo object
+      await eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        options: {
+          restoreMetadata: {
+            deploymentInstancesInfo: deploymentInstancesInfo
+          }
+        }
+      });
 
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
         let instance = deploymentInstancesInfo[i];
@@ -292,7 +307,7 @@ class BoshRestoreService extends BaseDirectorService {
   async processPutFile(resourceOptions) {
     try {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-      let deploymentInstancesInfo = _.cloneDeep(_.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'));
+      let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
 
       const service = catalog.getService(resourceOptions.service_id);
       const cmd = `
