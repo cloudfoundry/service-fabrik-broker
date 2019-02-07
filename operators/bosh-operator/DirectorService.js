@@ -248,7 +248,8 @@ class DirectorService extends BaseDirectorService {
         }
       })
       .catch(err => _.assign(operation, {
-        state: 'failed',
+        state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+        resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED,
         description: `${action} deployment '${this.deploymentName}' not yet completely succeeded because "${err.message}"`
       }));
   }

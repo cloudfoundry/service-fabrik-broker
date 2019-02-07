@@ -42,12 +42,13 @@ function getSecurityGroupName(guid) {
   return `${prefix}-${guid}`;
 }
 
-function createSecurityGroup(guid) {
+function createSecurityGroup(guid, responseCode, times) {
   const name = getSecurityGroupName(guid);
   return nock(cloudControllerUrl)
     .replyContentLength()
     .post('/v2/security_groups', body => body.name === name)
-    .reply(201, {
+    .times(times || 1)
+    .reply(responseCode || 201, {
       metadata: {
         guid: guid
       },

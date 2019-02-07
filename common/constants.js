@@ -437,6 +437,10 @@ module.exports = Object.freeze({
   DOCKER_HOST_CONFIG: {
     PIDS_LIMIT: 150
   },
+  CF_SECURITY_GROUP: {
+    MAX_RETRIES: 4,
+    RETRY_DELAY: 1000
+  },
   SYSTEM_ERRORS: ['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'],
   INTERNAL: 'internal',
   ALL: 'all',
