@@ -28,6 +28,8 @@ const transports = [
   new winston.transports.Syslog({
     level: config.sys_log_level || 'info',
     protocol: 'tcp4',
+    port: '1514',
+    app_name: config.broker_name,
     eol: '\n',
     formatter: (options) => `[${config.broker_name}] ${options.level.toUpperCase()}  ${options.message || ''}`
   })
