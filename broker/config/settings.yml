@@ -380,6 +380,7 @@ defaults: &defaults
     url: https://api.bosh-lite.com
     username: admin
     password: admin
+    identity_provider: uaa
   
   ###################
   # DOCKER SETTINGS #

@@ -109,7 +109,7 @@ class UaaClient extends HttpClient {
   }
 
   accessWithPassword(username, password) {
-    return this.request({
+    const reqBody = {
       method: 'POST',
       url: '/oauth/token',
       auth: {
@@ -120,10 +120,13 @@ class UaaClient extends HttpClient {
         grant_type: 'password',
         client_id: this.clientId,
         username: username,
-        password: password,
-        login_hint: '{"origin":"uaa"}'
+        password: password
       }
-    }, 200).then((res) => {
+    };
+    if (config.cf.identity_provider) {
+      reqBody.form.login_hint = `{"origin":"${config.cf.identity_provider}"}`;
+    }
+    return this.request(reqBody, 200).then((res) => {
       return JSON.parse(res.body);
     });
   }
