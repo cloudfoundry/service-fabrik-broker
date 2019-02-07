@@ -45,7 +45,7 @@ class MeteringClient extends HttpClient {
   }
 
   async sendUsageRecord(usageRecords) {
-    if (this.tokenInfo.expiresSoon(this.tokenInfo.accessToken) == true) {
+    if (this.tokenInfo.expiresSoon(this.tokenInfo.accessToken) === true) {
       this.tokenInfo.accessToken = await this.getAuthToken();
     }
     return this.request({
