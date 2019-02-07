@@ -24,9 +24,9 @@ class Plan {
     return _
       .chain(this.manager.settings)
       .get('stemcell', {})
-      .defaults(_.filter(config.directors, function (director) {
+      .defaults(_.get(_.first(_.filter(config.directors, function (director) {
         return director.primary && director.support_create;
-      })[0].infrastructure.stemcell)
+      })), 'infrastructure.stemcell'))
       .update('version', version => '' + version)
       .value();
   }
