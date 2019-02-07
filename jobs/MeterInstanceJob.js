@@ -125,18 +125,23 @@ class MeterInstanceJob extends BaseJob {
   }
 
   static updateMeterState(status, event, err) {
-    logger.debug(`Updating meter state to ${status} for event`, event);
-    let status_obj = {
-      state: status
-    };
-    if (err !== undefined) {
-      status_obj.error = utils.buildErrorJson(err);
-    }
-    return apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
-        resourceId: `${event.metadata.name}`,
-        status: status_obj
+    return utils.retry(tries => {
+        logger.debug(`Updating meter state to ${status} for event, try: ${tries}`, event);
+        let status_obj = {
+          state: status
+        };
+        if (err !== undefined) {
+          status_obj.error = utils.buildErrorJson(err);
+        }
+        return apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
+          resourceId: `${event.metadata.name}`,
+          status: status_obj
+        });
+      }, {
+        maxAttempts: 4,
+        minDelay: 1000
       })
       .tap((response) => logger.info('Successfully updated meter state : ', response));
   }
