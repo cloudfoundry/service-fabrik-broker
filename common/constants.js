@@ -477,6 +477,7 @@ module.exports = Object.freeze({
   SYSTEM_ERRORS: ['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'],
   INTERNAL: 'internal',
   ALL: 'all',
+  ANY: 'any',
   DISABLED: 'disabled',
   REGEX_PATTERN: {
     URL: /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
