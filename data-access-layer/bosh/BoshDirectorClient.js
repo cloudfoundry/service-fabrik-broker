@@ -916,8 +916,9 @@ class BoshDirectorClient extends HttpClient {
           user: tempUser,
           public_key: publicKey
         }
-      }
-    }, 200, deploymentName);
+      },
+      json: true
+    }, 302, deploymentName);
   }
 
   cleanupSsh(deploymentName, jobName, instanceId, tempUser) {
@@ -934,7 +935,8 @@ class BoshDirectorClient extends HttpClient {
         params: {
           user_regex: `^${tempUser}`
         }
-      }
+      },
+      json: true
     }, 200, deploymentName);
   }
 
@@ -991,7 +993,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
@@ -1010,7 +1012,7 @@ class BoshDirectorClient extends HttpClient {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered disk attachment with paramaters --> \
         deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 

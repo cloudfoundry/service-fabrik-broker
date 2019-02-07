@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const Agent = require('../../data-access-layer/service-agent');
+const assert = require('assert');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const BaseDirectorService = require('../BaseDirectorService');
 const utils = require('../../common/utils');
@@ -15,7 +16,7 @@ const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const config = require('../../common/config');
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
-const catalog = require('../common/models/catalog');
+const catalog = require('../../common/models/catalog');
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -166,7 +167,8 @@ class BoshRestoreService extends BaseDirectorService {
       });
 
       const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
-      let stateResult = _.assign({
+      stateResult = {};
+      stateResult = _.assign({
         statesResults: {
           'boshStop': {
             taskId: taskId,
@@ -486,7 +488,8 @@ class BoshRestoreService extends BaseDirectorService {
         options: stateResult
       });
       const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
-      let stateResult = _.assign({
+      stateResult = {}
+      stateResult = _.assign({
         statesResults: {
           'boshStart': {
             taskId: taskId,
