@@ -1,0 +1,93 @@
+{
+  "kind": "AdmissionReview",
+  "apiVersion": "admission.k8s.io/v1beta1",
+  "request": {
+    "uid": "8f676fb0-13ce-11e9-b037-0e655bfa3b31",
+    "kind": {
+      "group": "deployment.servicefabrik.io",
+      "version": "v1alpha1",
+      "kind": "Director"
+    },
+    "resource": {
+      "group": "deployment.servicefabrik.io",
+      "version": "v1alpha1",
+      "resource": "directors"
+    },
+    "name": "4e099918-1b37-42a8-9dbd-a752225fcd07",
+    "namespace": "default",
+    "operation": "UPDATE",
+    "userInfo": {
+      "username": "minikube-user",
+      "groups": [
+        "system:masters",
+        "system:authenticated"
+      ]
+    },
+    "object": {
+      "apiVersion": "deployment.servicefabrik.io/v1alpha1",
+      "kind": "Director",
+      "metadata": {
+        "annotations": {
+          "deploymentIps": "[\"10.112.189.120\",\"10.11.189.121\",\"10.11.189.122\",\"10.11.189.123\",\"10.11.189.124\"]",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"deployment.servicefabrik.io/v1alpha1\",\"kind\":\"Director\",\"metadata\":{\"annotations\":{\"deploymentIps\":\"[\\\"10.11.189.120\\\",\\\"10.11.189.121\\\",\\\"10.11.189.122\\\",\\\"10.11.189.123\\\",\\\"10.11.189.124\\\"]\",\"lockedByManager\":\"\",\"lockedByTaskPoller\":\"{\\\"lockTime\\\":\\\"2019-01-08T10:54:39.113Z\\\",\\\"ip\\\":\\\"10.11.252.12\\\"}\",\"processingStartedAt\":\"\"},\"creationTimestamp\":\"2019-01-08T10:40:28Z\",\"generation\":1,\"labels\":{\"state\":\"succeeded\"},\"name\":\"4e099918-1b37-42a8-9dbd-a752225fcd07\",\"namespace\":\"default\",\"resourceVersion\":\"34065\",\"selfLink\":\"/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/4e099918-1b37-42a8-9dbd-a752225fcd07\",\"uid\":\"d094d216-1331-11e9-af09-125d3dd9be94\"},\"spec\":{\"options\":\"{\\\"service_id\\\":\\\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\\\",\\\"plan_id\\\":\\\"c41f368b-1eab-4d0f-b740-d9abdd14449f\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"}}\"},\"status\":{\"appliedOptions\":\"{\\\"service_id\\\":\\\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\\\",\\\"plan_id\\\":\\\"c41f368b-1eab-4d0f-b740-d9abdd14449f\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"}}\",\"lastOperation\":\"{\\\"type\\\":\\\"create\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"},\\\"task_id\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\\\",\\\"deployment_name\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\\\",\\\"description\\\":\\\"Create deployment service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07 succeeded at 2019-01-08T10:52:54.000Z\\\",\\\"state\\\":\\\"succeeded\\\",\\\"resourceState\\\":\\\"succeeded\\\"}\",\"response\":\"{\\\"type\\\":\\\"create\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"},\\\"task_id\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\\\",\\\"deployment_name\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\\\"}\",\"state\":\"succeeded\"}}\n",
+          "lockedByManager": "",
+          "lockedByTaskPoller": "{\"lockTime\":\"2019-01-08T10:54:39.113Z\",\"ip\":\"10.11.252.12\"}",
+          "processingStartedAt": ""
+        },
+        "clusterName": "",
+        "creationTimestamp": "2019-01-09T05:17:36Z",
+        "generation": 1,
+        "labels": {
+          "state": "succeeded"
+        },
+        "name": "4e099918-1b37-42a8-9dbd-a752225fcd07",
+        "namespace": "default",
+        "resourceVersion": "230291",
+        "selfLink": "",
+        "uid": "e0956b18-13cd-11e9-b037-0e655bfa3b31"
+      },
+      "spec": {
+        "options": "{\"service_id\":\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\",\"plan_id\":\"c41f368b-1eab-4d0f-b740-d9abdd14449f\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"}}"
+      },
+      "status": {
+        "appliedOptions": "{\"service_id\":\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\",\"plan_id\":\"c41f368b-1eab-4d0f-b740-d9abdd14449f\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"}}",
+        "lastOperation": "{\"type\":\"create\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"},\"task_id\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\",\"deployment_name\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\",\"description\":\"Create deployment service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07 succeeded at 2019-01-08T10:52:54.000Z\",\"state\":\"succeeded\",\"resourceState\":\"succeeded\"}",
+        "response": "{\"type\":\"create\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"},\"task_id\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\",\"deployment_name\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\"}",
+        "state": "succeeded"
+      }
+    },
+    "oldObject": {
+      "apiVersion": "deployment.servicefabrik.io/v1alpha1",
+      "kind": "Director",
+      "metadata": {
+        "annotations": {
+          "deploymentIps": "[\"10.111.189.120\",\"10.11.189.121\",\"10.11.189.122\",\"10.11.189.123\",\"10.11.189.124\"]",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"deployment.servicefabrik.io/v1alpha1\",\"kind\":\"Director\",\"metadata\":{\"annotations\":{\"deploymentIps\":\"[\\\"10.11.189.120\\\",\\\"10.11.189.121\\\",\\\"10.11.189.122\\\",\\\"10.11.189.123\\\",\\\"10.11.189.124\\\"]\",\"lockedByManager\":\"\",\"lockedByTaskPoller\":\"{\\\"lockTime\\\":\\\"2019-01-08T10:54:39.113Z\\\",\\\"ip\\\":\\\"10.11.252.12\\\"}\",\"processingStartedAt\":\"\"},\"creationTimestamp\":\"2019-01-08T10:40:28Z\",\"generation\":1,\"labels\":{\"state\":\"succeeded\"},\"name\":\"4e099918-1b37-42a8-9dbd-a752225fcd07\",\"namespace\":\"default\",\"resourceVersion\":\"34065\",\"selfLink\":\"/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/4e099918-1b37-42a8-9dbd-a752225fcd07\",\"uid\":\"d094d216-1331-11e9-af09-125d3dd9be94\"},\"spec\":{\"options\":\"{\\\"service_id\\\":\\\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\\\",\\\"plan_id\\\":\\\"c41f368b-1eab-4d0f-b740-d9abdd14449f\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"}}\"},\"status\":{\"appliedOptions\":\"{\\\"service_id\\\":\\\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\\\",\\\"plan_id\\\":\\\"c41f368b-1eab-4d0f-b740-d9abdd14449f\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"}}\",\"lastOperation\":\"{\\\"type\\\":\\\"create\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"},\\\"task_id\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\\\",\\\"deployment_name\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\\\",\\\"description\\\":\\\"Create deployment service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07 succeeded at 2019-01-08T10:52:54.000Z\\\",\\\"state\\\":\\\"succeeded\\\",\\\"resourceState\\\":\\\"succeeded\\\"}\",\"response\":\"{\\\"type\\\":\\\"create\\\",\\\"context\\\":{\\\"platform\\\":\\\"cloudfoundry\\\",\\\"organization_guid\\\":\\\"33915d88-6002-4e83-b154-9ec2075e1435\\\",\\\"space_guid\\\":\\\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\\\"},\\\"task_id\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\\\",\\\"deployment_name\\\":\\\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\\\"}\",\"state\":\"succeeded\"}}\n",
+          "lockedByManager": "",
+          "lockedByTaskPoller": "{\"lockTime\":\"2019-01-08T10:54:39.113Z\",\"ip\":\"10.11.252.12\"}",
+          "processingStartedAt": ""
+        },
+        "clusterName": "",
+        "creationTimestamp": "2019-01-09T05:17:36Z",
+        "generation": 1,
+        "labels": {
+          "state": "succeeded"
+        },
+        "name": "4e099918-1b37-42a8-9dbd-a752225fcd07",
+        "namespace": "default",
+        "resourceVersion": "230291",
+        "selfLink": "",
+        "uid": "e0956b18-13cd-11e9-b037-0e655bfa3b31"
+      },
+      "spec": {
+        "options": "{\"service_id\":\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\",\"plan_id\":\"c41f368b-1eab-4d0f-b740-d9abdd14449f\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"}}"
+      },
+      "status": {
+        "appliedOptions": "{\"service_id\":\"6db542eb-8187-4afc-8a85-e08b4a3cc24e\",\"plan_id\":\"c41f368b-1eab-4d0f-b740-d9abdd14449f\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"}}",
+        "lastOperation": "{\"type\":\"create\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"},\"task_id\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\",\"deployment_name\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\",\"description\":\"Create deployment service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07 succeeded at 2019-01-08T10:52:54.000Z\",\"state\":\"succeeded\",\"resourceState\":\"succeeded\"}",
+        "response": "{\"type\":\"create\",\"context\":{\"platform\":\"cloudfoundry\",\"organization_guid\":\"33915d88-6002-4e83-b154-9ec2075e1435\",\"space_guid\":\"bd78dbbb-5225-4dfa-94e0-816a4de9b7c9\"},\"task_id\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07_282959\",\"deployment_name\":\"service-fabrik-1935-4e099918-1b37-42a8-9dbd-a752225fcd07\"}",
+        "state": "succeeded"
+      }
+    }
+  }
+}

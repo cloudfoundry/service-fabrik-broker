@@ -80,7 +80,9 @@ module.exports = Object.freeze({
     backup: '/api/v1/service_instances/:instance_id/backup',
     restore: '/api/v1/service_instances/:instance_id/restore',
     backup_by_guid: '/api/v1/backups/:backup_guid',
-    instance: '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id'
+    instance: '/:platform(cf|k8s|sm)/v2/service_instances/:instance_id',
+    METERING_AUTH: '/oauth/token',
+    METERING_USAGE: '/usage/v2/usage/documents'
   },
   INSTANCE_TYPE: {
     DIRECTOR: 'director',
@@ -121,7 +123,8 @@ module.exports = Object.freeze({
     BLUEPRINT_JOB: 'BluePrintJob',
     BACKUP_REAPER: 'BackupReaper',
     SERVICE_INSTANCE_UPDATE: 'ServiceInstanceAutoUpdate',
-    DB_COLLECTION_REAPER: 'DbCollectionReaper'
+    DB_COLLECTION_REAPER: 'DbCollectionReaper',
+    METER_INSTANCE: 'MeterInstance'
   },
   JOB_RUN_STATUS_CODE: {
     SUCCEEDED: '0'
@@ -291,7 +294,8 @@ module.exports = Object.freeze({
       BIND: 'bind.servicefabrik.io',
       BACKUP: 'backup.servicefabrik.io',
       RESTORE: 'backup.servicefabrik.io',
-      SERVICE_FLOW: 'serviceflow.servicefabrik.io'
+      SERVICE_FLOW: 'serviceflow.servicefabrik.io',
+      INSTANCE: 'instance.servicefabrik.io'
     },
     RESOURCE_TYPES: {
       INTEROPERATOR_SERVICEINSTANCES: 'sfserviceinstances',
@@ -310,6 +314,7 @@ module.exports = Object.freeze({
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
+      SFEVENT: 'sfevents',
       TASK: 'tasks'
     },
     RESOURCE_STATE: {
@@ -348,6 +353,12 @@ module.exports = Object.freeze({
     },
     WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_serviceflow'],
     READ_OPERATIONS: ['backup'],
+  },
+  METER_STATE: {
+    TO_BE_METERED: 'TO_BE_METERED',
+    METERED: 'METERED',
+    EXCLUDED: 'EXCLUDED',
+    FAILED: 'FAILED'
   },
   SERVICE_KEYS: {
     ATTRIBUTES: 'attributes',

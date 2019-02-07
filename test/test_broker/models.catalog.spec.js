@@ -7,10 +7,12 @@ const ServicePlanNotFound = errors.ServicePlanNotFound;
 
 let plan1 = {
   id: 1,
+  sku_name: 'plan1_sku',
   name: 'plan1'
 };
 let plan2 = {
   id: 2,
+  sku_name: 'plan2_sku',
   name: 'plan2'
 };
 let service1 = {
@@ -69,6 +71,12 @@ describe('models', () => {
         expect(catalog.toJSON()).to.eql({
           services: [service1]
         });
+      });
+    });
+
+    describe('#getPlanSKUFromPlanGUID', () => {
+      it('returns the sku', () => {
+        expect(catalog.getPlanSKUFromPlanGUID(service1.id, plan1.id)).to.eql(plan1.sku_name);
       });
     });
   });

@@ -112,8 +112,8 @@
   "scripts": {
     "start": "node broker/server.js",
     "jsdoc": "jsdoc -c jsdoc.json",
-    "jshint": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp,interoperator  --reporter=node_modules/jshint-stylish .",
-    "jshint-ci": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp,interoperator --reporter=checkstyle .",
+    "jshint": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp,interoperator,webhooks  --reporter=node_modules/jshint-stylish .",
+    "jshint-ci": "jshint --exclude coverage,docs,jsdoc,node_modules,common/public,tmp,interoperator,webhooks --reporter=checkstyle .",
     "test": "./test/init test",
     "test-ci": "./test/init test-ci",
     "test-cov": "./test/init test-cov",
