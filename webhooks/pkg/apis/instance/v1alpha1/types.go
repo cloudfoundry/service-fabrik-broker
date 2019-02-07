@@ -40,9 +40,9 @@ type SfeventList struct {
 
 // ServiceInfo holds the service id and plan id
 type ServiceInfo struct {
-    // Store the service guid and plan guid here
-    // will be enriched to servcie name and plan sku
-    //.before sending to metering
+	// Store the service guid and plan guid here
+	// will be enriched to servcie name and plan sku
+	//.before sending to metering
 	ID   string `json:"service_guid"`
 	Plan string `json:"plan_guid"`
 }

@@ -298,7 +298,9 @@ var _ = Describe("Event", func() {
 			})
 		})
 		It("should return error if isUpdate fails", func() {
-			evt, _ := NewEvent(&arDockerCreate)
+			evt, _ := NewEvent(&ar)
+			evt.crd.Status.State = "succeeded"
+			evt.oldCrd.Status.State = ""
 			evt.crd.Status.LastOperationRaw = "invalid json"
 			res, err := evt.isMeteringEvent()
 			Expect(res).To(Equal(false))
@@ -306,7 +308,9 @@ var _ = Describe("Event", func() {
 		})
 
 		It("should return error if isPlanChanged fails", func() {
-			evt, _ := NewEvent(&arDockerCreate)
+			evt, _ := NewEvent(&ar)
+			evt.crd.Status.State = "succeeded"
+			evt.oldCrd.Status.State = ""
 			evt.crd.Status.AppliedOptions = "invalid json"
 			res, err := evt.isMeteringEvent()
 			Expect(res).To(Equal(false))

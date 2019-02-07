@@ -147,20 +147,20 @@ func (e *Event) isMeteringEvent() (bool, error) {
 	// Create succeeded
 	// or Update Succeeded
 	// or Delete Triggered
-	isUpdate, err := e.isUpdate()
-	if err != nil {
-		return false, err
-	}
-	isCreate, err := e.isCreate()
-	if err != nil {
-		return false, err
-	}
-	isPlanChanged, err := e.isPlanChanged()
-	if err != nil {
-		return false, err
-	}
 	if e.isDirector() && e.isStateChanged() {
 		if e.isSucceeded() {
+			isUpdate, err := e.isUpdate()
+			if err != nil {
+				return false, err
+			}
+			isCreate, err := e.isCreate()
+			if err != nil {
+				return false, err
+			}
+			isPlanChanged, err := e.isPlanChanged()
+			if err != nil {
+				return false, err
+			}
 			return (isUpdate && isPlanChanged) || isCreate, nil
 		}
 		return e.isDeleteTriggered(), nil
