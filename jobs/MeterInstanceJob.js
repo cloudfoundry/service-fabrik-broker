@@ -65,7 +65,8 @@ class MeterInstanceJob extends BaseJob {
     const planId = _.get(options, 'service.plan_guid');
     logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
     const plan = catalog.getPlan(planId);
-    return !plan.metered;
+    const metered = _.get(plan, 'metered', false);
+    return !metered;
   }
 
   static enrichEvent(options) {
