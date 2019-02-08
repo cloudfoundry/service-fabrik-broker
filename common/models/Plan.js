@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
+const config = require('../config');
 
 class Plan {
   constructor(service, options) {
@@ -24,7 +24,9 @@ class Plan {
     return _
       .chain(this.manager.settings)
       .get('stemcell', {})
-      .defaults(BoshDirectorClient.getInfrastructure().stemcell)
+      .defaults(_.get(_.first(_.filter(config.directors, function (director) {
+        return director.primary && director.support_create;
+      })), 'infrastructure.stemcell'))
       .update('version', version => '' + version)
       .value();
   }

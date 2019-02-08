@@ -9,6 +9,8 @@ const crypto = require('crypto');
 const Readable = require('stream').Readable;
 const HttpClient = require('./HttpClient');
 const config = require('../config');
+const catalog = require('../models/catalog');
+const logger = require('../logger');
 const CONST = require('../constants');
 const RetryOperation = require('./RetryOperation');
 const randomBytes = Promise.promisify(crypto.randomBytes);
@@ -66,6 +68,7 @@ exports.getServiceCrdFromConfig = getServiceCrdFromConfig;
 exports.registerInterOperatorCrds = registerInterOperatorCrds;
 exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
+exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -735,4 +738,24 @@ function getAllPlansForService(serviceId) {
       });
       return plans;
     });
+}
+
+function loadCatalogFromAPIServer() {
+  if (config.apiserver.isServiceDefinitionAvailableOnApiserver) {
+    return getAllServices()
+      .tap(services => {
+        config.services = services;
+      })
+      .then((services) => {
+        return Promise.all(Promise.each(services, service => {
+          return getAllPlansForService(service.id)
+            .then(plans => {
+              service.plans = plans;
+            });
+        }));
+      })
+      .then(() => catalog.reload())
+      .tap(() => logger.silly('Loaded Services in catalog Are ', catalog.services))
+      .tap(() => logger.silly('Loaded Plans in catalog Are ', catalog.plans));
+  }
 }

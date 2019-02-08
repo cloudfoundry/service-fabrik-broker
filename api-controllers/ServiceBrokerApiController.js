@@ -17,7 +17,6 @@ const Conflict = errors.Conflict;
 const CONST = require('../common/constants');
 const eventmesh = require('../data-access-layer/eventmesh');
 const formatUrl = require('url').format;
-const lib = require('../broker/lib');
 
 class ServiceBrokerApiController extends FabrikBaseController {
   constructor() {
@@ -53,7 +52,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
     /* jshint unused:false */
     return Promise.try(() => {
         assert.ok(req.params.platform, 'Platform is must while fetching catalog');
-        return lib.loadCatalogFromAPIServer();
+        return utils.loadCatalogFromAPIServer();
       })
       .then(() => utils.getPlatformManager({
         platform: req.params.platform

@@ -51,6 +51,10 @@ class CfPlatformManager extends BasePlatformManager {
       });
   }
 
+  getCatalog(catalog) {
+    return catalog;
+  }
+
   preUnbindOperations(options) {
     return this.deleteSecurityGroupForShare(options);
   }
