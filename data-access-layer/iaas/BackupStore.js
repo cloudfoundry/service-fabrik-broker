@@ -70,11 +70,11 @@ class BackupStore {
     return fetchFiles()
       .then(() =>
         _
-          .chain(fileList)
-          .map(file => dontParseFilename ? file : this.filename.parse(file.name))
-          .filter(predicate)
-          .sortBy(iteratees)
-          .value());
+        .chain(fileList)
+        .map(file => dontParseFilename ? file : this.filename.parse(file.name))
+        .filter(predicate)
+        .sortBy(iteratees)
+        .value());
   }
 
   getFileNamePrefix() {
@@ -138,7 +138,7 @@ class BackupStore {
           .assign(newData)
           .set('finished_at',
             _.get(newData, 'finished_at') ?
-              new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
+            new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
           .value()
         )
       );
