@@ -449,7 +449,7 @@ func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInst
 		log.Printf("Retry threshold reached for %s. Ignoring %v\n", id, inputErr)
 		object.Status.State = "failed"
 		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", id, inputErr.Error())
-		object.Status.Description = "Service Broker Error: Something unexpected happened"
+		object.Status.Description = "Service Broker Error, status code: ETIMEDOUT, error code: 10008"
 		err := r.Update(context.TODO(), object)
 		if err != nil {
 			log.Printf("Error setting state to failed for %s\n", id)

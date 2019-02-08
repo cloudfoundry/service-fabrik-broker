@@ -13,7 +13,7 @@ class BaseError extends Error {
   constructor(message, statusCode) {
     super(message);
     this.name = this.constructor.name;
-    this.statusCode = statusCode;
+    this.statusCode = statusCode ? statusCode : CONST.ERR_STATUS_CODES.BROKER.DEFAULT;
     Error.captureStackTrace(this, this.constructor);
   }
 
@@ -148,8 +148,8 @@ class Forbidden extends HttpClientError {
 exports.Forbidden = Forbidden;
 
 class NotFound extends HttpClientError {
-  constructor(message) {
-    super(CONST.HTTP_STATUS_CODE.NOT_FOUND, 'Not Found', message);
+  constructor(message, statusCode) {
+    super(CONST.HTTP_STATUS_CODE.NOT_FOUND, 'Not Found', message, statusCode);
   }
 }
 exports.NotFound = NotFound;

@@ -226,7 +226,6 @@ module.exports = Object.freeze({
     CONTENT_TYPE: 'application/x-www-form-urlencoded',
     ACCEPT: 'application/json'
   },
-  SERVICE_BROKER_ERR_MSG: 'Service Broker Error: Something unexpected happened',
   ERR_CODES: {
     UNKNOWN: 'ERR-CODE-UNKNOWN',
     PRE_CONDITION_NOT_MET: 'PRE_CONDITION_NOT_MET',
