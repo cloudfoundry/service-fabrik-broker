@@ -3,7 +3,6 @@
 const parseUrl = require('url').parse;
 const Promise = require('bluebird');
 const _ = require('lodash');
-const uuid = require('uuid');
 const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
@@ -942,9 +941,9 @@ class BoshDirectorClient extends HttpClient {
 
   async runSsh(deploymentName, jobName, instanceId, command) { // jshint ignore: line
     const cryptoManager = new EncryptionManager();
-    const tempUser = `service-fabrik-user-${uuid.v4()}`;
-    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); // jshint ignore: line
-    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); // jshint ignore: line
+    const tempUser = `sf-${Math.random().toString(36).substring(2, 15)}`;
+    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); //jshint ignore: line
+    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); //jshint ignore: line
     const sshSetupTaskId = this.prefixTaskId(deploymentName, sshSetupResponse);
     await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); // jshint ignore: line
     const sshSetupResult = await this.getTaskResult(sshSetupTaskId); // jshint ignore: line
