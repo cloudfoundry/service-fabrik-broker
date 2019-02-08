@@ -95,7 +95,7 @@ class BoshRestoreService extends BaseDirectorService {
                 instances: _.get(service, 'restore_operation.errands.post_start.instances')
               }
             },
-            statesResults: {}
+            stateResults: {}
           });
         //TODO:create/update the restoreFile
         return eventmesh.apiServerClient.patchResource({
@@ -145,14 +145,14 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStop(resourceOptions) {
     try {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-      const oldTaskId = _.get(resourceOptions, 'restoreMetadata.statesResults.boshStop.taskId', undefined);
+      const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
       
       if (!_.isEmpty(oldTaskId)) {
         await this.director.pollTaskStatusTillComplete(oldTaskId);
       }
       const taskId  = await this.director.stopDeployment(deploymentName);
       let stateResult = _.assign({
-        statesResults: {
+        stateResults: {
           'boshStop': {
             taskId: taskId
           }
@@ -169,7 +169,7 @@ class BoshRestoreService extends BaseDirectorService {
       const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
       stateResult = {};
       stateResult = _.assign({
-        statesResults: {
+        stateResults: {
           'boshStop': {
             taskId: taskId,
             taskResult: taskResult
@@ -313,7 +313,7 @@ class BoshRestoreService extends BaseDirectorService {
       const backupData = _.assign({
         type: _.get(resourceOptions, 'arguments.backup.type'),
         backup_guid: _.get(resourceOptions, 'arguments.backup_guid'),
-        backup_secret: '',
+        backup_secret: _.get(resourceOptions,'arguments.backup.secret'),
         snapshotId: _.get(resourceOptions, 'arguments.backup.snapshotId'),
         started_at: _.get(resourceOptions, 'arguments.backup.started_at'),
         finished_at: _.get(resourceOptions, 'arguments.backup.finished_at'),
@@ -500,7 +500,7 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStart(resourceOptions) {
     try {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-      const oldTaskId = _.get(resourceOptions, 'restoreMetadata.statesResults.boshStart.taskId', undefined);
+      const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
       
       if (!_.isEmpty(oldTaskId)) {
         await this.director.pollTaskStatusTillComplete(oldTaskId);
@@ -508,7 +508,7 @@ class BoshRestoreService extends BaseDirectorService {
 
       const taskId  = await this.director.startDeployment(deploymentName);
       let stateResult = _.assign({
-        statesResults: {
+        stateResults: {
           'boshStart': {
             taskId: taskId
           }
@@ -524,7 +524,7 @@ class BoshRestoreService extends BaseDirectorService {
       const taskResult = await this.director.pollTaskStatusTillComplete(taskId);
       stateResult = {}
       stateResult = _.assign({
-        statesResults: {
+        stateResults: {
           'boshStart': {
             taskId: taskId,
             taskResult: taskResult
