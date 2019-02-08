@@ -1535,7 +1535,7 @@ describe('bosh', () => {
         };
         let response = {
           body: {},
-          statusCode: 200,
+          statusCode: 302,
           headers: {
             location: '/tasks/1234'
           }

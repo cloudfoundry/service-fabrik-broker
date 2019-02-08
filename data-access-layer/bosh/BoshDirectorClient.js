@@ -937,7 +937,7 @@ class BoshDirectorClient extends HttpClient {
         }
       },
       json: true
-    }, 200, deploymentName);
+    }, 302, deploymentName);
   }
 
   async runSsh(deploymentName, jobName, instanceId, command) { // jshint ignore: line
