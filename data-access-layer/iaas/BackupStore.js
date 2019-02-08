@@ -70,11 +70,11 @@ class BackupStore {
     return fetchFiles()
       .then(() =>
         _
-        .chain(fileList)
-        .map(file => dontParseFilename ? file : this.filename.parse(file.name))
-        .filter(predicate)
-        .sortBy(iteratees)
-        .value());
+          .chain(fileList)
+          .map(file => dontParseFilename ? file : this.filename.parse(file.name))
+          .filter(predicate)
+          .sortBy(iteratees)
+          .value());
   }
 
   getFileNamePrefix() {
@@ -115,10 +115,8 @@ class BackupStore {
   }
 
   deleteServiceBackup(data, options) {
-    return Promise.all([
-      data.snapshotId ? this.cloudProvider.deleteSnapshot(data.snapshotId) : Promise.resolve({}),
-      this.deleteBackupInServiceContainer(data, options)
-    ]);
+    return Promise.try(() => data.snapshotId ? this.cloudProvider.deleteSnapshot(data.snapshotId) : Promise.resolve({}))
+      .then(() => this.deleteBackupInServiceContainer(data, options));
   }
 
   putFile(data) {
@@ -140,7 +138,7 @@ class BackupStore {
           .assign(newData)
           .set('finished_at',
             _.get(newData, 'finished_at') ?
-            new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
+              new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
           .value()
         )
       );
