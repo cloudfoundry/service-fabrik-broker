@@ -2,7 +2,7 @@
 
 ##  Abstract
 
-This document describes the basic architecture and scope for the Service Fabrik inter-operator. This includes the details about how it integrates with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) on the other. This also includes some details about different possible Kubernetes cluster landscapes for hosting the Kubernetes-based services and how they can be managed.
+This document describes the basic architecture and scope for the Service Fabrik inter-operator. This includes the details about how it integrates with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://coreos.com/operators/) on the other. This also includes some details about different possible Kubernetes cluster landscapes for hosting the Kubernetes-based services and how they can be managed.
 
 ## Target Audience
 
@@ -49,8 +49,7 @@ Architects, Developers, Product Owners, Development Managers who are interested 
 
 ## Context
 
-The technical guidelines for developing stateful services natively on Kubernetes are documented [here](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md).
-The high-level approach recommendation is for the individual services to package their service implementation (including automated life-cycle activities) as a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery).
+The high-level approach recommendation for developing stateful services natively on Kubernetes is for the individual services to package their service implementation (including automated life-cycle activities) as a [Kubernetes Operator](https://coreos.com/operators/).
 An operator is a combination of a set of [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in Kubernetes and a set of custom controllers which watch, manage and implement a control-loop to take the required action to reconcile the desired state (as specified in the custom resources) with the actual state.
 
 Typically, the operators are expected to manage their services within a given Kubernetes cluster and be feature-complete (via their [custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in the functionality they provide.
@@ -59,7 +58,7 @@ Typically, the operators are expected to manage their services within a given Ku
 
 [Service Manager](https://github.com/Peripli/service-manager) is a central repository of service brokers and platforms. It integrates with individual service brokers based on the [OSB](https://www.openservicebrokerapi.org/) API standard.
 
-The guideline for developing stateful Kubernetes-native services is to develop a [Kubernetes Operator](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) for the service. This makes it very close to the paradigm of service development on Kubernetes as provide a powerful way to encapsulate both service and life-cycle functionality in once package.
+The guideline for developing stateful Kubernetes-native services is to develop a [Kubernetes Operator](https://coreos.com/operators/) for the service. This makes it very close to the paradigm of service development on Kubernetes as provide a powerful way to encapsulate both service and life-cycle functionality in once package.
 
 This makes it necessary to bridge the gap between the Kubernetes [custom resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)-based API of the operators with the [OSB](https://www.openservicebrokerapi.org/) API expected by the [Service Manager](https://github.com/Peripli/service-manager).
 
@@ -201,7 +200,7 @@ The binding response would follow a flow similar to the [`last_operation](#last-
 
 ## Service Fabrik Inter-operator Custom Resources
 
-The following custom resources are introduced as part of the Service Fabrik inter-operator to integrate with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://github.wdf.sap.corp/CPonK8s/k8s-native-services-concept/blob/master/README.md#packaging-inter-operability-and-discovery) on the other.
+The following custom resources are introduced as part of the Service Fabrik inter-operator to integrate with [Service Manager](https://github.com/Peripli/service-manager) on the one side and with the individual service [operators](https://coreos.com/operators/) on the other.
 
 ### SFService
 
