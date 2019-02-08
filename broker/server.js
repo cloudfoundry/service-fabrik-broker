@@ -10,6 +10,7 @@ const ExpressApp = require('../common/ExpressApp');
 const config = require('../common/config');
 const utils = require('../common/utils');
 const logger = require('../common/logger');
+const CONST = require('../common/constants');
 
 async function init() {
   try {
@@ -57,7 +58,7 @@ async function init() {
     require('../common/UnlockResourcePoller');
   } catch (error) {
     logger.info('Process shutting down now because of error ', error);
-    process.exit(2);
+    process.exit(CONST.ERR_CODES.UNCAUGHT_FATAL_EXCEPTION);
   }
 }
 

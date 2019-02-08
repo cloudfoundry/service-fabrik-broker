@@ -232,7 +232,8 @@ module.exports = Object.freeze({
     PRE_CONDITION_NOT_MET: 'PRE_CONDITION_NOT_MET',
     DEPLOYMENT_NAME_DUPED_ACROSS_DIRECTORS: 'DEPLOYMENT_NAME_DUPED_ACROSS_DIRECTORS',
     SF_IN_MAINTENANCE: 101,
-    INTERNAL_ERROR: 4
+    INTERNAL_ERROR: 4,
+    UNCAUGHT_FATAL_EXCEPTION: 1 // https://github.com/nodejs/node-v0.x-archive/blob/master/doc/api/process.markdown#exit-codes
     //Error codes should always be readable strings. However few error codes (used as process exit codes) must be int.
     //Guideline : Only in cases where it is mandatory to have int, error codes should be so else they must always be Strings.
   },
