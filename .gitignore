@@ -37,3 +37,4 @@ deployment_hooks/lib/actions/sh/
 
 interoperator/vendor
 webhooks/vendor
+webhooks/logs
