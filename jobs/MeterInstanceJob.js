@@ -41,13 +41,13 @@ class MeterInstanceJob extends BaseJob {
   }
 
   /* jshint ignore:start */
-  static async meter(events) {
+  static async meter(events, attempts) {
     try {
       logger.info(`Number of events to be metered in this run - ${events.length}`);
       // Adding this comment as we are transitioning to async/await
       // Note: The below Promise is not bluebird promise
-      const resultArray = await Promise.all(_.map(events, async event =>
-        await this.sendEvent(event)));
+      const resultArray = await Promise.all(_.map(events, async (event) =>
+        await this.sendEvent(event, attempts)));
       const successCount = resultArray.filter(r => r === true).length;
       return {
         totalEvents: events.length,
@@ -63,9 +63,9 @@ class MeterInstanceJob extends BaseJob {
   static isServicePlanExcluded(options) {
     const serviceId = _.get(options, 'service.service_guid');
     const planId = _.get(options, 'service.plan_guid');
-    logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
     const plan = catalog.getPlan(planId);
     const metered = _.get(plan, 'metered', false);
+    logger.info(`Meter status of Service ${serviceId}, plan: ${planId} : ${metered}`);
     return !metered;
   }
 
@@ -73,16 +73,16 @@ class MeterInstanceJob extends BaseJob {
     // Add region , service name and plan sku name of the event
     const serviceId = _.get(options, 'service.service_guid');
     const planId = _.get(options, 'service.plan_guid');
-    logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
     options.service.id = catalog.getServiceName(serviceId);
     options.service.plan = catalog.getPlanSKUFromPlanGUID(serviceId, planId);
     options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
+    logger.info(`Enriched metering document`, options);
     return options;
   }
 
   /* jshint ignore:start */
-  static async sendEvent(event) {
+  static async sendEvent(event, attempts) {
     try {
       logger.debug('Metering Event details before enriching:', event);
       if (this.isServicePlanExcluded(event.spec.options) === true) {
@@ -91,8 +91,15 @@ class MeterInstanceJob extends BaseJob {
       }
       const enrichedUsageDoc = await this.enrichEvent(_.get(event.spec, 'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
-      const validEvent = await maas.client.sendUsageRecord({
-        usage: [enrichedUsageDoc]
+      // Add utils . retry here
+      const validEvent = await utils.retry(tries => {
+        logger.debug(`Sending usage document, try: ${tries}`);
+        return maas.client.sendUsageRecord({
+          usage: [enrichedUsageDoc]
+        });
+      }, {
+        maxAttempts: attempts || 4,
+        minDelay: 1000
       });
       if (validEvent !== undefined) {
         await this.updateMeterState(CONST.METER_STATE.METERED, event);

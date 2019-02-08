@@ -197,7 +197,40 @@ describe('Jobs', () => {
         const dummy_event = getDummyEvent(options_json);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
-        return MeterInstanceJob.sendEvent(dummy_event)
+        return MeterInstanceJob.sendEvent(dummy_event, 1)
+          .then(res => {
+            expect(res).to.eql(false);
+            mocks.verify();
+          })
+          .catch(err => expect(err).to.be.undefined);
+      });
+      it('should retry if sending document fails', () => {
+        const expectedResponse = {
+          status: 200
+        };
+        const payload = {
+          status: {
+            state: CONST.METER_STATE.FAILED
+          }
+        };
+        const mock_response_code = 400;
+        // first call
+        mocks.metering.mockAuthCall(mock_token);
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
+          return true;
+        });
+        // second retry
+        mocks.metering.mockAuthCall(mock_token);
+        mocks.metering.mockSendUsageRecord(mock_token, mock_response_code, () => {
+          return true;
+        });
+        // updated the dummy event with not exluded plans
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = not_excluded_plan;
+        const dummy_event = getDummyEvent(options_json);
+        mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
+        return MeterInstanceJob.sendEvent(dummy_event, 2)
           .then(res => {
             expect(res).to.eql(false);
             mocks.verify();
@@ -307,7 +340,7 @@ describe('Jobs', () => {
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
           CONST.APISERVER.RESOURCE_TYPES.SFEVENT, meterGuid, expectedResponse, 1, payload_failure);
-        return MeterInstanceJob.meter([dummy_event, _.cloneDeep(dummy_event)])
+        return MeterInstanceJob.meter([dummy_event, _.cloneDeep(dummy_event)], 1)
           .then(res => {
             expect(res.totalEvents).to.eql(2);
             expect(res.success).to.eql(1);
