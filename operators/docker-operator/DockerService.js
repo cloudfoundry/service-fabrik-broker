@@ -502,7 +502,9 @@ class DockerService extends BaseService {
 
   createCredentials() {
     const networkInfo = this.getNetworkInfo(this.containerInfo);
-    return this.credentials.create(this.getEnvironment(), networkInfo.ip, networkInfo.ports);
+    const creds = this.credentials.create(this.getEnvironment(), networkInfo.ip, networkInfo.ports);
+    assert.ok(creds.hostname, `Attribute 'hostname' is missing in credentials, could be if your container or host is down`);
+    return creds;
   }
 
   ensureContainerIsRunning(removeVolumes) {
