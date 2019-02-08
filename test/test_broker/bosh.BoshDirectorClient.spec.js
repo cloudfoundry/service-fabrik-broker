@@ -10,7 +10,7 @@ const logger = require('../../common/logger');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const InternalServerError = errors.InternalServerError;
-const ServiceUnavailable = errors.ServiceUnavailable;
+const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const BoshDirectorClient = require('../../data-access-layer/bosh/BoshDirectorClient');
 const BoshSshClient = require('../../data-access-layer/bosh/BoshSshClient');
 const utils = require('../../common/utils');
@@ -345,7 +345,7 @@ describe('bosh', () => {
         return deployments;
       });
 
-      it('returns ServiceUnavailable error: 503', (done) => {
+      it('returns DirectorServiceUnavailable error: 503', (done) => {
         let request = {
           method: 'GET',
           url: '/deployments'
@@ -355,7 +355,7 @@ describe('bosh', () => {
         };
         new MockBoshDirectorClient(request, response).getDeployments()
           .catch((res) => {
-            expect(res instanceof ServiceUnavailable).to.eql(true);
+            expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           }).catch(done);
       });
@@ -537,7 +537,7 @@ describe('bosh', () => {
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
           .catch((res) => {
-            expect(res instanceof ServiceUnavailable).to.eql(true);
+            expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           })
           .catch(done);
@@ -560,7 +560,7 @@ describe('bosh', () => {
         new MockBoshDirectorClient(request, response)
           .createOrUpdateDeployment(CONST.OPERATION_TYPE.UPDATE, manifest)
           .catch((res) => {
-            expect(res instanceof ServiceUnavailable).to.eql(true);
+            expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           })
           .catch(done);
@@ -591,7 +591,7 @@ describe('bosh', () => {
         }).catch(done);
       });
 
-      it('returns ServiceUnavailable: 502', (done) => {
+      it('returns DirectorServiceUnavailable: 502', (done) => {
         let request = {
           method: 'DELETE',
           url: `/deployments/${deployment_name}`
@@ -602,7 +602,7 @@ describe('bosh', () => {
 
         new MockBoshDirectorClient(request, response).deleteDeployment(id)
           .catch((res) => {
-            expect(res instanceof ServiceUnavailable).to.eql(true);
+            expect(res instanceof DirectorServiceUnavailable).to.eql(true);
             done();
           }).catch(done);
       });
@@ -662,7 +662,7 @@ describe('bosh', () => {
 
         return new MockBoshDirectorClient(request, response)
           .getDeploymentInstances(id)
-          .catch(res => expect(res instanceof ServiceUnavailable).to.eql(true));
+          .catch(res => expect(res instanceof DirectorServiceUnavailable).to.eql(true));
       });
 
       it('returns Service Unavailable Error: 500', () => {
@@ -676,7 +676,7 @@ describe('bosh', () => {
 
         return new MockBoshDirectorClient(request, response)
           .getDeploymentInstances(id)
-          .catch(res => expect(res instanceof ServiceUnavailable).to.eql(true));
+          .catch(res => expect(res instanceof DirectorServiceUnavailable).to.eql(true));
       });
     });
 
@@ -1202,7 +1202,7 @@ describe('bosh', () => {
         new MockBoshDirectorClient(request, response).getTasks({
           deployment: deployment_name
         }).catch((res) => {
-          expect(res instanceof ServiceUnavailable).to.eql(true);
+          expect(res instanceof DirectorServiceUnavailable).to.eql(true);
           done();
         }).catch(done);
       });

@@ -8,7 +8,7 @@ const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const DeploymentAttemptRejected = errors.DeploymentAttemptRejected;
-const ServiceUnavailable = errors.ServiceUnavailable;
+const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const DirectorService = require('../../operators/bosh-operator/DirectorService');
 const CfPlatformManager = require('../../platform-managers/CfPlatformManager');
 
@@ -122,7 +122,7 @@ describe('service', () => {
     });
 
     it('should create with rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      initializeSpy.returns(Promise.reject(new DirectorServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.create(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -134,7 +134,7 @@ describe('service', () => {
     });
 
     it('should update with rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      initializeSpy.returns(Promise.reject(new DirectorServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -287,7 +287,7 @@ describe('service', () => {
     });
 
     it('should create without rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      initializeSpy.returns(Promise.reject(new DirectorServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.create(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -299,7 +299,7 @@ describe('service', () => {
     });
 
     it('should update without rate limits - bosh resilience - staggered', () => {
-      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      initializeSpy.returns(Promise.reject(new DirectorServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.update(params).then(out => {
         expect(out.task_id).to.eql(undefined);
@@ -312,7 +312,7 @@ describe('service', () => {
 
     it('should delete without rate limits - bosh resilience - staggered', () => {
       directorService.platformManager = new CfPlatformManager('cloudfoundry');
-      initializeSpy.returns(Promise.reject(new ServiceUnavailable()));
+      initializeSpy.returns(Promise.reject(new DirectorServiceUnavailable()));
       directorService.networkSegmentIndex = undefined;
       return directorService.delete(params).then(out => {
         expect(out.task_id).to.eql(undefined);

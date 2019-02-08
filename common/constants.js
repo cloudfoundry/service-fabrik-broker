@@ -237,6 +237,26 @@ module.exports = Object.freeze({
     //Error codes should always be readable strings. However few error codes (used as process exit codes) must be int.
     //Guideline : Only in cases where it is mandatory to have int, error codes should be so else they must always be Strings.
   },
+  ERR_STATUS_CODES: {
+    BROKER: {
+      DEFAULT: 10001,
+    },
+    BOSH: {
+      BAD_FORMAT: 20002,
+      DIRECTOR_UNAVAILABLE: 20003,
+      DEPLOYMENT_NOT_FOUND: 20004,
+      DEPLOYMENT_ALREADY_EXISTS: 20009
+    },
+    DOCKER: {
+      DOCKER_UNAVAILABLE: 30003
+    },
+    CF: {
+      DEFAULT: 40001
+    },
+    STORE: {
+      DEFAULT: 50001
+    }
+  },
   BOSH_ERR_CODES: {
     DEPLOYMENT_NOT_FOUND: 70000
   },

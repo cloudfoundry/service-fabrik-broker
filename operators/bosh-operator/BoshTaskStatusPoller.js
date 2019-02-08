@@ -58,7 +58,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           } else {
             lastOperationOfInstance = {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: CONST.SERVICE_BROKER_ERR_MSG
+              description: utils.getDefaultErrorMsg(err.code, err.statusCode)
             };
             return eventmesh.apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -82,7 +82,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           this.clearPoller(instanceId, intervalId);
           lastOperationOfInstance = {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: CONST.SERVICE_BROKER_ERR_MSG
+            description: utils.getDefaultErrorMsg(err.code, CONST.ERR_STATUS_CODES.BOSH.BAD_FORMAT)
           };
           return eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

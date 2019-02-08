@@ -69,6 +69,7 @@ exports.registerInterOperatorCrds = registerInterOperatorCrds;
 exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
+exports.getDefaultErrorMsg = getDefaultErrorMsg;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
@@ -758,4 +759,8 @@ function loadCatalogFromAPIServer() {
       .tap(() => logger.silly('Loaded Services in catalog Are ', catalog.services))
       .tap(() => logger.silly('Loaded Plans in catalog Are ', catalog.plans));
   }
+}
+
+function getDefaultErrorMsg(statusCode, errCode) {
+  return `Service Broker Error, status code: ${statusCode ? statusCode : CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR}, error code: ${errCode ? errCode : CONST.ERR_STATUS_CODES.BROKER.DEFAULT}`;
 }
