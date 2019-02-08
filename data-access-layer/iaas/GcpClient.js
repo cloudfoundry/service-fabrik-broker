@@ -58,9 +58,9 @@ class GcpClient extends BaseCloudClient {
       const options = {
         sourceSnapshot: `global/snapshots/${snapshotId}`,
         description: 'disk created via service fabrik',
-        type: opts.type || `projects/${this.settings.projectId || this.settings.credentials.project_id}/zones/${zone}/pd-ssd`,
+        type: `projects/${this.settings.projectId || this.settings.credentials.project_id}/zones/${zone}/diskTypes/${opts.type}`,
         labels: _.assign({}, opts.tags || {}, {
-          createdBy: 'service-fabrik'
+          createdby: 'service-fabrik'
         })
       };
 
@@ -86,7 +86,7 @@ class GcpClient extends BaseCloudClient {
         .zone(zone)
         .createDisk(diskName, options)
         .then(data => {
-          createDiskOperation = data[0];
+          createDiskOperation = data[1];
           createDiskOperation.on('complete', oncomplete);
           createDiskOperation.on('error', onerror);
         })

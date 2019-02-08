@@ -67,7 +67,7 @@ describe('service-fabrik-admin', function () {
       uuidv4Stub = sinon.stub(utils, 'uuidV4');
       timestampStub.withArgs().returns(started_at);
       uuidv4Stub.withArgs().returns(Promise.resolve(backup_guid));
-      scheduleStub = sinon.stub(ScheduleManager, 'schedule', () => Promise.resolve({}));
+      scheduleStub = sinon.stub(ScheduleManager, 'schedule').callsFake(() => Promise.resolve({}));
       return mocks.setup([
         backupStore.cloudProvider.getContainer()
       ]);
@@ -75,9 +75,9 @@ describe('service-fabrik-admin', function () {
 
     afterEach(function () {
       mocks.reset();
-      scheduleStub.reset();
-      timestampStub.reset();
-      uuidv4Stub.reset();
+      scheduleStub.resetHistory();
+      timestampStub.resetHistory();
+      uuidv4Stub.resetHistory();
     });
     after(function () {
       scheduleStub.restore();

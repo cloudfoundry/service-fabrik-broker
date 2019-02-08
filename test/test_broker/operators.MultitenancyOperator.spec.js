@@ -68,8 +68,8 @@ describe('multitenancy-operator', function () {
     let registerWatcherFake;
     let mtstub;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-      mtstub = sinon.stub(MultitenancyService, 'createInstance', function (instance_id, options, resourceType) {
+      sandbox = sinon.createSandbox();
+      mtstub = sinon.stub(MultitenancyService, 'createInstance').callsFake(function (instance_id, options, resourceType) {
         MultitenancyOperatorDummy.createInstanceDummy(instance_id, options, resourceType);
         return Promise.resolve({
           'create': () => {
@@ -99,7 +99,7 @@ describe('multitenancy-operator', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 

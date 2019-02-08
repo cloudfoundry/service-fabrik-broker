@@ -229,7 +229,7 @@ describe('Jobs', function () {
   describe('Scheduler', function () {
     let agendaSpy, subscribeSpy, publishSpy, agendaSpyInit, mongooseConnectionStub, sandbox, jobSpy, logSpy, osCpuStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mongooseConnectionStub = sandbox.stub(mongoose);
       logSpy = sinon.spy(logger, 'error');
       agendaSpy = sandbox.stub(agendaStub);
@@ -239,36 +239,36 @@ describe('Jobs', function () {
       }));
       subscribeSpy = sandbox.stub(pubSubStub, 'subscribe');
       publishSpy = sandbox.stub(pubSubStub, 'publish');
-      osCpuStub = sandbox.stub(os, 'cpus', () => ({
+      osCpuStub = sandbox.stub(os, 'cpus').callsFake(() => ({
         length: 8
       }));
     });
 
     function resetSpies() {
-      agendaSpy.init.reset();
-      agendaSpy.processEvery.reset();
-      agendaSpy.maxConcurrency.reset();
-      agendaSpy.defaultConcurrency.reset();
-      agendaSpy.defaultLockLifetime.reset();
-      agendaSpy.jobsAsync.reset();
-      agendaSpy.start.reset();
-      agendaSpy.define.reset();
-      agendaSpy.create.reset();
-      agendaSpy.everyAsync.reset();
-      agendaSpy.cancelAsync.reset();
-      agendaSpy.scheduleAsync.reset();
-      agendaSpy.nowAsync.reset();
-      agendaSpy.stop.reset();
-      agendaSpy.on.reset();
-      subscribeSpy.reset();
-      publishSpy.reset();
-      jobSpy.unique.reset();
-      jobSpy.repeatEvery.reset();
-      jobSpy.schedule.reset();
-      jobSpy.computeNextRunAt.reset();
-      jobSpy.runAsync.reset();
-      jobSpy.saveAsync.reset();
-      logSpy.reset();
+      agendaSpy.init.resetHistory();
+      agendaSpy.processEvery.resetHistory();
+      agendaSpy.maxConcurrency.resetHistory();
+      agendaSpy.defaultConcurrency.resetHistory();
+      agendaSpy.defaultLockLifetime.resetHistory();
+      agendaSpy.jobsAsync.resetHistory();
+      agendaSpy.start.resetHistory();
+      agendaSpy.define.resetHistory();
+      agendaSpy.create.resetHistory();
+      agendaSpy.everyAsync.resetHistory();
+      agendaSpy.cancelAsync.resetHistory();
+      agendaSpy.scheduleAsync.resetHistory();
+      agendaSpy.nowAsync.resetHistory();
+      agendaSpy.stop.resetHistory();
+      agendaSpy.on.resetHistory();
+      subscribeSpy.resetHistory();
+      publishSpy.resetHistory();
+      jobSpy.unique.resetHistory();
+      jobSpy.repeatEvery.resetHistory();
+      jobSpy.schedule.resetHistory();
+      jobSpy.computeNextRunAt.resetHistory();
+      jobSpy.runAsync.resetHistory();
+      jobSpy.saveAsync.resetHistory();
+      logSpy.resetHistory();
       agendaEventHandlers = {};
       schedulerStartFailed = false;
     }
@@ -932,9 +932,9 @@ describe('Jobs', function () {
       let jobTypesOld;
 
       before(function () {
-        runSandBox = sinon.sandbox.create();
-        baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory', () => Promise.resolve({}));
-        maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo',
+        runSandBox = sinon.createSandbox();
+        baseJobLogRunHistoryStub = runSandBox.stub(BaseJob, 'logRunHistory').callsFake(() => Promise.resolve({}));
+        maintenaceManagerStub = runSandBox.stub(maintenanceManager, 'getMaintenaceInfo').callsFake(
           () => maintenanceStatus === 0 ? Promise.resolve(null) :
           (maintenanceStatus === 1 ? Promise.resolve(null) : Promise.resolve({
             maintenance: true,
@@ -947,9 +947,9 @@ describe('Jobs', function () {
       });
       afterEach(function () {
         maintenanceStatus = 0;
-        baseJobLogRunHistoryStub.reset();
-        processExitStub.reset();
-        jobDoneSpy.reset();
+        baseJobLogRunHistoryStub.resetHistory();
+        processExitStub.resetHistory();
+        jobDoneSpy.resetHistory();
       });
       after(function () {
         runSandBox.restore();

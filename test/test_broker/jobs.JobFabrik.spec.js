@@ -8,6 +8,7 @@ const BluePrintJob = require('../../jobs/BluePrintJob');
 const BackupReaperJob = require('../../jobs/BackupReaperJob');
 const ServiceInstanceUpdateJob = require('../../jobs/ServiceInstanceUpdateJob');
 const DbCollectionReaperJob = require('../../jobs/DbCollectionReaperJob');
+const MeterInstanceJob = require('../../jobs/MeterInstanceJob');
 const CONST = require('../../common/constants');
 const AssertionError = require('assert').AssertionError;
 
@@ -29,6 +30,8 @@ describe('Jobs', function () {
         expect(dbCollectionReaperJob).to.eql(DbCollectionReaperJob);
         const blueprintJob = JobFabrik.getJob(CONST.JOB.BLUEPRINT_JOB);
         expect(blueprintJob).to.eql(BluePrintJob);
+        const meterInstanceJob = JobFabrik.getJob(CONST.JOB.METER_INSTANCE);
+        expect(meterInstanceJob).to.eql(MeterInstanceJob);
         blueprintJob.run({
           attrs: {
             data: {}

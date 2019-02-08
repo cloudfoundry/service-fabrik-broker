@@ -260,8 +260,8 @@ describe('eventmesh', () => {
     describe('#unlock', () => {
       let sandbox, delayStub;
       before(function () {
-        sandbox = sinon.sandbox.create();
-        delayStub = sandbox.stub(Promise, 'delay', () => Promise.resolve(true));
+        sandbox = sinon.createSandbox();
+        delayStub = sandbox.stub(Promise, 'delay').callsFake(() => Promise.resolve(true));
       });
 
       after(function () {

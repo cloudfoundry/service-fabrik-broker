@@ -117,7 +117,7 @@ describe('#DirectorService', function () {
 
       afterEach(function () {
         mocks.reset();
-        getScheduleStub.reset();
+        getScheduleStub.resetHistory();
       });
 
       after(function () {
@@ -729,6 +729,44 @@ describe('#DirectorService', function () {
               expect(_.pick(res, ['description', 'state'])).to.eql({
                 description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
                 state: 'succeeded'
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: returns 200 OK (state = failed) if security group creation fails', function () {
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.createSecurityGroup(instance_id, 500);
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          const response = {
+            task_id: `${deployment_name}_${task_id}`,
+            type: 'create',
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            }
+          };
+          const oldRetryCount = CONST.CF_SECURITY_GROUP.MAX_RETRIES;
+          CONST.CF_SECURITY_GROUP.MAX_RETRIES = 1;
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.lastOperation(response))
+            .then(res => {
+              CONST.CF_SECURITY_GROUP.MAX_RETRIES = oldRetryCount;
+              expect(_.pick(res, ['description', 'state'])).to.eql({
+                description: 'Create deployment \'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa\' not yet completely succeeded because "Failed to create security group \'service-fabrik-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa\'"',
+                state: 'failed'
               });
               mocks.verify();
             });

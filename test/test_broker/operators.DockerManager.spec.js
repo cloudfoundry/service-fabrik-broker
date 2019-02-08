@@ -78,7 +78,7 @@ describe('docker-operator', function () {
     let jsonStream;
     let registerWatcherFake;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       createDockerServiceSpy = sinon.spy(DockerOperatorDummy, 'createDockerServiceDummy');
       createSpy = sinon.spy(DockerOperatorDummy, 'createDummy');
       updateSpy = sinon.spy(DockerOperatorDummy, 'updateDummy');
@@ -91,7 +91,7 @@ describe('docker-operator', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       initDefaultBMTest(jsonStream, sandbox, registerWatcherStub);
     });
 

@@ -85,8 +85,8 @@ describe('service-fabrik-admin', function () {
 
     afterEach(function () {
       mocks.reset();
-      timestampStub.reset();
-      uuidv4Stub.reset();
+      timestampStub.resetHistory();
+      uuidv4Stub.resetHistory();
     });
 
     after(function () {

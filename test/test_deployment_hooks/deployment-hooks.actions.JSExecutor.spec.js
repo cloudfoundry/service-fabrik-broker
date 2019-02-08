@@ -7,7 +7,7 @@ describe('action', function () {
   describe('JSExecutor', function () {
     let sandbox, processExitStub, initialProcessArgv, proxyLibs, consoleErrorStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     beforeEach(function () {
       processExitStub = sandbox.stub(process, 'exit');
@@ -16,9 +16,9 @@ describe('action', function () {
       process.argv = [];
     });
     afterEach(function () {
-      processExitStub.reset();
+      processExitStub.resetHistory();
       processExitStub.restore();
-      consoleErrorStub.reset();
+      consoleErrorStub.resetHistory();
       consoleErrorStub.restore();
       process.argv = initialProcessArgv;
     });

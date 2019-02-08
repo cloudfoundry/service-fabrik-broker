@@ -38,7 +38,7 @@ describe('operators', function () {
 
     let sandbox, registerWatcherStub;
     before(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     after(function () {
       sandbox.restore();
@@ -52,7 +52,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -66,7 +66,7 @@ describe('operators', function () {
       expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound startPoller');
       expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`);
       expect(_.size(baseStatusPoller.pollers)).to.eql(0);
-      registerWatcherStub.reset();
+      registerWatcherStub.resetHistory();
       registerWatcherStub.restore();
       done();
     });
@@ -107,7 +107,7 @@ describe('operators', function () {
           }
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPollerNew({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -123,7 +123,7 @@ describe('operators', function () {
           expect(registerWatcherStub.firstCall.args[2].name).to.eql('bound startPoller');
           expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`);
           expect(_.size(baseStatusPoller.pollers)).to.eql(0);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -147,7 +147,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -164,7 +164,7 @@ describe('operators', function () {
           expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`);
           expect(_.size(baseStatusPoller.pollers)).to.eql(1);
           clearInterval(baseStatusPoller.pollers.guid);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -187,7 +187,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -205,7 +205,7 @@ describe('operators', function () {
           expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`);
           expect(_.size(baseStatusPoller.pollers)).to.eql(1);
           clearInterval(baseStatusPoller.pollers.guid);
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -236,7 +236,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -276,7 +276,7 @@ describe('operators', function () {
           expect(_.size(baseStatusPoller.pollers)).to.eql(1);
           clearInterval(baseStatusPoller.pollers.guid);
           mocks.verify();
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -306,7 +306,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -341,7 +341,7 @@ describe('operators', function () {
           expect(_.size(baseStatusPoller.pollers)).to.eql(1);
           clearInterval(baseStatusPoller.pollers.guid1);
           mocks.verify();
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });
@@ -371,7 +371,7 @@ describe('operators', function () {
           return jsonStream;
         });
       };
-      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher', registerWatcherFake);
+      registerWatcherStub = sandbox.stub(eventmesh.prototype, 'registerWatcher').callsFake(registerWatcherFake);
       const baseStatusPoller = new BaseStatusPoller({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -405,7 +405,7 @@ describe('operators', function () {
           expect(registerWatcherStub.firstCall.args[3]).to.eql(`state in (${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS})`);
           expect(_.size(baseStatusPoller.pollers)).to.eql(0);
           mocks.verify();
-          registerWatcherStub.reset();
+          registerWatcherStub.resetHistory();
           registerWatcherStub.restore();
           done();
         });

@@ -94,16 +94,16 @@ describe('JobScheduler', function () {
     let publishStub, sandbox, clock, processExitStub;
 
     before(function () {
-      sandbox = sinon.sandbox.create();
-      publishStub = sandbox.stub(pubsub, 'publish');
+      sandbox = sinon.createSandbox();
+      publishStub = sinon.stub(pubsub, 'publish');
       clock = sinon.useFakeTimers(new Date().getTime());
     });
     beforeEach(function () {
       processExitStub = sandbox.stub(process, 'exit');
     });
     afterEach(function () {
-      publishStub.reset();
-      processExitStub.reset();
+      publishStub.resetHistory();
+      processExitStub.resetHistory();
       processExitStub.restore();
       for (let attr in workers) {
         if (workers.hasOwnProperty(attr)) {
@@ -114,20 +114,21 @@ describe('JobScheduler', function () {
     });
     after(function () {
       clock.restore();
+      publishStub.restore();
       sandbox.restore();
     });
 
     describe('#NotInMaintenance', function () {
       let maintenaceManagerStub;
       before(function () {
-        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve({
+        maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => Promise.resolve({
           createdAt: new Date(),
           updatedAt: new Date(),
           state: CONST.OPERATION.SUCCEEDED
         }));
       });
       afterEach(function () {
-        maintenaceManagerStub.reset();
+        maintenaceManagerStub.resetHistory();
       });
       after(function () {
         maintenaceManagerStub.restore();
@@ -249,14 +250,14 @@ describe('JobScheduler', function () {
     describe('#MaintenanceStateNotDetermined', function () {
       let getMaintenanceStub;
       before(function () {
-        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => {
+        getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => {
           return Promise.try(() => {
             throw new Error('Error occurred while fetching maintenance state...');
           });
         });
       });
       afterEach(function () {
-        getMaintenanceStub.reset();
+        getMaintenanceStub.resetHistory();
       });
       after(function () {
         getMaintenanceStub.restore();
@@ -284,7 +285,7 @@ describe('JobScheduler', function () {
       let sfConnectedToDB = true,
         sfIsDown = false;
       before(function () {
-        sfClientStub = sandbox.stub(serviceFabrikClient, 'getInfo', () => {
+        sfClientStub = sandbox.stub(serviceFabrikClient, 'getInfo').callsFake(() => {
           return Promise.try(() => {
             if (sfIsDown) {
               throw new Error('Service Fabrik unreachable');
@@ -309,7 +310,7 @@ describe('JobScheduler', function () {
         sfIsDown = false;
         sfConnectedToDB = true;
         getMaintenanceStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState');
-        updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace', () => {
+        updateMaintStub = sandbox.stub(maintenanceManager, 'updateMaintenace').callsFake(() => {
           return Promise.try(() => {
             if (updateStatus) {
               return {};
@@ -337,7 +338,7 @@ describe('JobScheduler', function () {
       afterEach(function () {
         getMaintenanceStub.restore();
         updateMaintStub.restore();
-        sfClientStub.reset();
+        sfClientStub.resetHistory();
       });
       after(function () {
         sfClientStub.restore();
@@ -549,10 +550,10 @@ describe('JobScheduler', function () {
     let eventHandlers = {};
     let sigIntHandler, sigTermHandler, unhandledRejectHandler, messageHandler;
     before(function () {
-      sandbox = sinon.sandbox.create();
-      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState', () => Promise.resolve(null));
+      sandbox = sinon.createSandbox();
+      maintenaceManagerStub = sandbox.stub(maintenanceManager, 'getLastMaintenaceState').callsFake(() => Promise.resolve(null));
       processExitStub = sandbox.stub(process, 'exit');
-      processOnStub = sandbox.stub(process, 'on', (name, callback) => {
+      processOnStub = sandbox.stub(process, 'on').callsFake((name, callback) => {
         eventHandlers[name] = callback;
         if (name === 'SIGINT') {
           logger.info('int handler...');
@@ -577,6 +578,7 @@ describe('JobScheduler', function () {
     });
     after(function () {
       sandbox.restore();
+      publishStub.restore();
       clock.restore();
     });
     it('Should publish APP_SHUTDOWN event on recieving SIGINT/SIGTERM', function () {

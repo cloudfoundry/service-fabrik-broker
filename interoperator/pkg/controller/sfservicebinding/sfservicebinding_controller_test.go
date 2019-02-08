@@ -147,6 +147,9 @@ var binding = &osbv1alpha1.SFServiceBinding{
 		ServiceID:         "service-id",
 		AcceptsIncomplete: true,
 	},
+	Status: osbv1alpha1.SFServiceBindingStatus{
+		State: "in_queue",
+	},
 }
 
 var c client.Client
@@ -154,7 +157,7 @@ var c client.Client
 var bindingKey = types.NamespacedName{Name: "binding-id", Namespace: "default"}
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "binding-id", Namespace: "default"}}
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
@@ -187,6 +190,9 @@ func TestReconcile(t *testing.T) {
 			State:    "succeeded",
 			Response: "foo",
 		},
+		Unbind: properties.GenericStatus{
+			State: "succeeded",
+		},
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
 
@@ -218,15 +224,12 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		labels := serviceBinding.GetLabels()
-		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("label not updated")
+		if state := serviceBinding.GetState(); state != "succeeded" {
+			return fmt.Errorf("state not updated")
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(serviceBinding.Status.State).Should(gomega.Equal("succeeded"))
-	labels := serviceBinding.GetLabels()
-	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
 
 	secret := &corev1.Secret{}
 	secretRef := serviceBinding.Status.Response.SecretRef
@@ -236,6 +239,11 @@ func TestReconcile(t *testing.T) {
 
 	// Delete the service binding
 	g.Expect(c.Delete(context.TODO(), binding)).NotTo(gomega.HaveOccurred())
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), bindingKey, serviceBinding)).NotTo(gomega.HaveOccurred())
+	serviceBinding.SetState("delete")
+	g.Expect(c.Update(context.TODO(), serviceBinding)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), secret)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
@@ -254,14 +262,9 @@ func TestReconcile(t *testing.T) {
 
 func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	start := time.Now()
 	select {
 	case <-requests:
-		diff := time.Now().Sub(start)
-		if diff < remainingTime {
-			return 1 + drainAllRequests(requests, remainingTime-diff)
-		}
-		return 1
+		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
 	}

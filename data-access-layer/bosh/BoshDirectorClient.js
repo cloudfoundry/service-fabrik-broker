@@ -3,6 +3,7 @@
 const parseUrl = require('url').parse;
 const Promise = require('bluebird');
 const _ = require('lodash');
+const uuid = require('uuid');
 const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
@@ -19,7 +20,9 @@ const ServiceUnavailable = errors.ServiceUnavailable;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
+const EncryptionManager = require('../../common/utils/EncryptionManager');
 const eventmesh = require('../eventmesh');
+const BoshSshClient = require('./BoshSshClient');
 
 class BoshDirectorClient extends HttpClient {
   constructor() {
@@ -895,6 +898,137 @@ class BoshDirectorClient extends HttpClient {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
         return taskId;
+      });
+  }
+
+  setupSsh(deploymentName, jobName, instanceId, tempUser, publicKey) {
+    return this.makeRequest({ //jshint ignore: line
+      method: 'POST',
+      url: `/deployments/${deploymentName}/ssh`,
+      body: {
+        command: 'setup',
+        deployment_name: deploymentName,
+        target: {
+          job: jobName,
+          ids: [instanceId]
+        },
+        params: {
+          user: tempUser,
+          public_key: publicKey
+        }
+      }
+    }, 200, deploymentName);
+  }
+
+  cleanupSsh(deploymentName, jobName, instanceId, tempUser) {
+    return this.makeRequest({
+      method: 'POST',
+      url: `/deployments/${deploymentName}/ssh`,
+      body: {
+        command: 'cleanup',
+        deployment_name: deploymentName,
+        target: {
+          job: jobName,
+          ids: [instanceId]
+        },
+        params: {
+          user_regex: `^${tempUser}`
+        }
+      }
+    }, 200, deploymentName);
+  }
+
+  async runSsh(deploymentName, jobName, instanceId, command) { //jshint ignore: line
+    const cryptoManager = new EncryptionManager();
+    const tempUser = `service-fabrik-user-${uuid.v4()}`;
+    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); //jshint ignore: line
+    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); //jshint ignore: line
+    const sshSetupTaskId = this.prefixTaskId(deploymentName, sshSetupResponse);
+    await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); //jshint ignore: line
+    const sshSetupResult = await this.getTaskResult(sshSetupTaskId); //jshint ignore: line
+    const sshOptions = {
+      host: sshSetupResult[0].ip,
+      username: tempUser,
+      privateKey: genKeyPair.privateKey
+    };
+    const boshDeploymentOptions = {
+      deploymentName: deploymentName,
+      job: jobName,
+      instanceId: instanceId
+    };
+    const boshSshClient = new BoshSshClient(sshOptions, boshDeploymentOptions);
+    const sshOutput = await boshSshClient.run(command); //jshint ignore: line
+    await this.cleanupSsh(deploymentName, jobName, instanceId, tempUser); //jshint ignore: line
+    return sshOutput;
+  }
+
+  getDeploymentErrands(deploymentName) {
+    return this.makeRequest({
+        method: 'GET',
+        url: `/deployments/${deploymentName}/errands`
+      }, 200, deploymentName)
+      .then(res => JSON.parse(res.body));
+  }
+
+  /**
+   * Trigger the errand on specific instances and get the task id correspnding to errand
+   * @param {string} deploymentName - Deployment on which errand is to be started
+   * @param {string} errandName - errand name
+   * @param {Object[]}  instances - array of the instances on which the errand is to be triggered
+   * @param {string}  instances[].group - instance group
+   * @param {string}  instances[].id - instance index or id
+   */
+  runDeploymentErrand(deploymentName, errandName, instances = []) {
+    return this.makeRequest({
+        method: 'POST',
+        url: `/deployments/${deploymentName}/errands/${errandName}/runs`,
+        body: {
+          'keep-alive': true,
+          'instances': instances
+        },
+        json: true
+      }, 302, deploymentName)
+      .then(res => {
+        const taskId = this.lastSegment(res.headers.location);
+        logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
+        return taskId;
+      });
+  }
+
+  createDiskAttachment(deploymentName, diskCid, jobName, instanceId, diskProperties = 'copy') {
+    return this.makeRequest({
+        method: 'PUT',
+        url: `/disks/${diskCid}/attachments`,
+        qs: {
+          deployment: deploymentName,
+          job: jobName,
+          instance_id: instanceId,
+          disk_properties: diskProperties || 'copy'
+        }
+      }, 302, deploymentName)
+      .then(res => {
+        const taskId = this.lastSegment(res.headers.location);
+        logger.info(`Triggered disk attachment with paramaters --> \
+        deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
+        return taskId;
+      });
+  }
+
+  getPersistentDisks(deploymentName, instanceFilter = []) {
+    if (!instanceFilter || !_.isArray(instanceFilter)) {
+      instanceFilter = [];
+    }
+    return this.getDeploymentVmsVitals(deploymentName)
+      .then(instances => _.filter(instances, instance => _.includes(instanceFilter, instance.job_name)))
+      .then(filteredInstances => {
+        return _.chain(filteredInstances)
+          .map(i => ({
+            job_name: _.get(i, 'job_name'),
+            id: _.get(i, 'id'),
+            disk_cid: _.get(i, 'disk_cid'),
+            az: _.get(i, 'cloud_properties.availability_zone') || _.get(i, 'cloud_properties.zone')
+          }))
+          .value();
       });
   }
 

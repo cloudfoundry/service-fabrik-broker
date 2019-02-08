@@ -36,12 +36,12 @@ describe('quota', () => {
         }
       }];
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getServicePlansStub = sandbox.stub(CloudControllerClient.prototype, 'getServicePlans');
         getServicePlansStub.withArgs(`unique_id:${planId}`).returns(Promise.resolve(servicePlans));
       });
       afterEach(function () {
-        getServicePlansStub.reset();
+        getServicePlansStub.resetHistory();
       });
       after(function () {
         sandbox.restore();
@@ -104,12 +104,12 @@ describe('quota', () => {
         }
       }];
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getServicePlansStub = sandbox.stub(CloudControllerClient.prototype, 'getServicePlans');
         getServicePlansStub.withArgs(`unique_id:${planId}`).returns(Promise.resolve(servicePlans)).withArgs(`unique_id:${planId2}`).returns(Promise.resolve(servicePlans2));
       });
       afterEach(function () {
-        getServicePlansStub.reset();
+        getServicePlansStub.resetHistory();
       });
       after(function () {
         sandbox.restore();
@@ -312,7 +312,7 @@ describe('quota', () => {
       }];
 
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getQuotaStub = sandbox.stub(quotaAPIClientStub, 'getQuota');
         getOrganizationStub = sandbox.stub(CloudControllerClient.prototype, 'getOrganization');
         getOrganizationStub.withArgs(orgId).returns(Promise.resolve(org));
@@ -325,10 +325,10 @@ describe('quota', () => {
         isOrgWhitelistedStub.withArgs(orgId).returns(Promise.resolve(false));
       });
       afterEach(function () {
-        getServicePlansStub.reset();
-        getQuotaStub.reset();
-        getOrganizationStub.reset();
-        getServiceInstancesStub.reset();
+        getServicePlansStub.resetHistory();
+        getQuotaStub.resetHistory();
+        getOrganizationStub.resetHistory();
+        getServiceInstancesStub.resetHistory();
       });
       after(function () {
         sandbox.restore();
@@ -409,12 +409,12 @@ describe('quota', () => {
         }
       };
       before(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         getOrganizationStub = sandbox.stub(CloudControllerClient.prototype, 'getOrganization');
         getOrganizationStub.withArgs(orgId).returns(Promise.resolve(org));
       });
       afterEach(function () {
-        getOrganizationStub.reset();
+        getOrganizationStub.resetHistory();
       });
       after(function () {
         sandbox.restore();

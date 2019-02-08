@@ -18,7 +18,10 @@ package sfserviceinstance
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"reflect"
+	"strconv"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
@@ -40,7 +43,10 @@ import (
 
 // finalizerName is the name of the finalizer added by interoperator
 const (
-	finalizerName = "interoperator.servicefabrik.io"
+	finalizerName    = "interoperator.servicefabrik.io"
+	errorCountKey    = "interoperator.servicefabrik.io/error"
+	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
+	errorThreshold   = 10
 )
 
 // Add creates a new ServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -152,13 +158,22 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return r.handleError(instance, reconcile.Result{}, err)
 	}
 
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
 	bindingID := ""
+	state := instance.GetState()
+	labels := instance.GetLabels()
+	lastOperation, ok := labels[lastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+	var requeue bool
+	var appliedResources []*unstructured.Unstructured
+	var remainingResource []osbv1alpha1.Source
 
 	if instance.GetDeletionTimestamp().IsZero() {
 		if !containsString(instance.GetFinalizers(), finalizerName) {
@@ -166,76 +181,110 @@ func (r *ReconcileServiceInstance) Reconcile(request reconcile.Request) (reconci
 			// then lets add the finalizer and update the object.
 			instance.SetFinalizers(append(instance.GetFinalizers(), finalizerName))
 			if err := r.Update(context.Background(), instance); err != nil {
-				return reconcile.Result{Requeue: true}, nil
+				return r.handleError(instance, reconcile.Result{Requeue: true}, nil)
 			}
 		}
-	} else {
-		// The object is being deleted
-		if containsString(instance.GetFinalizers(), finalizerName) {
-			// our finalizer is present, so lets handle our external dependency
-			targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			remainingResource, _ := r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
-			if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
-				return reconcile.Result{}, err
-			}
-			if len(remainingResource) != 0 && instance.Status.State != "failed" {
-				return reconcile.Result{Requeue: true}, nil
-			}
-		}
-
-		// Our finalizer has finished, so the reconciler can do nothing.
-		log.Printf("instance %s deleted\n", request.NamespacedName)
-		return reconcile.Result{}, nil
-	}
-
-	labels := instance.GetLabels()
-	stateLabel, ok := labels["state"]
-	if ok {
-		switch stateLabel {
-		case "in_queue", "update":
-			if instance.Status.State == "succeeded" {
-				labels["state"] = "succeeded"
-				instance.SetLabels(labels)
-				err = r.Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				log.Printf("instance %s state label updated to succeeded\n", request.NamespacedName)
-			}
-		}
-	}
-
-	expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
-	if err != nil {
-		return reconcile.Result{}, err
 	}
 
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.handleError(instance, reconcile.Result{}, err)
 	}
 
-	var requeue bool
-	appliedResources, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
-	if err != nil {
-		log.Printf("Reconcile error %v\n", err)
-		requeue = true
+	if state == "delete" && !instance.GetDeletionTimestamp().IsZero() {
+		// The object is being deleted
+		if containsString(instance.GetFinalizers(), finalizerName) {
+			// our finalizer is present, so lets handle our external dependency
+			remainingResource, err = r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
+			if err != nil {
+				log.Printf("Delete sub resources error %s\n", err.Error())
+				requeue = true
+			} else {
+				err = r.setInProgress(request.NamespacedName, state)
+				if err != nil {
+					requeue = true
+				} else {
+					lastOperation = state
+				}
+			}
+		}
+	} else if state == "in_queue" || state == "update" {
+		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+
+		err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+
+		appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
+		if err != nil {
+			log.Printf("Reconcile error %s\n", err.Error())
+			requeue = true
+		} else {
+			err = r.setInProgress(request.NamespacedName, state)
+			if err != nil {
+				requeue = true
+			} else {
+				lastOperation = state
+			}
+		}
 	}
 
-	err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
-	if err != nil {
-		return reconcile.Result{}, err
+	if lastOperation == "delete" {
+		remainingResource = []osbv1alpha1.Source{}
+		for _, subResource := range instance.Status.Resources {
+			resource := &unstructured.Unstructured{}
+			resource.SetKind(subResource.Kind)
+			resource.SetAPIVersion(subResource.APIVersion)
+			resource.SetName(subResource.Name)
+			resource.SetNamespace(subResource.Namespace)
+			namespacedName := types.NamespacedName{
+				Name:      resource.GetName(),
+				Namespace: resource.GetNamespace(),
+			}
+			err := targetClient.Get(context.TODO(), namespacedName, resource)
+			if !errors.IsNotFound(err) {
+				remainingResource = append(remainingResource, subResource)
+			}
+		}
+		if err := r.updateDeprovisionStatus(targetClient, instance, remainingResource); err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
+	} else if lastOperation == "in_queue" || lastOperation == "update" {
+		err = r.updateStatus(instanceID, bindingID, serviceID, planID, instance.GetNamespace(), appliedResources)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err)
+		}
 	}
+	return r.handleError(instance, reconcile.Result{Requeue: requeue}, nil)
+}
 
-	return reconcile.Result{Requeue: requeue}, nil
+func (r *ReconcileServiceInstance) setInProgress(namespacedName types.NamespacedName, state string) error {
+	if state == "in_queue" || state == "update" || state == "delete" {
+		instance := &osbv1alpha1.SFServiceInstance{}
+		err := r.Get(context.TODO(), namespacedName, instance)
+		if err != nil {
+			log.Printf("error updating status to in progress. %s\n", err.Error())
+			return err
+		}
+		instance.SetState("in progress")
+		labels := instance.GetLabels()
+		if labels == nil {
+			labels = make(map[string]string)
+		}
+		labels[lastOperationKey] = state
+		instance.SetLabels(labels)
+		err = r.Update(context.Background(), instance)
+		if err != nil {
+			log.Printf("error updating status to in progress. %s\n", err.Error())
+			return err
+		}
+		log.Printf("Updated status to in progress for operation %s\n", state)
+	}
+	return nil
 }
 
 func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.Client, instance *osbv1alpha1.SFServiceInstance, remainingResource []osbv1alpha1.Source) error {
@@ -243,23 +292,48 @@ func (r *ReconcileServiceInstance) updateDeprovisionStatus(targetClient client.C
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
 	bindingID := ""
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, instance.GetNamespace())
+	namespace := instance.GetNamespace()
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
 		log.Printf("error computing status. %v\n", err)
 		return err
 	}
-	instance.Status.State = computedStatus.Deprovision.State
-	instance.Status.Error = computedStatus.Deprovision.Error
-	instance.Status.Description = computedStatus.Deprovision.Response
-	instance.Status.Resources = remainingResource
+
+	// Fetch object again before updating status
+	instanceObj := &osbv1alpha1.SFServiceInstance{}
+	namespacedName := types.NamespacedName{
+		Name:      instanceID,
+		Namespace: namespace,
+	}
+	err = r.Get(context.TODO(), namespacedName, instanceObj)
+	if err != nil {
+		log.Printf("error fetching instance. %v\n", err.Error())
+		return err
+	}
+
+	updateRequired := false
+	updatedStatus := instance.Status.DeepCopy()
+	updatedStatus.State = computedStatus.Deprovision.State
+	updatedStatus.Error = computedStatus.Deprovision.Error
+	updatedStatus.Description = computedStatus.Deprovision.Response
+	updatedStatus.Resources = remainingResource
+	if !reflect.DeepEqual(&instance.Status, updatedStatus) {
+		updatedStatus.DeepCopyInto(&instance.Status)
+		updateRequired = true
+	}
 
 	if instance.Status.State == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
+		log.Printf("instance %s removing finalizer\n", instanceID)
 		instance.SetFinalizers(removeString(instance.GetFinalizers(), finalizerName))
+		updateRequired = true
 	}
 
-	if err := r.Update(context.Background(), instance); err != nil {
-		return err
+	if updateRequired {
+		if err := r.Update(context.Background(), instance); err != nil {
+			log.Printf("error updating deprovision status instance %s. %s.\n", instanceID, err.Error())
+			return err
+		}
 	}
 	return nil
 }
@@ -297,18 +371,24 @@ func (r *ReconcileServiceInstance) updateStatus(instanceID, bindingID, serviceID
 		log.Printf("error fetching instance. %v\n", err)
 		return err
 	}
-	instanceObj.Status.State = computedStatus.Provision.State
-	instanceObj.Status.Error = computedStatus.Provision.Error
-	instanceObj.Status.Description = computedStatus.Provision.Response
-	instanceObj.Status.DashboardURL = computedStatus.Provision.DashboardURL
+	updatedStatus := instanceObj.Status.DeepCopy()
+	updatedStatus.State = computedStatus.Provision.State
+	updatedStatus.Error = computedStatus.Provision.Error
+	updatedStatus.Description = computedStatus.Provision.Response
+	updatedStatus.DashboardURL = computedStatus.Provision.DashboardURL
 	if appliedResources != nil {
-		instanceObj.Status.Resources = resourceRefs
+		updatedStatus.Resources = resourceRefs
 	}
-	err = r.Update(context.Background(), instanceObj)
-	if err != nil {
-		log.Printf("error updating status. %v\n", err)
-		return err
+	if !reflect.DeepEqual(&instanceObj.Status, updatedStatus) {
+		updatedStatus.DeepCopyInto(&instanceObj.Status)
+		log.Printf("Updating provision status from template for %s\n", namespacedName)
+		err = r.Update(context.Background(), instanceObj)
+		if err != nil {
+			log.Printf("error updating status. %v\n", err)
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -332,4 +412,72 @@ func removeString(slice []string, s string) (result []string) {
 		result = append(result, item)
 	}
 	return
+}
+
+func (r *ReconcileServiceInstance) handleError(object *osbv1alpha1.SFServiceInstance, result reconcile.Result, inputErr error) (reconcile.Result, error) {
+	labels := object.GetLabels()
+	var count int64
+	id := object.GetName()
+
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	countString, ok := labels[errorCountKey]
+	if !ok {
+		count = 0
+	} else {
+		i, err := strconv.ParseInt(countString, 10, 64)
+		if err != nil {
+			count = 0
+		} else {
+			count = i
+		}
+	}
+
+	if inputErr == nil {
+		if count == 0 {
+			//No change for count
+			return result, inputErr
+		}
+		count = 0
+	} else {
+		count++
+	}
+
+	if count > errorThreshold {
+		log.Printf("Retry threshold reached for %s. Ignoring %v\n", id, inputErr)
+		object.Status.State = "failed"
+		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", id, inputErr.Error())
+		object.Status.Description = "Service Broker Error: Something unexpected happened"
+		err := r.Update(context.TODO(), object)
+		if err != nil {
+			log.Printf("Error setting state to failed for %s\n", id)
+		}
+		return result, nil
+	}
+
+	labels[errorCountKey] = strconv.FormatInt(count, 10)
+	object.SetLabels(labels)
+	err := r.Update(context.TODO(), object)
+	if err != nil {
+		if errors.IsConflict(err) {
+			err := r.Get(context.TODO(), types.NamespacedName{
+				Name:      object.GetName(),
+				Namespace: object.GetNamespace(),
+			}, object)
+			if err != nil {
+				return result, inputErr
+			}
+			labels = object.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[errorCountKey] = strconv.FormatInt(count, 10)
+			object.SetLabels(labels)
+			return r.handleError(object, result, inputErr)
+		}
+		log.Printf("Error Updating error count label to %d for instance %s\n", count, id)
+	}
+	return result, inputErr
 }

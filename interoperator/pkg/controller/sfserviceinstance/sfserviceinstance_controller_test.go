@@ -42,7 +42,7 @@ import (
 
 var c client.Client
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
 	osbv1alpha1.TemplateSpec{
@@ -135,6 +135,9 @@ var instance = &osbv1alpha1.SFServiceInstance{
 		RawParameters:    nil,
 		PreviousValues:   nil,
 	},
+	Status: osbv1alpha1.SFServiceInstanceStatus{
+		State: "in_queue",
+	},
 }
 
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
@@ -170,6 +173,9 @@ func TestReconcile(t *testing.T) {
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
 		},
+		Deprovision: properties.GenericStatus{
+			State: "succeeded",
+		},
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
 
@@ -201,18 +207,20 @@ func TestReconcile(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		labels := serviceInstance.GetLabels()
-		if state, ok := labels["state"]; !ok || state != "succeeded" {
-			return fmt.Errorf("label not updated")
+		state := serviceInstance.GetState()
+		if state != "succeeded" {
+			return fmt.Errorf("state not updated")
 		}
 		return nil
 	}, timeout).Should(gomega.Succeed())
 	g.Expect(serviceInstance.Status.State).Should(gomega.Equal("succeeded"))
-	labels := serviceInstance.GetLabels()
-	g.Expect(labels).Should(gomega.HaveKeyWithValue("state", "succeeded"))
 
 	// Delete the service instance
 	g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
+	g.Expect(c.Get(context.TODO(), instanceKey, serviceInstance)).NotTo(gomega.HaveOccurred())
+	serviceInstance.SetState("delete")
+	g.Expect(c.Update(context.TODO(), serviceInstance)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(drainAllRequests(requests, timeout)).NotTo(gomega.BeZero())
 
@@ -231,14 +239,9 @@ func TestReconcile(t *testing.T) {
 
 func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	start := time.Now()
 	select {
 	case <-requests:
-		diff := time.Now().Sub(start)
-		if diff < remainingTime {
-			return 1 + drainAllRequests(requests, remainingTime-diff)
-		}
-		return 1
+		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
 	}
