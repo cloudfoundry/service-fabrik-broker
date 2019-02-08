@@ -741,7 +741,7 @@ describe('bosh', () => {
         let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
         return mockBoshDirectorClient.runDeploymentErrand(deployment_name, errandName, instances)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
 
@@ -935,7 +935,7 @@ describe('bosh', () => {
         let mockBoshClient = new MockBoshDirectorClient(req, res);
         return mockBoshClient.createDiskAttachment(deployment_name, diskCid, jobName, instanceId)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
@@ -1520,6 +1520,7 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
+          json: true,
           body: {
             command: 'cleanup',
             deployment_name: deployment_name,
@@ -1580,6 +1581,7 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
+          json: true,
           body: {
             command: 'setup',
             deployment_name: deployment_name,
@@ -1595,7 +1597,7 @@ describe('bosh', () => {
         };
         let response = {
           body: {},
-          statusCode: 200,
+          statusCode: 302,
           headers: {
             location: '/tasks/1234'
           }
