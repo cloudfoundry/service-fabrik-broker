@@ -310,11 +310,24 @@ class BoshRestoreService extends BaseDirectorService {
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
 
       const service = catalog.getService(resourceOptions.service_id);
+      const backupData = _.assign({
+        type: _.get(resourceOptions, 'arguments.backup.type'),
+        backup_guid: _.get(resourceOptions, 'arguments.backup_guid'),
+        backup_secret: '',
+        snapshotId: _.get(resourceOptions, 'arguments.backup.snapshotId'),
+        started_at: _.get(resourceOptions, 'arguments.backup.started_at'),
+        finished_at: _.get(resourceOptions, 'arguments.backup.finished_at'),
+        time_stamp: _.get(resourceOptions, 'arguments.time_stamp')
+      });
+      let stringified = JSON.stringify(backupData);
+      const escaped = stringified.replace(/"/g, '\\"');
+      //const stringified = _.replace(JSON.stringify(resource), '"', '\"');
       const cmd = `
-      rm -rf ${service.restore_operation.filesystem_path}
-      touch ${service.restore_operation.filesystem_path}
-      echo ${JSON.stringify(resourceOptions)} > ${service.restore_operation.filesystem_path}
-      sync
+      sudo -u root rm -rf ${service.restore_operation.filesystem_path}
+      sudo -u root mkdir -p $(dirname ${service.restore_operation.filesystem_path})
+      sudo -u root touch ${service.restore_operation.filesystem_path}
+      sudo -u root bash -c 'echo "${escaped}" > ${service.restore_operation.filesystem_path}'
+      sudo -u root sync
       `;
       //TODO: add retries
       for(let i = 0; i < deploymentInstancesInfo.length; i++) {
@@ -392,8 +405,10 @@ class BoshRestoreService extends BaseDirectorService {
       logger.info(`Older task for ${errandType} exists. Waiting for task ${oldTaskId}. Won't trigger errand again.`);
       const taskResult = await this.director.pollTaskStatusTillComplete(oldTaskId);
       let errands = {};
-      errands[errandType].taskId = oldTaskId;
-      errands[errandType].taskResult = taskResult;
+      errands[errandType] = {
+        taskId: taskIdForErrand,
+        taskResult: taskResult
+      };
       let stateResults = _.assign({
         stateResults : {
           errands: errands
@@ -420,7 +435,9 @@ class BoshRestoreService extends BaseDirectorService {
     logger.info(`Running errand ${errandName} on following instances: ${instancesForErrands}.`);
     const taskIdForErrand = await this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands);
     let errands = {};
-    errands[errandType].taskId = taskIdForErrand;
+    errands[errandType] = {
+      taskId: taskIdForErrand
+    }
     let stateResults = _.assign({
       stateResults : {
         errands: errands
@@ -435,8 +452,10 @@ class BoshRestoreService extends BaseDirectorService {
     const taskResult = await this.director.pollTaskStatusTillComplete(taskIdForErrand);
     errands = {};
     stateResults = {};
-    errands[errandType].taskId = taskIdForErrand;
-    errands[errandType].taskResult = taskResult;
+    errands[errandType] = {
+      taskId: taskIdForErrand,
+      taskResult: taskResult
+    };
     stateResults = _.assign({
       stateResults : {
         errands: errands

@@ -948,7 +948,7 @@ class BoshDirectorClient extends HttpClient {
     await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); // jshint ignore: line
     const sshSetupResult = await this.getTaskResult(sshSetupTaskId); // jshint ignore: line
     const sshOptions = {
-      host: sshSetupResult[0].ip,
+      host: sshSetupResult[0][0].ip,
       username: tempUser,
       privateKey: genKeyPair.privateKey
     };
