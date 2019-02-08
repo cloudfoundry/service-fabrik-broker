@@ -110,8 +110,8 @@ class CfPlatformManager extends BasePlatformManager {
         return this.cloudController
           .createSecurityGroup(name, rules, [spaceId]);
       }, {
-        maxAttempts: 4,
-        minDelay: 1000
+        maxAttempts: CONST.CF_SECURITY_GROUP.MAX_RETRIES,
+        minDelay: CONST.CF_SECURITY_GROUP.RETRY_DELAY
       })
       .then(securityGroup => securityGroup.metadata.guid)
       .tap(guid => logger.info(`+-> Created security group with guid '${guid}'`))
