@@ -404,7 +404,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
             return Promise.try(() => DirectorService.createInstance(_.get(instance, 'metadata.guid'), {
                 plan_id: plan.id,
                 context: {
-                  platform: 'cloudfoundry'
+                  platform: CONST.PLATFORM.CF
                 }
               }))
               .then(service => _
