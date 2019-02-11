@@ -402,7 +402,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
             return Promise.try(() => DirectorService.createInstance(_.get(instance, 'metadata.guid'), {
-                plan_id: plan.id
+                plan_id: plan.id,
+                context: {
+                  platform: 'cloudfoundry'
+                }
               }))
               .then(service => _
                 .chain(instance)
