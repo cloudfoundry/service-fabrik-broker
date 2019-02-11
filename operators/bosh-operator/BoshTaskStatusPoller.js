@@ -58,7 +58,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           } else {
             lastOperationOfInstance = {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err.code, err.statusCode)
+              description: utils.getDefaultErrorMsg(err)
             };
             return eventmesh.apiServerClient.updateResource({
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -80,9 +80,10 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
         .catch(AssertionError, err => {
           logger.error(`Error occured while getting last operation for instance ${instanceId}`, err);
           this.clearPoller(instanceId, intervalId);
+          err.statusCode = CONST.ERR_STATUS_CODES.BOSH.BAD_FORMAT;
           lastOperationOfInstance = {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            description: utils.getDefaultErrorMsg(err.code, CONST.ERR_STATUS_CODES.BOSH.BAD_FORMAT)
+            description: utils.getDefaultErrorMsg(err)
           };
           return eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

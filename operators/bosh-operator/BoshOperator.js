@@ -46,11 +46,11 @@ class BoshOperator extends BaseOperator {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             lastOperation: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err.code, err.statusCode)
+              description: utils.getDefaultErrorMsg(err)
             },
             response: {
               state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: utils.getDefaultErrorMsg(err.code, err.statusCode)
+              description: utils.getDefaultErrorMsg(err)
             },
             error: utils.buildErrorJson(err)
           }
