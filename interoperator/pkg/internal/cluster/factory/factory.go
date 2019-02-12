@@ -2,13 +2,15 @@ package factory
 
 import (
 	"fmt"
-	"log"
 
 	"k8s.io/client-go/rest"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("cluster-factory")
 
 // ClusterFactory sets up k8s clusters and gets client for them
 //go:generate mockgen -source factory.go -destination ./mock_factory/mock_factory.go
@@ -40,7 +42,7 @@ func (f *clusterFactory) GetCluster(instanceID, bindingID, serviceID, planID str
 	if cfg == nil {
 		cfg, err = config.GetConfig()
 		if err != nil {
-			log.Printf("unable to get client config %v", err)
+			log.Error(err, "unable to get client config")
 			return nil, err
 		}
 	}
@@ -51,7 +53,7 @@ func (f *clusterFactory) GetCluster(instanceID, bindingID, serviceID, planID str
 	}
 	client, err := kubernetes.New(cfg, options)
 	if err != nil {
-		log.Printf("unable create kubernetes client %v", err)
+		log.Error(err, "unable create kubernetes client")
 		return nil, err
 	}
 	return client, nil

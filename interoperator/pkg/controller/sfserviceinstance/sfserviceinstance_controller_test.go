@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var c client.Client
@@ -149,8 +150,8 @@ func TestReconcile(t *testing.T) {
 	defer ctrl.Finish()
 
 	var expectedResources = []*unstructured.Unstructured{nil}
-	var appliedResources = []*unstructured.Unstructured{
-		&unstructured.Unstructured{},
+	var appliedResources = []osbv1alpha1.Source{
+		osbv1alpha1.Source{},
 	}
 	err1 := fmt.Errorf("Some error")
 
@@ -183,6 +184,8 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	logf.SetLogger(logf.ZapLogger(true))
 
 	defer func() {
 		close(stopMgr)
