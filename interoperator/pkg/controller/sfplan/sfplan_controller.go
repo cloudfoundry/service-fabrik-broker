@@ -19,7 +19,6 @@ package sfplan
 import (
 	"context"
 	"fmt"
-	"log"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+var log = logf.Log.WithName("plan-controller")
 
 // Add creates a new SFPlan Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -155,7 +157,7 @@ func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Printf("Plan %s labels updated\n", instance.GetName())
+		log.Info("Plan labels updated", "plan", instance.GetName())
 	}
 	return reconcile.Result{}, nil
 }

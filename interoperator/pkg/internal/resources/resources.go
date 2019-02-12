@@ -30,7 +30,7 @@ const (
 type ResourceManager interface {
 	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)
 	SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error
-	ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error)
+	ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
 	ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error)
 	DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
 }
@@ -171,7 +171,7 @@ func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*uns
 }
 
 // ReconcileResources setups all resources according to expectation
-func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]*unstructured.Unstructured, error) {
+func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error) {
 	foundResources := make([]*unstructured.Unstructured, 0, len(expectedResources))
 	for _, expectedResource := range expectedResources {
 		foundResource := &unstructured.Unstructured{}
@@ -236,7 +236,20 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 			log.Printf("deleted outdated resource %v", lastResource)
 		}
 	}
-	return foundResources, nil
+	resourceRefs := []osbv1alpha1.Source{}
+	for _, object := range foundResources {
+		resourceRefs = append(resourceRefs, r.unstructuredToSource(object))
+	}
+	return resourceRefs, nil
+}
+
+func (r resourceManager) unstructuredToSource(object *unstructured.Unstructured) osbv1alpha1.Source {
+	resourceRef := osbv1alpha1.Source{}
+	resourceRef.Kind = object.GetKind()
+	resourceRef.APIVersion = object.GetAPIVersion()
+	resourceRef.Name = object.GetName()
+	resourceRef.Namespace = object.GetNamespace()
+	return resourceRef
 }
 
 func (r resourceManager) findUnstructuredObject(list []*unstructured.Unstructured, item *unstructured.Unstructured) bool {

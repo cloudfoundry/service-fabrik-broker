@@ -17,7 +17,7 @@ limitations under the License.
 package factory
 
 import (
-	"log"
+	stdlog "log"
 	"os"
 	"testing"
 
@@ -36,15 +36,15 @@ func TestMain(m *testing.M) {
 	var err error
 	t := &envtest.Environment{}
 	if cfg, err = t.Start(); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	if mgr, err = manager.New(cfg, manager.Options{}); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	code := m.Run()

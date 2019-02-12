@@ -17,11 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"log"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("osb-v1alpha1")
 
 // SFServiceBindingSpec defines the desired state of SFServiceBinding
 type SFServiceBindingSpec struct {
@@ -79,7 +80,7 @@ func init() {
 // GetState fetches the state of the SFServiceBinding
 func (r *SFServiceBinding) GetState() string {
 	if r == nil || r.Status.State == "" {
-		log.Printf("failed to read state of SFServiceBinding %s", r.GetName())
+		log.Info("failed to read state", "SFServiceBinding", r.GetName())
 		return ""
 	}
 	return r.Status.State
