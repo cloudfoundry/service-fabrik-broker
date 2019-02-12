@@ -762,5 +762,5 @@ function loadCatalogFromAPIServer() {
 }
 
 function getDefaultErrorMsg(err) {
-  return `Service Broker Error, status code: ${err.code ? err.code : CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR}, error code: ${err.statusCode ? err.statusCode : CONST.ERR_STATUS_CODES.BROKER.DEFAULT}`;
+  return `Service Broker Error, status code: ${err.code ? err.code : CONST.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR}, error code: ${err.statusCode ? err.statusCode : CONST.ERR_STATUS_CODES.BROKER.DEFAULT}, message: ${err.message}`;
 }
