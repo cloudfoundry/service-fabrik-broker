@@ -19,7 +19,7 @@ const Agent = require('../../data-access-layer/service-agent');
 const NetworkSegmentIndex = bosh.NetworkSegmentIndex;
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
-const ServiceUnavailable = errors.ServiceUnavailable;
+const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
@@ -204,6 +204,7 @@ class DirectorService extends BaseDirectorService {
         .then(tenant_id => tenant_id ? this.deleteRestoreFileFromObjectStore(tenant_id, this.guid) : Promise.resolve({}))
         .catch(err => {
           logger.error(`Failed to delete restore file of instance '${this.guid}'`, err);
+          err.statusCode = CONST.ERR_STATUS_CODES.STORE.DEFAULT;
           throw err;
         });
     }
@@ -265,7 +266,7 @@ class DirectorService extends BaseDirectorService {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
-      .catch(ServiceUnavailable, err =>
+      .catch(DirectorServiceUnavailable, err =>
         logger.warn(`Error occurred while creating deployment for instance guid :${this.guid}`, err))
       .then(op => _
         .chain(operation)
@@ -289,7 +290,7 @@ class DirectorService extends BaseDirectorService {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
-      .catch(ServiceUnavailable, err =>
+      .catch(DirectorServiceUnavailable, err =>
         logger.error(`Error occurred while updating deployment for instance guid :${this.guid}`, err))
       .then(op => _
         .chain(operation)
@@ -594,7 +595,7 @@ class DirectorService extends BaseDirectorService {
           return this.deleteDeployment(this.deploymentName, params);
         }
       })
-      .catch(ServiceUnavailable, err =>
+      .catch(DirectorServiceUnavailable, err =>
         logger.warn(`Error occurred while deleting deployment for create instance guid :${this.guid}`, err))
       .then(taskId => _
         .chain(operation)

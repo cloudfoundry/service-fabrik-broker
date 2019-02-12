@@ -34,6 +34,8 @@ const SecurityGroupNotCreated = errors.SecurityGroupNotCreated;
 const NotImplemented = errors.NotImplemented;
 const BadGateway = errors.BadGateway;
 const ServiceUnavailable = errors.ServiceUnavailable;
+const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
+const DockerServiceUnavailable = errors.DockerServiceUnavailable;
 
 describe('errors', () => {
   let status = 100;
@@ -315,6 +317,7 @@ describe('errors', () => {
 
     it('sets the class properties correctly', () => {
       expect(serviceInstanceNotFound.status).to.eql(404);
+      expect(serviceInstanceNotFound.statusCode).to.eql(20004);
       expect(serviceInstanceNotFound.reason).to.eql('Not Found');
       expect(serviceInstanceNotFound.message).to.eql(`Could not find Service Instance with ID ${id}`);
     });
@@ -337,6 +340,7 @@ describe('errors', () => {
 
     it('sets the class properties correctly', () => {
       expect(serviceInstanceAlreadyExists.status).to.eql(400);
+      expect(serviceInstanceAlreadyExists.statusCode).to.eql(20009);
       expect(serviceInstanceAlreadyExists.reason).to.eql('Bad Request');
       expect(serviceInstanceAlreadyExists.message).to.eql(`Service Instance with ID ${id} already exists`);
     });
@@ -437,7 +441,6 @@ describe('errors', () => {
       expect(badGateway.message).to.eql(message);
     });
   });
-
   describe('ServiceUnavailable', () => {
     let serviceUnavailable = new ServiceUnavailable(message);
 
@@ -445,6 +448,27 @@ describe('errors', () => {
       expect(serviceUnavailable.status).to.eql(503);
       expect(serviceUnavailable.reason).to.eql('Service Unavailable');
       expect(serviceUnavailable.message).to.eql(message);
+    });
+  });
+  describe('DirectorServiceUnavailable', () => {
+    let directorServiceUnavailable = new DirectorServiceUnavailable(message);
+
+    it('sets the class properties correctly', () => {
+      expect(directorServiceUnavailable.status).to.eql(503);
+      expect(directorServiceUnavailable.statusCode).to.eql(20003);
+      expect(directorServiceUnavailable.reason).to.eql('Service Unavailable');
+      expect(directorServiceUnavailable.message).to.eql(message);
+    });
+  });
+
+  describe('DockerServiceUnavailable', () => {
+    let dockerServiceUnavailable = new DockerServiceUnavailable(message);
+
+    it('sets the class properties correctly', () => {
+      expect(dockerServiceUnavailable.status).to.eql(503);
+      expect(dockerServiceUnavailable.statusCode).to.eql(30003);
+      expect(dockerServiceUnavailable.reason).to.eql('Service Unavailable');
+      expect(dockerServiceUnavailable.message).to.eql(message);
     });
   });
 });

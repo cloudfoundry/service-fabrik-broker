@@ -226,7 +226,6 @@ module.exports = Object.freeze({
     CONTENT_TYPE: 'application/x-www-form-urlencoded',
     ACCEPT: 'application/json'
   },
-  SERVICE_BROKER_ERR_MSG: 'Service Broker Error: Something unexpected happened',
   ERR_CODES: {
     UNKNOWN: 'ERR-CODE-UNKNOWN',
     PRE_CONDITION_NOT_MET: 'PRE_CONDITION_NOT_MET',
@@ -236,6 +235,26 @@ module.exports = Object.freeze({
     UNCAUGHT_FATAL_EXCEPTION: 1 // https://github.com/nodejs/node-v0.x-archive/blob/master/doc/api/process.markdown#exit-codes
     //Error codes should always be readable strings. However few error codes (used as process exit codes) must be int.
     //Guideline : Only in cases where it is mandatory to have int, error codes should be so else they must always be Strings.
+  },
+  ERR_STATUS_CODES: {
+    BROKER: {
+      DEFAULT: 10001,
+    },
+    BOSH: {
+      BAD_FORMAT: 20002,
+      DIRECTOR_UNAVAILABLE: 20003,
+      DEPLOYMENT_NOT_FOUND: 20004,
+      DEPLOYMENT_ALREADY_EXISTS: 20009
+    },
+    DOCKER: {
+      DOCKER_UNAVAILABLE: 30003
+    },
+    CF: {
+      DEFAULT: 40001
+    },
+    STORE: {
+      DEFAULT: 50001
+    }
   },
   BOSH_ERR_CODES: {
     DEPLOYMENT_NOT_FOUND: 70000

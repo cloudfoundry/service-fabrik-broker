@@ -139,6 +139,7 @@ class CfPlatformManager extends BasePlatformManager {
         logger.warn(err);
       }).catch(err => {
         logger.error('+-> Failed to delete security group', err);
+        err.statusCode = CONST.ERR_STATUS_CODES.CF.DEFAULT;
         throw err;
       });
   }

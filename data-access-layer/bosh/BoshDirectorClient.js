@@ -16,7 +16,7 @@ const config = require('../../common/config');
 const NotFound = errors.NotFound;
 const BadRequest = errors.BadRequest;
 const InternalServerError = errors.InternalServerError;
-const ServiceUnavailable = errors.ServiceUnavailable;
+const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const UaaClient = require('../cf/UaaClient');
 const TokenIssuer = require('../cf/TokenIssuer');
 const HttpServer = require('../../common/HttpServer');
@@ -1077,7 +1077,7 @@ class BoshDirectorClient extends HttpClient {
 
   convertHttpErrorAndThrow(err) {
     if ((err instanceof InternalServerError) || _.includes(CONST.SYSTEM_ERRORS, err.code)) {
-      throw new ServiceUnavailable(err.message);
+      throw new DirectorServiceUnavailable(err.message);
     } else {
       throw err;
     }
