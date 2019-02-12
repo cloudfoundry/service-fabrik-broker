@@ -115,10 +115,8 @@ class BackupStore {
   }
 
   deleteServiceBackup(data, options) {
-    return Promise.all([
-      data.snapshotId ? this.cloudProvider.deleteSnapshot(data.snapshotId) : Promise.resolve({}),
-      this.deleteBackupInServiceContainer(data, options)
-    ]);
+    return Promise.try(() => data.snapshotId ? this.cloudProvider.deleteSnapshot(data.snapshotId) : Promise.resolve({}))
+      .then(() => this.deleteBackupInServiceContainer(data, options));
   }
 
   putFile(data) {
