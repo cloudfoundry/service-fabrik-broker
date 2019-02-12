@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/webhooks/pkg/webhooks/manager/resources"
 	"github.com/golang/glog"
@@ -89,9 +90,9 @@ const (
 // create mutation patch for resoures
 func createPatch(resource *resources.GenericResource) []byte {
 	if resource.Labels != nil {
-		return []byte(fmt.Sprintf(labelPatchTemplate, resource.Status.State))
+		return []byte(fmt.Sprintf(labelPatchTemplate, strings.Replace(resource.Status.State, " ", "_", -1)))
 	}
-	return []byte(fmt.Sprintf(newLabelPatchTemplate, resource.Status.State))
+	return []byte(fmt.Sprintf(newLabelPatchTemplate, strings.Replace(resource.Status.State, " ", "_", -1)))
 }
 
 // main mutation process
