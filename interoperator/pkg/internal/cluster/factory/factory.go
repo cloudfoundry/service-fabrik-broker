@@ -10,7 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("cluster-factory")
+var log = logf.Log.WithName("cluster.factory")
 
 // ClusterFactory sets up k8s clusters and gets client for them
 //go:generate mockgen -source factory.go -destination ./mock_factory/mock_factory.go

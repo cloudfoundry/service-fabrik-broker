@@ -22,7 +22,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var log = logf.Log.WithName("osb-v1alpha1")
+var log = logf.Log.WithName("osb.v1alpha1")
 
 // SFServiceBindingSpec defines the desired state of SFServiceBinding
 type SFServiceBindingSpec struct {

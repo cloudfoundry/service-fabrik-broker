@@ -48,9 +48,10 @@ const (
 	errorCountKey    = "interoperator.servicefabrik.io/error"
 	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
 	errorThreshold   = 10
+	workerCount      = 20
 )
 
-var log = logf.Log.WithName("binding-controller")
+var log = logf.Log.WithName("binding.controller")
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -72,7 +73,7 @@ func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManage
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{Reconciler: r, MaxConcurrentReconciles: workerCount})
 	if err != nil {
 		return err
 	}
