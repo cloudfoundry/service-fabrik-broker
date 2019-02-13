@@ -68,10 +68,10 @@ func (mr *MockResourceManagerMockRecorder) SetOwnerReference(owner, resources, s
 }
 
 // ReconcileResources mocks base method
-func (m *MockResourceManager) ReconcileResources(sourceClient, targetClient client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source) ([]*unstructured.Unstructured, error) {
+func (m *MockResourceManager) ReconcileResources(sourceClient, targetClient client.Client, expectedResources []*unstructured.Unstructured, lastResources []v1alpha1.Source) ([]v1alpha1.Source, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReconcileResources", sourceClient, targetClient, expectedResources, lastResources)
-	ret0, _ := ret[0].([]*unstructured.Unstructured)
+	ret0, _ := ret[0].([]v1alpha1.Source)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
