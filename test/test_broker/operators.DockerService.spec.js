@@ -381,6 +381,38 @@ describe('docker-operator', function () {
             mocks.verify();
           });
       });
+      it('returns 201 Created for requests originating from kubernetes platform', function () {
+        mocks.docker.inspectContainer(instance_id);
+        const options = {
+          service_id: service_id,
+          plan_id: plan_id,
+          app_guid: app_guid,
+          bind_resource: {
+            app_guid: app_guid,
+            space_guid: space_guid
+          },
+          context: {
+            platform: 'kubernetes',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          }
+        };
+        return DockerService.createInstance(instance_id, options)
+          .then(service => service.bind(options))
+          .then(res => {
+            expect(res).to.eql({
+              hostname: docker_url.hostname,
+              username: username,
+              password: password,
+              port: undefined,
+              ports: {
+                '12345/tcp': 12345
+              },
+              uri: `http://${username}:${password}@${docker_url.hostname}`
+            });
+            mocks.verify();
+          });
+      });
     });
 
     describe('#unbind', function () {
