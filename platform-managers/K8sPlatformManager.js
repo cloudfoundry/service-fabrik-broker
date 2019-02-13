@@ -10,14 +10,17 @@ class K8sPlatformManager extends BasePlatformManager {
   }
 
   preUnbindOperations(options) {
+    /* jshint unused:false */
     return Promise.resolve();
   }
 
   preBindOperations(options) {
+    /* jshint unused:false */
     return Promise.resolve();
   }
 
   postBindOperations(options) {
+    /* jshint unused:false */
     return Promise.resolve();
   }
 

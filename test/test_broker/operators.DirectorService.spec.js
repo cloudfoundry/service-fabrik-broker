@@ -1186,7 +1186,7 @@ describe('#DirectorService', function () {
               }, WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION);
             });
         });
-        it('should process the requests originating from k8s platform', function(done) {
+        it('should process the requests originating from k8s platform', function (done) {
           config.mongodb.provision.plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
           deferred.reject(new errors.NotFound('Schedule not found'));
           const WAIT_TIME_FOR_ASYNCH_SCHEDULE_OPERATION = 0;
