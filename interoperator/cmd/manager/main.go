@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"os"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
@@ -34,6 +35,9 @@ const (
 )
 
 func main() {
+	var metricsAddr string
+	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(false))
 	log := logf.Log.WithName("entrypoint")
 
@@ -49,6 +53,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionID:        leaderElectionID,
 		LeaderElectionNamespace: "default",
+		//MetricsBindAddress:      metricsAddr,
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components

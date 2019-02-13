@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"log"
+	stdlog "log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,15 +38,15 @@ func TestMain(m *testing.M) {
 
 	err := SchemeBuilder.AddToScheme(scheme.Scheme)
 	if err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	if cfg, err = t.Start(); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	code := m.Run()

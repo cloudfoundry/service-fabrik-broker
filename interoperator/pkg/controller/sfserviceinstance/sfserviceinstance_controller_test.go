@@ -38,11 +38,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var c client.Client
 
-const timeout = time.Second * 5
+const timeout = time.Second * 2
 
 var templateSpec = []osbv1alpha1.TemplateSpec{
 	osbv1alpha1.TemplateSpec{
@@ -149,8 +150,8 @@ func TestReconcile(t *testing.T) {
 	defer ctrl.Finish()
 
 	var expectedResources = []*unstructured.Unstructured{nil}
-	var appliedResources = []*unstructured.Unstructured{
-		&unstructured.Unstructured{},
+	var appliedResources = []osbv1alpha1.Source{
+		osbv1alpha1.Source{},
 	}
 	err1 := fmt.Errorf("Some error")
 
@@ -173,6 +174,9 @@ func TestReconcile(t *testing.T) {
 		Provision: properties.InstanceStatus{
 			State: "succeeded",
 		},
+		Deprovision: properties.GenericStatus{
+			State: "succeeded",
+		},
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
 
@@ -180,6 +184,8 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	logf.SetLogger(logf.ZapLogger(true))
 
 	defer func() {
 		close(stopMgr)
@@ -236,14 +242,9 @@ func TestReconcile(t *testing.T) {
 
 func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Duration) int {
 	// Drain all requests
-	start := time.Now()
 	select {
 	case <-requests:
-		diff := time.Now().Sub(start)
-		if diff < remainingTime {
-			return 1 + drainAllRequests(requests, remainingTime-diff)
-		}
-		return 1
+		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
 	}

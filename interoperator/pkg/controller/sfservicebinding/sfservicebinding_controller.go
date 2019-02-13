@@ -19,7 +19,7 @@ package sfservicebinding
 import (
 	"context"
 	"fmt"
-	"log"
+	"reflect"
 	"strconv"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -47,7 +48,10 @@ const (
 	errorCountKey    = "interoperator.servicefabrik.io/error"
 	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
 	errorThreshold   = 10
+	workerCount      = 20
 )
+
+var log = logf.Log.WithName("binding.controller")
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -69,7 +73,7 @@ func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManage
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{Reconciler: r, MaxConcurrentReconciles: workerCount})
 	if err != nil {
 		return err
 	}
@@ -110,7 +114,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			OwnerType:    &osbv1alpha1.SFServiceBinding{},
 		})
 		if err != nil {
-			log.Printf("%v", err)
+			log.Error(err, "failed to start watch")
 		}
 	}
 
@@ -147,10 +151,11 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
+			log.Info("binding deleted", "binding", request.NamespacedName)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return r.handleError(binding, reconcile.Result{}, err)
+		return r.handleError(binding, reconcile.Result{}, err, "", 0)
 	}
 
 	serviceID := binding.Spec.ServiceID
@@ -163,106 +168,120 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	if !ok {
 		lastOperation = "in_queue"
 	}
-	var requeue bool
-	var appliedResources []*unstructured.Unstructured
-	var remainingResource []osbv1alpha1.Source
 
-	if binding.GetDeletionTimestamp().IsZero() {
-		if !containsString(binding.GetFinalizers(), finalizerName) {
-			// The object is not being deleted, so if it does not have our finalizer,
-			// then lets add the finalizer and update the object.
-			binding.SetFinalizers(append(binding.GetFinalizers(), finalizerName))
-			if err := r.Update(context.Background(), binding); err != nil {
-				return r.handleError(binding, reconcile.Result{Requeue: true}, nil)
-			}
-		}
+	if err := r.reconcileFinalizers(binding, 0); err != nil {
+		return r.handleError(binding, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
 
 	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
 	if err != nil {
-		return r.handleError(binding, reconcile.Result{}, err)
+		return r.handleError(binding, reconcile.Result{}, err, "", 0)
 	}
 
 	if state == "delete" && !binding.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
-		if containsString(binding.GetFinalizers(), finalizerName) {
-			// our finalizer is present, so lets handle our external dependency
-			// Explicitly delete BindSecret
-			secretName := "sf-" + bindingID
-			bindSecret := osbv1alpha1.Source{}
-			bindSecret.Kind = "Secret"
-			bindSecret.APIVersion = "v1"
-			bindSecret.Name = secretName
-			bindSecret.Namespace = binding.GetNamespace()
-			resourceRefs := append(binding.Status.Resources, bindSecret)
-			remainingResource, err = r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
-			if err != nil {
-				log.Printf("Delete sub resources error %s\n", err.Error())
-				requeue = true
-			} else {
-				err = r.setInProgress(binding, state)
-				if err != nil {
-					requeue = true
-				} else {
-					lastOperation = state
-				}
-			}
+		// so lets handle our external dependency
+		// Explicitly delete BindSecret
+		secretName := "sf-" + bindingID
+		bindSecret := osbv1alpha1.Source{}
+		bindSecret.Kind = "Secret"
+		bindSecret.APIVersion = "v1"
+		bindSecret.Name = secretName
+		bindSecret.Namespace = binding.GetNamespace()
+		resourceRefs := append(binding.Status.Resources, bindSecret)
+		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
+		if err != nil {
+			log.Error(err, "Delete sub resources failed")
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
+		err = r.setInProgress(request.NamespacedName, state, remainingResource, 0)
+		if err != nil {
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
+		}
+		lastOperation = state
 	} else if state == "in_queue" || state == "update" {
 		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 		if err != nil {
-			return r.handleError(binding, reconcile.Result{}, err)
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
 		err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.scheme)
 		if err != nil {
-			return r.handleError(binding, reconcile.Result{}, err)
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
 
-		appliedResources, err = r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
+		resourceRefs, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
 		if err != nil {
-			log.Printf("Reconcile error %s\n", err.Error())
-			requeue = true
-		} else {
-			err = r.setInProgress(binding, state)
-			if err != nil {
-				requeue = true
-			} else {
-				lastOperation = state
-			}
+			log.Error(err, "ReconcileResources failed")
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
+		err = r.setInProgress(request.NamespacedName, state, resourceRefs, 0)
+		if err != nil {
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
+		}
+		lastOperation = state
 	}
 
 	if lastOperation == "delete" {
-		remainingResource = []osbv1alpha1.Source{}
-		for _, subResource := range binding.Status.Resources {
-			resource := &unstructured.Unstructured{}
-			resource.SetKind(subResource.Kind)
-			resource.SetAPIVersion(subResource.APIVersion)
-			resource.SetName(subResource.Name)
-			resource.SetNamespace(subResource.Namespace)
-			namespacedName := types.NamespacedName{
-				Name:      resource.GetName(),
-				Namespace: resource.GetNamespace(),
-			}
-			err := targetClient.Get(context.TODO(), namespacedName, resource)
-			if !errors.IsNotFound(err) {
-				remainingResource = append(remainingResource, subResource)
-			}
-		}
-		if err := r.updateUnbindStatus(targetClient, binding, remainingResource); err != nil {
-			return r.handleError(binding, reconcile.Result{}, err)
+		if err := r.updateUnbindStatus(targetClient, binding, 0); err != nil {
+			return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
 		}
 	} else if lastOperation == "in_queue" || lastOperation == "update" {
-		err = r.updateBindStatus(instanceID, bindingID, serviceID, planID, binding.GetNamespace(), appliedResources)
+		err = r.updateBindStatus(targetClient, binding, 0)
 		if err != nil {
-			return r.handleError(binding, reconcile.Result{}, err)
+			return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
 		}
 	}
-	return r.handleError(binding, reconcile.Result{Requeue: requeue}, nil)
+	return r.handleError(binding, reconcile.Result{}, nil, lastOperation, 0)
 }
 
-func (r *ReconcileSFServiceBinding) setInProgress(binding *osbv1alpha1.SFServiceBinding, state string) error {
+func (r *ReconcileSFServiceBinding) reconcileFinalizers(object *osbv1alpha1.SFServiceBinding, retryCount int) error {
+	objectID := object.GetName()
+	namespace := object.GetNamespace()
+	// Fetch object again before updating
+	namespacedName := types.NamespacedName{
+		Name:      objectID,
+		Namespace: namespace,
+	}
+	err := r.Get(context.TODO(), namespacedName, object)
+	if err != nil {
+		if retryCount < errorThreshold {
+			log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
+			return r.reconcileFinalizers(object, retryCount+1)
+		}
+		log.Error(err, "failed to fetch object", "objectID", objectID)
+		return err
+	}
+	if object.GetDeletionTimestamp().IsZero() {
+		if !containsString(object.GetFinalizers(), finalizerName) {
+			// The object is not being deleted, so if it does not have our finalizer,
+			// then lets add the finalizer and update the object.
+			object.SetFinalizers(append(object.GetFinalizers(), finalizerName))
+			if err := r.Update(context.Background(), object); err != nil {
+				if retryCount < errorThreshold {
+					log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
+					return r.reconcileFinalizers(object, retryCount+1)
+				}
+				log.Error(err, "failed to add finalizer", "objectID", objectID)
+				return err
+			}
+			log.Info("added finalizer", "objectID", objectID)
+		}
+	}
+	return nil
+}
+
+func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.NamespacedName, state string, resources []osbv1alpha1.Source, retryCount int) error {
 	if state == "in_queue" || state == "update" || state == "delete" {
+		binding := &osbv1alpha1.SFServiceBinding{}
+		err := r.Get(context.TODO(), namespacedName, binding)
+		if err != nil {
+			if retryCount < errorThreshold {
+				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
+				return r.setInProgress(namespacedName, state, resources, retryCount+1)
+			}
+			log.Error(err, "Updating status to in progress failed")
+			return err
+		}
 		binding.SetState("in progress")
 		labels := binding.GetLabels()
 		if labels == nil {
@@ -270,126 +289,167 @@ func (r *ReconcileSFServiceBinding) setInProgress(binding *osbv1alpha1.SFService
 		}
 		labels[lastOperationKey] = state
 		binding.SetLabels(labels)
-		err := r.Update(context.Background(), binding)
+		binding.Status.Resources = resources
+		err = r.Update(context.Background(), binding)
 		if err != nil {
-			log.Printf("error updating status to in progress. %s\n", err.Error())
+			if retryCount < errorThreshold {
+				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
+				return r.setInProgress(namespacedName, state, resources, retryCount+1)
+			}
+			log.Error(err, "Updating status to in progress failed")
 			return err
 		}
-		log.Printf("Updated status to in progress for state %s\n", state)
+		log.Info("Updated status to in progress", "operation", state)
 	}
 	return nil
 }
 
-func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, remainingResource []osbv1alpha1.Source) error {
+func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
 	serviceID := binding.Spec.ServiceID
 	planID := binding.Spec.PlanID
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
-	if err != nil {
-		log.Printf("error computing status. %v\n", err)
-		return err
-	}
-	binding.Status.State = computedStatus.Unbind.State
-	binding.Status.Error = computedStatus.Unbind.Error
-	binding.Status.Resources = remainingResource
-
-	if binding.Status.State == "succeeded" || len(remainingResource) == 0 {
-		// remove our finalizer from the list and update it.
-		log.Printf("binding %s deleted\n", bindingID)
-		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
-	}
-
-	if err := r.Update(context.Background(), binding); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *ReconcileSFServiceBinding) updateBindStatus(instanceID, bindingID, serviceID, planID, namespace string, appliedResources []*unstructured.Unstructured) error {
-	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
-	if err != nil {
-		return err
-	}
-
-	resourceRefs := make([]osbv1alpha1.Source, 0, len(appliedResources))
-	for _, appliedResource := range appliedResources {
-		resource := osbv1alpha1.Source{}
-		resource.Kind = appliedResource.GetKind()
-		resource.APIVersion = appliedResource.GetAPIVersion()
-		resource.Name = appliedResource.GetName()
-		resource.Namespace = appliedResource.GetNamespace()
-		resourceRefs = append(resourceRefs, resource)
-	}
-
+	namespace := binding.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
 	if err != nil {
-		log.Printf("error computing status. %v\n", err)
+		log.Error(err, "ComputeStatus failed for unbind")
 		return err
 	}
 
 	// Fetch object again before updating status
-	bindingObj := &osbv1alpha1.SFServiceBinding{}
 	namespacedName := types.NamespacedName{
 		Name:      bindingID,
 		Namespace: namespace,
 	}
-	err = r.Get(context.TODO(), namespacedName, bindingObj)
+	err = r.Get(context.TODO(), namespacedName, binding)
 	if err != nil {
-		log.Printf("error fetching binding. %v\n", err)
+		log.Error(err, "Failed to get binding")
 		return err
 	}
-	if bindingObj.Status.State != "succeeded" && bindingObj.Status.State != "failed" {
-		bindingStatus := computedStatus.Bind
-		if bindingStatus.State == "succeeded" {
-			secretName := "sf-" + bindingID
 
-			data := make(map[string]string)
-			data["response"] = bindingStatus.Response
-			secret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      secretName,
-					Namespace: namespace,
-				},
-				StringData: data,
-			}
+	updateRequired := false
+	updatedStatus := binding.Status.DeepCopy()
+	updatedStatus.State = computedStatus.Unbind.State
+	updatedStatus.Error = computedStatus.Unbind.Error
 
-			if err := controllerutil.SetControllerReference(bindingObj, secret, r.scheme); err != nil {
-				log.Printf("error setting owner reference for secret. %v\n", err)
-				return err
+	remainingResource := []osbv1alpha1.Source{}
+	for _, subResource := range binding.Status.Resources {
+		resource := &unstructured.Unstructured{}
+		resource.SetKind(subResource.Kind)
+		resource.SetAPIVersion(subResource.APIVersion)
+		resource.SetName(subResource.Name)
+		resource.SetNamespace(subResource.Namespace)
+		namespacedName := types.NamespacedName{
+			Name:      resource.GetName(),
+			Namespace: resource.GetNamespace(),
+		}
+		err := targetClient.Get(context.TODO(), namespacedName, resource)
+		if !errors.IsNotFound(err) {
+			remainingResource = append(remainingResource, subResource)
+		}
+	}
+	updatedStatus.Resources = remainingResource
+	if !reflect.DeepEqual(&binding.Status, updatedStatus) {
+		updatedStatus.DeepCopyInto(&binding.Status)
+		updateRequired = true
+	}
+
+	if binding.GetState() == "succeeded" || len(remainingResource) == 0 {
+		// remove our finalizer from the list and update it.
+		log.Info("Removing finalizer", "binding", bindingID)
+		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
+		binding.SetState("succeeded")
+		updateRequired = true
+	}
+
+	if updateRequired {
+		if err := r.Update(context.Background(), binding); err != nil {
+			if retryCount < errorThreshold {
+				log.Info("Retrying", "function", "updateUnbindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
+				return r.updateUnbindStatus(targetClient, binding, retryCount+1)
 			}
-			secretNamespacedName := types.NamespacedName{
+			log.Error(err, "failed to update unbind status", "binding", bindingID)
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client, binding *osbv1alpha1.SFServiceBinding, retryCount int) error {
+	serviceID := binding.Spec.ServiceID
+	planID := binding.Spec.PlanID
+	instanceID := binding.Spec.InstanceID
+	bindingID := binding.GetName()
+	namespace := binding.GetNamespace()
+	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
+	if err != nil {
+		log.Error(err, "Compute status failed for bind", "binding", bindingID)
+		return err
+	}
+
+	// Fetch object again before updating status
+	namespacedName := types.NamespacedName{
+		Name:      bindingID,
+		Namespace: namespace,
+	}
+	err = r.Get(context.TODO(), namespacedName, binding)
+	if err != nil {
+		log.Error(err, "failed to fetch binding", "binding", bindingID)
+		return err
+	}
+
+	updatedStatus := binding.Status.DeepCopy()
+	updatedStatus.State = computedStatus.Bind.State
+	updatedStatus.Error = computedStatus.Bind.Error
+
+	computedBindingStatus := computedStatus.Bind
+
+	// Create secret if not exist
+	if computedBindingStatus.State == "succeeded" {
+		secretName := "sf-" + bindingID
+
+		data := make(map[string]string)
+		data["response"] = computedBindingStatus.Response
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: namespace,
-			}
-			foundSecret := &corev1.Secret{}
-			err = r.Get(context.TODO(), secretNamespacedName, foundSecret)
-			if err != nil && errors.IsNotFound(err) {
-				err = r.Create(context.TODO(), secret)
-				if err != nil {
-					log.Printf("error creating secret. %v\n", err)
-					return err
-				}
-			} else if err != nil {
+			},
+			StringData: data,
+		}
+
+		if err := controllerutil.SetControllerReference(binding, secret, r.scheme); err != nil {
+			log.Error(err, "failed to set owner reference for secret")
+			return err
+		}
+		secretNamespacedName := types.NamespacedName{
+			Name:      secretName,
+			Namespace: namespace,
+		}
+		foundSecret := &corev1.Secret{}
+		err = r.Get(context.TODO(), secretNamespacedName, foundSecret)
+		if err != nil && errors.IsNotFound(err) {
+			err = r.Create(context.TODO(), secret)
+			if err != nil {
+				log.Error(err, "failed to create secret")
 				return err
-			} else {
-				err = r.Update(context.TODO(), secret)
-				if err != nil {
-					log.Printf("error updating secret. %v\n", err)
-					return err
-				}
 			}
-			bindingObj.Status.Response.SecretRef = secretName
-		} else if bindingStatus.State == "failed" {
-			bindingObj.Status.Error = bindingStatus.Error
+		} else if err != nil {
+			return err
 		}
-		bindingObj.Status.State = bindingStatus.State
-		if appliedResources != nil {
-			bindingObj.Status.Resources = resourceRefs
-		}
-		err = r.Update(context.Background(), bindingObj)
+		updatedStatus.Response.SecretRef = secretName
+	}
+
+	if !reflect.DeepEqual(&binding.Status, updatedStatus) {
+		updatedStatus.DeepCopyInto(&binding.Status)
+		log.Info("Updating bind status from template", "binding", namespacedName)
+		err = r.Update(context.Background(), binding)
 		if err != nil {
-			log.Printf("error updating status. %v\n", err)
+			if retryCount < errorThreshold {
+				log.Info("Retrying", "function", "updateBindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
+				return r.updateBindStatus(targetClient, binding, retryCount+1)
+			}
+			log.Error(err, "failed to update status")
 			return err
 		}
 	}
@@ -418,10 +478,29 @@ func removeString(slice []string, s string) (result []string) {
 	return
 }
 
-func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBinding, result reconcile.Result, inputErr error) (reconcile.Result, error) {
+func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBinding, result reconcile.Result, inputErr error, lastOperation string, retryCount int) (reconcile.Result, error) {
+	objectID := object.GetName()
+	namespace := object.GetNamespace()
+	// Fetch object again before updating
+	namespacedName := types.NamespacedName{
+		Name:      objectID,
+		Namespace: namespace,
+	}
+	err := r.Get(context.TODO(), namespacedName, object)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return result, inputErr
+		}
+		if retryCount < errorThreshold {
+			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
+		}
+		log.Error(err, "failed to fetch object", "objectID", objectID)
+		return result, nil
+	}
+
 	labels := object.GetLabels()
 	var count int64
-	id := object.GetName()
 
 	if labels == nil {
 		labels = make(map[string]string)
@@ -450,37 +529,33 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 	}
 
 	if count > errorThreshold {
-		log.Printf("Retry threshold reached for %s. Ignoring %v\n", id, inputErr)
+		log.Error(inputErr, "Retry threshold reached. Ignoring error", "objectID", objectID)
 		object.Status.State = "failed"
-		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", id, inputErr.Error())
+		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", objectID, inputErr.Error())
+		if lastOperation != "" {
+			labels[lastOperationKey] = lastOperation
+			object.SetLabels(labels)
+		}
 		err := r.Update(context.TODO(), object)
 		if err != nil {
-			log.Printf("Error setting state to failed for %s\n", id)
+			if retryCount < errorThreshold {
+				log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+				return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
+			}
+			log.Error(err, "Failed to set state to failed", "objectID", objectID)
 		}
 		return result, nil
 	}
 
 	labels[errorCountKey] = strconv.FormatInt(count, 10)
 	object.SetLabels(labels)
-	err := r.Update(context.TODO(), object)
+	err = r.Update(context.TODO(), object)
 	if err != nil {
-		if errors.IsConflict(err) {
-			err := r.Get(context.TODO(), types.NamespacedName{
-				Name:      object.GetName(),
-				Namespace: object.GetNamespace(),
-			}, object)
-			if err != nil {
-				return result, inputErr
-			}
-			labels = object.GetLabels()
-			if labels == nil {
-				labels = make(map[string]string)
-			}
-			labels[errorCountKey] = strconv.FormatInt(count, 10)
-			object.SetLabels(labels)
-			return r.handleError(object, result, inputErr)
+		if retryCount < errorThreshold {
+			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
-		log.Printf("Error Updating error count label to %d for binding %s\n", count, id)
+		log.Error(err, "Failed to update error count label", "objectID", objectID, "count", count)
 	}
 	return result, inputErr
 }
