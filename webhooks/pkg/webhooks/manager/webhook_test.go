@@ -208,13 +208,13 @@ func Test_createPatch(t *testing.T) {
 					},
 				},
 			},
-			[]byte(fmt.Sprintf(newLabelPatchTemplate, "dummy state")),
+			[]byte(fmt.Sprintf(newLabelPatchTemplate, "dummy_state")),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := createPatch(tt.args.resource); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("createPatch() = %v, want %v", got, tt.want)
+				t.Errorf("createPatch() = %v, want %v", string(got), string(tt.want))
 			}
 		})
 	}
