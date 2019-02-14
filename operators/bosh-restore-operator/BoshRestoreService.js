@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-const Agent = require('../../data-access-layer/service-agent');
 const assert = require('assert');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const BaseDirectorService = require('../BaseDirectorService');
@@ -10,7 +9,6 @@ const cf = require('../../data-access-layer/cf');
 const retry = utils.retry;
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
-const Promise = require('bluebird');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const config = require('../../common/config');
@@ -22,8 +20,6 @@ class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
     this.plan = plan;
-    this.backupStore = backupStore;
-    this.agent = new Agent(this.settings.agent);
     this.cloudProvider = cloudProvider;
     this.director = bosh.director;
   }
@@ -35,79 +31,67 @@ class BoshRestoreService extends BaseDirectorService {
       const backupMetadata = _.get(args, 'backup');
       const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid);
 
-      const backup = {
-        guid: args.backup_guid,
-        timeStamp: args.time_stamp,
-        type: _.get(backupMetadata, 'type'),
-        secret: _.get(backupMetadata, 'secret'),
-        snapshotId: _.get(backupMetadata, 'snapshotId')
-      };
-
       const data = _
         .chain(opts)
         .pick('service_id', 'plan_id', 'instance_guid', 'username')
         .assign({
           operation: 'restore',
-          backup_guid: backup.guid,
-          time_stamp: backup.timeStamp,
+          backup_guid: args.backup_guid,
+          time_stamp: args.time_stamp,
           state: 'processing',
           started_at: new Date().toISOString(),
           finished_at: null,
           tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
         })
         .value();
-        const service = catalog.getService(opts.service_id);
-        
-        const instanceGroups = _.get(service, 'restore_operation.instance_group'); 
-        let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups);
 
-        //Get disk metadata of old disks
-        for (let i = 0;i < persistentDiskInfo.length; i++) {
-          let diskCid = persistentDiskInfo[i].disk_cid;
-          let az = persistentDiskInfo[i].az;
-          persistentDiskInfo[i].getDiskMetadataPromise = this.cloudProvider.getDiskMetadata(diskCid, az);
-        }
+      const service = catalog.getService(opts.service_id);
+      const instanceGroups = _.get(service, 'restore_operation.instance_group'); 
+      let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups);
 
-        for (let i = 0;i < persistentDiskInfo.length; i++) {
-          persistentDiskInfo[i].oldDiskInfo = await persistentDiskInfo[i].getDiskMetadataPromise;
-          _.unset(persistentDiskInfo[i], 'getDiskMetadataPromise');
-        }
+      let getDiskMetadataFn = async (instance) => {
+        let diskCid = instance.disk_cid;
+        let az = instance.az;
+        instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
+      }
 
-        const optionsData = _
-          .assign({ 
-            restoreMetadata: {
-              timeStamp: args.time_stamp,
-              filePath: _.get(service, 'restore_operation.filesystem_path'), 
-              snapshotId: _.get(backupMetadata, 'snapshotId'),
-              deploymentName: deploymentName,
-              deploymentInstancesInfo: persistentDiskInfo,
-              snapshotId: _.get(backupMetadata, 'snapshotId'),
-              baseBackupErrand: {
-                name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
-                instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
-              },
-              pointInTimeErrand: {
-                name: _.get(service, 'restore_operation.errands.point_in_time.name'),
-                instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
-              },
-              postStartErrand: {
-                name: _.get(service, 'restore_operation.errands.post_start.name'),
-                instances: _.get(service, 'restore_operation.errands.post_start.instances')
-              }
+      await Promise.all(persistentDiskInfo.map(getDiskMetadataFn));
+
+      const optionsData = _
+        .assign({ 
+          restoreMetadata: {
+            timeStamp: args.time_stamp,
+            filePath: _.get(service, 'restore_operation.filesystem_path'), 
+            snapshotId: _.get(backupMetadata, 'snapshotId'),
+            deploymentName: deploymentName,
+            deploymentInstancesInfo: persistentDiskInfo,
+            snapshotId: _.get(backupMetadata, 'snapshotId'),
+            baseBackupErrand: {
+              name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
+              instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
             },
-            stateResults: {}
-          });
-        //TODO:create/update the restoreFile
-        return eventmesh.apiServerClient.patchResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-          resourceId: opts.restore_guid,
-          options: optionsData,
-          status: {
-            'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
-            'response': data
-          }
+            pointInTimeErrand: {
+              name: _.get(service, 'restore_operation.errands.point_in_time.name'),
+              instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
+            },
+            postStartErrand: {
+              name: _.get(service, 'restore_operation.errands.post_start.name'),
+              instances: _.get(service, 'restore_operation.errands.post_start.instances')
+            }
+          },
+          stateResults: {}
         });
+      //TODO:create/update the restoreFile
+      return eventmesh.apiServerClient.patchResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: opts.restore_guid,
+        options: optionsData,
+        status: {
+          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
+          'response': data
+        }
+      });
     } catch (err) {
       logger.error(`Error occurred while starting the restore: ${err}`);
       return eventmesh.apiServerClient.updateResource({
@@ -123,6 +107,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processState(changeObjectBody) {
     const currentState = changeObjectBody.status.state;
+    logger.info(`rounting ${currentState} to appropriate function..`);
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     switch (currentState) {
       case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`:
@@ -204,19 +189,14 @@ class BoshRestoreService extends BaseDirectorService {
     try {
       const snapshotId = _.get(resourceOptions, 'restoreMetadata.snapshotId');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo'); 
-      for (let i = 0; i< deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
-        logger.info(`Triggering disk creation with snapshotId: ${snapshotId}, az: ${instance.az} and type: ${instance.oldDiskInfo.type}`);
-        let promise = this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az, {type: instance.oldDiskInfo.type});
-        _.set(instance, 'createDiskPromise', promise);
+
+      let createDiskFn = async (instance) => {
+        logger.info(`Triggering disk creation with snapshotId: ${snapshotId}, az: ${instance.az} and type: ${instance.oldDiskInfo.type} for instance ${instance.id}`);
+        instance.newDiskInfo = await this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az, {type: instance.oldDiskInfo.type});
       }
 
-      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
-        instance.newDiskInfo = await instance.createDiskPromise;
-        _.unset(instance, 'createDiskPromise');
-        logger.info(`Disk creation successful for ${instance.id}. New diskId is: ${instance.newDiskInfo.volumeId}`);
-      }
+      await Promise.all(deploymentInstancesInfo.map(createDiskFn));
+
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -247,20 +227,18 @@ class BoshRestoreService extends BaseDirectorService {
     try { 
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
-
-      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
+      
+      let createDiskAttachmentTaskFn = async (instance) => {
         let taskId = _.get(instance, 'attachDiskTaskId', undefined);
         if(_.isEmpty(taskId)) {
           taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, 
             instance.job_name, instance.id);
           _.set(instance, 'attachDiskTaskId', taskId);
-
         }
-        let pollingPromise = this.director.pollTaskStatusTillComplete(taskId);
-        _.set(instance, 'attachDiskPollingPromise', pollingPromise);
-      };
-      //TODO: remove promise from deploymentInstancesInfo object
+      }
+
+      await Promise.all(deploymentInstancesInfo.map(createDiskAttachmentTaskFn));
+
       await eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -272,11 +250,13 @@ class BoshRestoreService extends BaseDirectorService {
         }
       });
 
-      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
-        instance.attachDiskTaskResult = await instance.attachDiskPollingPromise;
-        _.unset(instance, 'attachDiskPollingPromise');
-      };
+      let taskPollingFn = async (instance) => {
+        let taskId = _.get(instance, 'attachDiskTaskId');
+        instance.attachDiskTaskResult = await this.director.pollTaskStatusTillComplete(taskId);
+      }
+
+      await Promise.all(deploymentInstancesInfo.map(taskPollingFn))
+    
       //TODO: add information for stateResults field also
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -290,7 +270,7 @@ class BoshRestoreService extends BaseDirectorService {
         status: {
           'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`
         }
-      });
+      });  
     } catch (err) {
       logger.error(`Error occurred: ${err}`);
       return eventmesh.apiServerClient.updateResource({
@@ -308,7 +288,6 @@ class BoshRestoreService extends BaseDirectorService {
     try {
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
-
       const service = catalog.getService(resourceOptions.service_id);
       const backupData = _.assign({
         type: _.get(resourceOptions, 'arguments.backup.type'),
@@ -321,7 +300,6 @@ class BoshRestoreService extends BaseDirectorService {
       });
       let stringified = JSON.stringify(backupData);
       const escaped = stringified.replace(/"/g, '\\"');
-      //const stringified = _.replace(JSON.stringify(resource), '"', '\"');
       const cmd = `
       sudo -u root rm -rf ${service.restore_operation.filesystem_path}
       sudo -u root mkdir -p $(dirname ${service.restore_operation.filesystem_path})
@@ -329,17 +307,12 @@ class BoshRestoreService extends BaseDirectorService {
       sudo -u root bash -c 'echo "${escaped}" > ${service.restore_operation.filesystem_path}'
       sudo -u root sync
       `;
-      //TODO: add retries
-      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
-        instance.sshPromise = this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
+      let sshFn = async (instance) => {
+        instance.sshResult = await this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
       }
 
-      for(let i = 0; i < deploymentInstancesInfo.length; i++) {
-        let instance = deploymentInstancesInfo[i];
-        instance.sshResult = await instance.sshPromise;
-        _.unset(instance, 'sshPromise');
-      }
+      //TODO: add retries
+      await Promise.all(deploymentInstancesInfo.map(sshFn));
 
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -356,7 +329,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
 
     } catch (err) {
-      logger.error(`Error occurred: ${err}`);
+      logger.error(`Error occurred while putting file in deployment instances: ${err}`);
       return eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,

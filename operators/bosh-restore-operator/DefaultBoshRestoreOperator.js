@@ -44,7 +44,7 @@ class DefaultBoshRestoreOperator extends BaseOperator {
       logger.info('Triggering restore with the following options:', changedOptions);
       const plan = catalog.getPlan(changedOptions.plan_id);
       let service = await BoshRestoreService.createService(plan)
-      return service.startRestore(changedOptions); //pass entire object and not just spec.options
+      return service.startRestore(changedOptions);
     } catch (err) {
     }
   }
@@ -52,10 +52,10 @@ class DefaultBoshRestoreOperator extends BaseOperator {
   async processInProgressRequest(changeObjectBody) {
     try {
       const changedOptions = JSON.parse(changeObjectBody.spec.options);
-      logger.info('Triggering restore with the following options:', changedOptions);
+      logger.info('Continuing restore with the following options:', changedOptions);
       const plan = catalog.getPlan(changedOptions.plan_id);
       let service = await BoshRestoreService.createService(plan)
-      return service.processState(changeObjectBody); //pass entire object and not just spec.options
+      return service.processState(changeObjectBody);
     } catch (err) {
     }
   }
