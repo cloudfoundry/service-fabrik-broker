@@ -64,11 +64,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const params = req.body;
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
+    const context = _
+      .chain({})
+      .merge(req.params, req.body)
+      .set('plan', plan)
+      .value();
+    const dashboardUrl = this.getDashboardUrl(context);
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
       const body = {
-        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
+        dashboard_url: dashboardUrl
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -122,11 +128,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
     const planId = params.plan_id;
     const plan = catalog.getPlan(planId);
     let serviceFlow;
+    const context = _
+      .chain({})
+      .merge(req.params, req.body)
+      .set('plan', plan)
+      .value();
+    const dashboardUrl = this.getDashboardUrl(context);
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.OK;
       const body = {
-        dashboard_url: ServiceBrokerApiController.getDashboardUrl(plan, req.params.instance_id)
+        dashboard_url: dashboardUrl
       };
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
@@ -424,12 +436,20 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .catch(NotFound, gone);
   }
 
-  static getDashboardUrl(plan, instanceId) {
+  getDashboardUrl(context) {
+    if (_.get(context, 'plan.manager.settings.dashboard_url_template') !== undefined) {
+      const urlTemplate = new Buffer(context.plan.manager.settings.dashboard_url_template, 'base64');
+      const dashboardUrl = encodeURI(_.template(urlTemplate)(context));
+      if (CONST.REGEX_PATTERN.URL.test(dashboardUrl)) {
+        return dashboardUrl;
+      }
+      throw new errors.UnprocessableEntity(`Unable to generate valid dashboard URL with the template '${urlTemplate}'`);
+    }
     return formatUrl(_
       .chain(config.external)
       .pick('protocol', 'host')
       .set('slashes', true)
-      .set('pathname', `manage/dashboards/${plan.manager.name}/instances/${instanceId}`)
+      .set('pathname', `manage/dashboards/${context.plan.manager.name}/instances/${context.instance_id}`)
       .value()
     );
   }
