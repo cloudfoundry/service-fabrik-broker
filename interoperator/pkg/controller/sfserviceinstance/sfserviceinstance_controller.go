@@ -220,14 +220,27 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		lastOperation = state
 	}
 
-	if lastOperation == "delete" {
-		if err := r.updateDeprovisionStatus(targetClient, instance, 0); err != nil {
-			return r.handleError(instance, reconcile.Result{}, err, lastOperation, 0)
-		}
-	} else if lastOperation == "in_queue" || lastOperation == "update" {
-		err = r.updateStatus(targetClient, instance, 0)
-		if err != nil {
-			return r.handleError(instance, reconcile.Result{}, err, lastOperation, 0)
+	err = r.Get(context.TODO(), request.NamespacedName, instance)
+	if err != nil {
+		return r.handleError(instance, reconcile.Result{}, err, "", 0)
+	}
+	state = instance.GetState()
+	labels = instance.GetLabels()
+	lastOperation, ok = labels[lastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+
+	if state == "in progress" {
+		if lastOperation == "delete" {
+			if err := r.updateDeprovisionStatus(targetClient, instance, 0); err != nil {
+				return r.handleError(instance, reconcile.Result{}, err, lastOperation, 0)
+			}
+		} else if lastOperation == "in_queue" || lastOperation == "update" {
+			err = r.updateStatus(targetClient, instance, 0)
+			if err != nil {
+				return r.handleError(instance, reconcile.Result{}, err, lastOperation, 0)
+			}
 		}
 	}
 	return r.handleError(instance, reconcile.Result{}, nil, lastOperation, 0)
@@ -363,6 +376,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	}
 
 	if updateRequired {
+		log.Info("Updating deprovision status from template", "instance", namespacedName)
 		if err := r.Update(context.Background(), instance); err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateDeprovisionStatus", "retryCount", retryCount+1, "instanceID", instanceID)
@@ -459,7 +473,7 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
 		log.Error(err, "failed to fetch object", "objectID", objectID)
-		return result, nil
+		return result, inputErr
 	}
 
 	labels := object.GetLabels()
