@@ -196,7 +196,7 @@ func TestReconcile(t *testing.T) {
 			State: "succeeded",
 		},
 	}, nil).AnyTimes()
-	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return([]osbv1alpha1.Source{}, nil).AnyTimes()
+	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())

@@ -221,14 +221,27 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		lastOperation = state
 	}
 
-	if lastOperation == "delete" {
-		if err := r.updateUnbindStatus(targetClient, binding, 0); err != nil {
-			return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
-		}
-	} else if lastOperation == "in_queue" || lastOperation == "update" {
-		err = r.updateBindStatus(targetClient, binding, 0)
-		if err != nil {
-			return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
+	err = r.Get(context.TODO(), request.NamespacedName, binding)
+	if err != nil {
+		return r.handleError(binding, reconcile.Result{}, err, "", 0)
+	}
+	state = binding.GetState()
+	labels = binding.GetLabels()
+	lastOperation, ok = labels[lastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
+
+	if state == "in progress" {
+		if lastOperation == "delete" {
+			if err := r.updateUnbindStatus(targetClient, binding, 0); err != nil {
+				return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
+			}
+		} else if lastOperation == "in_queue" || lastOperation == "update" {
+			err = r.updateBindStatus(targetClient, binding, 0)
+			if err != nil {
+				return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
+			}
 		}
 	}
 	return r.handleError(binding, reconcile.Result{}, nil, lastOperation, 0)
@@ -363,6 +376,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	}
 
 	if updateRequired {
+		log.Info("Updating unbind status from template", "binding", namespacedName)
 		if err := r.Update(context.Background(), binding); err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateUnbindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
@@ -496,7 +510,7 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
 		log.Error(err, "failed to fetch object", "objectID", objectID)
-		return result, nil
+		return result, inputErr
 	}
 
 	labels := object.GetLabels()
