@@ -30,6 +30,7 @@ describe('service-broker-api-2.0', function () {
       const api_version = '2.12';
       const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
       const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f';
+      const plan_id_custom_dashboard = 'bc158c9a-7934-401e-94ab-057082a5073e';
       const plan = catalog.getPlan(plan_id);
       const plan_id_deprecated = 'b91d9512-b5c9-4c4a-922a-fa54ae67d235';
       const plan_id_update = 'd616b00a-5949-4b1c-bc73-0d3c59f3954a';
@@ -49,6 +50,7 @@ describe('service-broker-api-2.0', function () {
       const protocol = config.external.protocol;
       const host = config.external.host;
       const dashboard_url = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}`;
+      const dashboard_url_with_template = `${protocol}://${host}/manage/dashboards/director/instances/${instance_id}?planName=v1.0-small&serviceId=${service_id}`;
       const container = backupStore.containerName;
       const deferred = Promise.defer();
       Promise.onPossiblyUnhandledRejection(() => {});
@@ -108,9 +110,11 @@ describe('service-broker-api-2.0', function () {
             state: 'in_queue'
           }
         };
+
         it('returns 202 Accepted', function () {
           const testPayload = _.cloneDeep(payload);
-          testPayload.spec = camelcaseKeys(payload.spec);
+          testPayload.spec.plan_id = plan_id_custom_dashboard;
+          testPayload.spec = camelcaseKeys(testPayload.spec);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
           return chai.request(app)
@@ -119,7 +123,7 @@ describe('service-broker-api-2.0', function () {
             .auth(config.username, config.password)
             .send({
               service_id: service_id,
-              plan_id: plan_id,
+              plan_id: plan_id_custom_dashboard,
               context: {
                 platform: 'cloudfoundry',
                 organization_guid: organization_guid,
@@ -131,7 +135,37 @@ describe('service-broker-api-2.0', function () {
             })
             .then(res => {
               expect(res).to.have.status(202);
-              expect(res.body.dashboard_url).to.equal(dashboard_url);
+              expect(res.body.dashboard_url).to.equal(dashboard_url_with_template);
+              mocks.verify();
+            });
+        });
+
+        it('returns UnprocessableEntity entity when dashboard template url does not evaluate to a valid URL', function () {
+          const testPayload = _.cloneDeep(payload);
+          testPayload.spec.plan_id = 'gd158c9a-7934-401e-94ab-057082a5073e';
+          testPayload.spec = camelcaseKeys(testPayload.spec);
+          mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, {});
+          //mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, {}, 1, testPayload);
+          return chai.request(app)
+            .put(`${base_url}/service_instances/${instance_id}?accepts_incomplete=true`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .send({
+              service_id: service_id,
+              plan_id: 'gd158c9a-7934-401e-94ab-057082a5073e',
+              context: {
+                platform: 'cloudfoundry',
+                organization_guid: organization_guid,
+                space_guid: space_guid
+              },
+              organization_guid: organization_guid,
+              space_guid: space_guid,
+              parameters: parameters
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY);
+              expect(res.body).to.eql({});
               mocks.verify();
             });
         });
