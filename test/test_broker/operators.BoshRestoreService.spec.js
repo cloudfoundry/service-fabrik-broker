@@ -3,8 +3,6 @@
 const _ = require('lodash');
 const catalog = require('../../common/models/catalog');
 const BoshRestoreService = require('../../operators/bosh-restore-operator/BoshRestoreService');
-const config = require('../../common/config');
-const Service = require('../../common/models').Service;
 const CONST = require('../../common/constants');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
@@ -25,64 +23,64 @@ describe('operators', function() {
         const fileSystemPath = '/var/vcap/store/restore/args.json';
         const instanceGroup = ['blueprint'];
         const baseBackupErrandName = 'errand_simulation';
-        let restoreOptions = {
-            "plan_id": planId,
-            "service_id": serviceId,
-            "context": {
-              "organization_guid": "33915d88-6002-4e83-b154-9ec2075e1435",
-              "platform": "cloudfoundry",
-              "space_guid": spaceGuid
-            },
-            "restore_guid": restoreGuid,
-            "instance_guid": instanceId,
-            "arguments": {
-              "backup": {
-                "type": "online",
-                "secret": "Bd+hF4fB4RCjqVNt",
-                "snapshotId": snapshotId,
-                "started_at": "2019-02-08T10:46:16.652Z",
-                "finished_at": "2019-02-08T10:48:17.198Z"
-              },
-              "backup_guid": backupGuid,
-              "space_guid": spaceGuid,
-              "context": {
-                "organization_guid": "33915d88-6002-4e83-b154-9ec2075e1435",
-                "platform": "cloudfoundry",
-                "space_guid": spaceGuid
-              },
-              "plan_id": planId
-            },
-            "username": "admin_service-fabrik"
-        }
-        let getPersistentDisksInfo = [
-            {
-                "job_name": "blueprint",
-                "id": "id1",
-                "disk_cid": "vol1",
-                "az": "az1"
-            },
-            {
-                "job_name": "blueprint",
-                "id": "id2",
-                "disk_cid": "vol2",
-                "az": "az2"
-            }
-        ];
-        let serviceInfo = {
-            restore_operation: {
-                type: 'defaultboshrestore',
-                filesystem_path: fileSystemPath,
-                instance_group: instanceGroup,
-                errands: {
-                    base_backup_restore: {
-                        name: baseBackupErrandName,
-                        instances: 'all'
-                    }
-                }
-            }
-        };
         describe('#startRestore', function() {
             let sandbox, findDeploymentNameByInstanceIdStub, getServiceStub, getPersistentDisksStub, getDiskMetadataStub;
+            let restoreOptions = {
+                "plan_id": planId,
+                "service_id": serviceId,
+                "context": {
+                  "organization_guid": "33915d88-6002-4e83-b154-9ec2075e1435",
+                  "platform": "cloudfoundry",
+                  "space_guid": spaceGuid
+                },
+                "restore_guid": restoreGuid,
+                "instance_guid": instanceId,
+                "arguments": {
+                  "backup": {
+                    "type": "online",
+                    "secret": "Bd+hF4fB4RCjqVNt",
+                    "snapshotId": snapshotId,
+                    "started_at": "2019-02-08T10:46:16.652Z",
+                    "finished_at": "2019-02-08T10:48:17.198Z"
+                  },
+                  "backup_guid": backupGuid,
+                  "space_guid": spaceGuid,
+                  "context": {
+                    "organization_guid": "33915d88-6002-4e83-b154-9ec2075e1435",
+                    "platform": "cloudfoundry",
+                    "space_guid": spaceGuid
+                  },
+                  "plan_id": planId
+                },
+                "username": "admin_service-fabrik"
+            }
+            let getPersistentDisksInfo = [
+                {
+                    "job_name": "blueprint",
+                    "id": "id1",
+                    "disk_cid": "vol1",
+                    "az": "az1"
+                },
+                {
+                    "job_name": "blueprint",
+                    "id": "id2",
+                    "disk_cid": "vol2",
+                    "az": "az2"
+                }
+            ];
+            let serviceInfo = {
+                restore_operation: {
+                    type: 'defaultboshrestore',
+                    filesystem_path: fileSystemPath,
+                    instance_group: instanceGroup,
+                    errands: {
+                        base_backup_restore: {
+                            name: baseBackupErrandName,
+                            instances: 'all'
+                        }
+                    }
+                }
+            };
             beforeEach(() => {
                 plan = catalog.getPlan(planId);
                 sandbox = sinon.createSandbox();
@@ -149,7 +147,7 @@ describe('operators', function() {
                   ];  
                 let restoreResource = {
                     spec: {
-                        options: JSON.stringify(restoreOptions)
+                        options: JSON.stringify({dummyOptions: 'dummyOptions'})
                     }
                 };
                 return BoshRestoreService.createService(plan)
@@ -518,6 +516,32 @@ describe('operators', function() {
                         .to.eql('done');
                     });
             });
+            it('should throw assertion error for invalid errand type', () => {
+                let restoreOptions = {
+                    restoreMetadata: restoreMetadata,
+                    service_id: serviceId 
+                };
+                return BoshRestoreService.createService(plan)
+                .then(rs => rs.runErrand(restoreOptions, 'invalidErrandType'))
+                .catch(err => {
+                    expect(err.message).to.eql(' Errand type invalidErrandType is invalid.');
+                });
+            });
+            it('should not trigger errand if not found in service catalog', () => {
+                let tempRestoreData = _.cloneDeep(restoreMetadata);
+                _.unset(tempRestoreData, 'baseBackupErrand');
+                let restoreOptions = {
+                    restoreMetadata: tempRestoreData,
+                    service_id: serviceId 
+                };
+                return BoshRestoreService.createService(plan)
+                    .then(rs => rs.runErrand(restoreOptions, 'baseBackupErrand'))
+                    .then(() => {
+                        expect(pollTaskStatusTillCompleteStub.callCount).to.eql(0);
+                        expect(runDeploymentErrandStub.callCount).to.eql(0);
+                        expect(patchResourceStub.callCount).to.eql(0);
+                    });
+            });
         });
 
         describe('#processRunErrands', function () {
@@ -564,20 +588,70 @@ describe('operators', function() {
         });
 
         describe('#processBoshStart', function(){
+            let sandbox;
+            let startDeploymentStub, patchResourceStub, pollTaskStatusTillCompleteStub;
+            let restoreMetadata = {
+                "deploymentName": deploymentName
+            };
             beforeEach(() => {
-
+                plan = catalog.getPlan(planId);
+                sandbox = sinon.createSandbox();
+                startDeploymentStub = sandbox.stub(bosh.director, 'startDeployment');
+                pollTaskStatusTillCompleteStub = sandbox.stub(bosh.director, 'pollTaskStatusTillComplete');
+                patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
             });
             afterEach(() => {
-                
+                sandbox.restore();
+            });
+            it('should start the deployment and update the resource on ApiServer', () => {
+                let restoreOptions = {
+                    restoreMetadata: restoreMetadata
+                };
+                const taskId = 'taskId';
+                startDeploymentStub.withArgs(deploymentName).resolves(taskId);
+                patchResourceStub.resolves();
+                pollTaskStatusTillCompleteStub.withArgs(taskId).resolves({state: 'done'});
+                return BoshRestoreService.createService(plan)
+                    .then(rs => rs.processBoshStart(restoreOptions))
+                    .then(() => {
+                        expect(startDeploymentStub.callCount).to.eql(1);
+                        expect(patchResourceStub.callCount).to.eql(2);
+                        expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
+                        expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStart.taskId).to.eql(taskId);
+                        expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStart.taskId).to.eql(taskId);
+                        expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStart.taskResult.state).to.eql('done');      
+                    });
             });
         });
 
         describe('#processPostStart', function(){
+            let sandbox; 
+            let patchResourceStub, runErrandStub;
+            let restoreMetadata = {
+                deploymentName: deploymentName
+            };
             beforeEach(() => {
-
+                plan = catalog.getPlan(planId);
+                sandbox = sinon.createSandbox();
+                patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+                runErrandStub = sandbox.stub(BoshRestoreService.prototype, 'runErrand');
             });
             afterEach(() => {
-                
+                sandbox.restore();
+            });
+            it('should call runErrand for postStartErrand and update ApiServer resource', () => {
+                let restoreOptions = {
+                    restoreMetadata: restoreMetadata
+                };
+                patchResourceStub.resolves();
+                runErrandStub.resolves();
+                return BoshRestoreService.createService(plan)
+                    .then(rs => rs.processPostStart(restoreOptions))
+                    .then(() => {
+                        expect(runErrandStub.callCount).to.eql(1);
+                        expect(patchResourceStub.callCount).to.eql(1);
+                        expect(runErrandStub.firstCall.args[1]).to.eql('postStartErrand');
+                    });
             });
         });
 
