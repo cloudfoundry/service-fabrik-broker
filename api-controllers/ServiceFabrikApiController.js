@@ -638,8 +638,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .then(restoreOptions => {
           logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
           const service = this.getService(serviceId);
-          restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ? 
-            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE ;
+          restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ?
+            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
           return lockManager.lock(req.params.instance_id, {
               lockedResourceDetails: {
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,

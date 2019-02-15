@@ -1,10 +1,8 @@
 'use strict';
 
-const Promise = require('bluebird');
 const logger = require('../../common/logger');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const catalog = require('../../common/models/catalog');
-const utils = require('../../common/utils');
 const CONST = require('../../common/constants');
 const BaseOperator = require('../BaseOperator');
 const BoshRestoreService = require('./');
@@ -20,44 +18,49 @@ class DefaultBoshRestoreOperator extends BaseOperator {
       `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`,
       `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
       `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`
-    ];    
+    ];
     const defaultValidStatelist = [
       CONST.APISERVER.RESOURCE_STATE.IN_QUEUE
-    ]; 
+    ];
     const validStateList = defaultValidStatelist.concat(RESTORE_STATES);
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE)
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, validStateList));
   }
 
-  async processRequest(requestObjectBody) {
-    if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-      return this.processInQueueRequest(requestObjectBody);
-    }
-    else {
-      return this.processInProgressRequest(requestObjectBody)
+  async processRequest(requestObjectBody) { //jshint ignore: line
+    try {
+      if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return this.processInQueueRequest(requestObjectBody);
+      } else {
+        return this.processInProgressRequest(requestObjectBody);
+      }
+    } catch (err) {
+      logger.error('Following error occurred while processing the restore request: ', err);
+      return eventmesh.apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: requestObjectBody.metadata.name,
+        status: {
+          'state': CONST.APISERVER.RESOURCE_STATE.FAILED
+        }
+      });
     }
   }
 
-  async processInQueueRequest(changeObjectBody) {
-    try {
-      const changedOptions = JSON.parse(changeObjectBody.spec.options);
-      logger.info('Triggering restore with the following options:', changedOptions);
-      const plan = catalog.getPlan(changedOptions.plan_id);
-      let service = await BoshRestoreService.createService(plan)
-      return service.startRestore(changedOptions);
-    } catch (err) {
-    }
+  async processInQueueRequest(changeObjectBody) { //jshint ignore: line
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    logger.info('Triggering restore with the following options:', changedOptions);
+    const plan = catalog.getPlan(changedOptions.plan_id);
+    let service = await BoshRestoreService.createService(plan); //jshint ignore: line
+    return service.startRestore(changedOptions);
   }
 
-  async processInProgressRequest(changeObjectBody) {
-    try {
-      const changedOptions = JSON.parse(changeObjectBody.spec.options);
-      logger.info('Continuing restore with the following options:', changedOptions);
-      const plan = catalog.getPlan(changedOptions.plan_id);
-      let service = await BoshRestoreService.createService(plan)
-      return service.processState(changeObjectBody);
-    } catch (err) {
-    }
+  async processInProgressRequest(changeObjectBody) { //jshint ignore: line
+    const changedOptions = JSON.parse(changeObjectBody.spec.options);
+    logger.info('Continuing restore with the following options:', changedOptions);
+    const plan = catalog.getPlan(changedOptions.plan_id);
+    let service = await BoshRestoreService.createService(plan); //jshint ignore: line
+    return service.processState(changeObjectBody);
   }
 }
 

@@ -1744,15 +1744,17 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.reject('sshconnectionerror'));
         return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
@@ -1785,15 +1787,17 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.resolve({}));
         let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
@@ -1835,15 +1839,17 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.resolve(sshout));
         let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
