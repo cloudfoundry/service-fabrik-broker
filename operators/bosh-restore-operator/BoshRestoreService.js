@@ -44,11 +44,13 @@ class BoshRestoreService extends BaseDirectorService {
       const instanceGroups = _.get(service, 'restore_operation.instance_group');
       let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); //jshint ignore: line
 
-      let getDiskMetadataFn = async (instance) => { //jshint ignore: line
+      /* jshint ignore: start */
+      let getDiskMetadataFn = async (instance) => {
         let diskCid = instance.disk_cid;
         let az = instance.az;
-        instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az); //jshint ignore: line
+        instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
       };
+      /* jshint ignore: end */
 
       await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); //jshint ignore: line
 
@@ -183,15 +185,18 @@ class BoshRestoreService extends BaseDirectorService {
   //TODO: Putting some threshold on disk creation.
   async processCreateDisk(resourceOptions) { //jshint ignore: line
     try {
+      /* jshint unused:false */
       const snapshotId = _.get(resourceOptions, 'restoreMetadata.snapshotId');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
 
-      let createDiskFn = async (instance) => { ////jshint ignore: line
+      /* jshint ignore: start */
+      let createDiskFn = async (instance) => {
         logger.info(`Triggering disk creation with snapshotId: ${snapshotId}, az: ${instance.az} and type: ${instance.oldDiskInfo.type} for instance ${instance.id}`);
         instance.newDiskInfo = await this.cloudProvider.createDiskFromSnapshot(snapshotId, instance.az, {
           type: instance.oldDiskInfo.type
-        }); //jshint ignore: line
+        });
       };
+      /* jshint ignore: end */
 
       await Promise.all(deploymentInstancesInfo.map(createDiskFn)); //jshint ignore: line
 
@@ -223,17 +228,20 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processAttachDisk(resourceOptions) { //jshint ignore: line
     try {
+      /* jshint unused:false */
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
 
-      let createDiskAttachmentTaskFn = async (instance) => { //jshint ignore: line
+      /* jshint ignore: start */
+      let createDiskAttachmentTaskFn = async (instance) => {
         let taskId = _.get(instance, 'attachDiskTaskId', undefined);
         if (_.isEmpty(taskId)) {
-          taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId, //jshint ignore: line
+          taskId = await this.director.createDiskAttachment(deploymentName, instance.newDiskInfo.volumeId,
             instance.job_name, instance.id);
           _.set(instance, 'attachDiskTaskId', taskId);
         }
       };
+      /* jshint ignore: end */
 
       await Promise.all(deploymentInstancesInfo.map(createDiskAttachmentTaskFn)); //jshint ignore: line
 
@@ -248,14 +256,15 @@ class BoshRestoreService extends BaseDirectorService {
         }
       });
 
-      let taskPollingFn = async (instance) => { //jshint ignore: line
+      /* jshint ignore: start */
+      let taskPollingFn = async (instance) => {
         let taskId = _.get(instance, 'attachDiskTaskId');
-        instance.attachDiskTaskResult = await this.director.pollTaskStatusTillComplete(taskId); //jshint ignore: line
+        instance.attachDiskTaskResult = await this.director.pollTaskStatusTillComplete(taskId);
       };
+      /* jshint ignore: end */
 
       await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); //jshint ignore: line
 
-      //TODO: add information for stateResults field also
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -284,6 +293,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processPutFile(resourceOptions) { //jshint ignore: line
     try {
+      /* jshint unused:false */
       const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
       const service = catalog.getService(resourceOptions.service_id);
@@ -305,9 +315,11 @@ class BoshRestoreService extends BaseDirectorService {
       sudo -u root bash -c 'echo "${escaped}" > ${service.restore_operation.filesystem_path}'
       sudo -u root sync
       `;
-      let sshFn = async (instance) => { //jshint ignore: line
-        instance.sshResult = await this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd); //jshint ignore: line
+      /* jshint ignore: start */
+      let sshFn = async (instance) => {
+        instance.sshResult = await this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
       };
+      /* jshint ignore: end */
 
       //TODO: add retries
       await Promise.all(deploymentInstancesInfo.map(sshFn)); //jshint ignore: line
