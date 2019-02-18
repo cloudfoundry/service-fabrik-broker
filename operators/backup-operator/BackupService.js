@@ -107,20 +107,20 @@ class BackupService extends BaseDirectorService {
             return data;
           });
       })
-      //TODO-PR - Break it into multiple methods
+      // TODO-PR - Break it into multiple methods
       .then(backupInfo => {
         const response = _.extend(backupInfo, {
           deployment: deploymentName
         });
         return eventmesh.apiServerClient.updateResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: result.backup_guid,
-            status: {
-              'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-              'response': response
-            }
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: result.backup_guid,
+          status: {
+            'state': CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
+            'response': response
+          }
+        })
           .then(() => backupInfo);
       })
       .catch(err => {
@@ -156,7 +156,7 @@ class BackupService extends BaseDirectorService {
                       .deleteBackupFile(options);
                   }
                 })
-                .catch((err) => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
+                .catch(err => logger.error('Error occurred while performing clean up of backup failure operation : ', err));
             }
           }).then(() => {
             throw err;
@@ -165,34 +165,34 @@ class BackupService extends BaseDirectorService {
   }
 
   getOperationState(name, opts) {
-    logger.info(`Retrieving state of last Backup with:`, opts);
+    logger.info('Retrieving state of last Backup with:', opts);
     return this.getBackupOperationState(opts)
       .then(result => {
         const deploymentName = opts.deployment;
         const action = _.capitalize(name);
         const timestamp = result.updated_at;
-        //TODO-PR - Try to move to BaseService
+        // TODO-PR - Try to move to BaseService
         switch (result.state) {
-        case CONST.BACKUP_OPERATION.SUCCEEDED:
-          return {
-            description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
-            state: CONST.BACKUP_OPERATION.SUCCEEDED
-          };
-        case CONST.BACKUP_OPERATION.ABORTED:
-          return {
-            description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
-            state: CONST.BACKUP_OPERATION.FAILED
-          };
-        case CONST.BACKUP_OPERATION.FAILED:
-          return {
-            description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
-            state: CONST.BACKUP_OPERATION.FAILED
-          };
-        default:
-          return {
-            description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
-            state: CONST.BACKUP_OPERATION.PROCESSING
-          };
+          case CONST.BACKUP_OPERATION.SUCCEEDED:
+            return {
+              description: `${action} deployment ${deploymentName} succeeded at ${timestamp}`,
+              state: CONST.BACKUP_OPERATION.SUCCEEDED
+            };
+          case CONST.BACKUP_OPERATION.ABORTED:
+            return {
+              description: `${action} deployment ${deploymentName} aborted at ${timestamp}`,
+              state: CONST.BACKUP_OPERATION.FAILED
+            };
+          case CONST.BACKUP_OPERATION.FAILED:
+            return {
+              description: `${action} deployment ${deploymentName} failed at ${timestamp} with Error "${result.stage}"`,
+              state: CONST.BACKUP_OPERATION.FAILED
+            };
+          default:
+            return {
+              description: `${action} deployment ${deploymentName} is still in progress: "${result.stage}"`,
+              state: CONST.BACKUP_OPERATION.PROCESSING
+            };
         }
       });
   }
@@ -266,7 +266,7 @@ class BackupService extends BaseDirectorService {
       }))
       .catch(err => {
         return Promise
-          .try(() => logger.error(`Error during delete of backup`, err))
+          .try(() => logger.error('Error during delete of backup', err))
           .then(() => eventmesh.apiServerClient.updateResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -291,22 +291,22 @@ class BackupService extends BaseDirectorService {
           throw new Forbidden('System scheduled backup runs cannot be aborted');
         }
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortBackup(metadata.agent_ip)
-            .then(() => eventmesh.apiServerClient.updateResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-              resourceId: abortOptions.guid,
-              status: {
-                'state': CONST.OPERATION.ABORTING
-              }
-            }))
-            .return({
-              state: CONST.OPERATION.ABORTING
-            });
-        default:
-          return _.pick(metadata, 'state');
+          case 'processing':
+            return this.agent
+              .abortBackup(metadata.agent_ip)
+              .then(() => eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceId: abortOptions.guid,
+                status: {
+                  'state': CONST.OPERATION.ABORTING
+                }
+              }))
+              .return({
+                state: CONST.OPERATION.ABORTING
+              });
+          default:
+            return _.pick(metadata, 'state');
         }
       })
       .catch(e => {

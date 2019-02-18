@@ -3,7 +3,6 @@
 
 console.log('Starting Service Fabrik...');
 const _ = require('lodash');
-const lib = require('./lib');
 const routes = require('../api-controllers/routes');
 const HttpServer = require('../common/HttpServer');
 const ExpressApp = require('../common/ExpressApp');
@@ -54,7 +53,7 @@ async function init() {
       });
       HttpServer.start(external);
     }
-    HttpServer.handleShutdown(); //https://github.com/nodejs/node-v0.x-archive/issues/5054
+    HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054
     require('../common/UnlockResourcePoller');
   } catch (error) {
     logger.info('Process shutting down now because of error ', error);

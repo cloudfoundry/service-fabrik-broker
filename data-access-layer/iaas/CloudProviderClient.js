@@ -65,15 +65,15 @@ class CloudProviderClient extends BaseCloudClient {
       }))
     });
     return Promise.try(() => {
-        return this.blockstorage
-          .createVolume({
-            AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
-            SnapshotId: snapshotId,
-            VolumeType: _.get(options, 'type', 'gp2'),
-            TagSpecifications: tags
-          })
-          .promise();
-      })
+      return this.blockstorage
+        .createVolume({
+          AvailabilityZone: _.isArray(zones) ? zones[0] : zones,
+          SnapshotId: snapshotId,
+          VolumeType: _.get(options, 'type', 'gp2'),
+          TagSpecifications: tags
+        })
+        .promise();
+    })
       .then(volume => {
         const describeReq = {
           VolumeIds: [volume.VolumeId]
@@ -102,12 +102,12 @@ class CloudProviderClient extends BaseCloudClient {
 
   getDiskMetadata(diskId) {
     return Promise.try(() => {
-        return this.blockstorage
-          .describeVolumes({
-            VolumeIds: [diskId]
-          })
-          .promise();
-      })
+      return this.blockstorage
+        .describeVolumes({
+          VolumeIds: [diskId]
+        })
+        .promise();
+    })
       .then(diskResponse => diskResponse.Volumes[0])
       .then(volume => {
         const responseTags = volume.Tags || [];
@@ -235,11 +235,11 @@ class CloudProviderClient extends BaseCloudClient {
         container: this.containerName,
         remote: file
       })
-      .then((data) => {
+      .then(data => {
         const response = JSON.parse(data);
         response.trigger = response.trigger === CONST.BACKUP.TRIGGER.MANUAL ? CONST.BACKUP.TRIGGER.SCHEDULED : response.trigger;
-        //The above conversion is done to handle existing CRON Jobs which set this trigger as 'manual' even for scheduled Jobs
-        //Above conversion can be removed and code changes can be revereted 14 days after the current fix goes live
+        // The above conversion is done to handle existing CRON Jobs which set this trigger as 'manual' even for scheduled Jobs
+        // Above conversion can be removed and code changes can be revereted 14 days after the current fix goes live
         return response;
       })
       .catchThrow(SyntaxError, new NotFound(`Object '${file}' not found`));

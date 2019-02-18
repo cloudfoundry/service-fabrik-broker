@@ -14,7 +14,7 @@ class ComputeClient {
     return Promise
       .try(() => {
         switch (settings.provider) {
-        case 'amazon':
+          case 'amazon':
           {
             let ec2Config = {
               accessKeyId: settings.keyId,
@@ -30,7 +30,7 @@ class ComputeClient {
             }
             return new AWS.EC2(ec2Config);
           }
-        case 'azure':
+          case 'azure':
           {
             const credentials = new MsRestAzure.ApplicationTokenCredentials(
               settings.client_id,
@@ -39,8 +39,8 @@ class ComputeClient {
             return new ComputeManagementClient(
               credentials, settings.subscription_id);
           }
-        default:
-          return new BaseComputeClient(settings);
+          default:
+            return new BaseComputeClient(settings);
         }
       });
   }

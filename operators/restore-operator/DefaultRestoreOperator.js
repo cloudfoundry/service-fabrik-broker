@@ -19,12 +19,12 @@ class DefaultRestoreOperator extends BaseOperator {
 
   processRequest(requestObjectBody) {
     return Promise.try(() => {
-        if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return DefaultRestoreOperator._processRestore(requestObjectBody);
-        } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.ABORT) {
-          return DefaultRestoreOperator._processAbort(requestObjectBody);
-        }
-      })
+      if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return DefaultRestoreOperator._processRestore(requestObjectBody);
+      } else if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.ABORT) {
+        return DefaultRestoreOperator._processAbort(requestObjectBody);
+      }
+    })
       .catch(err => {
         logger.error('Error occurred in processing request by DefaultRestoreOperator', err);
         return eventmesh.apiServerClient.updateResource({

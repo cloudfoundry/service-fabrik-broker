@@ -22,23 +22,23 @@ class BoshSshClient {
   getConnection() {
     const config = this.connectOptions;
     return new Promise((resolve, reject) => {
-        let connection = new Client();
-        connection.on('error', err => {
-          if (err.level === 'client-authentication') {
-            logger.error('Failed authenticate for ssh connection with config', config, err);
-            reject(new SshConnectionFailed('Failed to authenticate for ssh to BOSH VM. Public key not found/ not available in authorized keys within VM'));
-          } else {
-            logger.error('Failed establish ssh connection with config ', config, err);
-            reject(new SshConnectionFailed(err.message));
-          }
-        });
-        connection.on('ready', () => {
-          logger.debug('Connecting SSH Successful with config', config);
-          resolve(connection);
-        });
-        logger.debug('Connecting via SSH with config ', config);
-        connection.connect(config);
-      })
+      let connection = new Client();
+      connection.on('error', err => {
+        if (err.level === 'client-authentication') {
+          logger.error('Failed authenticate for ssh connection with config', config, err);
+          reject(new SshConnectionFailed('Failed to authenticate for ssh to BOSH VM. Public key not found/ not available in authorized keys within VM'));
+        } else {
+          logger.error('Failed establish ssh connection with config ', config, err);
+          reject(new SshConnectionFailed(err.message));
+        }
+      });
+      connection.on('ready', () => {
+        logger.debug('Connecting SSH Successful with config', config);
+        resolve(connection);
+      });
+      logger.debug('Connecting via SSH with config ', config);
+      connection.connect(config);
+    })
       .then(connection => Promise.try(() => connection)
         .disposer(connection => {
           logger.debug('closing ssh connection');
@@ -62,7 +62,7 @@ class BoshSshClient {
         stream.stderr.on('data', data => {
           errorOutput.push(data);
         });
-        stream.on('close', (code) => {
+        stream.on('close', code => {
           resolve({
             'code': code,
             'stdout': output.join('').trim(),

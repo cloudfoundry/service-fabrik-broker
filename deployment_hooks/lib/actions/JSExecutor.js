@@ -5,13 +5,13 @@ const action = process.argv[2];
 const phase = process.argv[3];
 let context = process.argv[4];
 
-//Validation of arguments
+// Validation of arguments
 function validateArgs() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
     console.error('Not enough arguments provided for script', args);
     process.exit(1);
-    //Added return false for unit testing.
+    // Added return false for unit testing.
     return false;
   }
   return true;

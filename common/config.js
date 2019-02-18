@@ -44,7 +44,7 @@ if (config.cf) {
   completeCloudFoundryConfig(config.cf);
 }
 if (config.enable_circuit_breaker) {
-  //Tests fail because of circuits tripping because of negative scenarios.
+  // Tests fail because of circuits tripping because of negative scenarios.
   const hystrixConfig = require('hystrixjs').hystrixConfig;
   hystrixConfig.init({
     // any other hystrix options...
@@ -114,7 +114,7 @@ function completeDockerConfig(docker) {
       }
     }
   }
-  //const dockerCertPath = docker.cert_path || process.env.DOCKER_CERT_PATH;
+  // const dockerCertPath = docker.cert_path || process.env.DOCKER_CERT_PATH;
   if (process.env.DOCKER_TLS_VERIFY === '1') {
     opts.ca = [
       docker.ssl.ca

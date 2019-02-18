@@ -21,4 +21,4 @@ const hook = expressApp.create('hook', app => {
 HttpServer.start(hook);
 HttpServer.handleShutdown();
 
-//https://github.com/nodejs/node-v0.x-archive/issues/5054
+// https://github.com/nodejs/node-v0.x-archive/issues/5054

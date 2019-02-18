@@ -24,8 +24,8 @@ class EventLogDomainSocketClient {
       const eventName = data.event.eventName;
       if ((eventName.indexOf('create_instance') > 0 || eventName.indexOf('delete_instance') > 0) &&
         data.event.metric === config.monitoring.success_metric) {
-        //For now just forwarding create/delete success events to  domain socket.
-        //But in future all events could be forwarded. This is just an optimization for now.
+        // For now just forwarding create/delete success events to  domain socket.
+        // But in future all events could be forwarded. This is just an optimization for now.
         this.logEvent(data.event);
       }
     }
@@ -36,7 +36,7 @@ class EventLogDomainSocketClient {
     const client = net.createConnection(this.options.path, () => {
       client.write(JSON.stringify(eventInfo));
       client.end();
-    }).on('error', (err) => {
+    }).on('error', err => {
       logger.error('error occurred while writing  to domain socket', err);
     });
   }

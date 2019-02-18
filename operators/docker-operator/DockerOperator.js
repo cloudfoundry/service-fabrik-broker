@@ -22,7 +22,7 @@ class DockerOperator extends BaseOperator {
   processRequest(changeObjectBody) {
 
     return Promise.try(() => {
-        switch (changeObjectBody.status.state) {
+      switch (changeObjectBody.status.state) {
         case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
         case CONST.APISERVER.RESOURCE_STATE.UPDATE:
@@ -32,8 +32,8 @@ class DockerOperator extends BaseOperator {
         default:
           logger.error('Ideally it should never come to default state! There must be some error as the state is ', changeObjectBody.status.state);
           break;
-        }
-      })
+      }
+    })
       .catch(err => {
         logger.error('Error occurred in processing request by DockerOperator', err);
         return eventmesh.apiServerClient.updateResource({
@@ -49,10 +49,10 @@ class DockerOperator extends BaseOperator {
   }
 
   _processCreate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.name, 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(changeObjectBody.spec.options, 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Creating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.create(changedOptions))
@@ -69,10 +69,10 @@ class DockerOperator extends BaseOperator {
   }
 
   _processUpdate(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.name, 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(changeObjectBody.spec.options, 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Updating docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.update(changedOptions))
@@ -89,10 +89,10 @@ class DockerOperator extends BaseOperator {
   }
 
   _processDelete(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.name, 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(changeObjectBody.spec.options, 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Deleting docker resource with the following options:', changedOptions);
     return DockerService.createInstance(changeObjectBody.metadata.name, changedOptions)
       .then(dockerService => dockerService.delete(changedOptions))

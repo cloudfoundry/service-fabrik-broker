@@ -20,12 +20,12 @@ class BoshBindOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return this._processBind(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-          return this._processUnbind(changeObjectBody);
-        }
-      })
+      if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return this._processBind(changeObjectBody);
+      } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        return this._processUnbind(changeObjectBody);
+      }
+    })
       .catch(err => {
         logger.error('Error occurred in processing request by BoshBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
@@ -41,11 +41,11 @@ class BoshBindOperator extends BaseOperator {
   }
 
   _processBind(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.name, 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, 'Argument \'metadata.labels.instance_guid\' is required to process the request');
+    assert.ok(changeObjectBody.spec.options, 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bind with the following options:', changedOptions);
     return DirectorService.createInstance(instanceGuid, changedOptions)
@@ -64,11 +64,11 @@ class BoshBindOperator extends BaseOperator {
       });
   }
   _processUnbind(changeObjectBody) {
-    assert.ok(changeObjectBody.metadata.name, `Argument 'metadata.name' is required to process the request`);
-    assert.ok(changeObjectBody.metadata.labels.instance_guid, `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(changeObjectBody.spec.options, `Argument 'spec.options' is required to process the request`);
+    assert.ok(changeObjectBody.metadata.name, 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(changeObjectBody.metadata.labels.instance_guid, 'Argument \'metadata.labels.instance_guid\' is required to process the request');
+    assert.ok(changeObjectBody.spec.options, 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     const instanceGuid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info('Triggering bosh unbind with the following options:', changedOptions);
     return DirectorService.createInstance(instanceGuid, changedOptions)

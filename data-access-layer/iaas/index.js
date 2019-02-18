@@ -11,16 +11,16 @@ const BaseCloudClient = require('./BaseCloudClient');
 
 const getCloudClient = function (settings) {
   switch (settings.name) {
-  case 'azure':
-    return new AzureClient(settings);
-  case 'gcp':
-    return new GcpClient(settings);
-  case 'aws':
-  case 'openstack':
-  case 'os':
-    return new CloudProviderClient(settings);
-  default:
-    return new BaseCloudClient(settings);
+    case 'azure':
+      return new AzureClient(settings);
+    case 'gcp':
+      return new GcpClient(settings);
+    case 'aws':
+    case 'openstack':
+    case 'os':
+      return new CloudProviderClient(settings);
+    default:
+      return new BaseCloudClient(settings);
   }
 };
 const cloudProvider = getCloudClient(config.backup.provider);

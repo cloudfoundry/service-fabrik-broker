@@ -32,7 +32,7 @@ class BackupReportManager {
         });
         if (startTime <= moment.utc(jobDetail.createdAt).startOf('day').toDate()) {
           let startTime = moment.utc(jobDetail.createdAt).startOf('day').toDate();
-          //Check if entry present in jobrundetails for current day (start day)
+          // Check if entry present in jobrundetails for current day (start day)
           return this.getJobRunDetailCount(instanceId, startTime, moment.utc(startTime).endOf('day').toDate())
             .then(count => {
               if (!count) {
@@ -56,7 +56,7 @@ class BackupReportManager {
           instanceDeleteTime: lastRunDetail.createdAt
         });
         endTime = lastRunDetail.createdAt;
-        //check if more than one entries present in jobrundetails on delete day
+        // check if more than one entries present in jobrundetails on delete day
         return this.getJobRunDetailCount(instanceId, moment.utc(endTime).startOf('day').toDate(), endTime)
           .then(count => {
             if (!count) {
@@ -81,25 +81,25 @@ class BackupReportManager {
       .spread((triggeredBackupCount, backupResults, lastRunDetail, jobDetail) => {
         const instanceRecord = {};
         const noBackupDays = [];
-        //iterator to first entry of the day
+        // iterator to first entry of the day
         let startIndex = 0;
         let consecutiveBackupFailureCount = 0;
         // let currentDay = new Date(startTime);
         let backupSuccessCount = 0;
         // Check if start time is less than instance create time
         return Promise.
-        all([
+          all([
             this.getReportStartTime(instanceId, jobDetail, instanceRecord, startTime, endTime),
             this.getReportEndTime(instanceId, lastRunDetail, instanceRecord, endTime)
           ])
           .spread((startDay, endDay) => {
             let currentDay = new Date(startDay);
-            //iterate through list of days and for each day count successful backups
+            // iterate through list of days and for each day count successful backups
             for (; currentDay < endDay; currentDay = moment(currentDay).add(1, 'days').toDate()) {
               logger.info(`Checking for backups for ${instanceId} on `, currentDay);
               let nextDay = moment(currentDay).add(1, 'days').toDate();
               let day_end = endDay < nextDay ? endDay : nextDay;
-              //iterator to last entry on the day
+              // iterator to last entry on the day
               let endIndex = startIndex;
               while (
                 endIndex < backupResults.length &&
@@ -177,7 +177,7 @@ class BackupReportManager {
         .set('offset', offset)
         .value();
       return Repository.search(modelName, searchCriteria, paginateOpts)
-        .then((result) => {
+        .then(result => {
           instanceList.push.apply(instanceList, _.map(result.list, 'data'));
           return getInstancesWithBackupScheduled(instanceList, result.nextOffset, modelName, searchCriteria, paginateOpts);
         });
@@ -214,8 +214,8 @@ class BackupReportManager {
       .then(() => result);
   }
 
-  //startTime and endTime are Date objects
-  //Count number of entries present in jobrundetails collection which is how many times scheduler was run/backups were triggered
+  // startTime and endTime are Date objects
+  // Count number of entries present in jobrundetails collection which is how many times scheduler was run/backups were triggered
   static getBackupTriggerCount(instanceId, startTime, endTime) {
     const criteria = {
       type: CONST.JOB.SCHEDULED_BACKUP,
@@ -241,7 +241,7 @@ class BackupReportManager {
         .set('offset', offset)
         .value();
       return Repository.search(modelName, searchCriteria, paginateOpts)
-        .then((result) => {
+        .then(result => {
           resultList.push.apply(resultList, result.list);
           return getBackupResult(resultList, result.nextOffset, modelName, searchCriteria, paginateOpts);
         });

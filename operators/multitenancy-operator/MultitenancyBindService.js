@@ -28,7 +28,7 @@ class MultitenancyBindService extends BaseService {
     return eventmesh.apiServerClient.getResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
       resourceType: this.deploymentResourceType,
-      resourceId: this.guid,
+      resourceId: this.guid
     }).then(resourcebody => {
       this.deploymentName = resourcebody.operatorMetadata.dedicatedInstanceDeploymentName;
       logger.info(`Dedicated instance deployment name is '${this.deploymentName}'...`);
@@ -82,10 +82,10 @@ class MultitenancyBindService extends BaseService {
   getCredentialsFromResource(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: this.bindResourceType,
-        resourceId: id
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+      resourceType: this.bindResourceType,
+      resourceId: id
+    })
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
         if (!_.isEmpty(response)) {

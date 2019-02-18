@@ -33,7 +33,7 @@ class SerialServiceFlowOperator extends BaseOperator {
           CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskRelay,
-          (event) => this.relayTask(event),
+          event => this.relayTask(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
         logger.info('Registered watcher for Service Flow Tasks!.');
       });
@@ -41,8 +41,8 @@ class SerialServiceFlowOperator extends BaseOperator {
 
   processRequest(resource) {
     return Promise.try(() => {
-      assert.ok(resource.metadata.name, `Argument 'metadata.name' is required to run the task`);
-      assert.ok(resource.spec.options, `Argument 'spec.options' is required to run the task`);
+      assert.ok(resource.metadata.name, 'Argument \'metadata.name\' is required to run the task');
+      assert.ok(resource.spec.options, 'Argument \'spec.options\' is required to run the task');
       const serviceFlowOptions = JSON.parse(resource.spec.options);
       serviceFlowOptions.serviceflow_id = resource.metadata.name;
       serviceFlowOptions.task_order = 0;
@@ -60,23 +60,23 @@ class SerialServiceFlowOperator extends BaseOperator {
       };
       const taskId = `${serviceFlowOptions.serviceflow_id}.${serviceFlowOptions.task_order}`;
       return apiServerClient.createResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-          resourceId: taskId,
-          labels: labels,
-          options: _.merge(serviceFlowOptions, tasks[0]),
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-            response: {}
-          }
-        })
-        .tap((resource) => logger.info('Created task -> ', resource))
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
+        resourceId: taskId,
+        labels: labels,
+        options: _.merge(serviceFlowOptions, tasks[0]),
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+          response: {}
+        }
+      })
+        .tap(resource => logger.info('Created task -> ', resource))
         .then(() => this.updateServiceFlowStatus(
           serviceFlowOptions, {
             state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
             description: `${tasks[0].task_description} in progress @ ${new Date()}`
           }))
-        .tap((resource) => logger.info('Successfully updated service flow ::', resource.body.status));
+        .tap(resource => logger.info('Successfully updated service flow ::', resource.body.status));
     });
   }
 
@@ -106,7 +106,7 @@ class SerialServiceFlowOperator extends BaseOperator {
       const relayedStatus = {
         state: previousTaskResponse.state,
         response: previousTaskResponse,
-        description: `Last Task complete.`
+        description: 'Last Task complete.'
       };
       if (previousTaskResponse.state !== CONST.OPERATION.SUCCEEDED) {
         logger.info(`Task ${resourceDetails.resourceId} has failed. service flow will be marked as failed.`);
@@ -117,8 +117,8 @@ class SerialServiceFlowOperator extends BaseOperator {
       }
       logger.info(`Order of next task ${taskDetails.task_order} - # of tasks in service flow ${serviceFlow.tasks.length}`);
       if (serviceFlow.tasks.length === taskDetails.task_order) {
-        //TODO: It might also be a good idea to fetch the actual tasks from etcd and check that number than this order
-        //Just in case due to some bug or some other reason task order is not getting incremented. For now though not required.
+        // TODO: It might also be a good idea to fetch the actual tasks from etcd and check that number than this order
+        // Just in case due to some bug or some other reason task order is not getting incremented. For now though not required.
         logger.info('Service Flow complete. Updating the status of last task as complete and marking service flow as done.');
         return task
           .updateStatus(resourceDetails, relayedStatus)
@@ -129,21 +129,21 @@ class SerialServiceFlowOperator extends BaseOperator {
           task_order: `${taskDetails.task_order}`
         };
         const relayedTaskId = `${taskDetails.serviceflow_id}.${taskDetails.task_order}`;
-        //Due to some race conditions (stream refresh/broker restart) same task could be tried to be created again. 
-        //Hence task Id is made as a combination of workflow id and task order, which will ensure an
-        //exception is thrown when we try to create a dupe task in workflow, which is ignored. 
-        //This is done as failsafe mechanism to ensure only one task of a type executes in workflow.
+        // Due to some race conditions (stream refresh/broker restart) same task could be tried to be created again. 
+        // Hence task Id is made as a combination of workflow id and task order, which will ensure an
+        // exception is thrown when we try to create a dupe task in workflow, which is ignored. 
+        // This is done as failsafe mechanism to ensure only one task of a type executes in workflow.
         return apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
-            resourceId: relayedTaskId,
-            labels: labels,
-            options: _.merge(taskDetails, tasks[taskDetails.task_order]),
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-              response: {}
-            }
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.TASK,
+          resourceId: relayedTaskId,
+          labels: labels,
+          options: _.merge(taskDetails, tasks[taskDetails.task_order]),
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            response: {}
+          }
+        })
           .then(() => {
             logger.info('Created next task in the service flow. Updating the state of current task as Relayed.');
             relayedStatus.description = `Task complete and next relayed task is ${relayedTaskId}`;
@@ -152,9 +152,9 @@ class SerialServiceFlowOperator extends BaseOperator {
           .then(() => this.updateServiceFlowStatus(
             taskDetails, {
               state: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS,
-              description: `${tasks[taskDetails.task_order-1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
+              description: `${tasks[taskDetails.task_order - 1].task_description} is complete. Initiated ${tasks[taskDetails.task_order].task_description} @ ${new Date()}`
             }))
-          .catch(errors.Conflict, (err) => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
+          .catch(errors.Conflict, err => logger.warn(`Trying to recreate same task :${serviceFlow.tasks[taskDetails.task_order].task_type} order:${taskDetails.task_order}. Check for loops in workflow.`, err))
           .return(CONST.APISERVER.HOLD_PROCESSING_LOCK);
       }
     });

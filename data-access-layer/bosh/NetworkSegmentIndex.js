@@ -31,7 +31,7 @@ class NetworkSegmentIndex {
 
   static getUsedIndices(deployments, subnet) {
     let indices = [];
-    deployments.forEach((deployment) => {
+    deployments.forEach(deployment => {
       let deploymentName = _.isString(deployment) ? deployment : deployment.name;
       let match = utils.deploymentNameRegExp(subnet).exec(deploymentName);
       if (match) {
@@ -56,9 +56,9 @@ function calculateCapacity(subnet) {
   if (!capacity || capacity < 1) {
     let name = subnet || segmentation.network_name || 'default';
     let minSubnetSize = Number.POSITIVE_INFINITY;
-    networks.find((net) => {
+    networks.find(net => {
       return net.name === name;
-    }).subnets.forEach((subnet) => {
+    }).subnets.forEach(subnet => {
       let length = ip.cidrSubnet(subnet.range).length;
       if (length < minSubnetSize) {
         minSubnetSize = length;

@@ -53,7 +53,7 @@ class BackupStoreForServiceInstance extends BackupStore {
 
     let prefix = `${tenant_id}/backup`;
     let predicate;
-    let message = `No backup found`;
+    let message = 'No backup found';
 
     if (service_id && instance_guid) {
       prefix += `/${service_id}.${instance_guid}`;

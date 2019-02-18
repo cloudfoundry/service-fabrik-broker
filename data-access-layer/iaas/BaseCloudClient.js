@@ -27,12 +27,12 @@ class BaseCloudClient {
 
   get provider() {
     switch (this.settings.name) {
-    case 'aws':
-      return 'amazon';
-    case 'os':
-      return 'openstack';
-    default:
-      return this.settings.name;
+      case 'aws':
+        return 'amazon';
+      case 'os':
+        return 'openstack';
+      default:
+        return this.settings.name;
     }
   }
 

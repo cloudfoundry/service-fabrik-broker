@@ -27,7 +27,7 @@ class Networks {
             type: network.type,
             index: index,
             offset: networkSegmentation.offset || defaultSegmentationOptions.offset || DEFAULT_OFFSET,
-            size: networkSegmentation.size || defaultSegmentationOptions.size || DEFAULT_SIZE,
+            size: networkSegmentation.size || defaultSegmentationOptions.size || DEFAULT_SIZE
           }, subnet));
           this.all.push(net);
           this[net.subnet_name] = net;

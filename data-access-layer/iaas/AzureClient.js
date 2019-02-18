@@ -122,11 +122,11 @@ class AzureClient extends BaseCloudClient {
       container = this.containerName;
     }
     const prefix = options ? options.prefix : null;
-    //TODO Need to update following line with value from 'options' e.g. options.marker
+    // TODO Need to update following line with value from 'options' e.g. options.marker
     let continuationToken = null;
-    //TODO : maxResult is 5000 
-    //https://azure.github.io/azure-storage-node/BlobService.html#listBlobsSegmentedWithPrefix__anchor
-    //If want to fetch more use 'continuationToken' returned in result
+    // TODO : maxResult is 5000 
+    // https://azure.github.io/azure-storage-node/BlobService.html#listBlobsSegmentedWithPrefix__anchor
+    // If want to fetch more use 'continuationToken' returned in result
     return this.storage
       .listBlobsSegmentedWithPrefixAsync(container, prefix, continuationToken)
       .then(result => {
@@ -167,7 +167,7 @@ class AzureClient extends BaseCloudClient {
 
   download(options) {
     return utils.streamToPromise(this.storage.createReadStream(
-        options.container, options.remote))
+      options.container, options.remote))
       .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
   }
 
@@ -221,7 +221,7 @@ class AzureClient extends BaseCloudClient {
         container: container,
         remote: file
       })
-      .then((data) => JSON.parse(data))
+      .then(data => JSON.parse(data))
       .catchThrow(SyntaxError, new NotFound(`Object '${file}' not found`));
   }
 

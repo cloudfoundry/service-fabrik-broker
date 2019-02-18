@@ -72,7 +72,7 @@ class QuotaManager {
       logger.debug(`SKUName is ${skuName}`);
       const planIdsWithSameSKU = [];
       const service = _.find(serviceCatalog.services, ['name', serviceName]);
-      _.each(service.plans, (plan) => {
+      _.each(service.plans, plan => {
         if (plan.name.endsWith(skuName) && plan.manager.name === planManagerName) {
           planIdsWithSameSKU.push(plan.id);
           logger.debug(`Found a plan with name as ${plan.name} which contains the skuName ${skuName}`);

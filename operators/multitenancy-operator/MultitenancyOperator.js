@@ -28,7 +28,7 @@ class MultitenancyOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        switch (changeObjectBody.status.state) {
+      switch (changeObjectBody.status.state) {
         case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
         case CONST.APISERVER.RESOURCE_STATE.DELETE:
@@ -38,9 +38,9 @@ class MultitenancyOperator extends BaseOperator {
         default:
           logger.error('Ideally it should never come to default state! There must be some error as the state is ', changeObjectBody.status.state);
           break;
-        }
-      })
-      .catch(Error, (err) => {
+      }
+    })
+      .catch(Error, err => {
         logger.error('Error occurred in processing request by MultitenancyOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -55,8 +55,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processCreate(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering create of resource '${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);
@@ -74,8 +74,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processDelete(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering delete of resource:'${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);
@@ -84,7 +84,7 @@ class MultitenancyOperator extends BaseOperator {
       .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: this.resourceType,
-        resourceId: changeObjectBody.metadata.name,
+        resourceId: changeObjectBody.metadata.name
       }))
       .catch(Gone, () => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
@@ -94,8 +94,8 @@ class MultitenancyOperator extends BaseOperator {
   }
 
   _processUpdate(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info(`Triggering update of resource:'${this.resourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
     const multitenancyService = MTServiceFabrik.getService(this.service);

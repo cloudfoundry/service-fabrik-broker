@@ -11,7 +11,7 @@ const errors = require('../../common/errors');
 const HttpClient = utils.HttpClient;
 const compareVersions = utils.compareVersions;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
-var AGENT_CACHE = {};
+var AGENT_CACHE = {}; // eslint-disable-line no-var
 class Agent extends HttpClient {
   constructor(settings) {
     super({
@@ -26,7 +26,7 @@ class Agent extends HttpClient {
       protocol: this.protocol,
       hostname: host,
       port: this.port,
-      pathname: path.posix.join(`/v1`, 'info')
+      pathname: path.posix.join('/v1', 'info')
     }));
     urls.push(formatUrl({
       protocol: this.protocol,

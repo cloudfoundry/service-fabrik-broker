@@ -20,15 +20,15 @@ class VirtualHostOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return this._processCreate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
-          return this._processUpdate(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-          return this._processDelete(changeObjectBody);
-        }
-      })
-      .catch(Error, (err) => {
+      if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return this._processCreate(changeObjectBody);
+      } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+        return this._processUpdate(changeObjectBody);
+      } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        return this._processDelete(changeObjectBody);
+      }
+    })
+      .catch(Error, err => {
         logger.error('Error occurred in processing request by VirtualHostOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

@@ -23,11 +23,11 @@ class Repository {
     delete model._id;
     const updatedAt = new Date();
     if (Model.schema.obj.updatedAt !== undefined) {
-      //Created At/By fields are mandatory. However updated fields could be optional for insert only type of collections.
+      // Created At/By fields are mandatory. However updated fields could be optional for insert only type of collections.
       model.updatedAt = updatedAt;
       model.updatedBy = user.email || user.name;
     }
-    //User object will have either email & name or just name. Email has precedence
+    // User object will have either email & name or just name. Email has precedence
     if (modelId !== undefined) {
       return Model
         .findOneAndUpdateAsync({
@@ -37,7 +37,7 @@ class Repository {
         }).then(() => {
           logger.debug(`Update of ${modelName} Succeeded`);
           return this.findById(modelName, modelId, populateOptions);
-          //Returning the latest doc from DB for consistency
+          // Returning the latest doc from DB for consistency
         });
     } else {
       model.createdAt = updatedAt;

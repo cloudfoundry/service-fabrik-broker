@@ -32,12 +32,12 @@ class RestoreService extends BaseDirectorService {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .getRestoreLastOperation(metadata.agent_ip)
-            .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-        default:
-          return metadata;
+          case 'processing':
+            return this.agent
+              .getRestoreLastOperation(metadata.agent_ip)
+              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+          default:
+            return metadata;
         }
       });
   }
@@ -65,9 +65,9 @@ class RestoreService extends BaseDirectorService {
       .tap(lastOperation => {
         if (isFinished(lastOperation.state)) {
           return Promise.all([this.agent
-              .getRestoreLogs(agent_ip), this.backupStore
-              .getRestoreFile(options)
-            ])
+            .getRestoreLogs(agent_ip), this.backupStore
+            .getRestoreFile(options)
+          ])
             .spread((logs, restoreMetadata) => {
               const restoreFinishiedAt = lastOperation.updated_at ? new Date(lastOperation.updated_at).toISOString() : new Date().toISOString();
               // following restoreDates will have structure
@@ -78,14 +78,14 @@ class RestoreService extends BaseDirectorService {
               // }
               let restoreDates = _.get(restoreMetadata, 'restore_dates') || {};
               let restoreDatesByState = _.get(restoreDates, lastOperation.state) || [];
-              //status check to prevent
+              // status check to prevent
               if (_.indexOf(restoreDatesByState, restoreFinishiedAt) !== -1) {
                 statusAlreadyChecked = true;
                 logger.debug(`Restore status check came once again even after finish for instance ${options.instance_guid}`);
               } else {
                 restoreDatesByState.push(restoreFinishiedAt);
               }
-              //following can be treated as extra processing
+              // following can be treated as extra processing
               // just to avoid duplicate entries in restore histroy
               // which might lead to quota full
               let uniqueDates = [...new Set(restoreDatesByState)];
@@ -143,7 +143,7 @@ class RestoreService extends BaseDirectorService {
 
     options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
     logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
-    //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+    // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
     return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
       maxAttempts: 3,
       minDelay: 500
@@ -196,9 +196,9 @@ class RestoreService extends BaseDirectorService {
             data.agent_ip = agent_ip;
             return this.backupStore
               .getRestoreFile(data)
-              .catch(errors.NotFound, (err) => {
+              .catch(errors.NotFound, err => {
                 logger.debug('Not found any restore data. May be first time.', err);
-                //Restore file might not be found, first time restore.
+                // Restore file might not be found, first time restore.
                 return;
               })
               .then(restoreMetadata => this.backupStore.putFile(_.assign(data, {
@@ -239,22 +239,22 @@ class RestoreService extends BaseDirectorService {
       })
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.agent
-            .abortRestore(metadata.agent_ip)
-            .then(() => eventmesh.apiServerClient.updateResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-              resourceId: abortOptions.restore_guid,
-              status: {
-                'state': CONST.OPERATION.ABORTING
-              }
-            }))
-            .return({
-              state: CONST.OPERATION.ABORTING
-            });
-        default:
-          return _.pick(metadata, 'state');
+          case 'processing':
+            return this.agent
+              .abortRestore(metadata.agent_ip)
+              .then(() => eventmesh.apiServerClient.updateResource({
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                resourceId: abortOptions.restore_guid,
+                status: {
+                  'state': CONST.OPERATION.ABORTING
+                }
+              }))
+              .return({
+                state: CONST.OPERATION.ABORTING
+              });
+          default:
+            return _.pick(metadata, 'state');
         }
       });
   }

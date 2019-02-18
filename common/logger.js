@@ -4,7 +4,7 @@ const _ = require('lodash');
 const winston = require('winston');
 const config = require('./config');
 /* jshint expr:true */
-require('winston-syslog').Syslog;
+require('winston-syslog').Syslog; // eslint-disable-line no-unused-expressions
 
 winston.emitErrs = true;
 
@@ -29,7 +29,7 @@ const transports = [
     level: config.sys_log_level || 'info',
     protocol: 'tcp4',
     eol: '\n',
-    formatter: (options) => `[${config.broker_name}] ${options.level.toUpperCase()}  ${options.message || ''}`
+    formatter: options => `[${config.broker_name}] ${options.level.toUpperCase()}  ${options.message || ''}`
   })
 ];
 

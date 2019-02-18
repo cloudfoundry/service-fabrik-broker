@@ -40,10 +40,10 @@ class ActionManager {
         logger.warn(`action ${action} for phase ${phase} undefined`);
         const otherPhases = _.chain(CONST.SERVICE_LIFE_CYCLE)
           .values()
-          .filter((value) => value !== phase)
+          .filter(value => value !== phase)
           .value();
         let scriptDefinedForOtherPhases = false;
-        _.each(otherPhases, (otherPhase) => {
+        _.each(otherPhases, otherPhase => {
           const actionScriptAbsPath = path.join(__dirname, 'sh', `${action}_${otherPhase}`);
           logger.info(`Script path .. ${actionScriptAbsPath}`);
           if (fs.existsSync(actionScriptAbsPath)) {
@@ -52,7 +52,7 @@ class ActionManager {
           }
         });
         if (scriptDefinedForOtherPhases) {
-          //action must be defined atleast for one phase.
+          // action must be defined atleast for one phase.
           return this.voidImplementation(action, phase, 'script');
         }
         throw new errors.NotImplemented(`Not implemented ${phase} for ${action}`);
@@ -71,12 +71,12 @@ class ActionManager {
 
   static executeActions(phase, actions, context) {
     const actionResponse = {};
-    return Promise.map(actions, (action) => {
-        logger.debug(`Looking up action ${action}`);
-        const actionHandler = this.getAction(phase, action);
-        return actionHandler(context)
-          .tap(resp => actionResponse[action] = resp);
-      })
+    return Promise.map(actions, action => {
+      logger.debug(`Looking up action ${action}`);
+      const actionHandler = this.getAction(phase, action);
+      return actionHandler(context)
+        .tap(resp => actionResponse[action] = resp);
+    })
       .return(actionResponse);
   }
 }

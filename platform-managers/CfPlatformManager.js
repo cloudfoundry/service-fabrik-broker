@@ -30,7 +30,7 @@ class CfPlatformManager extends BasePlatformManager {
     const targetContext = options.bind_resource;
     const sourceContext = options.context;
     if (_.isNil(targetContext) || _.isNil(sourceContext) || !_.has(targetContext, 'app_guid')) {
-      //service key creation requests are not part of sharing concept
+      // service key creation requests are not part of sharing concept
       return false;
     }
     return targetContext.space_guid !== sourceContext.space_guid;

@@ -29,9 +29,9 @@ class BackupReaperJob extends BaseJob {
         let guidsOfInstance = [];
         let guidsOfDeployments = [];
         return this.deleteOldBackup(job, {
-            backupStore: backupStoreForInstance,
-            isOob: false
-          })
+          backupStore: backupStoreForInstance,
+          isOob: false
+        })
           .tap(deletedGuidsOfInstance => guidsOfInstance = deletedGuidsOfInstance)
           .then(() => this.deleteOldBackup(job, {
             backupStore: backupStoreForOob,
@@ -47,9 +47,9 @@ class BackupReaperJob extends BaseJob {
             return deleteResponse;
           });
       })
-      .then((deleteResponse) => this.runSucceeded(deleteResponse, job, done))
+      .then(deleteResponse => this.runSucceeded(deleteResponse, job, done))
       .catch(err => {
-        logger.error(`Error occurred during BackupReaperJob start. More info:  `, err);
+        logger.error('Error occurred during BackupReaperJob start. More info:  ', err);
         this.runFailed(
           _.set(err, 'statusCode', `ERR_FABRIK_BACKUP_REAPER_FAILED_${_.get(err, 'statusCode', _.get(err, 'status', ''))}`), {}, job, done);
       });
@@ -57,10 +57,10 @@ class BackupReaperJob extends BaseJob {
 
   static isServiceInstanceDeleted(instanceId) {
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: instanceId
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: instanceId
+    })
       .then(resource => _.get(resource, 'metadata.deletionTimestamp') ? true : false)
       .catch(errors.NotFound, () => {
         logger.warn(`service instance : ${instanceId} deleted`);
@@ -95,26 +95,26 @@ class BackupReaperJob extends BaseJob {
     function deleteBackup(fileNameObject, deleteOptions) {
       ++numberOfBackups;
       logger.debug('Backup File info : ', fileNameObject);
-      //on-demand backups must be deleted after instance / OOB deployment deletion.
+      // on-demand backups must be deleted after instance / OOB deployment deletion.
       const logInfo = `Backup guid : ${fileNameObject.backup_guid} - backedup on : ${fileNameObject.started_at}`;
       deleteOptions = _.assign({
         backup_guid: fileNameObject.backup_guid,
         force: true,
         user: {
-          name: config.cf.username,
+          name: config.cf.username
         }
       }, deleteOptions);
-      const scheduledBackupOrServiceDeleted = (data) => {
+      const scheduledBackupOrServiceDeleted = data => {
         return Promise.try(() => {
           if (data.trigger !== CONST.BACKUP.TRIGGER.SCHEDULED) {
-            //it is an on-demand backup
-            //for optimization we are first checking whether for service insatnce_guid or deployment
-            //scheduled backup job is there. if present it will take care of on-demand
-            //backup deletion. if not will check with CF or BOSH respectively
+            // it is an on-demand backup
+            // for optimization we are first checking whether for service insatnce_guid or deployment
+            // scheduled backup job is there. if present it will take care of on-demand
+            // backup deletion. if not will check with CF or BOSH respectively
             return ScheduleManager
               .getSchedule(data.instance_guid || data.deployment_name,
                 data.instance_guid ? CONST.JOB.SCHEDULED_BACKUP : CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP)
-              .then((jobData) => {
+              .then(jobData => {
                 logger.debug('jobData of service instance or deployment scheduled backup: ', jobData);
                 return false;
               })
@@ -131,19 +131,19 @@ class BackupReaperJob extends BaseJob {
         });
       };
       logger.info(`-> Initiating delete of - ${logInfo}`);
-      //Adding a delay for delete requests as we dont want to overload the undelying infra with too many deletes at the same second
+      // Adding a delay for delete requests as we dont want to overload the undelying infra with too many deletes at the same second
       return Promise
         .delay(job.attrs.data.delete_delay * numberOfBackups)
         .then(() => {
           if (numberOfBackups % 30 === 0) {
-            //Incase of many stale backups, once every 30 seconds touch the job which keeps the lock on the job
+            // Incase of many stale backups, once every 30 seconds touch the job which keeps the lock on the job
             job.touch(() => {});
           }
           return Promise
             .try(() => {
               return backupStore.deleteBackupFile(deleteOptions, scheduledBackupOrServiceDeleted);
             })
-            .then((response) => {
+            .then(response => {
               if (response && response === CONST.ERR_CODES.PRE_CONDITION_NOT_MET) {
                 logger.info(`${fileNameObject.backup_guid} - Backup not deleted as precondition not met`);
                 return;
@@ -162,7 +162,7 @@ class BackupReaperJob extends BaseJob {
 
     return Promise
       .try(() => backupStore.listBackupFilenames(backupStartedBefore, listOptions))
-      .then((fileNames) =>
+      .then(fileNames =>
         Promise.map(fileNames, fileNameObject => {
           // Processing individual files after listing
           return Promise
@@ -170,7 +170,7 @@ class BackupReaperJob extends BaseJob {
             .then(backupData => {
               let deleteOptions = {};
               if (isOob === true) {
-                //Processing for 'OOB deployment' backup
+                // Processing for 'OOB deployment' backup
                 if (backupData.container) {
                   deleteOptions = _.assign(listOptions, {
                     container: backupData.container
@@ -183,13 +183,13 @@ class BackupReaperJob extends BaseJob {
                    */
                   return Promise.resolve();
                 }
-              } else { //isOob === false
-                //Processing for 'Service Instance' backups
+              } else { // isOob === false
+                // Processing for 'Service Instance' backups
                 deleteOptions = {
                   tenant_id: fileNameObject.tenant_id
                 };
               }
-              //Deleting each backups
+              // Deleting each backups
               return deleteBackup(fileNameObject, deleteOptions);
             });
         }));

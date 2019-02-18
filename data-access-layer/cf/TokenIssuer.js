@@ -84,7 +84,7 @@ class TokenIssuer {
 
   getAccessTokenBoshUAA(clientId, clientSecret) {
     if (!this.tokenInfo.accessTokenExpiresSoon) {
-      logger.debug(`reusing access token.`);
+      logger.debug('reusing access token.');
       return Promise.resolve(this.tokenInfo.accessToken);
     }
     logger.debug(`explicit request for access token being made to ${this.uaa.baseUrl}`);

@@ -21,11 +21,11 @@ class Task {
 
   static updateStatus(task, status) {
     return apiServerClient.updateResource({
-        resourceGroup: task.resourceGroup,
-        resourceType: task.resourceType,
-        resourceId: task.resourceId,
-        status: status
-      })
+      resourceGroup: task.resourceGroup,
+      resourceType: task.resourceType,
+      resourceId: task.resourceId,
+      status: status
+    })
       .tap(() => logger.info(`successfully updated state of task - ${task.resourceId} to ${JSON.stringify(status)}`));
   }
 }

@@ -24,16 +24,16 @@ class HttpServer {
         throw err;
       }
       switch (err.code) {
-      case 'EACCES':
-        logger.error(`${title}: Port ${port} requires elevated privileges`);
-        process.exit(1);
-        break;
-      case 'EADDRINUSE':
-        logger.error(`${title}: Port ${port} is already in use`);
-        process.exit(1);
-        break;
-      default:
-        throw err;
+        case 'EACCES':
+          logger.error(`${title}: Port ${port} requires elevated privileges`);
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          logger.error(`${title}: Port ${port} is already in use`);
+          process.exit(1);
+          break;
+        default:
+          throw err;
       }
     }
 
@@ -61,7 +61,7 @@ class HttpServer {
   static notifyShutDown() {
     logger.info('App shutting down shortly...');
     pubsub.publish(CONST.TOPIC.APP_SHUTTING_DOWN);
-    //Publish shutdown message to all & wait for 5 secs
+    // Publish shutdown message to all & wait for 5 secs
     setTimeout(() => {
       logger.info('ServiceFabrik shutdown complete');
       process.exit(2);
@@ -74,4 +74,4 @@ class HttpServer {
   }
 }
 module.exports = HttpServer;
-//https://github.com/nodejs/node-v0.x-archive/issues/5054
+// https://github.com/nodejs/node-v0.x-archive/issues/5054

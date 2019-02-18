@@ -26,7 +26,7 @@ class QuotaAPIClient extends HttpClient {
           }
         }, 200)
       )
-      .then((res) => {
+      .then(res => {
         return JSON.parse(res.body).quota;
       });
   }

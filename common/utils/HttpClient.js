@@ -26,7 +26,7 @@ class HttpClient {
     this.baseUrl = _.get(options, 'baseUrl');
     logger.silly('config.enable_circuit_breaker :', config.enable_circuit_breaker);
     if (config.enable_circuit_breaker) {
-      const httpCircuitConfig = _.get(config, `circuit_breaker.http`);
+      const httpCircuitConfig = _.get(config, 'circuit_breaker.http');
       if (httpCircuitConfig && httpCircuitConfig.apis) {
         this.buildCommandFactory(this.baseUrl);
       } else {
@@ -36,7 +36,7 @@ class HttpClient {
   }
 
   buildCommandFactory(baseUrl) {
-    const httpCircuitConfig = _.get(config, `circuit_breaker.http`);
+    const httpCircuitConfig = _.get(config, 'circuit_breaker.http');
     if (baseUrl && httpCircuitConfig) {
       const apiConfig = httpCircuitConfig.apis[baseUrl];
       if (apiConfig === undefined) {
@@ -140,41 +140,41 @@ class HttpClient {
         }
         let err;
         switch (res.statusCode) {
-        case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-          logger.warn(message, {
-            request: options,
-            response: result
-          });
-          err = new BadRequest(message);
-          break;
-        case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-          logger.info(message, {
-            request: options,
-            response: result
-          });
-          err = new NotFound(message);
-          break;
-        case CONST.HTTP_STATUS_CODE.CONFLICT:
-          logger.info(message, {
-            request: options,
-            response: result
-          });
-          err = new Conflict(message);
-          break;
-        case CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY:
-          logger.info(message, {
-            request: options,
-            response: result
-          });
-          err = new UnprocessableEntity(message);
-          break;
-        default:
-          logger.error(message, {
-            request: options,
-            response: result
-          });
-          err = new InternalServerError(message);
-          break;
+          case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+            logger.warn(message, {
+              request: options,
+              response: result
+            });
+            err = new BadRequest(message);
+            break;
+          case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+            logger.info(message, {
+              request: options,
+              response: result
+            });
+            err = new NotFound(message);
+            break;
+          case CONST.HTTP_STATUS_CODE.CONFLICT:
+            logger.info(message, {
+              request: options,
+              response: result
+            });
+            err = new Conflict(message);
+            break;
+          case CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY:
+            logger.info(message, {
+              request: options,
+              response: result
+            });
+            err = new UnprocessableEntity(message);
+            break;
+          default:
+            logger.error(message, {
+              request: options,
+              response: result
+            });
+            err = new InternalServerError(message);
+            break;
         }
         if (body && typeof body === 'object') {
           err.error = body;

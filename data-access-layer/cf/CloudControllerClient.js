@@ -35,8 +35,8 @@ class CloudControllerClient extends HttpClient {
     return Promise
       .try(() =>
         this.apiVersion ?
-        this.apiVersion :
-        this.getInfo().then(info => (this.apiVersion = info.api_version))
+          this.apiVersion :
+          this.getInfo().then(info => (this.apiVersion = info.api_version))
       );
   }
 
@@ -74,10 +74,10 @@ class CloudControllerClient extends HttpClient {
 
   getServiceInstanceByName(name, space_guid) {
     return this.getServiceInstances({
-        qs: {
-          q: [`space_guid:${space_guid}`, `name:${name}`]
-        }
-      })
+      qs: {
+        q: [`space_guid:${space_guid}`, `name:${name}`]
+      }
+    })
       .then(serviceInstances => {
         if (serviceInstances.length < 1) {
           logger.error(`Service instance with name ${name} not found in the space ${space_guid}`);
@@ -92,7 +92,7 @@ class CloudControllerClient extends HttpClient {
     const auth = options.auth || {};
     const parameters = options.parameters || null;
     const expectedResponseCode = options.isOperationSync ? 201 : 202;
-    //CC returns 201 for SYNC and 202 for ASYNC operations.
+    // CC returns 201 for SYNC and 202 for ASYNC operations.
     return Promise
       .try(() => auth.bearer || this.tokenIssuer.getAccessToken())
       .then(accessToken => this

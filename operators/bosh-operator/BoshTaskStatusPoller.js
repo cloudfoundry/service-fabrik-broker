@@ -47,7 +47,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
           })
         ]))
         .catch(ServiceInstanceNotFound, err => {
-          logger.error(`Error occured while getting last operation`, err);
+          logger.error('Error occured while getting last operation', err);
           this.clearPoller(instanceId, intervalId);
           if (resourceBody.status.response.type === 'delete') {
             return eventmesh.apiServerClient.deleteResource({
