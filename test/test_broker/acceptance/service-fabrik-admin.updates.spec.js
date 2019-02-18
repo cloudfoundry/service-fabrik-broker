@@ -8,6 +8,7 @@ const CONST = require('../../../common/constants');
 const ServiceFabrikAdminController = require('../../../api-controllers/ServiceFabrikAdminController');
 const APIServerClient = require('../../../data-access-layer/eventmesh/ApiServerClient');
 const numOfInstances = 2 * config.mongodb.record_max_fetch_count;
+const ScheduleManager = require('../../../jobs');
 
 const getInstance = (instanceId) => {
   return Promise.resolve({
@@ -48,6 +49,30 @@ class Repository {
 
 describe('service-fabrik-admin', function () {
   const base_url = '/admin';
+
+  describe('#runNow', function () {
+    const dateNow = new Date();
+    let jobResponse = {
+      name: `fakeJobName`,
+      lastRunAt: dateNow,
+    };
+
+    let sandbox = sinon.createSandbox();
+    let runNowStub = sandbox.stub(ScheduleManager, 'runNow').callsFake(() => Promise.resolve(jobResponse));
+    it('should run job once', function () {
+      return chai
+        .request(app)
+        .post(`${base_url}/scheduler/MeterInstance/runNow`)
+        .set('Accept', 'application/json')
+        .auth(config.username, config.password)
+        .catch(err => err.response)
+        .then(res => {
+          expect(runNowStub).to.be.calledOnce; // jshint ignore:line
+          expect(res).to.have.status(200);
+          expect(res.body.name).to.equal(jobResponse.name);
+        });
+    });
+  });
 
   describe('#getScheduledUpdateInstances', function () {
 

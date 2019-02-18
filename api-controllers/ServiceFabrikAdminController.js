@@ -753,6 +753,13 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
+  runNow(req, res) {
+    logger.info(`Running job: ${req.params.job_name}`);
+    return ScheduleManager
+      .runNow(`job_${req.params.job_name}_now`, req.params.job_name, {}, req.user)
+      .then(body => res.status(200).send(body));
+  }
+
   createUpdateConfig(req, res) {
     assert.ok(req.query.key, 'Key parameter must be defined for the Create Config request');
     assert.ok(req.query.value, 'Value parameter must be defined for the Create Config request');
