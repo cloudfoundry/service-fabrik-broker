@@ -2,6 +2,9 @@
 test: fmt lint vet
 	go test -coverpkg=./pkg/webhooks/... -coverprofile=coverage.txt ./pkg/webhooks/manager/... -log_dir=${PWD}/logs
 
+coverage: test
+	go tool cover -html=./coverage.txt
+
 fmt:
 	go fmt ./pkg/webhooks/manager/... ./pkg/apis/...
 
