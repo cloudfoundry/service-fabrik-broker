@@ -1,6 +1,6 @@
 'use strict';
 
-var moment = require('moment-timezone');
+var moment = require('moment-timezone'); // eslint-disable-line no-var
 const errors = require('../common/errors');
 const logger = require('../common/logger');
 const FabrikBaseController = require('./FabrikBaseController');
@@ -34,7 +34,7 @@ class ServiceFabrikReportController extends FabrikBaseController {
         .send(body));
   }
 
-  //Method for getting backup instance ids
+  // Method for getting backup instance ids
   getScheduledBackupInstances(req, res) {
     if (req.query.start_time && !moment(req.query.start_time, CONST.REPORT_BACKUP.INPUT_DATE_FORMAT, true).isValid()) {
       throw new BadRequest(`Invalid start date, required format ${CONST.REPORT_BACKUP.INPUT_DATE_FORMAT}`);

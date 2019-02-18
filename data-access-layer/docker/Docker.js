@@ -88,8 +88,8 @@ class Docker {
       .map(images, image => this.client
         .createImageAsync(image)
         .then(stream => this.client.followProgressAsync(stream)), {
-          concurrency: 7
-        })
+        concurrency: 7
+      })
       .then(results => _
         .chain(results)
         .map(events => _.last(events))

@@ -49,7 +49,7 @@ class DbConnectionManager {
         });
         pubsub.subscribe(CONST.TOPIC.APP_SHUTTING_DOWN, () => this.shutDown('App Shutdown'));
       });
-      mongoose.connection.on('error', (err) => {
+      mongoose.connection.on('error', err => {
         logger.error('Mongoose connection error: ' + err);
         if (this.dbConnectionStatus !== CONNECTION_STATE.SHUTTING_DOWN) {
           this.dbConnectionStatus = CONNECTION_STATE.DISCONNECTED;

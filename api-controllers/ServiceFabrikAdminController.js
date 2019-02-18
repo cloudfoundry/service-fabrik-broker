@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const assert = require('assert');
-var moment = require('moment-timezone');
+var moment = require('moment-timezone'); // eslint-disable-line no-var
 const catalog = require('../common/models/catalog');
 const errors = require('../common/errors');
 const logger = require('../common/logger');
@@ -85,10 +85,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       /* TODO: Conditional statement to fetch resource options below is needed to be backwards compatible 
        as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
       return eventmesh.apiServerClient.getResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: instanceId
-        })
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceId
+      })
         .catch(errors.NotFound, () => undefined)
         .then(resource => _.get(resource, 'status.appliedOptions') ? _.get(resource, 'status.appliedOptions') : _.get(resource, 'spec.options'))
         .then(resource => {
@@ -122,9 +122,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const deploymentName = instanceDetails.deployment_name;
     logger.debug(`Getting outdated diff for  :  ${deploymentName}`);
     return DirectorService.createInstance(instanceDetails.instance_id, {
-        plan_id: plan.id,
-        context: tenantInfo.context
-      })
+      plan_id: plan.id,
+      context: tenantInfo.context
+    })
       .then(directorInstance => directorInstance.diffManifest(deploymentName, tenantInfo))
       .tap(result => logger.debug(`Diff of manifest for ${deploymentName} is ${result.diff}`))
       .then(result => result.diff);
@@ -223,32 +223,32 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const deploymentName = req.params.name;
     const plan = catalog.getPlan(req.query.plan_id);
     Promise.try(() => DirectorService.createInstance(this.getInstanceId(deploymentName), {
-        plan_id: plan.id
-      }))
+      plan_id: plan.id
+    }))
       .then(directorService =>
         eventmesh.apiServerClient.getPlatformContext({
           resourceGroup: plan.resourceGroup,
           resourceType: plan.resourceType,
           resourceId: this.getInstanceId(deploymentName)
         })
-        .then(context => {
-          const opts = {};
-          opts.context = context;
-          return Promise
-            .all([
-              this.director.getDeploymentVmsVitals(deploymentName),
-              this.director.getTasks({
-                deployment: deploymentName
-              }),
-              directorService.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
-            ])
-            .spread((vms, tasks, diff) => ({
-              name: deploymentName,
-              diff: diff,
-              tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
-              vms: _.filter(vms, vm => !_.isNil(vm.vitals))
-            }));
-        })
+          .then(context => {
+            const opts = {};
+            opts.context = context;
+            return Promise
+              .all([
+                this.director.getDeploymentVmsVitals(deploymentName),
+                this.director.getTasks({
+                  deployment: deploymentName
+                }),
+                directorService.diffManifest(deploymentName, opts).then(utils.unifyDiffResult)
+              ])
+              .spread((vms, tasks, diff) => ({
+                name: deploymentName,
+                diff: diff,
+                tasks: _.filter(tasks, task => !_.startsWith(task.description, 'snapshot')),
+                vms: _.filter(vms, vm => !_.isNil(vm.vitals))
+              }));
+          })
       )
       .then(locals => {
         res.format({
@@ -347,10 +347,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           return false;
         }
         return eventmesh.apiServerClient.getPlatformContext({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-            resourceId: this.getInstanceId(deployment.name)
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          resourceId: this.getInstanceId(deployment.name)
+        })
           .then(context => {
             const opts = {};
             opts.context = context;
@@ -402,11 +402,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .map(instance => {
             const plan = getPlanByGuid(plans, instance.entity.service_plan_guid);
             return Promise.try(() => DirectorService.createInstance(_.get(instance, 'metadata.guid'), {
-                plan_id: plan.id,
-                context: {
-                  platform: CONST.PLATFORM.CF
-                }
-              }))
+              plan_id: plan.id,
+              context: {
+                platform: CONST.PLATFORM.CF
+              }
+            }))
               .then(service => _
                 .chain(instance)
                 .set('directorService', service)
@@ -592,10 +592,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const boshDirectorName = req.body.bosh_director;
     const boshDirector = bosh.director;
     return boshDirector.getAgentPropertiesFromManifest(req.params.name)
-      .then((deploymentAgentProps) => {
+      .then(deploymentAgentProps => {
         const deploymentAgentContainer = deploymentAgentProps.provider.container;
         if (_.isEmpty(deploymentAgentContainer)) {
-          /*if the deployment is deleted, there won't be any clue where the backup was stored by agent.
+          /* if the deployment is deleted, there won't be any clue where the backup was stored by agent.
           This case is unlike service instance based backup where we had service id ,
           from that we can figure out the container/bucket name.
           But here we don't have that info. that's why container/bucket is required.*/
@@ -611,11 +611,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
           .value();
 
         return ScheduleManager.schedule(
-            req.params.name,
-            CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
-            req.body.repeatInterval,
-            data,
-            req.user)
+          req.params.name,
+          CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP,
+          req.body.repeatInterval,
+          data,
+          req.user)
           .then(body => res
             .status(201)
             .send(body));
@@ -658,7 +658,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
-  //Method for getting backup instance ids
+  // Method for getting backup instance ids
   getScheduledBackupInstances(req, res) {
     if (req.query.start_time && !moment(req.query.start_time, CONST.REPORT_BACKUP.INPUT_DATE_FORMAT, true).isValid()) {
       throw new BadRequest(`Invalid start date, required format ${CONST.REPORT_BACKUP.INPUT_DATE_FORMAT}`);
@@ -744,7 +744,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .send(body));
   }
 
-  //Method for getting  instance ids with updates scheduled
+  // Method for getting  instance ids with updates scheduled
   getScheduledUpdateInstances(req, res) {
     logger.info('Getting scheduled update instance list...');
     return this.getInstancesWithUpdateScheduled()
@@ -792,7 +792,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
         .set('offset', offset)
         .value();
       return Repository.search(modelName, searchCriteria, paginateOpts)
-        .then((result) => {
+        .then(result => {
           instanceList.push.apply(instanceList, _.map(result.list, 'data'));
           return getInstancesWithUpdateScheduled(instanceList, result.nextOffset, modelName, searchCriteria, paginateOpts);
         });

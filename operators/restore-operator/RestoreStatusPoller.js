@@ -50,13 +50,13 @@ class RestoreStatusPoller extends BaseStatusPoller {
             .then(() => {
               if (utils.isServiceFabrikOperationFinished(operationStatusResponse.state)) {
                 return eventmesh.apiServerClient.patchResource({
-                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-                    resourceId: changedOptions.restore_guid,
-                    status: {
-                      state: operationStatusResponse.state
-                    }
-                  })
+                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+                  resourceId: changedOptions.restore_guid,
+                  status: {
+                    state: operationStatusResponse.state
+                  }
+                })
                   .then(() => {
                     logger.debug('Clearing Restore Task Poller:', resourceBody.metadata.name);
                     this.clearPoller(resourceBody.metadata.name, intervalId);

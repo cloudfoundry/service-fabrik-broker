@@ -61,8 +61,8 @@ class BackupStore {
             resolve();
           })
           .catch(err => reject(err));
-        //Ideally not catching the error must just bubble the error up in the promise chain.
-        //However this is not happening for wrapped promises in this recursion hence this explicit rejection.
+        // Ideally not catching the error must just bubble the error up in the promise chain.
+        // However this is not happening for wrapped promises in this recursion hence this explicit rejection.
       });
       return promise;
     }
@@ -70,11 +70,11 @@ class BackupStore {
     return fetchFiles()
       .then(() =>
         _
-        .chain(fileList)
-        .map(file => dontParseFilename ? file : this.filename.parse(file.name))
-        .filter(predicate)
-        .sortBy(iteratees)
-        .value());
+          .chain(fileList)
+          .map(file => dontParseFilename ? file : this.filename.parse(file.name))
+          .filter(predicate)
+          .sortBy(iteratees)
+          .value());
   }
 
   getFileNamePrefix() {
@@ -138,7 +138,7 @@ class BackupStore {
           .assign(newData)
           .set('finished_at',
             _.get(newData, 'finished_at') ?
-            new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
+              new Date(_.get(newData, 'finished_at')).toISOString() : new Date().toISOString())
           .value()
         )
       );
@@ -174,7 +174,7 @@ class BackupStore {
             return predicate(data);
           }
           return true;
-        }).then((toBeDeleted) => {
+        }).then(toBeDeleted => {
           if (!toBeDeleted) {
             return CONST.ERR_CODES.PRE_CONDITION_NOT_MET;
           }
@@ -222,7 +222,7 @@ class BackupStore {
             throw new Forbidden(`Delete of scheduled backup not permitted within retention period of ${config.backup.retention_period_in_days} days`);
           }
           if (options.user.name !== config.cf.username) {
-            throw new Forbidden(`Permission denined. Scheduled backups can only be deleted by System User`);
+            throw new Forbidden('Permission denined. Scheduled backups can only be deleted by System User');
           }
         }
         return this.cloudProvider
@@ -238,7 +238,7 @@ class BackupStore {
 
     function getPredicate(isoDate) {
       return function predicate(filenameobject) {
-        //backUpStartedBefore defaults to current timestamp as part of isoDate function.
+        // backUpStartedBefore defaults to current timestamp as part of isoDate function.
         return (filenameobject.operation === 'backup') &&
           _.lt(filenameobject.started_at, isoDate);
       };
@@ -263,7 +263,7 @@ class BackupStore {
 
     function getPredicate(isoDate) {
       return function predicate(filenameobject) {
-        //backUpStartedBefore defaults to current timestamp as part of isoDate function.
+        // backUpStartedBefore defaults to current timestamp as part of isoDate function.
         return _.lt(filenameobject.started_at, isoDate);
       };
     }
@@ -280,7 +280,7 @@ class BackupStore {
 
     function getPredicate(isoDate) {
       return function predicate(filenameobject) {
-        //transactionLogsDeletionStartDate defaults to current timestamp as part of isoDate function.
+        // transactionLogsDeletionStartDate defaults to current timestamp as part of isoDate function.
         return _.lt(new Date(filenameobject.lastModified).toISOString(), isoDate);
       };
     }
@@ -389,7 +389,7 @@ class Filename {
   }
 
   isoDate(date) {
-    //returns ISO Date string stripping out seconds
+    // returns ISO Date string stripping out seconds
     return new Date(date || Date.now())
       .toISOString()
       .replace(/\.\d*/, '');

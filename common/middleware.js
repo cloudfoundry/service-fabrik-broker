@@ -44,8 +44,8 @@ exports.csp = function () {
   const contentSecurityPolicy = formatContentSecurityPolicy({
     'default-src': [NONE],
     'script-src': [SELF],
-    'style-src': [SELF, `https://fonts.googleapis.com`],
-    'font-src': [SELF, `https://fonts.gstatic.com`],
+    'style-src': [SELF, 'https://fonts.googleapis.com'],
+    'font-src': [SELF, 'https://fonts.gstatic.com'],
     'img-src': [SELF]
   });
   return function (req, res, next) {
@@ -114,15 +114,15 @@ exports.requireEventLogging = function (appConfig, appType) {
   const eventsLogInterceptor = utils.initializeEventListener(appConfig, appType);
   return interceptor((req, res) => ({
     isInterceptable: () => true,
-    //intercept all responses
-    //Filtering is done in the eventlogging interceptor based on event config
+    // intercept all responses
+    // Filtering is done in the eventlogging interceptor based on event config
 
     intercept: (body, send) => send(body),
-    //the above dummy intercept is required for HTTP redirects
-    //If the above is not provided, they throw exceptions for redirects at client end
+    // the above dummy intercept is required for HTTP redirects
+    // If the above is not provided, they throw exceptions for redirects at client end
 
-    afterSend: (body) => {
-      //after response is sent, log the event. This is invoked in process.nextTick
+    afterSend: body => {
+      // after response is sent, log the event. This is invoked in process.nextTick
       try {
         const responseContentType = res.get('Content-Type') || '';
         if (responseContentType.indexOf('application/json') !== -1) {
@@ -132,7 +132,7 @@ exports.requireEventLogging = function (appConfig, appType) {
         logger.debug('Done processing request: ', req.__route);
       } catch (err) {
         logger.error('Error occurred while logging event :', err);
-        //Just log. Even if event logging has issues, should not affect main eventloop.
+        // Just log. Even if event logging has issues, should not affect main eventloop.
       }
     }
   }));

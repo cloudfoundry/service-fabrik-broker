@@ -36,7 +36,7 @@ class EventLogRiemannClient {
           this._processOutStandingRequest();
         }
       });
-      this.riemannClient.on('error', (err) => {
+      this.riemannClient.on('error', err => {
         if (this.options.show_errors) {
           logger.warn('error occurred with riemann ', err);
         }
@@ -51,8 +51,8 @@ class EventLogRiemannClient {
       if (this.options.show_errors) {
         logger.warn('Error initializing Riemann', err);
       }
-      //Just log & do not propogate errors due to event logging
-      //Event logging should in no way affect main event loop
+      // Just log & do not propogate errors due to event logging
+      // Event logging should in no way affect main event loop
       return;
     }
   }
@@ -71,7 +71,7 @@ class EventLogRiemannClient {
     try {
       if (data.event && !this.skipBasedOnHttpResponseCodes(_.get(data, 'event.response.status'), _.get(config, 'riemann.http_status_codes_to_be_skipped'))) {
         this.logEvent(data.event, data.options);
-        //Added to log additional event with instance id or backup guid suffix to the name to provide more details to email alerts
+        // Added to log additional event with instance id or backup guid suffix to the name to provide more details to email alerts
         if (_.get(config, 'riemann.log_additional_event', true) && typeof data.event.request === 'object' && this.suffixGuidsToEventName(data.event)) {
           this.logEvent(data.event, data.options);
         }
@@ -85,7 +85,7 @@ class EventLogRiemannClient {
    * This method suffixes the instance_id if available or backup guid if available or instance_id if available or service_name if available to event name to provide more information in the email alerts
    */
   suffixGuidsToEventName(eventInfo) {
-    var eventName = eventInfo.eventName;
+    var eventName = eventInfo.eventName; // eslint-disable-line no-var
     const instanceId = _.get(eventInfo, 'request.instance_id');
     const backupGuid = _.get(eventInfo, 'request.backup_guid');
     const appGuid = _.get(eventInfo, 'request.app_guid');
@@ -117,7 +117,7 @@ class EventLogRiemannClient {
   }
 
   logEvent(eventInfo, options) {
-    //Transforming app specific event Information to Riemann specific format.
+    // Transforming app specific event Information to Riemann specific format.
     const info = _
       .chain(eventInfo)
       .pick('metric', 'state', 'description', 'tags')
@@ -180,13 +180,13 @@ class EventLogRiemannClient {
     if (this.QUEUED_REQUESTS.length >= CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE) {
       logger.error(`Exceeded max queue size ${CONST.EVENT_LOG_RIEMANN_CLIENT.MAX_QUEUE_SIZE} for outstanding riemann events, dequeue first event`);
       const request = this._dequeRequest();
-      logger.error(`Request discarded : `, request.info);
+      logger.error('Request discarded : ', request.info);
     }
     this.QUEUED_REQUESTS.push({
       info: info,
       attempt: attempt
     });
-    logger.debug(`Request queued : `, info);
+    logger.debug('Request queued : ', info);
   }
 
   _dequeRequest() {
@@ -202,9 +202,9 @@ class EventLogRiemannClient {
     while (this._isRequestQueueNonEmpty()) {
       const request = this._dequeRequest();
       if (request !== null) {
-        logger.debug(`Processing queued up request: `, request.info);
+        logger.debug('Processing queued up request: ', request.info);
         if (!this.sendEvent(request.info, request.attempt)) {
-          break; //Incase of an exception during retry. Stop processing queue items as all of them end up going back in queue.
+          break; // Incase of an exception during retry. Stop processing queue items as all of them end up going back in queue.
         }
       }
     }

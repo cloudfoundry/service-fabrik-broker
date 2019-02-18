@@ -81,20 +81,20 @@ class ServiceFabrikApiController extends FabrikBaseController {
     ];
     const requiresAdminScope = this.getConfigPropertyValue('external.api_requires_admin_scope', false);
     switch (_.toUpper(req.method)) {
-    case 'GET':
-      scopes.push('cloud_controller.admin_read_only');
-      if (!requiresAdminScope) {
-        scopes.push(
-          'cloud_controller.read',
-          'cloud_controller_service_permissions.read'
-        );
-      }
-      break;
-    default:
-      if (!requiresAdminScope) {
-        scopes.push('cloud_controller.write');
-      }
-      break;
+      case 'GET':
+        scopes.push('cloud_controller.admin_read_only');
+        if (!requiresAdminScope) {
+          scopes.push(
+            'cloud_controller.read',
+            'cloud_controller_service_permissions.read'
+          );
+        }
+        break;
+      default:
+        if (!requiresAdminScope) {
+          scopes.push('cloud_controller.write');
+        }
+        break;
     }
     const [scheme, bearer] = _
       .chain(req)
@@ -134,12 +134,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   addResourceDetailsInRequest(req, res) {
     /* jshint unused:false */
-    //TODO: revisit this if default resource type changes for extension APIs
+    // TODO: revisit this if default resource type changes for extension APIs
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: req.params.instance_id
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: req.params.instance_id
+    })
       .then(resource => {
         let resourceOptions = _.isEmpty(_.get(resource, 'status.appliedOptions')) ? _.get(resource, 'spec.options') :
           _.get(resource, 'status.appliedOptions');
@@ -179,7 +179,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
         _.set(req, 'entity.platform', platform);
 
-        /*Following statement for backward compatibility*/
+        /* Following statement for backward compatibility*/
         const tenantId = _.get(req, 'body.space_guid') || _.get(req, 'query.space_guid') || _.get(req, 'query.tenant_id') ||
           _.get(req, 'body.context.space_guid') || _.get(req, 'body.context.namespace');
 
@@ -199,12 +199,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
           logger.info(`User ${user.email} has cloud_controller.admin scope. SpaceDeveloper validation will be skipped`);
           return;
         }
-        //TODO: Need to handle this separately for k8s consumption
+        // TODO: Need to handle this separately for k8s consumption
         return this.verifySpaceDevPermissions({
-            spaceGuid: space_guid,
-            user: user,
-            auth: opts
-          })
+          spaceGuid: space_guid,
+          user: user,
+          auth: opts
+        })
           .then(isSpaceDeveloper => {
             if (httpMethod !== CONST.HTTP_METHOD.GET && !isSpaceDeveloper) {
               throw new Forbidden(insufficientPermissions);
@@ -248,12 +248,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getInfo(req, res) {
     let allDockerImagesRetrieved = true;
     return Promise.try(() => {
-        if (config.enable_swarm_manager) {
-          return docker
-            .getMissingImages()
-            .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
-        }
-      })
+      if (config.enable_swarm_manager) {
+        return docker
+          .getMissingImages()
+          .then(missingImages => allDockerImagesRetrieved = _.isEmpty(missingImages));
+      }
+    })
       .catch(err => {
         allDockerImagesRetrieved = false;
         logger.info('error occurred while fetching docker images', err);
@@ -305,16 +305,16 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  //TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
+  // TODO: Need to be revisited as these apis should be agnostic to resourceGroup and Type
 
   getBackupOptions(backupGuid, req) {
     /* TODO: Conditional statements to fetch context and planId below is needed to be backwards compatible 
      as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: req.params.instance_id
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: req.params.instance_id
+    })
       .then(resource => {
         const context = req.body.context || _.get(resource, 'status.appliedOptions.context') || _.get(resource, 'spec.options.context');
         const planId = req.body.plan_id || _.get(resource, 'status.appliedOptions.plan_id') || _.get(resource, 'spec.options.plan_id');
@@ -335,10 +335,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
   getRestoreOptions(req, metadata) {
     const planDetails = catalog.getPlan(metadata.plan_id);
     return Promise.try(() => req.body.context ? req.body.context : eventmesh.apiServerClient.getPlatformContext({
-        resourceGroup: planDetails.resourceGroup,
-        resourceType: planDetails.resourceType,
-        resourceId: req.params.instance_id
-      }))
+      resourceGroup: planDetails.resourceGroup,
+      resourceType: planDetails.resourceType,
+      resourceId: req.params.instance_id
+    }))
       .then(context => {
         const restoreOptions = {
           plan_id: metadata.plan_id,
@@ -347,11 +347,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
-              backup: _.pick(metadata, 'type', 'secret')
-            },
-            req.body, {
-              backup_guid: _.get(metadata, 'backup_guid')
-            }),
+            backup: _.pick(metadata, 'type', 'secret')
+          },
+          req.body, {
+            backup_guid: _.get(metadata, 'backup_guid')
+          }),
           username: req.user.name
         };
         logger.debug('Restore options:', restoreOptions);
@@ -377,13 +377,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
             logger.info(`Triggering backup with options: ${JSON.stringify(backupOptions)}`);
             // Acquire read lock
             return lockManager.lock(req.params.instance_id, {
-                lockedResourceDetails: {
-                  resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-                  resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                  resourceId: backupGuid,
-                  operation: CONST.OPERATION_TYPE.BACKUP
-                }
-              })
+              lockedResourceDetails: {
+                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                resourceId: backupGuid,
+                operation: CONST.OPERATION_TYPE.BACKUP
+              }
+            })
               .then(lockResourceId => {
                 lockedDeployment = true;
                 lockId = lockResourceId;
@@ -515,29 +515,29 @@ class ServiceFabrikApiController extends FabrikBaseController {
             const dateTillRestoreAllowed = Date.now() - 1000 * 60 * 60 * 24 * config.backup.restore_history_days;
             return _.lt(new Date(date), new Date(dateTillRestoreAllowed));
           });
-          //after removing all older restore, 'restoreDates' contains dates within allowed time
+          // after removing all older restore, 'restoreDates' contains dates within allowed time
           // dates count should be less than 'config.backup.num_of_allowed_restores'
           if (restoreDates.length >= config.backup.num_of_allowed_restores) {
             throw new BadRequest(`Restore allowed only ${config.backup.num_of_allowed_restores} times within ${config.backup.restore_history_days} days.`);
           }
         }
       })
-      .catch(NotFound, (err) => {
+      .catch(NotFound, err => {
         logger.debug('Not found any restore data.', err);
-        //Restore file might not be found, first time restore.
+        // Restore file might not be found, first time restore.
         return true;
       });
   }
 
   getSpaceGuidOfBackup(backupGuid) {
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: backupGuid
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      resourceId: backupGuid
+    })
       .then(resource => _.get(resource, 'spec.options.context.space_guid') ||
         _.get(resource, 'spec.options.args.space_guid'));
-    //TODO: This will need to be handled while supporting BnR for instances from k8s platform
+    // TODO: This will need to be handled while supporting BnR for instances from k8s platform
   }
 
   startRestore(req, res) {
@@ -577,10 +577,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         let isCloudControllerAdmin = _.get(req, 'cloudControllerScopes').includes('cloud_controller.admin') ? true : false;
         if (backupSpaceGuid !== tenantId && !isCloudControllerAdmin) {
           return this.verifySpaceDevPermissions({
-              spaceGuid: backupSpaceGuid,
-              user: req.user,
-              auth: _.pick(req, 'auth')
-            })
+            spaceGuid: backupSpaceGuid,
+            user: req.user,
+            auth: _.pick(req, 'auth')
+          })
             .then(isSpaceDeveloper => {
               if (!isSpaceDeveloper) {
                 throw new Forbidden(`User '${req.user.name}' is not a space-developer for space with guid ${backupSpaceGuid}`);
@@ -637,18 +637,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .then(restoreOptions => {
           logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
           return lockManager.lock(req.params.instance_id, {
-              lockedResourceDetails: {
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-                resourceId: restoreGuid,
-                operation: CONST.OPERATION_TYPE.RESTORE
-              }
-            })
+            lockedResourceDetails: {
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+              resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+              resourceId: restoreGuid,
+              operation: CONST.OPERATION_TYPE.RESTORE
+            }
+          })
             .then(() => {
               lockedDeployment = true;
               return eventmesh.apiServerClient.createResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                //TODO read from plan details
+                // TODO read from plan details
                 resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
                 resourceId: restoreGuid,
                 options: restoreOptions,
@@ -662,7 +662,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         })
       )
       .then(() => {
-        //check if resource exist, else create and then update
+        // check if resource exist, else create and then update
         return eventmesh.apiServerClient.updateLastOperationValue({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
@@ -800,10 +800,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .try(() => {
         if (options.instance_id && !options.plan_id) {
           return eventmesh.apiServerClient.getResource({
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-              resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-              resourceId: options.instance_id
-            })
+            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+            resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+            resourceId: options.instance_id
+          })
             .then(resource => {
               /* TODO: Conditional statement to fetch plan_id below is needed to be backwards compatible       
               as appliedOptions was added afterwards. Should be removed once all the older resources are updated. */
@@ -833,10 +833,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         const options = _.pick(req.query, 'service_id', 'plan_id');
         options.tenant_id = req.entity.tenant_id;
         switch (req.params.operation) {
-        case 'backup':
-          return this.backupStore.listLastBackupFiles(options);
-        case 'restore':
-          return this.backupStore.listLastRestoreFiles(options);
+          case 'backup':
+            return this.backupStore.listLastBackupFiles(options);
+          case 'restore':
+            return this.backupStore.listLastRestoreFiles(options);
         }
         assert.ok(false, 'List result of last operation is only possible for \'backup\' or \'restore\'');
       })
@@ -883,7 +883,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         }
       })
       // Migration Code: to be removed 
-      .catch(NotFound, (err) => {
+      .catch(NotFound, err => {
         // if not found in apiserver delete from blobstore
         logger.info('Backup metadata not found in apiserver, checking blobstore. Error message:', err.message);
         return this.backupStore.deleteBackupFile(options);
@@ -895,7 +895,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date()
       }))
-      //delete resource from apiserver here if state is deleted 
+      // delete resource from apiserver here if state is deleted 
       .then(() => eventmesh.apiServerClient.deleteResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
@@ -934,7 +934,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
         let platform = utils.getPlatformFromContext(req.body.context);
         if (platform === CONST.PLATFORM.CF) {
-          //Fetch details needed for backup report.
+          // Fetch details needed for backup report.
           return this.cloudController.getOrgAndSpaceDetails(data.instance_id, data.tenant_id)
             .then(space => {
               _.chain(data)
@@ -944,21 +944,21 @@ class ServiceFabrikApiController extends FabrikBaseController {
                 .value();
             });
         } else if (platform === CONST.PLATFORM.K8S) {
-          //TODO: Add K8S specific paramaters in 'data' which will appear in backup report.
+          // TODO: Add K8S specific paramaters in 'data' which will appear in backup report.
           return;
         }
       })
       .then(() =>
         ScheduleManager
-        .schedule(
-          req.params.instance_id,
-          CONST.JOB.SCHEDULED_BACKUP,
-          req.body.repeatInterval,
-          data,
-          req.user)
-        .then(body => res
-          .status(CONST.HTTP_STATUS_CODE.CREATED)
-          .send(body))
+          .schedule(
+            req.params.instance_id,
+            CONST.JOB.SCHEDULED_BACKUP,
+            req.body.repeatInterval,
+            data,
+            req.user)
+          .then(body => res
+            .status(CONST.HTTP_STATUS_CODE.CREATED)
+            .send(body))
       );
   }
 
@@ -975,7 +975,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   cancelScheduledBackup(req, res) {
     if (!_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
-      throw new Forbidden(`Permission denied. Cancelling of backups can only be done by user with cloud_controller.admin scope.`);
+      throw new Forbidden('Permission denied. Cancelling of backups can only be done by user with cloud_controller.admin scope.');
     }
     return Promise
       .try(() => this.setPlan(req))
@@ -992,13 +992,13 @@ class ServiceFabrikApiController extends FabrikBaseController {
     let platform = utils.getPlatformFromContext(req.body.context);
     return Promise.try(() => {
       switch (platform) {
-      case CONST.PLATFORM.CF:
-        return this.cloudController
-          .getServiceInstance(instanceId)
-          .then(body => _.set(req, 'entity.name', body.entity.name));
-      case CONST.PLATFORM.K8S:
+        case CONST.PLATFORM.CF:
+          return this.cloudController
+            .getServiceInstance(instanceId)
+            .then(body => _.set(req, 'entity.name', body.entity.name));
+        case CONST.PLATFORM.K8S:
         /* TODO: Needs to handled */
-        return;
+          return;
       }
     });
   }
@@ -1022,7 +1022,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .assign(_.omit(req.body, ['repeatInterval', 'runImmediately']))
         .value()
       )
-      .then((jobData) => ScheduleManager
+      .then(jobData => ScheduleManager
         .schedule(req.params.instance_id,
           CONST.JOB.SERVICE_INSTANCE_UPDATE,
           req.body.repeatInterval,
@@ -1043,10 +1043,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         logger.info(`Instance Id: ${req.params.instance_id} - check outdated status - ${checkUpdateRequired}`);
         if (checkUpdateRequired) {
           return eventmesh.apiServerClient.getPlatformContext({
-              resourceGroup: req.plan.resourceGroup,
-              resourceType: req.plan.resourceType,
-              resourceId: req.params.instance_id
-            })
+            resourceGroup: req.plan.resourceGroup,
+            resourceType: req.plan.resourceType,
+            resourceId: req.params.instance_id
+          })
             .tap(ctxt => context = ctxt)
             .then(platformContext => DirectorService.createInstance(req.params.instance_id, {
               plan_id: req.plan.id,
@@ -1076,7 +1076,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   cancelScheduledUpdate(req, res) {
     if (!_.get(req, 'cloudControllerScopes').includes('cloud_controller.admin')) {
-      throw new Forbidden(`Permission denied. Cancelling of scheduled updates can only be done by user with cloud_controller.admin scope.`);
+      throw new Forbidden('Permission denied. Cancelling of scheduled updates can only be done by user with cloud_controller.admin scope.');
     }
     // Cancel repeat and all onetime jobs as well
     // e.g. cancel both jobs 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate and 6dee3dd8-c990-40d8-93b7-efcaa2637c5e_ServiceInstanceAutoUpdate_30minutesfromnow_1543823280862

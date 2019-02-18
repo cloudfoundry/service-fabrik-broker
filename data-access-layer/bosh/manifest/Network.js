@@ -18,12 +18,12 @@ class Network {
 
   static create(opts) {
     switch (opts.type) {
-    case 'manual':
-      return new ManualNetwork(opts);
-    case 'dynamic':
-      return new DynamicNetwork(opts);
-    default:
-      throw new Error('Invalid network type');
+      case 'manual':
+        return new ManualNetwork(opts);
+      case 'dynamic':
+        return new DynamicNetwork(opts);
+      default:
+        throw new Error('Invalid network type');
     }
   }
 }

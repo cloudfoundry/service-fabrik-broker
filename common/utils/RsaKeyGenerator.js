@@ -20,29 +20,29 @@ class RsaKeyGenerator {
     this.pubFile = `${this.location}.pub`;
   }
 
-  async isFileAvailable(loc) { //jshint ignore: line
+  async isFileAvailable(loc) { // jshint ignore: line
     let available = true;
     try {
-      await fileExists(loc); //jshint ignore: line
+      await fileExists(loc); // jshint ignore: line
     } catch (err) {
       available = false;
     }
     return available;
   }
 
-  async forceDeleteFiles() { //jshint ignore: line
-    const keyFilePresent = await this.isFileAvailable(this.location); //jshint ignore: line
-    const pubFilePresent = await this.isFileAvailable(this.pubFile); //jshint ignore: line
+  async forceDeleteFiles() { // jshint ignore: line
+    const keyFilePresent = await this.isFileAvailable(this.location); // jshint ignore: line
+    const pubFilePresent = await this.isFileAvailable(this.pubFile); // jshint ignore: line
     if (keyFilePresent) {
-      await unlinkFile(this.location); //jshint ignore: line
+      await unlinkFile(this.location); // jshint ignore: line
     }
     if (pubFilePresent) {
-      await unlinkFile(this.pubFile); //jshint ignore: line
+      await unlinkFile(this.pubFile); // jshint ignore: line
     }
   }
 
   runSshKeygen() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const keygen = spawn('ssh-keygen', [
         '-t', 'rsa',
         '-b', 2048,
@@ -55,12 +55,12 @@ class RsaKeyGenerator {
     });
   }
 
-  async createKeyPair() { //jshint ignore: line
-    await this.forceDeleteFiles(); //jshint ignore: line
-    await this.runSshKeygen(); //jshint ignore: line
-    let privateKey = await readFile(this.location, 'utf8'); //jshint ignore: line
-    let publicKey = await readFile(this.pubFile, 'utf8'); //jshint ignore: line
-    await this.forceDeleteFiles(); //jshint ignore: line
+  async createKeyPair() { // jshint ignore: line
+    await this.forceDeleteFiles(); // jshint ignore: line
+    await this.runSshKeygen(); // jshint ignore: line
+    let privateKey = await readFile(this.location, 'utf8'); // jshint ignore: line
+    let publicKey = await readFile(this.pubFile, 'utf8'); // jshint ignore: line
+    await this.forceDeleteFiles(); // jshint ignore: line
     privateKey = privateKey.toString();
     privateKey = privateKey.substring(0, privateKey.lastIndexOf('\n')).trim();
     publicKey = publicKey.toString();

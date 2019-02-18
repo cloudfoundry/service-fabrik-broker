@@ -19,13 +19,13 @@ class VirtualHostBindOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return this._processBind(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-          return this._processUnbind(changeObjectBody);
-        }
-      })
-      .catch(Error, (err) => {
+      if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return this._processBind(changeObjectBody);
+      } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        return this._processUnbind(changeObjectBody);
+      }
+    })
+      .catch(Error, err => {
         logger.error('Error occurred in processing request by VirtualHostBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,

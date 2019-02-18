@@ -286,7 +286,7 @@ exports.ServiceBrokerNotFound = ServiceBrokerNotFound;
 
 class AsyncRequired extends UnprocessableEntity {
   constructor() {
-    super(`Service Plan requires support for asynchronous operations`);
+    super('Service Plan requires support for asynchronous operations');
   }
 }
 exports.AsyncRequired = AsyncRequired;

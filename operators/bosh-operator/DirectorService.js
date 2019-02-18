@@ -67,7 +67,7 @@ class DirectorService extends BaseDirectorService {
             /* Following is to handle existing deployments. 
                 For them platform-context is not saved in deployment property. Defaults to CF.
             */
-            /*TODO: Remove the code for querying bosh for property.
+            /* TODO: Remove the code for querying bosh for property.
              */
             logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
           Setting default platform as '${CONST.PLATFORM.CF}'`);
@@ -109,10 +109,10 @@ class DirectorService extends BaseDirectorService {
   getContextFromResource() {
     logger.debug(`Fetching context from etcd for ${this.guid}`);
     return eventmesh.apiServerClient.getPlatformContext({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: this.guid
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: this.guid
+    })
       .catch(err => {
         logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
         return;
@@ -180,9 +180,9 @@ class DirectorService extends BaseDirectorService {
     return Promise.all(promises)
       .then(deploymentNameCollection =>
         _.chain(deploymentNameCollection)
-        .flatten()
-        .uniq()
-        .value()
+          .flatten()
+          .uniq()
+          .value()
       )
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
@@ -198,9 +198,9 @@ class DirectorService extends BaseDirectorService {
   deleteRestoreFile() {
     if (_.includes(this.agent.features, 'backup')) {
       return Promise.try(() => this.platformManager.ensureTenantId({
-          context: this.platformContext,
-          guid: this.guid
-        }))
+        context: this.platformContext,
+        guid: this.guid
+      }))
         .then(tenant_id => tenant_id ? this.deleteRestoreFileFromObjectStore(tenant_id, this.guid) : Promise.resolve({}))
         .catch(err => {
           logger.error(`Failed to delete restore file of instance '${this.guid}'`, err);
@@ -232,20 +232,20 @@ class DirectorService extends BaseDirectorService {
     return Promise
       .try(() => {
         switch (operation.type) {
-        case 'create':
-          return Promise.try(() => this.platformManager.postInstanceProvisionOperations({
+          case 'create':
+            return Promise.try(() => this.platformManager.postInstanceProvisionOperations({
               ipRuleOptions: this.buildIpRules(),
               guid: this.guid,
               context: operation.context
             }))
-            .tap(() => operation.state === CONST.OPERATION.SUCCEEDED ? this.scheduleAutoUpdate() : {});
+              .tap(() => operation.state === CONST.OPERATION.SUCCEEDED ? this.scheduleAutoUpdate() : {});
 
-        case 'update':
-          return this.platformManager.postInstanceUpdateOperations({
-            ipRuleOptions: this.buildIpRules(),
-            guid: this.guid,
-            context: operation.context
-          });
+          case 'update':
+            return this.platformManager.postInstanceUpdateOperations({
+              ipRuleOptions: this.buildIpRules(),
+              guid: this.guid,
+              context: operation.context
+            });
         }
       })
       .catch(err => _.assign(operation, {
@@ -316,10 +316,10 @@ class DirectorService extends BaseDirectorService {
 
   getDeploymentNamesInCache() {
     return eventmesh.apiServerClient.getResourceListByState({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+    })
       .map(resource => _.get(resource, 'status.response.deployment_name'))
       .then(deploymentNames => _
         .chain(deploymentNames)
@@ -369,7 +369,7 @@ class DirectorService extends BaseDirectorService {
         const allTasks = tasksCount.total;
         const maxTasks = _.get(targetDirectorConfig, 'max_workers', 6);
         if (allTasks >= maxTasks) {
-          //no slots left anyway
+          // no slots left anyway
           runOutput.shouldRunNow = false;
           return runOutput;
         }
@@ -381,21 +381,21 @@ class DirectorService extends BaseDirectorService {
           maxWorkers = _.get(targetDirectorConfig, `policies.user.${action}.max_workers`, 3);
         }
         if (currentTasks < maxWorkers) {
-          //should run if the tasks count is lesser than the specified max workers for op type
+          // should run if the tasks count is lesser than the specified max workers for op type
           runOutput.shouldRunNow = true;
           return runOutput;
         }
         return runOutput;
       }).catch(err => {
         logger.error('Error connecting to BOSH director > could not fetch current tasks', err);
-        //in case the director request returns an error, we queue it to avoid user experience issues
+        // in case the director request returns an error, we queue it to avoid user experience issues
         // return with shouldRunNow = false so that it is taken care of in processing
         return runOutput;
       });
   }
 
   createOrUpdateDeployment(deploymentName, params, args) {
-    logger.info(`Checking rate limits against bosh for deployment `);
+    logger.info('Checking rate limits against bosh for deployment ');
     const previousValues = _.get(params, 'previous_values');
     const action = _.isPlainObject(previousValues) ? CONST.OPERATION_TYPE.UPDATE : CONST.OPERATION_TYPE.CREATE;
     const scheduled = _.get(params, 'parameters.scheduled') || false;
@@ -421,7 +421,7 @@ class DirectorService extends BaseDirectorService {
           // deployment stagger
           throw new DeploymentDelayed(deploymentName);
         } else {
-          //process the deployment
+          // process the deployment
           return this._createOrUpdateDeployment(deploymentName, params, args, scheduled);
         }
       })
@@ -462,49 +462,49 @@ class DirectorService extends BaseDirectorService {
     return Promise
       .try(() => {
         switch (action) {
-        case CONST.OPERATION_TYPE.UPDATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
-          if (_.get(params, 'parameters.bosh_director_name') ||
+          case CONST.OPERATION_TYPE.UPDATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
+            if (_.get(params, 'parameters.bosh_director_name') ||
             username || password) {
-            throw new BadRequest(`Update cannot be done on custom BOSH`);
-          }
-          return this
-            .getDeploymentManifest(deploymentName)
-            .then(manifest => {
-              _.assign(actionContext.params, {
-                'previous_manifest': manifest
+              throw new BadRequest('Update cannot be done on custom BOSH');
+            }
+            return this
+              .getDeploymentManifest(deploymentName)
+              .then(manifest => {
+                _.assign(actionContext.params, {
+                  'previous_manifest': manifest
+                });
+                _.assign(opts, {
+                  previous_manifest: manifest
+                }, opts.context);
+                return;
+              })
+              .then(() => {
+                let preUpdateContext = _.cloneDeep(actionContext);
+                return this.executePreUpdate(deploymentName, preUpdateContext);
+              })
+              .tap(response => {
+                logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
+                preUpdateAgentResponse = response;
               });
-              _.assign(opts, {
-                previous_manifest: manifest
-              }, opts.context);
-              return;
-            })
-            .then(() => {
-              let preUpdateContext = _.cloneDeep(actionContext);
-              return this.executePreUpdate(deploymentName, preUpdateContext);
-            })
-            .tap(response => {
-              logger.info(`PreUpdate action response for ${deploymentName} is ...`, response);
-              preUpdateAgentResponse = response;
-            });
-        case CONST.OPERATION_TYPE.CREATE:
-          serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
-          if (_.get(params, 'parameters.bosh_director_name')) {
-            return cf
-              .uaa
-              .getScope(username, password)
-              .then(scopes => {
-                const isAdmin = _.includes(scopes, 'cloud_controller.admin');
-                if (!isAdmin) {
-                  throw new errors.Forbidden('Token has insufficient scope');
-                }
-              });
-          }
-          return;
+          case CONST.OPERATION_TYPE.CREATE:
+            serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_CREATE;
+            if (_.get(params, 'parameters.bosh_director_name')) {
+              return cf
+                .uaa
+                .getScope(username, password)
+                .then(scopes => {
+                  const isAdmin = _.includes(scopes, 'cloud_controller.admin');
+                  if (!isAdmin) {
+                    throw new errors.Forbidden('Token has insufficient scope');
+                  }
+                });
+            }
+            return;
         }
       })
       .then(() => this.executeActions(serviceLifeCycle, actionContext))
-      .then((preDeployResponse) => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
+      .then(preDeployResponse => this.generateManifest(deploymentName, opts, preDeployResponse, preUpdateAgentResponse))
       .tap(manifest => logger.info('+-> Deployment manifest:\n', manifest))
       .then(manifest => this.director.createOrUpdateDeployment(action, manifest, args, scheduled))
       .tap(taskId => logger.info(`+-> Scheduled ${action} deployment task '${taskId}'`))
@@ -542,9 +542,9 @@ class DirectorService extends BaseDirectorService {
   }
 
   executeActions(phase, context) {
-    //Lazy create of deploymentHookClient
-    //Only Processes that require service lifecycle operations will need deployment_hooks properties.
-    //Can be loaded on top when we modularize scheduler and report process codebase
+    // Lazy create of deploymentHookClient
+    // Only Processes that require service lifecycle operations will need deployment_hooks properties.
+    // Can be loaded on top when we modularize scheduler and report process codebase
     const deploymentHookClient = require('../../common/utils/DeploymentHookClient');
     return Promise.try(() => {
       const serviceLevelActions = this.service.actions;
@@ -576,7 +576,7 @@ class DirectorService extends BaseDirectorService {
           .set('context', context)
           .value();
         return deploymentHookClient.executeDeploymentActions(options)
-          .tap((actionResponse) => logger.info(`${phase} response ...`, actionResponse));
+          .tap(actionResponse => logger.info(`${phase} response ...`, actionResponse));
       } else {
         logger.info(`No actions to perform for ${context.deployment_name}`);
         return {};
@@ -672,36 +672,36 @@ class DirectorService extends BaseDirectorService {
     const action = _.capitalize(operation.type);
     const timestamp = new Date(task.timestamp * 1000).toISOString();
     switch (task.state) {
-    case 'done':
-      return _.assign(operation, {
-        description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
-        state: 'succeeded',
-        resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-      });
-    case 'error':
-    case 'cancelled':
-    case 'timeout':
-      return _.assign(operation, {
-        description: `${action} deployment ${task.deployment} failed at ${timestamp} with Error "${task.result}"`,
-        state: 'failed',
-        resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED
-      });
-    default:
-      return _.assign(operation, {
-        description: `${action} deployment ${task.deployment} is still in progress`,
-        state: 'in progress',
-        resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
-      });
+      case 'done':
+        return _.assign(operation, {
+          description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
+          state: 'succeeded',
+          resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+        });
+      case 'error':
+      case 'cancelled':
+      case 'timeout':
+        return _.assign(operation, {
+          description: `${action} deployment ${task.deployment} failed at ${timestamp} with Error "${task.result}"`,
+          state: 'failed',
+          resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED
+        });
+      default:
+        return _.assign(operation, {
+          description: `${action} deployment ${task.deployment} is still in progress`,
+          state: 'in progress',
+          resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
+        });
     }
   }
 
   bind(params) {
     let bindingCredentials;
     return this.platformManager.preBindOperations({
-        context: params.context,
-        bind_resource: params.bind_resource,
-        bindingId: params.binding_id
-      })
+      context: params.context,
+      bind_resource: params.bind_resource,
+      bindingId: params.binding_id
+    })
       .then(() => this
         .initialize({
           type: 'bind'
@@ -724,7 +724,7 @@ class DirectorService extends BaseDirectorService {
             .scheduleBackUp()
             .catch(() => {});
         } else {
-          //TODO: revisit this when supporting extension APIs for K8S consumption
+          // TODO: revisit this when supporting extension APIs for K8S consumption
           return;
         }
       });
@@ -739,16 +739,16 @@ class DirectorService extends BaseDirectorService {
     };
     _.assign(actionContext, binding);
     return Promise.join(
-        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
-        this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
-          maxAttempts: 3,
-          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-        })
+      this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
+      this.getDeploymentIps(deploymentName),
+      (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
+        maxAttempts: 3,
+        timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+      })
         .catch(errors.Timeout, err => {
           throw err;
         })
-      )
+    )
       .tap(credentials => {
         _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -781,17 +781,17 @@ class DirectorService extends BaseDirectorService {
       'id': id
     };
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
-      .then((preUnbindResponse) =>
+      .then(preUnbindResponse =>
         Promise
-        .all([
-          Promise.resolve(preUnbindResponse),
-          this.getDeploymentIps(deploymentName),
-          this.getCredentials(deploymentName, id)
-        ]))
+          .all([
+            Promise.resolve(preUnbindResponse),
+            this.getDeploymentIps(deploymentName),
+            this.getCredentials(deploymentName, id)
+          ]))
       .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
-          maxAttempts: 3,
-          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-        })
+        maxAttempts: 3,
+        timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+      })
         .catch(errors.Timeout, err => {
           throw err;
         })
@@ -819,10 +819,10 @@ class DirectorService extends BaseDirectorService {
   getCredentialsFromResource(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: id
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+      resourceId: id
+    })
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
         if (!_.isEmpty(response)) {
@@ -953,16 +953,16 @@ class DirectorService extends BaseDirectorService {
                 logger.info(`Backup Job : ${schedule.name} already scheduled for instance : ${this.guid} with interval ${schedule.repeatInterval}`);
                 return;
               })
-              .catch((error) => {
+              .catch(error => {
                 if (typeof error !== errors.NotFound) {
-                  //NotFound is an expected error.
+                  // NotFound is an expected error.
                   logger.warn('error occurred while fetching schedule for existing job', error);
                 }
                 if (this.service.backup_interval) {
                   options.repeatInterval = this.service.backup_interval;
                 }
                 logger.info(`Scheduling Backup for instance : ${this.guid} with backup interval of - ${options.repeatInterval}`);
-                //Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+                // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
                 // This flow has to be revisited when we start supporting K8s through service manager
                 return this.serviceFabrikClient.scheduleBackup(options);
               });
@@ -1044,7 +1044,7 @@ class DirectorService extends BaseDirectorService {
       if (!_.has(events, event.stage)) {
         events[event.stage] = {
           tags: event.tags,
-          total: event.total,
+          total: event.total
         };
       }
       if (!_.has(events[event.stage], event.task)) {

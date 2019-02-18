@@ -3,7 +3,7 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const pubsub = require('pubsub-js');
 const os = require('os');
-var moment = require('moment-timezone');
+var moment = require('moment-timezone'); // eslint-disable-line no-var
 Promise.promisifyAll([
   require('agenda/lib/agenda'),
   require('agenda/lib/job')
@@ -55,13 +55,13 @@ class Scheduler {
       const processId = BaseJob.getProcessId();
       this.agenda = new Agenda({
         mongo: eventInfo.mongoose.connection.collection(this.config.agenda_collection).conn.db,
-        //Reusing the connection from Mongoose connection pool
+        // Reusing the connection from Mongoose connection pool
         db: {
           collection: this.config.agenda_collection
         },
-        //collection for agenda
+        // collection for agenda
         name: processId
-        //'lastmodifiedby' for agendaJobs - can be helpful when multiple schedulers are running
+        // 'lastmodifiedby' for agendaJobs - can be helpful when multiple schedulers are running
       });
       /**
        * Regarding setting up mongoose connection in agenda refer below:
@@ -80,19 +80,19 @@ class Scheduler {
         } else {
           this.config.process_every = `${cpuCount - 1} minutes`;
         }
-        //When running in job scheduler mode, jobs per cpus are spawned. Each worker will be spawned with a delay of 1 minute 
-        //Having each worker goto DB once every $cpuCount minute, creates a sliding window of 1 minute. 
+        // When running in job scheduler mode, jobs per cpus are spawned. Each worker will be spawned with a delay of 1 minute 
+        // Having each worker goto DB once every $cpuCount minute, creates a sliding window of 1 minute. 
       }
       logger.info(`Agenda will process db once every:${this.config.process_every}`);
       this.agenda
-        .processEvery(this.config.process_every) //the frequency at which agenda will query the database looking for jobs that need to be processed
-        .maxConcurrency(this.config.max_concurrency) //number which specifies the max number of jobs that can be running at any given moment
-        .defaultConcurrency(this.config.default_concurrency) //number which specifies the default number of a specific job that can be running at any given moment
-        .defaultLockLifetime(this.config.default_lock_lifetime) //specifies the default lock lifetime in milliseconds. (keeping it as 3 mins)
+        .processEvery(this.config.process_every) // the frequency at which agenda will query the database looking for jobs that need to be processed
+        .maxConcurrency(this.config.max_concurrency) // number which specifies the max number of jobs that can be running at any given moment
+        .defaultConcurrency(this.config.default_concurrency) // number which specifies the default number of a specific job that can be running at any given moment
+        .defaultLockLifetime(this.config.default_lock_lifetime) // specifies the default lock lifetime in milliseconds. (keeping it as 3 mins)
         .on('ready', () => this.startScheduler())
-        .on('error', (err) => Promise.try(() => {
+        .on('error', err => Promise.try(() => {
           logger.error('Error occurred, scheduling services will be unavailable.', err);
-          //Just log error. DB Connection manager already handles retry.
+          // Just log error. DB Connection manager already handles retry.
         }));
       logger.info('init agenda complete!');
     } catch (error) {
@@ -107,7 +107,7 @@ class Scheduler {
       .then(() => {
         logger.debug(`process.env.job: ${process.env.job} - runWithWebProcess : ${this.runWithWebProcess}`);
         if (process.env.job || this.runWithWebProcess) {
-          //Only in Job mode, start agenda.
+          // Only in Job mode, start agenda.
           logger.debug('starting scheduler...');
           this.agenda.start();
           pubsub.publish(CONST.TOPIC.SCHEDULER_STARTED);
@@ -124,7 +124,7 @@ class Scheduler {
     return Promise
       .try(() => {
         logger.debug(`Checking configured Job Types & Registering Job Definitions for : ${this.jobTypeList}`);
-        _.each(this.jobTypeList, (jobType) => {
+        _.each(this.jobTypeList, jobType => {
           try {
             this.define(jobType, JobFabrik.getJob(jobType));
           } catch (err) {
@@ -144,7 +144,7 @@ class Scheduler {
   runJob(jobType, jobDefinition, job, done) {
     return maintenanceManager
       .getMaintenaceInfo()
-      .then((maintenanceInfo) => {
+      .then(maintenanceInfo => {
         job.__started_At = new Date();
         const jobData = _.get(job.attrs, 'data', {});
         if (jobData.attempt === undefined || jobData.attempt === 1) {
@@ -155,8 +155,8 @@ class Scheduler {
           maintenanceManager.getLastDowntimePhase(maintenanceInfo, config.scheduler.downtime_maintenance_phases) === undefined) {
           return jobDefinition.run(job, done);
         }
-        //System in maintenance Mode.
-        //Mark current run as failed and reschedule job & exit the process. [JobScheduler takes care of recreation]
+        // System in maintenance Mode.
+        // Mark current run as failed and reschedule job & exit the process. [JobScheduler takes care of recreation]
         return jobDefinition
           .runFailed(ServiceInMaintenance.getInstance(maintenanceInfo), 'System in maintenance', job, done)
           .then(() => this.reScheduleJob(jobType, job))
@@ -175,7 +175,7 @@ class Scheduler {
     try {
       /* jshint unused:false*/
       logger.debug('validating interval %s', interval);
-      const timeInterval = new CronTime(interval);
+      const timeInterval = new CronTime(interval); // eslint-disable-line no-unused-vars
       return CONST.SCHEDULE_INTERVAL.CRON_EXPRESSION;
     } catch (ex) {
       const nextRun = humanInterval(interval);
@@ -198,7 +198,7 @@ class Scheduler {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
-          //mongoDB is not initialized then cannot run the job currently.
+          // mongoDB is not initialized then cannot run the job currently.
           logger.error(`${name}_${jobType} cant be scheduled as mongodb is non-operational. Init status : ${this.initialized}`);
           throw new ServiceUnavailable('MongoDB not operational');
         }
@@ -228,11 +228,11 @@ class Scheduler {
         });
         job.repeatEvery(interval, options);
         job.attrs.lastRunAt = new Date();
-        //This is to fix the agendaJS bug which runs the jobs immediately if scheduled with human-interval
-        //Setting this job attrib ensures it skips setting nextrun immediately for human-intervals
+        // This is to fix the agendaJS bug which runs the jobs immediately if scheduled with human-interval
+        // Setting this job attrib ensures it skips setting nextrun immediately for human-intervals
         job.computeNextRunAt();
         delete job.attrs.lastRunAt;
-        //After dodging computeNextRunAt, delete it else it gives a wrong indication that job was run
+        // After dodging computeNextRunAt, delete it else it gives a wrong indication that job was run
         return job
           .saveAsync()
           .then(() => this.getJob(name, jobType));
@@ -243,7 +243,7 @@ class Scheduler {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
-          //mongoDB is not initialized then cannot run the job currently.
+          // mongoDB is not initialized then cannot run the job currently.
           logger.error(`${name}_${jobType} cant be scheduled @${runAt} as mongodb is non-operational. Init status : ${this.initialized}`);
           throw new ServiceUnavailable('MongoDB not operational');
         }
@@ -268,8 +268,8 @@ class Scheduler {
         return job
           .saveAsync()
           .then(() => this.getJob(name, jobType));
-        //Fetching again from Agenda DB, as few of the persistent fields (like. lastRunAt, etc.) 
-        //are not returned as part of save
+        // Fetching again from Agenda DB, as few of the persistent fields (like. lastRunAt, etc.) 
+        // are not returned as part of save
       });
   }
 
@@ -277,7 +277,7 @@ class Scheduler {
     return Promise
       .try(() => {
         if (this.initialized !== MONGO_INIT_SUCCEEDED) {
-          //mongoDB is not initialized then cannot run the job currently.
+          // mongoDB is not initialized then cannot run the job currently.
           logger.error(`${name}_${jobType} cant be scheduled to run now as mongodb is non-operational. Init status : ${this.initialized}`);
           throw new ServiceUnavailable('MongoDB not operational');
         }
@@ -318,15 +318,15 @@ class Scheduler {
           .agenda
           .jobsAsync(criteria)
           .then(jobs => {
-            const scheduledJob = _.filter(jobs, (job) => job.attrs.data[CONST.JOB_NAME_ATTRIB] === jobName);
+            const scheduledJob = _.filter(jobs, job => job.attrs.data[CONST.JOB_NAME_ATTRIB] === jobName);
             if (scheduledJob.length > 0) {
-              const sortedList = _.sortBy(jobs, (job) => job.attrs.nextRunAt);
+              const sortedList = _.sortBy(jobs, job => job.attrs.nextRunAt);
               scheduledJob[0].attrs.nextRunAt = sortedList[0].attrs.nextRunAt;
               return this.getJobAttrs(scheduledJob[0]);
-              //As part of retry mechanism for scheduled job (with repeat interval), one time jobs are scheduled 
-              //with a delay of 'config.scheduler.jobs.reschedule_delay' in case of errors. So there would be two 
-              //jobs that will run next (one-time job scheduled as part of retry on error and the regular job as defined interval)
-              //Need to set nextRunTime based on the job that is to run immediately from the current time for the given jobtype & name.
+              // As part of retry mechanism for scheduled job (with repeat interval), one time jobs are scheduled 
+              // with a delay of 'config.scheduler.jobs.reschedule_delay' in case of errors. So there would be two 
+              // jobs that will run next (one-time job scheduled as part of retry on error and the regular job as defined interval)
+              // Need to set nextRunTime based on the job that is to run immediately from the current time for the given jobtype & name.
             }
             return null;
           });
@@ -363,7 +363,7 @@ class Scheduler {
 
   purgeOldFinishedJobs() {
     return Promise.try(() => {
-      //One time jobs which have run only once need not be stored any longer in DB beyond the job retention period.
+      // One time jobs which have run only once need not be stored any longer in DB beyond the job retention period.
       const retentionDate = new Date(moment().subtract(CONST.FINISHED_JOBS_RETENTION_DURATION_DAYS, 'days').toISOString());
       const criteria = [];
       criteria.push({
@@ -374,17 +374,17 @@ class Scheduler {
       criteria.push({
         nextRunAt: null
       });
-      //nextRunAt null indicates that its a one time job which will not run in future.
+      // nextRunAt null indicates that its a one time job which will not run in future.
       criteria.push({
         type: 'normal'
       });
-      //jobtype normal only should be purged. Single type of jobs are repetitive and must be left alone.
+      // jobtype normal only should be purged. Single type of jobs are repetitive and must be left alone.
       return this
         .agenda
         .cancelAsync({
           $and: criteria
         })
-        .tap((response) => logger.debug('Purged old Agenda Jobs from the System : ', _.get(response, 'result')));
+        .tap(response => logger.debug('Purged old Agenda Jobs from the System : ', _.get(response, 'result')));
     });
   }
 
@@ -425,5 +425,5 @@ class Scheduler {
 }
 
 module.exports = Scheduler;
-//Scheduler should not be referenced directly in any other modules of app.
-//ScheduleManager is the external facing entity for all modules in the app & it maintains a single instance of scheduler.
+// Scheduler should not be referenced directly in any other modules of app.
+// ScheduleManager is the external facing entity for all modules in the app & it maintains a single instance of scheduler.

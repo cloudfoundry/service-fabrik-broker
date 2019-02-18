@@ -44,24 +44,24 @@ function convertToHttpErrorAndThrow(err) {
     code = err.status;
   }
   switch (code) {
-  case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
-    newErr = new BadRequest(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-    newErr = new NotFound(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.CONFLICT:
-    newErr = new Conflict(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.FORBIDDEN:
-    newErr = new errors.Forbidden(message);
-    break;
-  case CONST.HTTP_STATUS_CODE.GONE:
-    newErr = new errors.Gone(message);
-    break;
-  default:
-    newErr = new InternalServerError(message);
-    break;
+    case CONST.HTTP_STATUS_CODE.BAD_REQUEST:
+      newErr = new BadRequest(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.NOT_FOUND:
+      newErr = new NotFound(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.CONFLICT:
+      newErr = new Conflict(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.FORBIDDEN:
+      newErr = new errors.Forbidden(message);
+      break;
+    case CONST.HTTP_STATUS_CODE.GONE:
+      newErr = new errors.Gone(message);
+      break;
+    default:
+      newErr = new InternalServerError(message);
+      break;
   }
   throw newErr;
 }
@@ -76,8 +76,8 @@ class ApiServerClient {
     return Promise.try(() => {
       if (!this.ready) {
         return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
-            apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
-          })
+          apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+        })
           .then(() => apiserver.loadSpec())
           .then(() => {
             this.ready = true;
@@ -211,8 +211,8 @@ class ApiServerClient {
    * @param {string} callback - Fucntion to call when event is received
    */
   registerWatcher(resourceGroup, resourceType, callback, queryString) {
-    assert.ok(resourceGroup, `Argument 'resourceGroup' is required to register watcher`);
-    assert.ok(resourceType, `Argument 'resourceType' is required to register watcher`);
+    assert.ok(resourceGroup, 'Argument \'resourceGroup\' is required to register watcher');
+    assert.ok(resourceType, 'Argument \'resourceType\' is required to register watcher');
     return Promise.try(() => this.init())
       .then(() => {
         const stream = apiserver
@@ -252,11 +252,11 @@ class ApiServerClient {
     return Promise.try(() => this.init())
       .then(() => {
         return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-            body: crdJson,
-            headers: {
-              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-            }
-          })
+          body: crdJson,
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        })
           .catch(err => {
             return convertToHttpErrorAndThrow(err);
           });
@@ -283,7 +283,7 @@ class ApiServerClient {
    * @param {string} name - Name of resource group ex. backup.servicefabrik.io
    */
   createNamespace(name) {
-    assert.ok(name, `Property 'name' is required to create namespace`);
+    assert.ok(name, 'Property \'name\' is required to create namespace');
     if (name === CONST.APISERVER.DEFAULT_NAMESPACE) {
       return Promise.resolve();
     }
@@ -325,7 +325,7 @@ class ApiServerClient {
    * @param {string} namespaceId - Optional; Namespace id if given
    */
   getSecret(secretId, namespaceId) {
-    assert.ok(secretId, `Property 'secretId' is required to get Secret`);
+    assert.ok(secretId, 'Property \'secretId\' is required to get Secret');
     return this.init()
       .then(() => apiserver
         .api[CONST.APISERVER.SECRET_API_VERSION]
@@ -347,11 +347,11 @@ class ApiServerClient {
    * @param {string} opts.status - status of the resource
    */
   createResource(opts) {
-    logger.info(`Creating resource with opts: `, opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
-    assert.ok(opts.options, `Property 'options' is required to create resource`);
+    logger.info('Creating resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to create resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to create resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to create resource');
+    assert.ok(opts.options, 'Property \'options\' is required to create resource');
     const metadata = {
       name: opts.resourceId
     };
@@ -366,7 +366,7 @@ class ApiServerClient {
       metadata: metadata,
       spec: {
         'options': JSON.stringify(opts.options)
-      },
+      }
     };
 
     if (opts.status) {
@@ -405,50 +405,50 @@ class ApiServerClient {
    */
   updateResource(opts) {
     logger.silly('Updating resource with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
-    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata'  is required to update resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to update resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to update resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to update resource');
+    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, 'Property \'metadata\' or \'options\' or \'status\' or \'operatorMetadata\'  is required to update resource');
     return Promise.try(() => {
-        const patchBody = {};
-        if (opts.metadata) {
-          patchBody.metadata = opts.metadata;
-        }
-        if (opts.options) {
-          patchBody.spec = {
-            'options': JSON.stringify(opts.options)
-          };
-        }
-        if (opts.operatorMetadata) {
-          patchBody.operatorMetadata = opts.operatorMetadata;
-        }
-        if (opts.status) {
-          const statusJson = {};
-          _.forEach(opts.status, (val, key) => {
-            if (key === 'state') {
-              patchBody.metadata = _.merge(patchBody.metadata, {
-                labels: {
-                  'state': val
-                }
-              });
-            }
-            statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
-          });
-          patchBody.status = statusJson;
-        }
-        logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
-        const namespaceId = this.getNamespaceId(opts.resourceId);
-        // Create Namespace if not default
-        return Promise.try(() => this.init())
-          .then(() => apiserver
-            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-              body: patchBody,
-              headers: {
-                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+      const patchBody = {};
+      if (opts.metadata) {
+        patchBody.metadata = opts.metadata;
+      }
+      if (opts.options) {
+        patchBody.spec = {
+          'options': JSON.stringify(opts.options)
+        };
+      }
+      if (opts.operatorMetadata) {
+        patchBody.operatorMetadata = opts.operatorMetadata;
+      }
+      if (opts.status) {
+        const statusJson = {};
+        _.forEach(opts.status, (val, key) => {
+          if (key === 'state') {
+            patchBody.metadata = _.merge(patchBody.metadata, {
+              labels: {
+                'state': val
               }
-            }));
-      })
+            });
+          }
+          statusJson[key] = _.isObject(val) ? JSON.stringify(val) : val;
+        });
+        patchBody.status = statusJson;
+      }
+      logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+      const namespaceId = this.getNamespaceId(opts.resourceId);
+      // Create Namespace if not default
+      return Promise.try(() => this.init())
+        .then(() => apiserver
+          .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+          .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
+            body: patchBody,
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          }));
+    })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -463,10 +463,10 @@ class ApiServerClient {
    */
   patchResource(opts) {
     logger.info('Patching resource options with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
-    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, `Property 'metadata' or 'options' or 'status' or 'operatorMetadata' is required to patch resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to patch options');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to patch options');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to patch options');
+    assert.ok(opts.metadata || opts.options || opts.status || opts.operatorMetadata, 'Property \'metadata\' or \'options\' or \'status\' or \'operatorMetadata\' is required to patch resource');
     return this.getResource(opts)
       .then(resource => {
         if (_.get(opts, 'status.response') && resource.status) {
@@ -496,14 +496,14 @@ class ApiServerClient {
    */
   deleteResource(opts) {
     logger.info('Deleting resource with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to delete resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to delete resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to delete resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to delete resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to delete resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to delete resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
         .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
-      .then((res) => {
+      .then(res => {
         if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);
         }
@@ -525,12 +525,12 @@ class ApiServerClient {
    */
   updateLastOperationValue(opts) {
     logger.info('Updating last operation with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update lastOperation`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to update lastOperation`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to update lastOperation`);
-    assert.ok(opts.operationName, `Property 'operationName' is required to update lastOperation`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to update lastOperation`);
-    assert.ok(opts.value, `Property 'value' is required to update lastOperation`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to update lastOperation');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to update lastOperation');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to update lastOperation');
+    assert.ok(opts.operationName, 'Property \'operationName\' is required to update lastOperation');
+    assert.ok(opts.operationType, 'Property \'operationType\' is required to update lastOperation');
+    assert.ok(opts.value, 'Property \'value\' is required to update lastOperation');
     const metadata = {};
     metadata.labels = {};
     metadata.labels[`last_${opts.operationName}_${opts.operationType}`] = opts.value;
@@ -550,9 +550,9 @@ class ApiServerClient {
    */
   getResource(opts) {
     logger.debug('Get resource with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return Promise.try(() => this.init())
       .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
@@ -588,8 +588,8 @@ class ApiServerClient {
    */
   getResources(opts) {
     logger.debug('Get resources with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
     let query = {};
     if (opts.query) {
       query.qs = opts.query;
@@ -613,7 +613,7 @@ class ApiServerClient {
   _getParsedResources(opts) {
     return this.getResources(opts)
       .then(resources => {
-        _.forEach(resources, (resource) => {
+        _.forEach(resources, resource => {
           _.forEach(resource.spec, (val, key) => {
             try {
               resource.spec[key] = JSON.parse(val);
@@ -686,7 +686,7 @@ class ApiServerClient {
     };
     return Promise.try(() => this.init())
       .then(() => this.getConfigMapResource(configName))
-      .then((oldResourceBody) => {
+      .then(oldResourceBody => {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
         return apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
@@ -700,7 +700,7 @@ class ApiServerClient {
   }
 
   getConfigMap(configName, key) {
-    return this.getConfigMapResource(configName).then((body) => _.get(body.data, key))
+    return this.getConfigMapResource(configName).then(body => _.get(body.data, key))
       .catch(errors.NotFound, () => {
         return undefined;
       });
@@ -714,9 +714,9 @@ class ApiServerClient {
    */
   getResourceListByState(opts) {
     logger.debug('Get resource list with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get resource list`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get resource list`);
-    assert.ok(opts.stateList, `Property 'stateList' is required to fetch resource list`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get resource list');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource list');
+    assert.ok(opts.stateList, 'Property \'stateList\' is required to fetch resource list');
     return this._getParsedResources(_.assign(opts, {
       query: {
         labelSelector: `state in (${_.join(opts.stateList, ',')})`
@@ -733,11 +733,11 @@ class ApiServerClient {
    * @param {string} opts.operationType - Type of operation
    */
   getLastOperationValue(opts) {
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to get lastOperation`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to get lastOperation`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to get lastOperation`);
-    assert.ok(opts.operationName, `Property 'operationName' is required to get lastOperation`);
-    assert.ok(opts.operationType, `Property 'operationType' is required to get lastOperation`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to get lastOperation');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get lastOperation');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get lastOperation');
+    assert.ok(opts.operationName, 'Property \'operationName\' is required to get lastOperation');
+    assert.ok(opts.operationType, 'Property \'operationType\' is required to get lastOperation');
     let options = _.chain(opts)
       .omit('operationName', 'operationType')
       .value();
@@ -810,10 +810,10 @@ class ApiServerClient {
    */
   getPlatformContext(opts) {
     return this.getResource({
-        resourceGroup: opts.resourceGroup,
-        resourceType: opts.resourceType,
-        resourceId: opts.resourceId
-      })
+      resourceGroup: opts.resourceGroup,
+      resourceType: opts.resourceType,
+      resourceId: opts.resourceId
+    })
       .then(resource => _.get(resource, 'spec.options.context'));
   }
 
@@ -830,11 +830,11 @@ class ApiServerClient {
   // Note:- In this method, keys in ServiceInstance CR are required to be camelcased
   // Hence while creating resource, osb keys (snakecased) translated into camelcased using camelcase-keys module
   createOSBResource(opts) {
-    logger.info(`Creating OSB resource with opts: `, opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to create resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to create resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to create resource`);
-    assert.ok(opts.spec, `Property 'spec' is required to create resource`);
+    logger.info('Creating OSB resource with opts: ', opts);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to create resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to create resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to create resource');
+    assert.ok(opts.spec, 'Property \'spec\' is required to create resource');
     const metadata = _.merge(opts.metadata, {
       name: opts.resourceId
     });
@@ -886,45 +886,45 @@ class ApiServerClient {
    */
   updateOSBResource(opts) {
     logger.silly('Updating resource with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to update resource`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to update resource`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to update resource`);
-    assert.ok(opts.metadata || opts.spec || opts.status, `Property 'metadata' or 'options' or 'status'  is required to update resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to update resource');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to update resource');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to update resource');
+    assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\'  is required to update resource');
     return Promise.try(() => {
-        const patchBody = {};
-        if (opts.metadata) {
-          patchBody.metadata = opts.metadata;
-        }
-        if (opts.spec) {
-          patchBody.spec = camelcaseKeys(opts.spec);
-        }
-        if (opts.status) {
-          _.forEach(opts.status, (val, key) => {
-            if (key === 'state') {
-              patchBody.metadata = _.merge(patchBody.metadata, {
-                labels: {
-                  'state': val
-                }
-              });
-            }
-          });
-          patchBody.status = opts.status;
-        }
-        logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
-        // Create Namespace if not default
-        const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-          _.get(opts, 'spec.instance_id') : opts.resourceId
-        );
-        return Promise.try(() => this.init())
-          .then(() => apiserver
-            .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-              body: patchBody,
-              headers: {
-                'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+      const patchBody = {};
+      if (opts.metadata) {
+        patchBody.metadata = opts.metadata;
+      }
+      if (opts.spec) {
+        patchBody.spec = camelcaseKeys(opts.spec);
+      }
+      if (opts.status) {
+        _.forEach(opts.status, (val, key) => {
+          if (key === 'state') {
+            patchBody.metadata = _.merge(patchBody.metadata, {
+              labels: {
+                'state': val
               }
-            }));
-      })
+            });
+          }
+        });
+        patchBody.status = opts.status;
+      }
+      logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
+      // Create Namespace if not default
+      const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
+        _.get(opts, 'spec.instance_id') : opts.resourceId
+      );
+      return Promise.try(() => this.init())
+        .then(() => apiserver
+          .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+          .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
+            body: patchBody,
+            headers: {
+              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+            }
+          }));
+    })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -940,16 +940,16 @@ class ApiServerClient {
    */
   patchOSBResource(opts) {
     logger.info('Patching resource options with opts: ', opts);
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to patch options`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to patch options`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to patch options`);
-    assert.ok(opts.metadata || opts.spec || opts.status, `Property 'metadata' or 'options' or 'status' is required to patch resource`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to patch options');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to patch options');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to patch options');
+    assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\' is required to patch resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : (this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
       _.get(opts, 'spec.instance_id') : opts.resourceId
     ));
     return this.getResource(_.merge(opts, {
-        namespaceId: namespaceId
-      }))
+      namespaceId: namespaceId
+    }))
       .then(resource => {
         if (opts.spec && resource.spec) {
           const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
@@ -967,10 +967,10 @@ class ApiServerClient {
    * @param {string} opts.finalizer - Name of finalizer
    */
   removeFinalizers(opts) {
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to remove finalizer`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to remove finalizer`);
-    assert.ok(opts.resourceId, `Property 'resourceId' is required to remove finalizer`);
-    assert.ok(opts.finalizer, `Property 'finalizer' is required to remove finalizer`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to remove finalizer');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to remove finalizer');
+    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to remove finalizer');
+    assert.ok(opts.finalizer, 'Property \'finalizer\' is required to remove finalizer');
     opts.namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return this.getResource(opts)
       .then(resourceBody => {
@@ -987,8 +987,8 @@ class ApiServerClient {
    * @description Create Service/Plan Resource in Apiserver with given crd
    */
   createOrUpdateServicePlan(crd) {
-    logger.debug(`Creating service/plan resource with CRD: `, crd);
-    assert.ok(crd, `Property 'crd' is required to create Service/Plan Resource`);
+    logger.debug('Creating service/plan resource with CRD: ', crd);
+    assert.ok(crd, 'Property \'crd\' is required to create Service/Plan Resource');
     const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
     return Promise.try(() => this.init())
       .then(() => apiserver

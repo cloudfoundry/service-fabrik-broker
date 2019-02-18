@@ -309,16 +309,16 @@ class DockerService extends BaseService {
     const unit = memory.slice(-1);
     const amount = parseInt(memory.slice(0, -1));
     switch (unit) {
-    case 'b':
-      return amount;
-    case 'k':
-      return (amount << 10);
-    case 'm':
-      return (amount << 20);
-    case 'g':
-      return (amount << 30);
-    default:
-      return parseInt(memory);
+      case 'b':
+        return amount;
+      case 'k':
+        return (amount << 10);
+      case 'm':
+        return (amount << 20);
+      case 'g':
+        return (amount << 30);
+      default:
+        return parseInt(memory);
     }
   }
 
@@ -437,10 +437,10 @@ class DockerService extends BaseService {
   delete(params) {
     /* jshint unused:false */
     return Promise.try(() => this
-        .platformManager.preInstanceDeleteOperations({
-          guid: this.guid
-        })
-      )
+      .platformManager.preInstanceDeleteOperations({
+        guid: this.guid
+      })
+    )
       .then(() => this.removeContainer())
       .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
       .then(() => this.removeVolumes());
@@ -450,10 +450,10 @@ class DockerService extends BaseService {
     /* jshint unused:false */
     let credentials;
     return this.platformManager.preBindOperations({
-        context: params.context,
-        bind_resource: params.bind_resource,
-        bindingId: params.binding_id
-      })
+      context: params.context,
+      bind_resource: params.bind_resource,
+      bindingId: params.binding_id
+    })
       .then(() => this.inspectContainer())
       .catchThrow(DockerError.NotFound, new ServiceInstanceNotFound(this.guid))
       .then(() => this.createCredentials())
@@ -503,7 +503,7 @@ class DockerService extends BaseService {
   createCredentials() {
     const networkInfo = this.getNetworkInfo(this.containerInfo);
     const creds = this.credentials.create(this.getEnvironment(), networkInfo.ip, networkInfo.ports);
-    assert.ok(creds.hostname, `Attribute 'hostname' is missing in credentials, could be if your container or host is down`);
+    assert.ok(creds.hostname, 'Attribute \'hostname\' is missing in credentials, could be if your container or host is down');
     return creds;
   }
 
@@ -735,7 +735,7 @@ class DockerService extends BaseService {
     const hostConfig = {
       'CPU Shares': this.containerInfo.HostConfig.CpuShares,
       'Memory': this.containerInfo.HostConfig.Memory,
-      'Memory Swap': this.containerInfo.HostConfig.MemorySwap,
+      'Memory Swap': this.containerInfo.HostConfig.MemorySwap
     };
     const networkSettings = {
       'Host IP': undefined,
@@ -749,7 +749,7 @@ class DockerService extends BaseService {
     };
     if (this.containerInfo.State.Running) {
       _.assign(hostConfig, {
-        'Privileged': this.containerInfo.HostConfig.Privileged,
+        'Privileged': this.containerInfo.HostConfig.Privileged
       });
       const networkInfo = this.getNetworkInfo(this.containerInfo);
       _.assign(networkSettings, {

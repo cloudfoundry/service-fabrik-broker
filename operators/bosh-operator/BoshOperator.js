@@ -24,7 +24,7 @@ class BoshOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        switch (_.get(changeObjectBody, 'status.state')) {
+      switch (_.get(changeObjectBody, 'status.state')) {
         case CONST.APISERVER.RESOURCE_STATE.IN_QUEUE:
           return this._processCreate(changeObjectBody);
         case CONST.APISERVER.RESOURCE_STATE.UPDATE:
@@ -34,8 +34,8 @@ class BoshOperator extends BaseOperator {
         default:
           logger.error('Ideally it should never come to default state! There must be some error as the state is ', _.get(changeObjectBody, 'status.state'));
           break;
-        }
-      })
+      }
+    })
       .catch(err => {
         logger.error('Error occurred in processing request by BoshOperator', err);
         return eventmesh.apiServerClient.updateResource({
@@ -59,10 +59,10 @@ class BoshOperator extends BaseOperator {
   }
 
   _processCreate(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Creating deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.create(changedOptions))
@@ -78,10 +78,10 @@ class BoshOperator extends BaseOperator {
   }
 
   _processUpdate(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Updating deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.update(changedOptions))
@@ -97,10 +97,10 @@ class BoshOperator extends BaseOperator {
   }
 
   _processDelete(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.name'), `Argument 'metadata.name' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.name'), 'Argument \'metadata.name\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(_.get(changeObjectBody, 'spec.options'));
-    assert.ok(changedOptions.plan_id, `Argument 'spec.options' should have an argument plan_id to process the request`);
+    assert.ok(changedOptions.plan_id, 'Argument \'spec.options\' should have an argument plan_id to process the request');
     logger.info('Deleting deployment resource with the following options:', changedOptions);
     return DirectorService.createInstance(_.get(changeObjectBody, 'metadata.name'), changedOptions)
       .then(directorService => directorService.delete(changedOptions))

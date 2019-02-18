@@ -96,7 +96,7 @@ class OobBackupManager {
     const deploymentName = opts.deploymentName;
 
     return this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
-      .then((agentProperties) => {
+      .then(agentProperties => {
         const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
         return agent
           .getBackupLastOperation(agent_ip)
@@ -133,15 +133,15 @@ class OobBackupManager {
         .then(metadata => {
           logger.debug('Retrieved backup info :', metadata);
           switch (metadata.state) {
-          case 'processing':
-            return this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
-              .then((agentProperties) => {
-                const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
-                return agent.getBackupLastOperation(metadata.agent_ip)
-                  .then(data => [_.assign(metadata, _.pick(data, 'state', 'stage'))]);
-              });
-          default:
-            return [metadata];
+            case 'processing':
+              return this.boshDirector.getAgentPropertiesFromManifest(deploymentName)
+                .then(agentProperties => {
+                  const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
+                  return agent.getBackupLastOperation(metadata.agent_ip)
+                    .then(data => [_.assign(metadata, _.pick(data, 'state', 'stage'))]);
+                });
+            default:
+              return [metadata];
           }
         });
     } else {
@@ -183,7 +183,7 @@ class OobBackupManager {
           root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME
         };
 
-        var result = {
+        var result = { // eslint-disable-line no-var
           operation: 'restore',
           agent_ip: undefined
         };
@@ -219,7 +219,7 @@ class OobBackupManager {
     }
     const deploymentName = opts.deploymentName;
 
-    return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then((agentProperties) => {
+    return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then(agentProperties => {
       const agent = new Agent(this.getAgentFromAgentProperties(agentProperties));
       return agent.getRestoreLastOperation(agent_ip)
         .tap(lastOperation => {
@@ -250,18 +250,18 @@ class OobBackupManager {
       .getRestoreFile(opts)
       .then(metadata => {
         switch (metadata.state) {
-        case 'processing':
-          return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then((agentProperties) => {
-            const agent = this.getAgentFromAgentProperties(agentProperties);
-            return new Agent(agent)
-              .getRestoreLastOperation(metadata.agent_ip)
-              .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
-          });
-        default:
-          return metadata;
+          case 'processing':
+            return this.boshDirector.getAgentPropertiesFromManifest(deploymentName).then(agentProperties => {
+              const agent = this.getAgentFromAgentProperties(agentProperties);
+              return new Agent(agent)
+                .getRestoreLastOperation(metadata.agent_ip)
+                .then(data => _.assign(metadata, _.pick(data, 'state', 'stage')));
+            });
+          default:
+            return metadata;
         }
       });
-    //});
+    // });
   }
 
   /* Helper functions  */

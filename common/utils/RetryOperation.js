@@ -39,7 +39,7 @@ class RetryOperation {
         .try(() => {
           return fn(tries);
         })
-        .catch(self.predicate, (err) => {
+        .catch(self.predicate, err => {
           const now = Date.now();
           const delay = Math.max(self.backoff(++tries) - (now - attemptStart), 0);
           const time = now + delay - retryStart;

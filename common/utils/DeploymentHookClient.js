@@ -24,7 +24,7 @@ class DeploymentHookClient extends HttpClient {
     return this
       .request({
         method: 'POST',
-        url: `/hook`,
+        url: '/hook',
         body: options,
         json: true
       }, 200)

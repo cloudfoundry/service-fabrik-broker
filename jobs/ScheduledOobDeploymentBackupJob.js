@@ -85,17 +85,17 @@ class ScheduledOobDeploymentBackupJob extends BaseJob {
           container: job.attrs.data.container,
           root_folder: CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.ROOT_FOLDER_NAME,
           user: {
-            name: config.cf.username,
+            name: config.cf.username
           },
           force: true
         };
-        //Adding a delay for delete requests as we dont want to overload the undelying infra with too many deletes at the same second
-        //Default delay added to take care of existing scheduled Jobs.
+        // Adding a delay for delete requests as we dont want to overload the undelying infra with too many deletes at the same second
+        // Default delay added to take care of existing scheduled Jobs.
         return Promise
           .delay((job.attrs.data.delete_delay || CONST.FABRIK_OUT_OF_BAND_DEPLOYMENTS.DEFAULT_DELETE_DELAY) * numberOfBackups)
           .then(() => {
             if (numberOfBackups % 30 === 0) {
-              //Incase of many stale backups, once every 30 seconds touch the job which keeps the lock on the job
+              // Incase of many stale backups, once every 30 seconds touch the job which keeps the lock on the job
               job.touch(() => {});
             }
             return backupStore
@@ -121,7 +121,7 @@ class ScheduledOobDeploymentBackupJob extends BaseJob {
           .listBackupFilenames(backupStartedBefore, options)
           .then(listOfFiles => {
             if (listOfFiles.length === 0) {
-              //Deployment is deleted and no more backups present. Cancel the backup scheduler for the deployment
+              // Deployment is deleted and no more backups present. Cancel the backup scheduler for the deployment
               logger.info(`-> No more backups for the deleted deployment : ${options.deployment_name}. Cancelling backup scheduled Job`);
               return ScheduleManager
                 .cancelSchedule(options.deployment_name, CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP)

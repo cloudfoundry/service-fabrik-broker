@@ -29,12 +29,12 @@ class BoshStaggeredDeploymentPoller extends BaseStatusPoller {
       .createInstance(instanceId, resourceOptions)
       .then(directorService => {
         switch (operationType) {
-        case CONST.OPERATION_TYPE.CREATE:
-          return directorService.create(resourceOptions, deploymentName);
-        case CONST.OPERATION_TYPE.UPDATE:
-          return directorService.update(resourceOptions, deploymentName);
-        case CONST.OPERATION_TYPE.DELETE:
-          return directorService.delete(resourceOptions, deploymentName);
+          case CONST.OPERATION_TYPE.CREATE:
+            return directorService.create(resourceOptions, deploymentName);
+          case CONST.OPERATION_TYPE.UPDATE:
+            return directorService.update(resourceOptions, deploymentName);
+          case CONST.OPERATION_TYPE.DELETE:
+            return directorService.delete(resourceOptions, deploymentName);
         }
       })
       .then(directorResponse => {

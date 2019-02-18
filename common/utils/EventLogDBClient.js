@@ -48,7 +48,7 @@ class EventLogDBClient {
   logEvent(eventInfo) {
     eventInfo.instanceId = _.get(eventInfo, 'request.instance_id') || _.get(eventInfo, 'request.instance_guid') ||
       _.get(eventInfo, 'response.instance_id') || _.get(eventInfo, 'response.instance_guid', 'NA');
-    //Pick instance id either from request / response attribs
+    // Pick instance id either from request / response attribs
     const user = _.get(eventInfo, 'request.user', CONST.SYSTEM_USER);
     logger.debug('event being written to DB - ', eventInfo);
     Repository.save(CONST.DB_MODEL.EVENT_DETAIL, eventInfo, user);

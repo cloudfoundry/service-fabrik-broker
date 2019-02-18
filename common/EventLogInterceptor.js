@@ -31,12 +31,12 @@ class EventLogInterceptor {
     resBody = resBody || '';
     let operationConfig;
     if (eventConfig.op_name_in_request) {
-      //If operation name in request is to be checked. This handles scenarios where within each HTTP Verb,
-      //several operations are defined. for ex. enpoints like last_operation, :operation(backup/restore)
+      // If operation name in request is to be checked. This handles scenarios where within each HTTP Verb,
+      // several operations are defined. for ex. enpoints like last_operation, :operation(backup/restore)
       operationConfig = this.getOperationConfig(req, eventConfig);
     } else {
-      //OR just normal HTTP verbs are sufficient to determine operations
-      //& event config at VERB level is same as Operation level
+      // OR just normal HTTP verbs are sufficient to determine operations
+      // & event config at VERB level is same as Operation level
       operationConfig = eventConfig;
     }
     if (!operationConfig) {
@@ -51,17 +51,17 @@ class EventLogInterceptor {
     const requestDetails = _
       .chain({})
       .assign(req.body, req.params, req.query, req.params_copy)
-      //req.params_copy gets populated in BaseController.js in handler function
+      // req.params_copy gets populated in BaseController.js in handler function
       .set('user', req.user || {})
       .value();
-    //If operation status is inprogress and if config says do not log, then skip it
+    // If operation status is inprogress and if config says do not log, then skip it
     if (!operationConfig.log_inprogress_state && operationStatus.inprogress) {
       if (res.statusCode === '500') {
         logger.warn(`Potential failure operation! verify : ${operationConfig.event_name} - request : ${requestDetails} - response : ${resBody}`);
       }
       return [];
-      //This check is specifically for enpoints like last_operation, :operation(backup/restore),
-      //For operations which can be determined at HTTP verb, below is checked in execute() method itself
+      // This check is specifically for enpoints like last_operation, :operation(backup/restore),
+      // For operations which can be determined at HTTP verb, below is checked in execute() method itself
     }
     const planId = _.get(req, 'body.plan_id') || _.get(req, 'query.plan_id');
     const serviceInstanceType = planId ? `${require('./models/catalog').getPlan(planId).manager.name}.` : (req.service ? `${req.service.name}.` : '');
@@ -102,8 +102,8 @@ class EventLogInterceptor {
         operation = utils.decodeBase64(operation);
       }
       if (typeof operation === 'string' && !eventConfig.op_name_in_request.lookup_params) {
-        //If operation name is string and there are no lookup params, then the value at the
-        //path itself is the name of the operation and no need for further lookup. (ex. :operation(backup/restore))
+        // If operation name is string and there are no lookup params, then the value at the
+        // path itself is the name of the operation and no need for further lookup. (ex. :operation(backup/restore))
         return eventConfig[operation] ? _.assign(eventConfig[operation],
           _.pick(eventConfig, 'cf_last_operation', 'http_success_codes', 'http_inprogress_codes')) : undefined;
       } else {
@@ -153,25 +153,25 @@ class EventLogInterceptor {
   }
 
   getOperationStatus(res, eventConfig, resBody) {
-    //Method operation status either follows CF Last operation semantics
-    //OR normal HTTP method response states
+    // Method operation status either follows CF Last operation semantics
+    // OR normal HTTP method response states
     if (eventConfig.cf_last_operation || eventConfig.check_res_body) {
       switch (resBody.state) {
-      case 'succeeded':
-        return this.successState(eventConfig);
-      case 'aborted':
-      case 'failed':
-        return this.failureState(res.statusCode, eventConfig);
-      default:
-        //Per design of cf last operation, internal server errors (500) are not flagged as errors with completed sate
-        //by broker. They are returned back to cloud controller with in-progress status, with the hope that whatever was
-        //the reason which caused the internal server error might get fixed by the cloud controller timeout time,
-        //at which time CC will stop polling for status and will mark the operation as failed.
-        //Hence keeping in-progress as default state if it is not conclusively success/failure state.
-        if (res.statusCode === 410 && eventConfig.event_name === 'delete_instance') {
+        case 'succeeded':
           return this.successState(eventConfig);
-        }
-        return this.inProgressState(eventConfig);
+        case 'aborted':
+        case 'failed':
+          return this.failureState(res.statusCode, eventConfig);
+        default:
+        // Per design of cf last operation, internal server errors (500) are not flagged as errors with completed sate
+        // by broker. They are returned back to cloud controller with in-progress status, with the hope that whatever was
+        // the reason which caused the internal server error might get fixed by the cloud controller timeout time,
+        // at which time CC will stop polling for status and will mark the operation as failed.
+        // Hence keeping in-progress as default state if it is not conclusively success/failure state.
+          if (res.statusCode === 410 && eventConfig.event_name === 'delete_instance') {
+            return this.successState(eventConfig);
+          }
+          return this.inProgressState(eventConfig);
       }
     } else if (_.includes(eventConfig.http_success_codes, res.statusCode)) {
       return this.successState(eventConfig);
@@ -240,7 +240,7 @@ class EventLogInterceptor {
       logger.info(auditMessage);
       return eventInfo;
     } catch (err) {
-      //Any errors arising out of logging must not bubble up
+      // Any errors arising out of logging must not bubble up
       logger.error(`Error occurred while publishing event for ${url} : ${method}`, err);
     }
   }

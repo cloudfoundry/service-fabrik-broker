@@ -17,7 +17,7 @@ class DefaultBackupOperator extends BaseOperator {
     utils.initializeEventListener(config.external, 'external');
     const validStateList = [CONST.APISERVER.RESOURCE_STATE.IN_QUEUE, CONST.OPERATION.ABORT, CONST.APISERVER.RESOURCE_STATE.DELETE];
     return this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP)
-      .then(() => this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)) //creating director resource CRD as well, as during backup it is needed.
+      .then(() => this.registerCrds(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR)) // creating director resource CRD as well, as during backup it is needed.
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, validStateList));
   }
 
@@ -55,10 +55,10 @@ class DefaultBackupOperator extends BaseOperator {
   static _processAbort(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     return eventmesh.apiServerClient.getOptions({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: changedOptions.guid
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      resourceId: changedOptions.guid
+    })
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);
@@ -70,10 +70,10 @@ class DefaultBackupOperator extends BaseOperator {
   static _processDelete(changeObjectBody) {
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     return eventmesh.apiServerClient.getOptions({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: changedOptions.guid
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+      resourceId: changedOptions.guid
+    })
       .then(options => {
         return Promise.try(() => {
           const plan = catalog.getPlan(options.plan_id);

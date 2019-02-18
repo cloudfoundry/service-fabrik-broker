@@ -32,8 +32,8 @@ module.exports = function (express) {
     if (req.__route && path) {
       const searchFromIdx = req.__route.length - path.length;
       if (req.__route.indexOf(path, searchFromIdx) > 0) {
-        //There have been instances (in case of error), where same mount path is repeatedly appended at times. 
-        //This ensures that if a mountpath is already at the end of the URL, then skip it dont add it.
+        // There have been instances (in case of error), where same mount path is repeatedly appended at times. 
+        // This ensures that if a mountpath is already at the end of the URL, then skip it dont add it.
         return origPP.apply(this, arguments);
       }
     }

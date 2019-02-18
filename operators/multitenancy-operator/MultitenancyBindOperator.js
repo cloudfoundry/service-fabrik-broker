@@ -27,13 +27,13 @@ class MultitenancyBindOperator extends BaseOperator {
 
   processRequest(changeObjectBody) {
     return Promise.try(() => {
-        if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-          return this._processBind(changeObjectBody);
-        } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
-          return this._processUnbind(changeObjectBody);
-        }
-      })
-      .catch(Error, (err) => {
+      if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
+        return this._processBind(changeObjectBody);
+      } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
+        return this._processUnbind(changeObjectBody);
+      }
+    })
+      .catch(Error, err => {
         logger.error('Error occurred in processing request by MultitenancyBindOperator', err);
         return eventmesh.apiServerClient.updateResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
@@ -48,8 +48,8 @@ class MultitenancyBindOperator extends BaseOperator {
   }
 
   _processBind(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), 'Argument \'metadata.labels.instance_guid\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info(`Triggering bind of resource: '${this.bindResourceType}' with the following options: '${JSON.stringify(changedOptions)}`);
@@ -71,8 +71,8 @@ class MultitenancyBindOperator extends BaseOperator {
   }
 
   _processUnbind(changeObjectBody) {
-    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), `Argument 'metadata.labels.instance_guid' is required to process the request`);
-    assert.ok(_.get(changeObjectBody, 'spec.options'), `Argument 'spec.options' is required to process the request`);
+    assert.ok(_.get(changeObjectBody, 'metadata.labels.instance_guid'), 'Argument \'metadata.labels.instance_guid\' is required to process the request');
+    assert.ok(_.get(changeObjectBody, 'spec.options'), 'Argument \'spec.options\' is required to process the request');
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     const instance_guid = _.get(changeObjectBody, 'metadata.labels.instance_guid');
     logger.info(`Triggering unbind of resource: '${this.bindResourceType}' with the following options: '${JSON.stringify(changedOptions)}`);

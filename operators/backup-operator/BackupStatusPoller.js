@@ -28,11 +28,11 @@ class BackupStatusPoller extends BaseStatusPoller {
   }
 
   checkOperationCompletionStatus(opts) {
-    assert.ok(_.get(opts, 'instance_guid'), `Argument 'opts.instance_guid' is required to start polling for backup`);
-    assert.ok(_.get(opts, 'backup_guid'), `Argument 'opts.backup_guid' is required to start polling for backup`);
-    assert.ok(_.get(opts, 'plan_id'), `Argument 'opts.plan_id' is required to start polling for backup`);
-    assert.ok(_.get(opts, 'started_at'), `Argument 'opts.started_at' is required to start polling for backup`);
-    assert.ok(_.get(opts, 'deployment'), `Argument 'opts.deployment' is required to start polling for backup`);
+    assert.ok(_.get(opts, 'instance_guid'), 'Argument \'opts.instance_guid\' is required to start polling for backup');
+    assert.ok(_.get(opts, 'backup_guid'), 'Argument \'opts.backup_guid\' is required to start polling for backup');
+    assert.ok(_.get(opts, 'plan_id'), 'Argument \'opts.plan_id\' is required to start polling for backup');
+    assert.ok(_.get(opts, 'started_at'), 'Argument \'opts.started_at\' is required to start polling for backup');
+    assert.ok(_.get(opts, 'deployment'), 'Argument \'opts.deployment\' is required to start polling for backup');
 
     logger.info('Checking Operation Completion Status for :', opts);
     const operationName = CONST.OPERATION_TYPE.BACKUP;
@@ -64,21 +64,21 @@ class BackupStatusPoller extends BaseStatusPoller {
             .then(() => {
               const lockDeploymentMaxDuration = eventmesh.lockManager.getLockTTL(operationName);
               if (backupTriggeredDuration > lockDeploymentMaxDuration) {
-                //Operation timed out
+                // Operation timed out
                 if (!opts.abortStartTime) {
-                  //Operation not aborted. Aborting operation and with abort start time
+                  // Operation not aborted. Aborting operation and with abort start time
                   let abortStartTime = new Date().toISOString();
                   return eventmesh.apiServerClient.patchResource({
-                      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-                      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-                      resourceId: opts.backup_guid,
-                      status: {
-                        state: CONST.APISERVER.RESOURCE_STATE.ABORT,
-                        response: {
-                          abortStartTime: abortStartTime
-                        }
+                    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+                    resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+                    resourceId: opts.backup_guid,
+                    status: {
+                      state: CONST.APISERVER.RESOURCE_STATE.ABORT,
+                      response: {
+                        abortStartTime: abortStartTime
                       }
-                    })
+                    }
+                  })
                     .then(() => {
                       operationStatusResponse.state = CONST.OPERATION.ABORTING;
                       return operationStatusResponse;
@@ -105,25 +105,25 @@ class BackupStatusPoller extends BaseStatusPoller {
       })
       .then(operationStatusResponse => utils.isServiceFabrikOperationFinished(operationStatusResponse.state) ?
         this.doPostFinishOperation(operationStatusResponse, operationName, opts)
-        .tap(() => {
-          const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
-          let retryDelayInMinutes;
-          if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
-            retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
-          }
-          let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
-          if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
-            const options = {
-              instance_id: instance_guid,
-              repeatInterval: retryInterval,
-              type: CONST.BACKUP.TYPE.ONLINE
-            };
-            return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
-              maxAttempts: 3,
-              minDelay: 500
-            });
-          }
-        }) : operationStatusResponse
+          .tap(() => {
+            const RUN_AFTER = config.scheduler.jobs.reschedule_delay;
+            let retryDelayInMinutes;
+            if ((RUN_AFTER.toLowerCase()).indexOf('minutes') !== -1) {
+              retryDelayInMinutes = parseInt(/^[0-9]+/.exec(RUN_AFTER)[0]);
+            }
+            let retryInterval = utils.getCronWithIntervalAndAfterXminute(plan.service.backup_interval || 'daily', retryDelayInMinutes);
+            if (operationStatusResponse.state === CONST.OPERATION.FAILED) {
+              const options = {
+                instance_id: instance_guid,
+                repeatInterval: retryInterval,
+                type: CONST.BACKUP.TYPE.ONLINE
+              };
+              return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+                maxAttempts: 3,
+                minDelay: 500
+              });
+            }
+          }) : operationStatusResponse
       )
       .catch(err => {
         logger.error(`Caught error while checking for backup operation completion status for guid ${backup_guid}:`, err);

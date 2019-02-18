@@ -15,7 +15,7 @@ class ScriptExecutor {
   execute() {
     return new Promise((resolve, reject) => {
       let args = {};
-      _.forEach(arguments, (value) => {
+      _.forEach(arguments, value => {
         _.assign(args, value);
       });
       let executable_command = `${this.command} '${JSON.stringify(args)}'`;

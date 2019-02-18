@@ -123,8 +123,8 @@ function initializeEventListener(appConfig, appType) {
     .assign(config.riemann)
     .set('event_type', appConfig.event_type)
     .value();
-  const riemannClient = new EventLogRiemannClient(riemannOptions);
-  //if events are to be forwarded to monitoring agent via domain socket
+  const riemannClient = new EventLogRiemannClient(riemannOptions); // eslint-disable-line no-unused-vars
+  // if events are to be forwarded to monitoring agent via domain socket
   if (appConfig.domain_socket && appConfig.domain_socket.fwd_events) {
     /* jshint unused:false */
     const domainSockOptions = _
@@ -132,10 +132,10 @@ function initializeEventListener(appConfig, appType) {
       .set('event_type', appConfig.event_type)
       .set('path', appConfig.domain_socket.path)
       .value();
-    const domainSockClient = new EventLogDomainSocketClient(domainSockOptions);
+    const domainSockClient = new EventLogDomainSocketClient(domainSockOptions); // eslint-disable-line no-unused-vars
   }
   if (isDBConfigured()) {
-    const domainSockClient = new EventLogDBClient({
+    const domainSockClient = new EventLogDBClient({ // eslint-disable-line no-unused-vars
       event_type: appConfig.event_type
     });
   }
@@ -181,13 +181,13 @@ function demux(stream, options) {
     function onreadable() {
       while (read()) {
         switch (header.readUInt8(0)) {
-        case 2:
-          stderrLength++;
-          stderr.push(chunk);
-          break;
-        default:
-          stdoutLength++;
-          stdout.push(chunk);
+          case 2:
+            stderrLength++;
+            stderr.push(chunk);
+            break;
+          default:
+            stdoutLength++;
+            stdout.push(chunk);
         }
         takeRight(2 * options.tail);
         header = null;
@@ -294,12 +294,12 @@ function promiseWhile(condition, action) {
 function maskSensitiveInfo(target) {
   const mask = function (target, level) {
     const SENSITIVE_FIELD_NAMES = ['password', 'psswd', 'pwd', 'passwd', 'uri', 'url'];
-    //For now only the above fields are marked sensitive. If any additional keys are to be added, expand this list.
+    // For now only the above fields are marked sensitive. If any additional keys are to be added, expand this list.
     if (level === undefined || level < 0) {
       throw new Error('Level argument cannot be undefined or negative value');
     }
     if (level > 4) {
-      //Do not recurse beyond 5 levels in deep objects.
+      // Do not recurse beyond 5 levels in deep objects.
       return target;
     }
     if (!_.isPlainObject(target) && !_.isArray(target)) {
@@ -316,7 +316,7 @@ function maskSensitiveInfo(target) {
         }
       });
     } else if (_.isArray(target)) {
-      _.forEach(target, (value) => {
+      _.forEach(target, value => {
         if (_.isPlainObject(value) || _.isArray(value)) {
           mask(value, level + 1);
         }
@@ -331,17 +331,17 @@ function isDBConfigured() {
 }
 
 function isFeatureEnabled(name) {
-  var jobTypes = _.get(config, 'scheduler.job_types');
-  var jobTypeList = jobTypes !== undefined ? jobTypes.replace(/\s*/g, '').split(',') : [];
+  var jobTypes = _.get(config, 'scheduler.job_types'); // eslint-disable-line no-var
+  var jobTypeList = jobTypes !== undefined ? jobTypes.replace(/\s*/g, '').split(',') : []; // eslint-disable-line no-var
   switch (name) {
-  case CONST.FEATURE.SCHEDULED_UPDATE:
-    const scheduleUpdateEnabled = _.get(config, 'feature.ServiceInstanceAutoUpdate', false);
-    return scheduleUpdateEnabled && isDBConfigured() && jobTypeList.indexOf(name) !== -1;
-  case CONST.FEATURE.SCHEDULED_BACKUP:
-  case CONST.FEATURE.SCHEDULED_OOB_DEPLOYMENT_BACKUP:
-    return isDBConfigured() && jobTypeList.indexOf(name) !== -1;
-  default:
-    throw new Error(`Unknown feature : ${name}`);
+    case CONST.FEATURE.SCHEDULED_UPDATE:
+      const scheduleUpdateEnabled = _.get(config, 'feature.ServiceInstanceAutoUpdate', false);
+      return scheduleUpdateEnabled && isDBConfigured() && jobTypeList.indexOf(name) !== -1;
+    case CONST.FEATURE.SCHEDULED_BACKUP:
+    case CONST.FEATURE.SCHEDULED_OOB_DEPLOYMENT_BACKUP:
+      return isDBConfigured() && jobTypeList.indexOf(name) !== -1;
+    default:
+      throw new Error(`Unknown feature : ${name}`);
   }
 }
 
@@ -358,7 +358,7 @@ function deploymentNameRegExp(service_subnet) {
 }
 
 function taskIdRegExp() {
-  return new RegExp(`^([0-9a-z-]+)_([0-9]+)$`);
+  return new RegExp('^([0-9a-z-]+)_([0-9]+)$');
 }
 
 function parseServiceInstanceIdFromDeployment(deploymentName) {
@@ -373,15 +373,15 @@ function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   const factor = max - min === 1 ? 2 : (max - min);
-  //If we want a random of just 2 numbers then the factor must be 2, else it will always return back the lesser of two number always.
+  // If we want a random of just 2 numbers then the factor must be 2, else it will always return back the lesser of two number always.
   return Math.floor(Math.random() * (factor)) + min;
 }
 
 function getRandomCronForEveryDayAtXHoursInterval(everyXHours) {
   assert.ok((everyXHours > 0 && everyXHours <= 24), 'Input hours can be any number between 1 to 24 only');
   const min = exports.getRandomInt(0, 59);
-  //referred via exports to aid in stubbing for UT
-  let nthHour = exports.getRandomInt(0, everyXHours - 1); //Since we consider from 0
+  // referred via exports to aid in stubbing for UT
+  let nthHour = exports.getRandomInt(0, everyXHours - 1); // Since we consider from 0
   let hoursApplicable = `${nthHour}`;
   while (nthHour + everyXHours < 24) {
     nthHour = nthHour + everyXHours;
@@ -439,23 +439,23 @@ function getRandomCronForOnceEveryXDaysWeekly(options) {
 function getRandomCronForOnceEveryXDays(days, options) {
   assert.ok((days > 0 && days < 28), 'Input days can be any number between 1 to 27 only');
   const maxDay = days <= 14 ? days : 28 - days;
-  //Considering only 28 days while scheduling to keep things simple.
+  // Considering only 28 days while scheduling to keep things simple.
   const startAfterHour = _.get(options, 'start_after_hr', 0);
   const startBeforeHour = _.get(options, 'start_before_hr', 23);
   const hr = exports.getRandomInt(startAfterHour, startBeforeHour);
   const startAfterMin = _.get(options, 'start_after_min', 0);
   const startBeforeMin = _.get(options, 'start_before_min', 59);
   const min = exports.getRandomInt(startAfterMin, startBeforeMin);
-  //referred via exports to aid in stubbing for UT
+  // referred via exports to aid in stubbing for UT
   const startDay = exports.getRandomInt(1, maxDay);
   let day = startDay;
   let daysApplicable = day;
   while (day + days <= 28 || ((31 - (day + days)) + (startDay - 1) >= days)) {
-    //days 29 - 31 are tricky and are not always applicable in every month. So keeping things simple.
-    //Second part of OR condition applicable only for shorter duration like once every 2days.
-    //NOTE: This function is not perfect in calculating once every xdays in cron.
-    //(Not sure if there could be a way to truly randomize and still have valid cron to get once every x days,
-    //but this is as good as it gets for now with randomization)
+    // days 29 - 31 are tricky and are not always applicable in every month. So keeping things simple.
+    // Second part of OR condition applicable only for shorter duration like once every 2days.
+    // NOTE: This function is not perfect in calculating once every xdays in cron.
+    // (Not sure if there could be a way to truly randomize and still have valid cron to get once every x days,
+    // but this is as good as it gets for now with randomization)
     day = day + days;
     daysApplicable = `${daysApplicable},${day}`;
   }
@@ -488,8 +488,8 @@ function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
         nthHour = nthHour - everyXhrs;
         arrayOfHours.push(nthHour);
       }
-      //This to handle e.g. '7 hours' where 7 doesn't divide 24
-      //then it shoud run in every 7 hours a day including 0
+      // This to handle e.g. '7 hours' where 7 doesn't divide 24
+      // then it shoud run in every 7 hours a day including 0
       if (24 % everyXhrs !== 0 && _.indexOf(arrayOfHours, 0) === -1) {
         arrayOfHours.push(0);
       }
@@ -554,35 +554,35 @@ function unifyDiffResult(result) {
   const diff = [];
   _.each(result.diff, _.spread((value, type) => {
     switch (type) {
-    case 'added':
-      diff.push(`+${value}`);
-      break;
-    case 'removed':
-      diff.push(`-${value}`);
-      break;
-    default:
-      diff.push(` ${value}`);
-      break;
+      case 'added':
+        diff.push(`+${value}`);
+        break;
+      case 'removed':
+        diff.push(`-${value}`);
+        break;
+      default:
+        diff.push(` ${value}`);
+        break;
     }
   }));
   return diff;
 }
 
 function getBrokerAgentCredsFromManifest(manifest) {
-  var brokerAgentNameRegex = RegExp('broker-agent');
+  var brokerAgentNameRegex = RegExp('broker-agent'); // eslint-disable-line no-var
   let authObject;
-  _.forEach(manifest.instance_groups, (instanceGroup) => {
+  _.forEach(manifest.instance_groups, instanceGroup => {
     if (authObject) {
       // break forEach
       return false;
     }
-    _.forEach(instanceGroup.jobs, (job) => {
+    _.forEach(instanceGroup.jobs, job => {
       if (brokerAgentNameRegex.test(job.name)) {
         authObject =
           _.chain({})
-          .set('username', job.properties.username)
-          .set('password', job.properties.password)
-          .value();
+            .set('username', job.properties.username)
+            .set('password', job.properties.password)
+            .value();
         // break forEach
         return false;
       }
@@ -711,9 +711,9 @@ function registerInterOperatorCrds() {
 function getAllServices() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES
-    })
+    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES
+  })
     .then(serviceList => {
       let services = [];
       _.forEach(serviceList, service => {
@@ -726,12 +726,12 @@ function getAllServices() {
 function getAllPlansForService(serviceId) {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
-      query: {
-        labelSelector: `serviceId=${serviceId}`
-      }
-    })
+    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
+    query: {
+      labelSelector: `serviceId=${serviceId}`
+    }
+  })
     .then(planList => {
       let plans = [];
       _.forEach(planList, plan => {
@@ -747,7 +747,7 @@ function loadCatalogFromAPIServer() {
       .tap(services => {
         config.services = services;
       })
-      .then((services) => {
+      .then(services => {
         return Promise.all(Promise.each(services, service => {
           return getAllPlansForService(service.id)
             .then(plans => {

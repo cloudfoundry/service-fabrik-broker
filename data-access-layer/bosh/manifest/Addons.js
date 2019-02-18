@@ -12,22 +12,22 @@ class Addons {
 
   getAll() {
     const addOnList = _.get(config, 'service_addon_jobs', []);
-    return _.map(addOnList, (name) => this.getAddOn(name));
+    return _.map(addOnList, name => this.getAddOn(name));
   }
 
   getAddOn(type) {
     switch (type) {
-    case CONST.ADD_ON_JOBS.IP_TABLES_MANAGER:
-      return this.getIpTablesManagerJob();
-    default:
-      assert.fail(type, [CONST.ADD_ON_JOBS.IP_TABLES_MANAGER], `Invalid add-on job type. ${type} does not exist`);
+      case CONST.ADD_ON_JOBS.IP_TABLES_MANAGER:
+        return this.getIpTablesManagerJob();
+      default:
+        assert.fail(type, [CONST.ADD_ON_JOBS.IP_TABLES_MANAGER], `Invalid add-on job type. ${type} does not exist`);
     }
   }
 
   getIpTablesManagerJob() {
     let allowIpList = [],
       blockIpList = [];
-    _.each(this.networks, (net) => {
+    _.each(this.networks, net => {
       allowIpList = allowIpList.concat.apply(allowIpList, net.static);
       blockIpList.push(net.range);
     });

@@ -13,60 +13,60 @@ const catalog = require('../common/models').catalog;
 const eventmesh = require('../data-access-layer/eventmesh');
 const backupStore = require('../data-access-layer/iaas').backupStore;
 const ScheduleManager = require('./ScheduleManager');
-//Above reference to schedulemanager leads to the below cyclic dependency:
+// Above reference to schedulemanager leads to the below cyclic dependency:
 // ScheduleManager -> Scheduler -> JobFabrik -> ScheduleBackupJob -> ScheduleManager
 // However in JobFabrik the reference is done at runtime & hence the above reference back to ScheduleManager does
 // not pose the typical issues of cyclic dependencies.
 
-//Intentionally Jobs are kept as static as we register same definition for all Jobs of similar type
-//Any instance specific references if reqiured for any jobs must be kept within run method for any future jobs
+// Intentionally Jobs are kept as static as we register same definition for all Jobs of similar type
+// Any instance specific references if reqiured for any jobs must be kept within run method for any future jobs
 class ScheduleBackupJob extends BaseJob {
 
   static run(job, done) {
     return Promise.try(() => {
-        job.__started_At = new Date();
-        const jobData = job.attrs.data;
-        logger.info(`-> Starting ScheduleBackupJob -  name: ${jobData[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(jobData)} `);
-        if (!_.get(jobData, 'instance_id') || !_.get(jobData, 'type')) {
-          const msg = `Scheduled backup cannot be initiated as the required mandatory params (intance_uid | type) is empty : ${JSON.stringify(jobData)}`;
-          logger.error(msg);
-          return this.runFailed(new errors.BadRequest(msg), undefined, job, done);
-        }
-        const backupRunStatus = {
-          start_backup_status: 'failed',
-          delete_backup_status: 'failed'
-        };
-        let instanceDeleted = false;
-        return this
-          .isServiceInstanceDeleted(jobData.instance_id)
-          .tap(deleteStatus => instanceDeleted = deleteStatus)
-          .then(() => {
-            if (instanceDeleted) {
-              if (!_.get(job.attrs.data, 'instance_deletion_time')) {
-                job.attrs.data.instance_deletion_time = new Date(Date.now()).toISOString();
-              }
-              return 'instance_deleted';
+      job.__started_At = new Date();
+      const jobData = job.attrs.data;
+      logger.info(`-> Starting ScheduleBackupJob -  name: ${jobData[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(jobData)} `);
+      if (!_.get(jobData, 'instance_id') || !_.get(jobData, 'type')) {
+        const msg = `Scheduled backup cannot be initiated as the required mandatory params (intance_uid | type) is empty : ${JSON.stringify(jobData)}`;
+        logger.error(msg);
+        return this.runFailed(new errors.BadRequest(msg), undefined, job, done);
+      }
+      const backupRunStatus = {
+        start_backup_status: 'failed',
+        delete_backup_status: 'failed'
+      };
+      let instanceDeleted = false;
+      return this
+        .isServiceInstanceDeleted(jobData.instance_id)
+        .tap(deleteStatus => instanceDeleted = deleteStatus)
+        .then(() => {
+          if (instanceDeleted) {
+            if (!_.get(job.attrs.data, 'instance_deletion_time')) {
+              job.attrs.data.instance_deletion_time = new Date(Date.now()).toISOString();
             }
-            return this
-              .getFabrikClient()
-              .startBackup(_.pick(jobData, 'instance_id', 'type', 'trigger'));
-          })
-          .tap(backupResponse => backupRunStatus.start_backup_status = backupResponse)
-          .then(() => this.deleteOldBackup(job, instanceDeleted))
-          .tap(deleteResponse => backupRunStatus.delete_backup_status = deleteResponse)
-          .then(() => this.runSucceeded(backupRunStatus, job, done))
-          .catch((error) => {
-            return this.runFailed(error, backupRunStatus, job, done)
-              .then(() => {
-                if (error instanceof errors.Conflict || error instanceof errors.UnprocessableEntity) {
-                  return retry(() => this.reScheduleBackup(job.attrs.data, job.attrs.repeatInterval), {
-                    maxAttempts: 3,
-                    minDelay: 500
-                  });
-                }
-              });
-          });
-      })
+            return 'instance_deleted';
+          }
+          return this
+            .getFabrikClient()
+            .startBackup(_.pick(jobData, 'instance_id', 'type', 'trigger'));
+        })
+        .tap(backupResponse => backupRunStatus.start_backup_status = backupResponse)
+        .then(() => this.deleteOldBackup(job, instanceDeleted))
+        .tap(deleteResponse => backupRunStatus.delete_backup_status = deleteResponse)
+        .then(() => this.runSucceeded(backupRunStatus, job, done))
+        .catch(error => {
+          return this.runFailed(error, backupRunStatus, job, done)
+            .then(() => {
+              if (error instanceof errors.Conflict || error instanceof errors.UnprocessableEntity) {
+                return retry(() => this.reScheduleBackup(job.attrs.data, job.attrs.repeatInterval), {
+                  maxAttempts: 3,
+                  minDelay: 500
+                });
+              }
+            });
+        });
+    })
       .catch(error => {
         logger.error(`Error occurred while handling failure for job :${job.attrs.data[CONST.JOB_NAME_ATTRIB]}`, error);
         done();
@@ -75,10 +75,10 @@ class ScheduleBackupJob extends BaseJob {
 
   static isServiceInstanceDeleted(instanceId) {
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: instanceId
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: instanceId
+    })
       .then(resource => _.get(resource, 'metadata.deletionTimestamp') ? true : false)
       .catch(errors.NotFound, () => {
         logger.warn(`service instance : ${instanceId} deleted`);
@@ -102,17 +102,17 @@ class ScheduleBackupJob extends BaseJob {
           backup => backup.state === CONST.OPERATION.SUCCEEDED);
         if (_.get(job.attrs.data, 'instance_deletion_time')) {
           const instanceDeletionTime = job.attrs.data.instance_deletion_time;
-          const instanceDeletedBefore = (new Date(Date.now()) - new Date(instanceDeletionTime)) / (24 * 60 * 60 * 1000); //in days
+          const instanceDeletedBefore = (new Date(Date.now()) - new Date(instanceDeletionTime)) / (24 * 60 * 60 * 1000); // in days
           if (instanceDeletedBefore > config.backup.retention_period_in_days) {
             deleteAllOlderBackups = true;
           }
         }
         if (latestSuccessIndex === -1 || deleteAllOlderBackups) {
-          //No successful backup beyond retention period.
+          // No successful backup beyond retention period.
           filteredOldBackups = sortedBackups;
           transactionLogsBefore = new Date(Date.now() - (config.backup.retention_period_in_days + 1) * 24 * 60 * 60 * 1000).toISOString();
         } else {
-          //Should return backups before a successful backup.
+          // Should return backups before a successful backup.
           filteredOldBackups = _.slice(sortedBackups, latestSuccessIndex + 1);
           let backupStartedMillis = new Date(_.get(sortedBackups[latestSuccessIndex], 'started_at')).getTime();
           transactionLogsBefore = new Date(backupStartedMillis - config.backup.transaction_logs_delete_buffer_time * 60 * 1000).toISOString();
@@ -133,10 +133,10 @@ class ScheduleBackupJob extends BaseJob {
       .listBackupsOlderThan(options, config.backup.retention_period_in_days)
       .then(oldBackups => filterOldBackups(oldBackups))
       .map(backup => {
-        //Deleting base backup/backup guids.
+        // Deleting base backup/backup guids.
         logger.debug(`Backup meta info : ${JSON.stringify(backup)}`);
         if (backup.trigger === CONST.BACKUP.TRIGGER.SCHEDULED || instanceDeleted) {
-          //on-demand backups must be deleted after instance deletion.
+          // on-demand backups must be deleted after instance deletion.
           const logInfo = `backup guid : ${backup.backup_guid} - instance : ${options.instance_id} - type : ${backup.type} - backedup on : ${backup.started_at}`;
           logger.info(`-> Initiating delete of - ${logInfo} - instance deleted : ${instanceDeleted}`);
           const deleteOptions = {
@@ -176,12 +176,12 @@ class ScheduleBackupJob extends BaseJob {
         const backupStartedBefore = new Date().toISOString();
         transactionLogsBefore = new Date().toISOString();
         return Promise.all([
-            backupStore.listBackupFilenames(backupStartedBefore, options),
-            backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsBefore)
-          ])
+          backupStore.listBackupFilenames(backupStartedBefore, options),
+          backupStore.listTransactionLogsOlderThan(listOptions, transactionLogsBefore)
+        ])
           .spread((listOfBackups, listOfTransactionLogs) => {
             if (listOfBackups.length === 0 && listOfTransactionLogs.length === 0) {
-              //Instance is deleted and no more backups present. Cancel the backup scheduler for the instance
+              // Instance is deleted and no more backups present. Cancel the backup scheduler for the instance
               logger.info(`-> No more backups for the deleted instance : ${options.instance_id}. Cancelling backup scheduled Job`);
               return ScheduleManager
                 .cancelSchedule(options.instance_id, CONST.JOB.SCHEDULED_BACKUP)
@@ -214,11 +214,11 @@ class ScheduleBackupJob extends BaseJob {
         // Resetting the number of attempts to 0 and re-creating the schedule with this modified param
         jobData.attempt = 0;
         return ScheduleManager.schedule(
-            jobData.instance_id,
-            CONST.JOB.SCHEDULED_BACKUP,
-            repeatInterval,
-            jobData,
-            CONST.SYSTEM_USER)
+          jobData.instance_id,
+          CONST.JOB.SCHEDULED_BACKUP,
+          repeatInterval,
+          jobData,
+          CONST.SYSTEM_USER)
           .then(() => {
             throw new errors.toManyAttempts(config.scheduler.jobs.scheduled_backup.max_attempts, new Error(`Failed to reschedule backup for ${jobData.instance_id}`));
           });

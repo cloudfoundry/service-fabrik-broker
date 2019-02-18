@@ -24,10 +24,10 @@ class LockManager {
 
   checkWriteLockStatus(resourceId) {
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
-        resourceId: resourceId
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+      resourceId: resourceId
+    })
       .then(resource => {
         const lockDetails = _.get(resource, 'spec.options');
         const currentTime = new Date();
@@ -96,9 +96,9 @@ class LockManager {
    */
 
   lock(resourceId, lockDetails, plan) {
-    assert.ok(lockDetails, `Parameter 'lockDetails' is required to acquire lock`);
-    assert.ok(lockDetails.lockedResourceDetails, `'lockedResourceDetails' is required to acquire lock`);
-    assert.ok(lockDetails.lockedResourceDetails.operation, `'operation' is required to acquire lock`);
+    assert.ok(lockDetails, 'Parameter \'lockDetails\' is required to acquire lock');
+    assert.ok(lockDetails.lockedResourceDetails, '\'lockedResourceDetails\' is required to acquire lock');
+    assert.ok(lockDetails.lockedResourceDetails.operation, '\'operation\' is required to acquire lock');
 
     const currentTime = new Date();
     const opts = _.cloneDeep(lockDetails);
@@ -109,10 +109,10 @@ class LockManager {
     });
     logger.info(`Attempting to acquire lock on resource with resourceId: ${resourceId} `);
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
-        resourceId: resourceId
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+      resourceId: resourceId
+    })
       .then(resource => {
         const currentlLockDetails = _.get(resource, 'spec.options');
         const currentLockTTL = this.getLockTTL(_.get(currentlLockDetails, 'lockedResourceDetails.operation'));
@@ -141,23 +141,23 @@ class LockManager {
       .then(resource => _.get(resource, 'body.metadata.resourceVersion'))
       .catch(NotFound, () => {
         return eventmesh.apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
-            resourceId: resourceId,
-            options: opts,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.LOCKED
-            }
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+          resourceId: resourceId,
+          options: opts,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.LOCKED
+          }
+        })
           .tap(() => logger.info(`Successfully acquired lock on resource with resourceId: ${resourceId} `))
           .then(resource => _.get(resource, 'body.metadata.resourceVersion'));
       })
       .catch(Conflict, () => {
         return eventmesh.apiServerClient.getResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
-            resourceId: resourceId
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.LOCK,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS,
+          resourceId: resourceId
+        })
           .then(resource => {
             const currentlLockDetails = _.get(resource, 'spec.options');
             const currentLockTime = new Date(currentlLockDetails.lockTime);
@@ -179,7 +179,7 @@ class LockManager {
    */
 
   unlock(resourceId, lockId, maxRetryCount, retryDelay) {
-    assert.ok(resourceId, `Parameter 'resourceId' is required to release lock`);
+    assert.ok(resourceId, 'Parameter \'resourceId\' is required to release lock');
     // assert.ok(lockId, `Parameter 'lockId' is required to release lock`);
     // TODO-PR: making lockId not mendatory as currently we don't have deployment resources
     // hence from lastOperation call we can't pass lockId for unlock call

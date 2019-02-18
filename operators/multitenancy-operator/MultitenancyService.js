@@ -73,7 +73,7 @@ class MultitenancyService extends BaseService {
         deploymentName: changedOptions.operatorMetadata.dedicatedInstanceDeploymentName
       }
     };
-    let instanceDeleted = true;
+    let instanceDeleted = true; // eslint-disable-line no-unused-vars
     return this.initialize(operation)
       .tap(() => logger.info(`Deleting resource '${this.guid}' of type '${this.resourceType}' on dedicated deployment '${this.deploymentName}'...`))
       .then(() => this.director.getDeploymentIps(this.deploymentName))
@@ -98,7 +98,7 @@ class MultitenancyService extends BaseService {
 
   static createInstance(instanceId, options, resourceType) {
     assert.ok(options.plan_id, 'Plan ID must be available');
-    assert.ok(_.get(options, 'context.space_guid'), `Argument 'options.context.space_guid' is required to process the request`);
+    assert.ok(_.get(options, 'context.space_guid'), 'Argument \'options.context.space_guid\' is required to process the request');
     const planId = options.plan_id;
     const plan = catalog.getPlan(planId);
     const spaceId = _.get(options, 'context.space_guid');

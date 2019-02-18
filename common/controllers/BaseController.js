@@ -17,7 +17,7 @@ class BaseController {
           _.set(req, 'params_copy', req.params);
           return process.nextTick(next);
         })
-        .catch((err) => {
+        .catch(err => {
           _.set(req, 'params_copy', req.params);
           return next(err);
         });

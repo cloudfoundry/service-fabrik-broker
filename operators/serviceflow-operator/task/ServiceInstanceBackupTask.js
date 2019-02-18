@@ -34,19 +34,19 @@ class ServiceInstanceBackupTask extends Task {
         };
 
         return apiServerClient.createResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: backupGuid,
-            labels: {
-              instance_guid: taskDetails.instance_id
-            },
-            options: backupOptions,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
-              lastOperation: {},
-              response: {}
-            }
-          })
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: backupGuid,
+          labels: {
+            instance_guid: taskDetails.instance_id
+          },
+          options: backupOptions,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
+            lastOperation: {},
+            response: {}
+          }
+        })
           .tap(() => {
             logger.info(`Backup task ${taskDetails.task_description} with options -  ${JSON.stringify(backupOptions)} initiated successfully @ ${new Date()}`);
             taskDetails.resource = {

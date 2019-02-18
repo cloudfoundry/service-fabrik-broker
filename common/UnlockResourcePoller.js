@@ -13,23 +13,23 @@ const NotFound = errors.NotFound;
 class UnlockResourcePoller {
   static start() {
     function poller(object, intervalId) {
-      //TODO-PR - instead of a poller, its better to convert this to a watcher.
+      // TODO-PR - instead of a poller, its better to convert this to a watcher.
       const lockDetails = JSON.parse(object.spec.options);
       return eventmesh.apiServerClient.getResourceState({
-          resourceGroup: lockDetails.lockedResourceDetails.resourceGroup,
-          resourceType: lockDetails.lockedResourceDetails.resourceType,
-          resourceId: lockDetails.lockedResourceDetails.resourceId
-        })
+        resourceGroup: lockDetails.lockedResourceDetails.resourceGroup,
+        resourceType: lockDetails.lockedResourceDetails.resourceType,
+        resourceId: lockDetails.lockedResourceDetails.resourceId
+      })
         .then(resourceState => {
           logger.debug(`[Unlock Poller] Got resource ${lockDetails.lockedResourceDetails.resourceId} state of ${lockDetails.lockedResourceDetails.operation}` +
             ` operation for deployment ${object.metadata.name} as`, resourceState);
-          //TODO-PR - re use util method is operationCompleted.
+          // TODO-PR - re use util method is operationCompleted.
           if (_.includes([
-              CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-              CONST.APISERVER.RESOURCE_STATE.FAILED,
-              CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-              CONST.APISERVER.RESOURCE_STATE.ABORTED
-            ], resourceState)) {
+            CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+            CONST.APISERVER.RESOURCE_STATE.FAILED,
+            CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
+            CONST.APISERVER.RESOURCE_STATE.ABORTED
+          ], resourceState)) {
             return lockManager.unlock(object.metadata.name, object.metadata.resourceVersion)
               .then(() => UnlockResourcePoller.clearPoller(object.metadata.name, intervalId));
           }
@@ -56,7 +56,7 @@ class UnlockResourcePoller {
         const lockTime = new Date(lockDetails.lockTime);
         if ((currentTime - lockTime) < lockTTL) {
           logger.debug('starting unlock resource poller for deployment', event.object.metadata.name);
-          //TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
+          // TODO-PR - its better to convert this to a generic unlocker, which unlocks all types of resources.
           // It can watch on all resources which have completed their operation whose state can be 'Done' and post unlocking it can update it as 'Completed'.
           const intervalId = setInterval(() => poller(event.object, intervalId), CONST.UNLOCK_RESOURCE_POLLER_INTERVAL);
           UnlockResourcePoller.pollers[event.object.metadata.name] = intervalId;
@@ -77,7 +77,7 @@ class UnlockResourcePoller {
           });
       })
       .catch(e => {
-        logger.error(`Error occured in registerWatcher:`, e);
+        logger.error('Error occured in registerWatcher:', e);
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
@@ -87,7 +87,7 @@ class UnlockResourcePoller {
       });
   }
   static clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing unlock interval for deployment`, resourceId);
+    logger.debug('Clearing unlock interval for deployment', resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }

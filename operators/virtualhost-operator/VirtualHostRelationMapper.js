@@ -36,11 +36,11 @@ class VirtualHostRelationMapper {
 
   loadCacheforInstance(instanceId) {
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
-        resourceId: instanceId,
-      })
-      .then((resourceBody) => {
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST,
+      resourceId: instanceId
+    })
+      .then(resourceBody => {
         this.cache[instanceId] = resourceBody.operatorMetadata.deploymentName;
         return resourceBody.operatorMetadata.deploymentName;
       });

@@ -23,17 +23,17 @@ class QuotaAPIAuthClient extends HttpClient {
 
   accessWithClientCredentials() {
     return this.request({
-        method: 'POST',
-        url: '/oauth/token',
-        auth: {
-          user: this.clientId,
-          pass: this.clientSecret
-        },
-        form: {
-          grant_type: 'client_credentials'
-        }
-      }, 200)
-      .then((res) => {
+      method: 'POST',
+      url: '/oauth/token',
+      auth: {
+        user: this.clientId,
+        pass: this.clientSecret
+      },
+      form: {
+        grant_type: 'client_credentials'
+      }
+    }, 200)
+      .then(res => {
         return JSON.parse(res.body);
       });
   }

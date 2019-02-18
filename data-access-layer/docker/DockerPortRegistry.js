@@ -51,8 +51,8 @@ class DockerPortRegistry {
   update(containers) {
     if (containers && containers.length) {
       this.reset();
-      containers.forEach((container) => {
-        container.Ports.forEach((port) => {
+      containers.forEach(container => {
+        container.Ports.forEach(port => {
           this.insert(port.Type, port.PublicPort);
         });
       });

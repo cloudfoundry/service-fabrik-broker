@@ -2,7 +2,7 @@
 const Promise = require('bluebird');
 
 class BaseAction {
-  //TODO
+  // TODO
   // Post Lifecycle operations are not supported yet because of undefined and unknown nature of post actions
   static executePreCreate() {
     return Promise.resolve(0);

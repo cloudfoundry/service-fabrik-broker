@@ -13,11 +13,11 @@ const Conflict = errors.Conflict;
 
 class BaseStatusPoller {
   constructor(opts) {
-    assert.ok(opts.resourceGroup, `Property 'resourceGroup' is required to start status poller`);
-    assert.ok(opts.resourceType, `Property 'resourceType' is required to start status poller`);
-    assert.ok(opts.validStateList, `Property 'validStateList' is required to start status poller`);
-    assert.ok(opts.validEventList, `Property 'validEventList' is required to start status poller`);
-    assert.ok(opts.pollInterval, `Property 'pollInterval' is required to start status poller`);
+    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to start status poller');
+    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to start status poller');
+    assert.ok(opts.validStateList, 'Property \'validStateList\' is required to start status poller');
+    assert.ok(opts.validEventList, 'Property \'validEventList\' is required to start status poller');
+    assert.ok(opts.pollInterval, 'Property \'pollInterval\' is required to start status poller');
     this.pollers = {};
     this.resourceGroup = opts.resourceGroup;
     this.resourceType = opts.resourceType;
@@ -53,13 +53,13 @@ class BaseStatusPoller {
         metadata.annotations = patchAnnotations;
         // Handle conflict also
         return eventmesh.apiServerClient.updateResource({
-            resourceGroup: resourceDetails.resourceGroup,
-            resourceType: resourceDetails.resourceType,
-            resourceId: metadata.name,
-            metadata: metadata
-          })
-          .tap((updatedResource) => logger.debug(`Successfully acquired status poller lock for resource ${this.resourceType} with options: ${JSON.stringify(options)}\n` +
-            `Updated resource with poller annotations is: `, updatedResource))
+          resourceGroup: resourceDetails.resourceGroup,
+          resourceType: resourceDetails.resourceType,
+          resourceId: metadata.name,
+          metadata: metadata
+        })
+          .tap(updatedResource => logger.debug(`Successfully acquired status poller lock for resource ${this.resourceType} with options: ${JSON.stringify(options)}\n` +
+            'Updated resource with poller annotations is: ', updatedResource))
           .return(true)
           .catch(Conflict, () => {
             logger.debug(`Not able to acquire status poller processing lock for resource ${resourceBody.metadata.name}, Request is probably picked by other worker`);
@@ -74,10 +74,10 @@ class BaseStatusPoller {
     // If no lockedByPoller annotation then set annotation  with time
     // Else check timestamp if more than specific time than start polling and change lockedByPoller Ip
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: resourceDetails.resourceGroup,
-        resourceType: resourceDetails.resourceType,
-        resourceId: object.metadata.name,
-      })
+      resourceGroup: resourceDetails.resourceGroup,
+      resourceType: resourceDetails.resourceType,
+      resourceId: object.metadata.name
+    })
       .then(resourceBody => {
         return this.acquireLock(resourceBody)
           .then(isLockAcquired => {
@@ -133,7 +133,7 @@ class BaseStatusPoller {
   }
 
   clearPoller(resourceId, intervalId) {
-    logger.debug(`Clearing status poller interval for resource`, resourceId);
+    logger.debug('Clearing status poller interval for resource', resourceId);
     if (intervalId) {
       clearInterval(intervalId);
     }

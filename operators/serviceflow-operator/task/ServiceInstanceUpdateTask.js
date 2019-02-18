@@ -11,9 +11,9 @@ class ServiceInstanceUpdateTask extends Task {
   static run(taskId, taskDetails) {
     logger.info(`Running ServiceInstanceUpdateTask Task ${taskId} - with Data - ${JSON.stringify((taskDetails))}`);
     return Promise.try(() => {
-      //TODO: Check if orgid/space guid is entitled to create multi-az deployment from CIS.
+      // TODO: Check if orgid/space guid is entitled to create multi-az deployment from CIS.
       return true;
-      //Throw exception if not entitled.
+      // Throw exception if not entitled.
     }).then(() => {
       const params = _.cloneDeep(taskDetails.operation_params);
       const taskInfo = _.chain(taskDetails)
@@ -22,15 +22,15 @@ class ServiceInstanceUpdateTask extends Task {
         .value();
       params.parameters = _.merge(params.parameters, taskInfo);
       return apiServerClient.updateOSBResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-          resourceId: taskDetails.instance_id,
-          spec: params,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
-            description: ''
-          }
-        })
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
+        resourceId: taskDetails.instance_id,
+        spec: params,
+        status: {
+          state: CONST.APISERVER.RESOURCE_STATE.UPDATE,
+          description: ''
+        }
+      })
         .tap(() => {
           logger.info(`Update task ${taskDetails.task_description} with task data -  ${JSON.stringify(taskDetails.task_data)} initiated successfully @ ${new Date()}`);
           taskDetails.resource = {

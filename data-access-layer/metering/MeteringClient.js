@@ -6,7 +6,6 @@ const _ = require('lodash');
 const config = require('../../common/config');
 const utils = require('../../common/utils');
 const HttpClient = utils.HttpClient;
-const logger = require('../../common/logger');
 const CONST = require('../../common/constants');
 const TokenInfo = require('../../quota/TokenInfo');
 
@@ -16,7 +15,7 @@ class MeteringClient extends HttpClient {
     super(_.defaultsDeep({
       baseUrl: config.metering.metering_url,
       headers: {
-        Accept: 'application/json',
+        Accept: 'application/json'
       },
       followRedirect: false
     }, options));
@@ -24,7 +23,7 @@ class MeteringClient extends HttpClient {
     this.clientSecret = config.metering.client_secret;
     this.tokenUrl = config.metering.token_url;
     this.meteringUrl = config.metering.metering_url;
-    this.tokenInfo = new TokenInfo()
+    this.tokenInfo = new TokenInfo();
   }
 
   async getAuthToken() {

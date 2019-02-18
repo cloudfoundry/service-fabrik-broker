@@ -45,7 +45,7 @@ class BackupStoreForOob extends BackupStore {
 
     let prefix = `${root_folder}/backup`;
     let predicate;
-    let message = `No backup found`;
+    let message = 'No backup found';
 
     if (deployment_name) {
       prefix += `/${deployment_name}`;

@@ -56,8 +56,8 @@ class BasePlatformManager {
       if (config.multi_az_enabled === CONST.INTERNAL ||
         config.multi_az_enabled === CONST.ALL ||
         config.multi_az_enabled === true) {
-        //Default implementation does not differentiate between internal / all clients. 
-        //If additional checks are to be done for internal, then platform specific manager must override and provide impl.
+        // Default implementation does not differentiate between internal / all clients. 
+        // If additional checks are to be done for internal, then platform specific manager must override and provide impl.
         return true;
       } else if (config.multi_az_enabled === CONST.DISABLED || config.multi_az_enabled === false) {
         return false;

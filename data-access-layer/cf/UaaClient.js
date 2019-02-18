@@ -46,7 +46,7 @@ class UaaClient extends HttpClient {
         schema: 'openid'
       },
       json: true
-    }, 200).then((res) => {
+    }, 200).then(res => {
       return res.body;
     });
   }
@@ -92,7 +92,7 @@ class UaaClient extends HttpClient {
         code: code,
         redirect_uri: client.redirect_uri
       }
-    }, 200).then((res) => {
+    }, 200).then(res => {
       return JSON.parse(res.body);
     });
   }
@@ -126,7 +126,7 @@ class UaaClient extends HttpClient {
     if (config.cf.identity_provider) {
       reqBody.form.login_hint = `{"origin":"${config.cf.identity_provider}"}`;
     }
-    return this.request(reqBody, 200).then((res) => {
+    return this.request(reqBody, 200).then(res => {
       return JSON.parse(res.body);
     });
   }
@@ -143,7 +143,7 @@ class UaaClient extends HttpClient {
         grant_type: 'refresh_token',
         refresh_token: refreshToken
       }
-    }, 200).then((res) => {
+    }, 200).then(res => {
       return JSON.parse(res.body);
     });
   }
@@ -160,7 +160,7 @@ class UaaClient extends HttpClient {
         grant_type: 'client_credentials',
         response_type: 'token'
       }
-    }, 200).then((res) => {
+    }, 200).then(res => {
       return JSON.parse(res.body);
     });
   }

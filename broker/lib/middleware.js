@@ -57,7 +57,7 @@ exports.checkBlockingOperationInProgress = function () {
             next();
           }
         })
-        .catch((err) => {
+        .catch(err => {
           logger.error('[LOCK]: exception occurred --', err);
           next(err);
         });
@@ -82,7 +82,7 @@ exports.checkQuota = function () {
       if (shouldCheckQuotaForPlatform(platform, origin)) {
         const orgId = req.body.organization_guid || req.body.context.organization_guid || _.get(req, 'body.previous_values.organization_id');
         if (orgId === undefined) {
-          next(new BadRequest(`organization_id is undefined`));
+          next(new BadRequest('organization_id is undefined'));
         } else {
           const quota = require('../../quota');
           const quotaManager = quota.quotaManager;
@@ -92,15 +92,15 @@ exports.checkQuota = function () {
               logger.debug(`quota api response : ${quotaValid}`);
               if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.NOT_ENTITLED) {
                 logger.error(`[QUOTA] Not entitled to create service instance: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
-                next(new Forbidden(`Not entitled to create service instance`));
+                next(new Forbidden('Not entitled to create service instance'));
               } else if (quotaValid === CONST.QUOTA_API_RESPONSE_CODES.INVALID_QUOTA) {
                 logger.error(`[QUOTA] Quota is not sufficient for this request: org '${req.body.organization_guid}', service '${plan.service.name}', plan '${plan.name}'`);
-                next(new Forbidden(`Quota is not sufficient for this request`));
+                next(new Forbidden('Quota is not sufficient for this request'));
               } else {
                 logger.debug('[Quota]: calling next handler..');
                 next();
               }
-            }).catch((err) => {
+            }).catch(err => {
               logger.error('[QUOTA]: exception occurred --', err);
               next(err);
             });
@@ -117,7 +117,7 @@ exports.isPlanDeprecated = function () {
   return function (req, res, next) {
     if (checkIfPlanDeprecated(req.body.plan_id)) {
       logger.error(`Service instance with the requested plan with id : '${req.body.plan_id}' cannot be created as it is deprecated.`);
-      throw new Forbidden(`Service instance with the requested plan cannot be created as it is deprecated.`);
+      throw new Forbidden('Service instance with the requested plan cannot be created as it is deprecated.');
     }
     next();
   };

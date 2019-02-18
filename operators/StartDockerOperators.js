@@ -13,8 +13,8 @@ function bootstrap() {
   return docker
     .bootstrap()
     .tap(() => logger.debug('Successfully fetched docker images:'))
-    .spread((images) => images.forEach(image => logger.debug(image.status)))
-    .catch((err) => logger.error('Failed to bootstrap docker client', err));
+    .spread(images => images.forEach(image => logger.debug(image.status)))
+    .catch(err => logger.error('Failed to bootstrap docker client', err));
 }
 
 bootstrap();

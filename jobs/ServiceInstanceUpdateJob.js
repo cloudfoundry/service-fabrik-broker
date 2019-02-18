@@ -14,7 +14,7 @@ const ScheduleManager = require('./ScheduleManager');
 const DirectorService = require('../operators/bosh-operator/DirectorService');
 const eventmesh = require('../data-access-layer/eventmesh');
 const Repository = require('../common/db').Repository;
-//NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
+// NOTE: Cyclic dependency withe above. (Taken care in JobFabrik)
 
 class ServiceInstanceUpdateJob extends BaseJob {
 
@@ -45,10 +45,10 @@ class ServiceInstanceUpdateJob extends BaseJob {
        * Otherwise need to look for instance_id with all possible provisioners.
        */
       return eventmesh.apiServerClient.getResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-          resourceId: instanceDetails.instance_id
-        })
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+        resourceId: instanceDetails.instance_id
+      })
         .catch(errors.NotFound, () => undefined)
         .then(resource => {
           if (!_.isEmpty(_.get(resource, 'status.appliedOptions'))) {
@@ -72,7 +72,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
           }
         })
         .then(opResponse => this.runSucceeded(opResponse, job, done))
-        .catch((error) => {
+        .catch(error => {
           this.runFailed(error, operationResponse, job, done);
         });
     });
@@ -132,15 +132,15 @@ class ServiceInstanceUpdateJob extends BaseJob {
             operationResponse.update_init = CONST.OPERATION.FAILED;
             logger.error('Error occurred while updating service instance job :', err);
             if (utils.deploymentStaggered(err)) {
-              //If deployment was staggered due to exhaustion of workers, reschedule update job
-              //Retry attempts do not count when deployment is staggered
-              //TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
+              // If deployment was staggered due to exhaustion of workers, reschedule update job
+              // Retry attempts do not count when deployment is staggered
+              // TODO: Need to check if the next run for scheduled update causes problems if the earlier deployment did not go through
               trackAttempts = false;
               err.statusMessage = 'Deployment attempt rejected due to BOSH overload. Update cannot be initiated';
             }
             if (utils.deploymentLocked(err)) {
-              //If deployment locked then backup is in progress. So reschedule update job,
-              //Retry attempts dont count when deployment is locked for backup.
+              // If deployment locked then backup is in progress. So reschedule update job,
+              // Retry attempts dont count when deployment is locked for backup.
               // Only if locked for backup operation
               // Message example: 
               // Service Instance abcdefgh-abcd-abcd-abcd-abcdefghijkl __Locked__ at Mon Sep 10 2018 11:17:01 GMT+0000 (UTC) for backup
@@ -151,14 +151,14 @@ class ServiceInstanceUpdateJob extends BaseJob {
                 err.statusMessage = 'Backup in-progress. Update cannot be initiated';
               }
             }
-            //Bubble error and make current run as a failure
+            // Bubble error and make current run as a failure
             throw err;
           })
           .finally(() => {
             logger.info(`${instanceDetails.instance_name} instance update initiated. Status : `, operationResponse);
-            //Even in case of successful initiation the job is rescheduled so that after the reschedule delay,
-            //when this job comes up it must see itself as updated.
-            //This is to handle any Infra errors that could happen post successful initiation of update. (its a retry mechanism)
+            // Even in case of successful initiation the job is rescheduled so that after the reschedule delay,
+            // when this job comes up it must see itself as updated.
+            // This is to handle any Infra errors that could happen post successful initiation of update. (its a retry mechanism)
             this.rescheduleUpdateJob(instanceDetails, trackAttempts);
           });
       });
@@ -166,9 +166,9 @@ class ServiceInstanceUpdateJob extends BaseJob {
 
   static getOutdatedDiff(instanceDetails, tenantInfo, plan) {
     return DirectorService.createInstance(instanceDetails.instance_id, {
-        plan_id: plan.id,
-        context: tenantInfo.context
-      })
+      plan_id: plan.id,
+      context: tenantInfo.context
+    })
       .then(directorInstance => directorInstance.diffManifest(instanceDetails.deployment_name, tenantInfo));
   }
 
@@ -271,7 +271,7 @@ class ServiceInstanceUpdateJob extends BaseJob {
         criteria, {
           records: config.scheduler.jobs.service_instance_update.max_attempts,
           offset: 0
-          //Fetch last 3 run history records and figure out the status of the update operation.
+          // Fetch last 3 run history records and figure out the status of the update operation.
         })
       .then(lastRunDetails => {
         logger.info(`${name} - Total last runs # ${_.get(lastRunDetails, 'totalRecordCount', 0)}`);
@@ -305,8 +305,8 @@ class ServiceInstanceUpdateJob extends BaseJob {
         } else {
           if (initialJobRunStatus.statusCode === CONST.JOB_RUN_STATUS_CODE.SUCCEEDED &&
             lastRunList[0].statusCode === CONST.HTTP_STATUS_CODE.CONFLICT) {
-            //Initial run is success, but the next immediate run to try failed due to conflict
-            //This means the initial job is still in-progress
+            // Initial run is success, but the next immediate run to try failed due to conflict
+            // This means the initial job is still in-progress
             return _.set(response, 'status', CONST.OPERATION.IN_PROGRESS);
           } else if (initialJobRunStatus.statusCode === CONST.HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY) {
             _.set(response, 'message', 'Could not initiate update as Backup process was in-progress');

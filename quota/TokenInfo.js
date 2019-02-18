@@ -36,7 +36,7 @@ class TokenInfo {
   }
 
   parseToken(token) {
-    return token.split('.').slice(0, 2).map((part) => {
+    return token.split('.').slice(0, 2).map(part => {
       return JSON.parse(new Buffer(part, 'base64').toString('utf8'));
     });
   }

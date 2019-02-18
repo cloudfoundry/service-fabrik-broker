@@ -19,12 +19,12 @@ class MeterInstanceJob extends BaseJob {
   static async run(job, done) {
     try {
       logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
-      const events = await this.getInstanceEvents()
-      logger.debug('Received metering events -> ', events)
-      let meterResponse = await this.meter(events)
-      return this.runSucceeded(meterResponse, job, done)
+      const events = await this.getInstanceEvents();
+      logger.debug('Received metering events -> ', events);
+      let meterResponse = await this.meter(events);
+      return this.runSucceeded(meterResponse, job, done);
     } catch (err) {
-      return this.runFailed(err, {}, job, done)
+      return this.runFailed(err, {}, job, done);
     }
   }
   /* jshint ignore:end */
@@ -46,16 +46,16 @@ class MeterInstanceJob extends BaseJob {
       logger.info(`Number of events to be metered in this run - ${events.length}`);
       // Adding this comment as we are transitioning to async/await
       // Note: The below Promise is not bluebird promise
-      const resultArray = await Promise.all(_.map(events, async (event) =>
+      const resultArray = await Promise.all(_.map(events, async event =>
         await this.sendEvent(event)));
       const successCount = resultArray.filter(r => r === true).length;
       return {
         totalEvents: events.length,
         success: successCount,
-        failed: events.length - successCount,
-      }
+        failed: events.length - successCount
+      };
     } catch (err) {
-      logger.error(`Error occurred while metering all events : `, err);
+      logger.error('Error occurred while metering all events : ', err);
     }
   }
   /* jshint ignore:end */
@@ -127,24 +127,24 @@ class MeterInstanceJob extends BaseJob {
 
   static updateMeterState(status, event, err) {
     return utils.retry(tries => {
-        logger.debug(`Updating meter state to ${status} for event, try: ${tries}`, event);
-        let status_obj = {
-          state: status
-        };
-        if (err !== undefined) {
-          status_obj.error = utils.buildErrorJson(err);
-        }
-        return apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
-          resourceId: `${event.metadata.name}`,
-          status: status_obj
-        });
-      }, {
-        maxAttempts: 4,
-        minDelay: 1000
-      })
-      .tap((response) => logger.info('Successfully updated meter state : ', response));
+      logger.debug(`Updating meter state to ${status} for event, try: ${tries}`, event);
+      let status_obj = {
+        state: status
+      };
+      if (err !== undefined) {
+        status_obj.error = utils.buildErrorJson(err);
+      }
+      return apiServerClient.updateResource({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
+        resourceId: `${event.metadata.name}`,
+        status: status_obj
+      });
+    }, {
+      maxAttempts: 4,
+      minDelay: 1000
+    })
+      .tap(response => logger.info('Successfully updated meter state : ', response));
   }
 }
 

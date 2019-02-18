@@ -36,12 +36,12 @@ class MaintenanceManager {
     logger.info('searching by criteria: ', criteria);
     return Repository
       .findOne(CONST.DB_MODEL.MAINTENANCE_DETAIL, criteria)
-      .then((model) => {
+      .then(model => {
         if (_.isEmpty(model)) {
-          throw new errors.BadRequest(`System not in maitenance mode`);
+          throw new errors.BadRequest('System not in maitenance mode');
         }
         if (progressInfo === undefined || _.isEmpty(progressInfo.trim())) {
-          throw new errors.BadRequest(`Progressinfo is mandatory`);
+          throw new errors.BadRequest('Progressinfo is mandatory');
         } else {
           model.progress.push(`${progressInfo} at ${new Date()}`);
         }
@@ -70,7 +70,7 @@ class MaintenanceManager {
   getLastDowntimePhase(maintenanceInfo, downTimePhases) {
     if (maintenanceInfo && maintenanceInfo.progress) {
       const lastMaintPhase = maintenanceInfo.progress[maintenanceInfo.progress.length - 1];
-      return _.find(downTimePhases, (phase) => _.includes(lastMaintPhase, phase)) !== undefined ? lastMaintPhase : undefined;
+      return _.find(downTimePhases, phase => _.includes(lastMaintPhase, phase)) !== undefined ? lastMaintPhase : undefined;
     }
     return undefined;
   }
@@ -103,7 +103,7 @@ class MaintenanceManager {
         [sortBy, sortOrder]
       ];
     }
-    //sortOn - must be an array of arrays
+    // sortOn - must be an array of arrays
     logger.debug('sort on criteria: ', sortOn);
     const criteria = {
       sortBy: sortOn

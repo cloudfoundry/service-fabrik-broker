@@ -26,7 +26,7 @@ class TaskOperator extends BaseOperator {
           CONST.APISERVER.RESOURCE_GROUPS.SERVICE_FLOW,
           CONST.APISERVER.RESOURCE_TYPES.TASK,
           statesToWatchForTaskStatus,
-          (event) => this.startTaskStatusPoller(event),
+          event => this.startTaskStatusPoller(event),
           CONST.APISERVER.POLLER_WATCHER_REFRESH_INTERVAL);
         logger.info('registered both watchers for tasks!');
       });
@@ -34,8 +34,8 @@ class TaskOperator extends BaseOperator {
 
   processRequest(resource) {
     return Promise.try(() => {
-      assert.ok(resource.metadata.name, `Argument 'metadata.name' is required to run the task`);
-      assert.ok(resource.spec.options, `Argument 'spec.options' is required to run the task`);
+      assert.ok(resource.metadata.name, 'Argument \'metadata.name\' is required to run the task');
+      assert.ok(resource.spec.options, 'Argument \'spec.options\' is required to run the task');
       const taskDetails = JSON.parse(resource.spec.options);
       const task = TaskFabrik.getTask(taskDetails.task_type);
       return task
@@ -104,7 +104,7 @@ class TaskOperator extends BaseOperator {
           logger.debug(`${taskDetails.task_type} - on  - ${object.metadata.name} is still in progress..${JSON.stringify(operationStatus)}`);
           return this
             .continueToHoldLock(object)
-            .tap((resource) => {
+            .tap(resource => {
               object.metadata.resourceVersion = resource.metadata.resourceVersion;
               logger.debug(`-> Retained the lock successfully -> for ${object.metadata.name} with version - ${resource.metadata.resourceVersion}`);
             })

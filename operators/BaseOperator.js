@@ -20,9 +20,9 @@ class BaseOperator {
   registerWatcher(resourceGroup, resourceType, validStateList, handler, watchRefreshInterval) {
     const queryString = `state in (${_.join(validStateList, ',')})`;
     logger.debug(`Registering watcher for resourceGroup ${resourceGroup} of type ${resourceType} with queryString as ${queryString}`);
-    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, (resource) => this.handleResource(resource, handler, resourceGroup, resourceType, queryString), queryString)
+    return eventmesh.apiServerClient.registerWatcher(resourceGroup, resourceType, resource => this.handleResource(resource, handler, resourceGroup, resourceType, queryString), queryString)
       .then(stream => {
-        logger.debug(`Successfully set watcher with query string:`, queryString);
+        logger.debug('Successfully set watcher with query string:', queryString);
         watchRefreshInterval = watchRefreshInterval || CONST.APISERVER.WATCHER_REFRESH_INTERVAL;
         logger.info(`Refreshing stream for resourceGroup ${resourceGroup} of type ${resourceType} with queryString  ${queryString} at interval of ${watchRefreshInterval}`);
         return Promise
@@ -34,7 +34,7 @@ class BaseOperator {
           });
       })
       .catch(e => {
-        logger.error(`Error occured in registerWatcher:`, e);
+        logger.error('Error occured in registerWatcher:', e);
         return Promise
           .delay(CONST.APISERVER.WATCHER_ERROR_DELAY)
           .then(() => {
@@ -59,12 +59,12 @@ class BaseOperator {
     metadata.annotations = patchAnnotations;
     const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
     return eventmesh.apiServerClient.updateResource({
-        resourceGroup: resourceDetails.resourceGroup,
-        resourceType: resourceDetails.resourceType,
-        resourceId: metadata.name,
-        metadata: metadata
-      })
-      .tap((resource) => logger.debug(`Successfully acquired processing lock for request with options: ${metadata.name}\n\
+      resourceGroup: resourceDetails.resourceGroup,
+      resourceType: resourceDetails.resourceType,
+      resourceId: metadata.name,
+      metadata: metadata
+    })
+      .tap(resource => logger.debug(`Successfully acquired processing lock for request with options: ${metadata.name}\n\
         Updated resource with annotations is:`, resource))
       .then(resource => resource.body);
   }
@@ -84,11 +84,11 @@ class BaseOperator {
     };
     const resourceDetails = eventmesh.apiServerClient.parseResourceDetailsFromSelfLink(changeObjectBody.metadata.selfLink);
     return eventmesh.apiServerClient.updateResource({
-        resourceGroup: resourceDetails.resourceGroup,
-        resourceType: resourceDetails.resourceType,
-        resourceId: changeObjectBody.metadata.name,
-        metadata: metadata
-      })
+      resourceGroup: resourceDetails.resourceGroup,
+      resourceType: resourceDetails.resourceType,
+      resourceId: changeObjectBody.metadata.name,
+      metadata: metadata
+    })
       .tap(() => logger.info(`Successfully released processing lock for the resource: ${changeObjectBody.metadata.name} with options: ${JSON.stringify(changedOptions)}`));
   }
 
@@ -170,7 +170,7 @@ class BaseOperator {
           return this.processRequest(changeObjectBody);
         }
       })
-      .tap((releaseLock) => releaseProcessingLock = releaseLock !== CONST.APISERVER.HOLD_PROCESSING_LOCK)
+      .tap(releaseLock => releaseProcessingLock = releaseLock !== CONST.APISERVER.HOLD_PROCESSING_LOCK)
       .catch(err => {
         if (!processingLockStatus.conflict) {
           logger.error(`Caught error while processing request with options ${JSON.stringify(changedOptions)} `, err);

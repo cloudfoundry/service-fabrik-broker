@@ -8,7 +8,7 @@ function validateState(state) {
   return _
     .chain(CONST.OPERATION)
     .values()
-    .find((val) => val === state)
+    .find(val => val === state)
     .value() !== undefined;
 }
 

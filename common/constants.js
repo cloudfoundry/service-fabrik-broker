@@ -115,7 +115,7 @@ module.exports = Object.freeze({
   },
   JOB_NAME_ATTRIB: '_n_a_m_e_',
   JOB: {
-    //Define names of scheduled JOBS
+    // Define names of scheduled JOBS
     SCHEDULED_BACKUP: 'ScheduledBackup',
     SERVICE_FABRIK_BACKUP: 'ServiceFabrikBackup',
     SCHEDULED_OOB_DEPLOYMENT_BACKUP: 'ScheduledOobDeploymentBackup',
@@ -141,7 +141,7 @@ module.exports = Object.freeze({
     TRIGGER: {
       SCHEDULED: 'scheduled',
       ON_DEMAND: 'on-demand',
-      MANUAL: 'manual' //This is actually scheduled backup via existing cron jobs. Could be removed 14 days after the current solution goes live.
+      MANUAL: 'manual' // This is actually scheduled backup via existing cron jobs. Could be removed 14 days after the current solution goes live.
     }
   },
   SCHEDULE: {
@@ -157,14 +157,14 @@ module.exports = Object.freeze({
     RESOURCE_NAME: 'sfconfig'
   },
   DB_MODEL: {
-    //Define all DB Model names
+    // Define all DB Model names
     JOB: 'JobDetail',
     JOB_RUN_DETAIL: 'JobRunDetail',
     MAINTENANCE_DETAIL: 'MaintenanceDetail',
     EVENT_DETAIL: 'EventDetail'
   },
-  //Topic naming convention: {GROUP}.{EVENT_NAME}
-  //Reasoning: pubsub module allow for dotted notation of event names and one can subscribe to all events even at group level
+  // Topic naming convention: {GROUP}.{EVENT_NAME}
+  // Reasoning: pubsub module allow for dotted notation of event names and one can subscribe to all events even at group level
   TOPIC: {
     MONGO_OPERATIONAL: 'MONGODB.OPERATIONAL',
     MONGO_INIT_FAILED: 'MONGODB.INIT_FAILIED',
@@ -206,11 +206,11 @@ module.exports = Object.freeze({
       SHUTTING_DOWN: 'SHUTTING_DOWN'
     }
   },
-  //BELOW UUIDs are taken from MongoDB Manifest for v3.0-dedicated-xsmall
+  // BELOW UUIDs are taken from MongoDB Manifest for v3.0-dedicated-xsmall
   FABRIK_INTERNAL_MONGO_DB: {
     SERVICE_ID: '3c266123-8e6e-4034-a2aa-e48e13fbf893',
     PLAN_ID: '2fff2c4d-7c31-4ed7-b505-0aeafbd8c0e2',
-    ORG_ID: 'FABDEC11-FABD-FABD-FABD-FABDECFABDEC', //Random valid UUID string made from FABDEC phonotically similar to FABRIK
+    ORG_ID: 'FABDEC11-FABD-FABD-FABD-FABDECFABDEC', // Random valid UUID string made from FABDEC phonotically similar to FABRIK
     SPACE_ID: 'FABDEC22-FABD-FABD-FABD-FABDECFABDEC',
     INSTANCE_ID: 'FABDEC33-FABD-FABD-FABD-FABDECFABDEC',
     BINDING_ID: 'FABDEC44-FABD-FABD-FABD-FABDECFABDEC'
@@ -233,12 +233,12 @@ module.exports = Object.freeze({
     SF_IN_MAINTENANCE: 101,
     INTERNAL_ERROR: 4,
     UNCAUGHT_FATAL_EXCEPTION: 1 // https://github.com/nodejs/node-v0.x-archive/blob/master/doc/api/process.markdown#exit-codes
-    //Error codes should always be readable strings. However few error codes (used as process exit codes) must be int.
-    //Guideline : Only in cases where it is mandatory to have int, error codes should be so else they must always be Strings.
+    // Error codes should always be readable strings. However few error codes (used as process exit codes) must be int.
+    // Guideline : Only in cases where it is mandatory to have int, error codes should be so else they must always be Strings.
   },
   ERR_STATUS_CODES: {
     BROKER: {
-      DEFAULT: 10001,
+      DEFAULT: 10001
     },
     BOSH: {
       BAD_FORMAT: 20002,
@@ -259,12 +259,12 @@ module.exports = Object.freeze({
   BOSH_ERR_CODES: {
     DEPLOYMENT_NOT_FOUND: 70000
   },
-  //OOB Deployments
+  // OOB Deployments
   FABRIK_OUT_OF_BAND_DEPLOYMENTS: {
     ROOT_FOLDER_NAME: 'OOB_DEPLOYMENTS',
     DEFAULT_DELETE_DELAY: 1000
   },
-  //BOSH Directors
+  // BOSH Directors
   BOSH_DIRECTORS: {
     BOSH_SF: 'bosh-sf',
     BOSH: 'bosh'
@@ -372,7 +372,7 @@ module.exports = Object.freeze({
       LASTOPERATION: 'lastoperation'
     },
     WRITE_OPERATIONS: ['create', 'update', 'delete', 'restore', 'update_serviceflow'],
-    READ_OPERATIONS: ['backup'],
+    READ_OPERATIONS: ['backup']
   },
   METER_STATE: {
     TO_BE_METERED: 'TO_BE_METERED',
@@ -433,7 +433,7 @@ module.exports = Object.freeze({
   FILE_PERMISSIONS: {
     RWXR_XR_X: 0o755
   },
-  //IaaS SDK config
+  // IaaS SDK config
   SDK_CLIENT: {
     AWS: {
       MAX_RETRIES: 10
