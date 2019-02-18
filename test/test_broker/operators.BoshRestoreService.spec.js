@@ -7,6 +7,7 @@ const CONST = require('../../common/constants');
 const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
+const errors = require('../../common/errors');
 
 describe('operators', function () {
   describe('BoshRestoreService', function () {
@@ -167,6 +168,22 @@ describe('operators', function () {
             });
           });
       });
+
+      it('should throw error for invalid state', () => {
+        let restoreResource = {
+          spec: {
+            options: JSON.stringify({
+              dummyOptions: 'dummyOptions'
+            })
+          }
+        };
+        _.set(restoreResource, 'status.state', 'invalid-state');
+        return BoshRestoreService.createService(plan)
+          .then(rs => rs.processState(restoreResource))
+          .catch(err => {
+            expect(err instanceof errors.BadRequest).to.eql(true);
+          });
+      });
     });
 
     describe('#processBoshStop', function () {
@@ -202,6 +219,7 @@ describe('operators', function () {
             expect(stopDeploymentStub.callCount).to.eql(1);
             expect(patchResourceStub.callCount).to.eql(2);
             expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
+            expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
             expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
             expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
             expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskResult.state).to.eql('done');

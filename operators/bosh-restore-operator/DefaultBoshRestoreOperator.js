@@ -30,9 +30,9 @@ class DefaultBoshRestoreOperator extends BaseOperator {
   async processRequest(requestObjectBody) { //jshint ignore: line
     try {
       if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        return this.processInQueueRequest(requestObjectBody);
+        await this.processInQueueRequest(requestObjectBody); //jshint ignore: line
       } else {
-        return this.processInProgressRequest(requestObjectBody);
+        await this.processInProgressRequest(requestObjectBody); //jshint ignore: line
       }
     } catch (err) {
       logger.error('Following error occurred while processing the restore request: ', err);

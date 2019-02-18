@@ -118,6 +118,8 @@ class BoshRestoreService extends BaseDirectorService {
       return this.processBoshStart(changedOptions);
     case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`:
       return this.processPostStart(changedOptions);
+    default:
+      throw new errors.BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
     }
   }
 
