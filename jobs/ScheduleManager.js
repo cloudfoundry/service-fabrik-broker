@@ -16,6 +16,15 @@ const CONST = require('../common/constants');
 
 class ScheduleManager {
 
+  static runNow(name, jobType, jobData, user) {
+    let agendaJob = {};
+    return scheduler
+      .runNow(name, jobType, jobData)
+      .tap(job => agendaJob = job)
+      .then(() => this.saveJob(name, jobType, 'now', jobData, user, true))
+      .then(jobInDB => this.getJobAttrs(jobInDB, agendaJob));
+  }
+
   static runAt(name, jobType, runAt, jobData, user, avoidDupJobWithSameData) {
     let agendaJob = {};
     return scheduler

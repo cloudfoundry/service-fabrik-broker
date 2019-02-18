@@ -52,6 +52,7 @@ const schedulerStub = {
   schedule: () => undefined,
   getJob: () => undefined,
   runAt: () => undefined,
+  runNow: () => undefined,
   cancelJob: () => undefined,
   purgeOldFinishedJobs: () => undefined
 };
@@ -84,6 +85,19 @@ class Scheduler {
       nextRunAt: nextRunAt,
       lockedAt: null,
       repeatInterval: runAt,
+      repeatTimezone: data.timeZone
+    });
+  }
+
+  runNow(name, type, data) {
+    schedulerStub.runNow.call(schedulerStub, arguments);
+    return Promise.resolve({
+      name: type,
+      data: _.omit(data, 'timeZone'),
+      lastRunAt: lastRunAt,
+      nextRunAt: nextRunAt,
+      repeatInterval: 'now',
+      lockedAt: null,
       repeatTimezone: data.timeZone
     });
   }
@@ -243,7 +257,6 @@ describe('Jobs', function () {
       randomIntStub.restore();
       repoSinonStub.restore();
     });
-
     describe('#ScheduleJobs', function () {
       it('should schedule a job in agenda and save it in mongodb successfully', function () {
         return ScheduleManager
@@ -438,6 +451,35 @@ describe('Jobs', function () {
             expect(schedulerSpy.runAt.firstCall.args[0][1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
             expect(schedulerSpy.runAt.firstCall.args[0][2]).to.eql(scheduleAt);
             expect(schedulerSpy.runAt.firstCall.args[0][3]).to.eql(jobData);
+            const jobToBeSavedInDB = {
+              name: instance_id,
+              type: `${jobType}_0`,
+              interval: scheduleAt,
+              data: jobData,
+              runOnlyOnce: true
+            };
+            expect(repoSpy.saveOrUpdate).to.be.calledOnce;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][0]).to.eql(CONST.DB_MODEL.JOB);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][1]).to.eql(jobToBeSavedInDB);
+            const expectedCriteria = _.clone(criteria);
+            expectedCriteria.type = `${CONST.JOB.SCHEDULED_BACKUP}_0`;
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][2]).to.eql(expectedCriteria);
+            expect(repoSpy.saveOrUpdate.firstCall.args[0][3]).to.eql(user);
+          });
+      });
+      it('should schedule a job in agenda and save it in mongodb successfully at current time', function () {
+        const scheduleAt = 'now';
+        return ScheduleManager
+          .runNow(instance_id, CONST.JOB.SCHEDULED_BACKUP, jobData, user)
+          .then((jobResponse) => {
+            const expectedResponse = _.cloneDeep(mergedJob);
+            delete expectedResponse.lastRunDetails;
+            expectedResponse.repeatInterval = scheduleAt;
+            expect(jobResponse).to.eql(expectedResponse);
+            expect(schedulerSpy.runNow).to.be.calledOnce;
+            expect(schedulerSpy.runNow.firstCall.args[0][0]).to.eql(instance_id);
+            expect(schedulerSpy.runNow.firstCall.args[0][1]).to.eql(CONST.JOB.SCHEDULED_BACKUP);
+            expect(schedulerSpy.runNow.firstCall.args[0][2]).to.eql(jobData);
             const jobToBeSavedInDB = {
               name: instance_id,
               type: `${jobType}_0`,
