@@ -10,6 +10,7 @@ const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
 const catalog = require('../../common/models/catalog');
+const backupStore = require('../../data-access-layer/iaas').backupStore;
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -17,6 +18,7 @@ class BoshRestoreService extends BaseDirectorService {
     this.plan = plan;
     this.cloudProvider = cloudProvider;
     this.director = bosh.director;
+    this.backupStore = backupStore;
   }
 
   async startRestore(opts) { //jshint ignore: line
@@ -77,7 +79,18 @@ class BoshRestoreService extends BaseDirectorService {
           },
           stateResults: {}
         });
-      //TODO:create/update the restoreFile
+
+      let restoreFileMetadata;
+      try {
+        restoreFileMetadata = await this.backupStore.getRestoreFile(data);
+      } catch(err) {
+        if (!(err instanceof errors.NotFound)) throw err;
+      }
+
+      await this.backupStore.putFile(_.assign(data, {
+        restore_dates: _.get(restoreFileMetadata, 'restore_dates')
+      }));
+
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -99,6 +112,31 @@ class BoshRestoreService extends BaseDirectorService {
         }
       });
     }
+  }
+
+  async patchRestoreFileWithFinalResult(opts, stateToUpdate) {
+    const options = _.assign({
+      service_id: opts.service_id,
+      plan_id: opts.plan_id,
+      tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id,
+      instance_guid: opts.instance_guid
+    });
+    let restoreFileMetadata = await this.backupStore.getRestoreFile(options);
+    let restoreFinishiedAt = new Date().toISOString();
+    let restoreDates = _.get(restoreFileMetadata, 'restore_dates') || {};
+    let restoreDatesByState = _.get(restoreDates, stateToUpdate) || [];
+    if (_.indexOf(restoreDatesByState, restoreFinishiedAt) === -1) {
+      restoreDatesByState.push(restoreFinishiedAt);
+    }
+    let uniqueDates = [...new Set(restoreDatesByState)];
+    const patchObj = {
+      state: stateToUpdate,
+      finished_at: restoreFinishiedAt,
+      restore_dates: _.chain(restoreDates)
+        .set(stateToUpdate, _.sortBy(uniqueDates))
+        .value()
+    };
+    return this.backupStore.patchRestoreFile(options, patchObj);
   }
 
   async processState(changeObjectBody) { //jshint ignore: line
@@ -171,7 +209,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     } catch (err) {
       logger.error(`Error occurred while stopping the bosh deployment: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -179,6 +217,9 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
+
     }
   }
   //TODO: Store the logs in restorefile or not?
@@ -215,7 +256,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     } catch (err) {
       logger.error(`Error occurred while creating new disks: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -223,6 +264,8 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
@@ -280,7 +323,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     } catch (err) {
       logger.error(`Error occurred: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -288,6 +331,8 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
@@ -340,7 +385,7 @@ class BoshRestoreService extends BaseDirectorService {
 
     } catch (err) {
       logger.error(`Error occurred while putting file in deployment instances: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -348,6 +393,7 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
@@ -465,7 +511,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     } catch (err) {
       logger.error(`Error occurred while running errands: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -473,6 +519,8 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
@@ -522,7 +570,7 @@ class BoshRestoreService extends BaseDirectorService {
       });
     } catch (err) {
       logger.error(`Error occurred while starting the bosh deployment: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -530,13 +578,15 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
   async processPostStart(resourceOptions) { //jshint ignore: line
     try {
       await this.runErrand(resourceOptions, 'postStartErrand'); //jshint ignore: line
-      return eventmesh.apiServerClient.patchResource({
+      await eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -544,9 +594,10 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         }
       });
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'succeeded');
     } catch (err) {
       logger.error(`Error occurred in bosh post start: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
+      await eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: resourceOptions.restore_guid,
@@ -554,6 +605,8 @@ class BoshRestoreService extends BaseDirectorService {
           'state': CONST.APISERVER.RESOURCE_STATE.FAILED
         }
       });
+
+      return this.patchRestoreFileWithFinalResult(resourceOptions, 'failed');
     }
   }
 
