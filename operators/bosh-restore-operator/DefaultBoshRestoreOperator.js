@@ -27,12 +27,12 @@ class DefaultBoshRestoreOperator extends BaseOperator {
       .then(() => this.registerWatcher(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, validStateList));
   }
 
-  async processRequest(requestObjectBody) { //jshint ignore: line
+  async processRequest(requestObjectBody) { 
     try {
       if (requestObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.IN_QUEUE) {
-        await this.processInQueueRequest(requestObjectBody); //jshint ignore: line
+        await this.processInQueueRequest(requestObjectBody); 
       } else {
-        await this.processInProgressRequest(requestObjectBody); //jshint ignore: line
+        await this.processInProgressRequest(requestObjectBody); 
       }
     } catch (err) {
       logger.error('Following error occurred while processing the restore request: ', err);
@@ -47,19 +47,19 @@ class DefaultBoshRestoreOperator extends BaseOperator {
     }
   }
 
-  async processInQueueRequest(changeObjectBody) { //jshint ignore: line
+  async processInQueueRequest(changeObjectBody) { 
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Triggering restore with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
-    let service = await BoshRestoreService.createService(plan); //jshint ignore: line
+    let service = await BoshRestoreService.createService(plan); 
     return service.startRestore(changedOptions);
   }
 
-  async processInProgressRequest(changeObjectBody) { //jshint ignore: line
+  async processInProgressRequest(changeObjectBody) { 
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
     logger.info('Continuing restore with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
-    let service = await BoshRestoreService.createService(plan); //jshint ignore: line
+    let service = await BoshRestoreService.createService(plan); 
     return service.processState(changeObjectBody);
   }
 }

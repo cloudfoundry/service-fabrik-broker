@@ -944,8 +944,8 @@ class BoshDirectorClient extends HttpClient {
     /* temporary username below is clipped to length of 16 characters to satisfy restrictions (32 chars) on length
        by useradd command used on destination instances */
     const tempUser = `sf-${Math.random().toString(36).substring(2, 15)}`;
-    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); //jshint ignore: line
-    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); //jshint ignore: line
+    const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); // jshint ignore: line
+    const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); // jshint ignore: line
     const sshSetupTaskId = this.prefixTaskId(deploymentName, sshSetupResponse);
     await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); // jshint ignore: line
     const sshSetupResult = await this.getTaskResult(sshSetupTaskId); // jshint ignore: line

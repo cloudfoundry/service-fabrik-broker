@@ -347,11 +347,11 @@ class ServiceFabrikApiController extends FabrikBaseController {
           restore_guid: metadata.restore_guid,
           instance_guid: req.params.instance_id,
           arguments: _.assign({
-              backup: _.pick(metadata, 'type', 'secret', 'snapshotId', 'started_at', 'finished_at')
-            },
-            req.body, {
-              backup_guid: _.get(metadata, 'backup_guid')
-            }),
+            backup: _.pick(metadata, 'type', 'secret', 'snapshotId', 'started_at', 'finished_at')
+          },
+          req.body, {
+            backup_guid: _.get(metadata, 'backup_guid')
+          }),
           username: req.user.name
         };
         logger.debug('Restore options:', restoreOptions);
@@ -641,18 +641,18 @@ class ServiceFabrikApiController extends FabrikBaseController {
           restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ?
             CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
           return lockManager.lock(req.params.instance_id, {
-              lockedResourceDetails: {
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                resourceType: restoreType,
-                resourceId: restoreGuid,
-                operation: CONST.OPERATION_TYPE.RESTORE
-              }
-            })
+            lockedResourceDetails: {
+              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+              resourceType: restoreType,
+              resourceId: restoreGuid,
+              operation: CONST.OPERATION_TYPE.RESTORE
+            }
+          })
             .then(() => {
               lockedDeployment = true;
               return eventmesh.apiServerClient.createResource({
                 resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                //TODO read from plan details
+                // TODO read from plan details
                 resourceType: restoreType,
                 resourceId: restoreGuid,
                 options: restoreOptions,
