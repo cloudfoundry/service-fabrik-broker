@@ -754,9 +754,9 @@ class ServiceFabrikAdminController extends FabrikBaseController {
   }
 
   runNow(req, res) {
-    logger.info(`Running job: ${req.params.job_name}`);
+    logger.info(`Running job name: ${req.body.job_name}, job type ${req.params.job_type}`);
     return ScheduleManager
-      .runNow(`job_${req.params.job_name}_now`, req.params.job_name, {}, req.user)
+      .runNow(req.body.job_name, req.params.job_type, {}, req.user)
       .then(body => res.status(200).send(body));
   }
 
