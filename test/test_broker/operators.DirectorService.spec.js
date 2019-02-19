@@ -1469,7 +1469,6 @@ describe('#DirectorService', function () {
             }
           };
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-          mocks.cloudController.findSecurityGroupByName(binding_id, []);
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id);
