@@ -637,9 +637,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .getRestoreOptions(req, metadata)
         .then(restoreOptions => {
           logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
-          const service = this.getService(serviceId);
-          restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ?
-            CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
+          restoreType = this.determineRestoreTypeOfService(req.plan);
           return lockManager.lock(req.params.instance_id, {
             lockedResourceDetails: {
               resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -695,23 +693,34 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
+  determineRestoreTypeOfService(plan) {
+    const serviceId = plan.service.id;
+    const service = this.getService(serviceId);
+    const restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ?
+      CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
+    return restoreType;
+  }
+
   getLastRestore(req, res) {
     const instanceId = req.params.instance_id;
-
+    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
-      .then(() => eventmesh.apiServerClient.getLastOperationValue({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        operationName: CONST.OPERATION_TYPE.RESTORE,
-        operationType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
-        resourceId: req.params.instance_id
-      }))
+      .then(() => {
+        restoreType = this.determineRestoreTypeOfService(req.plan);
+        return eventmesh.apiServerClient.getLastOperationValue({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+          operationName: CONST.OPERATION_TYPE.RESTORE,
+          operationType: restoreType,
+          resourceId: req.params.instance_id
+        });
+      })
       .then(restoreGuid =>
         eventmesh.apiServerClient.getResponse({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE,
+          resourceType: restoreType,
           resourceId: restoreGuid
         })
       )

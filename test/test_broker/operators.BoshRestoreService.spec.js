@@ -8,6 +8,7 @@ const cloudProvider = require('../../data-access-layer/iaas').cloudProvider;
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const errors = require('../../common/errors');
+const backupStore = require('../../data-access-layer/iaas').backupStore;
 
 describe('operators', function () {
   describe('BoshRestoreService', function () {
@@ -106,16 +107,20 @@ describe('operators', function () {
             options: JSON.stringify(restoreOptions)
           }
         };
+        let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+        let putFileStub = sandbox.stub(backupStore, 'putFile').resolves();
         mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, restoreGuid, restoreResource);
         mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.RESTORE, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE, restoreGuid);
         return BoshRestoreService.createService(plan)
           .then(rs => rs.startRestore(restoreOptions))
           .then(() => {
-            mocks.verify();
             expect(findDeploymentNameByInstanceIdStub.callCount).to.eql(1);
             expect(getServiceStub.callCount).to.eql(1);
             expect(getPersistentDisksStub.callCount).to.eql(1);
             expect(getDiskMetadataStub.callCount).to.eql(getPersistentDisksInfo.length);
+            expect(getRestoreFileStub.callCount).to.eql(1);
+            expect(putFileStub.callCount).to.eql(1);
+            mocks.verify();
           });
       });
 
@@ -178,11 +183,40 @@ describe('operators', function () {
           }
         };
         _.set(restoreResource, 'status.state', 'invalid-state');
+        let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+        let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processState(restoreResource))
-          .catch(err => {
-            expect(err instanceof errors.BadRequest).to.eql(true);
+          .then(() => {
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(getRestoreFileStub.callCount).to.eql(1);
+            expect(patchRestoreFileStub.callCount).to.eql(1);
           });
+      });
+
+      it('should handle error condition in child calls', () => {
+        let restoreResource = {
+          spec: {
+            options: JSON.stringify({
+              dummyOptions: 'dummyOptions'
+            })
+          }
+        };
+        _.set(restoreResource, 'status.state', `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`);
+        let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        stubs[0].restore();
+        let processBoshStopStub = sandbox.stub(BoshRestoreService.prototype, 'processBoshStop').rejects('some error');
+        let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+        let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
+        return BoshRestoreService.createService(plan)
+          .then(rs => rs.processState(restoreResource))
+          .then(() => {
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(processBoshStopStub.callCount).to.eql(1);
+            expect(getRestoreFileStub.callCount).to.eql(1);
+            expect(patchRestoreFileStub.callCount).to.eql(1);
+          });  
       });
     });
 
@@ -720,6 +754,8 @@ describe('operators', function () {
         let restoreOptions = {
           restoreMetadata: restoreMetadata
         };
+        let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+        let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
         patchResourceStub.resolves();
         runErrandStub.resolves();
         return BoshRestoreService.createService(plan)
@@ -727,6 +763,8 @@ describe('operators', function () {
           .then(() => {
             expect(runErrandStub.callCount).to.eql(1);
             expect(patchResourceStub.callCount).to.eql(1);
+            expect(getRestoreFileStub.callCount).to.eql(1);
+            expect(patchRestoreFileStub.callCount).to.eql(1);
             expect(runErrandStub.firstCall.args[1]).to.eql('postStartErrand');
           });
       });
