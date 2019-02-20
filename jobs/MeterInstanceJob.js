@@ -95,7 +95,7 @@ class MeterInstanceJob extends BaseJob {
         usage: [enrichedUsageDoc]
       });
       if (validEvent !== undefined) {
-        this.updateMeterState(CONST.METER_STATE.METERED, event);
+        await this.updateMeterState(CONST.METER_STATE.METERED, event);
       }
       return true;
     } catch (err) {
