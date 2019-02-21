@@ -16,7 +16,7 @@ const Forbidden = errors.Forbidden;
 class AliClient extends BaseCloudClient {
   constructor(settings) {
     super(settings);
-    this.constructor.validateParams(_.chain(this.settings).value());
+    //this.constructor.validateParams(_.chain(this.settings).value());
     this.storage = this.constructor.createStorageClient(_
       .chain(this.settings)
       .omit('name')
@@ -195,8 +195,8 @@ class AliClient extends BaseCloudClient {
   static createStorageClient(options) {
     return Storage({
       region: options.region,
-      accessKeyId: options.accessKey,
-      accessKeySecret: options.secretKey,
+      accessKeyId: options.keyId,
+      accessKeySecret: options.key,
       endpoint: options.endpoint
     });
   }
