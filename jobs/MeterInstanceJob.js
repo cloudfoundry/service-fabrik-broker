@@ -46,7 +46,7 @@ class MeterInstanceJob extends BaseJob {
       logger.info(`Number of events to be metered in this run - ${events.length}`);
       // Adding this comment as we are transitioning to async/await
       // Note: The below Promise is not bluebird promise
-      const resultArray = await Promise.all(_.map(events, async (event) =>
+      const resultArray = await Promise.all(_.map(events, async event =>
         await this.sendEvent(event, attempts)));
       const successCount = resultArray.filter(r => r === true).length;
       return {
@@ -77,7 +77,7 @@ class MeterInstanceJob extends BaseJob {
     options.service.plan = catalog.getPlanSKUFromPlanGUID(serviceId, planId);
     options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
-    logger.info(`Enriched metering document`, options);
+    logger.info('Enriched metering document', options);
     return options;
   }
 
@@ -91,7 +91,6 @@ class MeterInstanceJob extends BaseJob {
       }
       const enrichedUsageDoc = await this.enrichEvent(_.get(event.spec, 'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
-      // Add utils . retry here
       const validEvent = await utils.retry(tries => {
         logger.debug(`Sending usage document, try: ${tries}`);
         return maas.client.sendUsageRecord({
