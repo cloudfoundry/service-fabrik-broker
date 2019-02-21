@@ -19,7 +19,7 @@ class MeterInstanceJob extends BaseJob {
   static async run(job, done) {
     try {
       logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
-      const events = await this.getInstanceEvents();
+      const events = await this.getInstanceEvents(job.attrs.data);
       logger.debug('Received metering events -> ', events);
       let meterResponse = await this.meter(events);
       return this.runSucceeded(meterResponse, job, done);
@@ -29,12 +29,17 @@ class MeterInstanceJob extends BaseJob {
   }
   /* jshint ignore:end */
 
-  static getInstanceEvents() {
+  static getInstanceEvents(data) {
+    const instance_guid = _.get(data, 'instance_guid');
+    let selector = `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`;
+    if(instance_guid !== undefined) {
+      selector = selector + `,instance_guid=${instance_guid}`;
+    }
     const options = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
       query: {
-        labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
+        labelSelector: selector
       }
     };
     return apiServerClient.getResources(options);
@@ -117,9 +122,9 @@ class MeterInstanceJob extends BaseJob {
     const now = new Date();
     const secondsSinceEpoch = Math.round(now.getTime() / 1000);
     const createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
-    logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
+    logger.debug(`Metering event creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
     // Threshold needs to be greater than the metering job frequency
-    const thresholdHours = config.metering.error_threshold_hours;
+    const thresholdHours = _.get(config.metering,'error_threshold_hours', 0);
     if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
       logger.debug(`Publishing log event for error: ${err}, for event:`, event);
       const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');

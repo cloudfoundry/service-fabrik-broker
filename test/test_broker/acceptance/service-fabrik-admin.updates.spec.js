@@ -50,7 +50,7 @@ class Repository {
 describe('service-fabrik-admin', function () {
   const base_url = '/admin';
 
-  describe.only('#runNow', function () {
+  describe('#runNow', function () {
     const dateNow = new Date();
     let jobResponse = {
       name: `fakeJobName`,

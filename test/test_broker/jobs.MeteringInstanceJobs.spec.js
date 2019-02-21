@@ -126,6 +126,26 @@ describe('Jobs', () => {
             expect(evts[0].metadata.creationTimestamp).to.equal(dummy_events[0].metadata.creationTimestamp);
           });
       });
+      it('should get instance_events of only passed instance', () => {
+        const dummy_events = [getDummyEvent(options_json)];
+        const fake_guid = 'fake_instance_guid';
+        let selector = `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`;
+        selector = selector + `,instance_guid=${fake_guid}`;
+        mocks.apiServerEventMesh.nockGetResources(
+          CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+          CONST.APISERVER.RESOURCE_TYPES.SFEVENT, {
+            items: dummy_events
+          }, {
+            labelSelector: selector
+          }, 1, 200);
+        return MeterInstanceJob.getInstanceEvents({
+          instance_guid: fake_guid
+        })
+          .then(evts => {
+            mocks.verify();
+            expect(evts[0].metadata.creationTimestamp).to.equal(dummy_events[0].metadata.creationTimestamp);
+          });
+      });
     });
 
 
