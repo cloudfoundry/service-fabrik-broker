@@ -19,7 +19,7 @@ class MeterInstanceJob extends BaseJob {
   static async run(job, done) {
     try {
       logger.info(`-> Starting MeterInstanceJob -  name: ${job.attrs.data[CONST.JOB_NAME_ATTRIB]} - with options: ${JSON.stringify(job.attrs.data)} `);
-      const events = await this.getInstanceEvents();
+      const events = await this.getInstanceEvents(job.attrs.data);
       logger.debug('Received metering events -> ', events);
       let meterResponse = await this.meter(events);
       return this.runSucceeded(meterResponse, job, done);
@@ -29,25 +29,30 @@ class MeterInstanceJob extends BaseJob {
   }
   /* jshint ignore:end */
 
-  static getInstanceEvents() {
+  static getInstanceEvents(data) {
+    const instance_guid = _.get(data, 'instance_guid');
+    let selector = `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`;
+    if(instance_guid !== undefined) {
+      selector = selector + `,instance_guid=${instance_guid}`;
+    }
     const options = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
       query: {
-        labelSelector: `state in (${CONST.METER_STATE.TO_BE_METERED},${CONST.METER_STATE.FAILED})`
+        labelSelector: selector
       }
     };
     return apiServerClient.getResources(options);
   }
 
   /* jshint ignore:start */
-  static async meter(events) {
+  static async meter(events, attempts) {
     try {
       logger.info(`Number of events to be metered in this run - ${events.length}`);
       // Adding this comment as we are transitioning to async/await
       // Note: The below Promise is not bluebird promise
       const resultArray = await Promise.all(_.map(events, async event =>
-        await this.sendEvent(event)));
+        await this.sendEvent(event, attempts)));
       const successCount = resultArray.filter(r => r === true).length;
       return {
         totalEvents: events.length,
@@ -63,9 +68,9 @@ class MeterInstanceJob extends BaseJob {
   static isServicePlanExcluded(options) {
     const serviceId = _.get(options, 'service.service_guid');
     const planId = _.get(options, 'service.plan_guid');
-    logger.info(`Checking if service ${serviceId}, plan: ${planId} is excluded`);
     const plan = catalog.getPlan(planId);
     const metered = _.get(plan, 'metered', false);
+    logger.info(`Meter status of Service ${serviceId}, plan: ${planId} : ${metered}`);
     return !metered;
   }
 
@@ -73,16 +78,16 @@ class MeterInstanceJob extends BaseJob {
     // Add region , service name and plan sku name of the event
     const serviceId = _.get(options, 'service.service_guid');
     const planId = _.get(options, 'service.plan_guid');
-    logger.info(`Enriching the metering event ${serviceId}, plan: ${planId}`);
     options.service.id = catalog.getServiceName(serviceId);
     options.service.plan = catalog.getPlanSKUFromPlanGUID(serviceId, planId);
     options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
+    logger.info('Enriched metering document', options);
     return options;
   }
 
   /* jshint ignore:start */
-  static async sendEvent(event) {
+  static async sendEvent(event, attempts) {
     try {
       logger.debug('Metering Event details before enriching:', event);
       if (this.isServicePlanExcluded(event.spec.options) === true) {
@@ -91,8 +96,14 @@ class MeterInstanceJob extends BaseJob {
       }
       const enrichedUsageDoc = await this.enrichEvent(_.get(event.spec, 'options'));
       logger.info('Sending enriched document:', enrichedUsageDoc);
-      const validEvent = await maas.client.sendUsageRecord({
-        usage: [enrichedUsageDoc]
+      const validEvent = await utils.retry(tries => {
+        logger.debug(`Sending usage document, try: ${tries}`);
+        return maas.client.sendUsageRecord({
+          usage: [enrichedUsageDoc]
+        });
+      }, {
+        maxAttempts: attempts || 4,
+        minDelay: 1000
       });
       if (validEvent !== undefined) {
         await this.updateMeterState(CONST.METER_STATE.METERED, event);
@@ -111,9 +122,9 @@ class MeterInstanceJob extends BaseJob {
     const now = new Date();
     const secondsSinceEpoch = Math.round(now.getTime() / 1000);
     const createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
-    logger.debug(`Event Creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
+    logger.debug(`Metering event creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
     // Threshold needs to be greater than the metering job frequency
-    const thresholdHours = config.metering.error_threshold_hours;
+    const thresholdHours = _.get(config.metering,'error_threshold_hours', 0);
     if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
       logger.debug(`Publishing log event for error: ${err}, for event:`, event);
       const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');

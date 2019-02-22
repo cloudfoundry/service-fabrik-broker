@@ -54,4 +54,5 @@ func main() {
 
 	glog.Infof("Got OS shutdown signal, shutting down wenhook server gracefully...")
 	whsvr.server.Shutdown(context.Background())
+	glog.Flush()
 }

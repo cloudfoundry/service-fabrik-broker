@@ -77,6 +77,9 @@ router.route('/service-fabrik/maintenance')
 router.route('/instances/update/schedules')
   .get(controller.handler('getScheduledUpdateInstances'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
+router.route('/scheduler/:job_type/runNow/')
+  .post(controller.handler('runNow'))
+  .all(commonMiddleware.methodNotAllowed(['POST']));
 
 
 router.use(commonMiddleware.notFound());

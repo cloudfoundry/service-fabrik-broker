@@ -157,7 +157,6 @@ func (whsvr *WebhookServer) meter(evt EventInterface, a APIServerInterface) *v1b
 	return &v1beta1.AdmissionResponse{
 		Allowed: true,
 	}
-
 }
 
 // Serve method for webhook server
@@ -228,4 +227,5 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		glog.Errorf("Can't write response: %v", err)
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
+	glog.Flush()
 }
