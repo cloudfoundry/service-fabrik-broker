@@ -196,7 +196,7 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 				return nil, err
 			}
 			foundResources = append(foundResources, foundResource)
-			break
+			continue
 		} else if err != nil {
 			log.Printf("error getting %s %s. %v\n", kind, namespacedName, err)
 			return nil, err
@@ -477,15 +477,12 @@ func (r resourceManager) deleteSubResource(client kubernetes.Client, resource *u
 				status = make(map[string]interface{})
 			}
 
-			state, ok := status["state"]
-			if !ok || state == "succeeded" || state == "failed" {
-				status["state"] = "delete"
-				content["status"] = status
-				resource.SetUnstructuredContent(content)
-				err = client.Update(context.TODO(), resource)
-				if err != nil {
-					return err
-				}
+			status["state"] = "delete"
+			content["status"] = status
+			resource.SetUnstructuredContent(content)
+			err = client.Update(context.TODO(), resource)
+			if err != nil {
+				return err
 			}
 			return nil
 		}

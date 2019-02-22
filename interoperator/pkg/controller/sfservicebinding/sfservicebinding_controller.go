@@ -151,7 +151,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			log.Info("binding deleted", "binding", request.NamespacedName)
+			log.Info("binding deleted", "binding", request.NamespacedName.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -191,7 +191,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		resourceRefs := append(binding.Status.Resources, bindSecret)
 		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
 		if err != nil {
-			log.Error(err, "Delete sub resources failed")
+			log.Error(err, "Delete sub resources failed", "binding", bindingID)
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
 		err = r.setInProgress(request.NamespacedName, state, remainingResource, 0)
@@ -211,7 +211,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 
 		resourceRefs, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, binding.Status.Resources)
 		if err != nil {
-			log.Error(err, "ReconcileResources failed")
+			log.Error(err, "ReconcileResources failed", "binding", bindingID)
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
 		err = r.setInProgress(request.NamespacedName, state, resourceRefs, 0)
@@ -292,7 +292,7 @@ func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.Namespace
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed")
+			log.Error(err, "Updating status to in progress failed", "binding", namespacedName.Name)
 			return err
 		}
 		binding.SetState("in progress")
@@ -309,10 +309,10 @@ func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.Namespace
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed")
+			log.Error(err, "Updating status to in progress failed", "binding", namespacedName.Name)
 			return err
 		}
-		log.Info("Updated status to in progress", "operation", state)
+		log.Info("Updated status to in progress", "operation", state, "binding", namespacedName.Name)
 	}
 	return nil
 }
@@ -325,7 +325,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	namespace := binding.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
 	if err != nil {
-		log.Error(err, "ComputeStatus failed for unbind")
+		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
 		return err
 	}
 
@@ -336,7 +336,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	}
 	err = r.Get(context.TODO(), namespacedName, binding)
 	if err != nil {
-		log.Error(err, "Failed to get binding")
+		log.Error(err, "Failed to get binding", "binding", bindingID)
 		return err
 	}
 
@@ -376,7 +376,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	}
 
 	if updateRequired {
-		log.Info("Updating unbind status from template", "binding", namespacedName)
+		log.Info("Updating unbind status from template", "binding", namespacedName.Name)
 		if err := r.Update(context.Background(), binding); err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateUnbindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
@@ -433,7 +433,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 		}
 
 		if err := controllerutil.SetControllerReference(binding, secret, r.scheme); err != nil {
-			log.Error(err, "failed to set owner reference for secret")
+			log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 			return err
 		}
 		secretNamespacedName := types.NamespacedName{
@@ -445,7 +445,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 		if err != nil && errors.IsNotFound(err) {
 			err = r.Create(context.TODO(), secret)
 			if err != nil {
-				log.Error(err, "failed to create secret")
+				log.Error(err, "failed to create secret", "binding", bindingID)
 				return err
 			}
 		} else if err != nil {
@@ -456,14 +456,14 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 
 	if !reflect.DeepEqual(&binding.Status, updatedStatus) {
 		updatedStatus.DeepCopyInto(&binding.Status)
-		log.Info("Updating bind status from template", "binding", namespacedName)
+		log.Info("Updating bind status from template", "binding", namespacedName.Name)
 		err = r.Update(context.Background(), binding)
 		if err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateBindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
 				return r.updateBindStatus(targetClient, binding, retryCount+1)
 			}
-			log.Error(err, "failed to update status")
+			log.Error(err, "failed to update status", "binding", bindingID)
 			return err
 		}
 	}
