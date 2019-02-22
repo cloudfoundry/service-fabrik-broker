@@ -27,7 +27,7 @@ class AliClient extends BaseCloudClient {
 
   getContainer(container) {
     if (arguments.length < 1) {
-      container = containerName;
+      container = this.containerName;
     }
     logger.debug("Looking for container " + container);
     return Promise.try(() => {
@@ -88,7 +88,7 @@ class AliClient extends BaseCloudClient {
       level++;
       logger.debug(`Fetching recursively at level : ${level}`);
       const promise = new Promise(function (resolve, reject) {
-        Promise.try(() => list(containerName, options))
+        Promise.try(() => list(this.containerName, options))
           .then(files => {
             logger.debug('list of files recieved - ', files);
             if (files && files.length > 0) {
@@ -119,7 +119,7 @@ class AliClient extends BaseCloudClient {
   remove(container, file) {
     if (arguments.length < 2) {
       file = container;
-      container = containerName;
+      container = this.containerName;
     }
 
     logger.info("Deleting file " + file + " from container " + container);
@@ -159,11 +159,11 @@ class AliClient extends BaseCloudClient {
     if (arguments.length < 3) {
       data = file;
       file = container;
-      container = containerName;
+      container = this.containerName;
     }
 
     logger.info("Uploading file " + file + " to container " + container);
-    return upload({
+    return this.upload({
       container: container,
       remote: file
     }, new Buffer(JSON.stringify(data, null, 2), 'utf8'));
@@ -172,7 +172,7 @@ class AliClient extends BaseCloudClient {
   downloadJson(container, file) {
     if (arguments.length < 2) {
       file = container;
-      container = containerName;
+      container = this.containerName;
     }
     logger.info("Downloading file " + file + " from container " + container);
     return download({
