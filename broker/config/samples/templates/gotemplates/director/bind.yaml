@@ -1,7 +1,11 @@
 {{ $name := "" }}
 {{- with .binding.metadata.name }} {{ $name = . }} {{ end }}
 {{- $state := "in_queue" }}
-{{- with .binding.status.state }} {{ $state = . }} {{ end }}
+{{- with .binding.status.state }}
+  {{- if eq . "update" }}
+    {{- $state = . }}
+  {{- end }}
+{{- end }}
 {{- $serviceId := "" }}
 {{- $planId := "" }}
 {{- $context := "{}" }}
@@ -40,8 +44,6 @@
     {{- $instanceId = . }}
   {{- end }}
 {{- end }}
-
-
 apiVersion: bind.servicefabrik.io/v1alpha1
 kind: DirectorBind
 metadata:
