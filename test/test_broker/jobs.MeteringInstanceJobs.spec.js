@@ -150,6 +150,14 @@ describe('Jobs', () => {
 
 
     describe('#sendEvent', () => {
+
+      let _logMeteringEventStub;
+      _logMeteringEventStub = sinon.stub(MeterInstanceJob, '_logMeteringEvent');
+
+      afterEach(function () {
+        _logMeteringEventStub.resetHistory();
+      });
+
       it('should not send metering event for excluded plans', () => {
         const expectedResponse = {
           status: 200
@@ -194,6 +202,9 @@ describe('Jobs', () => {
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
             expect(res).to.eql(true);
+            expect(_logMeteringEventStub).to.be.calledOnce;
+            expect(_logMeteringEventStub.firstCall.args[0]).to.eql(undefined);
+            expect(_logMeteringEventStub.firstCall.args[1]).to.eql(dummy_event);
             mocks.verify();
           });
       });
@@ -220,6 +231,9 @@ describe('Jobs', () => {
         return MeterInstanceJob.sendEvent(dummy_event, 1)
           .then(res => {
             expect(res).to.eql(false);
+            expect(_logMeteringEventStub).to.be.calledOnce;
+            expect(_logMeteringEventStub.firstCall.args[0].error.status).to.eql(400);
+            expect(_logMeteringEventStub.firstCall.args[1]).to.eql(dummy_event);
             mocks.verify();
           })
           .catch(err => expect(err).to.be.undefined);
