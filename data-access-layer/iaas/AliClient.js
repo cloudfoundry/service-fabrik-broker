@@ -56,7 +56,7 @@ class AliClient extends BaseCloudClient {
       options = container;
       container = this.containerName;
     }
-    return storageClient
+    return this.storage
       .useBucket(container)
       .list(options)
       .then(listOfFiles => {
@@ -123,7 +123,7 @@ class AliClient extends BaseCloudClient {
     }
 
     logger.info("Deleting file " + file + " from container " + container);
-    return storageClient
+    return this.storage
       .useBucket(container)
       .delete(file)
       .then(() => {
