@@ -108,6 +108,7 @@ class MeterInstanceJob extends BaseJob {
       if (validEvent !== undefined) {
         await this.updateMeterState(CONST.METER_STATE.METERED, event);
       }
+      await MeterInstanceJob._logMeteringEvent(undefined, event);
       return true;
     } catch (err) {
       logger.error('Error occured while metering:', err);
@@ -119,20 +120,32 @@ class MeterInstanceJob extends BaseJob {
   /* jshint ignore:end */
 
   static _logMeteringEvent(err, event) {
-    const now = new Date();
-    const secondsSinceEpoch = Math.round(now.getTime() / 1000);
-    const createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
-    logger.debug(`Metering event creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
-    // Threshold needs to be greater than the metering job frequency
-    const thresholdHours = _.get(config.metering,'error_threshold_hours', 0);
-    if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
-      logger.debug(`Publishing log event for error: ${err}, for event:`, event);
-      const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+    const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
+    const request = {
+      instance_id: _.get(event, 'metadata.labels.instance_guid')
+    };
+    if (err !== undefined) {
+      const now = new Date();
+      const secondsSinceEpoch = Math.round(now.getTime() / 1000);
+      const createSecondsSinceEpoch = Math.round(Date.parse(event.spec.options.timestamp) / 1000);
+      logger.debug(`Metering event creation timestamp: ${event.spec.options.timestamp} (${createSecondsSinceEpoch}), Current time: ${now} ${secondsSinceEpoch}`);
+      // Threshold needs to be greater than the metering job frequency
+      const thresholdHours = _.get(config.metering,'error_threshold_hours', 0);
+      if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
+        logger.debug(`Publishing log event for error: ${err}, for event:`, event);
+        const resp = {
+          statusCode: err.status
+        };
+        const check_res_body = false;
+        return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body);
+      }
+    } else {
+      logger.debug('Publishing log event for success for event:', event);
       const resp = {
-        statusCode: err.status
+        statusCode: CONST.HTTP_STATUS_CODE.OK
       };
       const check_res_body = false;
-      return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, event, resp, check_res_body);
+      return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body);
     }
   }
 
@@ -149,7 +162,13 @@ class MeterInstanceJob extends BaseJob {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
         resourceId: `${event.metadata.name}`,
-        status: status_obj
+        status: status_obj,
+        options: {
+          service: {
+            id: _.get(event,'spec.options.service.id'),
+            plan: _.get(event,'spec.options.service.plan')
+          }
+        }
       });
     }, {
       maxAttempts: 4,
