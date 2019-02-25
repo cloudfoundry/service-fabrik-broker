@@ -162,13 +162,7 @@ class MeterInstanceJob extends BaseJob {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
         resourceId: `${event.metadata.name}`,
-        status: status_obj,
-        options: {
-          service: {
-            id: _.get(event,'spec.options.service.id'),
-            plan: _.get(event,'spec.options.service.plan')
-          }
-        }
+        status: status_obj
       });
     }, {
       maxAttempts: 4,
