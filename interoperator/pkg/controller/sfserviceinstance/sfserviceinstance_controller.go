@@ -157,7 +157,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			log.Info("instance deleted", "binding", request.NamespacedName)
+			log.Info("instance deleted", "binding", request.NamespacedName.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -189,7 +189,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		// so lets handle our external dependency
 		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, instance.Status.Resources)
 		if err != nil {
-			log.Error(err, "Delete sub resources failed")
+			log.Error(err, "Delete sub resources failed", "instanceId", instanceID)
 			return r.handleError(instance, reconcile.Result{}, err, state, 0)
 		}
 		err = r.setInProgress(request.NamespacedName, state, remainingResource, 0)
@@ -210,7 +210,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 
 		resourceRefs, err := r.resourceManager.ReconcileResources(r, targetClient, expectedResources, instance.Status.Resources)
 		if err != nil {
-			log.Error(err, "ReconcileResources failed")
+			log.Error(err, "ReconcileResources failed", "instanceId", instanceID)
 			return r.handleError(instance, reconcile.Result{}, err, state, 0)
 		}
 		err = r.setInProgress(request.NamespacedName, state, resourceRefs, 0)
@@ -291,7 +291,7 @@ func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.Namespac
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed")
+			log.Error(err, "Updating status to in progress failed", "instanceId", namespacedName.Name)
 			return err
 		}
 		instance.SetState("in progress")
@@ -308,10 +308,10 @@ func (r *ReconcileSFServiceInstance) setInProgress(namespacedName types.Namespac
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
-			log.Error(err, "Updating status to in progress failed")
+			log.Error(err, "Updating status to in progress failed", "instanceId", namespacedName.Name)
 			return err
 		}
-		log.Info("Updated status to in progress", "operation", state)
+		log.Info("Updated status to in progress", "operation", state, "instanceId", namespacedName.Name)
 	}
 	return nil
 }
@@ -324,7 +324,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	namespace := instance.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
 	if err != nil {
-		log.Error(err, "ComputeStatus failed for deprovision")
+		log.Error(err, "ComputeStatus failed for deprovision", "instanceId", instanceID)
 		return err
 	}
 
@@ -335,7 +335,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	}
 	err = r.Get(context.TODO(), namespacedName, instance)
 	if err != nil {
-		log.Error(err, "Failed to get instance")
+		log.Error(err, "Failed to get instance", "instanceId", instanceID)
 		return err
 	}
 
@@ -376,7 +376,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	}
 
 	if updateRequired {
-		log.Info("Updating deprovision status from template", "instance", namespacedName)
+		log.Info("Updating deprovision status from template", "instance", namespacedName.Name)
 		if err := r.Update(context.Background(), instance); err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateDeprovisionStatus", "retryCount", retryCount+1, "instanceID", instanceID)
@@ -419,14 +419,14 @@ func (r *ReconcileSFServiceInstance) updateStatus(targetClient client.Client, in
 
 	if !reflect.DeepEqual(&instance.Status, updatedStatus) {
 		updatedStatus.DeepCopyInto(&instance.Status)
-		log.Info("Updating provision status from template", "instance", namespacedName)
+		log.Info("Updating provision status from template", "instance", namespacedName.Name)
 		err = r.Update(context.Background(), instance)
 		if err != nil {
 			if retryCount < errorThreshold {
 				log.Info("Retrying", "function", "updateStatus", "retryCount", retryCount+1, "instanceID", instanceID)
 				return r.updateStatus(targetClient, instance, retryCount+1)
 			}
-			log.Error(err, "failed to update status")
+			log.Error(err, "failed to update status", "instanceId", instanceID)
 			return err
 		}
 	}
