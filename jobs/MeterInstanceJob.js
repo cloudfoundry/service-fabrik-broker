@@ -134,7 +134,7 @@ class MeterInstanceJob extends BaseJob {
       if (secondsSinceEpoch - createSecondsSinceEpoch > thresholdHours * 60 * 60) {
         logger.debug(`Publishing log event for error: ${err}, for event:`, event);
         const resp = {
-          statusCode: err.status
+          statusCode: _.get(err,'status', CONST.HTTP_STATUS_CODE.TIMEOUT)
         };
         const check_res_body = false;
         return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body);
