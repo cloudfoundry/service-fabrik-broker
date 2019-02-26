@@ -122,7 +122,8 @@ class MeterInstanceJob extends BaseJob {
   static _logMeteringEvent(err, event) {
     const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
     const request = {
-      instance_id: _.get(event, 'metadata.labels.instance_guid')
+      instance_id: _.get(event, 'metadata.labels.instance_guid'),
+      event_type: _.get(event, 'metadata.labels.event_type')
     };
     if (err !== undefined) {
       const now = new Date();

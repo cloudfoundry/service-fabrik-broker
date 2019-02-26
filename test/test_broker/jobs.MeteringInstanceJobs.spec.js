@@ -37,7 +37,8 @@ function getDummyEvent(options_json) {
       generation: 1,
       labels: {
         state: 'TO_BE_METERED',
-        instance_guid: 'fake_instance_id'
+        instance_guid: 'fake_instance_id',
+        event_type: 'update'
       },
       name: meterGuid,
       namespace: 'default',
@@ -215,7 +216,10 @@ describe('Jobs', () => {
             expect(publishAndAuditLogEventStub).to.be.calledOnce;
             expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
             expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
-            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ instance_id: 'fake_instance_id' });
+            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
+              "event_type": 'update',
+              instance_id: 'fake_instance_id'
+            });
             expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: 200 });
             mocks.verify();
           });
@@ -246,7 +250,10 @@ describe('Jobs', () => {
             expect(publishAndAuditLogEventStub).to.be.calledOnce;
             expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
             expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
-            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ instance_id: 'fake_instance_id' });
+            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
+              "event_type": 'update',
+              instance_id: 'fake_instance_id'
+            });
             expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: CONST.HTTP_STATUS_CODE.TIMEOUT });
             mocks.verify();
           })
