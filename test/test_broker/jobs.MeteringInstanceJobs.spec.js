@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const MeterInstanceJob = require('../../jobs/MeterInstanceJob');
 const CONST = require('../../common/constants');
+const EventLogInterceptor = require('../../common/EventLogInterceptor');
 
 const meterGuid = 'meter-guid';
 const not_excluded_plan = 'bc158c9a-7934-401e-94ab-057082a5073f';
@@ -35,7 +36,9 @@ function getDummyEvent(options_json) {
       creationTimestamp: '2019-01-21T11:00:43Z',
       generation: 1,
       labels: {
-        state: 'TO_BE_METERED'
+        state: 'TO_BE_METERED',
+        instance_guid: 'fake_instance_id',
+        event_type: 'update'
       },
       name: meterGuid,
       namespace: 'default',
@@ -150,6 +153,21 @@ describe('Jobs', () => {
 
 
     describe('#sendEvent', () => {
+
+      let publishAndAuditLogEventStub;
+      publishAndAuditLogEventStub = sinon.stub(EventLogInterceptor.prototype, 'publishAndAuditLogEvent');
+
+      beforeEach(function () {
+          publishAndAuditLogEventStub.resetHistory();
+      });
+      afterEach(function () {
+        publishAndAuditLogEventStub.resetHistory();
+      });
+
+      after(function(){
+        publishAndAuditLogEventStub.restore();
+      });
+
       it('should not send metering event for excluded plans', () => {
         const expectedResponse = {
           status: 200
@@ -168,6 +186,7 @@ describe('Jobs', () => {
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
             expect(res).to.eql(true);
+            expect(publishAndAuditLogEventStub).to.be.not.called;
             mocks.verify();
           });
       });
@@ -194,6 +213,14 @@ describe('Jobs', () => {
         return MeterInstanceJob.sendEvent(dummy_event)
           .then(res => {
             expect(res).to.eql(true);
+            expect(publishAndAuditLogEventStub).to.be.calledOnce;
+            expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
+            expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
+            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
+              "event_type": 'update',
+              instance_id: 'fake_instance_id'
+            });
+            expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: 200 });
             mocks.verify();
           });
       });
@@ -220,9 +247,16 @@ describe('Jobs', () => {
         return MeterInstanceJob.sendEvent(dummy_event, 1)
           .then(res => {
             expect(res).to.eql(false);
+            expect(publishAndAuditLogEventStub).to.be.calledOnce;
+            expect(publishAndAuditLogEventStub.firstCall.args[0]).to.eql(CONST.URL.METERING_USAGE);
+            expect(publishAndAuditLogEventStub.firstCall.args[1]).to.eql(CONST.HTTP_METHOD.PUT);
+            expect(publishAndAuditLogEventStub.firstCall.args[2]).to.eql({ 
+              "event_type": 'update',
+              instance_id: 'fake_instance_id'
+            });
+            expect(publishAndAuditLogEventStub.firstCall.args[3]).to.eql({ statusCode: CONST.HTTP_STATUS_CODE.TIMEOUT });
             mocks.verify();
           })
-          .catch(err => expect(err).to.be.undefined);
       });
       it('should retry if sending document fails', () => {
         const expectedResponse = {

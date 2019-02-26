@@ -90,10 +90,14 @@ class EventLogRiemannClient {
     const backupGuid = _.get(eventInfo, 'request.backup_guid');
     const appGuid = _.get(eventInfo, 'request.app_guid');
     const serviceId = _.get(eventInfo, 'request.service_id');
+    const eventType = _.get(eventInfo, 'request.event_type');
 
     if (instanceId === undefined && backupGuid === undefined && appGuid === undefined && serviceId === undefined) {
       return false;
     } else {
+      if (eventType !== undefined) {
+        eventName = `${eventName}.event_type.${eventType}`;
+      }
       if (instanceId !== undefined) {
         eventName = `${eventName}.instance_id.${instanceId}`;
       }
