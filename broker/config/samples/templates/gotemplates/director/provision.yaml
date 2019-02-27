@@ -1,7 +1,11 @@
 {{ $name := "" }}
 {{- with .instance.metadata.name }} {{ $name = . }} {{ end }}
 {{- $state := "in_queue" }}
-{{- with .instance.status.state }} {{ $state = . }} {{ end }}
+{{- with .instance.status.state }}
+  {{- if eq . "update" }}
+    {{- $state = . }}
+  {{- end }}
+{{- end }}
 {{- $serviceId := "" }}
 {{- $planId := "" }}
 {{- $organizationGuid := "" }}
