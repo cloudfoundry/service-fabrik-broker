@@ -27,7 +27,6 @@ class BoshRestoreService extends BaseDirectorService {
       const args = opts.arguments;
       const backupMetadata = _.get(args, 'backup');
       const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid); 
-
       const data = _
         .chain(opts)
         .pick('service_id', 'plan_id', 'instance_guid', 'username')
@@ -41,19 +40,15 @@ class BoshRestoreService extends BaseDirectorService {
           tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
         })
         .value();
-
       const service = catalog.getService(opts.service_id);
       const instanceGroups = _.get(service, 'restore_operation.instance_group');
       let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); 
-
       let getDiskMetadataFn = async instance => {
         let diskCid = instance.disk_cid;
         let az = instance.az;
         instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
       };
-
       await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); 
-
       const optionsData = _
         .assign({
           restoreMetadata: {
@@ -77,7 +72,6 @@ class BoshRestoreService extends BaseDirectorService {
           },
           stateResults: {}
         });
-
       let restoreFileMetadata;
       try {
         restoreFileMetadata = await this.backupStore.getRestoreFile(data);
@@ -86,11 +80,9 @@ class BoshRestoreService extends BaseDirectorService {
           throw err;
         }
       }
-
       await this.backupStore.putFile(_.assign(data, {
         restore_dates: _.get(restoreFileMetadata, 'restore_dates')
       }));
-
       return eventmesh.apiServerClient.patchResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -200,7 +192,6 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStop(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
     const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
-
     if (!_.isEmpty(oldTaskId)) {
       await this.director.pollTaskStatusTillComplete(oldTaskId); 
     }
@@ -212,14 +203,12 @@ class BoshRestoreService extends BaseDirectorService {
         }
       }
     });
-
     await eventmesh.apiServerClient.patchResource({ 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
       options: stateResult
     });
-
     const taskResult = await this.director.pollTaskStatusTillComplete(taskId); 
     stateResult = {};
     stateResult = _.assign({
@@ -230,7 +219,6 @@ class BoshRestoreService extends BaseDirectorService {
         }
       }
     });
-
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -253,9 +241,7 @@ class BoshRestoreService extends BaseDirectorService {
         type: instance.oldDiskInfo.type
       });
     };
-
     await Promise.all(deploymentInstancesInfo.map(createDiskFn)); 
-
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -275,7 +261,6 @@ class BoshRestoreService extends BaseDirectorService {
   async processAttachDisk(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
     let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
-
     let createDiskAttachmentTaskFn = async instance => {
       let taskId = _.get(instance, 'attachDiskTaskId', undefined);
       if (_.isEmpty(taskId)) {
@@ -284,9 +269,7 @@ class BoshRestoreService extends BaseDirectorService {
         _.set(instance, 'attachDiskTaskId', taskId);
       }
     };
-
     await Promise.all(deploymentInstancesInfo.map(createDiskAttachmentTaskFn)); 
-
     await eventmesh.apiServerClient.patchResource({ 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -297,14 +280,11 @@ class BoshRestoreService extends BaseDirectorService {
         }
       }
     });
-
     let taskPollingFn = async instance => {
       let taskId = _.get(instance, 'attachDiskTaskId');
       instance.attachDiskTaskResult = await this.director.pollTaskStatusTillComplete(taskId);
     };
-
     await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); 
-
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -345,10 +325,8 @@ class BoshRestoreService extends BaseDirectorService {
     let sshFn = async instance => {
       instance.sshResult = await this.director.runSsh(deploymentName, instance.job_name, instance.id, cmd);
     };
-
     // TODO: add retries
     await Promise.all(deploymentInstancesInfo.map(sshFn)); 
-
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -414,7 +392,6 @@ class BoshRestoreService extends BaseDirectorService {
       });
       return;
     }
-
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
     const errandName = _.get(resourceOptions, `restoreMetadata.${errandType}.name`);
     const instanceOption = _.get(resourceOptions, `restoreMetadata.${errandType}.instances`);
@@ -480,11 +457,9 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStart(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
     const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
-
     if (!_.isEmpty(oldTaskId)) {
       await this.director.pollTaskStatusTillComplete(oldTaskId); 
     }
-
     const taskId = await this.director.startDeployment(deploymentName); 
     let stateResult = _.assign({
       stateResults: {
@@ -493,7 +468,6 @@ class BoshRestoreService extends BaseDirectorService {
         }
       }
     });
-
     await eventmesh.apiServerClient.patchResource({ 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
@@ -510,7 +484,6 @@ class BoshRestoreService extends BaseDirectorService {
         }
       }
     });
-
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
