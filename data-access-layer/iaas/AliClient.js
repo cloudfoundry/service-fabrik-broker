@@ -2,7 +2,7 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const Storage = require('ali-oss');
-//const Compute = require('@alicloud/pop-core');
+// const Compute = require('@alicloud/pop-core');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
 const utils = require('../../common/utils');
@@ -135,9 +135,17 @@ class AliClient extends BaseCloudClient {
   }
 
   download(options) {
-    return utils.streamToPromise(this.storage.createReadStream(
-      options.container, options.remote))
-      .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
+    return Promise.try(() => {
+      return this.storage
+        .useBucket(options.container)
+        .get(options.remote)
+        .then(result => {
+          return result.content;
+        })
+        .catch(err => {
+          console.error(err)
+        })
+    });
   }
 
   upload(options, buffer) {
@@ -175,7 +183,7 @@ class AliClient extends BaseCloudClient {
       container = this.containerName;
     }
     logger.info("Downloading file " + file + " from container " + container);
-    return download({
+    return this.download({
       container: container,
       remote: file
     })
