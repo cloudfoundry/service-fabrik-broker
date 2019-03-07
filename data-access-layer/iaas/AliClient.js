@@ -4,10 +4,10 @@ const Promise = require('bluebird');
 const Storage = require('ali-oss');
 // const Compute = require('@alicloud/pop-core');
 const logger = require('../../common/logger');
-const errors = require('../../common/errors');
+// const errors = require('../../common/errors');
 // const utils = require('../../common/utils');
 // const uuid = require('uuid');
-//const ComputeClient = require('./ComputeClient');
+// const ComputeClient = require('./ComputeClient');
 const BaseCloudClient = require('./BaseCloudClient');
 // const NotFound = errors.NotFound;
 // const Unauthorized = errors.Unauthorized;
@@ -35,7 +35,7 @@ class AliClient extends BaseCloudClient {
         prefix: container
       })
         .then(buckets => {
-          if (buckets.buckets == null) {
+          if (buckets.buckets === null) {
             logger.error('Bucket ' + container + ' does not exists');
           } else if (buckets.buckets.length == 1) {
             return buckets.buckets;
@@ -157,8 +157,8 @@ class AliClient extends BaseCloudClient {
           JSON.parse(buffer);
         })
         .catch(err => {
-          logger.error(err)
-        })
+          logger.error(err);
+        });
     });
   }
 
@@ -186,7 +186,7 @@ class AliClient extends BaseCloudClient {
       container: container,
       remote: file
     })
-      .then((data) => JSON.parse(data));
+      .then(data => JSON.parse(data));
   }
 
   createDiskFromSnapshot(snapshotId, zone, opts = {}) { }
