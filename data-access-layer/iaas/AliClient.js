@@ -5,18 +5,18 @@ const Storage = require('ali-oss');
 // const Compute = require('@alicloud/pop-core');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
-const utils = require('../../common/utils');
-const uuid = require('uuid');
+// const utils = require('../../common/utils');
+// const uuid = require('uuid');
 //const ComputeClient = require('./ComputeClient');
 const BaseCloudClient = require('./BaseCloudClient');
-const NotFound = errors.NotFound;
-const Unauthorized = errors.Unauthorized;
-const Forbidden = errors.Forbidden;
+// const NotFound = errors.NotFound;
+// const Unauthorized = errors.Unauthorized;
+// const Forbidden = errors.Forbidden;
 
 class AliClient extends BaseCloudClient {
   constructor(settings) {
     super(settings);
-    //this.constructor.validateParams(_.chain(this.settings).value());
+    // this.constructor.validateParams(_.chain(this.settings).value());
     this.storage = this.constructor.createStorageClient(_
       .chain(this.settings)
       .omit('name')
@@ -29,23 +29,23 @@ class AliClient extends BaseCloudClient {
     if (arguments.length < 1) {
       container = this.containerName;
     }
-    logger.debug("Looking for container " + container);
+    logger.debug('Looking for container ' + container);
     return Promise.try(() => {
       return this.storage.listBuckets({
         prefix: container
       })
         .then(buckets => {
           if (buckets.buckets == null) {
-            logger.error("Bucket " + container + " does not exists");
+            logger.error('Bucket ' + container + ' does not exists');
           } else if (buckets.buckets.length == 1) {
             return buckets.buckets;
-            logger.info("Bucket " + container + " exists");
+            logger.info('Bucket ' + container + ' exists');
           } else {
-            logger.error("More than 1 Buckets with prefix " + container + " exists");
+            logger.error('More than 1 Buckets with prefix ' + container + ' exists');
           }
         })
         .catch(err => {
-          logger.error("Bucket " + container + " does not exists");
+          logger.error('Bucket ' + container + ' does not exists');
         });
     });
   }
@@ -122,12 +122,12 @@ class AliClient extends BaseCloudClient {
       container = this.containerName;
     }
 
-    logger.info("Deleting file " + file + " from container " + container);
+    logger.info('Deleting file ' + file + ' from container ' + container);
     return this.storage
       .useBucket(container)
       .delete(file)
       .then(() => {
-        logger.info("Deleted file " + file + " from container " + container);
+        logger.info('Deleted file ' + file + ' from container ' + container);
       })
       .catch(err => {
         logger.error(err.message);
@@ -143,8 +143,8 @@ class AliClient extends BaseCloudClient {
           return result.content;
         })
         .catch(err => {
-          console.error(err)
-        })
+          console.error(err);
+        });
     });
   }
 
@@ -153,8 +153,7 @@ class AliClient extends BaseCloudClient {
       return this.storage
         .useBucket(options.container)
         .put(options.remote, buffer)
-        .then(result => {
-          //console.log(result);
+        .then(() => {
           JSON.parse(buffer);
         })
         .catch(err => {
@@ -170,7 +169,7 @@ class AliClient extends BaseCloudClient {
       container = this.containerName;
     }
 
-    logger.info("Uploading file " + file + " to container " + container);
+    logger.info('Uploading file ' + file + ' to container ' + container);
     return this.upload({
       container: container,
       remote: file
@@ -182,7 +181,7 @@ class AliClient extends BaseCloudClient {
       file = container;
       container = this.containerName;
     }
-    logger.info("Downloading file " + file + " from container " + container);
+    logger.info('Downloading file ' + file + ' from container ' + container);
     return this.download({
       container: container,
       remote: file
