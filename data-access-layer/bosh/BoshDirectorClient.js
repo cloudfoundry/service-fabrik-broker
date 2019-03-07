@@ -917,7 +917,7 @@ class BoshDirectorClient extends HttpClient {
         }
       },
       json: true
-    }, 302, deploymentName);
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName);
   }
 
   cleanupSsh(deploymentName, jobName, instanceId, tempUser) {
@@ -936,7 +936,7 @@ class BoshDirectorClient extends HttpClient {
         }
       },
       json: true
-    }, 302, deploymentName);
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName);
   }
 
   async runSsh(deploymentName, jobName, instanceId, command) { // jshint ignore: line
@@ -969,7 +969,7 @@ class BoshDirectorClient extends HttpClient {
     return this.makeRequest({
       method: 'GET',
       url: `/deployments/${deploymentName}/errands`
-    }, 200, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -990,7 +990,7 @@ class BoshDirectorClient extends HttpClient {
         'instances': instances
       },
       json: true
-    }, 302, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
@@ -1008,7 +1008,7 @@ class BoshDirectorClient extends HttpClient {
         instance_id: instanceId,
         disk_properties: diskProperties || 'copy'
       }
-    }, 302, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered disk attachment with paramaters --> \

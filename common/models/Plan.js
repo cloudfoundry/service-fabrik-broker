@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const config = require('../config');
+const CONST = require('../constants');
 
 class Plan {
   constructor(service, options) {
@@ -62,6 +63,14 @@ class Plan {
 
   get bindResourceType() {
     return _.get(this.manager, 'resource_mappings.bind.resource_type');
+  }
+
+  get restoreResourceGroup() {
+    return _.get(this.manager, 'resource_mappings.restore.resource_group', undefined) || CONST.APISERVER.RESOURCE_GROUPS.RESTORE;
+  }
+
+  get restoreResourceType() {
+    return _.get(this.manager, 'resource_mappings.restore.resource_type', undefined) || CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
   }
 
   toJSON() {

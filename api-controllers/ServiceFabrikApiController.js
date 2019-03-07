@@ -546,7 +546,6 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const backupGuid = req.body.backup_guid;
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
-    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     let backupSpaceGuid = tenantId;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     return Promise
@@ -637,11 +636,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         .getRestoreOptions(req, metadata)
         .then(restoreOptions => {
           logger.info(`Triggering restore with options: ${JSON.stringify(restoreOptions)}`);
-          restoreType = this.determineRestoreTypeOfService(req.plan);
           return lockManager.lock(req.params.instance_id, {
             lockedResourceDetails: {
-              resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-              resourceType: restoreType,
+              resourceGroup: req.plan.restoreResourceGroup,
+              resourceType: req.plan.restoreResourceType,
               resourceId: restoreGuid,
               operation: CONST.OPERATION_TYPE.RESTORE
             }
@@ -649,9 +647,8 @@ class ServiceFabrikApiController extends FabrikBaseController {
             .then(() => {
               lockedDeployment = true;
               return eventmesh.apiServerClient.createResource({
-                resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-                // TODO read from plan details
-                resourceType: restoreType,
+                resourceGroup: req.plan.restoreResourceGroup,
+                resourceType: req.plan.restoreResourceType,
                 resourceId: restoreGuid,
                 options: restoreOptions,
                 status: {
@@ -669,7 +666,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           operationName: CONST.OPERATION_TYPE.RESTORE,
-          operationType: restoreType,
+          operationType: req.plan.restoreResourceType,
           resourceId: req.params.instance_id,
           value: restoreGuid
         });
@@ -693,34 +690,24 @@ class ServiceFabrikApiController extends FabrikBaseController {
       });
   }
 
-  determineRestoreTypeOfService(plan) {
-    const serviceId = plan.service.id;
-    const service = this.getService(serviceId);
-    const restoreType = _.get(service, 'restore_operation.type') === 'defaultboshrestore' ?
-      CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE : CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
-    return restoreType;
-  }
-
   getLastRestore(req, res) {
     const instanceId = req.params.instance_id;
-    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
       .then(() => {
-        restoreType = this.determineRestoreTypeOfService(req.plan);
         return eventmesh.apiServerClient.getLastOperationValue({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           operationName: CONST.OPERATION_TYPE.RESTORE,
-          operationType: restoreType,
+          operationType: req.plan.restoreResourceType,
           resourceId: req.params.instance_id
         });
       })
       .then(restoreGuid =>
         eventmesh.apiServerClient.getResponse({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-          resourceType: restoreType,
+          resourceGroup: req.plan.restoreResourceGroup,
+          resourceType: req.plan.restoreResourceType,
           resourceId: restoreGuid
         })
       )

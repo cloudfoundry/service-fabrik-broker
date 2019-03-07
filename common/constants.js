@@ -101,6 +101,7 @@ module.exports = Object.freeze({
     CREATED: 201,
     ACCEPTED: 202,
     NO_CONTENT: 204,
+    FOUND: 302,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,

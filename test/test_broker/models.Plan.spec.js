@@ -22,6 +22,10 @@ describe('models', function () {
           bind: {
             resource_group: 'bind',
             resource_type: 'directorbind'
+          },
+          restore: {
+            resource_group: 'restore',
+            resource_type: 'defaultrestores'
           }
         },
         settings: {
@@ -59,6 +63,14 @@ describe('models', function () {
       });
       it('ensures bind resourcetype is correct', function () {
         expect(plan.bindResourceType).to.eql('directorbind');
+      });
+    });
+    describe('#restoreResourceMappings', function() {
+      it('ensures restore resourcegroup is correct', function() {
+        expect(plan.restoreResourceGroup).to.eql('restore');
+      });
+      it('ensures restore resourcetype is correct', function() {
+        expect(plan.restoreResourceType).to.eql('defaultrestores');
       });
     });
     describe('#toJSON', function () {
