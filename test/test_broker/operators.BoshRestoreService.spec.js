@@ -178,7 +178,8 @@ describe('operators', function () {
         let restoreResource = {
           spec: {
             options: JSON.stringify({
-              dummyOptions: 'dummyOptions'
+              dummyOptions: 'dummyOptions',
+              restore_guid: 'dummyGuid'
             })
           }
         };
@@ -199,7 +200,8 @@ describe('operators', function () {
         let restoreResource = {
           spec: {
             options: JSON.stringify({
-              dummyOptions: 'dummyOptions'
+              dummyOptions: 'dummyOptions',
+              restore_guid: 'dummyGuid'
             })
           }
         };
@@ -752,7 +754,8 @@ describe('operators', function () {
       });
       it('should call runErrand for postStartErrand and update ApiServer resource', () => {
         let restoreOptions = {
-          restoreMetadata: restoreMetadata
+          restoreMetadata: restoreMetadata,
+          restore_guid: 'dummyGuid'
         };
         let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
         let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();

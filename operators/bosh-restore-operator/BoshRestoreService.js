@@ -113,15 +113,18 @@ class BoshRestoreService extends BaseDirectorService {
       tenant_id: opts.context ? this.getTenantGuid(opts.context) : opts.tenant_id,
       instance_guid: opts.instance_guid
     });
-    let restoreFileMetadata = await this.backupStore.getRestoreFile(options);
+    const restoreFileMetadata = await this.backupStore.getRestoreFile(options);
+    const lastRestoreGuid = _.get(restoreFileMetadata, 'last_restore_guid', undefined);
+    if(lastRestoreGuid === opts.restore_guid) {
+      return;
+    }
     let restoreFinishiedAt = new Date().toISOString();
     let restoreDates = _.get(restoreFileMetadata, 'restore_dates') || {};
     let restoreDatesByState = _.get(restoreDates, stateToUpdate) || [];
-    if (_.indexOf(restoreDatesByState, restoreFinishiedAt) === -1) {
-      restoreDatesByState.push(restoreFinishiedAt);
-    }
-    let uniqueDates = [...new Set(restoreDatesByState)];
+    restoreDatesByState.push(restoreFinishiedAt);
+    let uniqueDates = [...new Set(restoreDatesByState)]; // one more safeguard against duplication
     const patchObj = {
+      last_restore_guid: opts.restore_guid,
       state: stateToUpdate,
       finished_at: restoreFinishiedAt,
       restore_dates: _.chain(restoreDates)
@@ -132,6 +135,10 @@ class BoshRestoreService extends BaseDirectorService {
   }
 
   async patchRestoreFileWithFinalResult(opts, patchObj) {
+    if(_.isEmpty(patchObj)) {
+      logger.info(`empty patchObj passed. Not patching to file.`);
+      return;
+    }
     const options = _.assign({
       service_id: opts.service_id,
       plan_id: opts.plan_id,
@@ -175,16 +182,18 @@ class BoshRestoreService extends BaseDirectorService {
     } catch(err) {
       logger.error(`Error occurred in state ${currentState}: ${err}`);
       const patchObj = await this.createPatchObject(changedOptions, 'failed');
-      await eventmesh.apiServerClient.patchResource({
+      let patchResourceObj = {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
         resourceId: changedOptions.restore_guid,
         status: {
-          'state': CONST.APISERVER.RESOURCE_STATE.FAILED,
-          response: patchObj
+          'state': CONST.APISERVER.RESOURCE_STATE.FAILED 
         }
-      });
-
+      };
+      if(!_.isEmpty(patchObj)) {
+        _.set(patchResourceObj, 'status.response', patchObj);
+      }
+      await eventmesh.apiServerClient.patchResource(patchResourceObj);
       return this.patchRestoreFileWithFinalResult(changedOptions, patchObj);
     }
   }
@@ -361,6 +370,9 @@ class BoshRestoreService extends BaseDirectorService {
           throw new errors.BadRequest(`Invalid 'instances' option: ${instanceOption}`);
         }
         let instanceIndex = parseInt(instanceOption);
+        if (instanceIndex >= deploymentInstancesInfo.length || instanceIndex < 0) {
+          throw new errors.BadRequest(`${instanceIndex} out of bound, number of instances: ${deploymentInstancesInfo.length}`);
+        }
         return [{
           'group': deploymentInstancesInfo[instanceIndex].job_name,
           'id': deploymentInstancesInfo[instanceIndex].id
@@ -498,15 +510,18 @@ class BoshRestoreService extends BaseDirectorService {
   async processPostStart(resourceOptions) { 
     await this.runErrand(resourceOptions, 'postStartErrand'); 
     const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
-    await eventmesh.apiServerClient.patchResource({
+    let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
       status: {
         'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
-        'response': patchObj
       }
-    });
+    };
+    if(!_.isEmpty(patchObj)) {
+      _.set(patchResourceObj, 'status.response', patchObj);
+    }
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
     return this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
   }
 
