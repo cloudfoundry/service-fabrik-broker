@@ -38,7 +38,7 @@ class AliClient extends BaseCloudClient {
             logger.error('More than 1 Buckets with prefix ' + container + ' exists');
             throw new Error(`More than 1 Buckets with prefix ${container} exists`);
           }
-        })
+        });
     });
   }
 

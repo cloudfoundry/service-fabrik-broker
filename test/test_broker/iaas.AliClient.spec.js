@@ -109,7 +109,6 @@ describe('iaas', function () {
     describe('#AliStorage', function () {
       it('should form an object with correct credentials', function () {
         const responseAliStorageObject = AliClient.createStorageClient(settings);
-
         expect(responseAliStorageObject.options.accessKeyId).to.equal(settings.keyId);
         expect(responseAliStorageObject.options.accessKeySecret).to.equal(settings.key);
         expect(responseAliStorageObject.options.region).to.equal(settings.region);
