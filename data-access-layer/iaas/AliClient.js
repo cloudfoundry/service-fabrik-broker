@@ -144,9 +144,7 @@ class AliClient extends BaseCloudClient {
       return this.storage
         .useBucket(options.container)
         .put(options.remote, buffer)
-        .then(() => {
-          JSON.parse(buffer);
-        })
+        .then(() => JSON.parse(buffer))
         .catch(err => {
           logger.error(err);
         });

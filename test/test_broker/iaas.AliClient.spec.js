@@ -69,6 +69,9 @@ const listFilesStub = {
   get: () => {
     return Promise.resolve(jsonContent);
   },
+  put: () => {
+    return Promise.resolve(jsonContent);
+  },
   delete: (file) => {
     if (file === validBlobName) {
       return Promise.resolve(deleteFileSuccessResponse);
@@ -156,6 +159,10 @@ describe('iaas', function () {
           .catch(() => {
             throw new Error('expected download to be successful');
           });
+      });
+      it('file/blob upload should be successful', function () {
+        return client.uploadJson(validBlobName, jsonContent)
+          .then(response => expect(response.content).to.eql(jsonContent.content));
       });
     });
   });
