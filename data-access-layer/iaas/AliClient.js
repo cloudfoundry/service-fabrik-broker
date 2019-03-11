@@ -4,6 +4,8 @@ const Promise = require('bluebird');
 const Storage = require('ali-oss');
 const logger = require('../../common/logger');
 const BaseCloudClient = require('./BaseCloudClient');
+const errors = require('../../common/errors');
+const NotFound = errors.NotFound;
 
 class AliClient extends BaseCloudClient {
   constructor(settings) {
@@ -28,11 +30,13 @@ class AliClient extends BaseCloudClient {
         .then(buckets => {
           if (buckets.buckets === null) {
             logger.error('Bucket ' + container + ' does not exists');
+            throw new NotFound(`Bucket ${container} does not exist`);
           } else if (buckets.buckets.length == 1) {
-            return buckets.buckets;
             logger.info('Bucket ' + container + ' exists');
+            return buckets.buckets;
           } else {
             logger.error('More than 1 Buckets with prefix ' + container + ' exists');
+            throw new Error(`More than 1 Buckets with prefix ${container} exists`);
           }
         })
         .catch(err => {
@@ -40,7 +44,6 @@ class AliClient extends BaseCloudClient {
         });
     });
   }
-
 
   list(container, options) {
     if (arguments.length < 2) {
@@ -64,47 +67,6 @@ class AliClient extends BaseCloudClient {
         ));
         return files;
       });
-  }
-
-  listFilenames(prefix, max_keys) {
-    const options = {
-      prefix: prefix,
-      'max-keys': max_keys
-    };
-
-    let fileList = [];
-    let level = 0;
-
-    function fetchFiles() {
-      level++;
-      logger.debug(`Fetching recursively at level : ${level}`);
-      const promise = new Promise(function (resolve, reject) {
-        Promise.try(() => list(this.containerName, options))
-          .then(files => {
-            logger.debug('list of files recieved - ', files);
-            if (files && files.length > 0) {
-              fileList = fileList.concat(files);
-              if (files[0].isTruncated === true && level < 10) {
-                options.marker = files[files.length - 1].marker;
-                return fetchFiles()
-                  .then(() => resolve())
-                  .catch(err => reject(err));
-              }
-            }
-            logger.debug('end of recursion');
-            resolve();
-          })
-          .catch(err => reject(err));
-      });
-      return promise;
-    }
-
-    return fetchFiles()
-      .then(() =>
-        _
-          .chain(fileList)
-          .map(file => file)
-          .value());
   }
 
   remove(container, file) {
