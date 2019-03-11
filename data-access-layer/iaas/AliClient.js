@@ -2,21 +2,12 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const Storage = require('ali-oss');
-// const Compute = require('@alicloud/pop-core');
 const logger = require('../../common/logger');
-// const errors = require('../../common/errors');
-// const utils = require('../../common/utils');
-// const uuid = require('uuid');
-// const ComputeClient = require('./ComputeClient');
 const BaseCloudClient = require('./BaseCloudClient');
-// const NotFound = errors.NotFound;
-// const Unauthorized = errors.Unauthorized;
-// const Forbidden = errors.Forbidden;
 
 class AliClient extends BaseCloudClient {
   constructor(settings) {
     super(settings);
-    // this.constructor.validateParams(_.chain(this.settings).value());
     this.storage = this.constructor.createStorageClient(_
       .chain(this.settings)
       .omit('name')
