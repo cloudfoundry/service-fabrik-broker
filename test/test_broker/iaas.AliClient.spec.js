@@ -2,11 +2,11 @@
 const _ = require('lodash');
 const Promise = require('bluebird');
 const logger = require('../../common/logger');
-// const errors = require('../../common/errors');
+const errors = require('../../common/errors');
 // const utils = require('../../common/utils');
 const AliClient = require('../../data-access-layer/iaas').AliClient;
 const AliStorage = require('ali-oss');
-// const NotFound = errors.NotFound;
+const NotFound = errors.NotFound;
 // const Forbidden = errors.Forbidden;
 // const UnprocessableEntity = errors.UnprocessableEntity;
 
@@ -39,6 +39,26 @@ const bucketMetadataResponse = {
     location: 'region-name',
   }]
 };
+const bucketMetadataNotFoundResponse = {
+  buckets: null
+}
+const bucketMetadataMultipleResponse = {
+  buckets: [{
+    name: 'sample-container',
+    id: 'sample-container',
+    timeCreated: '2017-12-24T10:23:50.348Z',
+    updated: '2017-12-24T10:23:50.348Z',
+    location: 'region-name',
+  },
+  {
+    name: 'sample-container2',
+    id: 'sample-container2',
+    timeCreated: '2017-12-24T10:23:50.348Z',
+    updated: '2017-12-24T10:23:50.348Z',
+    location: 'region-name',
+  }
+  ]
+}
 const listFilesResponse = {
   objects:
     [{
@@ -58,10 +78,16 @@ const validBlobName = 'blob1.txt';
 const jsonContent = {
   content: '{"data": "This is a sample content"}'
 };
-
+const wrongContainer = 'wrong-container';
 const bucketStub = function () {
   return Promise.resolve(bucketMetadataResponse);
 };
+const incorrectBucketStub = function () {
+  return Promise.resolve(bucketMetadataNotFoundResponse);
+}
+const incorrectBucketStub2 = function () {
+  return Promise.resolve(bucketMetadataMultipleResponse);
+}
 const listFilesStub = {
   list: () => {
     return Promise.resolve(listFilesResponse);
@@ -95,13 +121,13 @@ describe('iaas', function () {
 
     describe('#BucketOperations', function () {
       let sandbox, client;
-      before(function () {
+      beforeEach(function () {
         sandbox = sinon.createSandbox();
         client = new AliClient(settings);
         sandbox.stub(AliStorage.prototype, 'listBuckets').withArgs({ prefix: settings.container }).callsFake(bucketStub);
         sandbox.stub(AliStorage.prototype, 'useBucket').withArgs(settings.container).returns(listFilesStub);
       });
-      after(function () {
+      afterEach(function () {
         sandbox.restore();
       });
 
@@ -118,6 +144,33 @@ describe('iaas', function () {
             throw new Error('expected container properties to be retrived successfully');
           });
       });
+
+      it('getting container properties should fail with Not Found error', function () {
+        sandbox.restore();
+        sandbox.stub(AliStorage.prototype, 'useBucket').withArgs(settings.container).returns(listFilesStub);
+        sandbox.stub(AliStorage.prototype, 'listBuckets').withArgs({ prefix: settings.container }).callsFake(incorrectBucketStub);
+        return client.getContainer()
+          .then(() => {
+            logger.error('The get container call should fails');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(NotFound);
+          });
+      });
+
+      it('getting container properties should fail with multiple buckets error', function () {
+        sandbox.restore();
+        sandbox.stub(AliStorage.prototype, 'useBucket').withArgs(settings.container).returns(listFilesStub);
+        sandbox.stub(AliStorage.prototype, 'listBuckets').withArgs({ prefix: settings.container }).callsFake(incorrectBucketStub2);
+        return client.getContainer()
+          .then(() => {
+            logger.error('The get container call should fails');
+          })
+          .catch(err => {
+            expect(err.message).to.equal(`More than 1 Buckets with prefix ${settings.container} exists`);
+          });
+      });
+
       it('list of files/blobs should be returned', function () {
         const options = {
           prefix: 'blob'
