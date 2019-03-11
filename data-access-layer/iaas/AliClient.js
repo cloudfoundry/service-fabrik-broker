@@ -39,9 +39,6 @@ class AliClient extends BaseCloudClient {
             throw new Error(`More than 1 Buckets with prefix ${container} exists`);
           }
         })
-        .catch(err => {
-          logger.error('Bucket ' + container + ' does not exists');
-        });
     });
   }
 
