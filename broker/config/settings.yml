@@ -67,6 +67,13 @@ const cloudProviders = {
     storageAccessKey: 'xxxxxxxxxxxxxxxxxx',
     container: 'samplecontainer'
   },
+  ali: {
+    keyId: 'key-id',
+    container: 'sample-container',
+    endpoint: 'https://sample-endpoint',
+    region: 'region-name',
+    key: 'secret-key'
+  },
   gcp: {
     projectId: 'my-gcp-dev',
     credentials: {
