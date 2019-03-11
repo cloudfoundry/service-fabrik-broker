@@ -55,12 +55,19 @@ const deleteFileSuccessResponse = {
 };
 
 const validBlobName = 'blob1.txt';
+const jsonContent = {
+  content: '{"data": "This is a sample content"}'
+};
+
 const bucketStub = function () {
   return Promise.resolve(bucketMetadataResponse);
 };
 const listFilesStub = {
   list: () => {
     return Promise.resolve(listFilesResponse);
+  },
+  get: () => {
+    return Promise.resolve(jsonContent);
   },
   delete: (file) => {
     if (file === validBlobName) {
@@ -141,6 +148,13 @@ describe('iaas', function () {
           .catch(err => {
             logger.error(err);
             throw new Error('expected file/blob deletion to be successful');
+          });
+      });
+      it('file/blob download should be successful', function () {
+        return client.downloadJson(validBlobName)
+          .then(response => expect(response).to.eql(JSON.parse(jsonContent.content)))
+          .catch(() => {
+            throw new Error('expected download to be successful');
           });
       });
     });
