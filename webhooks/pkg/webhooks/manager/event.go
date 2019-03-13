@@ -254,8 +254,8 @@ func (e *Event) validateOptions(opt resources.GenericOptions) error {
 		return errors.New("ServiceID not found")
 	} else if opt.PlanID == "" {
 		return errors.New("PlanID not found")
-	} else if opt.PlanID == "" {
-		return errors.New("PlanID not found")
+	} else if opt.Context.Platform == "" {
+		return errors.New("Context.Platform not found")
 	} else if opt.Context.OrganizationGUID == "" {
 		return errors.New("Context.OrganizationGUID is not found")
 	} else if opt.Context.SpaceGUID == "" {

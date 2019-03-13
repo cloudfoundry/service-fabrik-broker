@@ -371,6 +371,103 @@ var _ = Describe("Event", func() {
 		})
 	})
 
+	Describe("validateOptions", func() {
+		It("Returns nil if options has necessary values", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fakeServiceId",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).To(BeNil())
+		})
+		It("Throws error if ServiceID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
+		})
+		It("Throws error if PlanID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "",
+				ServiceID: "fake servie id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("PlanID not found"))
+		})
+		It("Throws error if Platform not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.Platform not found"))
+		})
+		It("Throws error if OrganizationGUID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.OrganizationGUID is not found"))
+		})
+		It("Throws error if SpaceGUID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.SpaceGUID is not found"))
+		})
+	})
 	Describe("getMeteringEvents", func() {
 		Context("when type is update", func() {
 			It("Generates two metering docs", func() {
