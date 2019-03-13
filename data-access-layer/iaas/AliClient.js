@@ -6,6 +6,9 @@ const logger = require('../../common/logger');
 const BaseCloudClient = require('./BaseCloudClient');
 const errors = require('../../common/errors');
 const NotFound = errors.NotFound;
+const Unauthorized = errors.Unauthorized;
+const Forbidden = errors.Forbidden;
+const UnprocessableEntity = errors.UnprocessableEntity;
 
 class AliClient extends BaseCloudClient {
   constructor(settings) {
@@ -79,9 +82,12 @@ class AliClient extends BaseCloudClient {
       .then(() => {
         logger.info('Deleted file ' + file + ' from container ' + container);
       })
-      .catch(err => {
-        logger.error(err.message);
-      });
+      .catchThrow(BaseCloudClient.providerErrorTypes.Unauthorized,
+        new Unauthorized(`Authorization at ali cloud storage provider failed while deleting blob ${file} in container ${container}`))
+      .catchThrow(BaseCloudClient.providerErrorTypes.Forbidden,
+        new Forbidden(`Authentication at ali cloud storage provider failed while deleting blob ${file} in container ${container}`))
+      .catchThrow(BaseCloudClient.providerErrorTypes.NotFound,
+        new NotFound(`Object '${file}' not found while deleting in container ${container}`));
   }
 
   download(options) {
@@ -92,9 +98,7 @@ class AliClient extends BaseCloudClient {
         .then(result => {
           return result.content;
         })
-        .catch(err => {
-          console.error(err);
-        });
+        .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
     });
   }
 
@@ -103,10 +107,7 @@ class AliClient extends BaseCloudClient {
       return this.storage
         .useBucket(options.container)
         .put(options.remote, buffer)
-        .then(() => JSON.parse(buffer))
-        .catch(err => {
-          logger.error(err);
-        });
+        .then(() => JSON.parse(buffer));
     });
   }
 
@@ -134,7 +135,8 @@ class AliClient extends BaseCloudClient {
       container: container,
       remote: file
     })
-      .then(data => JSON.parse(data));
+      .then(data => JSON.parse(data))
+      .catchThrow(SyntaxError, new UnprocessableEntity(`Object '${file}' data unprocessable`));
   }
 
   createDiskFromSnapshot(snapshotId, zone, opts = {}) { }

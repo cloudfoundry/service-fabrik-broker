@@ -3,12 +3,12 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 const logger = require('../../common/logger');
 const errors = require('../../common/errors');
-// const utils = require('../../common/utils');
 const AliClient = require('../../data-access-layer/iaas').AliClient;
 const AliStorage = require('ali-oss');
 const NotFound = errors.NotFound;
-// const Forbidden = errors.Forbidden;
-// const UnprocessableEntity = errors.UnprocessableEntity;
+const Unauthorized = errors.Unauthorized;
+const Forbidden = errors.Forbidden;
+const UnprocessableEntity = errors.UnprocessableEntity;
 
 const CONNECTION_WAIT_SIMULATED_DELAY = 5;
 const config = {
@@ -75,8 +75,14 @@ const deleteFileSuccessResponse = {
 };
 
 const validBlobName = 'blob1.txt';
+const invalidBlobName = 'invalid_blob';
+const invalidBlobName2 = 'invalid_blob2';
+const notFoundBlobName = 'notfound_blob';
 const jsonContent = {
   content: '{"data": "This is a sample content"}'
+};
+const invalidJsonContent = {
+  content: 'invalid json content'
 };
 const wrongContainer = 'wrong-container';
 const bucketStub = function () {
@@ -92,8 +98,15 @@ const listFilesStub = {
   list: () => {
     return Promise.resolve(listFilesResponse);
   },
-  get: () => {
-    return Promise.resolve(jsonContent);
+  get: (file) => {
+    if (file === validBlobName) {
+      return Promise.resolve(jsonContent);
+    } else if (file === invalidBlobName) {
+      return Promise.resolve(invalidJsonContent);
+    } else if (file === notFoundBlobName) {
+      return Promise.reject(new NotFound(`Object '${file}' not found`));
+    }
+
   },
   put: () => {
     return Promise.resolve(jsonContent);
@@ -101,6 +114,12 @@ const listFilesStub = {
   delete: (file) => {
     if (file === validBlobName) {
       return Promise.resolve(deleteFileSuccessResponse);
+    } else if (file === invalidBlobName) {
+      return Promise.reject(new Unauthorized(`Authorization at ali cloud storage provider failed while deleting blob ${file} in container ${settings.container}`));
+    } else if (file === invalidBlobName2) {
+      return Promise.reject(new Forbidden(`Authentication at ali cloud storage provider failed while deleting blob ${file} in container ${settings.container}`));
+    } else if (file === notFoundBlobName) {
+      return Promise.reject(new NotFound(`Object '${file}' not found while deleting in container ${settings.container}`));
     }
   }
 };
@@ -150,7 +169,7 @@ describe('iaas', function () {
         sandbox.stub(AliStorage.prototype, 'listBuckets').withArgs({ prefix: settings.container }).callsFake(incorrectBucketStub);
         return client.getContainer()
           .then(() => {
-            logger.error('The get container call should fails');
+            logger.error('The get container call should fail');
           })
           .catch(err => {
             expect(err).to.be.an.instanceof(NotFound);
@@ -205,11 +224,66 @@ describe('iaas', function () {
             throw new Error('expected file/blob deletion to be successful');
           });
       });
+      it('file/blob deletion should fail with Unauthorized error', function () {
+        return client.remove(invalidBlobName)
+          .then(() => {
+            logger.error('file/blob deletion should fail');
+            throw new Error('expected file/blob deletion to fail');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(Unauthorized);
+            expect(err.message).to.eql(`Authorization at ali cloud storage provider failed while deleting blob ${invalidBlobName} in container ${settings.container}`)
+          });
+      });
+      it('file/blob deletion should fail with Forbidden error', function () {
+        return client.remove(invalidBlobName2)
+          .then(() => {
+            logger.error('file/blob deletion should fail');
+            throw new Error('expected file/blob deletion to fail');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(Forbidden);
+            expect(err.message).to.eql(`Authentication at ali cloud storage provider failed while deleting blob ${invalidBlobName2} in container ${settings.container}`)
+          });
+      });
+      it('file/blob deletion should fail with NotFound error', function () {
+        return client.remove(notFoundBlobName)
+          .then(() => {
+            logger.error('file/blob deletion should fail');
+            throw new Error('expected file/blob deletion to fail');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(NotFound);
+            expect(err.message).to.eql(`Object '${notFoundBlobName}' not found while deleting in container ${settings.container}`)
+          });
+      });
       it('file/blob download should be successful', function () {
         return client.downloadJson(validBlobName)
           .then(response => expect(response).to.eql(JSON.parse(jsonContent.content)))
           .catch(() => {
             throw new Error('expected download to be successful');
+          });
+      });
+      it('file/blob download should fail with Unprocessable Entity error', function () {
+        return client.downloadJson(invalidBlobName)
+          .then(() => {
+            logger.error('file/blob download should fail');
+            throw new Error('expected file/blob download to fail');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(UnprocessableEntity);
+            expect(err.message).to.eql(`Object '${invalidBlobName}' data unprocessable`);
+          });
+      });
+      it('file/blob download should fail with NotFound error', function () {
+        return client.downloadJson(notFoundBlobName)
+          .then(() => {
+            logger.error('file/blob download should fail');
+            throw new Error('expected file/blob download to fail');
+          })
+          .catch(err => {
+            expect(err).to.be.an.instanceof(NotFound);
+            expect(err.message).to.eql(`Object '${notFoundBlobName}' not found`);
           });
       });
       it('file/blob upload should be successful', function () {
