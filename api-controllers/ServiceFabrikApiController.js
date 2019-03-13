@@ -30,6 +30,7 @@ const catalog = require('../common/models').catalog;
 const utils = require('../common/utils');
 const dbManager = require('../data-access-layer/db/DBManager');
 const docker = config.enable_swarm_manager ? require('../data-access-layer/docker') : undefined;
+const serviceBrokerClient = require('../common/utils/ServiceBrokerClient');
 
 const CloudControllerError = {
   NotAuthorized: err => {
@@ -540,6 +541,12 @@ class ServiceFabrikApiController extends FabrikBaseController {
     // TODO: This will need to be handled while supporting BnR for instances from k8s platform
   }
 
+  getBoshRestoreConfig(serviceId) {
+    const serviceName = catalog.getServiceName(serviceId);
+    const configKey = CONST.CONFIG.DISABLE_BOSH_BASED_RESTORE_PREFIX + serviceName;
+    return serviceBrokerClient.getConfigValue(configKey);
+  }
+
   startRestore(req, res) {
     let lockedDeployment = false; // Need not unlock if checkQuota fails for parallelly triggered on-demand backup
     let restoreGuid, serviceId, planId;
@@ -547,6 +554,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
     const timeStamp = req.body.time_stamp;
     const tenantId = req.entity.tenant_id;
     let backupSpaceGuid = tenantId;
+    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     const sourceInstanceId = req.body.source_instance_id || req.params.instance_id;
     return Promise
       .try(() => this.setPlan(req))
@@ -594,6 +602,10 @@ class ServiceFabrikApiController extends FabrikBaseController {
         plan_id: planId,
         tenant_id: tenantId
       }))
+      .then(() => this.getBoshRestoreConfig(serviceId))
+      .then(disabled => {
+        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE: req.plan.restoreResourceType;
+      })
       .then(() => {
         const backupFileOptions = timeStamp ? {
           time_stamp: timeStamp,
@@ -639,7 +651,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           return lockManager.lock(req.params.instance_id, {
             lockedResourceDetails: {
               resourceGroup: req.plan.restoreResourceGroup,
-              resourceType: req.plan.restoreResourceType,
+              resourceType: restoreType,
               resourceId: restoreGuid,
               operation: CONST.OPERATION_TYPE.RESTORE
             }
@@ -648,7 +660,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
               lockedDeployment = true;
               return eventmesh.apiServerClient.createResource({
                 resourceGroup: req.plan.restoreResourceGroup,
-                resourceType: req.plan.restoreResourceType,
+                resourceType: restoreType,
                 resourceId: restoreGuid,
                 options: restoreOptions,
                 status: {
@@ -666,7 +678,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           operationName: CONST.OPERATION_TYPE.RESTORE,
-          operationType: req.plan.restoreResourceType,
+          operationType: restoreType,
           resourceId: req.params.instance_id,
           value: restoreGuid
         });
@@ -692,22 +704,27 @@ class ServiceFabrikApiController extends FabrikBaseController {
 
   getLastRestore(req, res) {
     const instanceId = req.params.instance_id;
+    let restoreType = CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE;
     return Promise
       .try(() => this.setPlan(req))
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
+      .then(() => this.getBoshRestoreConfig(req.plan.service.id))
+      .then(disabled => {
+        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE: req.plan.restoreResourceType;
+      })
       .then(() => {
         return eventmesh.apiServerClient.getLastOperationValue({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
           operationName: CONST.OPERATION_TYPE.RESTORE,
-          operationType: req.plan.restoreResourceType,
+          operationType: restoreType,
           resourceId: req.params.instance_id
         });
       })
       .then(restoreGuid =>
         eventmesh.apiServerClient.getResponse({
           resourceGroup: req.plan.restoreResourceGroup,
-          resourceType: req.plan.restoreResourceType,
+          resourceType: restoreType,
           resourceId: restoreGuid
         })
       )

@@ -156,7 +156,8 @@ module.exports = Object.freeze({
   },
   CONFIG: {
     DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_',
-    RESOURCE_NAME: 'sfconfig'
+    RESOURCE_NAME: 'sfconfig',
+    DISABLE_BOSH_BASED_RESTORE_PREFIX: 'disable_bosh_based_restore_'
   },
   DB_MODEL: {
     // Define all DB Model names
