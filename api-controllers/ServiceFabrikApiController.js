@@ -604,7 +604,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       }))
       .then(() => this.getBoshRestoreConfig(serviceId))
       .then(disabled => {
-        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE: req.plan.restoreResourceType;
+        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE : req.plan.restoreResourceType;
       })
       .then(() => {
         const backupFileOptions = timeStamp ? {
@@ -710,7 +710,7 @@ class ServiceFabrikApiController extends FabrikBaseController {
       .then(() => utils.verifyFeatureSupport(req.plan, CONST.OPERATION_TYPE.RESTORE))
       .then(() => this.getBoshRestoreConfig(req.plan.service.id))
       .then(disabled => {
-        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE: req.plan.restoreResourceType;
+        restoreType = (disabled === 'true') ? CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE : req.plan.restoreResourceType;
       })
       .then(() => {
         return eventmesh.apiServerClient.getLastOperationValue({

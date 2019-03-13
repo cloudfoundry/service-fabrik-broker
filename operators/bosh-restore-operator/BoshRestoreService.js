@@ -136,7 +136,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async patchRestoreFileWithFinalResult(opts, patchObj) {
     if(_.isEmpty(patchObj)) {
-      logger.info(`empty patchObj passed. Not patching to file.`);
+      logger.info('empty patchObj passed. Not patching to file.');
       return;
     }
     const options = _.assign({
@@ -515,7 +515,7 @@ class BoshRestoreService extends BaseDirectorService {
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
       status: {
-        'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED,
+        'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
       }
     };
     if(!_.isEmpty(patchObj)) {
