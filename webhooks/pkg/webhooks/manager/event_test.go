@@ -379,9 +379,24 @@ var _ = Describe("Event", func() {
 					Type: "update",
 				})
 
-				evt.crd.Spec.SetOptions(resources.GenericOptions{PlanID: "new plan in options"})
-				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
-				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
+				co := resources.ContextOptions{
+					Platform:         "fakePlatform",
+					OrganizationGUID: "fakeOrganizationGuid",
+					SpaceGUID:        "fakeSpaceGuid",
+				}
+
+				evt.crd.Spec.SetOptions(resources.GenericOptions{
+					PlanID:    "new plan in options",
+					ServiceID: "fakeServiceId",
+					Context:   co})
+				evt.crd.SetAppliedOptions(resources.GenericOptions{
+					PlanID:    "newPlanUUID",
+					ServiceID: "fakeServiceId",
+					Context:   co})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{
+					PlanID:    "oldPlanUUID",
+					ServiceID: "fakeServiceId",
+					Context:   co})
 
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
@@ -414,6 +429,25 @@ var _ = Describe("Event", func() {
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(1))
+			})
+			It("Should choose Options if docker", func() {
+				evt, _ := NewEvent(&ar)
+				evt.crd.Kind = "Docker"
+				evt.oldCrd.Status.AppliedOptions = ""
+				evt.crd.Status.State = "delete"
+				docs, err := evt.getMeteringEvents()
+				Expect(err).To(BeNil())
+				Expect(len(docs)).To(Equal(1))
+			})
+			It("Should throw error if Docker and Options is empty", func() {
+				evt, _ := NewEvent(&ar)
+				evt.crd.Kind = "Docker"
+				evt.crd.Spec.Options = ""
+				evt.oldCrd.Status.AppliedOptions = ""
+				evt.crd.Status.State = "delete"
+				docs, err := evt.getMeteringEvents()
+				Expect(err).To(HaveOccurred())
+				Expect(docs).To(BeNil())
 			})
 		})
 		It("Should throw error when getting Options fails", func() {
