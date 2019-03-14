@@ -35,6 +35,8 @@
     "@google-cloud/compute": "0.9.1",
     "@google-cloud/storage": "1.6.0",
     "agenda": "0.10.0",
+    "ali-oss": "6.0.1",
+    "@alicloud/pop-core": "1.7.1",
     "aws-sdk": "2.35.0",
     "azure-arm-compute": "4.0.0",
     "azure-storage": "2.8.3",
