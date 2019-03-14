@@ -223,14 +223,45 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 	}
 	switch et {
 	case c.UpdateEvent:
+		if err = e.validateOptions(options); err != nil {
+			return nil, err
+		}
+		if err = e.validateOptions(oldAppliedOptions); err != nil {
+			return nil, err
+		}
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.UpdateEvent))
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.UpdateEvent))
 	case c.CreateEvent:
+		if err = e.validateOptions(options); err != nil {
+			return nil, err
+		}
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.CreateEvent))
 	case c.DeleteEvent:
-		meteringDocs = append(meteringDocs, e.getMeteringEvent(oldAppliedOptions, c.MeterStop, c.DeleteEvent))
+		chosenOptions := oldAppliedOptions
+		if e.isDocker() {
+			chosenOptions = options
+		}
+		if err = e.validateOptions(chosenOptions); err != nil {
+			return nil, err
+		}
+		meteringDocs = append(meteringDocs, e.getMeteringEvent(chosenOptions, c.MeterStop, c.DeleteEvent))
 	}
 	return meteringDocs, nil
+}
+
+func (e *Event) validateOptions(opt resources.GenericOptions) error {
+	if opt.ServiceID == "" {
+		return errors.New("ServiceID not found")
+	} else if opt.PlanID == "" {
+		return errors.New("PlanID not found")
+	} else if opt.Context.Platform == "" {
+		return errors.New("Context.Platform not found")
+	} else if opt.Context.OrganizationGUID == "" {
+		return errors.New("Context.OrganizationGUID is not found")
+	} else if opt.Context.SpaceGUID == "" {
+		return errors.New("Context.SpaceGUID is not found")
+	}
+	return nil
 }
 
 // Checks if the event is already created in apiserver

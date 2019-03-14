@@ -371,6 +371,103 @@ var _ = Describe("Event", func() {
 		})
 	})
 
+	Describe("validateOptions", func() {
+		It("Returns nil if options has necessary values", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fakeServiceId",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).To(BeNil())
+		})
+		It("Throws error if ServiceID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
+		})
+		It("Throws error if PlanID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "",
+				ServiceID: "fake servie id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("PlanID not found"))
+		})
+		It("Throws error if Platform not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.Platform not found"))
+		})
+		It("Throws error if OrganizationGUID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "",
+				SpaceGUID:        "fakeSpaceGuid",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.OrganizationGUID is not found"))
+		})
+		It("Throws error if SpaceGUID not found", func() {
+			evt, _ := NewEvent(&ar)
+			co := resources.ContextOptions{
+				Platform:         "fakePlatform",
+				OrganizationGUID: "fakeOrganizationGuid",
+				SpaceGUID:        "",
+			}
+			o := resources.GenericOptions{
+				PlanID:    "new plan in options",
+				ServiceID: "fake service id",
+				Context:   co,
+			}
+			err := evt.validateOptions(o)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("Context.SpaceGUID is not found"))
+		})
+	})
 	Describe("getMeteringEvents", func() {
 		Context("when type is update", func() {
 			It("Generates two metering docs", func() {
@@ -379,9 +476,24 @@ var _ = Describe("Event", func() {
 					Type: "update",
 				})
 
-				evt.crd.Spec.SetOptions(resources.GenericOptions{PlanID: "new plan in options"})
-				evt.crd.SetAppliedOptions(resources.GenericOptions{PlanID: "newPlanUUID"})
-				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{PlanID: "oldPlanUUID"})
+				co := resources.ContextOptions{
+					Platform:         "fakePlatform",
+					OrganizationGUID: "fakeOrganizationGuid",
+					SpaceGUID:        "fakeSpaceGuid",
+				}
+
+				evt.crd.Spec.SetOptions(resources.GenericOptions{
+					PlanID:    "new plan in options",
+					ServiceID: "fakeServiceId",
+					Context:   co})
+				evt.crd.SetAppliedOptions(resources.GenericOptions{
+					PlanID:    "newPlanUUID",
+					ServiceID: "fakeServiceId",
+					Context:   co})
+				evt.oldCrd.SetAppliedOptions(resources.GenericOptions{
+					PlanID:    "oldPlanUUID",
+					ServiceID: "fakeServiceId",
+					Context:   co})
 
 				docs, err := evt.getMeteringEvents()
 				Expect(err).To(BeNil())
@@ -415,6 +527,66 @@ var _ = Describe("Event", func() {
 				Expect(err).To(BeNil())
 				Expect(len(docs)).To(Equal(1))
 			})
+			It("Should choose Options if docker", func() {
+				evt, _ := NewEvent(&ar)
+				evt.crd.Kind = "Docker"
+				evt.oldCrd.Status.AppliedOptions = ""
+				evt.crd.Status.State = "delete"
+				docs, err := evt.getMeteringEvents()
+				Expect(err).To(BeNil())
+				Expect(len(docs)).To(Equal(1))
+			})
+			It("Should throw error if Docker and Options is empty", func() {
+				evt, _ := NewEvent(&ar)
+				evt.crd.Kind = "Docker"
+				evt.crd.Spec.Options = ""
+				evt.oldCrd.Status.AppliedOptions = ""
+				evt.crd.Status.State = "delete"
+				docs, err := evt.getMeteringEvents()
+				Expect(err).To(HaveOccurred())
+				Expect(docs).To(BeNil())
+			})
+		})
+		It("Should throw error when Options is empty", func() {
+			evt, _ := NewEvent(&ar)
+			evt.crd.Spec.Options = "{}"
+			_, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
+		})
+		It("Should throw error when AppliedOptions is empty when event type is update", func() {
+			evt, _ := NewEvent(&ar)
+			evt.crd.SetLastOperation(resources.GenericLastOperation{
+				Type:  "update",
+				State: "succeeded",
+			})
+			evt.oldCrd.Status.AppliedOptions = "{}"
+			_, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
+		})
+		It("Should throw error when Options is empty when event type is create", func() {
+			evt, _ := NewEvent(&ar)
+			evt.crd.SetLastOperation(resources.GenericLastOperation{
+				Type:  "create",
+				State: "succeeded",
+			})
+			evt.crd.Spec.Options = "{}"
+			_, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
+		})
+		It("Should throw error when AppliedOptions is empty when event type is delete", func() {
+			evt, _ := NewEvent(&ar)
+			evt.crd.Status.State = "delete"
+			evt.crd.SetLastOperation(resources.GenericLastOperation{
+				Type:  "delete",
+				State: "delete",
+			})
+			evt.oldCrd.Status.AppliedOptions = "{}"
+			_, err := evt.getMeteringEvents()
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(Equal("ServiceID not found"))
 		})
 		It("Should throw error when getting Options fails", func() {
 			evt, _ := NewEvent(&ar)
