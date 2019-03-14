@@ -170,6 +170,7 @@ describe('iaas', function () {
         return client.getContainer()
           .then(() => {
             logger.error('The get container call should fail');
+            throw new Error('The get container call should fails');
           })
           .catch(err => {
             expect(err).to.be.an.instanceof(NotFound);
@@ -183,6 +184,7 @@ describe('iaas', function () {
         return client.getContainer()
           .then(() => {
             logger.error('The get container call should fails');
+            throw new Error('The get container call should fails');
           })
           .catch(err => {
             expect(err.message).to.equal(`More than 1 Buckets with prefix ${settings.container} exists`);
