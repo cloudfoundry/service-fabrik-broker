@@ -712,7 +712,8 @@ function getAllServices() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
     resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
+    allNamespaces: true
   })
     .then(serviceList => {
       let services = [];
@@ -730,7 +731,8 @@ function getAllPlansForService(serviceId) {
     resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
     query: {
       labelSelector: `serviceId=${serviceId}`
-    }
+    },
+    allNamespaces: true
   })
     .then(planList => {
       let plans = [];

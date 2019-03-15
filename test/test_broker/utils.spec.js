@@ -492,7 +492,7 @@ describe('utils', function () {
           }
         }]
       };
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, expectedResponse);
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, expectedResponse);
       return utils.getAllServices()
         .then(res => {
           expect(res).to.eql([expectedResponse.items[0].spec]);
@@ -500,7 +500,7 @@ describe('utils', function () {
         });
     });
     it('Throws error on getting list of services from apiserver', () => {
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, undefined, 1, 500);
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {}, undefined, 1, 500);
       return utils.getAllServices()
         .catch(err => {
           expect(err.status).to.eql(500);
@@ -519,7 +519,7 @@ describe('utils', function () {
           }
         }]
       };
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, expectedResponse, {
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, expectedResponse, {
         labelSelector: `serviceId=service1`
       });
       return utils.getAllPlansForService('service1')
@@ -529,7 +529,7 @@ describe('utils', function () {
         });
     });
     it('Throws error on getting list of plans from apiserver', () => {
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, {
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {}, {
         labelSelector: `serviceId=service1`
       }, 1, 500);
       return utils.getAllPlansForService('service1')
