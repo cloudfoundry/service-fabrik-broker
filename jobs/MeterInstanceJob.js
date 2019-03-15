@@ -120,7 +120,13 @@ class MeterInstanceJob extends BaseJob {
   /* jshint ignore:end */
 
   static getInstanceType(event){
-    const enrichedUsageDoc = this.enrichEvent(_.get(event.spec, 'options'));
+    const options = _.get(event.spec, 'options');
+    let enrichedUsageDoc;
+    if ( options.service.plan ) {
+      enrichedUsageDoc = options
+    }else{
+      enrichedUsageDoc = this.enrichEvent(options);
+    }
     const instanceType = enrichedUsageDoc.service.plan.match(/dev/) ? CONST.INSTANCE_TYPE.DOCKER : CONST.INSTANCE_TYPE.DIRECTOR;
     return instanceType
   }
@@ -131,7 +137,7 @@ class MeterInstanceJob extends BaseJob {
       instance_id: _.get(event, 'metadata.labels.instance_guid'),
       event_type: _.get(event, 'metadata.labels.event_type')
     };
-    const instanceType = getInstanceType(event);
+    const instanceType = MeterInstanceJob.getInstanceType(event);
     if (err !== undefined) {
       const now = new Date();
       const secondsSinceEpoch = Math.round(now.getTime() / 1000);
