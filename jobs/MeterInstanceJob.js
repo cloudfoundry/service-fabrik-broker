@@ -145,7 +145,6 @@ class MeterInstanceJob extends BaseJob {
           statusCode: _.get(err,'status', CONST.HTTP_STATUS_CODE.TIMEOUT)
         };
         const check_res_body = false;
-        // if sku contains dev sent instance type as docker
         return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body, instanceType);
       }
     } else {
