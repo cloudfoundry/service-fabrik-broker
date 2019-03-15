@@ -163,9 +163,18 @@ describe('Jobs', () => {
       it('should get the instance type as director when SKU does not contain dev', () => {
         options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
         options_json.service.plan_guid = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        options_json.service.plan = undefined;
         const dummy_event = getDummyEvent(options_json);
         const val = MeterInstanceJob.getInstanceType(dummy_event)
         expect(val).to.eql(CONST.INSTANCE_TYPE.DIRECTOR);
+      });
+      it('should get the instance type as docker when document is already enriched', () => {
+        options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
+        options_json.service.plan_guid = 'bc158c9a-7934-401e-94ab-057082a5073f';
+        options_json.service.plan = 'dev';
+        const dummy_event = getDummyEvent(options_json);
+        const val = MeterInstanceJob.getInstanceType(dummy_event)
+        expect(val).to.eql(CONST.INSTANCE_TYPE.DOCKER);
       });
     });
 
