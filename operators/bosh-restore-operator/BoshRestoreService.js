@@ -31,10 +31,10 @@ class BoshRestoreService extends BaseDirectorService {
         .chain(opts)
         .pick('service_id', 'plan_id', 'instance_guid', 'username')
         .assign({
-          operation: 'restore',
+          operation: CONST.OPERATION_TYPE.RESTORE,
           backup_guid: args.backup_guid,
           time_stamp: args.time_stamp,
-          state: 'processing',
+          state: CONST.RESTORE_OPERATION.PROCESSING,
           started_at: new Date().toISOString(),
           finished_at: null,
           tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
