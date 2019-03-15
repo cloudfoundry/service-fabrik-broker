@@ -119,12 +119,19 @@ class MeterInstanceJob extends BaseJob {
   }
   /* jshint ignore:end */
 
+  static getInstanceType(event){
+    const enrichedUsageDoc = this.enrichEvent(_.get(event.spec, 'options'));
+    const instanceType = enrichedUsageDoc.service.plan.match(/dev/) ? CONST.INSTANCE_TYPE.DOCKER : CONST.INSTANCE_TYPE.DIRECTOR;
+    return instanceType
+  }
+
   static _logMeteringEvent(err, event) {
     const eventLogger = EventLogInterceptor.getInstance(config.internal.event_type, 'internal');
     const request = {
       instance_id: _.get(event, 'metadata.labels.instance_guid'),
       event_type: _.get(event, 'metadata.labels.event_type')
     };
+    const instanceType = getInstanceType(event);
     if (err !== undefined) {
       const now = new Date();
       const secondsSinceEpoch = Math.round(now.getTime() / 1000);
@@ -138,7 +145,8 @@ class MeterInstanceJob extends BaseJob {
           statusCode: _.get(err,'status', CONST.HTTP_STATUS_CODE.TIMEOUT)
         };
         const check_res_body = false;
-        return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body);
+        // if sku contains dev sent instance type as docker
+        return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body, instanceType);
       }
     } else {
       logger.debug('Publishing log event for success for event:', event);
@@ -146,7 +154,7 @@ class MeterInstanceJob extends BaseJob {
         statusCode: CONST.HTTP_STATUS_CODE.OK
       };
       const check_res_body = false;
-      return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body);
+      return eventLogger.publishAndAuditLogEvent(CONST.URL.METERING_USAGE, CONST.HTTP_METHOD.PUT, request, resp, check_res_body, instanceType);
     }
   }
 
