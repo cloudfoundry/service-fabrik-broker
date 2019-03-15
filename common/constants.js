@@ -101,6 +101,7 @@ module.exports = Object.freeze({
     CREATED: 201,
     ACCEPTED: 202,
     NO_CONTENT: 204,
+    FOUND: 302,
     BAD_REQUEST: 400,
     UNAUTHORIZED: 401,
     FORBIDDEN: 403,
@@ -155,7 +156,8 @@ module.exports = Object.freeze({
   },
   CONFIG: {
     DISABLE_SCHEDULED_UPDATE_CONFIG_PREFIX: 'disable_scheduled_update_',
-    RESOURCE_NAME: 'sfconfig'
+    RESOURCE_NAME: 'sfconfig',
+    DISABLE_BOSH_BASED_RESTORE_PREFIX: 'disable_bosh_based_restore_'
   },
   DB_MODEL: {
     // Define all DB Model names
@@ -334,6 +336,7 @@ module.exports = Object.freeze({
       POSTGRESQL_MT_BIND: 'postgresqlmtbinds',
       DEFAULT_BACKUP: 'defaultbackups',
       DEFAULT_RESTORE: 'defaultrestores',
+      DEFAULT_BOSH_RESTORE: 'defaultboshrestores',
       SERIAL_SERVICE_FLOW: 'serialserviceflows',
       SFEVENT: 'sfevents',
       TASK: 'tasks'
@@ -476,6 +479,7 @@ module.exports = Object.freeze({
   SYSTEM_ERRORS: ['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ESOCKETTIMEDOUT'],
   INTERNAL: 'internal',
   ALL: 'all',
+  ANY: 'any',
   DISABLED: 'disabled',
   REGEX_PATTERN: {
     URL: /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/

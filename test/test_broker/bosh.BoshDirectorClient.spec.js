@@ -741,7 +741,7 @@ describe('bosh', () => {
         let mockBoshDirectorClient = new MockBoshDirectorClient(req, res);
         return mockBoshDirectorClient.runDeploymentErrand(deployment_name, errandName, instances)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
 
@@ -935,7 +935,7 @@ describe('bosh', () => {
         let mockBoshClient = new MockBoshDirectorClient(req, res);
         return mockBoshClient.createDiskAttachment(deployment_name, diskCid, jobName, instanceId)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
@@ -1020,7 +1020,7 @@ describe('bosh', () => {
       it('sends start signal for deployment', () => {
         return mockBoshDirectorClient.stopDeployment(id)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
@@ -1059,7 +1059,7 @@ describe('bosh', () => {
       it('sends start signal for deployment', () => {
         return mockBoshDirectorClient.startDeployment(id)
           .then(taskId => {
-            expect(taskId).to.equal('taskId');
+            expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
       });
     });
@@ -1520,6 +1520,7 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
+          json: true,
           body: {
             command: 'cleanup',
             deployment_name: deployment_name,
@@ -1534,7 +1535,7 @@ describe('bosh', () => {
         };
         let response = {
           body: {},
-          statusCode: 200,
+          statusCode: 302,
           headers: {
             location: '/tasks/1234'
           }
@@ -1580,6 +1581,7 @@ describe('bosh', () => {
         let request = {
           method: 'POST',
           url: `/deployments/${deployment_name}/ssh`,
+          json: true,
           body: {
             command: 'setup',
             deployment_name: deployment_name,
@@ -1595,7 +1597,7 @@ describe('bosh', () => {
         };
         let response = {
           body: {},
-          statusCode: 200,
+          statusCode: 302,
           headers: {
             location: '/tasks/1234'
           }
@@ -1643,8 +1645,8 @@ describe('bosh', () => {
       beforeEach(() => {
         dummyBoshDirectorClient = new MockBoshDirectorClient();
         sandbox = sinon.sandbox.create();
-        uuidStub = sandbox.stub(uuid, 'v4');
-        uuidStub.returns('abcd');
+        uuidStub = sandbox.stub(Math, 'random');
+        uuidStub.returns(0.5);
       });
       afterEach(() => {
         sandbox.restore();
@@ -1656,7 +1658,7 @@ describe('bosh', () => {
           .catch(err => {
             expect(err).to.eql('cryptoerror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
           });
       });
       it('it should fail if bosh ssh setup fails', () => {
@@ -1670,7 +1672,7 @@ describe('bosh', () => {
           .catch(err => {
             expect(err).to.eql('setuperror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
           });
       });
       it('it should fail if polling for ssh setup fails', () => {
@@ -1691,9 +1693,9 @@ describe('bosh', () => {
           .catch(err => {
             expect(err).to.eql('pollerror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
             expect(setupStub.callCount).to.eql(1);
-            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i', 'p2']);
             expect(pollStub.callCount).to.eql(1);
             expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
           });
@@ -1718,9 +1720,9 @@ describe('bosh', () => {
           .catch(err => {
             expect(err).to.eql('taskerror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
             expect(setupStub.callCount).to.eql(1);
-            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i', 'p2']);
             expect(pollStub.callCount).to.eql(1);
             expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
             expect(getTaskResultStub.callCount).to.eql(1);
@@ -1742,24 +1744,26 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.reject('sshconnectionerror'));
         return dummyBoshDirectorClient.runSsh(deployment_name, job_name, instance_id, command)
           .catch(err => {
             expect(err).to.eql('sshconnectionerror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
             expect(setupStub.callCount).to.eql(1);
-            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i', 'p2']);
             expect(pollStub.callCount).to.eql(1);
             expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
             expect(getTaskResultStub.callCount).to.eql(1);
@@ -1783,15 +1787,17 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.resolve({}));
         let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
@@ -1800,9 +1806,9 @@ describe('bosh', () => {
           .catch(err => {
             expect(err).to.eql('cleanuperror');
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
             expect(setupStub.callCount).to.eql(1);
-            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i', 'p2']);
             expect(pollStub.callCount).to.eql(1);
             expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
             expect(getTaskResultStub.callCount).to.eql(1);
@@ -1810,7 +1816,7 @@ describe('bosh', () => {
             expect(boshSshStub.callCount).to.eql(1);
             expect(boshSshStub.firstCall.args[0]).to.eql(command);
             expect(boshCleanupSshStub.callCount).to.eql(1);
-            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd']);
+            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i']);
           });
       });
       it('it should pass successfully', () => {
@@ -1833,15 +1839,17 @@ describe('bosh', () => {
         let pollStub = sandbox.stub(dummyBoshDirectorClient, 'pollTaskStatusTillComplete');
         pollStub.returns(Promise.resolve('pollsuccess'));
         let getTaskResultStub = sandbox.stub(dummyBoshDirectorClient, 'getTaskResult');
-        getTaskResultStub.returns(Promise.resolve([{
-          command: 'setup',
-          status: 'success',
-          ip: '1.2.3.4',
-          host_public_key: 'ssh-rsa key',
-          id: instance_id,
-          index: 0,
-          job: 'postgresql'
-        }]));
+        getTaskResultStub.returns(Promise.resolve([
+          [{
+            command: 'setup',
+            status: 'success',
+            ip: '1.2.3.4',
+            host_public_key: 'ssh-rsa key',
+            id: instance_id,
+            index: 0,
+            job: 'postgresql'
+          }]
+        ]));
         let boshSshStub = sandbox.stub(BoshSshClient.prototype, 'run');
         boshSshStub.returns(Promise.resolve(sshout));
         let boshCleanupSshStub = sandbox.stub(dummyBoshDirectorClient, 'cleanupSsh');
@@ -1850,9 +1858,9 @@ describe('bosh', () => {
           .then(out => {
             expect(out).to.deep.eql(sshout);
             expect(cryptoStub.callCount).to.eql(1);
-            expect(cryptoStub.firstCall.args[0]).to.eql('service-fabrik-user-abcd');
+            expect(cryptoStub.firstCall.args[0]).to.eql('sf-i');
             expect(setupStub.callCount).to.eql(1);
-            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd', 'p2']);
+            expect(setupStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i', 'p2']);
             expect(pollStub.callCount).to.eql(1);
             expect(pollStub.firstCall.args[0]).to.eql(`${deployment_name}_1234`);
             expect(getTaskResultStub.callCount).to.eql(1);
@@ -1860,7 +1868,7 @@ describe('bosh', () => {
             expect(boshSshStub.callCount).to.eql(1);
             expect(boshSshStub.firstCall.args[0]).to.eql(command);
             expect(boshCleanupSshStub.callCount).to.eql(1);
-            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'service-fabrik-user-abcd']);
+            expect(boshCleanupSshStub.firstCall.args).to.eql([deployment_name, job_name, instance_id, 'sf-i']);
           });
       });
     });

@@ -3,7 +3,6 @@
 const parseUrl = require('url').parse;
 const Promise = require('bluebird');
 const _ = require('lodash');
-const uuid = require('uuid');
 const yaml = require('js-yaml');
 const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
@@ -897,7 +896,7 @@ class BoshDirectorClient extends HttpClient {
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Sent signal to ${deploymentName} for result state ${expectedState}, BOSH task ID: ${taskId}`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
@@ -916,8 +915,9 @@ class BoshDirectorClient extends HttpClient {
           user: tempUser,
           public_key: publicKey
         }
-      }
-    }, 200, deploymentName);
+      },
+      json: true
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName);
   }
 
   cleanupSsh(deploymentName, jobName, instanceId, tempUser) {
@@ -934,20 +934,23 @@ class BoshDirectorClient extends HttpClient {
         params: {
           user_regex: `^${tempUser}`
         }
-      }
-    }, 200, deploymentName);
+      },
+      json: true
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName);
   }
 
   async runSsh(deploymentName, jobName, instanceId, command) { // jshint ignore: line
     const cryptoManager = new EncryptionManager();
-    const tempUser = `service-fabrik-user-${uuid.v4()}`;
+    /* temporary username below is clipped to length of 16 characters to satisfy restrictions (32 chars) on length
+       by useradd command used on destination instances */
+    const tempUser = `sf-${Math.random().toString(36).substring(2, 15)}`;
     const genKeyPair = await cryptoManager.generateSshKeyPair(tempUser); // jshint ignore: line
     const sshSetupResponse = await this.setupSsh(deploymentName, jobName, instanceId, tempUser, genKeyPair.publicKey); // jshint ignore: line
     const sshSetupTaskId = this.prefixTaskId(deploymentName, sshSetupResponse);
     await this.pollTaskStatusTillComplete(sshSetupTaskId, 2000); // jshint ignore: line
     const sshSetupResult = await this.getTaskResult(sshSetupTaskId); // jshint ignore: line
     const sshOptions = {
-      host: sshSetupResult[0].ip,
+      host: sshSetupResult[0][0].ip,
       username: tempUser,
       privateKey: genKeyPair.privateKey
     };
@@ -966,7 +969,7 @@ class BoshDirectorClient extends HttpClient {
     return this.makeRequest({
       method: 'GET',
       url: `/deployments/${deploymentName}/errands`
-    }, 200, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.OK, deploymentName)
       .then(res => JSON.parse(res.body));
   }
 
@@ -987,11 +990,11 @@ class BoshDirectorClient extends HttpClient {
         'instances': instances
       },
       json: true
-    }, 302, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered errand ${errandName} on instances ${instances} of deployment ${deploymentName}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 
@@ -1005,12 +1008,12 @@ class BoshDirectorClient extends HttpClient {
         instance_id: instanceId,
         disk_properties: diskProperties || 'copy'
       }
-    }, 302, deploymentName)
+    }, CONST.HTTP_STATUS_CODE.FOUND, deploymentName)
       .then(res => {
         const taskId = this.lastSegment(res.headers.location);
         logger.info(`Triggered disk attachment with paramaters --> \
         deploymentName: ${deploymentName}, jobName: ${jobName}, instanceId: ${instanceId}, diskCid: ${diskCid}. Task Id: ${taskId}.`);
-        return taskId;
+        return this.prefixTaskId(deploymentName, res);
       });
   }
 

@@ -1070,6 +1070,7 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 422 Unprocessable Entity (no backup found before given time_stamp)', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, backupPrefix1, []);
           return chai
@@ -1089,6 +1090,7 @@ describe('service-fabrik-api-sf2.0', function () {
         it('should return 422 Unprocessable Entity (no backup found before given time_stamp - Cross instance restore)', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.cloudProvider.list(container, citrBackupPrefix1, []);
           return chai
@@ -1111,6 +1113,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, dummyBackupResource);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
             state: 'processing'
@@ -1133,6 +1136,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
             state: 'processing'
@@ -1155,6 +1159,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, backup_guid, dummyBackupResource);
           mocks.cloudProvider.list(container, backupPrefix, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
@@ -1182,6 +1187,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource);
           mocks.cloudController.getSpaceDevelopers(space_guid);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           mocks.cloudProvider.list(container, backupPrefix1, [backupFilename]);
           mocks.cloudProvider.download(backupPathname, {
             plan_id: 'bc158c9a-7934-401e-94ab-057082a5073e',
@@ -1323,6 +1329,7 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1364,6 +1371,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1406,6 +1414,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1450,6 +1459,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.LOCK, CONST.APISERVER.RESOURCE_TYPES.DEPLOYMENT_LOCKS, instance_id, lock_body);
           mocks.apiServerEventMesh.nockCreateResource(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_RESTORE, backup_create_response);
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1492,6 +1502,7 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1537,6 +1548,7 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, {});
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai
             .request(apps.external)
             .post(`${base_url}/service_instances/${instance_id}/restore`)
@@ -1612,6 +1624,7 @@ describe('service-fabrik-api-sf2.0', function () {
             }
           });
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource, 2);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
@@ -1627,6 +1640,7 @@ describe('service-fabrik-api-sf2.0', function () {
           mocks.uaa.tokenKey();
           mocks.cloudController.getSpaceDevelopers(space_guid);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeploymentResource, 2);
+          mocks.serviceBrokerClient.getConfigValue(undefined, 'disable_bosh_based_restore_blueprint', false);
           return chai.request(apps.external)
             .get(`${base_url}/service_instances/${instance_id}/restore`)
             .set('Authorization', authHeader)
