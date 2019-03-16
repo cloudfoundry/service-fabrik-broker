@@ -94,17 +94,6 @@ describe('service-fabrik-admin', function () {
           mocks.cloudController.getServiceInstances(plan_guid, numberOfDeployments);
           mocks.director.getDeploymentManifest(numberOfDeployments);
           mocks.director.diffDeploymentManifest(numberOfDeployments);
-          _.each(_.range(numberOfDeployments), index => mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, mocks.director.uuidByIndex(index), {
-            spec: {
-              options: JSON.stringify({
-                context: {
-                  platform: CONST.PLATFORM.CF,
-                  space_guid: space_guid,
-                  organization_guid: org_guid
-                }
-              })
-            }
-          }, 1));
           return chai
             .request(apps.internal)
             .get(`${base_url}/deployments/outdated`)
