@@ -119,16 +119,16 @@ class MeterInstanceJob extends BaseJob {
   }
   /* jshint ignore:end */
 
-  static getInstanceType(event){
+  static getInstanceType(event) {
     const options = _.get(event.spec, 'options');
     let enrichedUsageDoc;
-    if ( options.service.plan ) {
-      enrichedUsageDoc = options
-    }else{
+    if (options.service.plan) {
+      enrichedUsageDoc = options;
+    } else {
       enrichedUsageDoc = this.enrichEvent(options);
     }
     const instanceType = enrichedUsageDoc.service.plan.match(/dev/) ? CONST.INSTANCE_TYPE.DOCKER : CONST.INSTANCE_TYPE.DIRECTOR;
-    return instanceType
+    return instanceType;
   }
 
   static _logMeteringEvent(err, event) {
