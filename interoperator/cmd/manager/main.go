@@ -49,10 +49,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	leaderElectionNamespace := os.Getenv("POD_NAMESPACE")
+	if leaderElectionNamespace == "" {
+		leaderElectionNamespace = "default"
+	}
 	options := manager.Options{
 		LeaderElection:          true,
 		LeaderElectionID:        leaderElectionID,
-		LeaderElectionNamespace: "default",
+		LeaderElectionNamespace: leaderElectionNamespace,
 		//MetricsBindAddress:      metricsAddr,
 	}
 

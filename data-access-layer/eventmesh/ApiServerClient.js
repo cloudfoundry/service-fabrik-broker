@@ -585,6 +585,7 @@ class ApiServerClient {
    * @param {string} opts.resourceType - Name of operation
    * @param {string} opts.namespaceId - namesapce Id: optional
    * @param {object} opts.query - optional query
+   * @param {boolean} opts.allNamespaces - optional, get  resources across all namespaces
    */
   getResources(opts) {
     logger.debug('Get resources with opts: ', opts);
@@ -596,8 +597,14 @@ class ApiServerClient {
     }
     const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
     return Promise.try(() => this.init())
-      .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType].get(query))
+      .then(() => {
+        if (!_.get(opts, 'allNamespaces', false)) {
+          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+            .namespaces(namespaceId)[opts.resourceType].get(query);
+        } else {
+          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION].namespaces()[opts.resourceType].get(query);
+        }
+      })
       .then(response => _.get(response, 'body.items', []))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);

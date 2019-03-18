@@ -28,7 +28,7 @@ describe('service-broker-api', function () {
     it('returns 200 Ok; Loads catalog from apiserver', function () {
       const oldServices = config.services;
       config.services = undefined;
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES, {
         items: [{
           spec: {
             id: 'service1',
@@ -36,7 +36,7 @@ describe('service-broker-api', function () {
           }
         }]
       });
-      mocks.apiServerEventMesh.nockGetResources(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {
+      mocks.apiServerEventMesh.nockGetResourcesAcrossAllNamespaces(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS, {
         items: [{
           spec: {
             id: 'plan1',

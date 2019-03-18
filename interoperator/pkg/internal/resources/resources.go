@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
@@ -63,7 +64,11 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 	}
 
 	if serviceID != "" && planID != "" {
-		service, plan, err = services.FindServiceInfo(client, serviceID, planID, defaultNamespace)
+		serviceNamespace := os.Getenv("POD_NAMESPACE")
+		if serviceNamespace == "" {
+			serviceNamespace = defaultNamespace
+		}
+		service, plan, err = services.FindServiceInfo(client, serviceID, planID, serviceNamespace)
 		if err != nil {
 			log.Printf("error finding service info with id %s. %v\n", serviceID, err)
 			return nil, nil, nil, nil, err

@@ -22,6 +22,7 @@ exports.nockGetResources = nockGetResources;
 exports.nockCreateNamespace = nockCreateNamespace;
 exports.nockGetSecret = nockGetSecret;
 exports.nockDeleteNamespace = nockDeleteNamespace;
+exports.nockGetResourcesAcrossAllNamespaces = nockGetResourcesAcrossAllNamespaces;
 
 const expectedGetConfigMapResponseEnabled = {
   apiVersion: 'v1',
@@ -163,6 +164,14 @@ function nockGetSecret(secretName, namespaceId, response, times, expectedStatusC
 function nockGetResources(resourceGroup, resourceType, response, query, times, expectedStatusCode) {
   nock(apiServerHost)
     .get(`/apis/${resourceGroup}/v1alpha1/namespaces/default/${resourceType}`)
+    .query(query)
+    .times(times || 1)
+    .reply(expectedStatusCode || 200, response);
+}
+
+function nockGetResourcesAcrossAllNamespaces(resourceGroup, resourceType, response, query, times, expectedStatusCode) {
+  nock(apiServerHost)
+    .get(`/apis/${resourceGroup}/v1alpha1/namespaces//${resourceType}`)
     .query(query)
     .times(times || 1)
     .reply(expectedStatusCode || 200, response);
