@@ -196,7 +196,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
             }
           });
         } else {
-          return eventmesh.apiServerClient.patchOSBResource({
+          return eventmesh.apiServerClient.updateOSBResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
             resourceId: req.params.instance_id,
@@ -253,7 +253,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
       resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
       resourceId: req.params.instance_id
     })
-      .then(() => eventmesh.apiServerClient.patchOSBResource({
+      .then(() => eventmesh.apiServerClient.updateOSBResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
         resourceId: req.params.instance_id,

@@ -938,35 +938,6 @@ class ApiServerClient {
   }
 
   /**
-   * @description Patches OSB Resource in Apiserver with the opts
-   * Use this method when you want to append something in status.response or spec
-   * @param {string} opts.resourceGroup - Name of resource group ex. backup.servicefabrik.io
-   * @param {string} opts.resourceType - Type of resource ex. defaultbackup
-   * @param {string} opts.resourceId - Unique id of resource ex. backup_guid
-   * @param {string} opts.namespaceId - Unique id of namespace
-   */
-  patchOSBResource(opts) {
-    logger.info('Patching resource options with opts: ', opts);
-    assert.ok(opts.resourceGroup, 'Property \'resourceGroup\' is required to patch options');
-    assert.ok(opts.resourceType, 'Property \'resourceType\' is required to patch options');
-    assert.ok(opts.resourceId, 'Property \'resourceId\' is required to patch options');
-    assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\' is required to patch resource');
-    const namespaceId = opts.namespaceId ? opts.namespaceId : (this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-      _.get(opts, 'spec.instance_id') : opts.resourceId
-    ));
-    return this.getResource(_.merge(opts, {
-      namespaceId: namespaceId
-    }))
-      .then(resource => {
-        if (opts.spec && resource.spec) {
-          const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
-          _.set(opts, 'spec', spec);
-        }
-        return this.updateOSBResource(opts);
-      });
-  }
-
-  /**
    * @description Remove finalizers from finalizer list
    * @param {string} opts.resourceGroup - Name of resource group 
    * @param {string} opts.resourceType - Type of resource 
