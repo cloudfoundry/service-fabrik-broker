@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/webhook"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -28,10 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-)
-
-const (
-	leaderElectionID = "interoperator-leader-election-helper"
 )
 
 func main() {
@@ -49,13 +46,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	leaderElectionNamespace := os.Getenv("POD_NAMESPACE")
+	leaderElectionNamespace := os.Getenv(constants.NamespaceEnvKey)
 	if leaderElectionNamespace == "" {
-		leaderElectionNamespace = "default"
+		leaderElectionNamespace = constants.DefaultServiceFabrikNamespace
 	}
 	options := manager.Options{
 		LeaderElection:          true,
-		LeaderElectionID:        leaderElectionID,
+		LeaderElectionID:        constants.LeaderElectionID,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		//MetricsBindAddress:      metricsAddr,
 	}

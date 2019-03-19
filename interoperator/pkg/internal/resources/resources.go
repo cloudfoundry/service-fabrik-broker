@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
@@ -20,10 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	defaultNamespace = "default"
 )
 
 // ResourceManager defines the interface implemented by resources
@@ -64,9 +61,9 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 	}
 
 	if serviceID != "" && planID != "" {
-		serviceNamespace := os.Getenv("POD_NAMESPACE")
+		serviceNamespace := os.Getenv(constants.NamespaceEnvKey)
 		if serviceNamespace == "" {
-			serviceNamespace = defaultNamespace
+			serviceNamespace = constants.DefaultServiceFabrikNamespace
 		}
 		service, plan, err = services.FindServiceInfo(client, serviceID, planID, serviceNamespace)
 		if err != nil {
