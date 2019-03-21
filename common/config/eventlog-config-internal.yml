@@ -226,3 +226,5 @@ defaults:
     description: Send usage data to Metering as a Service
     tags:
     - metering
+    http_success_codes:
+    - 200

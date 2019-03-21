@@ -319,6 +319,30 @@ describe('Jobs', () => {
       });
     });
 
+    describe('#_logMeteringEvent', () => {
+      it('should send log event for success when err is undefined', () => {
+        const dummy_event = getDummyEvent(options_json);
+        return Promise.try( () => MeterInstanceJob._logMeteringEvent(undefined, dummy_event))
+          .then(res => {
+            expect(res.eventName).to.eql('broker.0.service-fabrik.director.send_metering_usage');
+            expect(res.metric).to.eql(0);
+            expect(res.state).to.eql('ok');
+          });
+      });
+      it('should send log event for success when err is undefined', () => {
+        const dummy_event = getDummyEvent(options_json);
+        const err = { 
+          status: CONST.HTTP_STATUS_CODE.TIMEOUT
+        };
+        return Promise.try( () => MeterInstanceJob._logMeteringEvent(err, dummy_event))
+          .then(res => {
+            expect(res.eventName).to.eql('broker.0.service-fabrik.director.send_metering_usage');
+            expect(res.metric).to.eql(1);
+            expect(res.state).to.eql('critical');
+          });
+      });
+    });
+
     describe('#enrichEvent', () => {
       it('Should create new object with service id and plan sku', () => {
         options_json.service.service_guid = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
