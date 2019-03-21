@@ -558,7 +558,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("resourceManager.ComputeExpectedResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ComputeExpectedResources() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -671,16 +671,16 @@ func Test_resourceManager_ReconcileResources_ResourceNotFound(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got[0].GetAPIVersion(), tt.want[0].GetAPIVersion()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetKind(), tt.want[0].GetKind()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetName(), tt.want[0].GetName()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetNamespace(), tt.want[0].GetNamespace()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -791,16 +791,16 @@ status:
 				return
 			}
 			if !reflect.DeepEqual(got[0].GetAPIVersion(), tt.want[0].GetAPIVersion()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetKind(), tt.want[0].GetKind()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetName(), tt.want[0].GetName()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got[0].GetNamespace(), tt.want[0].GetNamespace()) {
-				t.Errorf("resourceManager.ReconcileResources() = %s, want %s", got, tt.want)
+				t.Errorf("resourceManager.ReconcileResources() = %v, want %v", got, tt.want)
 			}
 		})
 	}

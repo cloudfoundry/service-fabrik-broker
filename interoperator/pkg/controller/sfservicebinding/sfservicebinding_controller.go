@@ -23,7 +23,9 @@ import (
 	"strconv"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,21 +44,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// finalizerName is the name of the finalizer added by interoperator
-const (
-	finalizerName    = "interoperator.servicefabrik.io"
-	errorCountKey    = "interoperator.servicefabrik.io/error"
-	lastOperationKey = "interoperator.servicefabrik.io/lastoperation"
-	errorThreshold   = 10
-	workerCount      = 20
-)
-
 var log = logf.Log.WithName("binding.controller")
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	clusterFactory, _ := clusterFactory.New(mgr)
+	clusterFactory, err := clusterFactory.New(mgr)
+	if err != nil {
+		return err
+	}
+
 	return add(mgr, newReconciler(mgr, resources.New(), clusterFactory))
 }
 
@@ -72,8 +69,16 @@ func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManage
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+	cfgManager, err := config.New(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	interoperatorCfg := cfgManager.GetConfig()
 	// Create a new controller
-	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{Reconciler: r, MaxConcurrentReconciles: workerCount})
+	c, err := controller.New("sfservicebinding-controller", mgr, controller.Options{
+		Reconciler:              r,
+		MaxConcurrentReconciles: interoperatorCfg.BindingWorkerCount,
+	})
 	if err != nil {
 		return err
 	}
@@ -164,7 +169,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	bindingID := binding.GetName()
 	state := binding.GetState()
 	labels := binding.GetLabels()
-	lastOperation, ok := labels[lastOperationKey]
+	lastOperation, ok := labels[constants.LastOperationKey]
 	if !ok {
 		lastOperation = "in_queue"
 	}
@@ -227,7 +232,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	}
 	state = binding.GetState()
 	labels = binding.GetLabels()
-	lastOperation, ok = labels[lastOperationKey]
+	lastOperation, ok = labels[constants.LastOperationKey]
 	if !ok {
 		lastOperation = "in_queue"
 	}
@@ -257,7 +262,7 @@ func (r *ReconcileSFServiceBinding) reconcileFinalizers(object *osbv1alpha1.SFSe
 	}
 	err := r.Get(context.TODO(), namespacedName, object)
 	if err != nil {
-		if retryCount < errorThreshold {
+		if retryCount < constants.ErrorThreshold {
 			log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
 			return r.reconcileFinalizers(object, retryCount+1)
 		}
@@ -265,12 +270,12 @@ func (r *ReconcileSFServiceBinding) reconcileFinalizers(object *osbv1alpha1.SFSe
 		return err
 	}
 	if object.GetDeletionTimestamp().IsZero() {
-		if !containsString(object.GetFinalizers(), finalizerName) {
+		if !containsString(object.GetFinalizers(), constants.FinalizerName) {
 			// The object is not being deleted, so if it does not have our finalizer,
 			// then lets add the finalizer and update the object.
-			object.SetFinalizers(append(object.GetFinalizers(), finalizerName))
+			object.SetFinalizers(append(object.GetFinalizers(), constants.FinalizerName))
 			if err := r.Update(context.Background(), object); err != nil {
-				if retryCount < errorThreshold {
+				if retryCount < constants.ErrorThreshold {
 					log.Info("Retrying", "function", "reconcileFinalizers", "retryCount", retryCount+1, "objectID", objectID)
 					return r.reconcileFinalizers(object, retryCount+1)
 				}
@@ -288,7 +293,7 @@ func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.Namespace
 		binding := &osbv1alpha1.SFServiceBinding{}
 		err := r.Get(context.TODO(), namespacedName, binding)
 		if err != nil {
-			if retryCount < errorThreshold {
+			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
@@ -300,12 +305,12 @@ func (r *ReconcileSFServiceBinding) setInProgress(namespacedName types.Namespace
 		if labels == nil {
 			labels = make(map[string]string)
 		}
-		labels[lastOperationKey] = state
+		labels[constants.LastOperationKey] = state
 		binding.SetLabels(labels)
 		binding.Status.Resources = resources
 		err = r.Update(context.Background(), binding)
 		if err != nil {
-			if retryCount < errorThreshold {
+			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", namespacedName.Name)
 				return r.setInProgress(namespacedName, state, resources, retryCount+1)
 			}
@@ -370,7 +375,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	if binding.GetState() == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
 		log.Info("Removing finalizer", "binding", bindingID)
-		binding.SetFinalizers(removeString(binding.GetFinalizers(), finalizerName))
+		binding.SetFinalizers(removeString(binding.GetFinalizers(), constants.FinalizerName))
 		binding.SetState("succeeded")
 		updateRequired = true
 	}
@@ -378,7 +383,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	if updateRequired {
 		log.Info("Updating unbind status from template", "binding", namespacedName.Name)
 		if err := r.Update(context.Background(), binding); err != nil {
-			if retryCount < errorThreshold {
+			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateUnbindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
 				return r.updateUnbindStatus(targetClient, binding, retryCount+1)
 			}
@@ -459,7 +464,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 		log.Info("Updating bind status from template", "binding", namespacedName.Name)
 		err = r.Update(context.Background(), binding)
 		if err != nil {
-			if retryCount < errorThreshold {
+			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "updateBindStatus", "retryCount", retryCount+1, "bindingID", bindingID)
 				return r.updateBindStatus(targetClient, binding, retryCount+1)
 			}
@@ -505,7 +510,7 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		if errors.IsNotFound(err) {
 			return result, inputErr
 		}
-		if retryCount < errorThreshold {
+		if retryCount < constants.ErrorThreshold {
 			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
@@ -520,7 +525,7 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		labels = make(map[string]string)
 	}
 
-	countString, ok := labels[errorCountKey]
+	countString, ok := labels[constants.ErrorCountKey]
 	if !ok {
 		count = 0
 	} else {
@@ -542,17 +547,17 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		count++
 	}
 
-	if count > errorThreshold {
+	if count > constants.ErrorThreshold {
 		log.Error(inputErr, "Retry threshold reached. Ignoring error", "objectID", objectID)
 		object.Status.State = "failed"
 		object.Status.Error = fmt.Sprintf("Retry threshold reached for %s.\n%s", objectID, inputErr.Error())
 		if lastOperation != "" {
-			labels[lastOperationKey] = lastOperation
+			labels[constants.LastOperationKey] = lastOperation
 			object.SetLabels(labels)
 		}
 		err := r.Update(context.TODO(), object)
 		if err != nil {
-			if retryCount < errorThreshold {
+			if retryCount < constants.ErrorThreshold {
 				log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
 				return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 			}
@@ -561,11 +566,11 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		return result, nil
 	}
 
-	labels[errorCountKey] = strconv.FormatInt(count, 10)
+	labels[constants.ErrorCountKey] = strconv.FormatInt(count, 10)
 	object.SetLabels(labels)
 	err = r.Update(context.TODO(), object)
 	if err != nil {
-		if retryCount < errorThreshold {
+		if retryCount < constants.ErrorThreshold {
 			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
 			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
 		}
