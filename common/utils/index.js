@@ -550,19 +550,31 @@ function hasChangesInForbiddenSections(diff) {
   return false;
 }
 
-function unifyDiffResult(result) {
+function unifyDiffResult(result, ignoreTags) {
   const diff = [];
+  let validDeploymentSection = true;
   _.each(result.diff, _.spread((value, type) => {
-    switch (type) {
-      case 'added':
-        diff.push(`+${value}`);
-        break;
-      case 'removed':
-        diff.push(`-${value}`);
-        break;
-      default:
-        diff.push(` ${value}`);
-        break;
+
+    if(_.includes(value, 'tags:') && ignoreTags) {
+      validDeploymentSection = false;
+    } else if(!validDeploymentSection && _.findIndex(CONST.BOSH_DEPLOYMENT_MANIFEST_SECTIONS, section => {
+      return _.includes(value, section);
+    }) != -1) {
+      validDeploymentSection = true;
+    }
+
+    if(validDeploymentSection) {
+      switch (type) {
+        case 'added':
+          diff.push(`+${value}`);
+          break;
+        case 'removed':
+          diff.push(`-${value}`);
+          break;
+        default:
+          diff.push(` ${value}`);
+          break;
+      }
     }
   }));
   return diff;

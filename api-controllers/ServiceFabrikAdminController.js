@@ -267,7 +267,7 @@ class ServiceFabrikAdminController extends FabrikBaseController {
       return _
         .chain(deployment)
         .pick('name', 'releases', 'stemcell')
-        .set('diff', utils.unifyDiffResult(deployment))
+        .set('diff', utils.unifyDiffResult(deployment, true))
         .set('instance', _
           .chain(deployment.entity)
           .pick('name', 'last_operation', 'space_guid', 'service_plan_id', 'service_plan_guid', 'dashboard_url')
@@ -280,8 +280,11 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     return this
       .findOutdatedDeployments()
       .then(deployments => {
+        const mappedDeployments = _.map(deployments, mapDeployment);
         const locals = {
-          deployments: _.map(deployments, mapDeployment)
+          deployments: _.filter(mappedDeployments, deployment => {
+            return !_.isEmpty(deployment.diff);
+          })
         };
         res.format({
           html: () => res
