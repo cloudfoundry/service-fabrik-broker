@@ -238,7 +238,9 @@ func (e *Event) getMeteringEvents() ([]*v1alpha1.Sfevent, error) {
 		meteringDocs = append(meteringDocs, e.getMeteringEvent(options, c.MeterStart, c.CreateEvent))
 	case c.DeleteEvent:
 		chosenOptions := oldAppliedOptions
-		if e.isDocker() {
+		// When create fails , field of appliedOptions can be empty
+		// In such cases chose options
+		if chosenOptions.ServiceID == "" {
 			chosenOptions = options
 		}
 		if err = e.validateOptions(chosenOptions); err != nil {
