@@ -306,7 +306,6 @@ describe('#DirectorService', function () {
             .omit('space_guid')
             .omit('organization_guid')
             .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
           mocks.director.getDeployment(deploymentName, true, undefined);
@@ -354,7 +353,6 @@ describe('#DirectorService', function () {
             .omit('space_guid')
             .omit('organization_guid')
             .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
@@ -380,7 +378,7 @@ describe('#DirectorService', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: _.omit(context, 'previous_manifest')
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -403,7 +401,6 @@ describe('#DirectorService', function () {
             .omit('space_guid')
             .omit('organization_guid')
             .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
@@ -430,7 +427,7 @@ describe('#DirectorService', function () {
                 task_id: `${deployment_name}_${task_id}`,
                 type: 'update',
                 parameters: parameters,
-                context: context
+                context: _.omit(context, 'previous_manifest')
               });
               expect(res.task_id).to.eql(`${deployment_name}_${task_id}`);
               mocks.verify();
@@ -450,7 +447,6 @@ describe('#DirectorService', function () {
             .omit('space_guid')
             .omit('organization_guid')
             .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
@@ -495,7 +491,6 @@ describe('#DirectorService', function () {
             .omit('space_guid')
             .omit('organization_guid')
             .value();
-          expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
           expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
           mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
           mocks.director.getDeployment(deploymentName, true, undefined);
