@@ -540,4 +540,132 @@ describe('utils', function () {
     });
   });
 
+  describe('#unifyDiffResult', () => {
+    let sampleDiff = { '0': [ 'stemcells:', 'added' ],
+    '1': [ '- alias: ubuntu-xenial', 'added' ],
+    '2': [ '  name: bosh-aws-xen-hvm-ubuntu-xenial-go_agent', 'added' ],
+    '3': [ '  version: \'170.24\'', 'added' ],
+    '4': [ '', null ],
+    '5': [ 'releases:', null ],
+    '6': [ '- name: blueprint', 'added' ],
+    '7': [ '  version: 1.23.0', 'added' ],
+    '8': [ '- name: service-fabrik', 'added' ],
+    '9': [ '  version: 3.110.0', 'added' ],
+    '10': [ '', null ],
+    '11': [ 'update:', 'added' ],
+    '12': [ '  canaries: 0', 'added' ],
+    '13': [ '  max_in_flight: 50', 'added' ],
+    '14': [ '  canary_watch_time: 1000-100000', 'added' ],
+    '15': [ '  update_watch_time: 1000-100000', 'added' ],
+    '16': [ '  serial: false', 'added' ],
+    '17': [ '', null ],
+    '18': [ 'addons:', 'added' ],
+    '19': [ '- name: iptables-manager', 'added' ],
+    '20': [ '  jobs:', 'added' ],
+    '21': [ '  - name: iptables-manager', 'added' ],
+    '22': [ '    release: service-fabrik', 'added' ],
+    '23': [ '    properties:', 'added' ],
+    '24': 
+     [ '      allow_ips_list: 10.11.13.80',
+       'added' ],
+    '25': 
+     [ '      block_ips_list: 10.11.0.0/18,10.11.64.0/18,10.11.128.0/18',
+       'added' ],
+    '26': [ '', null ],
+    '27': 
+     [ 'name: service-fabrik-0394-34293c64-1c99-4611-9146-fcac7756101d',
+       'added' ],
+    '28': [ '', null ],
+    '29': [ 'tags:', 'added' ],
+    '30': 
+     [ '  organization_guid: 57caa1ea-b47c-408c-8e58-1610b20c9faf',
+       'added' ],
+    '31': [ '  platform: cloudfoundry', 'added' ],
+    '32': 
+     [ '  space_guid: f6be1038-fbba-4ee5-89b1-f801d0eb144d',
+       'added' ],
+    '33': [ '', null ] }
+
+    it('should ignore tags in diff when ignoreTags flag is true', () => {
+      let dummyOutdatedResult = {
+        diff: sampleDiff
+      };
+      let expectedOp = [
+        "+stemcells:",
+        "+- alias: ubuntu-xenial",
+        "+  name: bosh-aws-xen-hvm-ubuntu-xenial-go_agent",
+        "+  version: '170.24'",
+        " ",
+        " releases:",
+        "+- name: blueprint",
+        "+  version: 1.23.0",
+        "+- name: service-fabrik",
+        "+  version: 3.110.0",
+        " ",
+        "+update:",
+        "+  canaries: 0",
+        "+  max_in_flight: 50",
+        "+  canary_watch_time: 1000-100000",
+        "+  update_watch_time: 1000-100000",
+        "+  serial: false",
+        " ",
+        "+addons:",
+        "+- name: iptables-manager",
+        "+  jobs:",
+        "+  - name: iptables-manager",
+        "+    release: service-fabrik",
+        "+    properties:",
+        "+      allow_ips_list: 10.11.13.80",
+        "+      block_ips_list: 10.11.0.0/18,10.11.64.0/18,10.11.128.0/18",
+        " ",
+        "+name: service-fabrik-0394-34293c64-1c99-4611-9146-fcac7756101d",
+        " "
+      ];
+      
+      let actualOp = utils.unifyDiffResult(dummyOutdatedResult, true);
+      expect(actualOp).to.deep.equal(expectedOp);
+    });
+
+    it('should not ignore tags in diff by default', () => {
+      let dummyOutdatedResult = {
+        diff: sampleDiff
+      };
+      let expectedOp = [ "+stemcells:",
+      "+- alias: ubuntu-xenial",
+      "+  name: bosh-aws-xen-hvm-ubuntu-xenial-go_agent",
+      "+  version: '170.24'",
+      " ",
+      " releases:",
+      "+- name: blueprint",
+      "+  version: 1.23.0",
+      "+- name: service-fabrik",
+      "+  version: 3.110.0",
+      " ",
+      "+update:",
+      "+  canaries: 0",
+      "+  max_in_flight: 50",
+      "+  canary_watch_time: 1000-100000",
+      "+  update_watch_time: 1000-100000",
+      "+  serial: false",
+      " ",
+      "+addons:",
+      "+- name: iptables-manager",
+      "+  jobs:",
+      "+  - name: iptables-manager",
+      "+    release: service-fabrik",
+      "+    properties:",
+      "+      allow_ips_list: 10.11.13.80",
+      "+      block_ips_list: 10.11.0.0/18,10.11.64.0/18,10.11.128.0/18",
+      " ",
+      "+name: service-fabrik-0394-34293c64-1c99-4611-9146-fcac7756101d",
+      " ",
+      "+tags:",
+      "+  organization_guid: 57caa1ea-b47c-408c-8e58-1610b20c9faf",
+      "+  platform: cloudfoundry",
+      "+  space_guid: f6be1038-fbba-4ee5-89b1-f801d0eb144d",
+      " "]
+      let actualOp = utils.unifyDiffResult(dummyOutdatedResult);
+      expect(actualOp).to.deep.equal(expectedOp);
+    });
+  });
 });
