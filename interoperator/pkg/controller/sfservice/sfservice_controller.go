@@ -71,7 +71,6 @@ type ReconcileSFService struct {
 // Reconcile reads that state of the cluster for a SFService object and makes changes based on the state read
 // and what is in the SFService.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservices,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileSFService) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFService instance
 	instance := &osbv1alpha1.SFService{}
