@@ -107,6 +107,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	vhostmts := &unstructured.Unstructured{}
 	vhostmts.SetKind("VirtualHost")
 	vhostmts.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
+	abapSystem := &unstructured.Unstructured{}
+	abapSystem.SetKind("AbapSystem")
+	abapSystem.SetAPIVersion("kubernetes.sapcloud.io/v1alpha1")
 	subresources := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
@@ -116,6 +119,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		docker,
 		postgresqlmts,
 		vhostmts,
+		abapSystem,
 	}
 
 	for _, subresource := range subresources {
@@ -144,15 +148,12 @@ type ReconcileSFServiceInstance struct {
 // Reconcile reads that state of the cluster for a SFServiceInstance object and makes changes based on the state read
 // and what is in the SFServiceInstance.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=postgresql,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=director,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=docker,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=postgresqlmt,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=virtualhost,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=interoperator.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=*,verbs=*
+// +kubebuilder:rbac:groups=deployment.servicefabrik.io,resources=*,verbs=*
+// +kubebuilder:rbac:groups=kubernetes.sapcloud.io,resources=*,verbs=*
+// +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=*
+// +kubebuilder:rbac:groups=,resources=configmap,verbs=*
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
 // TODO dynamically setup rbac rules and watches
 func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the ServiceInstance instance

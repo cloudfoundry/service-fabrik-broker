@@ -139,14 +139,7 @@ type ReconcileSFServiceBinding struct {
 // Reconcile reads that state of the cluster for a SFServiceBinding object and makes changes based on the state read
 // and what is in the SFServiceBinding.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=kubedb.com,resources=Postgres,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=directorbind,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=dockerbind,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=postgresqlmtbind,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=virtualhostbind,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=,resources=configmap,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfservicebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bind.servicefabrik.io,resources=*,verbs=*
 // TODO dynamically setup rbac rules and watches
 func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFServiceBinding instance
