@@ -576,7 +576,7 @@ var _ = Describe("Event", func() {
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).To(Equal("ServiceID not found"))
 		})
-		It("Should throw error when AppliedOptions is empty when event type is delete", func() {
+		It("Should throw error when AppliedOptions is empty and Options is empty", func() {
 			evt, _ := NewEvent(&ar)
 			evt.crd.Status.State = "delete"
 			evt.crd.SetLastOperation(resources.GenericLastOperation{
@@ -584,6 +584,7 @@ var _ = Describe("Event", func() {
 				State: "delete",
 			})
 			evt.oldCrd.Status.AppliedOptions = "{}"
+			evt.crd.Spec.Options = "{}"
 			_, err := evt.getMeteringEvents()
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).To(Equal("ServiceID not found"))
