@@ -168,7 +168,6 @@ describe('service-fabrik-admin', function () {
           .omit('space_guid')
           .omit('organization_guid')
           .value();
-        expectedRequestBody.context.params.previous_manifest = mocks.director.manifest;
         expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
         mocks.director.getDeployment(config.mongodb.deployment_name, true);

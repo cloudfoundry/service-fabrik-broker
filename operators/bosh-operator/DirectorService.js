@@ -573,7 +573,7 @@ class DirectorService extends BaseDirectorService {
         const options = _.chain({})
           .set('phase', phase)
           .set('actions', actionsToPerform)
-          .set('context', context)
+          .set('context', _.omit(context, 'params.previous_manifest'))
           .value();
         return deploymentHookClient.executeDeploymentActions(options)
           .tap(actionResponse => logger.info(`${phase} response ...`, actionResponse));
