@@ -141,7 +141,7 @@ func NewOperationInProgress(name string, err error) *InteroperatorError {
 	return &InteroperatorError{
 		Err:     err,
 		Code:    CodeOperationInProgress,
-		Message: fmt.Sprintf("SFServiceBinding %s not found", name),
+		Message: fmt.Sprintf("Some operation is in progress for resource %s", name),
 	}
 }
 

@@ -14,11 +14,11 @@ const (
 
 	CodeClusterFactoryError = "ClusterFactoryError"
 
-	CodeUnknown = "Unknown"
-
 	CodeMarshalError   = "CodeMarshalError"
 	CodeUnmarshalError = "CodeUnmarshalError"
 	CodeConvertError   = "CodeConvertError"
+
+	CodeUnknown = "Unknown"
 )
 
 // ErrorCodeType is the type for error codes
