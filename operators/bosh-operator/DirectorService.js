@@ -286,7 +286,7 @@ class DirectorService extends BaseDirectorService {
       .then(() => {
         logger.info('Parameters for update operation:', _.get(params, 'parameters'));
         this.operation = this.operation || 'update';
-        if (this.networkSegmentIndex) {
+        if (_.isInteger(this.networkSegmentIndex)) {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
@@ -465,7 +465,7 @@ class DirectorService extends BaseDirectorService {
           case CONST.OPERATION_TYPE.UPDATE:
             serviceLifeCycle = CONST.SERVICE_LIFE_CYCLE.PRE_UPDATE;
             if (_.get(params, 'parameters.bosh_director_name') ||
-            username || password) {
+              username || password) {
               throw new BadRequest('Update cannot be done on custom BOSH');
             }
             return this
@@ -722,7 +722,7 @@ class DirectorService extends BaseDirectorService {
         if (this.platformManager.platformName === CONST.PLATFORM.CF) {
           return this
             .scheduleBackUp()
-            .catch(() => {});
+            .catch(() => { });
         } else {
           // TODO: revisit this when supporting extension APIs for K8S consumption
           return;
