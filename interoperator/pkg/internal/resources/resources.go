@@ -3,25 +3,27 @@ package resources
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
-
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/services"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("resources.internal")
 
 // ResourceManager defines the interface implemented by resources
 //go:generate mockgen -source resources.go -destination ./mock_resources/mock_resources.go
@@ -55,7 +57,10 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 			Namespace: namespace,
 		}, instance)
 		if err != nil {
-			log.Printf("error getting service instance. %v\n", err)
+			if apiErrors.IsNotFound(err) {
+				return nil, nil, nil, nil, errors.NewSFServiceInstanceNotFound(instanceID, err)
+			}
+			log.Error(err, "failed to get service instance", "instanceID", instanceID)
 			return nil, nil, nil, nil, err
 		}
 	}
@@ -67,7 +72,7 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 		}
 		service, plan, err = services.FindServiceInfo(client, serviceID, planID, serviceNamespace)
 		if err != nil {
-			log.Printf("error finding service info with id %s. %v\n", serviceID, err)
+			log.Error(err, "failed finding service and plan info", "serviceID", serviceID, "planID", planID)
 			return nil, nil, nil, nil, err
 		}
 	}
@@ -79,7 +84,10 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 			Namespace: namespace,
 		}, binding)
 		if err != nil {
-			log.Printf("error getting service binding. %v\n", err)
+			if apiErrors.IsNotFound(err) {
+				return nil, nil, nil, nil, errors.NewSFServiceBindingNotFound(bindingID, err)
+			}
+			log.Error(err, "failed getting service binding", "bindingID", bindingID)
 			return nil, nil, nil, nil, err
 		}
 	}
@@ -91,12 +99,16 @@ func (r resourceManager) fetchResources(client kubernetes.Client, instanceID, bi
 func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error) {
 	instance, binding, service, plan, err := r.fetchResources(client, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
-		log.Printf("error getting resource. %v\n", err)
+		log.Error(err, "failed fetching resources to compute expected resources")
 		return nil, err
 	}
 
-	if plan == nil || service == nil {
-		return nil, fmt.Errorf("failed to get service or plan details")
+	if plan == nil {
+		return nil, errors.NewSFPlanNotFound(planID, nil)
+	}
+
+	if service == nil {
+		return nil, errors.NewSFServiceNotFound(serviceID, nil)
 	}
 
 	name := types.NamespacedName{
@@ -111,31 +123,31 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 
 	template, err := plan.GetTemplate(action)
 	if err != nil {
-		log.Printf("plan %s does not have %s template. %v\n", planID, action, err)
+		log.Error(err, "plan does not have template", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	renderer, err := rendererFactory.GetRenderer(template.Type, nil)
 	if err != nil {
-		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed to get renderer", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	input, err := rendererFactory.GetRendererInput(template, service, plan, instance, binding, name)
 	if err != nil {
-		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed creating renderer input", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	output, err := renderer.Render(input)
 	if err != nil {
-		log.Printf("error renderering resources for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed rendering resource", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	files, err := output.ListFiles()
 	if err != nil {
-		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed listing rendered resource files", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
@@ -143,13 +155,13 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 	for _, file := range files {
 		subResourcesString, err := output.FileContent(file)
 		if err != nil {
-			log.Printf("error getting file content %s. %v\n", file, err)
+			log.Error(err, "failed to get rendered file content", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", file)
 			return nil, err
 		}
 
 		subresources, err := dynamic.StringToUnstructured(subResourcesString)
 		if err != nil {
-			log.Printf("error converting file content to unstructured %s. %v\n", file, err)
+			log.Error(err, "failed converting file content to unstructured", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", file)
 			return nil, err
 		}
 
@@ -165,7 +177,7 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
 	for _, obj := range resources {
 		if err := controllerutil.SetControllerReference(owner, obj, scheme); err != nil {
-			log.Printf("error setting owner reference for resource. %v\n", err)
+			log.Error(err, "failed setting owner reference for resource", "owner", owner, "resource", obj)
 			return err
 		}
 	}
@@ -190,32 +202,32 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 		foundResource.SetNamespace(namespacedName.Namespace)
 
 		err := targetClient.Get(context.TODO(), namespacedName, foundResource)
-		if err != nil && errors.IsNotFound(err) {
-			log.Printf("Creating %s %s\n", kind, namespacedName)
+		if err != nil && apiErrors.IsNotFound(err) {
+			log.Info("reconcile - creating resource", "kind", kind, "namespacedName", namespacedName)
 			err = targetClient.Create(context.TODO(), expectedResource)
 			if err != nil {
-				log.Printf("error creating %s %s. %v\n", kind, namespacedName, err)
+				log.Error(err, "reconcile - failed to create resource", "kind", kind, "namespacedName", namespacedName)
 				return nil, err
 			}
 			foundResources = append(foundResources, foundResource)
 			continue
 		} else if err != nil {
-			log.Printf("error getting %s %s. %v\n", kind, namespacedName, err)
+			log.Error(err, "reconcile - failed fetching resource", "kind", kind, "namespacedName", namespacedName)
 			return nil, err
 		}
 
 		toBeUpdated := false
 		updatedResource, toBeUpdated := dynamic.DeepUpdate(foundResource.Object, expectedResource.Object)
 		if toBeUpdated {
-			log.Printf("Updating %s %s\n", kind, namespacedName)
+			log.Info("reconcile - updating resource", "kind", kind, "namespacedName", namespacedName)
 			foundResource.Object = updatedResource.(map[string]interface{})
 			err = targetClient.Update(context.TODO(), foundResource)
 			if err != nil {
-				log.Printf("error updating %s %s. %v\n", kind, namespacedName, err)
+				log.Error(err, "reconcile- failed to update resource", "kind", kind, "namespacedName", namespacedName)
 				return nil, err
 			}
 		} else {
-			log.Printf("%s %s already up todate .\n", kind, namespacedName)
+			log.Info("reconcile - resource already up todate", "kind", kind, "namespacedName", namespacedName)
 		}
 		foundResources = append(foundResources, foundResource)
 	}
@@ -231,11 +243,11 @@ func (r resourceManager) ReconcileResources(sourceClient kubernetes.Client, targ
 			if err != nil {
 				// Not failing here. Add the outdated resource to foundResource
 				// Delete will be retried on next reconcile
-				log.Printf("failed to delete outdated resource %v. %v", lastResource, err)
+				log.Error(err, "reconcile - failed to delete outdated resource", "resource", lastResource)
 				foundResources = append(foundResources, oldResource)
 				continue
 			}
-			log.Printf("deleted outdated resource %v", lastResource)
+			log.Info("reconcile - delete triggered for outdated resource", "resource", lastResource)
 		}
 	}
 	resourceRefs := []osbv1alpha1.Source{}
@@ -267,12 +279,16 @@ func (r resourceManager) findUnstructuredObject(list []*unstructured.Unstructure
 func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error) {
 	instance, binding, service, plan, err := r.fetchResources(sourceClient, instanceID, bindingID, serviceID, planID, namespace)
 	if err != nil {
-		log.Printf("error getting resource. %v\n", err)
+		log.Error(err, "failed fetching resources to compute status")
 		return nil, err
 	}
 
-	if plan == nil || service == nil {
-		return nil, fmt.Errorf("failed to get service or plan details")
+	if plan == nil {
+		return nil, errors.NewSFPlanNotFound(planID, nil)
+	}
+
+	if service == nil {
+		return nil, errors.NewSFServiceNotFound(serviceID, nil)
 	}
 
 	name := types.NamespacedName{
@@ -287,36 +303,36 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 
 	template, err := plan.GetTemplate(osbv1alpha1.SourcesAction)
 	if err != nil {
-		log.Printf("plan %s does not have sources template. %v\n", planID, err)
+		log.Error(err, "plan does not have sources template", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	renderer, err := rendererFactory.GetRenderer(template.Type, nil)
 	if err != nil {
-		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed to get sources renderer", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	input, err := rendererFactory.GetRendererInput(template, service, plan, instance, binding, name)
 	if err != nil {
-		log.Printf("error creating renderer input of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed creating renderer input for sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	output, err := renderer.Render(input)
 	if err != nil {
-		log.Printf("error renderering sources for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed rendering sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	files, err := output.ListFiles()
 	if err != nil {
-		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed listing rendered sources files", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	if len(files) == 0 {
-		log.Printf("sources template did not genarate any file. %v\n", err)
+		log.Error(err, "sources template did not genarate any file", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
@@ -330,13 +346,13 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 
 	sourcesString, err := output.FileContent(sourcesFileName)
 	if err != nil {
-		log.Printf("error getting file content of sources.yaml. %v\n", err)
+		log.Error(err, "failed to get sources file content", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", sourcesFileName)
 		return nil, err
 	}
 
 	sources, err := properties.ParseSources(sourcesString)
 	if err != nil {
-		log.Printf("error parsing file content of sources.yaml. %v\n", err)
+		log.Error(err, "failed parsing file content of sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", sourcesFileName)
 		return nil, err
 	}
 
@@ -353,7 +369,7 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 			err := targetClient.Get(context.TODO(), namespacedName, obj)
 			if err != nil {
 				// Not failing here as the resource might not exist
-				log.Printf("failed to fetch resource %v. %v\n", val, err)
+				log.Error(err, "failed to fetch resource listed in sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "resource", val)
 				continue
 			}
 			sourceObjects[key] = obj
@@ -362,36 +378,36 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 
 	template, err = plan.GetTemplate(osbv1alpha1.StatusAction)
 	if err != nil {
-		log.Printf("plan %s does not have status template. %v\n", planID, err)
+		log.Error(err, "plan does not have status template", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	renderer, err = rendererFactory.GetRenderer(template.Type, nil)
 	if err != nil {
-		log.Printf("error getting renderer of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed to get status renderer", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	input, err = rendererFactory.GetStatusRendererInput(template, name, sourceObjects)
 	if err != nil {
-		log.Printf("error creating status renderer input of type %s. %v\n", template.Type, err)
+		log.Error(err, "failed creating renderer input for status", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "type", template.Type)
 		return nil, err
 	}
 
 	output, err = renderer.Render(input)
 	if err != nil {
-		log.Printf("error renderering status for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed rendering status", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	files, err = output.ListFiles()
 	if err != nil {
-		log.Printf("error listing rendered resource files for service %s. %v\n", serviceID, err)
+		log.Error(err, "failed listing rendered status files", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
 	if len(files) == 0 {
-		log.Printf("status template did not genarate any file. %v\n", err)
+		log.Error(err, "status template did not genarate any file", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
 		return nil, err
 	}
 
@@ -405,13 +421,13 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 
 	statusString, err := output.FileContent(statusFileName)
 	if err != nil {
-		log.Printf("error getting file content of status.yaml. %v\n", err)
+		log.Error(err, "failed to get status file content", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", sourcesFileName)
 		return nil, err
 	}
 
 	status, err := properties.ParseStatus(statusString)
 	if err != nil {
-		log.Printf("error parsing file content of status.yaml. %v\n", err)
+		log.Error(err, "failed parsing file content of status", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action, "file", sourcesFileName)
 		return nil, err
 	}
 
@@ -437,16 +453,16 @@ func (r resourceManager) DeleteSubResources(client kubernetes.Client, subResourc
 		resource.SetNamespace(subResource.Namespace)
 		err := r.deleteSubResource(client, resource)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				log.Printf("deleted completed for resource %v", subResource)
+			if apiErrors.IsNotFound(err) {
+				log.Info("deleted completed for subResource", "subResource", subResource)
 				continue
 			}
-			log.Printf("failed to delete resource %v. %v", subResource, err)
+			log.Error(err, "failed to delete subResource", "subResource", subResource)
 			remainingResource = append(remainingResource, subResource)
 			lastError = err
 			continue
 		}
-		log.Printf("deleted triggered for resource %v", subResource)
+		log.Info("deleted triggered for subResource", "subResource", subResource)
 		remainingResource = append(remainingResource, subResource)
 	}
 	return remainingResource, lastError

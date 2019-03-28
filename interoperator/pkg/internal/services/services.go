@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,7 +28,7 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 		}
 	}
 	if service == nil {
-		return nil, nil, fmt.Errorf("unable to find service with id %s", serviceID)
+		return nil, nil, errors.NewSFServiceNotFound(serviceID, nil)
 	}
 
 	plans := &osbv1alpha1.SFPlanList{}
@@ -48,5 +48,5 @@ func FindServiceInfo(client kubernetes.Client, serviceID string, planID string, 
 			return service, &plan, nil
 		}
 	}
-	return nil, nil, fmt.Errorf("unable to find plan with service id %s and plan id %s", serviceID, planID)
+	return nil, nil, errors.NewSFPlanNotFound(planID, nil)
 }

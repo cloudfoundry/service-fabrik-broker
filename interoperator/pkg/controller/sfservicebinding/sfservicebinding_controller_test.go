@@ -18,15 +18,18 @@ package sfservicebinding
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	mock_clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory/mock_factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources/mock_resources"
 	"github.com/golang/mock/gomock"
-
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
@@ -271,5 +274,140 @@ func drainAllRequests(requests <-chan reconcile.Request, remainingTime time.Dura
 		return 1 + drainAllRequests(requests, remainingTime)
 	case <-time.After(remainingTime):
 		return 0
+	}
+}
+
+func TestReconcileSFServiceBinding_handleError(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c := mgr.GetClient()
+	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
+	mockClusterFactory := mock_clusterFactory.NewMockClusterFactory(ctrl)
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+	cache := mgr.GetCache()
+
+	binding := &osbv1alpha1.SFServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "binding-id",
+			Namespace: "default",
+			Labels: map[string]string{
+				"state":                 "in_queue",
+				constants.ErrorCountKey: "10",
+			},
+			Finalizers: []string{"abc"},
+		},
+		Spec: osbv1alpha1.SFServiceBindingSpec{
+			ID:                "binding-id",
+			InstanceID:        "instance-id",
+			PlanID:            "plan-id",
+			ServiceID:         "service-id",
+			AcceptsIncomplete: true,
+		},
+		Status: osbv1alpha1.SFServiceBindingStatus{
+			State: "in_queue",
+		},
+	}
+	err = c.Create(context.TODO(), binding)
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	serviceBinding := &osbv1alpha1.SFServiceBinding{}
+	g.Eventually(func() error {
+		return c.Get(context.TODO(), bindingKey, serviceBinding)
+	}, timeout).Should(gomega.Succeed())
+
+	r := &ReconcileSFServiceBinding{
+		Client:          c,
+		scheme:          mgr.GetScheme(),
+		clusterFactory:  mockClusterFactory,
+		resourceManager: mockResourceManager,
+	}
+	type args struct {
+		object        *osbv1alpha1.SFServiceBinding
+		result        reconcile.Result
+		inputErr      error
+		lastOperation string
+		retryCount    int
+	}
+	tests := []struct {
+		name    string
+		setup   func()
+		args    args
+		want    reconcile.Result
+		wantErr bool
+	}{
+		{
+			name: "ignore error if retry count is reached",
+			args: args{
+				object:        binding,
+				result:        reconcile.Result{},
+				inputErr:      errors.NewMarshalError("", nil),
+				lastOperation: "in_queue",
+				retryCount:    0,
+			},
+			want:    reconcile.Result{},
+			wantErr: false,
+		},
+		{
+			name: "delete binding if instance not found",
+			args: args{
+				object:        binding,
+				result:        reconcile.Result{},
+				inputErr:      errors.NewSFServiceInstanceNotFound("instance-id", nil),
+				lastOperation: "in_queue",
+				retryCount:    0,
+			},
+			want:    reconcile.Result{},
+			wantErr: false,
+		},
+		{
+			name: "return error if binding not found",
+			setup: func() {
+				stopCacheSync := make(chan struct{})
+				g.Expect(cache.WaitForCacheSync(stopCacheSync)).To(gomega.BeTrue())
+				g.Eventually(func() error {
+					return c.Get(context.TODO(), bindingKey, serviceBinding)
+				}, timeout).Should(gomega.Succeed())
+				serviceBinding.SetFinalizers([]string{})
+				g.Expect(c.Update(context.TODO(), serviceBinding)).NotTo(gomega.HaveOccurred())
+				g.Eventually(func() error {
+					err := c.Get(context.TODO(), bindingKey, serviceBinding)
+					if err != nil {
+						return nil
+					}
+					return errors.NewMarshalError("", nil)
+				}, timeout).Should(gomega.Succeed())
+			},
+			args: args{
+				object:        binding,
+				result:        reconcile.Result{},
+				inputErr:      errors.NewMarshalError("", nil),
+				lastOperation: "in_queue",
+				retryCount:    0,
+			},
+			want:    reconcile.Result{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got, err := r.handleError(tt.args.object, tt.args.result, tt.args.inputErr, tt.args.lastOperation, tt.args.retryCount)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ReconcileSFServiceBinding.handleError() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ReconcileSFServiceBinding.handleError() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

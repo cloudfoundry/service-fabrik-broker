@@ -6,9 +6,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("dynamic")
 
 // StringToUnstructured converts a yaml string to array of unstructured objects
 func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, error) {
@@ -21,7 +25,8 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 		var body interface{}
 		err := yaml.Unmarshal([]byte(content), &body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal %s. %v", contentString, err)
+			log.Error(err, "StringToUnstructured: failed to unmarshal yaml")
+			return nil, errors.NewUnmarshalError("unable to unmarshal from yaml", err)
 		}
 		body = MapInterfaceToMapString(body)
 
@@ -29,7 +34,9 @@ func StringToUnstructured(contentString string) ([]*unstructured.Unstructured, e
 		case map[string]interface{}:
 			obj.Object = x
 		default:
-			return nil, fmt.Errorf("failed to convert %s to unstructured", contentString)
+			err := fmt.Errorf("failed to convert %s to unstructured", contentString)
+			log.Error(err, "StringToUnstructured: default case failed")
+			return nil, errors.NewConvertError("unable to convert to unstructured", err)
 		}
 		res = append(res, obj)
 	}
@@ -66,11 +73,13 @@ func ObjectToMapInterface(obj interface{}) (map[string]interface{}, error) {
 	values := make(map[string]interface{})
 	options, err := json.Marshal(obj)
 	if err != nil {
-		return nil, err
+		log.Error(err, "ObjectToMapInterface: unable to marshal to json")
+		return nil, errors.NewMarshalError("unable to marshal to json", err)
 	}
 	err = json.Unmarshal(options, &values)
 	if err != nil {
-		return nil, err
+		log.Error(err, "ObjectToMapInterface: unable to unmarshal to json")
+		return nil, errors.NewUnmarshalError("unable to unmarshal from json", err)
 	}
 	return values, nil
 }

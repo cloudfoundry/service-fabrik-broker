@@ -24,12 +24,14 @@ import (
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -146,7 +148,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	binding := &osbv1alpha1.SFServiceBinding{}
 	err := r.Get(context.TODO(), request.NamespacedName, binding)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			log.Info("binding deleted", "binding", request.NamespacedName.Name)
@@ -322,9 +324,15 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	bindingID := binding.GetName()
 	namespace := binding.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
 		return err
+	}
+
+	if errors.IsNotFound(err) && computedStatus == nil {
+		computedStatus = &properties.Status{}
+		computedStatus.Unbind.State = binding.GetState()
+		computedStatus.Unbind.Error = err.Error()
 	}
 
 	// Fetch object again before updating status
@@ -355,7 +363,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 			Namespace: resource.GetNamespace(),
 		}
 		err := targetClient.Get(context.TODO(), namespacedName, resource)
-		if !errors.IsNotFound(err) {
+		if !apiErrors.IsNotFound(err) {
 			remainingResource = append(remainingResource, subResource)
 		}
 	}
@@ -440,7 +448,7 @@ func (r *ReconcileSFServiceBinding) updateBindStatus(targetClient client.Client,
 		}
 		foundSecret := &corev1.Secret{}
 		err = r.Get(context.TODO(), secretNamespacedName, foundSecret)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && apiErrors.IsNotFound(err) {
 			err = r.Create(context.TODO(), secret)
 			if err != nil {
 				log.Error(err, "failed to create secret", "binding", bindingID)
@@ -500,7 +508,7 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 	}
 	err := r.Get(context.TODO(), namespacedName, object)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			return result, inputErr
 		}
 		if retryCount < constants.ErrorThreshold {
@@ -509,6 +517,24 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		}
 		log.Error(err, "failed to fetch object", "objectID", objectID)
 		return result, inputErr
+	}
+
+	if errors.IsSFServiceInstanceNotFound(inputErr) {
+		log.Info("sfserviceinstance not found for binding. deleting.", "objectID", objectID, "InstanceID", object.Spec.InstanceID)
+		err = r.Delete(context.TODO(), object)
+		if err != nil && retryCount < constants.ErrorThreshold {
+			log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+			return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
+		} else if err == nil {
+			object.SetState("delete")
+			err = r.Update(context.TODO(), object)
+			if err != nil && retryCount < constants.ErrorThreshold {
+				log.Info("Retrying", "function", "handleError", "retryCount", retryCount+1, "lastOperation", lastOperation, "err", inputErr, "objectID", objectID)
+				return r.handleError(object, result, inputErr, lastOperation, retryCount+1)
+			} else if err == nil {
+				return result, nil
+			}
+		}
 	}
 
 	labels := object.GetLabels()

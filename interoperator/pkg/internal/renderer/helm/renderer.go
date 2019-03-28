@@ -22,6 +22,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer"
 
 	"k8s.io/client-go/kubernetes"
@@ -62,18 +63,18 @@ func New(clientSet *kubernetes.Clientset) (renderer.Renderer, error) {
 	if clientSet == nil {
 		cfg, err := config.GetConfig()
 		if err != nil {
-			return nil, fmt.Errorf("unable to set up client config for helm chart renderer %v", err)
+			return nil, errors.NewRendererError("helm", "unable to set up client config", err)
 		}
 
 		clientSet, err = kubernetes.NewForConfig(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create kubernetes client %v", err)
+			return nil, errors.NewRendererError("helm", "failed to create kubernetes client", err)
 		}
 	}
 	sv, err := clientSet.ServerVersion()
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get kubernetes server version %v", err)
+		return nil, errors.NewRendererError("helm", "failed to get kubernetes server version", err)
 	}
 	return &helmRenderer{
 		clientSet:    clientSet,
@@ -88,11 +89,11 @@ func New(clientSet *kubernetes.Clientset) (renderer.Renderer, error) {
 func (r *helmRenderer) Render(rawInput renderer.Input) (renderer.Output, error) {
 	input, ok := rawInput.(helmInput)
 	if !ok {
-		return nil, fmt.Errorf("invalid input to helm chart renderer")
+		return nil, errors.NewRendererError("helm", "invalid input to renderer", nil)
 	}
 	chart, err := chartutil.Load(input.chartPath)
 	if err != nil {
-		return nil, fmt.Errorf("can't create load chart from path %s:, %s", input.chartPath, err)
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't create load chart from path %s", input.chartPath), err)
 	}
 	return r.renderRelease(chart, input.releaseName, input.namespace, input.values)
 }
@@ -102,17 +103,17 @@ func (r *helmRenderer) renderRelease(chart *chartapi.Chart, releaseName, namespa
 
 	parsedValues, err := json.Marshal(values)
 	if err != nil {
-		return nil, fmt.Errorf("can't parse variables for chart %s: ,%s", chartName, err)
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't parse variables for chart %s", chartName), err)
 	}
 	chartConfig := &chartapi.Config{Raw: string(parsedValues)}
 
 	err = chartutil.ProcessRequirementsEnabled(chart, chartConfig)
 	if err != nil {
-		return nil, fmt.Errorf("can't process requirements for chart %s: ,%s", chartName, err)
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't process requirements for chart %s", chartName), err)
 	}
 	err = chartutil.ProcessRequirementsImportValues(chart)
 	if err != nil {
-		return nil, fmt.Errorf("can't process requirements for import values for chart %s: ,%s", chartName, err)
+		return nil, errors.NewRendererError("helm", fmt.Sprintf("can't process requirements for import values for chart %s", chartName), err)
 	}
 
 	caps := r.capabilities

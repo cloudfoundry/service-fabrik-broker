@@ -1,12 +1,14 @@
 package properties
 
 import (
-	"fmt"
-
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	yaml "gopkg.in/yaml.v2"
 )
+
+var log = logf.Log.WithName("properties")
 
 // GenericStatus defines template provided by the service for binding response
 type GenericStatus struct {
@@ -37,7 +39,8 @@ func ParseSources(sourcesString string) (map[string]osbv1alpha1.Source, error) {
 	sources := make(map[string]osbv1alpha1.Source)
 	err := yaml.Unmarshal([]byte(sourcesString), &sources)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal %s. %v", sourcesString, err)
+		log.Error(err, "ParseSources: unable to unmarshal from yaml")
+		return nil, errors.NewUnmarshalError("unable to unmarshal from yaml: "+sourcesString, err)
 	}
 	return sources, nil
 }
@@ -47,7 +50,8 @@ func ParseStatus(propertiesString string) (*Status, error) {
 	status := &Status{}
 	err := yaml.Unmarshal([]byte(propertiesString), status)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal %s. %v", propertiesString, err)
+		log.Error(err, "ParseStatus: unable to unmarshal from yaml")
+		return nil, errors.NewUnmarshalError("unable to unmarshal from yaml: "+propertiesString, err)
 	}
 	return status, nil
 }

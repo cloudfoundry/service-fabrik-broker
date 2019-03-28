@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"log"
+	stdlog "log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,11 +33,11 @@ func TestMain(m *testing.M) {
 	apis.AddToScheme(scheme.Scheme)
 	var err error
 	if cfg, err = t.Start(); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	code := m.Run()
