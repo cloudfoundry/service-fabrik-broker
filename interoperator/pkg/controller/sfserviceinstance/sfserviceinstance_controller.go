@@ -165,7 +165,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			log.Info("instance deleted", "binding", request.NamespacedName.Name)
+			log.Info("instance deleted", "instance", request.NamespacedName.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.

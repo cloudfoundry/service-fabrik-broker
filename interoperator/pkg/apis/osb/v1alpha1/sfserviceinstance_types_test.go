@@ -120,3 +120,90 @@ func TestStorageServiceInstance(t *testing.T) {
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
 }
+
+func TestSFServiceInstance_GetState(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceInstanceSpec
+		Status     SFServiceInstanceStatus
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "return state",
+			fields: fields{
+				Status: SFServiceInstanceStatus{
+					State: "succeeded",
+				},
+			},
+			want: "succeeded",
+		},
+		{
+			name:   "return empty string if state not set",
+			fields: fields{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceInstance{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			if got := r.GetState(); got != tt.want {
+				t.Errorf("SFServiceInstance.GetState() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSFServiceInstance_SetState(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceInstanceSpec
+		Status     SFServiceInstanceStatus
+	}
+	type args struct {
+		state string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "set the state",
+			fields: fields{
+				Status: SFServiceInstanceStatus{
+					State: "succeeded",
+				},
+			},
+			args: args{
+				state: "in progress",
+			},
+			want: "in progress",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceInstance{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			r.SetState(tt.args.state)
+			if got := r.GetState(); got != tt.want {
+				t.Errorf("SFServiceInstance.GetState() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
