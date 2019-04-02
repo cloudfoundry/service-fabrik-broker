@@ -331,12 +331,12 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	bindingID := ""
 	namespace := instance.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for deprovision", "instanceId", instanceID)
 		return err
 	}
 
-	if errors.IsNotFound(err) && computedStatus == nil {
+	if errors.NotFound(err) && computedStatus == nil {
 		computedStatus = &properties.Status{}
 		computedStatus.Deprovision.State = instance.GetState()
 		computedStatus.Deprovision.Error = err.Error()

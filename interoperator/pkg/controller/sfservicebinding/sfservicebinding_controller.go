@@ -324,12 +324,12 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	bindingID := binding.GetName()
 	namespace := binding.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
 		return err
 	}
 
-	if errors.IsNotFound(err) && computedStatus == nil {
+	if errors.NotFound(err) && computedStatus == nil {
 		computedStatus = &properties.Status{}
 		computedStatus.Unbind.State = binding.GetState()
 		computedStatus.Unbind.Error = err.Error()
@@ -519,7 +519,7 @@ func (r *ReconcileSFServiceBinding) handleError(object *osbv1alpha1.SFServiceBin
 		return result, inputErr
 	}
 
-	if errors.IsSFServiceInstanceNotFound(inputErr) {
+	if errors.SFServiceInstanceNotFound(inputErr) {
 		log.Info("sfserviceinstance not found for binding. deleting.", "objectID", objectID, "InstanceID", object.Spec.InstanceID)
 		err = r.Delete(context.TODO(), object)
 		if err != nil && retryCount < constants.ErrorThreshold {

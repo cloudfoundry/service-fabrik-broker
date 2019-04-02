@@ -76,7 +76,7 @@ func TestNewClusterFactoryError(t *testing.T) {
 	}
 }
 
-func TestIsClusterFactoryError(t *testing.T) {
+func TestClusterFactoryError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -110,7 +110,7 @@ func TestIsClusterFactoryError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsClusterFactoryError(tt.args.err); got != tt.want {
+			if got := ClusterFactoryError(tt.args.err); got != tt.want {
 				t.Errorf("IsClusterFactoryError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -149,7 +149,7 @@ func TestNewMarshalError(t *testing.T) {
 	}
 }
 
-func TestIsMarshalError(t *testing.T) {
+func TestMarshalError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -183,7 +183,7 @@ func TestIsMarshalError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsMarshalError(tt.args.err); got != tt.want {
+			if got := MarshalError(tt.args.err); got != tt.want {
 				t.Errorf("IsMarshalError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -222,7 +222,7 @@ func TestNewUnmarshalError(t *testing.T) {
 	}
 }
 
-func TestIsUnmarshalError(t *testing.T) {
+func TestUnmarshalError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -256,7 +256,7 @@ func TestIsUnmarshalError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsUnmarshalError(tt.args.err); got != tt.want {
+			if got := UnmarshalError(tt.args.err); got != tt.want {
 				t.Errorf("IsUnmarshalError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -295,7 +295,7 @@ func TestNewConvertError(t *testing.T) {
 	}
 }
 
-func TestIsConvertError(t *testing.T) {
+func TestConvertError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -329,7 +329,7 @@ func TestIsConvertError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsConvertError(tt.args.err); got != tt.want {
+			if got := ConvertError(tt.args.err); got != tt.want {
 				t.Errorf("IsConvertError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -368,7 +368,7 @@ func TestNewSFServiceNotFound(t *testing.T) {
 	}
 }
 
-func TestIsSFServiceNotFound(t *testing.T) {
+func TestSFServiceNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -402,7 +402,7 @@ func TestIsSFServiceNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSFServiceNotFound(tt.args.err); got != tt.want {
+			if got := SFServiceNotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsSFServiceNotFound() = %v, want %v", got, tt.want)
 			}
 		})
@@ -441,7 +441,7 @@ func TestNewSFPlanNotFound(t *testing.T) {
 	}
 }
 
-func TestIsSFPlanNotFound(t *testing.T) {
+func TestSFPlanNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -475,7 +475,7 @@ func TestIsSFPlanNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSFPlanNotFound(tt.args.err); got != tt.want {
+			if got := SFPlanNotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsSFPlanNotFound() = %v, want %v", got, tt.want)
 			}
 		})
@@ -514,7 +514,7 @@ func TestNewSFServiceInstanceNotFound(t *testing.T) {
 	}
 }
 
-func TestIsSFServiceInstanceNotFound(t *testing.T) {
+func TestSFServiceInstanceNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -548,7 +548,7 @@ func TestIsSFServiceInstanceNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSFServiceInstanceNotFound(tt.args.err); got != tt.want {
+			if got := SFServiceInstanceNotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsSFServiceInstanceNotFound() = %v, want %v", got, tt.want)
 			}
 		})
@@ -587,7 +587,7 @@ func TestNewSFServiceBindingNotFound(t *testing.T) {
 	}
 }
 
-func TestIsSFServiceBindingNotFound(t *testing.T) {
+func TestSFServiceBindingNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -621,14 +621,14 @@ func TestIsSFServiceBindingNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSFServiceBindingNotFound(tt.args.err); got != tt.want {
+			if got := SFServiceBindingNotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsSFServiceBindingNotFound() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestIsNotFound(t *testing.T) {
+func TestNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -662,7 +662,7 @@ func TestIsNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsNotFound(tt.args.err); got != tt.want {
+			if got := NotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsNotFound() = %v, want %v", got, tt.want)
 			}
 		})
@@ -701,7 +701,7 @@ func TestNewOperationInProgress(t *testing.T) {
 	}
 }
 
-func TestIsOperationInProgress(t *testing.T) {
+func TestOperationInProgress(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -735,7 +735,7 @@ func TestIsOperationInProgress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsOperationInProgress(tt.args.err); got != tt.want {
+			if got := OperationInProgress(tt.args.err); got != tt.want {
 				t.Errorf("IsOperationInProgress() = %v, want %v", got, tt.want)
 			}
 		})
@@ -776,7 +776,7 @@ func TestNewRendererError(t *testing.T) {
 	}
 }
 
-func TestIsRendererError(t *testing.T) {
+func TestRendererError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -810,7 +810,7 @@ func TestIsRendererError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsRendererError(tt.args.err); got != tt.want {
+			if got := RendererError(tt.args.err); got != tt.want {
 				t.Errorf("IsRendererError() = %v, want %v", got, tt.want)
 			}
 		})
@@ -851,7 +851,7 @@ func TestNewTemplateNotFound(t *testing.T) {
 	}
 }
 
-func TestIsTemplateNotFound(t *testing.T) {
+func TestTemplateNotFound(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -885,7 +885,7 @@ func TestIsTemplateNotFound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsTemplateNotFound(tt.args.err); got != tt.want {
+			if got := TemplateNotFound(tt.args.err); got != tt.want {
 				t.Errorf("IsTemplateNotFound() = %v, want %v", got, tt.want)
 			}
 		})

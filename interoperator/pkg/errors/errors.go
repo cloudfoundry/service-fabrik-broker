@@ -23,8 +23,8 @@ func NewClusterFactoryError(message string, err error) *InteroperatorError {
 	}
 }
 
-// IsClusterFactoryError checks whether error is of CodeClusterError type
-func IsClusterFactoryError(err error) bool {
+// ClusterFactoryError checks whether error is of CodeClusterError type
+func ClusterFactoryError(err error) bool {
 	return ErrorCode(err) == CodeClusterFactoryError
 }
 
@@ -37,8 +37,8 @@ func NewMarshalError(message string, err error) *InteroperatorError {
 	}
 }
 
-// IsMarshalError checks whether error is of CodeMarshalError type
-func IsMarshalError(err error) bool {
+// MarshalError checks whether error is of CodeMarshalError type
+func MarshalError(err error) bool {
 	return ErrorCode(err) == CodeMarshalError
 }
 
@@ -51,8 +51,8 @@ func NewUnmarshalError(message string, err error) *InteroperatorError {
 	}
 }
 
-// IsUnmarshalError checks whether error is of CodeUnmarshalError type
-func IsUnmarshalError(err error) bool {
+// UnmarshalError checks whether error is of CodeUnmarshalError type
+func UnmarshalError(err error) bool {
 	return ErrorCode(err) == CodeUnmarshalError
 }
 
@@ -65,8 +65,8 @@ func NewConvertError(message string, err error) *InteroperatorError {
 	}
 }
 
-// IsConvertError checks whether error is of CodeConvertError type
-func IsConvertError(err error) bool {
+// ConvertError checks whether error is of CodeConvertError type
+func ConvertError(err error) bool {
 	return ErrorCode(err) == CodeConvertError
 }
 
@@ -79,8 +79,8 @@ func NewSFServiceNotFound(name string, err error) *InteroperatorError {
 	}
 }
 
-// IsSFServiceNotFound is true if the error indicates the requested service is not found.
-func IsSFServiceNotFound(err error) bool {
+// SFServiceNotFound is true if the error indicates the requested service is not found.
+func SFServiceNotFound(err error) bool {
 	return ErrorCode(err) == CodeSFServiceNotFound
 }
 
@@ -93,8 +93,8 @@ func NewSFPlanNotFound(name string, err error) *InteroperatorError {
 	}
 }
 
-// IsSFPlanNotFound is true if the error indicates the requested service plan is not found.
-func IsSFPlanNotFound(err error) bool {
+// SFPlanNotFound is true if the error indicates the requested service plan is not found.
+func SFPlanNotFound(err error) bool {
 	return ErrorCode(err) == CodeSFPlanNotFound
 }
 
@@ -107,8 +107,8 @@ func NewSFServiceInstanceNotFound(name string, err error) *InteroperatorError {
 	}
 }
 
-// IsSFServiceInstanceNotFound is true if the error indicates the requested service instance is not found.
-func IsSFServiceInstanceNotFound(err error) bool {
+// SFServiceInstanceNotFound is true if the error indicates the requested service instance is not found.
+func SFServiceInstanceNotFound(err error) bool {
 	return ErrorCode(err) == CodeSFServiceInstanceNotFound
 }
 
@@ -121,13 +121,13 @@ func NewSFServiceBindingNotFound(name string, err error) *InteroperatorError {
 	}
 }
 
-// IsSFServiceBindingNotFound is true if the error indicates the requested service binding is not found.
-func IsSFServiceBindingNotFound(err error) bool {
+// SFServiceBindingNotFound is true if the error indicates the requested service binding is not found.
+func SFServiceBindingNotFound(err error) bool {
 	return ErrorCode(err) == CodeSFServiceBindingNotFound
 }
 
-// IsNotFound is true if the error indicates any not found error
-func IsNotFound(err error) bool {
+// NotFound is true if the error indicates any not found error
+func NotFound(err error) bool {
 	code := ErrorCode(err)
 	return code == CodeSFServiceNotFound ||
 		code == CodeSFPlanNotFound ||
@@ -145,8 +145,8 @@ func NewOperationInProgress(name string, err error) *InteroperatorError {
 	}
 }
 
-// IsOperationInProgress is true if the error indicates the requested service binding is not found.
-func IsOperationInProgress(err error) bool {
+// OperationInProgress is true if the error indicates the requested service binding is not found.
+func OperationInProgress(err error) bool {
 	return ErrorCode(err) == CodeOperationInProgress
 }
 
@@ -159,8 +159,8 @@ func NewRendererError(rendererType, message string, err error) *InteroperatorErr
 	}
 }
 
-// IsRendererError is true if the error indicates renderer error.
-func IsRendererError(err error) bool {
+// RendererError is true if the error indicates renderer error.
+func RendererError(err error) bool {
 	return ErrorCode(err) == CodeRendererError
 }
 
@@ -173,7 +173,7 @@ func NewTemplateNotFound(name, planID string, err error) *InteroperatorError {
 	}
 }
 
-// IsTemplateNotFound is true if the error indicates TemplateNotFound error.
-func IsTemplateNotFound(err error) bool {
+// TemplateNotFound is true if the error indicates TemplateNotFound error.
+func TemplateNotFound(err error) bool {
 	return ErrorCode(err) == CodeTemplateNotFound
 }
