@@ -53,6 +53,9 @@ class MeteringClient extends HttpClient {
       auth: {
         bearer: this.tokenInfo.accessToken
       },
+      qs: {
+        timeBased: 'true'
+      },
       body: usageRecords,
       json: true
     }, CONST.HTTP_STATUS_CODE.OK);

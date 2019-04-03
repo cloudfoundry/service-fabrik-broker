@@ -34,5 +34,8 @@ function mockSendUsageRecord(token, response_code, test_body_fn) {
       }
     })
     .put('/usage/v2/usage/documents', test_body_fn || true)
+    .query({
+      timeBased: 'true'
+    })
     .reply(response_code);
 }
