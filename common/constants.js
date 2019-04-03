@@ -18,6 +18,17 @@ module.exports = Object.freeze({
     BOSH_PROCESSING: 'processing',
     BOSH_CANCELLING: 'cancelling'
   },
+  BOSH_DEPLOYMENT_MANIFEST_SECTIONS: [
+    'features',
+    'releases',
+    'stemcells',
+    'update',
+    'instance_groups',
+    'addons',
+    'properties',
+    'variables',
+    'tags'
+  ],
   FABRIK_SCHEDULED_OPERATION: 'scheduled',
   FABRIK_OPERATION_STAGGERED: 'staggered',
   FABRIK_OPERATION_COUNT_EXCEEDED: 'operation count exceeded',
