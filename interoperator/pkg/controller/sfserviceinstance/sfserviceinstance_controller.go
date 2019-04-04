@@ -22,7 +22,9 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
@@ -31,7 +33,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -160,10 +162,10 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	instance := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			log.Info("instance deleted", "binding", request.NamespacedName.Name)
+			log.Info("instance deleted", "instance", request.NamespacedName.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -329,9 +331,15 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	bindingID := ""
 	namespace := instance.GetNamespace()
 	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.ProvisionAction, namespace)
-	if err != nil {
+	if err != nil && !errors.NotFound(err) {
 		log.Error(err, "ComputeStatus failed for deprovision", "instanceId", instanceID)
 		return err
+	}
+
+	if errors.NotFound(err) && computedStatus == nil {
+		computedStatus = &properties.Status{}
+		computedStatus.Deprovision.State = instance.GetState()
+		computedStatus.Deprovision.Error = err.Error()
 	}
 
 	// Fetch object again before updating status
@@ -363,7 +371,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 			Namespace: resource.GetNamespace(),
 		}
 		err := targetClient.Get(context.TODO(), namespacedName, resource)
-		if !errors.IsNotFound(err) {
+		if !apiErrors.IsNotFound(err) {
 			remainingResource = append(remainingResource, subResource)
 		}
 	}
@@ -471,7 +479,7 @@ func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceIn
 	}
 	err := r.Get(context.TODO(), namespacedName, object)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			return result, inputErr
 		}
 		if retryCount < constants.ErrorThreshold {

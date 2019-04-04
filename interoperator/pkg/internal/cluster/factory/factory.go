@@ -3,6 +3,7 @@ package factory
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"k8s.io/client-go/rest"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -27,7 +28,9 @@ type clusterFactory struct {
 // New returns a new ClusterFactory using the provided manager
 func New(mgr manager.Manager) (ClusterFactory, error) {
 	if mgr == nil {
-		return nil, fmt.Errorf("invalid input to new manager")
+		err := fmt.Errorf("manager cannot be nil")
+		log.Error(err, "New: manager argument is nil")
+		return nil, errors.NewClusterFactoryError("nil argument found", err)
 	}
 	return &clusterFactory{
 		mgr: mgr,
@@ -42,8 +45,8 @@ func (f *clusterFactory) GetCluster(instanceID, bindingID, serviceID, planID str
 	if cfg == nil {
 		cfg, err = config.GetConfig()
 		if err != nil {
-			log.Error(err, "unable to get client config")
-			return nil, err
+			log.Error(err, "GetCluster: unable to get client config")
+			return nil, errors.NewClusterFactoryError("error getting config object", err)
 		}
 	}
 
@@ -53,8 +56,8 @@ func (f *clusterFactory) GetCluster(instanceID, bindingID, serviceID, planID str
 	}
 	client, err := kubernetes.New(cfg, options)
 	if err != nil {
-		log.Error(err, "unable create kubernetes client")
-		return nil, err
+		log.Error(err, "GetCluster: unable to create kubernetes client")
+		return nil, errors.NewClusterFactoryError("error creating new kubernetes client", err)
 	}
 	return client, nil
 }

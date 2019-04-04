@@ -18,7 +18,7 @@ package webhook
 
 import (
 	"fmt"
-	"log"
+	stdlog "log"
 	"testing"
 
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -29,12 +29,12 @@ func TestAddToManager(t *testing.T) {
 	testEnv := &envtest.Environment{}
 	cfg, err := testEnv.Start()
 	if err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 	defer testEnv.Stop()
 

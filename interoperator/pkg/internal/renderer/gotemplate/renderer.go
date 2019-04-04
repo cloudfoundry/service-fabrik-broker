@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer"
 )
 
@@ -58,17 +59,17 @@ func New() (renderer.Renderer, error) {
 func (r *gotemplateRenderer) Render(rawInput renderer.Input) (renderer.Output, error) {
 	input, ok := rawInput.(gotemplateInput)
 	if !ok {
-		return nil, fmt.Errorf("invalid input to gotemplate chart renderer")
+		return nil, errors.NewRendererError("gotemplate", "invalid input", nil)
 	}
 	engine, err := template.New(input.name).Funcs(r.funcMap).Parse(input.content)
 	if err != nil {
-		return nil, fmt.Errorf("can't create template from %s:, %s", input.name, err)
+		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't create template from %s", input.name), err)
 	}
 
 	buf := new(bytes.Buffer)
 	err = engine.Execute(buf, input.values)
 	if err != nil {
-		return nil, fmt.Errorf("can't render from %s:, %s", input.name, err)
+		return nil, errors.NewRendererError("gotemplate", fmt.Sprintf("can't render from %s", input.name), err)
 	}
 
 	return &gotemplateOutput{content: *buf}, nil

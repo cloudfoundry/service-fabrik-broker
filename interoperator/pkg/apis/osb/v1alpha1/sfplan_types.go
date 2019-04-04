@@ -17,8 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
-
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -124,5 +123,5 @@ func (sfPlan *SFPlan) GetTemplate(action string) (*TemplateSpec, error) {
 			return &template, nil
 		}
 	}
-	return nil, fmt.Errorf("failed to get template %s", action)
+	return nil, errors.NewTemplateNotFound(action, sfPlan.Spec.ID, nil)
 }

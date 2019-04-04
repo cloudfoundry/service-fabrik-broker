@@ -117,3 +117,90 @@ func TestStorageSFServiceBinding(t *testing.T) {
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
 }
+
+func TestSFServiceBinding_GetState(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceBindingSpec
+		Status     SFServiceBindingStatus
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "return state",
+			fields: fields{
+				Status: SFServiceBindingStatus{
+					State: "succeeded",
+				},
+			},
+			want: "succeeded",
+		},
+		{
+			name:   "return empty string if state not set",
+			fields: fields{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceBinding{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			if got := r.GetState(); got != tt.want {
+				t.Errorf("SFServiceBinding.GetState() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSFServiceBinding_SetState(t *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Spec       SFServiceBindingSpec
+		Status     SFServiceBindingStatus
+	}
+	type args struct {
+		state string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "set the state",
+			fields: fields{
+				Status: SFServiceBindingStatus{
+					State: "succeeded",
+				},
+			},
+			args: args{
+				state: "in progress",
+			},
+			want: "in progress",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &SFServiceBinding{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			r.SetState(tt.args.state)
+			if got := r.GetState(); got != tt.want {
+				t.Errorf("SFServiceBinding.GetState() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
