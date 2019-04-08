@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
 
@@ -95,6 +96,14 @@ func Test_config_GetConfig(t *testing.T) {
 	cfg, _ := New(kubeConfig)
 	data := make(map[string]string)
 	data["instanceWorkerCount"] = "2"
+	watchList := `
+- apiVersion: kubedb.com/v1alpha1
+  kind: Postgres
+- apiVersion: kubernetes.sapcloud.io/v1alpha1
+  kind: Postgresql
+- apiVersion: deployment.servicefabrik.io/v1alpha1
+  kind: Director`
+	data["instanceContollerWatchList"] = watchList
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
@@ -109,6 +118,20 @@ func Test_config_GetConfig(t *testing.T) {
 	interoperatorConfig := &InteroperatorConfig{
 		BindingWorkerCount:  constants.DefaultBindingWorkerCount,
 		InstanceWorkerCount: constants.DefaultInstanceWorkerCount,
+		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "kubedb.com/v1alpha1",
+				Kind:       "Postgres",
+			},
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "kubernetes.sapcloud.io/v1alpha1",
+				Kind:       "Postgresql",
+			},
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "deployment.servicefabrik.io/v1alpha1",
+				Kind:       "Director",
+			},
+		},
 	}
 	tests := []struct {
 		name  string
@@ -156,6 +179,7 @@ func Test_config_GetConfig(t *testing.T) {
 					return fmt.Errorf("not deleted")
 				}, timeout).Should(gomega.Succeed())
 				interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+				interoperatorConfig.InstanceContollerWatchList = nil
 			},
 			want: interoperatorConfig,
 		},

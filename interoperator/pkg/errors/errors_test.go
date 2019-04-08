@@ -891,3 +891,78 @@ func TestTemplateNotFound(t *testing.T) {
 		})
 	}
 }
+
+func TestNewInputError(t *testing.T) {
+	type args struct {
+		fn     string
+		inputs string
+		err    error
+	}
+	tests := []struct {
+		name string
+		args args
+		want *InteroperatorError
+	}{
+		{
+			name: "return InputError",
+			args: args{
+				fn:     name,
+				inputs: message,
+				err:    nil,
+			},
+			want: &InteroperatorError{
+				Err:     nil,
+				Code:    CodeInputError,
+				Message: fmt.Sprintf("invalid inputs %s to function %s", message, name),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewInputError(tt.args.fn, tt.args.inputs, tt.args.err); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewInputError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInputError(t *testing.T) {
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "return true if InputError",
+			args: args{
+				err: &InteroperatorError{
+					Err:     nil,
+					Code:    CodeInputError,
+					Message: message,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "return false if not InputError",
+			args: args{
+				err: &InteroperatorError{
+					Err:     nil,
+					Code:    CodeUnknown,
+					Message: message,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := InputError(tt.args.err); got != tt.want {
+				t.Errorf("InputError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

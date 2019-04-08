@@ -92,27 +92,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// TODO dynamically setup rbac rules and watches
-	postgres := &unstructured.Unstructured{}
-	postgres.SetKind("Postgres")
-	postgres.SetAPIVersion("kubedb.com/v1alpha1")
-	directorBind := &unstructured.Unstructured{}
-	directorBind.SetKind("DirectorBind")
-	directorBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
-	dockerBind := &unstructured.Unstructured{}
-	dockerBind.SetKind("DockerBind")
-	dockerBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
-	postgresqlMtsBind := &unstructured.Unstructured{}
-	postgresqlMtsBind.SetKind("PostgresqlMTBind")
-	postgresqlMtsBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
-	vhostMtsBind := &unstructured.Unstructured{}
-	vhostMtsBind.SetKind("VirtualHostBind")
-	vhostMtsBind.SetAPIVersion("bind.servicefabrik.io/v1alpha1")
-	subresources := []runtime.Object{
-		postgres,
-		directorBind,
-		dockerBind,
-		postgresqlMtsBind,
-		vhostMtsBind,
+	subresources := make([]runtime.Object, len(interoperatorCfg.BindingContollerWatchList))
+	for i, gvk := range interoperatorCfg.BindingContollerWatchList {
+		object := &unstructured.Unstructured{}
+		object.SetKind(gvk.GetKind())
+		object.SetAPIVersion(gvk.GetAPIVersion())
+		subresources[i] = object
 	}
 
 	for _, subresource := range subresources {

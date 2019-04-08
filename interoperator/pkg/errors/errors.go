@@ -177,3 +177,17 @@ func NewTemplateNotFound(name, planID string, err error) *InteroperatorError {
 func TemplateNotFound(err error) bool {
 	return ErrorCode(err) == CodeTemplateNotFound
 }
+
+// NewInputError returns a new error which indicates plan template mot found
+func NewInputError(fn, inputs string, err error) *InteroperatorError {
+	return &InteroperatorError{
+		Err:     err,
+		Code:    CodeInputError,
+		Message: fmt.Sprintf("invalid inputs %s to function %s", inputs, fn),
+	}
+}
+
+// InputError is true if the error indicates an InputError.
+func InputError(err error) bool {
+	return ErrorCode(err) == CodeInputError
+}
