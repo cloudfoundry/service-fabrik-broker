@@ -97,9 +97,9 @@ class AliClient extends BaseCloudClient {
         .get(options.remote)
         .then(result => {
           return result.content;
-        })
-        .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
-    });
+        });
+    })
+      .catchThrow(BaseCloudClient.providerErrorTypes.NotFound, new NotFound(`Object '${options.remote}' not found`));
   }
 
   upload(options, buffer) {
@@ -139,15 +139,15 @@ class AliClient extends BaseCloudClient {
       .catchThrow(SyntaxError, new UnprocessableEntity(`Object '${file}' data unprocessable`));
   }
 
-  createDiskFromSnapshot(snapshotId, zone, opts = {}) { }
+  createDiskFromSnapshot(snapshotId, zone, opts = {}) {}
 
-  getDiskMetadata(diskCid, zone) { }
+  getDiskMetadata(diskCid, zone) {}
 
-  deleteSnapshot() { }
+  deleteSnapshot() {}
 
-  getRandomDiskId() { }
+  getRandomDiskId() {}
 
-  static createComputeClient() { }
+  static createComputeClient() {}
 
   static createStorageClient(options) {
     return Storage({
