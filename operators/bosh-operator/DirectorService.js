@@ -867,7 +867,7 @@ class DirectorService extends BaseDirectorService {
         const index = opts.network_index || this.getNetworkSegmentIndex(deploymentName);
         const networks = this.getNetworks(index);
         const allRequiredNetworks = _.union(networks.dynamic, networks.all.filter(net => _.startsWith(net.name, this.networkName)));
-        const tags = opts.context;
+        const tags = _.pick(opts.context, 'organization_guid', 'space_guid');
         const skipAddOns = _.get(opts, 'skip_addons', false) || _.get(config, 'service_addon_jobs', []).length === 0;
         const header = new Header({
           name: deploymentName,
