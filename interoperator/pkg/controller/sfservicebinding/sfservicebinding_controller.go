@@ -71,7 +71,7 @@ func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManage
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	cfgManager, err := config.New(mgr.GetConfig())
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {
 		return err
 	}

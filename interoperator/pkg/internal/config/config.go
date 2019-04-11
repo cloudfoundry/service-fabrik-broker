@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"os"
 	"reflect"
 	"strconv"
@@ -12,9 +13,12 @@ import (
 
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -40,42 +44,54 @@ func newInteroperatorConfig() *InteroperatorConfig {
 // Config fetches the runtime configs from the configmap
 type Config interface {
 	GetConfig() *InteroperatorConfig
+	UpdateConfig(*InteroperatorConfig) error
 }
 
 type config struct {
-	kubeConfig *rest.Config
-	clientset  *kubernetes.Clientset
-	configMap  *corev1.ConfigMap
+	c         client.Client
+	configMap *corev1.ConfigMap
+	namespace string
 }
 
 // New returns a new Config using the kubernetes client
-func New(kubeConfig *rest.Config) (Config, error) {
+func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) (Config, error) {
 	if kubeConfig == nil {
 		return nil, errors.NewInputError("New config", "kubeConfig", nil)
 	}
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
+
+	if scheme == nil {
+		return nil, errors.NewInputError("New config", "scheme", nil)
+	}
+
+	c, err := client.New(kubeConfig, client.Options{
+		Scheme: scheme,
+		Mapper: mapper,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &config{
-		kubeConfig: kubeConfig,
-		clientset:  clientset,
-	}, nil
-}
-
-func (cfg *config) fetchConfig() error {
-	var err error
 	configMapNamespace := os.Getenv(constants.NamespaceEnvKey)
 	if configMapNamespace == "" {
 		configMapNamespace = constants.DefaultServiceFabrikNamespace
 	}
-	cfg.configMap, err = cfg.clientset.CoreV1().
-		ConfigMaps(configMapNamespace).
-		Get(constants.ConfigMapName, metav1.GetOptions{})
+
+	return &config{
+		c:         c,
+		namespace: configMapNamespace,
+	}, nil
+}
+
+func (cfg *config) fetchConfig() error {
+	configMap := &corev1.ConfigMap{}
+	var configMapKey = types.NamespacedName{
+		Name:      constants.ConfigMapName,
+		Namespace: cfg.namespace,
+	}
+	err := cfg.c.Get(context.TODO(), configMapKey, configMap)
 	if err != nil {
 		return err
 	}
+	cfg.configMap = configMap
 	log.Info("Successfully fetched configmap", "name", cfg.configMap.Name,
 		"namespace", cfg.configMap.Namespace, "data", cfg.configMap.Data)
 	return nil
@@ -85,7 +101,7 @@ func (cfg *config) GetConfig() *InteroperatorConfig {
 	interoperatorConfig := newInteroperatorConfig()
 	err := cfg.fetchConfig()
 	if err != nil {
-		log.Error(err, "failed to update interoperator config. using defaults.")
+		log.Info("failed to read interoperator config. using defaults.")
 		return interoperatorConfig
 	}
 	val := reflect.ValueOf(interoperatorConfig)
@@ -105,6 +121,54 @@ func (cfg *config) GetConfig() *InteroperatorConfig {
 		decodeField(f, fieldVal)
 	}
 	return interoperatorConfig
+}
+
+func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error {
+	if interoperatorConfig == nil {
+		return errors.NewInputError("UpdateConfig", "interoperatorConfig", nil)
+	}
+	err := cfg.fetchConfig()
+	if err != nil && !apiErrors.IsNotFound(err) {
+		log.Error(err, "failed to fetch interoperator config for update")
+		return err
+	}
+
+	toCreate := false
+	if apiErrors.IsNotFound(err) {
+		toCreate = true
+		cfg.configMap = &corev1.ConfigMap{}
+		cfg.configMap.SetName(constants.ConfigMapName)
+		cfg.configMap.SetNamespace(cfg.namespace)
+		cfg.configMap.Data = make(map[string]string)
+	}
+
+	val := reflect.ValueOf(interoperatorConfig)
+	configType := reflect.Indirect(val).Type()
+	for i := 0; i < configType.NumField(); i++ {
+		field := configType.Field(i)
+		tags := strings.Split(field.Tag.Get("yaml"), ",")
+		if len(tags) == 0 {
+			continue
+		}
+		key := tags[0]
+		f := reflect.Indirect(val).FieldByName(field.Name)
+		cfg.configMap.Data[key] = encodeField(f.Interface())
+	}
+
+	if toCreate {
+		err = cfg.c.Create(context.TODO(), cfg.configMap)
+	} else {
+		err = cfg.c.Update(context.TODO(), cfg.configMap)
+	}
+	if err != nil {
+		return err
+	}
+	if toCreate {
+		log.Info("created interoperator config map", "data", cfg.configMap.Data)
+	} else {
+		log.Info("updated interoperator config map", "data", cfg.configMap.Data)
+	}
+	return nil
 }
 
 func decodeField(f reflect.Value, fieldVal string) {
@@ -136,4 +200,20 @@ func decodeYamlUnmarshal(f reflect.Value, fieldVal string, out interface{}) {
 		}
 		f.Set(v)
 	}
+}
+
+func encodeField(i interface{}) string {
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Int:
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.String:
+		return v.String()
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool())
+	case reflect.Slice, reflect.Struct, reflect.Map:
+		out, _ := yaml.Marshal(i)
+		return strings.TrimSpace(string(out))
+	}
+	return ""
 }

@@ -10,14 +10,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/onsi/gomega"
-
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -26,6 +27,7 @@ import (
 )
 
 var kubeConfig *rest.Config
+var sch *runtime.Scheme
 var c client.Client
 
 const timeout = time.Second * 5
@@ -43,6 +45,7 @@ func TestMain(m *testing.M) {
 	if c, err = client.New(kubeConfig, client.Options{Scheme: scheme.Scheme}); err != nil {
 		stdlog.Fatal(err)
 	}
+	sch = scheme.Scheme
 
 	code := m.Run()
 	t.Stop()
@@ -52,6 +55,8 @@ func TestMain(m *testing.M) {
 func TestNew(t *testing.T) {
 	type args struct {
 		kubeConfig *rest.Config
+		scheme     *runtime.Scheme
+		mapper     meta.RESTMapper
 	}
 	tests := []struct {
 		name    string
@@ -68,9 +73,18 @@ func TestNew(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "fail on invalid scheme",
+			args: args{
+				kubeConfig: kubeConfig,
+			},
+			want:    false,
+			wantErr: true,
+		},
+		{
 			name: "create config manager",
 			args: args{
 				kubeConfig: kubeConfig,
+				scheme:     sch,
 			},
 			want:    true,
 			wantErr: false,
@@ -78,7 +92,7 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := New(tt.args.kubeConfig)
+			got, err := New(tt.args.kubeConfig, tt.args.scheme, tt.args.mapper)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -93,7 +107,7 @@ func TestNew(t *testing.T) {
 
 func Test_config_GetConfig(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	cfg, _ := New(kubeConfig)
+	cfg, _ := New(kubeConfig, sch, nil)
 	data := make(map[string]string)
 	data["instanceWorkerCount"] = "2"
 	watchList := `
@@ -189,6 +203,128 @@ func Test_config_GetConfig(t *testing.T) {
 			tt.setup()
 			if got := tt.cfg.GetConfig(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("config.GetConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_config_UpdateConfig(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	cfg, _ := New(kubeConfig, sch, nil)
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.ConfigMapName,
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		},
+	}
+	interoperatorConfig := &InteroperatorConfig{
+		BindingWorkerCount:  constants.DefaultBindingWorkerCount,
+		InstanceWorkerCount: constants.DefaultInstanceWorkerCount,
+		InstanceContollerWatchList: []osbv1alpha1.APIVersionKind{
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "kubedb.com/v1alpha1",
+				Kind:       "Postgres",
+			},
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "kubernetes.sapcloud.io/v1alpha1",
+				Kind:       "Postgresql",
+			},
+			osbv1alpha1.APIVersionKind{
+				APIVersion: "deployment.servicefabrik.io/v1alpha1",
+				Kind:       "Director",
+			},
+		},
+	}
+	type fields struct {
+		c         client.Client
+		configMap *corev1.ConfigMap
+		namespace string
+	}
+	type args struct {
+		interoperatorConfig *InteroperatorConfig
+	}
+	tests := []struct {
+		name    string
+		setup   func()
+		cfg     Config
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "fail on no input",
+			cfg:  cfg,
+			setup: func() {
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "create the configmap if not exist",
+			cfg:  cfg,
+			setup: func() {
+			},
+			args: args{
+				interoperatorConfig: interoperatorConfig,
+			},
+			wantErr: false,
+		},
+		{
+			name: "update the configmap with new values",
+			cfg:  cfg,
+			setup: func() {
+				interoperatorConfig.BindingContollerWatchList = interoperatorConfig.InstanceContollerWatchList
+			},
+			args: args{
+				interoperatorConfig: interoperatorConfig,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.cfg.UpdateConfig(tt.args.interoperatorConfig); (err != nil) != tt.wantErr {
+				t.Errorf("config.UpdateConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	g.Expect(c.Delete(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
+}
+
+func Test_encodeField(t *testing.T) {
+	type args struct {
+		i interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "encode int",
+			args: args{
+				i: 25,
+			},
+			want: "25",
+		},
+		{
+			name: "encode string",
+			args: args{
+				i: "hello",
+			},
+			want: "hello",
+		},
+		{
+			name: "encode bool",
+			args: args{
+				i: false,
+			},
+			want: "false",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := encodeField(tt.args.i); got != tt.want {
+				t.Errorf("encodeField() = %v, want %v", got, tt.want)
 			}
 		})
 	}
