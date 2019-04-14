@@ -755,12 +755,16 @@ describe('operators', function () {
       it('should call runErrand for postStartErrand and update ApiServer resource', () => {
         let restoreOptions = {
           restoreMetadata: restoreMetadata,
-          restore_guid: 'dummyGuid'
+          restore_guid: 'dummyGuid',
+          instance_guid: 'dummyInstanceGuid'
         };
         let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
         let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
         patchResourceStub.resolves();
         runErrandStub.resolves();
+        mocks.serviceFabrikClient.scheduleBackup('dummyInstanceGuid', function (body) {
+          return body.type === CONST.BACKUP.TYPE.ONLINE;
+        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processPostStart(restoreOptions))
           .then(() => {

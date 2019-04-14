@@ -11,6 +11,7 @@ const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
 const catalog = require('../../common/models/catalog');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
+const config = require('../../common/config');
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -509,6 +510,12 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processPostStart(resourceOptions) { 
     await this.runErrand(resourceOptions, 'postStartErrand'); 
+    if (this.service.pitr === true) {
+      await this.reScheduleBackup({
+        instance_id: resourceOptions.instance_guid,
+        afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
+      });
+    }
     const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
     let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,

@@ -10,6 +10,9 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const Networks = bosh.manifest.Networks;
 const BaseService = require('./BaseService');
+const cf = require('../data-access-layer/cf');
+const retry = utils.retry;
+const CONST = require('../common/constants');
 
 class BaseDirectorService extends BaseService {
   constructor(plan) {
@@ -83,6 +86,25 @@ class BaseDirectorService extends BaseService {
     return this.getNetworks(index)[this.networkName];
   }
 
+  reScheduleBackup(opts) {
+    const options = {
+      instance_id: opts.instance_id,
+      repeatInterval: 'daily',
+      type: CONST.BACKUP.TYPE.ONLINE
+    };
+
+    if (this.plan.service.backup_interval) {
+      options.repeatInterval = this.plan.service.backup_interval;
+    }
+
+    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
+    logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
+    // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
+    return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
+      maxAttempts: 3,
+      minDelay: 500
+    });
+  }
 }
 
 module.exports = BaseDirectorService;
