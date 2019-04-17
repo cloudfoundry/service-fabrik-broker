@@ -10,7 +10,6 @@ const ServiceInstanceNotFound = errors.ServiceInstanceNotFound;
 const BoshDirectorClient = bosh.BoshDirectorClient;
 const Networks = bosh.manifest.Networks;
 const BaseService = require('./BaseService');
-const cf = require('../data-access-layer/cf');
 const retry = utils.retry;
 const CONST = require('../common/constants');
 
@@ -87,6 +86,7 @@ class BaseDirectorService extends BaseService {
   }
 
   reScheduleBackup(opts) {
+    const cf = require('../data-access-layer/cf');
     const options = {
       instance_id: opts.instance_id,
       repeatInterval: 'daily',
