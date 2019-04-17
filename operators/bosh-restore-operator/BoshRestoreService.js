@@ -526,7 +526,7 @@ class BoshRestoreService extends BaseDirectorService {
     await eventmesh.apiServerClient.patchResource(patchResourceObj);
     await this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
     if (this.service.pitr === true) {
-      await this.reScheduleBackup({
+      this.reScheduleBackup({
         instance_id: resourceOptions.instance_guid,
         afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
       });
