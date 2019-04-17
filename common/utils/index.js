@@ -12,6 +12,7 @@ const config = require('../config');
 const catalog = require('../models/catalog');
 const logger = require('../logger');
 const CONST = require('../constants');
+const decamelizeKeysDeep = require('decamelize-keys-deep');
 const RetryOperation = require('./RetryOperation');
 const randomBytes = Promise.promisify(crypto.randomBytes);
 const EventLogRiemannClient = require('./EventLogRiemannClient');
@@ -555,15 +556,15 @@ function unifyDiffResult(result, ignoreTags) {
   let validDeploymentSection = true;
   _.each(result.diff, _.spread((value, type) => {
 
-    if(_.includes(value, 'tags:') && ignoreTags) {
+    if (_.includes(value, 'tags:') && ignoreTags) {
       validDeploymentSection = false;
-    } else if(!validDeploymentSection && _.findIndex(CONST.BOSH_DEPLOYMENT_MANIFEST_SECTIONS, section => {
-      return _.includes(value, section);
-    }) != -1) {
+    } else if (!validDeploymentSection && _.findIndex(CONST.BOSH_DEPLOYMENT_MANIFEST_SECTIONS, section => {
+        return _.includes(value, section);
+      }) != -1) {
       validDeploymentSection = true;
     }
 
-    if(validDeploymentSection) {
+    if (validDeploymentSection) {
       switch (type) {
         case 'added':
           diff.push(`+${value}`);
@@ -592,9 +593,9 @@ function getBrokerAgentCredsFromManifest(manifest) {
       if (brokerAgentNameRegex.test(job.name)) {
         authObject =
           _.chain({})
-            .set('username', job.properties.username)
-            .set('password', job.properties.password)
-            .value();
+          .set('username', job.properties.username)
+          .set('password', job.properties.password)
+          .value();
         // break forEach
         return false;
       }
@@ -723,14 +724,14 @@ function registerInterOperatorCrds() {
 function getAllServices() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
-    allNamespaces: true
-  })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
+      allNamespaces: true
+    })
     .then(serviceList => {
       let services = [];
       _.forEach(serviceList, service => {
-        services = _.concat(services, [service.spec]);
+        services = _.concat(services, [decamelizeKeysDeep(service.spec)]);
       });
       return services;
     });
@@ -739,13 +740,13 @@ function getAllServices() {
 function getAllPlansForService(serviceId) {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
-    query: {
-      labelSelector: `serviceId=${serviceId}`
-    },
-    allNamespaces: true
-  })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
+      query: {
+        labelSelector: `serviceId=${serviceId}`
+      },
+      allNamespaces: true
+    })
     .then(planList => {
       let plans = [];
       _.forEach(planList, plan => {

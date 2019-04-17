@@ -73,6 +73,12 @@ describe('#timeout', function () {
 });
 
 describe('#checkQuota', () => {
+  before(function () {
+    config.quota.enabled = true;
+  });
+  after(function () {
+    config.quota.enabled = false;
+  });
   /* jshint expr:true */
   const service_id = '24731fb8-7b84-4f57-914f-c3d55d793dd4';
   const plan_id = 'bc158c9a-7934-401e-94ab-057082a5073f'; // name: 'v1.0-xsmall'
