@@ -510,12 +510,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processPostStart(resourceOptions) { 
     await this.runErrand(resourceOptions, 'postStartErrand'); 
-    if (this.service.pitr === true) {
-      await this.reScheduleBackup({
-        instance_id: resourceOptions.instance_guid,
-        afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
-      });
-    }
+    
     const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
     let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -529,7 +524,13 @@ class BoshRestoreService extends BaseDirectorService {
       _.set(patchResourceObj, 'status.response', patchObj);
     }
     await eventmesh.apiServerClient.patchResource(patchResourceObj);
-    return this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
+    await this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
+    if (this.service.pitr === true) {
+      await this.reScheduleBackup({
+        instance_id: resourceOptions.instance_guid,
+        afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
+      });
+    }
   }
 
   static createService(plan) {
