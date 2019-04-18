@@ -6,6 +6,7 @@ const logger = require('../../common/logger');
 const Forbidden = errors.Forbidden;
 const BadRequest = errors.BadRequest;
 const utils = require('../../common/utils');
+const config = require('../../common/config');
 const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('./../../common/constants');
@@ -73,7 +74,10 @@ exports.checkQuota = function () {
         origin === CONST.PLATFORM.CF));
   }
   return function (req, res, next) {
-    if (utils.isServiceFabrikOperation(req.body)) {
+    if (!_.get(config.quota, 'enabled')) {
+      logger.debug('Quota check is not enabled');
+      next();
+    } else if (utils.isServiceFabrikOperation(req.body)) {
       logger.debug('[Quota]: Check skipped as it is ServiceFabrikOperation: calling next handler..');
       next();
     } else {
