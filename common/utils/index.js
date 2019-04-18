@@ -559,8 +559,8 @@ function unifyDiffResult(result, ignoreTags) {
     if (_.includes(value, 'tags:') && ignoreTags) {
       validDeploymentSection = false;
     } else if (!validDeploymentSection && _.findIndex(CONST.BOSH_DEPLOYMENT_MANIFEST_SECTIONS, section => {
-        return _.includes(value, section);
-      }) != -1) {
+      return _.includes(value, section);
+    }) != -1) {
       validDeploymentSection = true;
     }
 
@@ -593,9 +593,9 @@ function getBrokerAgentCredsFromManifest(manifest) {
       if (brokerAgentNameRegex.test(job.name)) {
         authObject =
           _.chain({})
-          .set('username', job.properties.username)
-          .set('password', job.properties.password)
-          .value();
+            .set('username', job.properties.username)
+            .set('password', job.properties.password)
+            .value();
         // break forEach
         return false;
       }
@@ -724,10 +724,10 @@ function registerInterOperatorCrds() {
 function getAllServices() {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
-      allNamespaces: true
-    })
+    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES,
+    allNamespaces: true
+  })
     .then(serviceList => {
       let services = [];
       _.forEach(serviceList, service => {
@@ -740,13 +740,13 @@ function getAllServices() {
 function getAllPlansForService(serviceId) {
   const eventmesh = require('../../data-access-layer/eventmesh');
   return eventmesh.apiServerClient.getResources({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
-      query: {
-        labelSelector: `serviceId=${serviceId}`
-      },
-      allNamespaces: true
-    })
+    resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
+    resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS,
+    query: {
+      labelSelector: `serviceId=${serviceId}`
+    },
+    allNamespaces: true
+  })
     .then(planList => {
       let plans = [];
       _.forEach(planList, plan => {
