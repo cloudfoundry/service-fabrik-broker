@@ -182,7 +182,7 @@ class AliClient extends BaseCloudClient {
           .then(result => this._waitForDiskAvailability(result.DiskId))
           .tap(diskDetails => logger.info(`Created disk ${diskDetails.DiskId} from snapshot ${snapshotId} is now Available with status: ${diskDetails.Status}`))
           .catch(err => {
-            logger.error(`Error creating disk from snapshot ${snapshotId}`, err);
+            logger.error(`Error in creating disk from snapshot ${snapshotId}`, err);
             throw err;
           });
       });

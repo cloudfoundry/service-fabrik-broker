@@ -158,6 +158,14 @@ const createDiskStub = function () {
   });
 };
 
+const deleteSnapshotStub = function () {
+  return Promise.resolve({});
+};
+
+const deleteSnapshotFailStub = function () {
+  return Promise.reject(new Error('snapshotDeletionFailed'));
+};
+
 
 describe('iaas', function () {
   describe('AliClient', function () {
@@ -368,6 +376,16 @@ describe('iaas', function () {
         };
         reqStub.withArgs('CreateDisk', createDiskParams, createDiskrequestOption).callsFake(createDiskStub);
 
+        const deleteSnapshotParams = {
+          'SnapshotId': 'snappy',
+          'Force': true
+        };
+        const deleteSnapshotRequestOption = {
+          timeout: CONST.ALI_CLIENT.ECS.REQ_TIMEOUT,
+          method: 'POST'
+        };
+        reqStub.withArgs('DeleteSnapshot', deleteSnapshotParams, deleteSnapshotRequestOption).callsFake(deleteSnapshotStub);
+
       });
       afterEach(function () {
         sandbox.restore();
@@ -402,7 +420,7 @@ describe('iaas', function () {
         return client.getDiskMetadata(diskName)
         .catch(err => {
           expect(err.message).to.eql('diskFailed')
-        })
+        });
       });
       it('successfully waits for disk to be available', function () {
         const oldConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
@@ -416,29 +434,6 @@ describe('iaas', function () {
           CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
         })
       });
-      // it('wait for disk to be available times out', function () {
-      //   const oldDelayConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
-      //   const oldToConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC;
-        
-      //   CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = 1;
-      //   CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = 0.01;
-        
-      //   const timeParams = {
-      //     'RegionId': settings.region,
-      //     'DiskIds': '[\'' + diskName + '\']'
-      //   };
-      //   const timeRequestOption = {
-      //     timeout: CONST.ALI_CLIENT.ECS.REQ_TIMEOUT,
-      //     method: 'POST'
-      //   };
-      //   reqStub.withArgs('DescribeDisks', timeParams, timeRequestOption).callsFake(getDiskTimeoutStub);
-      //   return client._waitForDiskAvailability(diskName)
-      //   .catch(Timeout, (err) => {
-      //     expect(err.message).to.eql('Volume with diskId disk-sample is not yet available. Current state is: Creating')
-      //     CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
-      //     CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
-      //   })
-      // });
       it('wait for disk to be available times out with error', function () {
         const oldDelayConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
         const oldToConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC;
@@ -475,6 +470,75 @@ describe('iaas', function () {
           CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
         })
       });
+      it('throws error if creates disk from snapshot fails', function () {
+        const oldConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
+        CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = 0;
+
+        sandbox.restore();
+        const createDiskFailParams = {
+          RegionId: 'region-name',
+          ZoneId: 'zone',
+          SnapshotId: 'snappy',
+          DiskCategory: 'cloud_ssd',
+          'Tag.1.Key': 'createdBy',
+          'Tag.1.Value': 'service-fabrik' };
+        const createDiskFailrequestOption = {
+          timeout: CONST.ALI_CLIENT.ECS.REQ_TIMEOUT,
+          method: 'POST'
+        };
+        sandbox.stub(AliCompute.prototype, 'request').withArgs('CreateDisk', createDiskFailParams, createDiskFailrequestOption).callsFake(getDiskFailStub);
+        return client.createDiskFromSnapshot(snapshotName, zone)
+        .catch(err => {
+          expect(err.message).to.eql('diskFailed');
+        });
+      });
+      it('wait for disk to be available times out', function () {
+        const oldDelayConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY;
+        const oldToConst = CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC;
+        
+        CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = 1;
+        CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = 0.01;
+        
+        const timeParams = {
+          'RegionId': settings.region,
+          'DiskIds': '[\'' + diskName + '\']'
+        };
+        const timeRequestOption = {
+          timeout: CONST.ALI_CLIENT.ECS.REQ_TIMEOUT,
+          method: 'POST'
+        };
+        reqStub.withArgs('DescribeDisks', timeParams, timeRequestOption).callsFake(getDiskTimeoutStub);
+        return client._waitForDiskAvailability(diskName)
+        .catch(Timeout, (err) => {
+          expect(err.message).to.eql('Volume with diskId disk-sample is not yet available. Current state is: Creating')
+          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldDelayConst;
+          CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_TIMEOUT_IN_SEC = oldToConst;
+        })
+      });
+
+      it('successfully deletes snapshot', function () {
+        return client.deleteSnapshot(snapshotName)
+        .then(res => {
+          expect(res).to.eql({})
+        })
+      });    
+      it('throws error if delete snapshot fails', function () {
+        sandbox.restore();
+        const deleteSnapshotFailParams = {
+          'SnapshotId': 'snappy',
+          'Force': true
+        };
+        const deleteSnapshotFailRequestOption = {
+          timeout: CONST.ALI_CLIENT.ECS.REQ_TIMEOUT,
+          method: 'POST'
+        };
+        sandbox.stub(AliCompute.prototype, 'request').withArgs('DeleteSnapshot', deleteSnapshotFailParams, deleteSnapshotFailRequestOption).callsFake(deleteSnapshotFailStub);
+        return client.deleteSnapshot(snapshotName)
+        .catch(err => {
+          expect(err.message).to.eql('snapshotDeletionFailed');
+        });
+      });   
+
     });
   });
 });
