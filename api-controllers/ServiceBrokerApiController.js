@@ -73,9 +73,10 @@ class ServiceBrokerApiController extends FabrikBaseController {
 
     function done() {
       let statusCode = CONST.HTTP_STATUS_CODE.CREATED;
-      const body = {
-        dashboard_url: dashboardUrl
-      };
+      const body = {};
+      if (dashboardUrl) {
+        body.dashboard_url = dashboardUrl;
+      }
       if (plan.manager.async) {
         statusCode = CONST.HTTP_STATUS_CODE.ACCEPTED;
         body.operation = utils.encodeBase64({
@@ -444,14 +445,17 @@ class ServiceBrokerApiController extends FabrikBaseController {
         return dashboardUrl;
       }
       throw new errors.UnprocessableEntity(`Unable to generate valid dashboard URL with the template '${urlTemplate}'`);
+    } else if (_.get(config, 'external.protocol') !== undefined && _.get(config, 'external.host') !== undefined) {
+      return formatUrl(_
+        .chain(config.external)
+        .pick('protocol', 'host')
+        .set('slashes', true)
+        .set('pathname', `manage/dashboards/${context.plan.manager.name}/instances/${context.instance_id}`)
+        .value()
+      );
+    } else {
+      return null;
     }
-    return formatUrl(_
-      .chain(config.external)
-      .pick('protocol', 'host')
-      .set('slashes', true)
-      .set('pathname', `manage/dashboards/${context.plan.manager.name}/instances/${context.instance_id}`)
-      .value()
-    );
   }
 
 }
