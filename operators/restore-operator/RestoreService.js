@@ -4,9 +4,6 @@ const _ = require('lodash');
 const Agent = require('../../data-access-layer/service-agent');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const BaseDirectorService = require('../BaseDirectorService');
-const utils = require('../../common/utils');
-const cf = require('../../data-access-layer/cf');
-const retry = utils.retry;
 const errors = require('../../common/errors');
 const CONST = require('../../common/constants');
 const Promise = require('bluebird');
@@ -128,26 +125,6 @@ class RestoreService extends BaseDirectorService {
             });
         }
       });
-  }
-
-  reScheduleBackup(opts) {
-    const options = {
-      instance_id: opts.instance_id,
-      repeatInterval: 'daily',
-      type: CONST.BACKUP.TYPE.ONLINE
-    };
-
-    if (this.plan.service.backup_interval) {
-      options.repeatInterval = this.plan.service.backup_interval;
-    }
-
-    options.repeatInterval = utils.getCronWithIntervalAndAfterXminute(options.repeatInterval, opts.afterXminute);
-    logger.info(`Scheduling Backup for instance : ${options.instance_id} with backup interval of - ${options.repeatInterval}`);
-    // Even if there is an error while fetching backup schedule, trigger backup schedule we would want audit log captured and riemann alert sent
-    return retry(() => cf.serviceFabrikClient.scheduleBackup(options), {
-      maxAttempts: 3,
-      minDelay: 500
-    });
   }
 
   startRestore(opts) {
