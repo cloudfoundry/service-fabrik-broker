@@ -58,23 +58,25 @@ class AliClient extends BaseCloudClient {
       options = container;
       container = this.containerName;
     }
-    return this.storage
-      .useBucket(container)
-      .list(options)
-      .then(listOfFiles => {
-        let list = listOfFiles.objects;
-        let isTruncated = listOfFiles.isTruncated;
-        let marker = listOfFiles.nextMarker;
-        const files = [];
-        _.each(list, file => files.push(_
-          .chain(file)
-          .pick('name', 'lastModified')
-          .set('isTruncated', isTruncated)
-          .set('marker', marker)
-          .value()
-        ));
-        return files;
-      });
+    return Promise.try(() => {
+      return this.storage
+        .useBucket(container)
+        .list(options)
+        .then(listOfFiles => {
+          let list = listOfFiles.objects;
+          let isTruncated = listOfFiles.isTruncated;
+          let marker = listOfFiles.nextMarker;
+          const files = [];
+          _.each(list, file => files.push(_
+            .chain(file)
+            .pick('name', 'lastModified')
+            .set('isTruncated', isTruncated)
+            .set('marker', marker)
+            .value()
+          ));
+          return files;
+        });
+    });
   }
 
   remove(container, file) {
@@ -84,12 +86,14 @@ class AliClient extends BaseCloudClient {
     }
 
     logger.info('Deleting file ' + file + ' from container ' + container);
-    return this.storage
-      .useBucket(container)
-      .delete(file)
-      .then(() => {
-        logger.info('Deleted file ' + file + ' from container ' + container);
-      })
+    return Promise.try(() => {
+      return this.storage
+        .useBucket(container)
+        .delete(file)
+        .then(() => {
+          logger.info('Deleted file ' + file + ' from container ' + container);
+        });
+    })
       .catchThrow(BaseCloudClient.providerErrorTypes.Unauthorized,
         new Unauthorized(`Authorization at ali cloud storage provider failed while deleting blob ${file} in container ${container}`))
       .catchThrow(BaseCloudClient.providerErrorTypes.Forbidden,
@@ -175,16 +179,14 @@ class AliClient extends BaseCloudClient {
       method: 'POST'
     };
     return Promise
-      .try(() => {
-        return this.computeClient
-          .request('CreateDisk', reqParams, requestOption)
-          .tap(result => logger.info(`Created disk ${result.DiskId} from snapshot ${snapshotId}, now wait for it to be available...`))
-          .then(result => this._waitForDiskAvailability(result.DiskId))
-          .tap(diskDetails => logger.info(`Created disk ${diskDetails.DiskId} from snapshot ${snapshotId} is now Available with status: ${diskDetails.Status}`))
-          .catch(err => {
-            logger.error(`Error in creating disk from snapshot ${snapshotId}`, err);
-            throw err;
-          });
+      .try(() => this.computeClient
+        .request('CreateDisk', reqParams, requestOption))
+      .tap(result => logger.info(`Created disk ${result.DiskId} from snapshot ${snapshotId}, now wait for it to be available...`))
+      .then(result => this._waitForDiskAvailability(result.DiskId))
+      .tap(diskDetails => logger.info(`Created disk ${diskDetails.DiskId} from snapshot ${snapshotId} is now Available with status: ${diskDetails.Status}`))
+      .catch(err => {
+        logger.error(`Error in creating disk from snapshot ${snapshotId}`, err);
+        throw err;
       });
   }
 
@@ -274,14 +276,12 @@ class AliClient extends BaseCloudClient {
       method: 'POST'
     };
     return Promise
-      .try(() => {
-        return this.computeClient
-          .request('DeleteSnapshot', params, requestOption)
-          .tap(() => logger.info(`Deleted snapshot ${snapshotId}`))
-          .catch(err => {
-            logger.error(`Error occured while deleting snapshot ${snapshotId}`, err);
-            throw err;
-          });
+      .try(() => this.computeClient
+        .request('DeleteSnapshot', params, requestOption))
+      .tap(() => logger.info(`Deleted snapshot ${snapshotId}`))
+      .catch(err => {
+        logger.error(`Error occured while deleting snapshot ${snapshotId}`, err);
+        throw err;
       });
   }
 
