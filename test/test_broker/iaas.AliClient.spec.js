@@ -463,10 +463,10 @@ describe('iaas', function () {
 
         return client.createDiskFromSnapshot(snapshotName, zone)
         .then(res => {
-          expect(res.DiskId).to.eql(diskName);
-          expect(res.Size).to.eql(20);
-          expect(res.ZoneId).to.eql(zone);
-          expect(res.Category).to.eql('cloud_ssd');
+          expect(res.volumeId).to.eql(diskName);
+          expect(res.size).to.eql(20);
+          expect(res.zone).to.eql(zone);
+          expect(res.type).to.eql('cloud_ssd');
           CONST.ALI_CLIENT.ECS.AVAILABILITY_POLLER_DELAY = oldConst;
         })
       });

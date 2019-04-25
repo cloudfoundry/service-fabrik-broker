@@ -183,7 +183,20 @@ class AliClient extends BaseCloudClient {
         .request('CreateDisk', reqParams, requestOption))
       .tap(result => logger.info(`Created disk ${result.DiskId} from snapshot ${snapshotId}, now wait for it to be available...`))
       .then(result => this._waitForDiskAvailability(result.DiskId))
-      .tap(diskDetails => logger.info(`Created disk ${diskDetails.DiskId} from snapshot ${snapshotId} is now Available with status: ${diskDetails.Status}`))
+      .then(diskDetails => {
+        logger.info(`Created disk ${diskDetails.DiskId} from snapshot ${snapshotId} is now Available with status: ${diskDetails.Status}`);
+        return {
+          volumeId: diskDetails.DiskId,
+          size: diskDetails.Size,
+          zone: diskDetails.ZoneId,
+          type: diskDetails.Category,
+          extra: {
+            type: diskDetails.Category,
+            sku: diskDetails.Category,
+            tags: diskDetails.tags
+          }
+        };
+      })
       .catch(err => {
         logger.error(`Error in creating disk from snapshot ${snapshotId}`, err);
         throw err;
