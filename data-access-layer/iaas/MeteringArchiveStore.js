@@ -2,6 +2,7 @@
 
 const CONST = require('../../common/constants');
 const path = require('path');
+const logger = require('../../common/logger');
 
 class MeteringArchiveStore {
   constructor(cloudProvider) {
