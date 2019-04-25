@@ -9,6 +9,7 @@ const BackupStore = require('./BackupStore');
 const BackupStoreForServiceInstance = require('./BackupStoreForServiceInstance');
 const BackupStoreForOob = require('./BackupStoreForOob');
 const BaseCloudClient = require('./BaseCloudClient');
+const MeteringArchiveStore = require('./MeteringArchiveStore');
 
 const getCloudClient = function (settings) {
   switch (settings.name) {
@@ -37,3 +38,4 @@ exports.BaseCloudClient = BaseCloudClient;
 exports.cloudProvider = cloudProvider;
 exports.backupStore = new BackupStoreForServiceInstance(cloudProvider);
 exports.backupStoreForOob = new BackupStoreForOob(cloudProvider);
+exports.meteringArchiveStore = new MeteringArchiveStore(cloudProvider);
