@@ -10,13 +10,16 @@ const CloudProviderError = {
   NotFound: err => {
     return err.statusCode === CONST.HTTP_STATUS_CODE.NOT_FOUND || err.failCode === 'Item not found' ||
       err.code === CONST.HTTP_STATUS_CODE.NOT_FOUND || err.code === 'NotFound' ||
+      err.status == CONST.HTTP_STATUS_CODE.NOT_FOUND ||
       String(err.code).includes('NotFound') || String(err.statusCode).includes('NotFound');
   },
   Unauthorized: err => {
-    return err.statusCode === CONST.HTTP_STATUS_CODE.UNAUTHORIZED || err.failCode === 'Unauthorized';
+    return err.statusCode === CONST.HTTP_STATUS_CODE.UNAUTHORIZED || err.status === CONST.HTTP_STATUS_CODE.UNAUTHORIZED ||
+      err.failCode === 'Unauthorized';
   },
   Forbidden: err => {
-    return err.statusCode === CONST.HTTP_STATUS_CODE.FORBIDDEN || err.code === CONST.HTTP_STATUS_CODE.FORBIDDEN;
+    return err.statusCode === CONST.HTTP_STATUS_CODE.FORBIDDEN || err.status === CONST.HTTP_STATUS_CODE.FORBIDDEN ||
+      err.code === CONST.HTTP_STATUS_CODE.FORBIDDEN;
   }
 };
 

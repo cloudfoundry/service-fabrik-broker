@@ -494,5 +494,13 @@ module.exports = Object.freeze({
   DISABLED: 'disabled',
   REGEX_PATTERN: {
     URL: /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+  },
+  ALI_CLIENT:{
+    ECS:{
+      API_VERSION: '2014-05-26',
+      REQ_TIMEOUT: 20000, // 20 seconds
+      AVAILABILITY_POLLER_DELAY: 1000, // 1sec
+      AVAILABILITY_POLLER_TIMEOUT_IN_SEC: 3600 // 60 minutes
+    }
   }
 });
