@@ -85,7 +85,7 @@ class EventLogInterceptor {
     // Following logic is based on above format, made as much as independent, but some hardcodgins were unavoidable.
     const currentPrefix = `${config.monitoring.event_name_prefix}`;
     let splitPrefix = currentPrefix.split('.');
-    if(isNaN(splitPrefix[splitPrefix.length - 2])) {
+    if(splitPrefix.length != 4 || isNaN(splitPrefix[splitPrefix.length - 2])) {
       return currentPrefix;
     }
     splitPrefix[splitPrefix.length - 2] = '0';
