@@ -305,7 +305,6 @@ describe('operators', function () {
         mocks.cloudProvider.list(container, `${prefix}/${service_id}.${instance_id}.${backup_guid}`, [filename]);
         mocks.cloudProvider.remove(pathname);
         mocks.cloudProvider.download(pathname, data);
-        mocks.apiServerEventMesh.nockLoadSpec();
         mocks.apiServerEventMesh.nockPatchResourceRegex(CONST.APISERVER.RESOURCE_GROUPS.BACKUP, CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP, {
           status: {
             state: 'deleting'

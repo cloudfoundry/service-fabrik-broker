@@ -39,7 +39,6 @@ global.chai.use(require('sinon-chai'));
 global.chai.use(require('chai-http'));
 
 /**
- * Loading it from the first time before the test starts and mocking it here so that the tests need not do it.
+ * Registering def for first and only time.
  */
-mocks.apiServerEventMesh.nockLoadSpec();
 require('../../../data-access-layer/eventmesh').apiServerClient.init();

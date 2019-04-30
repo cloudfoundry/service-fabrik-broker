@@ -68,26 +68,19 @@ function convertToHttpErrorAndThrow(err) {
 
 class ApiServerClient {
 
-  constructor() {
-    this.ready = false;
-  }
-
   init() {
     return Promise.try(() => {
-      if (!this.ready) {
-        return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
-          apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+      return Promise.map(_.values(config.apiserver.crds), crdTemplate => {
+        apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
+      })
+        .tap(() => {
+          this.ready = true;
+          logger.debug('Successfully loaded ApiServer Spec');
         })
-          .then(() => apiserver.loadSpec())
-          .then(() => {
-            this.ready = true;
-            logger.debug('Successfully loaded ApiServer Spec');
-          })
-          .catch(err => {
-            logger.error('Error occured while loading ApiServer Spec', err);
-            return convertToHttpErrorAndThrow(err);
-          });
-      }
+        .catch(err => {
+          logger.error('Error occured while loading ApiServer Spec', err);
+          return convertToHttpErrorAndThrow(err);
+        });
     });
   }
 
@@ -215,21 +208,20 @@ class ApiServerClient {
   registerWatcher(resourceGroup, resourceType, callback, queryString) {
     assert.ok(resourceGroup, 'Argument \'resourceGroup\' is required to register watcher');
     assert.ok(resourceType, 'Argument \'resourceType\' is required to register watcher');
-    return Promise.try(() => this.init())
-      .then(() => {
-        const stream = apiserver
-          .apis[resourceGroup][CONST.APISERVER.API_VERSION]
-          .watch[resourceType].getStream({
-            qs: {
-              labelSelector: queryString ? queryString : '',
-              timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
-            }
-          });
-        const jsonStream = new JSONStream();
-        stream.pipe(jsonStream);
-        jsonStream.on('data', callback);
-        return stream;
-      })
+    return Promise.try(() => {
+      const stream = apiserver
+        .apis[resourceGroup][CONST.APISERVER.API_VERSION]
+        .watch[resourceType].getStream({
+          qs: {
+            labelSelector: queryString ? queryString : '',
+            timeoutSeconds: CONST.APISERVER.WATCH_TIMEOUT
+          }
+        });
+      const jsonStream = new JSONStream();
+      stream.pipe(jsonStream);
+      jsonStream.on('data', callback);
+      return stream;
+    })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -251,17 +243,14 @@ class ApiServerClient {
   registerCrds(resourceGroup, resourceType) {
     logger.info(`Registering CRDs for ${resourceGroup}, ${resourceType}`);
     const crdJson = this.getCrdJson(resourceGroup, resourceType);
-    return Promise.try(() => this.init())
-      .then(() => {
-        return apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
-          body: crdJson,
-          headers: {
-            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-          }
-        })
-          .catch(err => {
-            return convertToHttpErrorAndThrow(err);
-          });
+    return Promise.try(() => apiserver.apis[CONST.APISERVER.CRD_RESOURCE_GROUP].v1beta1.customresourcedefinitions(crdJson.metadata.name).patch({
+      body: crdJson,
+      headers: {
+        'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+      }
+    }))
+      .catch(err => {
+        return convertToHttpErrorAndThrow(err);
       })
       .catch(NotFound, () => {
         logger.info(`CRD with resourcegroup ${resourceGroup} and resource ${resourceType} not yet registered, registering it now..`);
@@ -296,11 +285,9 @@ class ApiServerClient {
         name: name
       }
     };
-    return this.init()
-      .then(() => apiserver
-        .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns.post({
-          body: resourceBody
-        }))
+    return Promise.try(() => apiserver.api[CONST.APISERVER.NAMESPACE_API_VERSION].ns.post({
+      body: resourceBody
+    }))
       .tap(() => logger.debug(`Successfully created namespace ${name}`))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -308,9 +295,7 @@ class ApiServerClient {
   }
 
   deleteNamespace(name) {
-    return this.init()
-      .then(() => apiserver
-        .api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
+    return Promise.try(() => apiserver.api[CONST.APISERVER.NAMESPACE_API_VERSION].ns(name).delete())
       .tap(() => logger.debug(`Successfully deleted namespace ${name}`))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -328,11 +313,10 @@ class ApiServerClient {
    */
   getSecret(secretId, namespaceId) {
     assert.ok(secretId, 'Property \'secretId\' is required to get Secret');
-    return this.init()
-      .then(() => apiserver
-        .api[CONST.APISERVER.SECRET_API_VERSION]
-        .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
-        .secrets(secretId).get())
+    return Promise.try(() => apiserver
+      .api[CONST.APISERVER.SECRET_API_VERSION]
+      .namespaces(namespaceId ? namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE)
+      .secrets(secretId).get())
       .then(secret => secret.body)
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -385,12 +369,11 @@ class ApiServerClient {
     }
     const namespaceId = this.getNamespaceId(opts.resourceId);
     // Create Namespace if not default
-    return Promise.try(() => this.init())
-      .then(() => apiserver
-        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType].post({
-          body: resourceBody
-        }))
+    return Promise.try(() => apiserver
+      .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+      .namespaces(namespaceId)[opts.resourceType].post({
+        body: resourceBody
+      }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -441,21 +424,19 @@ class ApiServerClient {
       logger.info(`Updating - Resource ${opts.resourceId} with body - ${JSON.stringify(patchBody)}`);
       const namespaceId = this.getNamespaceId(opts.resourceId);
       // Create Namespace if not default
-      return Promise.try(() => this.init())
-        .then(() => apiserver
-          .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-          .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-            body: patchBody,
-            headers: {
-              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-            }
-          }));
+      return Promise.try(() => apiserver
+        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
+          body: patchBody,
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        }));
     })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
   }
-
   /**
    * @description Patches Resource in Apiserver with the opts
    * Use this method when you want to append something in status.response or spec.options
@@ -502,9 +483,8 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to delete resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to delete resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceId);
-    return Promise.try(() => this.init())
-      .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
+    return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+      .namespaces(namespaceId)[opts.resourceType](opts.resourceId).delete())
       .then(res => {
         if (namespaceId !== CONST.APISERVER.DEFAULT_NAMESPACE && opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES) {
           return this.deleteNamespace(namespaceId);
@@ -556,9 +536,8 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to get resource');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to get resource');
     const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
-    return Promise.try(() => this.init())
-      .then(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).get())
+    return Promise.try(() => apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+      .namespaces(namespaceId)[opts.resourceType](opts.resourceId).get())
       .then(resource => {
         _.forEach(resource.body.spec, (val, key) => {
           try {
@@ -598,15 +577,14 @@ class ApiServerClient {
       query.qs = opts.query;
     }
     const namespaceId = opts.namespaceId ? opts.namespaceId : CONST.APISERVER.DEFAULT_NAMESPACE;
-    return Promise.try(() => this.init())
-      .then(() => {
-        if (!_.get(opts, 'allNamespaces', false)) {
-          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-            .namespaces(namespaceId)[opts.resourceType].get(query);
-        } else {
-          return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION].namespaces()[opts.resourceType].get(query);
-        }
-      })
+    return Promise.try(() => {
+      if (!_.get(opts, 'allNamespaces', false)) {
+        return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+          .namespaces(namespaceId)[opts.resourceType].get(query);
+      } else {
+        return apiserver.apis[opts.resourceGroup][CONST.APISERVER.API_VERSION].namespaces()[opts.resourceType].get(query);
+      }
+    })
       .then(response => _.get(response, 'body.items', []))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -658,11 +636,10 @@ class ApiServerClient {
       metadata: metadata,
       data: data
     };
-    return Promise.try(() => this.init())
-      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
-          body: resourceBody
-        }))
+    return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE].post({
+        body: resourceBody
+      }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -670,9 +647,8 @@ class ApiServerClient {
 
   getConfigMapResource(configName) {
     logger.debug('Get resource with opts: ', configName);
-    return Promise.try(() => this.init())
-      .then(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
+    return Promise.try(() => apiserver.api[CONST.APISERVER.CONFIG_MAP.API_VERSION]
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[CONST.APISERVER.CONFIG_MAP.RESOURCE_TYPE](configName).get())
       .then(resource => {
         return resource.body;
       })
@@ -693,8 +669,7 @@ class ApiServerClient {
       metadata: metadata,
       data: data
     };
-    return Promise.try(() => this.init())
-      .then(() => this.getConfigMapResource(configName))
+    return Promise.try(() => this.getConfigMapResource(configName))
       .then(oldResourceBody => {
         resourceBody.data = oldResourceBody.data ? _.merge(oldResourceBody.data, data) : resourceBody.data;
         resourceBody.metadata.resourceVersion = oldResourceBody.metadata.resourceVersion;
@@ -873,12 +848,11 @@ class ApiServerClient {
       _.get(opts, 'spec.instance_id') : opts.resourceId
     );
     // Create Namespace if not default
-    return this.init()
-      .then(() => apiserver
-        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-        .namespaces(namespaceId)[opts.resourceType].post({
-          body: resourceBody
-        }))
+    return Promise.try(() => apiserver
+      .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+      .namespaces(namespaceId)[opts.resourceType].post({
+        body: resourceBody
+      }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       });
@@ -924,15 +898,14 @@ class ApiServerClient {
       const namespaceId = opts.namespaceId ? opts.namespaceId : this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
         _.get(opts, 'spec.instance_id') : opts.resourceId
       );
-      return Promise.try(() => this.init())
-        .then(() => apiserver
-          .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
-          .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
-            body: patchBody,
-            headers: {
-              'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
-            }
-          }));
+      return Promise.try(() => apiserver
+        .apis[opts.resourceGroup][CONST.APISERVER.API_VERSION]
+        .namespaces(namespaceId)[opts.resourceType](opts.resourceId).patch({
+          body: patchBody,
+          headers: {
+            'content-type': CONST.APISERVER.PATCH_CONTENT_TYPE
+          }
+        }));
     })
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
@@ -999,12 +972,11 @@ class ApiServerClient {
     logger.debug('Creating service/plan resource with CRD: ', crd);
     assert.ok(crd, 'Property \'crd\' is required to create Service/Plan Resource');
     const resourceType = crd.kind === 'SFService' ? CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICES : CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_PLANS;
-    return Promise.try(() => this.init())
-      .then(() => apiserver
-        .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
-        .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({
-          body: crd
-        }))
+    return Promise.try(() => apiserver
+      .apis[CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR][CONST.APISERVER.API_VERSION]
+      .namespaces(CONST.APISERVER.DEFAULT_NAMESPACE)[resourceType].post({
+        body: crd
+      }))
       .catch(err => {
         return convertToHttpErrorAndThrow(err);
       })
