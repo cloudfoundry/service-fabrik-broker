@@ -17,6 +17,7 @@ class EventLogInterceptor {
       path.join(__dirname, 'config', configFileName);
     this.EVENT_LOG_CONFIG = yaml.safeLoad(fs.readFileSync(eventConfAbsPath, 'utf8'));
     this.eventType = eventType;
+    this.commonUpdatePrefix = this.getCommonUpdatePrefixForUpdate();
   }
 
   static getInstance(eventType, appType) {
@@ -77,10 +78,29 @@ class EventLogInterceptor {
     return [info, operationConfig];
   }
 
+  getCommonUpdatePrefixForUpdate() {
+    // In case of update always send event prefix as: <%= p('riemann.prefix') %>.<%= name %>.0.<%= spec.deployment %>
+    // That means, don't send actual index of broker vm in prefix.
+    // current prefix format is: <%= p('riemann.prefix') %>.<%= name %>.<%= index %>.<%= spec.deployment %>
+    // Following logic is based on above format, made as much as independent, but some hardcodgins were unavoidable.
+    const currentPrefix = `${config.monitoring.event_name_prefix}`;
+    let splitPrefix = currentPrefix.split('.');
+    if(splitPrefix.length != 4 || isNaN(splitPrefix[splitPrefix.length - 2])) {
+      return currentPrefix;
+    }
+    splitPrefix[splitPrefix.length - 2] = '0';
+    const commonPrefix = splitPrefix.join('.');
+    return commonPrefix;
+  }
+
   getEventInfo(serviceInstanceType, eventName, tags, operationStatus, requestDetails, response) {
+    let eventNamePrefix = config.monitoring.event_name_prefix;
+    if (eventName === CONST.EVENT_LOG_INTERCEPTOR.UPDATE_EVENT) {
+      eventNamePrefix = this.commonUpdatePrefix;
+    }
     return {
       host: os.hostname(),
-      eventName: `${config.monitoring.event_name_prefix}.${serviceInstanceType}${eventName}`,
+      eventName: `${eventNamePrefix}.${serviceInstanceType}${eventName}`,
       metric: operationStatus.metric,
       state: operationStatus.state,
       description: operationStatus.message,

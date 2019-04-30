@@ -48,6 +48,9 @@ module.exports = Object.freeze({
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected'
   },
+  EVENT_LOG_INTERCEPTOR: {
+    UPDATE_EVENT: 'update_instance'
+  },
   EVENTMESH_POLLER_DELAY: 200,
   UNLOCK_RESOURCE_POLLER_INTERVAL: 3000,
   RESTORE_OPERATION: {
