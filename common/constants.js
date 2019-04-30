@@ -497,6 +497,7 @@ module.exports = Object.freeze({
   },
   ALI_CLIENT:{
     ECS:{
+      DOMAIN: 'https://ecs.aliyuncs.com',
       API_VERSION: '2014-05-26',
       REQ_TIMEOUT: 20000, // 20 seconds
       AVAILABILITY_POLLER_DELAY: 1000, // 1sec

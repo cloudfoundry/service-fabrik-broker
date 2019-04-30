@@ -281,6 +281,7 @@ class AliClient extends BaseCloudClient {
     // Thing to remember is that disk can't be reinitialised if parent snapshot is deleted
   
     const params = {
+      'RegionId': this.settings.region,
       'SnapshotId': snapshotId,
       'Force': true
     };
@@ -303,7 +304,7 @@ class AliClient extends BaseCloudClient {
       accessKeyId: options.keyId,
       accessKeySecret: options.key,
       apiVersion: CONST.ALI_CLIENT.ECS.API_VERSION,
-      endpoint: 'https://ecs.' + options.region + '.aliyuncs.com'
+      endpoint: CONST.ALI_CLIENT.ECS.DOMAIN
     });
   }
 
