@@ -187,7 +187,7 @@ describe('iaas', function () {
         expect(responseAliComputeObject.accessKeyId).to.equal(settings.keyId);
         expect(responseAliComputeObject.accessKeySecret).to.equal(settings.key);
         expect(responseAliComputeObject.apiVersion).to.equal(CONST.ALI_CLIENT.ECS.API_VERSION);
-        expect(responseAliComputeObject.endpoint).to.equal('https://ecs.' + settings.region + '.aliyuncs.com');
+        expect(responseAliComputeObject.endpoint).to.equal('https://ecs.aliyuncs.com');
       });
     });
 
@@ -377,6 +377,7 @@ describe('iaas', function () {
         reqStub.withArgs('CreateDisk', createDiskParams, createDiskrequestOption).callsFake(createDiskStub);
 
         const deleteSnapshotParams = {
+          RegionId: 'region-name',
           'SnapshotId': 'snappy',
           'Force': true
         };
@@ -525,6 +526,7 @@ describe('iaas', function () {
       it('throws error if delete snapshot fails', function () {
         sandbox.restore();
         const deleteSnapshotFailParams = {
+          'RegionId': settings.region,
           'SnapshotId': 'snappy',
           'Force': true
         };
