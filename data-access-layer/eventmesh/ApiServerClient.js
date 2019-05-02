@@ -99,6 +99,7 @@ class ApiServerClient {
    * @param {string} opts.resourceId - Id of the operation ex. backupGuid
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
+   * @param {object} opts.timeout_in_sec - Req timeout in sec (optional)
    * @param {object} opts.namespaceId - namespace Id of resource
    */
   getResourceOperationStatus(opts) {
@@ -116,9 +117,9 @@ class ApiServerClient {
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
-          if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
-            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+          if (duration > (opts.timeout_in_sec ? opts.timeout_in_sec : CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
+            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
+            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
           }
           return this.getResourceOperationStatus(opts);
         } else if (
@@ -155,6 +156,7 @@ class ApiServerClient {
    * @param {string} opts.resourceId - Id of the operation ex. instance_id
    * @param {string} opts.start_state - start state of the operation ex. in_queue
    * @param {object} opts.started_at - Date object specifying operation start time
+   * @param {object} opts.timeout_in_sec - Req timeout in seconds (optional)
    * @param {object} opts.namespaceId - namespace Id of resource
    */
   // TODO:- merge getResourceOperationStatus and getOSBResourceOperationStatus after streamlining state conventions
@@ -186,9 +188,9 @@ class ApiServerClient {
         } else {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
-          if (duration > CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS) {
-            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
-            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed`);
+          if (duration > (opts.timeout_in_sec ? opts.timeout_in_sec : CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
+            logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
+            throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
           }
           return this.getOSBResourceOperationStatus(opts);
         }
