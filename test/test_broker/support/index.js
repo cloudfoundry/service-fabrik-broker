@@ -37,8 +37,3 @@ global.expect = global.chai.expect;
  */
 global.chai.use(require('sinon-chai'));
 global.chai.use(require('chai-http'));
-
-/**
- * Registering def for first and only time.
- */
-require('../../../data-access-layer/eventmesh').apiServerClient.init();

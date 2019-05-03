@@ -67,6 +67,10 @@ function convertToHttpErrorAndThrow(err) {
 }
 
 class ApiServerClient {
+  constructor() {	
+    this.ready = false;
+    this.init();
+  }
 
   init() {
     return Promise.try(() => {
@@ -74,11 +78,10 @@ class ApiServerClient {
         apiserver.addCustomResourceDefinition(yaml.safeLoad(Buffer.from(crdTemplate, 'base64')));
       })
         .tap(() => {
-          this.ready = true;
-          logger.debug('Successfully loaded ApiServer Spec');
+          logger.debug('Successfully added enpoints to apiserver client');
         })
         .catch(err => {
-          logger.error('Error occured while loading ApiServer Spec', err);
+          logger.error('Error occured while adding enpoints to apiserver client', err);
           return convertToHttpErrorAndThrow(err);
         });
     });
