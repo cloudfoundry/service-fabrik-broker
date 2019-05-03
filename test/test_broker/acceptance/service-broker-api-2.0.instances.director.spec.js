@@ -1487,8 +1487,8 @@ describe('service-broker-api-2.0', function () {
               state: 'in progress'
             }
           });
-          const timeout = CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS;
-          CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS = 0;
+          const timeout = CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC;
+          CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC = 0;
           return chai.request(app)
             .put(`${base_url}/service_instances/${instance_id}/service_bindings/${binding_id}`)
             .set('X-Broker-API-Version', api_version)
@@ -1503,7 +1503,7 @@ describe('service-broker-api-2.0', function () {
             })
             .catch(err => err.response)
             .then(res => {
-              CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS = timeout;
+              CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC = timeout;
               expect(res).to.have.status(500);
               mocks.verify();
               done();

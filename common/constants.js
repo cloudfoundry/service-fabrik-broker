@@ -65,7 +65,9 @@ module.exports = Object.freeze({
     ABORTED: 'aborted',
     PROCESSING: 'processing'
   },
-  OSB_SYNC_OPERATION_TIMEOUT_IN_SEC: 55, // in sec
+  OSB_OPERATION: {
+    OSB_SYNC_OPERATION_TIMEOUT_IN_SEC: 55 // in sec
+  },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   POLLER_RELAXATION_TIME: 5000, // in ms
   PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes

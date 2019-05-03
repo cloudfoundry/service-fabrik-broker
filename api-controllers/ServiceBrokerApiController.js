@@ -379,7 +379,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.IN_QUEUE,
         started_at: new Date(),
-        timeout_in_sec: CONST.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
+        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
       }))
       .then(operationStatus => {
         const secretName = operationStatus.response.secretRef;
@@ -433,7 +433,7 @@ class ServiceBrokerApiController extends FabrikBaseController {
         namespaceId: eventmesh.apiServerClient.getNamespaceId(params.instance_id),
         start_state: CONST.APISERVER.RESOURCE_STATE.DELETE,
         started_at: new Date(),
-        timeout_in_sec: CONST.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
+        timeout_in_sec: CONST.OSB_OPERATION.OSB_SYNC_OPERATION_TIMEOUT_IN_SEC
       }))
       .then(done.bind(this))
       .catch(NotFound, gone);

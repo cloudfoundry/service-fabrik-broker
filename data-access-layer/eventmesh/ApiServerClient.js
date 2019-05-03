@@ -117,7 +117,7 @@ class ApiServerClient {
         if (state === opts.start_state) {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
-          if (duration > (opts.timeout_in_sec ? opts.timeout_in_sec : CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
+          if (duration > _.get(opts, 'timeout_in_sec', CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
             logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
             throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
           }
@@ -188,7 +188,7 @@ class ApiServerClient {
         } else {
           const duration = (new Date() - opts.started_at) / 1000;
           logger.debug(`Polling for ${opts.start_state} duration: ${duration} `);
-          if (duration > (opts.timeout_in_sec ? opts.timeout_in_sec : CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
+          if (duration > _.get(opts, 'timeout_in_sec', CONST.APISERVER.OPERATION_TIMEOUT_IN_SECS)) {
             logger.error(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
             throw new Timeout(`${opts.resourceGroup} with guid ${opts.resourceId} not yet processed after ${duration}s`);
           }
