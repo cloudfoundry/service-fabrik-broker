@@ -10,7 +10,7 @@ class MeteringArchiveStore {
   }
 
   getMeteringArchiveFileName(timeStamp) {
-    return path.posix.join(CONST.METERING_ARCHIVE_ROOT_FOLDER, `${CONST.METERING_ARCHIVE_JOB_FILE_PREFIX}${timeStamp}`);
+    return path.posix.join(CONST.METERING_ARCHIVE_ROOT_FOLDER, `${CONST.METERING_ARCHIVE_JOB_FILE_PREFIX}${timeStamp}.json`);
   }
 
   async putArchiveFile(timeStamp) {
@@ -21,10 +21,10 @@ class MeteringArchiveStore {
 
   async patchEventToArchiveFile(event, timeStamp) {
     const fileName = this.getMeteringArchiveFileName(timeStamp);
-    logger.info(`Patching metered event ${event.metadata.name} to archive ${fileName}`);
     let data = await this.cloudProvider.downloadJson(filename);
     data.meteredEvents.push(event);
     await this.cloudProvider.uploadJson(fileName, data);
+    logger.info(`Patched metered event ${event.metadata.name} to archive ${fileName}`);
   }
 }
 
