@@ -34,7 +34,7 @@
       }
     ],
     "comma-dangle": [2, "never"],
-    "complexity": [2, 17],
+    "complexity": [2, 20],
     "consistent-return": 0,
     "curly": [2, "all"],
     "dot-notation": 2,
