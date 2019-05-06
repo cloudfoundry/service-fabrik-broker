@@ -44,10 +44,10 @@ class RetryOperation {
           const delay = Math.max(self.backoff(++tries) - (now - attemptStart), 0);
           const time = now + delay - retryStart;
           if (tries >= self.maxAttempts) {
-            return Promise.reject(Timeout.toManyAttempts(tries, err));
+            return Promise.reject(Timeout.toManyAttempts(tries, err, self.operation));
           }
           if (time >= self.timeout) {
-            return Promise.reject(Timeout.timedOut(time, err));
+            return Promise.reject(Timeout.timedOut(time, err, self.operation));
           }
           if (delay > 0) {
             return Promise.delay(delay).then(attempt);
