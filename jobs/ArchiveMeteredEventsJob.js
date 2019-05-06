@@ -7,6 +7,7 @@ const apiServerClient = require('../data-access-layer/eventmesh').apiServerClien
 const meteringArchiveStore = require('../data-access-layer/iaas').meteringArchiveStore;
 const BaseJob = require('./BaseJob');
 const logger = require('../common/logger');
+const utils = require('../common/utils');
 
 class ArchiveMeteredEventsJob extends BaseJob {
 
@@ -50,9 +51,9 @@ class ArchiveMeteredEventsJob extends BaseJob {
       const noEventsToPatch = Math.min(_.get(config, 'system_jobs.archive_metered_events.job_data.events_to_patch', 100), events.length, 
         CONST.ARCHIVE_METERED_EVENTS_RUN_THRESHOLD);
       const eventsToPatch = _.slice(events, 0, noEventsToPatch);
-      _.forEach(eventsToPatch, async event => {
-        await this.processEvent(event, timeStamp);
-      });
+      for(let i = 0; i < eventsToPatch.length; i++) {
+        await this.processEvent(eventsToPatch[i], timeStamp);
+      }
       return noEventsToPatch;
     } catch(err) {
       logger.error('Error while archiving events in the MeteringStore: ', err);

@@ -21,7 +21,7 @@ class MeteringArchiveStore {
 
   async patchEventToArchiveFile(event, timeStamp) {
     const fileName = this.getMeteringArchiveFileName(timeStamp);
-    let data = await this.cloudProvider.downloadJson(filename);
+    let data = await this.cloudProvider.downloadJson(fileName);
     data.meteredEvents.push(event);
     await this.cloudProvider.uploadJson(fileName, data);
     logger.info(`Patched metered event ${event.metadata.name} to archive ${fileName}`);
