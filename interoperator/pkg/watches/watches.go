@@ -26,13 +26,13 @@ var log = logf.Log.WithName("init.watches")
 // InitWatchConfig populates the watch configs for instance and binding
 // controllers by rendering dummy instance and binding for each plan.
 // Must be called before starting controllers.
-func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) error {
+func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) (bool, error) {
 	if kubeConfig == nil {
-		return errors.NewInputError("InitWatchConfig", "kubeConfig", nil)
+		return false, errors.NewInputError("InitWatchConfig", "kubeConfig", nil)
 	}
 
 	if scheme == nil {
-		return errors.NewInputError("InitWatchConfig", "scheme", nil)
+		return false, errors.NewInputError("InitWatchConfig", "scheme", nil)
 	}
 
 	c, err := client.New(kubeConfig, client.Options{
@@ -40,7 +40,7 @@ func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper met
 		Mapper: mapper,
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
 	if sfNamespace == "" {
@@ -48,18 +48,19 @@ func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper met
 	}
 	instanceWatches, bindingWatches, err := computeWatchList(c, sfNamespace)
 	if err != nil {
-		return err
+		log.Error(err, "Failed to compute watch lists")
+		return false, err
 	}
 
 	cfgManager, err := config.New(kubeConfig, scheme, mapper)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	return updateWatchConfig(cfgManager, instanceWatches, bindingWatches)
 }
 
-func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches []osbv1alpha1.APIVersionKind) error {
+func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches []osbv1alpha1.APIVersionKind) (bool, error) {
 	interoperatorCfg := cfgManager.GetConfig()
 	toUpdate := false
 	if !compareWatchLists(interoperatorCfg.InstanceContollerWatchList, instanceWatches) {
@@ -73,11 +74,11 @@ func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches
 	}
 
 	if toUpdate {
-		return cfgManager.UpdateConfig(interoperatorCfg)
+		return true, cfgManager.UpdateConfig(interoperatorCfg)
 	}
 
 	log.Info("Watch List in configmap up todate", "InstanceContollerWatchList", instanceWatches, "BindingContollerWatchList", bindingWatches)
-	return nil
+	return false, nil
 }
 
 func compareWatchLists(list1, list2 []osbv1alpha1.APIVersionKind) bool {
@@ -103,6 +104,17 @@ type k8sObject interface {
 }
 
 func deleteObject(c client.Client, object k8sObject) error {
+	var err error
+	for retry := 0; retry < constants.ErrorThreshold; retry++ {
+		err = _deleteObject(c, object)
+		if err == nil {
+			return nil
+		}
+	}
+	return err
+}
+
+func _deleteObject(c client.Client, object k8sObject) error {
 	var key = types.NamespacedName{
 		Name:      object.GetName(),
 		Namespace: object.GetNamespace(),
