@@ -133,6 +133,9 @@ module.exports = Object.freeze({
     TIMEOUT: 504
   },
   JOB_NAME_ATTRIB: '_n_a_m_e_',
+  METERING_ARCHIVE_JOB_FILE_PREFIX: 'MeteringArchive-',
+  ARCHIVE_METERED_EVENTS_RUN_THRESHOLD: 500,
+  METERING_ARCHIVE_ROOT_FOLDER: 'MeteringArchive',
   JOB: {
     // Define names of scheduled JOBS
     SCHEDULED_BACKUP: 'ScheduledBackup',
@@ -143,7 +146,8 @@ module.exports = Object.freeze({
     BACKUP_REAPER: 'BackupReaper',
     SERVICE_INSTANCE_UPDATE: 'ServiceInstanceAutoUpdate',
     DB_COLLECTION_REAPER: 'DbCollectionReaper',
-    METER_INSTANCE: 'MeterInstance'
+    METER_INSTANCE: 'MeterInstance',
+    ARCHIVE_METERED_EVENTS: 'ArchiveMeteredEvents'
   },
   JOB_RUN_STATUS_CODE: {
     SUCCEEDED: '0'

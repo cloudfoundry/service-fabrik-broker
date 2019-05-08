@@ -3,7 +3,7 @@
 const assert = require('assert');
 const CONST = require('../common/constants');
 let ScheduleBackupJob, ScheduledOobDeploymentBackupJob, OperationStatusPollerJob, BackupReaperJob, ServiceInstanceUpdateJob, DbCollectionReaperJob, BluePrintJob,
-  MeterInstanceJob;
+  MeterInstanceJob, ArchiveMeteredEventsJob;
 
 class JobFabrik {
   static getJob(jobType) {
@@ -48,6 +48,11 @@ class JobFabrik {
           MeterInstanceJob = require('./MeterInstanceJob');
         }
         return MeterInstanceJob;
+      case CONST.JOB.ARCHIVE_METERED_EVENTS:
+        if (ArchiveMeteredEventsJob === undefined) {
+          ArchiveMeteredEventsJob = require('./ArchiveMeteredEventsJob');
+        }
+        return ArchiveMeteredEventsJob;
       default:
         assert.fail(jobType, [CONST.JOB.SCHEDULED_BACKUP, CONST.JOB.SERVICE_FABRIK_BACKUP, CONST.JOB.SCHEDULED_OOB_DEPLOYMENT_BACKUP, CONST.JOB.OPERATION_STATUS_POLLER, CONST.JOB.BACKUP_REAPER], `Invalid job type. ${jobType} does not exist`, 'in');
     }
