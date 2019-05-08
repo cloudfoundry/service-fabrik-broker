@@ -43,8 +43,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
   static async patchToMeteringStore(events, timeStamp, sleepDuration, attempts) {
     try {
       await meteringArchiveStore.putArchiveFile(timeStamp);
-      const noEventsToPatch = Math.min(_.get(config, 'system_jobs.archive_metered_events.job_data.events_to_patch', 100), events.length, 
-        CONST.ARCHIVE_METERED_EVENTS_RUN_THRESHOLD);
+      const noEventsToPatch = Math.min(_.get(config, 'system_jobs.archive_metered_events.job_data.events_to_patch', CONST.ARCHIVE_METERED_EVENTS_RUN_THRESHOLD), events.length);
       const eventsToPatch = _.slice(events, 0, noEventsToPatch);
       for(let i = 0; i < eventsToPatch.length; i++) {
         await this.processEvent(eventsToPatch[i], timeStamp, attempts || 4);

@@ -131,7 +131,7 @@ module.exports = Object.freeze({
   },
   JOB_NAME_ATTRIB: '_n_a_m_e_',
   METERING_ARCHIVE_JOB_FILE_PREFIX: 'MeteringArchive-',
-  ARCHIVE_METERED_EVENTS_RUN_THRESHOLD: 100,
+  ARCHIVE_METERED_EVENTS_RUN_THRESHOLD: 500,
   METERING_ARCHIVE_ROOT_FOLDER: 'MeteringArchive',
   JOB: {
     // Define names of scheduled JOBS
