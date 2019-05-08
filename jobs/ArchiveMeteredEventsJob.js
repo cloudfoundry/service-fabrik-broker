@@ -20,7 +20,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
         return this.runSucceeded({}, job, done);
       }
       const meteringFileTimeStamp = new Date();
-      const successfullyPatchedEvents = await this.patchToMeteringStore(events, meteringFileTimeStamp.toISOString());
+      const successfullyPatchedEvents = await this.patchToMeteringStore(events, meteringFileTimeStamp.toISOString(), job.attrs.data.sleepDuration, job.attrs.data.deleteAttempts);
       logger.info(`No of processed metered events: ${successfullyPatchedEvents}`);
       return this.runSucceeded({}, job, done);
     } catch(err) {
@@ -29,30 +29,26 @@ class ArchiveMeteredEventsJob extends BaseJob {
   }
 
   static async getMeteredEvents() {
-    try {
-      let selector = `state in (${CONST.METER_STATE.METERED})`;
-      const options = {
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
-        query: {
-          labelSelector: selector
-        }
-      };
-      return apiServerClient.getResources(options);
-    } catch(err) {
-      logger.error('Error while getting events from the ApiServer', err);
-      throw err;
-    }
+    let selector = `state in (${CONST.METER_STATE.METERED})`;
+    const options = {
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INSTANCE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.SFEVENT,
+      query: {
+        labelSelector: selector
+      }
+    };
+    return apiServerClient.getResources(options);
   }
 
-  static async patchToMeteringStore(events, timeStamp) {
+  static async patchToMeteringStore(events, timeStamp, sleepDuration, attempts) {
     try {
       await meteringArchiveStore.putArchiveFile(timeStamp);
       const noEventsToPatch = Math.min(_.get(config, 'system_jobs.archive_metered_events.job_data.events_to_patch', 100), events.length, 
         CONST.ARCHIVE_METERED_EVENTS_RUN_THRESHOLD);
       const eventsToPatch = _.slice(events, 0, noEventsToPatch);
       for(let i = 0; i < eventsToPatch.length; i++) {
-        await this.processEvent(eventsToPatch[i], timeStamp);
+        await this.processEvent(eventsToPatch[i], timeStamp, attempts || 4);
+        await utils.sleep(sleepDuration || 1000);
       }
       return noEventsToPatch;
     } catch(err) {
@@ -61,7 +57,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
     }
   }
 
-  static async processEvent(event, timeStamp) {
+  static async processEvent(event, timeStamp, attempts) {
     logger.info(`Processing event: ${event.metadata.name}`);
     await meteringArchiveStore.patchEventToArchiveFile(event, timeStamp);
     return utils.retry(tries => {
@@ -72,7 +68,7 @@ class ArchiveMeteredEventsJob extends BaseJob {
         resourceId: `${event.metadata.name}`
       });
     }, {
-      maxAttempts: 4,
+      maxAttempts: attempts || 4,
       minDelay: 1000
     });
   }

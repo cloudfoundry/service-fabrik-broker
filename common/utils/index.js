@@ -71,6 +71,11 @@ exports.getAllServices = getAllServices;
 exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 exports.getDefaultErrorMsg = getDefaultErrorMsg;
+exports.sleep = sleep;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;
