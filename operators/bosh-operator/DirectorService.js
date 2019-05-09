@@ -60,7 +60,7 @@ class DirectorService extends BaseDirectorService {
           return context;
         }
         logger.debug(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
-        return Promise.try(() => this.networkSegmentIndex ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
+        return Promise.try(() => _.isInteger(this.networkSegmentIndex) ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
           .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
           .then(context => JSON.parse(context))
           .catch(NotFound, () => {
@@ -262,7 +262,7 @@ class DirectorService extends BaseDirectorService {
     return this
       .initialize(operation, deploymentName)
       .then(() => {
-        if (this.networkSegmentIndex) {
+        if (_.isInteger(this.networkSegmentIndex)) {
           return this.createOrUpdateDeployment(this.deploymentName, params);
         }
       })
@@ -272,7 +272,7 @@ class DirectorService extends BaseDirectorService {
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
         .set('task_id', _.get(op, 'task_id'))
-        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
+        .set('deployment_name', _.isInteger(this.networkSegmentIndex) ? this.deploymentName : undefined)
         .value()
       );
   }
@@ -296,7 +296,7 @@ class DirectorService extends BaseDirectorService {
         .chain(operation)
         .assign(_.pick(params, 'parameters', 'context'))
         .set('task_id', _.get(op, 'task_id'))
-        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
+        .set('deployment_name', _.isInteger(this.networkSegmentIndex) ? this.deploymentName : undefined)
         .value()
       );
   }
@@ -591,7 +591,7 @@ class DirectorService extends BaseDirectorService {
     return this
       .initialize(operation, deploymentName)
       .then(() => {
-        if (this.networkSegmentIndex) {
+        if (_.isInteger(this.networkSegmentIndex)) {
           return this.deleteDeployment(this.deploymentName, params);
         }
       })
@@ -603,7 +603,7 @@ class DirectorService extends BaseDirectorService {
         .set('context', {
           platform: this.platformManager.platform
         })
-        .set('deployment_name', this.networkSegmentIndex ? this.deploymentName : undefined)
+        .set('deployment_name', _.isInteger(this.networkSegmentIndex) ? this.deploymentName : undefined)
         .value()
       );
   }
