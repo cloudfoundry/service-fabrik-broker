@@ -13,14 +13,10 @@ const CONST = require('../common/constants');
 
 async function init() {
   try {
-    await utils.registerInterOperatorCrds();
-    // TODO:- To be removed when bosh services also push plan and service CRDs to apiserver
-    await utils.pushServicePlanToApiServer();
-    await utils.loadCatalogFromAPIServer();
-
+    let internal, external;
     // internal app
     if (config.internal) {
-      const internal = ExpressApp.create('internal', app => {
+      internal = ExpressApp.create('internal', app => {
         // home
         app.get('/', (req, res) => {
           res.render('index', {
@@ -35,11 +31,10 @@ async function init() {
           app.use('/:platform(cf|k8s|sm)', routes.broker);
         }
       });
-      HttpServer.start(internal);
     }
     // exernal app
     if (config.external) {
-      const external = ExpressApp.create('external', app => {
+      external = ExpressApp.create('external', app => {
         // home
         app.get('/', (req, res) => {
           res.render('index', {
@@ -51,6 +46,22 @@ async function init() {
         // manage
         app.use('/manage', routes.manage);
       });
+    }
+    // Don't change the order of calling these methods,
+    // As these are sync methods and take significant time
+    // These should be executed only after all apps are set up
+    // Else it breaks the pubsub mechanism of event login 
+    // This is a temporary solution
+    // Permanent solution would be to avoid unnecessary initialisation of modules in require
+
+    await utils.registerInterOperatorCrds();
+    // TODO:- To be removed when bosh services also push plan and service CRDs to apiserver
+    await utils.pushServicePlanToApiServer();
+    await utils.loadCatalogFromAPIServer();
+    if(config.internal) {
+      HttpServer.start(internal);
+    }
+    if(config.external) {
       HttpServer.start(external);
     }
     HttpServer.handleShutdown(); // https://github.com/nodejs/node-v0.x-archive/issues/5054
