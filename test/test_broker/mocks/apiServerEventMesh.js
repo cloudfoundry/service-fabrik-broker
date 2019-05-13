@@ -7,7 +7,6 @@ const CONST = require('../../../common/constants');
 const apiServerHost = `https://${config.apiserver.ip}:${config.apiserver.port}`;
 
 
-exports.nockLoadSpec = nockLoadSpec;
 exports.nockCreateResource = nockCreateResource;
 exports.nockPatchResource = nockPatchResource;
 exports.nockGetResource = nockGetResource;
@@ -55,21 +54,6 @@ const expectedGetConfigMapResponseDisabled = {
     uid: '4e47d831-f881-11e8-9055-123c04a61866'
   }
 };
-
-function nockLoadSpec(times) {
-  nock(apiServerHost)
-    .get('/swagger.json')
-    .times(times || 1)
-    .reply(200, {
-      paths: {
-        '/api/': {
-          get: {
-            operationId: 'getCoreAPIVersions'
-          }
-        }
-      }
-    });
-}
 
 function nockCreateCrd(resourceGroup, resourceType, response, times) {
   nock(apiServerHost)
