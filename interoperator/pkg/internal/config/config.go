@@ -3,8 +3,6 @@ package config
 import (
 	"context"
 	"os"
-	"reflect"
-	"strconv"
 	"strings"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
@@ -33,12 +31,16 @@ type InteroperatorConfig struct {
 	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
 }
 
-// newInteroperatorConfig assigns default values to config
-func newInteroperatorConfig() *InteroperatorConfig {
-	return &InteroperatorConfig{
-		BindingWorkerCount:  constants.DefaultBindingWorkerCount,
-		InstanceWorkerCount: constants.DefaultInstanceWorkerCount,
+// setConfigDefaults assigns default values to config
+func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorConfig {
+	if interoperatorConfig.BindingWorkerCount == 0 {
+		interoperatorConfig.BindingWorkerCount = constants.DefaultBindingWorkerCount
 	}
+	if interoperatorConfig.InstanceWorkerCount == 0 {
+		interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+	}
+
+	return interoperatorConfig
 }
 
 // Config fetches the runtime configs from the configmap
@@ -98,29 +100,18 @@ func (cfg *config) fetchConfig() error {
 }
 
 func (cfg *config) GetConfig() *InteroperatorConfig {
-	interoperatorConfig := newInteroperatorConfig()
+	interoperatorConfig := &InteroperatorConfig{}
 	err := cfg.fetchConfig()
 	if err != nil {
 		log.Info("failed to read interoperator config. using defaults.")
-		return interoperatorConfig
+		return setConfigDefaults(interoperatorConfig)
 	}
-	val := reflect.ValueOf(interoperatorConfig)
-	configType := reflect.Indirect(val).Type()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
-		tags := strings.Split(field.Tag.Get("yaml"), ",")
-		if len(tags) == 0 {
-			continue
-		}
-		key := tags[0]
-		fieldVal, ok := cfg.configMap.Data[key]
-		if !ok {
-			continue
-		}
-		f := reflect.Indirect(val).FieldByName(field.Name)
-		decodeField(f, fieldVal)
+	err = yaml.Unmarshal([]byte(cfg.configMap.Data[constants.ConfigMapKey]), interoperatorConfig)
+	if err != nil {
+		log.Info("failed to decode interoperator config. using defaults.")
+		return setConfigDefaults(interoperatorConfig)
 	}
-	return interoperatorConfig
+	return setConfigDefaults(interoperatorConfig)
 }
 
 func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error {
@@ -142,18 +133,12 @@ func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error 
 		cfg.configMap.Data = make(map[string]string)
 	}
 
-	val := reflect.ValueOf(interoperatorConfig)
-	configType := reflect.Indirect(val).Type()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
-		tags := strings.Split(field.Tag.Get("yaml"), ",")
-		if len(tags) == 0 {
-			continue
-		}
-		key := tags[0]
-		f := reflect.Indirect(val).FieldByName(field.Name)
-		cfg.configMap.Data[key] = encodeField(f.Interface())
+	out, err := yaml.Marshal(interoperatorConfig)
+	if err != nil {
+		return errors.NewMarshalError("failed to marshal interoperatorConfig", err)
 	}
+
+	cfg.configMap.Data[constants.ConfigMapKey] = strings.TrimSpace(string(out))
 
 	if toCreate {
 		err = cfg.c.Create(context.TODO(), cfg.configMap)
@@ -169,51 +154,4 @@ func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error 
 		log.Info("updated interoperator config map", "data", cfg.configMap.Data)
 	}
 	return nil
-}
-
-func decodeField(f reflect.Value, fieldVal string) {
-	switch f.Kind() {
-	case reflect.Int:
-		intVal, err := strconv.Atoi(fieldVal)
-		if err != nil {
-			log.Error(err, "invalid config value, skipping", "value", fieldVal)
-			return
-		}
-		if f.CanSet() {
-			f.SetInt(int64(intVal))
-		}
-	case reflect.Slice:
-		switch f.Type().Elem() {
-		case reflect.TypeOf(osbv1alpha1.APIVersionKind{}):
-			var watchList []osbv1alpha1.APIVersionKind
-			decodeYamlUnmarshal(f, fieldVal, &watchList)
-		}
-	}
-}
-
-func decodeYamlUnmarshal(f reflect.Value, fieldVal string, out interface{}) {
-	yaml.Unmarshal([]byte(fieldVal), out)
-	if f.CanSet() {
-		v := reflect.ValueOf(out)
-		if v.Kind() == reflect.Ptr && !v.IsNil() {
-			v = v.Elem()
-		}
-		f.Set(v)
-	}
-}
-
-func encodeField(i interface{}) string {
-	v := reflect.ValueOf(i)
-	switch v.Kind() {
-	case reflect.Int:
-		return strconv.FormatInt(v.Int(), 10)
-	case reflect.String:
-		return v.String()
-	case reflect.Bool:
-		return strconv.FormatBool(v.Bool())
-	case reflect.Slice, reflect.Struct, reflect.Map:
-		out, _ := yaml.Marshal(i)
-		return strings.TrimSpace(string(out))
-	}
-	return ""
 }

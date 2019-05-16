@@ -109,15 +109,16 @@ func Test_config_GetConfig(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	cfg, _ := New(kubeConfig, sch, nil)
 	data := make(map[string]string)
-	data["instanceWorkerCount"] = "2"
-	watchList := `
+	config := `
+instanceWorkerCount: 2
+instanceContollerWatchList:
 - apiVersion: kubedb.com/v1alpha1
   kind: Postgres
 - apiVersion: kubernetes.sapcloud.io/v1alpha1
   kind: Postgresql
 - apiVersion: deployment.servicefabrik.io/v1alpha1
   kind: Director`
-	data["instanceContollerWatchList"] = watchList
+	data[constants.ConfigMapKey] = config
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      constants.ConfigMapName,
@@ -171,7 +172,16 @@ func Test_config_GetConfig(t *testing.T) {
 			name: "return default values if configmap has incorrect value",
 			cfg:  cfg,
 			setup: func() {
-				data["instanceWorkerCount"] = "invalid"
+				config := `
+instanceWorkerCount: invalid
+instanceContollerWatchList:
+- apiVersion: kubedb.com/v1alpha1
+  kind: Postgres
+- apiVersion: kubernetes.sapcloud.io/v1alpha1
+  kind: Postgresql
+- apiVersion: deployment.servicefabrik.io/v1alpha1
+  kind: Director`
+				data[constants.ConfigMapKey] = config
 				g.Expect(c.Update(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
 				interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
 			},
@@ -288,44 +298,4 @@ func Test_config_UpdateConfig(t *testing.T) {
 		})
 	}
 	g.Expect(c.Delete(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
-}
-
-func Test_encodeField(t *testing.T) {
-	type args struct {
-		i interface{}
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "encode int",
-			args: args{
-				i: 25,
-			},
-			want: "25",
-		},
-		{
-			name: "encode string",
-			args: args{
-				i: "hello",
-			},
-			want: "hello",
-		},
-		{
-			name: "encode bool",
-			args: args{
-				i: false,
-			},
-			want: "false",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeField(tt.args.i); got != tt.want {
-				t.Errorf("encodeField() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

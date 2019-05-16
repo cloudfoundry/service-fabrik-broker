@@ -4,9 +4,10 @@ kind: ConfigMap
 metadata:
   name: interoperator-config
 data:
-  instanceWorkerCount: "5"
-  bindingWorkerCount: "10"
-  instanceContollerWatchList: |
+  config: |
+    instanceWorkerCount: 5
+    bindingWorkerCount: 10
+    instanceContollerWatchList:
     - apiVersion: kubedb.com/v1alpha1
       kind: Postgres
     - apiVersion: kubernetes.sapcloud.io/v1alpha1
@@ -21,7 +22,7 @@ data:
       apiVersion: deployment.servicefabrik.io/v1alpha1
     - kind: AbapSystem
       apiVersion: kubernetes.sapcloud.io/v1alpha1
-  bindingContollerWatchList: |
+    bindingContollerWatchList:
     - kind: Postgres
       apiVersion: kubedb.com/v1alpha1
     - kind: DirectorBind

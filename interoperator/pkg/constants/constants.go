@@ -9,6 +9,7 @@ const (
 	ErrorThreshold   = 10
 
 	ConfigMapName   = "interoperator-config"
+	ConfigMapKey    = "config"
 	NamespaceEnvKey = "POD_NAMESPACE"
 
 	DefaultServiceFabrikNamespace = "default"

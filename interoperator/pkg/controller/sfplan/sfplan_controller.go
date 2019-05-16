@@ -49,12 +49,14 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	initWatches := make(chan bool)
-	go restartOnWatchUpdate(mgr, initWatches)
+	initWatches := make(chan struct{})
+	stopWatches := make(chan struct{})
+	go restartOnWatchUpdate(mgr, initWatches, stopWatches)
 	return &ReconcileSfPlan{
 		Client:      mgr.GetClient(),
 		scheme:      mgr.GetScheme(),
 		initWatches: initWatches,
+		stopWatches: stopWatches,
 	}
 }
 
@@ -74,7 +76,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-func restartOnWatchUpdate(mgr manager.Manager, initWatches chan bool) {
+func restartOnWatchUpdate(mgr manager.Manager, initWatches, stop <-chan struct{}) {
 	for {
 		select {
 		case <-initWatches:
@@ -86,6 +88,9 @@ func restartOnWatchUpdate(mgr manager.Manager, initWatches chan bool) {
 				log.Info("Watch list changed. Restarting interoperator")
 				os.Exit(1)
 			}
+		case <-stop:
+			// We are done
+			return
 		}
 	}
 }
@@ -96,7 +101,8 @@ var _ reconcile.Reconciler = &ReconcileSfPlan{}
 type ReconcileSfPlan struct {
 	client.Client
 	scheme      *runtime.Scheme
-	initWatches chan bool
+	initWatches chan struct{}
+	stopWatches chan struct{}
 }
 
 // Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
@@ -105,7 +111,7 @@ type ReconcileSfPlan struct {
 func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Recompute watches
 	defer func() {
-		r.initWatches <- true
+		r.initWatches <- struct{}{}
 	}()
 	// Fetch the SFPlan instance
 	instance := &osbv1alpha1.SFPlan{}
