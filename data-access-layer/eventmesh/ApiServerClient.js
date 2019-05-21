@@ -929,23 +929,15 @@ class ApiServerClient {
     assert.ok(opts.resourceType, 'Property \'resourceType\' is required to patch options');
     assert.ok(opts.resourceId, 'Property \'resourceId\' is required to patch options');
     assert.ok(opts.metadata || opts.spec || opts.status, 'Property \'metadata\' or \'options\' or \'status\' is required to patch resource');
-    const namespaceId = opts.namespaceId ? opts.namespaceId : (this.getNamespaceId(opts.resourceType === CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS ?
-      _.get(opts, 'spec.instance_id') : opts.resourceId
-    ));
-    return this.getResource(_.merge(opts, {
-      namespaceId: namespaceId
-    }))
-      .then(resource => {
-        if (opts.spec && resource.spec) {
-          const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
-          _.set(opts, 'spec', spec);
-        }
-        if(_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE && !_.isEmpty(_.get(resource, 'spec.parameters'))) {
-          // set parameters field to null
-          const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId']);
-          return this.updateOSBResource(_.extend(clearParamsReqOpts, { 'spec': { 'parameters': null } }));
-        }
-      }).then(() => this.updateOSBResource(opts));
+
+    return Promise.try(() => {
+      if(_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE) {
+        // set parameters field to null
+        const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId']);
+        return this.updateOSBResource(_.extend(clearParamsReqOpts, { 'spec': { 'parameters': null } }));
+      }
+    })
+      .then(() => this.updateOSBResource(opts));
   }
 
   /**
