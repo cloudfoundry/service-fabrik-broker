@@ -11,7 +11,7 @@ class EventLogDBClient {
   constructor(options) {
     this.options = options;
     this.eventsToBeLoggedInDB = [];
-    this.MONGO_OP_TOPIC = pubsub.subscribe(CONST.TOPIC.MONGO_OPERATIONAL, (eventName, eventInfo) => this.initialize(eventName, eventInfo));
+    this.initialize();
     this.APP_SHUTDOWN_TOPIC = pubsub.subscribe(CONST.TOPIC.APP_SHUTTING_DOWN, () => this.shutDownHook());
   }
 
@@ -55,7 +55,6 @@ class EventLogDBClient {
   }
 
   shutDownHook() {
-    pubsub.unsubscribe(this.MONGO_OP_TOPIC);
     pubsub.unsubscribe(this.APP_SHUTDOWN_TOPIC);
     if (this.HANDLE_EVENT_TOPIC) {
       pubsub.unsubscribe(this.HANDLE_EVENT_TOPIC);

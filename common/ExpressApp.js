@@ -23,11 +23,6 @@ class ExpressApp {
       .set('_', _)
       .set('yaml', yaml)
       .commit();
-    // requireEventLogging should be done as early as possible
-    // Else some events published by dbManager are missed
-    if (cfg.log_event) {
-      app.use(middleware.requireEventLogging(cfg, type));
-    }
     app.set('env', process.env.NODE_ENV || 'development');
     app.set('port', cfg.port);
     app.set('type', type);
@@ -54,6 +49,9 @@ class ExpressApp {
       extended: true
     }));
     app.use(bodyParser.json());
+    if (cfg.log_event) {
+      app.use(middleware.requireEventLogging(cfg, type));
+    }
     // routes
     addRoutes(app);
 
