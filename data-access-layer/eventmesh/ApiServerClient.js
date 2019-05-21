@@ -940,8 +940,12 @@ class ApiServerClient {
           const spec = _.merge(resource.spec, camelcaseKeys(opts.spec));
           _.set(opts, 'spec', spec);
         }
-        return this.updateOSBResource(opts);
-      });
+        if(_.get(opts, 'status.state') === CONST.APISERVER.RESOURCE_STATE.UPDATE && !_.isEmpty(_.get(resource, 'spec.parameters'))) {
+          // set parameters field to null
+          const clearParamsReqOpts = _.pick(opts, ['resourceGroup', 'resourceType', 'resourceId']);
+          return this.updateOSBResource(_.extend(clearParamsReqOpts, { 'spec': { 'parameters': null } }));
+        }
+      }).then(() => this.updateOSBResource(opts));
   }
 
   /**
