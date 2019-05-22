@@ -30,18 +30,23 @@ class DefaultBackupOperator extends BaseOperator {
       } else if (changeObjectBody.status.state === CONST.APISERVER.RESOURCE_STATE.DELETE) {
         return DefaultBackupOperator._processDelete(changeObjectBody);
       }
-    }).catch(err => {
-      logger.error('Error occurred in processing request by DefaultBackupOperator', err);
-      return eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-        resourceId: changeObjectBody.metadata.name,
-        status: {
-          state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-          error: utils.buildErrorJson(err)
-        }
+    })
+      .catch(err => {
+        logger.error(`Error occurred in processing request ${changeObjectBody.status.state} for guid ${changeObjectBody.metadata.name} by DefaultBackupOperator`, err);
+        return eventmesh.apiServerClient.updateResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
+          resourceId: changeObjectBody.metadata.name,
+          status: {
+            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+            response: {
+              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              description: err.message
+            },
+            error: utils.buildErrorJson(err)
+          }
+        });
       });
-    });
   }
 
   static _processBackup(changeObjectBody) {

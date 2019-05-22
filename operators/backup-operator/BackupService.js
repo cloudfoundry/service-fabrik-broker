@@ -263,20 +263,7 @@ class BackupService extends BaseDirectorService {
         status: {
           'state': CONST.APISERVER.RESOURCE_STATE.DELETED
         }
-      }))
-      .catch(err => {
-        return Promise
-          .try(() => logger.error('Error during delete of backup', err))
-          .then(() => eventmesh.apiServerClient.updateResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-            resourceId: options.backup_guid,
-            status: {
-              state: CONST.APISERVER.RESOURCE_STATE.DELETE_FAILED,
-              error: utils.buildErrorJson(err)
-            }
-          }));
-      });
+      }));
   }
 
   abortLastBackup(abortOptions, force) {
@@ -308,17 +295,6 @@ class BackupService extends BaseDirectorService {
           default:
             return _.pick(metadata, 'state');
         }
-      })
-      .catch(e => {
-        return eventmesh.apiServerClient.updateResource({
-          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BACKUP,
-          resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BACKUP,
-          resourceId: abortOptions.guid,
-          status: {
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-            error: utils.buildErrorJson(e)
-          }
-        });
       });
   }
 
