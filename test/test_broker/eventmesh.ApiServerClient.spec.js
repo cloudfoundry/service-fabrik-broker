@@ -1140,34 +1140,15 @@ describe('eventmesh', () => {
     });
     describe('patchOSBResource', () => {
       it('Patches osb resource with spec and status', () => {
-        const expectedGetResponse = {
-          spec: {
-            plan_id: 'plan1',
-            params: {
-              foo: 'bar'
-            },
-            context: {
-              organization_guid: 'org1',
-              space_guid: 'space1'
-            }
-          },
-          status: {
-            state: 'in_queue',
-            description: 'desc'
-          }
-        };
         const expectedResponse = {};
         const payload = {
           spec: {
             planId: 'plan2',
-            params: {
-              foo: 'bar'
-            },
+            serviceId: 'service2',
             context: {
               organization_guid: 'org2',
               space_guid: 'space2'
-            },
-            serviceId: 'service2'
+            }
           },
           metadata: {
             labels: {
@@ -1179,7 +1160,6 @@ describe('eventmesh', () => {
             description: ''
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedGetResponse);
         nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.patchOSBResource({
             resourceId: 'deployment1',
@@ -1206,62 +1186,48 @@ describe('eventmesh', () => {
       });
 
       it('Patches osb resource in a namespace with spec and status', () => {
-        const expectedGetResponse = {
-          spec: {
-            plan_id: 'plan1',
-            params: {
-              foo: 'bar'
-            },
-            context: {
-              organization_guid: 'org1',
-              space_guid: 'space1'
-            }
-          },
-          status: {
-            state: 'in_queue',
-            description: 'desc'
-          }
-        };
         const expectedResponse = {};
         const payload = {
           spec: {
             planId: 'plan2',
-            params: {
-              foo: 'bar'
-            },
+            serviceId: 'service2',
             context: {
               organization_guid: 'org2',
               space_guid: 'space2'
             },
-            serviceId: 'service2'
+            params: {
+              foo: 'bar'
+            }
           },
           metadata: {
             labels: {
-              state: 'in_progress'
+              state: 'update'
             }
           },
           status: {
-            state: 'in_progress',
+            state: 'update',
             description: ''
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace-id', expectedGetResponse);
-        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'namespace-id', expectedResponse, payload);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedResponse, {spec: {parameters: null}});
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedResponse, payload);
         return apiserver.patchOSBResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES,
-            namespaceId: 'namespace-id',
             spec: {
               plan_id: 'plan2',
               service_id: 'service2',
               context: {
                 organization_guid: 'org2',
                 space_guid: 'space2'
+              },
+              params: {
+                foo: 'bar'
               }
             },
             status: {
-              state: 'in_progress',
+              state: 'update',
               description: ''
             }
           })
@@ -1273,23 +1239,26 @@ describe('eventmesh', () => {
       });
 
       it('Patches osb resource fails with error', () => {
-        const expectedGetResponse = {
+        const payload = {
           spec: {
-            plan_id: 'plan1',
-            params: {
-              foo: 'bar'
-            },
+            planId: 'plan2',
+            serviceId: 'service2',
             context: {
-              organization_guid: 'org1',
-              space_guid: 'space1'
+              organization_guid: 'org2',
+              space_guid: 'space2'
+            }
+          },
+          metadata: {
+            labels: {
+              state: 'in_progress'
             }
           },
           status: {
-            state: 'in_queue',
-            description: 'desc'
+            state: 'in_progress',
+            description: ''
           }
         };
-        nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', expectedGetResponse);
+        nockPatchResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, 'deployment1', 'default', {}, undefined, 404);
         return apiserver.patchOSBResource({
             resourceId: 'deployment1',
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR,
