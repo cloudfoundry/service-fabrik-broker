@@ -318,7 +318,7 @@ module.exports = Object.freeze({
     WATCHER_REFRESH_INTERVAL: 60000, // in ms ( 1 minute )
     POLLER_WATCHER_REFRESH_INTERVAL: 120000, // // in ms should be greater than DIRECTOR_RESOURCE_POLLER_INTERVAL
     WATCH_TIMEOUT: 600, // in sec (10 minutes)
-    VERSION: '1.9',
+    VERSION: '1.10',
     DEFAULT_NAMESPACE: 'default',
     NAMESPACE_OBJECT: 'Namespace',
     NAMESPACE_API_VERSION: 'v1',
