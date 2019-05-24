@@ -1,19 +1,22 @@
 package config
 
 import (
-	"fmt"
+	"context"
 	"os"
-	"reflect"
-	"strconv"
 	"strings"
 
-	"k8s.io/client-go/rest"
-
+	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -23,91 +26,132 @@ var log = logf.Log.WithName("config.manager")
 type InteroperatorConfig struct {
 	InstanceWorkerCount int `yaml:"instanceWorkerCount,omitempty"`
 	BindingWorkerCount  int `yaml:"bindingWorkerCount,omitempty"`
+
+	InstanceContollerWatchList []osbv1alpha1.APIVersionKind `yaml:"instanceContollerWatchList,omitempty"`
+	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
 }
 
-// newInteroperatorConfig assigns default values to config
-func newInteroperatorConfig() *InteroperatorConfig {
-	return &InteroperatorConfig{
-		BindingWorkerCount:  constants.DefaultBindingWorkerCount,
-		InstanceWorkerCount: constants.DefaultInstanceWorkerCount,
+// setConfigDefaults assigns default values to config
+func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorConfig {
+	if interoperatorConfig.BindingWorkerCount == 0 {
+		interoperatorConfig.BindingWorkerCount = constants.DefaultBindingWorkerCount
 	}
+	if interoperatorConfig.InstanceWorkerCount == 0 {
+		interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+	}
+
+	return interoperatorConfig
 }
 
 // Config fetches the runtime configs from the configmap
 type Config interface {
 	GetConfig() *InteroperatorConfig
+	UpdateConfig(*InteroperatorConfig) error
 }
 
 type config struct {
-	kubeConfig *rest.Config
-	clientset  *kubernetes.Clientset
-	configMap  *corev1.ConfigMap
+	c         client.Client
+	configMap *corev1.ConfigMap
+	namespace string
 }
 
 // New returns a new Config using the kubernetes client
-func New(kubeConfig *rest.Config) (Config, error) {
+func New(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) (Config, error) {
 	if kubeConfig == nil {
-		return nil, fmt.Errorf("invalid input to new config")
+		return nil, errors.NewInputError("New config", "kubeConfig", nil)
 	}
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
+
+	if scheme == nil {
+		return nil, errors.NewInputError("New config", "scheme", nil)
+	}
+
+	c, err := client.New(kubeConfig, client.Options{
+		Scheme: scheme,
+		Mapper: mapper,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &config{
-		kubeConfig: kubeConfig,
-		clientset:  clientset,
-	}, nil
-}
-
-func (cfg *config) fetchConfig() error {
-	var err error
 	configMapNamespace := os.Getenv(constants.NamespaceEnvKey)
 	if configMapNamespace == "" {
 		configMapNamespace = constants.DefaultServiceFabrikNamespace
 	}
-	cfg.configMap, err = cfg.clientset.CoreV1().
-		ConfigMaps(configMapNamespace).
-		Get(constants.ConfigMapName, metav1.GetOptions{})
+
+	return &config{
+		c:         c,
+		namespace: configMapNamespace,
+	}, nil
+}
+
+func (cfg *config) fetchConfig() error {
+	configMap := &corev1.ConfigMap{}
+	var configMapKey = types.NamespacedName{
+		Name:      constants.ConfigMapName,
+		Namespace: cfg.namespace,
+	}
+	err := cfg.c.Get(context.TODO(), configMapKey, configMap)
 	if err != nil {
 		return err
 	}
+	cfg.configMap = configMap
 	log.Info("Successfully fetched configmap", "name", cfg.configMap.Name,
 		"namespace", cfg.configMap.Namespace, "data", cfg.configMap.Data)
 	return nil
 }
 
 func (cfg *config) GetConfig() *InteroperatorConfig {
-	interoperatorConfig := newInteroperatorConfig()
+	interoperatorConfig := &InteroperatorConfig{}
 	err := cfg.fetchConfig()
 	if err != nil {
-		log.Error(err, "failed to update interoperator config. using defaults.")
-		return interoperatorConfig
+		log.Info("failed to read interoperator config. using defaults.")
+		return setConfigDefaults(interoperatorConfig)
 	}
-	val := reflect.ValueOf(interoperatorConfig)
-	configType := reflect.Indirect(val).Type()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
-		tags := strings.Split(field.Tag.Get("yaml"), ",")
-		if len(tags) == 0 {
-			continue
-		}
-		key := tags[0]
-		fieldVal, ok := cfg.configMap.Data[key]
-		if !ok {
-			continue
-		}
-		f := reflect.Indirect(val).FieldByName(field.Name)
-		if f.Kind() == reflect.Int {
-			intVal, err := strconv.Atoi(fieldVal)
-			if err != nil {
-				log.Error(err, "invalid config value, skipping", "field", key, "value", fieldVal)
-				continue
-			}
-			if f.CanSet() {
-				f.SetInt(int64(intVal))
-			}
-		}
+	err = yaml.Unmarshal([]byte(cfg.configMap.Data[constants.ConfigMapKey]), interoperatorConfig)
+	if err != nil {
+		log.Info("failed to decode interoperator config. using defaults.")
+		return setConfigDefaults(interoperatorConfig)
 	}
-	return interoperatorConfig
+	return setConfigDefaults(interoperatorConfig)
+}
+
+func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error {
+	if interoperatorConfig == nil {
+		return errors.NewInputError("UpdateConfig", "interoperatorConfig", nil)
+	}
+	err := cfg.fetchConfig()
+	if err != nil && !apiErrors.IsNotFound(err) {
+		log.Error(err, "failed to fetch interoperator config for update")
+		return err
+	}
+
+	toCreate := false
+	if apiErrors.IsNotFound(err) {
+		toCreate = true
+		cfg.configMap = &corev1.ConfigMap{}
+		cfg.configMap.SetName(constants.ConfigMapName)
+		cfg.configMap.SetNamespace(cfg.namespace)
+		cfg.configMap.Data = make(map[string]string)
+	}
+
+	out, err := yaml.Marshal(interoperatorConfig)
+	if err != nil {
+		return errors.NewMarshalError("failed to marshal interoperatorConfig", err)
+	}
+
+	cfg.configMap.Data[constants.ConfigMapKey] = strings.TrimSpace(string(out))
+
+	if toCreate {
+		err = cfg.c.Create(context.TODO(), cfg.configMap)
+	} else {
+		err = cfg.c.Update(context.TODO(), cfg.configMap)
+	}
+	if err != nil {
+		return err
+	}
+	if toCreate {
+		log.Info("created interoperator config map", "data", cfg.configMap.Data)
+	} else {
+		log.Info("updated interoperator config map", "data", cfg.configMap.Data)
+	}
+	return nil
 }

@@ -31,6 +31,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -144,6 +145,29 @@ var instance = &osbv1alpha1.SFServiceInstance{
 var instanceKey = types.NamespacedName{Name: "instance-id", Namespace: "default"}
 var expectedRequest = reconcile.Request{NamespacedName: instanceKey}
 
+func setupInteroperatorConfig(g *gomega.GomegaWithT) {
+	data := make(map[string]string)
+	data["instanceWorkerCount"] = "1"
+	data["bindingWorkerCount"] = "1"
+	watchList := `
+- apiVersion: kubedb.com/v1alpha1
+  kind: Postgres
+- apiVersion: kubernetes.sapcloud.io/v1alpha1
+  kind: Postgresql
+- apiVersion: deployment.servicefabrik.io/v1alpha1
+  kind: Director`
+	data["instanceContollerWatchList"] = watchList
+	data["bindingContollerWatchList"] = watchList
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.ConfigMapName,
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		},
+		Data: data,
+	}
+	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
+}
+
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
@@ -180,6 +204,7 @@ func TestReconcile(t *testing.T) {
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
+	setupInteroperatorConfig(g)
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 

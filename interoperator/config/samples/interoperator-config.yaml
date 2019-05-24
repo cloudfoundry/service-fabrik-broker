@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: interoperator-config
+data:
+  config: |
+    instanceWorkerCount: 5
+    bindingWorkerCount: 10
+    instanceContollerWatchList:
+    - apiVersion: kubedb.com/v1alpha1
+      kind: Postgres
+    - apiVersion: kubernetes.sapcloud.io/v1alpha1
+      kind: Postgresql
+    - apiVersion: deployment.servicefabrik.io/v1alpha1
+      kind: Director
+    - kind: Docker
+      apiVersion: deployment.servicefabrik.io/v1alpha1
+    - kind: PostgresqlMT
+      apiVersion: deployment.servicefabrik.io/v1alpha1
+    - kind: VirtualHost
+      apiVersion: deployment.servicefabrik.io/v1alpha1
+    - kind: AbapSystem
+      apiVersion: kubernetes.sapcloud.io/v1alpha1
+    bindingContollerWatchList:
+    - kind: Postgres
+      apiVersion: kubedb.com/v1alpha1
+    - kind: DirectorBind
+      apiVersion: bind.servicefabrik.io/v1alpha1
+    - kind: DockerBind
+      apiVersion: bind.servicefabrik.io/v1alpha1
+    - kind: PostgresqlMTBind
+      apiVersion: bind.servicefabrik.io/v1alpha1
+    - kind: VirtualHostBind
+      apiVersion: bind.servicefabrik.io/v1alpha1
+      

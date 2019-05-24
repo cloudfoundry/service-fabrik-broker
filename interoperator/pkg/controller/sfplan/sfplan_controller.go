@@ -19,8 +19,11 @@ package sfplan
 import (
 	"context"
 	"fmt"
+	"os"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +49,15 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileSfPlan{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	initWatches := make(chan struct{})
+	stopWatches := make(chan struct{})
+	go restartOnWatchUpdate(mgr, initWatches, stopWatches)
+	return &ReconcileSfPlan{
+		Client:      mgr.GetClient(),
+		scheme:      mgr.GetScheme(),
+		initWatches: initWatches,
+		stopWatches: stopWatches,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -65,18 +76,43 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
+func restartOnWatchUpdate(mgr manager.Manager, initWatches, stop <-chan struct{}) {
+	for {
+		select {
+		case <-initWatches:
+			toUpdate, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+			if err != nil {
+				log.Error(err, "unable initializing interoperator watch list")
+			}
+			if toUpdate {
+				log.Info("Watch list changed. Restarting interoperator")
+				os.Exit(1)
+			}
+		case <-stop:
+			// We are done
+			return
+		}
+	}
+}
+
 var _ reconcile.Reconciler = &ReconcileSfPlan{}
 
 // ReconcileSfPlan reconciles a SFPlan object
 type ReconcileSfPlan struct {
 	client.Client
-	scheme *runtime.Scheme
+	scheme      *runtime.Scheme
+	initWatches chan struct{}
+	stopWatches chan struct{}
 }
 
 // Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
 // and what is in the SFPlan.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Recompute watches
+	defer func() {
+		r.initWatches <- struct{}{}
+	}()
 	// Fetch the SFPlan instance
 	instance := &osbv1alpha1.SFPlan{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)

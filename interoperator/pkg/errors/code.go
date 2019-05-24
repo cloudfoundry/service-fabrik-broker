@@ -14,6 +14,7 @@ const (
 
 	CodeClusterFactoryError = "ClusterFactoryError"
 
+	CodeInputError     = "CodeInputError"
 	CodeMarshalError   = "CodeMarshalError"
 	CodeUnmarshalError = "CodeUnmarshalError"
 	CodeConvertError   = "CodeConvertError"

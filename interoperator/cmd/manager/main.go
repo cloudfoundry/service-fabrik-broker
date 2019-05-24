@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/webhook"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -71,6 +72,13 @@ func main() {
 	log.Info("setting up scheme")
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "unable add APIs to scheme")
+		os.Exit(1)
+	}
+
+	// Init watch list
+	log.Info("Initializing interoperator watch list")
+	if _, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
+		log.Error(err, "unable initializing interoperator watch list")
 		os.Exit(1)
 	}
 

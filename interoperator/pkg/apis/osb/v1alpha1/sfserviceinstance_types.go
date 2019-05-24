@@ -17,44 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
-
-// Source is the details for identifying each resource
-// sources.yaml file is unmarshalled to a map[string]Source
-type Source struct {
-	APIVersion string `yaml:"apiVersion" json:"apiVersion"`
-	Kind       string `yaml:"kind" json:"kind"`
-	Name       string `yaml:"name" json:"name"`
-	Namespace  string `yaml:"namespace" json:"namespace"`
-}
-
-func (r Source) String() string {
-	return fmt.Sprintf("%s/%s (%s %s)", r.Namespace, r.Name, r.Kind, r.APIVersion)
-}
-
-// GetKind returns the Kind of the resource
-func (r Source) GetKind() string {
-	return r.Kind
-}
-
-// GetAPIVersion returns the APIVersion of the resource
-func (r Source) GetAPIVersion() string {
-	return r.APIVersion
-}
-
-// GetName returns the Name of the resource
-func (r Source) GetName() string {
-	return r.Name
-}
-
-// GetNamespace returns the Namespace of the resource
-func (r Source) GetNamespace() string {
-	return r.Namespace
-}
 
 // SFServiceInstanceSpec defines the desired state of SFServiceInstance
 type SFServiceInstanceSpec struct {

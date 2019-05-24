@@ -31,8 +31,6 @@ import (
 	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,7 +68,7 @@ func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManage
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	cfgManager, err := config.New(mgr.GetConfig())
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {
 		return err
 	}
@@ -91,37 +89,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// TODO dynamically setup rbac rules and watches
-	postgres := &unstructured.Unstructured{}
-	postgres.SetKind("Postgres")
-	postgres.SetAPIVersion("kubedb.com/v1alpha1")
-	postgres2 := &unstructured.Unstructured{}
-	postgres2.SetKind("Postgresql")
-	postgres2.SetAPIVersion("kubernetes.sapcloud.io/v1alpha1")
-	director := &unstructured.Unstructured{}
-	director.SetKind("Director")
-	director.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
-	docker := &unstructured.Unstructured{}
-	docker.SetKind("Docker")
-	docker.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
-	postgresqlmts := &unstructured.Unstructured{}
-	postgresqlmts.SetKind("PostgresqlMT")
-	postgresqlmts.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
-	vhostmts := &unstructured.Unstructured{}
-	vhostmts.SetKind("VirtualHost")
-	vhostmts.SetAPIVersion("deployment.servicefabrik.io/v1alpha1")
-	abapSystem := &unstructured.Unstructured{}
-	abapSystem.SetKind("AbapSystem")
-	abapSystem.SetAPIVersion("kubernetes.sapcloud.io/v1alpha1")
-	subresources := []runtime.Object{
-		&appsv1.Deployment{},
-		&corev1.ConfigMap{},
-		postgres,
-		postgres2,
-		director,
-		docker,
-		postgresqlmts,
-		vhostmts,
-		abapSystem,
+	subresources := make([]runtime.Object, len(interoperatorCfg.InstanceContollerWatchList))
+	for i, gvk := range interoperatorCfg.InstanceContollerWatchList {
+		object := &unstructured.Unstructured{}
+		object.SetKind(gvk.GetKind())
+		object.SetAPIVersion(gvk.GetAPIVersion())
+		subresources[i] = object
 	}
 
 	for _, subresource := range subresources {

@@ -162,6 +162,29 @@ var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Nam
 
 const timeout = time.Second * 2
 
+func setupInteroperatorConfig(g *gomega.GomegaWithT) {
+	data := make(map[string]string)
+	data["instanceWorkerCount"] = "1"
+	data["bindingWorkerCount"] = "1"
+	watchList := `
+- apiVersion: kubedb.com/v1alpha1
+  kind: Postgres
+- apiVersion: kubernetes.sapcloud.io/v1alpha1
+  kind: Postgresql
+- apiVersion: deployment.servicefabrik.io/v1alpha1
+  kind: Director`
+	data["instanceContollerWatchList"] = watchList
+	data["bindingContollerWatchList"] = watchList
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      constants.ConfigMapName,
+			Namespace: constants.DefaultServiceFabrikNamespace,
+		},
+		Data: data,
+	}
+	g.Expect(c.Create(context.TODO(), configMap)).NotTo(gomega.HaveOccurred())
+}
+
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctrl := gomock.NewController(t)
@@ -200,6 +223,7 @@ func TestReconcile(t *testing.T) {
 	}, nil).AnyTimes()
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
+	setupInteroperatorConfig(g)
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 
