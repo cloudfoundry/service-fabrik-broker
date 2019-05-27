@@ -155,7 +155,7 @@ The required files mentioned above can be found here: https://github.com/cloudfo
 ### Launch the Deployment Hooks Process
 This process executes action scripts provided by services in restricted environment.
 More information on how to configure action scripts is documented here: https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Deployment-hooks-for-service-lifecycle-operations
-If you don't want any predeployment action to run please comment out `actions` property in [service](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L574) and [plan](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/broker/config/settings.yml#L685) from catalog.
+If you don't want any predeployment action to run please comment out `actions` property in [service](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/config/settings.yml#L574) and [plan](https://github.com/cloudfoundry-incubator/service-fabrik-broker/blob/rel-2018.T08a/config/settings.yml#L685) from catalog.
 
 If predeployment actions are present in service catalog then deployment hook process has to be running.
 Before starting deployment hooks process, SETTINGS_PATH env variable has to be set.
@@ -184,14 +184,14 @@ Dependencies on other processes: broker process is dependent on deployment hooks
 
 Before starting broker process SETTINGS_PATH env variable has to be set.
 ```shell
-export SETTINGS_PATH=$(pwd)/broker/config/settings.yml
+export SETTINGS_PATH=$(pwd)/config/settings.yml
 ```
 If you need  to change the `settings.yml` configuration you should copy the file and point the broker to your settings file via the environment variable `SETTINGS_PATH`.
 ```shell
 # env vars you may like to set to different than these default values
 # export NODE_ENV=development ## For bosh2.0, use the environment boshlite2, as the passwords and BOSH IP are different.
-# cp $(pwd)/broker/config/settings.yml $(pwd)/broker/config/my-settings.yml
-# export SETTINGS_PATH=$(pwd)/broker/config/my-settings.yml
+# cp $(pwd)/config/settings.yml $(pwd)/config/my-settings.yml
+# export SETTINGS_PATH=$(pwd)/config/my-settings.yml
 npm run -s start
 ```
 Check endpoint with curl

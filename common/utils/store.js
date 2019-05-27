@@ -3,8 +3,8 @@
 const _ = require('lodash');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
-const config = require('../../common/config');
-const logger = require('../../common/logger');
+const config = require('../config');
+const logger = require('../logger');
 
 // merge does not update properties if new value is undefined
 module.exports = new FileStore(_.merge({

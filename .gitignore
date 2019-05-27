@@ -15,10 +15,10 @@
 npm-debug.log
 package-lock.json
 
-*/*/kubeconfig.yaml
+*/kubeconfig.yaml
 
 # Ignore developer's settings files
-broker/config/settings.*.yml
+config/settings.*.yml
 common/config/settings.*.yml
 
 # Ignore all files starting with "my"

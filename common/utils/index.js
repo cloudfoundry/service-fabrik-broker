@@ -21,6 +21,7 @@ const EventLogDBClient = require('./EventLogDBClient');
 const EventLogInterceptor = require('../EventLogInterceptor');
 const errors = require('../errors');
 const NotImplemented = errors.NotImplemented;
+const jwt = require('./jwt');
 exports.HttpClient = HttpClient;
 exports.RetryOperation = RetryOperation;
 exports.promiseWhile = promiseWhile;
@@ -76,6 +77,7 @@ exports.sleep = sleep;
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+exports.jwt = jwt;
 
 function isRestorePossible(plan_id, plan) {
   const settings = plan.manager.settings;

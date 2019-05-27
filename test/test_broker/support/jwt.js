@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const lib = require('../../../broker/lib');
+const utils = require('../../../common/utils');
 const config = require('../../../common/config');
-const jwt = lib.jwt;
+const jwt = utils.jwt;
 
 exports.verify = verify;
 exports.sign = sign;

@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-//const lib = require('../../../broker/lib');
 const routes = require('../../../api-controllers/routes');
 const ExpressApp = require('../../../common/ExpressApp');
 
