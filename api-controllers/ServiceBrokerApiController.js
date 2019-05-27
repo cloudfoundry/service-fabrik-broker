@@ -342,11 +342,9 @@ class ServiceBrokerApiController extends FabrikBaseController {
       .set('instance_id', req.params.instance_id)
       .value();
 
-    function done(encodedCredentials) {
-      const credentials = utils.decodeBase64(encodedCredentials);
-      res.status(CONST.HTTP_STATUS_CODE.CREATED).send({
-        credentials: credentials
-      });
+    function done(bindResponse) {
+      const response = utils.decodeBase64(bindResponse);
+      res.status(CONST.HTTP_STATUS_CODE.CREATED).send(response);
     }
 
     function conflict(err) {

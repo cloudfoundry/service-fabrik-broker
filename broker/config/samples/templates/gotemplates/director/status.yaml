@@ -58,7 +58,8 @@ bind:
 {{- if eq $stateString "failed" }}
   error: {{ $error | quote }}
 {{- end }}
-  response: {{ $response }}
+  response:
+    credentials: {{ $response }}
 {{- with .directorbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}

@@ -24,7 +24,8 @@ provision:
 bind:
   state: {{ printf "%s" $stateString }}
   error: ""
-  response: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 
+  response:
+    credentials: {{ (printf `"{ \"host\": \"%s\", \"username\": \"postgres\", \"password\": \"%s\" }"` $host  $pass ) }} 
 {{- $stateString = "succeeded" }}
 unbind:
   state: {{ printf "%s" $stateString }}
