@@ -1315,7 +1315,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64(mocks.agent.credentials)
+              response: utils.encodeBase64({credentials: mocks.agent.credentials})
             }
           });
           return chai.request(app)
@@ -1362,7 +1362,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64(mocks.agent.credentials)
+              response: utils.encodeBase64({credentials: mocks.agent.credentials})
             }
           });
           return chai.request(app)
@@ -1409,7 +1409,7 @@ describe('service-broker-api-2.0', function () {
           });
           mocks.apiServerEventMesh.nockGetSecret('secret-name', 'default', {
             data: {
-              response: utils.encodeBase64(mocks.agent.credentials)
+              response: utils.encodeBase64({credentials: mocks.agent.credentials})
             }
           });
           return chai.request(app)

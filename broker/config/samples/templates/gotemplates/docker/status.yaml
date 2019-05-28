@@ -32,7 +32,7 @@ provision:
 {{- end }}
   dashboardUrl: ""
 {{- with .dockerbind.status.response }}
-  {{- $response = (b64dec . | quote) }}
+  {{- $response = (b64dec .) }}
 {{- end }}
 {{- $stateString = "in progress" }} 
 {{- with .dockerbind }}
@@ -52,8 +52,7 @@ bind:
 {{- if eq $stateString "failed" }}
   error: {{ $error | quote}}
 {{- end }}
-  response:
-    credentials: {{ $response }}
+  response: {{ (printf "'{ \"credentials\" : %s }'" $response ) }}
 {{- with .dockerbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}

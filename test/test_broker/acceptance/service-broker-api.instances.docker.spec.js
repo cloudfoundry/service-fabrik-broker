@@ -659,7 +659,7 @@ describe('service-broker-api', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEBINDINGS, binding_id, testPayload2, 1);
           mocks.apiServerEventMesh.nockGetSecret(binding_id, CONST.APISERVER.DEFAULT_NAMESPACE, {
             data: {
-              response: utils.encodeBase64(secretData)
+              response: utils.encodeBase64({credentials: secretData})
             }
           });
           return chai.request(app)
