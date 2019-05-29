@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
 
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,71 +102,14 @@ type k8sObject interface {
 	runtime.Object
 }
 
-func deleteObject(c client.Client, object k8sObject) error {
-	var err error
-	for retry := 0; retry < constants.ErrorThreshold; retry++ {
-		err = _deleteObject(c, object)
-		if err == nil {
-			return nil
-		}
-	}
-	return err
-}
-
-func _deleteObject(c client.Client, object k8sObject) error {
-	var key = types.NamespacedName{
-		Name:      object.GetName(),
-		Namespace: object.GetNamespace(),
-	}
-	err := c.Delete(context.TODO(), object)
-	if apiErrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	err = c.Get(context.TODO(), key, object)
-	if apiErrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	object.SetFinalizers([]string{})
-	err = c.Update(context.TODO(), object)
-	if apiErrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	log.Info("Deleted", "object", object.GetObjectKind().GroupVersionKind(), "name", object.GetName())
-	return nil
-}
-
 func computeWatchList(c client.Client, sfNamespace string) ([]osbv1alpha1.APIVersionKind, []osbv1alpha1.APIVersionKind, error) {
 	serviceInstance := getDummyServiceInstance(sfNamespace)
 	serviceBinding := getDummyServiceBinding(sfNamespace)
 
-	err := c.Create(context.TODO(), serviceInstance)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer deleteObject(c, serviceInstance)
-
-	err = c.Create(context.TODO(), serviceBinding)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer deleteObject(c, serviceBinding)
-
 	plans := &osbv1alpha1.SFPlanList{}
 	options := client.InNamespace(sfNamespace)
 
-	err = c.List(context.TODO(), options, plans)
+	err := c.List(context.TODO(), options, plans)
 	if err != nil {
 		return nil, nil, err
 	}
