@@ -38,7 +38,7 @@ provision:
 {{- end }}
   dashboardUrl: ""
 {{- with .directorbind.status.response }}
-  {{- $response = (b64dec . | quote) }}
+  {{- $response = (b64dec .) }}
 {{- end }}
 {{- $stateString = "in progress" }} 
 {{- with .directorbind }}
@@ -58,7 +58,7 @@ bind:
 {{- if eq $stateString "failed" }}
   error: {{ $error | quote }}
 {{- end }}
-  response: {{ $response }}
+  response: {{ (printf "'{ \"credentials\" : %s }'" $response ) }}
 {{- with .directorbind.status.response }}
   {{- $response = (b64dec . | quote) }}
 {{- end }}
