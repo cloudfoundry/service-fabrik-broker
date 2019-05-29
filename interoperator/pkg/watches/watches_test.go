@@ -11,10 +11,14 @@ import (
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+
 	"github.com/onsi/gomega"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -403,4 +407,49 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 			ID:         "binding-id",
 		},
 	}
+}
+
+func deleteObject(c client.Client, object k8sObject) error {
+	var err error
+	for retry := 0; retry < constants.ErrorThreshold; retry++ {
+		err = _deleteObject(c, object)
+		if err == nil {
+			return nil
+		}
+	}
+	return err
+}
+
+func _deleteObject(c client.Client, object k8sObject) error {
+	var key = types.NamespacedName{
+		Name:      object.GetName(),
+		Namespace: object.GetNamespace(),
+	}
+	err := c.Delete(context.TODO(), object)
+	if apiErrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	err = c.Get(context.TODO(), key, object)
+	if apiErrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	object.SetFinalizers([]string{})
+	err = c.Update(context.TODO(), object)
+	if apiErrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	log.Info("Deleted", "object", object.GetObjectKind().GroupVersionKind(), "name", object.GetName())
+	return nil
 }
