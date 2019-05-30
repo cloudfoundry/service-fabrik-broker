@@ -28,6 +28,8 @@ spec:
           type: object
         spec:
           properties:
+            clusterId:
+              type: string
             context:
               type: object
             organizationGuid:
@@ -50,6 +52,8 @@ spec:
           properties:
             appliedSpec:
               properties:
+                clusterId:
+                  type: string
                 context:
                   type: object
                 organizationGuid:
