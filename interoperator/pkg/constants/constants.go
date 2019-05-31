@@ -15,4 +15,5 @@ const (
 	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20
+	DefaultSchedulerWorkerCount   = 10
 )

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -51,8 +52,16 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+	cfgManager, err := config.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+	if err != nil {
+		return err
+	}
+	interoperatorCfg := cfgManager.GetConfig()
 	// Create a new controller
-	c, err := controller.New("sfdefaultscheduler-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("sfdefaultscheduler-controller", mgr, controller.Options{
+		Reconciler:              r,
+		MaxConcurrentReconciles: interoperatorCfg.SchedulerWorkerCount,
+	})
 	if err != nil {
 		return err
 	}
@@ -102,9 +111,7 @@ func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reco
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	log.Info("Watch is triggered", instance.Spec.ClusterID)
 	if instance.Spec.ClusterID == "" {
-		log.Info("Watch is triggered", instance.GetName())
 		instance.Spec.ClusterID = "1"
 		if err := r.Update(context.Background(), instance); err != nil {
 			log.Error(err, "failed to update deprovision status", "instance", instance.GetName())

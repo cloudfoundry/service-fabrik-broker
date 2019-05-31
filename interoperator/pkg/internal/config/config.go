@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,8 +24,9 @@ var log = logf.Log.WithName("config.manager")
 
 // InteroperatorConfig contains tuneable configs used by interoperator
 type InteroperatorConfig struct {
-	InstanceWorkerCount int `yaml:"instanceWorkerCount,omitempty"`
-	BindingWorkerCount  int `yaml:"bindingWorkerCount,omitempty"`
+	InstanceWorkerCount  int `yaml:"instanceWorkerCount,omitempty"`
+	BindingWorkerCount   int `yaml:"bindingWorkerCount,omitempty"`
+	SchedulerWorkerCount int `yaml:"schedulerWorkerCount,omitempty"`
 
 	InstanceContollerWatchList []osbv1alpha1.APIVersionKind `yaml:"instanceContollerWatchList,omitempty"`
 	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
@@ -38,6 +39,9 @@ func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorC
 	}
 	if interoperatorConfig.InstanceWorkerCount == 0 {
 		interoperatorConfig.InstanceWorkerCount = constants.DefaultInstanceWorkerCount
+	}
+	if interoperatorConfig.SchedulerWorkerCount == 0 {
+		interoperatorConfig.SchedulerWorkerCount = constants.DefaultSchedulerWorkerCount
 	}
 
 	return interoperatorConfig
