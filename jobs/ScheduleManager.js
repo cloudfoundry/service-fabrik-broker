@@ -207,7 +207,7 @@ class ScheduleManager {
                 jobDefinition.job_data,
                 CONST.SYSTEM_USER);
           } else {
-            logger.info(`System job: ${jobDefinition.name} of type ${jobDefinition.type} is already scheduled for ${jobDefinition.interval}`);
+            logger.info(`System job: ${jobDefinition.name} of type ${jobDefinition.type} is either already scheduled for ${jobDefinition.interval} or there is an error (see below...)`);
           }
         });
     });
