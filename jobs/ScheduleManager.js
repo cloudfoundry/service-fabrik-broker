@@ -160,7 +160,7 @@ class ScheduleManager {
       if (jobInDb !== null) {
         const JobDefinition = JobFabrik.getJob(jobType);
         if (JobDefinition.getLastRunStatus !== undefined && typeof JobDefinition.getLastRunStatus === 'function') {
-          const jobNameInRunHistory = jobInDb.data.instance_id || jobInDb.data.deployment_name || jobInDb.data._n_a_m_e_;
+          const jobNameInRunHistory = _.get(jobInDb, 'data.instance_id') || _.get(jobInDb, 'data.deployment_name') || _.get(jobInDb, 'data._n_a_m_e_');
           // see BaseJob.logRunHistory
           return JobDefinition
             .getLastRunStatus(jobNameInRunHistory, jobType)
@@ -207,7 +207,7 @@ class ScheduleManager {
                 jobDefinition.job_data,
                 CONST.SYSTEM_USER);
           } else {
-            logger.info(`System job: ${jobDefinition.name} of type ${jobDefinition.type} is already scheduled for ${jobDefinition.interval}`);
+            logger.info(`System job: ${jobDefinition.name} of type ${jobDefinition.type} is either already scheduled for ${jobDefinition.interval} or there is an error (see below...)`);
           }
         });
     });
