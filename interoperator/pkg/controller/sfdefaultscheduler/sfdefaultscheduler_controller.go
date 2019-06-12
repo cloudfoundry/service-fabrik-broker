@@ -86,7 +86,6 @@ type ReconcileSFDefaultScheduler struct {
 // and what is in the SFDefaultScheduler.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-// +kubebuilder:rbac:groups=osb.servicefabrik.io,resources=sfserviceinstances,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the SFDefaultScheduler instance
 	instance := &osbv1alpha1.SFServiceInstance{}

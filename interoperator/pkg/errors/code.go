@@ -6,13 +6,14 @@ const (
 	CodeSFPlanNotFound            = "SFPlanNotFound"
 	CodeSFServiceInstanceNotFound = "SFServiceInstanceNotFound"
 	CodeSFServiceBindingNotFound  = "SFServiceBindingNotFound"
+	CodeSFClusterNotFound         = "SFClusterNotFound"
 	CodeTemplateNotFound          = "TemplateNotFound"
 
 	CodeOperationInProgress = "OperationInProgress"
 
 	CodeRendererError = "RendererError"
 
-	CodeClusterFactoryError = "ClusterFactoryError"
+	CodeClusterRegistryError = "ClusterRegistryError"
 
 	CodeInputError     = "CodeInputError"
 	CodeMarshalError   = "CodeMarshalError"

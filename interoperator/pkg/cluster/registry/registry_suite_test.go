@@ -14,39 +14,55 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package factory
+package registry
 
 import (
 	stdlog "log"
 	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var cfg *rest.Config
+var kubeConfig *rest.Config
 var c client.Client
-var mgr manager.Manager
+var sch *runtime.Scheme
+var mapper meta.RESTMapper
 
 func TestMain(m *testing.M) {
 	var err error
-	t := &envtest.Environment{}
-	if cfg, err = t.Start(); err != nil {
+	t := &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
+	}
+	apis.AddToScheme(scheme.Scheme)
+	if kubeConfig, err = t.Start(); err != nil {
 		stdlog.Fatal(err)
 	}
 
-	if c, err = client.New(cfg, client.Options{Scheme: scheme.Scheme}); err != nil {
+	mapper, err = apiutil.NewDiscoveryRESTMapper(kubeConfig)
+	if err != nil {
 		stdlog.Fatal(err)
 	}
 
-	if mgr, err = manager.New(cfg, manager.Options{}); err != nil {
+	if c, err = client.New(kubeConfig, client.Options{
+		Scheme: scheme.Scheme,
+		Mapper: mapper,
+	}); err != nil {
 		stdlog.Fatal(err)
 	}
+	sch = scheme.Scheme
 
+	logf.SetLogger(logf.ZapLogger(false))
 	code := m.Run()
 	t.Stop()
 	os.Exit(code)

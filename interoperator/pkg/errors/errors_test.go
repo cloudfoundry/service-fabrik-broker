@@ -44,7 +44,7 @@ func TestInteroperatorError_Error(t *testing.T) {
 	}
 }
 
-func TestNewClusterFactoryError(t *testing.T) {
+func TestNewClusterRegistryError(t *testing.T) {
 	type args struct {
 		message string
 		err     error
@@ -55,28 +55,28 @@ func TestNewClusterFactoryError(t *testing.T) {
 		want *InteroperatorError
 	}{
 		{
-			name: "return ClusterFactoryError",
+			name: "return ClusterRegistryError",
 			args: args{
 				message: message,
 				err:     nil,
 			},
 			want: &InteroperatorError{
 				Err:     nil,
-				Code:    CodeClusterFactoryError,
+				Code:    CodeClusterRegistryError,
 				Message: message,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewClusterFactoryError(tt.args.message, tt.args.err); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewClusterFactoryError() = %v, want %v", got, tt.want)
+			if got := NewClusterRegistryError(tt.args.message, tt.args.err); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewClusterRegistryError() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestClusterFactoryError(t *testing.T) {
+func TestClusterRegistryError(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -86,18 +86,18 @@ func TestClusterFactoryError(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "return true if ClusterFactoryError",
+			name: "return true if ClusterRegistryError",
 			args: args{
 				err: &InteroperatorError{
 					Err:     nil,
-					Code:    CodeClusterFactoryError,
+					Code:    CodeClusterRegistryError,
 					Message: message,
 				},
 			},
 			want: true,
 		},
 		{
-			name: "return false if not ClusterFactoryError",
+			name: "return false if not ClusterRegistryError",
 			args: args{
 				err: &InteroperatorError{
 					Err:     nil,
@@ -110,8 +110,8 @@ func TestClusterFactoryError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ClusterFactoryError(tt.args.err); got != tt.want {
-				t.Errorf("IsClusterFactoryError() = %v, want %v", got, tt.want)
+			if got := ClusterRegistryError(tt.args.err); got != tt.want {
+				t.Errorf("IsClusterRegistryError() = %v, want %v", got, tt.want)
 			}
 		})
 	}

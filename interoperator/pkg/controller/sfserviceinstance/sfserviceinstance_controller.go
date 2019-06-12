@@ -27,8 +27,8 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,19 +49,19 @@ var log = logf.Log.WithName("instance.controller")
 // Add creates a new SFServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	clusterFactory, err := clusterFactory.New(mgr)
+	clusterRegistry, err := registry.New(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
 	if err != nil {
 		return err
 	}
-	return add(mgr, newReconciler(mgr, resources.New(), clusterFactory))
+	return add(mgr, newReconciler(mgr, resources.New(), clusterRegistry))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterFactory clusterFactory.ClusterFactory) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager, resourceManager resources.ResourceManager, clusterRegistry registry.ClusterRegistry) reconcile.Reconciler {
 	return &ReconcileSFServiceInstance{
 		Client:          mgr.GetClient(),
 		scheme:          mgr.GetScheme(),
-		clusterFactory:  clusterFactory,
+		clusterRegistry: clusterRegistry,
 		resourceManager: resourceManager,
 	}
 }
@@ -116,7 +116,7 @@ var _ reconcile.Reconciler = &ReconcileSFServiceInstance{}
 type ReconcileSFServiceInstance struct {
 	client.Client
 	scheme          *runtime.Scheme
-	clusterFactory  clusterFactory.ClusterFactory
+	clusterRegistry registry.ClusterRegistry
 	resourceManager resources.ResourceManager
 }
 
@@ -159,12 +159,17 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	if !ok {
 		lastOperation = "in_queue"
 	}
+	clusterID := instance.GetClusterID()
+	if clusterID == "" {
+		log.Info("clusterID not set. Ignoring", "instance", instanceID)
+		return reconcile.Result{}, nil
+	}
 
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
 
-	targetClient, err := r.clusterFactory.GetCluster(instanceID, bindingID, serviceID, planID)
+	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
 		return r.handleError(instance, reconcile.Result{}, err, "", 0)
 	}

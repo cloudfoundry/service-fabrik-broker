@@ -84,3 +84,12 @@ func (r *SFServiceInstance) SetState(state string) {
 		r.Status.State = state
 	}
 }
+
+// GetClusterID fetches the ClusterID of the SFServiceInstance
+func (r *SFServiceInstance) GetClusterID() string {
+	if r == nil || r.Spec.ClusterID == "" {
+		log.Info("failed to read ClusterID", "SFServiceInstance", r.GetName())
+		return ""
+	}
+	return r.Spec.ClusterID
+}
