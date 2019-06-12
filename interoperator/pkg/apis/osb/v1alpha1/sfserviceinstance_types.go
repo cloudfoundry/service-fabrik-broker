@@ -30,6 +30,7 @@ type SFServiceInstanceSpec struct {
 	SpaceGUID        string                `json:"spaceGuid,omitempty"`
 	RawParameters    *runtime.RawExtension `json:"parameters,omitempty"`
 	PreviousValues   *runtime.RawExtension `json:"previousValues,omitempty"`
+	ClusterID        string                `json:"clusterId,omitempty"`
 }
 
 // SFServiceInstanceStatus defines the observed state of SFServiceInstance
