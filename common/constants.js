@@ -376,7 +376,8 @@ module.exports = Object.freeze({
       ABORTED: 'aborted',
       UPDATE: 'update',
       LOCKED: 'locked',
-      UNLOCKED: 'unlocked'
+      UNLOCKED: 'unlocked',
+      TRIGGER: 'trigger'
     },
     FINALIZERS: {
       BROKER: 'broker.servicefabrik.io'
