@@ -153,7 +153,7 @@ class BoshRestoreService extends BaseDirectorService {
     let currentState, changedOptions;
     try {
       currentState = changeObjectBody.status.state;
-      logger.info(`routing ${currentState} to appropriate function..`);
+      logger.info(`routing ${currentState} to appropriate function in service..`);
       changedOptions = JSON.parse(changeObjectBody.spec.options);
       switch (currentState) {
         case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`:
@@ -204,6 +204,14 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStop(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
+    let patchResourceObj = { 
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+      resourceId: resourceOptions.restore_guid,
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
+      }
+    };
     const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
     if (_.isEmpty(oldTaskId)) {
       const taskId = await this.director.stopDeployment(deploymentName); 
@@ -214,26 +222,9 @@ class BoshRestoreService extends BaseDirectorService {
           }
         }
       });
-      await eventmesh.apiServerClient.patchResource({ 
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: resourceOptions.restore_guid,
-        options: stateResult,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
-        }
-      });
-    } else {
-      logger.info('It should not come to this, still trying to move on...');
-      await eventmesh.apiServerClient.patchResource({ 
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: resourceOptions.restore_guid,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
-        }
-      });
-    }
+      _.set(patchResourceObj, 'options', stateResult);
+    } 
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
   }
   // TODO: Store the logs in restorefile or not?
   // TODO: Putting some threshold on disk creation.
@@ -425,6 +416,14 @@ class BoshRestoreService extends BaseDirectorService {
   async processBoshStart(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
     const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
+    let patchResourceObj = { 
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+      resourceId: resourceOptions.restore_guid,
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
+      }
+    }
     if (_.isEmpty(oldTaskId)) {
       const taskId = await this.director.startDeployment(deploymentName); 
       let stateResult = _.assign({
@@ -434,25 +433,9 @@ class BoshRestoreService extends BaseDirectorService {
           }
         }
       });
-      await eventmesh.apiServerClient.patchResource({ 
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: resourceOptions.restore_guid,
-        options: stateResult,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
-        }
-      });
-    } else {
-      await eventmesh.apiServerClient.patchResource({ 
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: resourceOptions.restore_guid,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
-        }
-      });
-    }
+      _.set(patchResourceObj, 'options', stateResult);
+    } 
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
   }
 
   async processPostStart(resourceOptions) { 

@@ -4,7 +4,6 @@ const _ = require('lodash');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('../../common/constants');
 const logger = require('../../common/logger');
-const utils = require('../../common/utils');
 const BaseStatusPoller = require('../BaseStatusPoller');
 const bosh = require('../../data-access-layer/bosh');
 const errors = require('../../common/errors');
@@ -26,10 +25,11 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
     });
     this.director = bosh.director;
   }
-
+  /* Main router function*/
   async getStatus(resourceBody, intervalId) {
     const currentState = _.get(resourceBody, 'status.state');
     const changedOptions = _.get(resourceBody, 'spec.options');
+    logger.info(`routing ${currentState} to appropriate function in poller..`);
     try {
         switch(currentState) {
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`:
@@ -69,7 +69,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         }
         await eventmesh.apiServerClient.patchResource(patchResourceObj);
         await service.patchRestoreFileWithFinalResult(changedOptions, patchObj);
-        throw err;
+        throw err; //Clear poller should be called in BaseStatusPoller due to this.
     }
   }
 
@@ -83,73 +83,39 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
     else return false;
   }
 
-  async processInProgressBoshStop(changedOptions, resourceName, intervalId) {
-    const taskId = _.get(changedOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
+  /* helper poller functions */
+  async _handleBoshStartStopPolling (changedOptions, operation, nextState, errorMsg, resourceName, intervalId) {
+    const taskId = _.get(changedOptions, `restoreMetadata.stateResults.${operation}.taskId`, undefined);
     const taskResult = await this.director.getTask(taskId);
     if(!this.isBoshTaskInProgress(taskResult)) {
-        stateResult = {};
+        let stateResult = {};
+        let operations = {};
+        operations[operation] = {
+            taskId: taskId,
+            taskResult: taskResult
+        };
         stateResult = _.assign({
-          stateResults: {
-            'boshStop': {
-              taskId: taskId,
-              taskResult: taskResult
-            }
-          }
+            stateResults: operations
         });
-        const nextState = this.isBoshTaskSucceeded(taskResult) ? `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK` : CONST.APISERVER.RESOURCE_STATE.FAILED;
+        const nextStateToPatch = this.isBoshTaskSucceeded(taskResult) ? nextState : CONST.APISERVER.RESOURCE_STATE.FAILED;
         await eventmesh.apiServerClient.patchResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
             resourceId: resourceOptions.restore_guid,
             options: stateResult,
             status: {
-                'state': nextState
+                'state': nextStateToPatch
             }
         });
         if(isBoshTaskSucceeded(taskResult)) {
-            this.clearPoller(resourceName, intervalId);
+            this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
         } else {
-            throw new errors.InternalServerError(`Stopping the bosh deployment failed as ${taskResult.state}. Check bosh-sf task ${taskId}`);
+            throw new errors.InternalServerError(errorMsg);
         }
     }
-  }
+  } 
 
-  async processInProgressAttachDisk(changedOptions, resourceName, intervalId) {
-    let deploymentInstancesInfo = _.get(changedOptions, 'restoreMetadata.deploymentInstancesInfo');
-    let allTasksSucceeded = true;
-    let allTasksCompleted = true;
-    let taskPollingFn = async instance => {
-        let taskId = _.get(instance, 'attachDiskTaskId');
-        let taskResult = await this.director.getTask(taskId);
-        if(!this.isBoshTaskInProgress(taskResult)) {
-            instance.attachDiskTaskResult = taskResult;
-            if(!isBoshTaskSucceeded(taskResult)) allTasksSucceeded = false;
-        } else allTasksCompleted = false;
-    };
-    await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); 
-    if (allTasksCompleted){
-        const nextState = allTasksSucceeded ? `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`: CONST.APISERVER.RESOURCE_STATE.FAILED;
-        await eventmesh.apiServerClient.patchResource({
-            resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-            resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-            resourceId: resourceOptions.restore_guid,
-            options: {
-                restoreMetadata: {
-                    deploymentInstancesInfo: deploymentInstancesInfo
-                }
-            },
-            status: {
-                'state': nextState
-            }
-        });
-        this.clearPoller(resourceName, intervalId);
-        if (!allTasksSucceeded) {
-            throw new errors.InternalServerError(`Attching disk to some of the instances failed.`);
-        }
-    }
-  }
-
-  async handleErrandPolling(resourceOptions, errandType, nextState, resourceName,intervalId ) {
+  async _handleErrandPolling(resourceOptions, errandType, nextState, resourceName,intervalId ) {
     const taskId = _.get(resourceOptions, `stateResults.errands.${errandType}.taskId`, undefined);
     if(_.isEmpty(taskId)) {
         //This could happen if the corresponding errand is not defined in the service catalog.
@@ -157,19 +123,18 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
             resourceId: resourceOptions.restore_guid,
-            options: stateResults,
             status: {
-              'state': nextState 
+              'state': nextState //Do nothing and move to next state
             }
         });
-        this.clearPoller(resourceName, intervalId);
+        this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
     }
     const taskResult = await this.director.getTask(taskId);
     if(!this.isBoshTaskInProgress(taskResult)) {
-        errands = {};
-        stateResults = {};
+        let errands = {};
+        let stateResults = {};
         errands[errandType] = {
-          taskId: taskIdForErrand,
+          taskId: taskId,
           taskResult: taskResult
         };
         stateResults = _.assign({
@@ -188,54 +153,77 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
           }
         });
         if(isBoshTaskSucceeded(taskResult)) {
-            this.clearPoller(resourceName, intervalId);
+            this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
         } else {
             throw new errors.InternalServerError(`Errand ${errandType} failed as ${taskResult.state}. Check task ${taskId}`);
         }
     }
   }
 
-  async processInProgressBaseBackupErrand(changedOptions, resourceName, intervalId) {
-    await this.handleErrandPolling(changedOptions, 'baseBackupErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`, resourceName, intervalId);
+  /* Entry functions for each of the state poller */
+  async processInProgressBoshStop(changedOptions, resourceName, intervalId) {
+    await this._handleBoshStartStopPolling(changedOptions, 'boshStop', `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`,
+    `Stopping bosh deployment with id ${resourceName} failed.`,
+    resourceName, intervalId);
   }
 
-  async processInProgressPitrErrand(changedOptions, resourceName, intervalId) {
-    await this.handleErrandPolling(changedOptions, 'pointInTimeErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START` , resourceName, intervalId);
-  }
-
-  async processInProgressBoshStart(changedOptions, resourceName, intervalId) {
-    const taskId = _.get(changedOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
-    const taskResult = await this.director.getTask(taskId);
-    if(!this.isBoshTaskInProgress(taskResult)) { 
-        stateResult = {};
-        stateResult = _.assign({
-        stateResults: {
-            'boshStart': {
-            taskId: taskId,
-            taskResult: taskResult
-            }
+  async processInProgressAttachDisk(changedOptions, resourceName, intervalId) {
+    let deploymentInstancesInfo = _.get(changedOptions, 'restoreMetadata.deploymentInstancesInfo');
+    let allTasksSucceeded = true;
+    let allTasksCompleted = true;
+    let taskPollingFn = async instance => {
+        let taskId = _.get(instance, 'attachDiskTaskId');
+        if(_.isEmpty(taskId)) {
+            throw new errors.InternalServerError(`Task id for attaching disk not found for instance ${instance.id}. Polling could not be continued.`);
         }
-        });
-        const nextState = this.isBoshTaskSucceeded(taskResult) ? `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND` : CONST.APISERVER.RESOURCE_STATE.FAILED;
+        let taskResult = await this.director.getTask(taskId);
+        if(!this.isBoshTaskInProgress(taskResult)) {
+            instance.attachDiskTaskResult = taskResult;
+            if(!isBoshTaskSucceeded(taskResult)) allTasksSucceeded = false;
+        } else allTasksCompleted = false;
+    };
+    await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); 
+    if (allTasksCompleted) {
+        const nextState = allTasksSucceeded ? `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`: CONST.APISERVER.RESOURCE_STATE.FAILED;
         await eventmesh.apiServerClient.patchResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
             resourceId: resourceOptions.restore_guid,
-            options: stateResult,
+            options: {
+                restoreMetadata: {
+                    deploymentInstancesInfo: deploymentInstancesInfo
+                }
+            },
             status: {
                 'state': nextState
             }
         });
-        if(isBoshTaskSucceeded(taskResult)) {
-            this.clearPoller(resourceName, intervalId);
-        } else {
-            throw new errors.InternalServerError(`Starting the bosh deployment failed as ${taskResult.state}. Check bosh-sf task ${taskId}`);
+        if (!allTasksSucceeded) {
+            throw new errors.InternalServerError(`Attaching disk to some of the instances failed.`);
         }
+        this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
     }
   }
 
+  async processInProgressBaseBackupErrand(changedOptions, resourceName, intervalId) {
+    await this._handleErrandPolling(changedOptions, 'baseBackupErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`, 
+    resourceName, intervalId);
+  }
+
+  async processInProgressPitrErrand(changedOptions, resourceName, intervalId) {
+    await this.handleErrandPolling(changedOptions, 'pointInTimeErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START` , 
+    resourceName, intervalId);
+  }
+
+  async processInProgressBoshStart(changedOptions, resourceName, intervalId) {
+    await this._handleBoshStartStopPolling(changedOptions, 'boshStart', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`,
+    `Starting bosh deployment with id ${resourceName} failed.`,
+    resourceName, intervalId);
+  }
+
   async processInProgressPostBoshStart(changedOptions, resourceName, intervalId) {
-    await this.handleErrandPolling(changedOptions, 'postStartErrand', CONST.APISERVER.RESOURCE_STATE.SUCCEEDED , resourceName, intervalId);
+    await this._handleErrandPolling(changedOptions, 'postStartErrand', CONST.APISERVER.RESOURCE_STATE.SUCCEEDED , 
+    resourceName, intervalId);
 
     const plan = catalog.getPlan(changedOptions.plan_id);
     let service = await BoshRestoreService.createService(plan);
