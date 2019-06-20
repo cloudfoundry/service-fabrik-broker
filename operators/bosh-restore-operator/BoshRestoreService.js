@@ -212,7 +212,7 @@ class BoshRestoreService extends BaseDirectorService {
         'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
       }
     };
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
+    const oldTaskId = _.get(resourceOptions, 'stateResults.boshStop.taskId', undefined);
     if (_.isEmpty(oldTaskId)) {
       const taskId = await this.director.stopDeployment(deploymentName); 
       let stateResult = _.assign({
@@ -383,6 +383,8 @@ class BoshRestoreService extends BaseDirectorService {
         resourceId: resourceOptions.restore_guid,
         options: stateResults
       });
+    } else {
+      logger.info(`Older task for ${errandType} exists. Waiting for task ${oldTaskId}. Won't trigger errand again.`);
     }
   }
 
@@ -415,7 +417,7 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStart(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
+    const oldTaskId = _.get(resourceOptions, 'stateResults.boshStart.taskId', undefined);
     let patchResourceObj = { 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,

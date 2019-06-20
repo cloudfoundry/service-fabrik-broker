@@ -85,7 +85,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
 
   /* helper poller functions */
   async _handleBoshStartStopPolling (changedOptions, operation, nextState, errorMsg, resourceName, intervalId) {
-    const taskId = _.get(changedOptions, `restoreMetadata.stateResults.${operation}.taskId`, undefined);
+    const taskId = _.get(changedOptions, `stateResults.${operation}.taskId`, undefined);
     const taskResult = await this.director.getTask(taskId);
     if(!this.isBoshTaskInProgress(taskResult)) {
         let stateResult = {};
