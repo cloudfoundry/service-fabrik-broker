@@ -201,24 +201,24 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStop(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
-    if (!_.isEmpty(oldTaskId)) {
-      await this.director.pollTaskStatusTillComplete(oldTaskId); 
-    }
-    const taskId = await this.director.stopDeployment(deploymentName); 
-    let stateResult = _.assign({
-      stateResults: {
-        'boshStop': {
-          taskId: taskId
+    let taskId = _.get(resourceOptions, 'stateResults.boshStop.taskId', undefined);
+    let stateResult = {};
+    if (_.isEmpty(taskId)) {
+      taskId = await this.director.stopDeployment(deploymentName); 
+      stateResult = _.assign({
+        stateResults: {
+          'boshStop': {
+            taskId: taskId
+          }
         }
-      }
-    });
-    await eventmesh.apiServerClient.patchResource({ 
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
-      options: stateResult
-    });
+      });
+      await eventmesh.apiServerClient.patchResource({ 
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        options: stateResult
+      });
+    }
     const taskResult = await this.director.pollTaskStatusTillComplete(taskId); 
     stateResult = {};
     stateResult = _.assign({
@@ -389,7 +389,7 @@ class BoshRestoreService extends BaseDirectorService {
       const taskResult = await this.director.pollTaskStatusTillComplete(oldTaskId); 
       let errands = {};
       errands[errandType] = {
-        taskId: taskIdForErrand,
+        taskId: oldTaskId,
         taskResult: taskResult
       };
       let stateResults = _.assign({
@@ -469,24 +469,24 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStart(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
-    if (!_.isEmpty(oldTaskId)) {
-      await this.director.pollTaskStatusTillComplete(oldTaskId); 
-    }
-    const taskId = await this.director.startDeployment(deploymentName); 
-    let stateResult = _.assign({
-      stateResults: {
-        'boshStart': {
-          taskId: taskId
+    let taskId = _.get(resourceOptions, 'stateResults.boshStart.taskId', undefined);
+    let stateResult = {};
+    if (_.isEmpty(taskId)) {
+      taskId = await this.director.startDeployment(deploymentName); 
+      stateResult = _.assign({
+        stateResults: {
+          'boshStart': {
+            taskId: taskId
+          }
         }
-      }
-    });
-    await eventmesh.apiServerClient.patchResource({ 
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
-      options: stateResult
-    });
+      });
+      await eventmesh.apiServerClient.patchResource({ 
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+        resourceId: resourceOptions.restore_guid,
+        options: stateResult
+      });
+    }
     const taskResult = await this.director.pollTaskStatusTillComplete(taskId); 
     stateResult = {};
     stateResult = _.assign({
@@ -510,7 +510,6 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processPostStart(resourceOptions) { 
     await this.runErrand(resourceOptions, 'postStartErrand'); 
-    
     const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
     let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
