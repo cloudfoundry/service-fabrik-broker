@@ -58,7 +58,6 @@ class DefaultBoshRestoreOperator extends BaseOperator {
 
   async processInProgressRequest(changeObjectBody) { 
     const changedOptions = JSON.parse(changeObjectBody.spec.options);
-    logger.info('Continuing restore with the following options:', changedOptions);
     const plan = catalog.getPlan(changedOptions.plan_id);
     let service = await BoshRestoreService.createService(plan); 
     return service.processState(changeObjectBody);

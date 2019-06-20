@@ -90,7 +90,7 @@ class BoshRestoreService extends BaseDirectorService {
         resourceId: opts.restore_guid,
         options: optionsData,
         status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
+          'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`,
           'response': data
         }
       });
@@ -153,8 +153,8 @@ class BoshRestoreService extends BaseDirectorService {
     let currentState, changedOptions;
     try {
       currentState = changeObjectBody.status.state;
-      logger.info(`routing ${currentState} to appropriate function in service..`);
       changedOptions = JSON.parse(changeObjectBody.spec.options);
+      logger.info(`routing ${currentState} to appropriate function in service for restore ${changedOptions.restore_guid}`);
       switch (currentState) {
         case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`:
           await this.processBoshStop(changedOptions);
@@ -184,7 +184,7 @@ class BoshRestoreService extends BaseDirectorService {
           throw new errors.BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
       }
     } catch(err) {
-      logger.error(`Error occurred in state ${currentState}: ${err}`);
+      logger.error(`Error occurred in state ${currentState} for restore ${changedOptions.restore_guid}: ${err}`);
       const patchObj = await this.createPatchObject(changedOptions, 'failed');
       let patchResourceObj = {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -249,7 +249,7 @@ class BoshRestoreService extends BaseDirectorService {
         }
       },
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`
+        'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_ATTACH_DISK`
       }
     });
   
@@ -366,7 +366,7 @@ class BoshRestoreService extends BaseDirectorService {
       }
       let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
       let instancesForErrands = this.getInstancesForErrands(deploymentInstancesInfo, instanceOption);
-      logger.info(`Running errand ${errandName} on following instances: ${instancesForErrands}.`);
+      logger.info(`Running errand ${errandName} for restore ${resourceOptions.restore_guid} on following instances: ${instancesForErrands}.`);
       const taskIdForErrand = await this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands); 
       let errands = {};
       errands[errandType] = {

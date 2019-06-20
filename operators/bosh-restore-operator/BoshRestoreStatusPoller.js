@@ -8,6 +8,8 @@ const BaseStatusPoller = require('../BaseStatusPoller');
 const bosh = require('../../data-access-layer/bosh');
 const errors = require('../../common/errors');
 const BoshRestoreService = require('./');
+const config = require('../../common/config');
+const catalog = require('../../common/models/catalog');
 
 class BoshRestoreStatusPoller extends BaseStatusPoller {
   constructor() {
@@ -21,7 +23,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
       `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
       `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`],
       validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
-      pollInterval: config.backup.backup_restore_status_check_every 
+      pollInterval: config.backup.backup_restore_status_check_every //TODO: 2 mins is very high
     });
     this.director = bosh.director;
   }
@@ -29,30 +31,30 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
   async getStatus(resourceBody, intervalId) {
     const currentState = _.get(resourceBody, 'status.state');
     const changedOptions = _.get(resourceBody, 'spec.options');
-    logger.info(`routing ${currentState} to appropriate function in poller..`);
+    logger.info(`routing ${currentState} to appropriate function in poller for restore ${changedOptions.restore_guid}`);
     try {
         switch(currentState) {
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`:
-                await processInProgressBoshStop(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressBoshStop(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`:
-                await processInProgressAttachDisk(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressAttachDisk(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BASEBACKUP_ERRAND`:
-                await processInProgressBaseBackupErrand(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressBaseBackupErrand(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`:
-                await processInProgressPitrErrand(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressPitrErrand(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`:
-                await processInProgressBoshStart(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressBoshStart(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
             case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`:
-                await processInProgressPostBoshStart(changedOptions, resourceBody.metadata.name, intervalId);
+                await this.processInProgressPostBoshStart(changedOptions, resourceBody.metadata.name, intervalId);
                 break;
         }
     } catch (err) {
-        logger.error(`Error occurred in state ${currentState}: ${err}`);
+        logger.error(`Error occurred in state ${currentState} for restore ${changedOptions.restore_guid}: ${err}`);
         const plan = catalog.getPlan(changedOptions.plan_id);
         let service = await BoshRestoreService.createService(plan);
         const patchObj = await service.createPatchObject(changedOptions, 'failed');
@@ -69,7 +71,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         }
         await eventmesh.apiServerClient.patchResource(patchResourceObj);
         await service.patchRestoreFileWithFinalResult(changedOptions, patchObj);
-        throw err; //Clear poller should be called in BaseStatusPoller due to this.
+        throw err;
     }
   }
 
@@ -86,6 +88,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
   /* helper poller functions */
   async _handleBoshStartStopPolling (changedOptions, operation, nextState, errorMsg, resourceName, intervalId) {
     const taskId = _.get(changedOptions, `stateResults.${operation}.taskId`, undefined);
+    logger.info(`Polling for ${operation} operation with task id ${taskId} for restore ${changedOptions.restore_guid}`);
     const taskResult = await this.director.getTask(taskId);
     if(!this.isBoshTaskInProgress(taskResult)) {
         let stateResult = {};
@@ -101,13 +104,14 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         await eventmesh.apiServerClient.patchResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-            resourceId: resourceOptions.restore_guid,
+            resourceId: changedOptions.restore_guid,
             options: stateResult,
             status: {
                 'state': nextStateToPatch
             }
         });
-        if(isBoshTaskSucceeded(taskResult)) {
+        if(this.isBoshTaskSucceeded(taskResult)) {
+            logger.info(`Operation ${operation} successful for restore ${changedOptions.restore_guid}. Clearing the poller.`);
             this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
         } else {
             throw new errors.InternalServerError(errorMsg);
@@ -115,20 +119,22 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
     }
   } 
 
-  async _handleErrandPolling(resourceOptions, errandType, nextState, resourceName,intervalId ) {
-    const taskId = _.get(resourceOptions, `stateResults.errands.${errandType}.taskId`, undefined);
+  async _handleErrandPolling(changedOptions, errandType, nextState, resourceName,intervalId ) {
+    const taskId = _.get(changedOptions, `stateResults.errands.${errandType}.taskId`, undefined);
     if(_.isEmpty(taskId)) {
         //This could happen if the corresponding errand is not defined in the service catalog.
         await eventmesh.apiServerClient.patchResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-            resourceId: resourceOptions.restore_guid,
+            resourceId: changedOptions.restore_guid,
             status: {
               'state': nextState //Do nothing and move to next state
             }
         });
         this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
+        return;
     }
+    looger.info(`Polling for errand ${errandType} with task id ${taskId} for restore ${changedOptions.restore_guid}`);
     const taskResult = await this.director.getTask(taskId);
     if(!this.isBoshTaskInProgress(taskResult)) {
         let errands = {};
@@ -146,13 +152,14 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         await eventmesh.apiServerClient.patchResource({
           resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
           resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-          resourceId: resourceOptions.restore_guid,
+          resourceId: changedOptions.restore_guid,
           options: stateResults,
           status: {
             'state': nextStateToPatch
           }
         });
-        if(isBoshTaskSucceeded(taskResult)) {
+        if(this.isBoshTaskSucceeded(taskResult)) {
+            logger.info(`Errand ${errandType} successful for restore ${changedOptions.restore_guid}. Clearing the poller.`);
             this.clearPoller(resourceName, intervalId); //Clear poller for polling of next state
         } else {
             throw new errors.InternalServerError(`Errand ${errandType} failed as ${taskResult.state}. Check task ${taskId}`);
@@ -179,7 +186,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         let taskResult = await this.director.getTask(taskId);
         if(!this.isBoshTaskInProgress(taskResult)) {
             instance.attachDiskTaskResult = taskResult;
-            if(!isBoshTaskSucceeded(taskResult)) allTasksSucceeded = false;
+            if(!this.isBoshTaskSucceeded(taskResult)) allTasksSucceeded = false;
         } else allTasksCompleted = false;
     };
     await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); 
@@ -188,7 +195,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         await eventmesh.apiServerClient.patchResource({
             resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
             resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-            resourceId: resourceOptions.restore_guid,
+            resourceId: changedOptions.restore_guid,
             options: {
                 restoreMetadata: {
                     deploymentInstancesInfo: deploymentInstancesInfo
@@ -211,7 +218,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
   }
 
   async processInProgressPitrErrand(changedOptions, resourceName, intervalId) {
-    await this.handleErrandPolling(changedOptions, 'pointInTimeErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START` , 
+    await this._handleErrandPolling(changedOptions, 'pointInTimeErrand', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START` , 
     resourceName, intervalId);
   }
 
@@ -226,12 +233,12 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
     resourceName, intervalId);
 
     const plan = catalog.getPlan(changedOptions.plan_id);
-    let service = await BoshRestoreService.createService(plan);
-    const patchObj = await service.createPatchObject(resourceOptions, 'succeeded');
+    let boshRestoreService = await BoshRestoreService.createService(plan);
+    const patchObj = await boshRestoreService.createPatchObject(changedOptions, 'succeeded');
     let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
+      resourceId: changedOptions.restore_guid,
       status: {
         'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
       }
@@ -240,10 +247,10 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
       _.set(patchResourceObj, 'status.response', patchObj);
     }
     await eventmesh.apiServerClient.patchResource(patchResourceObj);
-    await service.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
-    if (this.service.pitr === true) {
+    await boshRestoreService.patchRestoreFileWithFinalResult(changedOptions, patchObj);
+    if (boshRestoreService.service.pitr === true) {
       this.reScheduleBackup({
-        instance_id: resourceOptions.instance_guid,
+        instance_id: changedOptions.instance_guid,
         afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
       });
     }
