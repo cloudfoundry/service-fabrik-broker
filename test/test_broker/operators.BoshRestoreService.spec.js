@@ -266,7 +266,7 @@ describe('operators', function () {
         let restoreOptions = {
           restoreMetadata: restoreMetadata
         };
-        _.set(restoreOptions, 'restoreMetadata.stateResults.boshStop.taskId', 'oldTaskId');
+        _.set(restoreOptions, 'stateResults.boshStop.taskId', 'oldTaskId');
         const taskId = 'taskId';
         stopDeploymentStub.withArgs(deploymentName).resolves(taskId);
         patchResourceStub.resolves();
@@ -279,14 +279,10 @@ describe('operators', function () {
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processBoshStop(restoreOptions))
           .then(() => {
-            expect(stopDeploymentStub.callCount).to.eql(1);
-            expect(patchResourceStub.callCount).to.eql(2);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(2);
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
             expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql('oldTaskId');
-            expect(pollTaskStatusTillCompleteStub.secondCall.args[0]).to.eql(taskId);
-            expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskResult.state).to.eql('done');
+            expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStop.taskId).to.eql('oldTaskId');
           });
       });
 

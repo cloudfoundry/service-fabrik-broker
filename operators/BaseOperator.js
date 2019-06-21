@@ -95,7 +95,9 @@ class BaseOperator {
   _getAllowedLockElapsedTime(resourceGroup,resourceType) {
     if(resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.RESTORE && resourceType === CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE) {
       return CONST.PROCESSING_REQUEST_TIMEOUT_FOR_BOSH_RESTORE;
-    } else return CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT;
+    } else {
+      return CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT;
+    }
   }
 
   _preProcessRequest(objectBody, processingLockStatus, resourceGroup, resourceType, queryString) {
