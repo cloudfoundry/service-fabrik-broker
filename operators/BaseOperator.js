@@ -92,6 +92,12 @@ class BaseOperator {
       .tap(() => logger.info(`Successfully released processing lock for the resource: ${changeObjectBody.metadata.name} with options: ${JSON.stringify(changedOptions)}`));
   }
 
+  _getAllowedLockElapsedTime(resourceGroup,resourceType) {
+    if(resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.RESTORE && resourceType === CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE) {
+      return CONST.PROCESSING_REQUEST_TIMEOUT_FOR_BOSH_RESTORE;
+    } else return CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT;
+  }
+
   _preProcessRequest(objectBody, processingLockStatus, resourceGroup, resourceType, queryString) {
     const options = JSON.parse(objectBody.spec.options);
     // Acquire processing lock so that in HA scenerio, only one backup-operator process processes the request
@@ -102,16 +108,17 @@ class BaseOperator {
       // To handle already existing resources
       // For already existing resources lockedByManager value is either '' or '<ip>' or undefined
       const elapsedTimeInMs = new Date() - new Date(processingStartedAt);
+      const allowedLockElapsedTime = this._getAllowedLockElapsedTime(resourceGroup, resourceType);
       if (
         lockedByManager &&
         (lockedByManager !== '') &&
         processingStartedAt &&
         (processingStartedAt !== '') &&
-        (elapsedTimeInMs < CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT)
+        (elapsedTimeInMs < allowedLockElapsedTime)
       ) {
         processingConflict = true;
       }
-      if (elapsedTimeInMs >= CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT) {
+      if (elapsedTimeInMs >= allowedLockElapsedTime) {
         logger.info(`Lock is expired on ${objectBody.metadata.name} - acquiring the lock.`);
       }
       if (!processingConflict) {
@@ -128,7 +135,7 @@ class BaseOperator {
       } else {
         processingLockStatus.conflict = true;
         logger.debug(`Resource ${objectBody.metadata.name}  ${resourceGroup}, ${resourceType}, ${queryString} -` +
-          ` is picked by process with ip ${lockedByManager} at ${processingStartedAt} will be held for another ${elapsedTimeInMs - CONST.PROCESSING_REQUEST_BY_MANAGER_TIMEOUT}(ms)`);
+          ` is picked by process with ip ${lockedByManager} at ${processingStartedAt} will be held for another ${elapsedTimeInMs - allowedLockElapsedTime}(ms)`);
       }
     });
   }
