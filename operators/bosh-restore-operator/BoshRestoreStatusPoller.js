@@ -8,7 +8,6 @@ const BaseStatusPoller = require('../BaseStatusPoller');
 const bosh = require('../../data-access-layer/bosh');
 const errors = require('../../common/errors');
 const BoshRestoreService = require('./');
-const config = require('../../common/config');
 const catalog = require('../../common/models/catalog');
 
 class BoshRestoreStatusPoller extends BaseStatusPoller {
@@ -23,7 +22,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
         `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`],
       validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
-      pollInterval: config.backup.backup_restore_status_check_every // TODO: 2 mins is very high
+      pollInterval: 10000 // TODO: Take it from constant
     });
     this.director = bosh.director;
   }
@@ -239,31 +238,8 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
   }
 
   async processInProgressPostBoshStart(changedOptions, resourceName, intervalId) {
-    await this._handleErrandPolling(changedOptions, 'postStartErrand', CONST.APISERVER.RESOURCE_STATE.SUCCEEDED , 
+    await this._handleErrandPolling(changedOptions, 'postStartErrand', CONST.APISERVER.RESOURCE_STATE.FINALIZE , 
       resourceName, intervalId);
-
-    const plan = catalog.getPlan(changedOptions.plan_id);
-    let boshRestoreService = await BoshRestoreService.createService(plan);
-    const patchObj = await boshRestoreService.createPatchObject(changedOptions, 'succeeded');
-    let patchResourceObj = {
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: changedOptions.restore_guid,
-      status: {
-        'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
-      }
-    };
-    if(!_.isEmpty(patchObj)) {
-      _.set(patchResourceObj, 'status.response', patchObj);
-    }
-    await eventmesh.apiServerClient.patchResource(patchResourceObj);
-    await boshRestoreService.patchRestoreFileWithFinalResult(changedOptions, patchObj);
-    if (boshRestoreService.service.pitr === true) {
-      this.reScheduleBackup({
-        instance_id: changedOptions.instance_guid,
-        afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
-      });
-    }
   }
 
 }

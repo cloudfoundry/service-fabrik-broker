@@ -179,6 +179,9 @@ class BoshRestoreService extends BaseDirectorService {
         case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`:
           await this.processPostStart(changedOptions);
           break;
+        case `${CONST.APISERVER.RESOURCE_STATE.FINALIZE}`:
+          await this.processFinalize(changedOptions);
+          break;
         default:
           throw new errors.BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
       }
@@ -401,15 +404,17 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processPitrErrand(resourceOptions) {
     const timeStamp = _.get(resourceOptions, 'restoreMetadata.timeStamp');
+    let nextState = `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`;
     if (!_.isEmpty(timeStamp)) {
-      await this.triggerErrand(resourceOptions, 'pointInTimeErrand'); 
+      await this.triggerErrand(resourceOptions, 'pointInTimeErrand');
+      nextState = `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`;
     }
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`
+        'state': nextState
       }
     });
   }
@@ -451,6 +456,29 @@ class BoshRestoreService extends BaseDirectorService {
     });   
   }
 
+  async processFinalize(resourceOptions) {
+    const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
+    let patchResourceObj = {
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+      resourceId: resourceOptions.restore_guid,
+      status: {
+        'state': CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+      }
+    };
+    if(!_.isEmpty(patchObj)) {
+      _.set(patchResourceObj, 'status.response', patchObj);
+    }
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
+    await this.patchRestoreFileWithFinalResult(resourceOptions, patchObj);
+    if (this.service.pitr === true) {
+      this.reScheduleBackup({
+        instance_id: resourceOptions.instance_guid,
+        afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
+      });
+    }
+
+  }
   static createService(plan) {
     if (!this[plan.id]) {
       this[plan.id] = new this(plan);
