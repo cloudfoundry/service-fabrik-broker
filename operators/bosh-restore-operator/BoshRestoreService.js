@@ -11,7 +11,6 @@ const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
 const catalog = require('../../common/models/catalog');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
-const config = require('../../common/config');
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
@@ -172,8 +171,8 @@ class BoshRestoreService extends BaseDirectorService {
           await this.processBaseBackupErrand(changedOptions);
           break;
         case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`:
-            await this.processPitrErrand(changedOptions);
-            break;
+          await this.processPitrErrand(changedOptions);
+          break;
         case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`:
           await this.processBoshStart(changedOptions);
           break;
@@ -425,7 +424,7 @@ class BoshRestoreService extends BaseDirectorService {
       status: {
         'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
       }
-    }
+    };
     if (_.isEmpty(oldTaskId)) {
       const taskId = await this.director.startDeployment(deploymentName); 
       let stateResult = _.assign({
