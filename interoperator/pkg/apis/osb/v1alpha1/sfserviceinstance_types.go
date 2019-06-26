@@ -48,6 +48,7 @@ type SFServiceInstanceStatus struct {
 
 // SFServiceInstance is the Schema for the sfserviceinstances API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name=state,type=string,JSONPath=.status.state
 type SFServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

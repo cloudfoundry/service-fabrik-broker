@@ -33,7 +33,7 @@ import (
 type SFClusterSpec struct {
 	// Name of the secret containing the kubeconfig required to access the
 	// member cluster. The secret needs to exist in the same namespace
-	// as the control plane and should have a "kubeconfig" key.
+	// as the SFCluster and should have a "kubeconfig" key.
 	SecretRef string `json:"secretRef"`
 }
 

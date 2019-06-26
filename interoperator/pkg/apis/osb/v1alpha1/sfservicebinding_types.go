@@ -60,6 +60,7 @@ type BindingResponse struct {
 
 // SFServiceBinding is the Schema for the sfservicebindings API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name=state,type=string,JSONPath=.status.state
 type SFServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -98,6 +99,7 @@ func (r *SFServiceBinding) SetState(state string) {
 }
 
 // GetClusterID fetches the ClusterID of the SFServiceBinding
+// WARN: This will fetch the corresponding SFServiceInstance
 func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) string {
 	instance := &SFServiceInstance{}
 	var instanceKey = types.NamespacedName{

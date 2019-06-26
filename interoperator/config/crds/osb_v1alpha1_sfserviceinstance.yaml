@@ -6,6 +6,10 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: sfserviceinstances.osb.servicefabrik.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: state
+    type: string
   group: osb.servicefabrik.io
   names:
     kind: SFServiceInstance
