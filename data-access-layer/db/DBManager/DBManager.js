@@ -102,10 +102,16 @@ class DBManager {
       if (this.bindInfo) {
         return this.bindInfo;
       }
-      return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+      return utils.retry(tries => {
+        logger.debug(`+-> Attempt ${tries + 1} to get db binding from apiserver`);
+        return eventmesh.apiServerClient.getResource({
+          resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+          resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+          resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
+        });
+      }, {
+        maxAttempts: 5,
+        minDelay: 1000
       })
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')))
         .catch(NotFound, () => {
