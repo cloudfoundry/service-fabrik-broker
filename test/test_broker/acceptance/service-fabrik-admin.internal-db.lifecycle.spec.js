@@ -67,7 +67,6 @@ describe('service-fabrik-admin', function () {
 
       createResourceStub.withArgs().returns(Promise.resolve());
 
-      mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
       dbManager.initialize();
@@ -100,13 +99,22 @@ describe('service-fabrik-admin', function () {
 
     describe('create', function () {
       let clock;
+      let sandbox, retryStub;
+      before(function(){
+        sandbox = sinon.createSandbox();
+        retryStub = sandbox.stub(utils, 'retry').callsFake((callback, options) => callback());
+      });
 
       beforeEach(function () {
         clock = sinon.useFakeTimers(new Date().getTime());
       });
 
       afterEach(function () {
+        retryStub.resetHistory();
         clock.restore();
+      });
+      after(function () {
+        sandbox.restore();
       });
 
       it('should provision service fabrik internal mongodb when deployment not found', function (done) {
