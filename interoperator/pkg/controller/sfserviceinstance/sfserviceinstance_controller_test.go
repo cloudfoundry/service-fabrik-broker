@@ -136,6 +136,7 @@ var instance = &osbv1alpha1.SFServiceInstance{
 		SpaceGUID:        "space-guid",
 		RawParameters:    nil,
 		PreviousValues:   nil,
+		ClusterID:        "1",
 	},
 	Status: osbv1alpha1.SFServiceInstanceStatus{
 		State: "in_queue",

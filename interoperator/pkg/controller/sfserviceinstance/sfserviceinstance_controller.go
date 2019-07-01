@@ -145,6 +145,10 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		return r.handleError(instance, reconcile.Result{}, err, "", 0)
 	}
 
+	if instance.Spec.ClusterID == "" {
+		return reconcile.Result{}, nil
+	}
+
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()

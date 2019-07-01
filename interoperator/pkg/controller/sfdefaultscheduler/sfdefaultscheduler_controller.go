@@ -103,7 +103,7 @@ func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reco
 	if instance.Spec.ClusterID == "" {
 		instance.Spec.ClusterID = "1"
 		if err := r.Update(context.Background(), instance); err != nil {
-			log.Error(err, "failed to update deprovision status", "instance", instance.GetName())
+			log.Error(err, "failed to update cluster id for ", "instance", instance.GetName())
 			return reconcile.Result{}, err
 		}
 	}
