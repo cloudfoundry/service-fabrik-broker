@@ -31,14 +31,14 @@ router.use(commonMiddleware.error({
 
 /* Service Instance Router */
 instanceRouter.route('/')
-  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
-  .patch([middleware.checkQuota(), middleware.validateRequest(), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
+  .put([middleware.isPlanDeprecated(), middleware.checkQuota(), middleware.validateRequest(), middleware.validateCreateRequest(), middleware.validateSchemaForRequest('service_instance', 'create'), controller.handleWithResourceLocking('putInstance', CONST.OPERATION_TYPE.CREATE)])
+  .patch([middleware.checkQuota(), middleware.validateRequest(), middleware.validateSchemaForRequest('service_instance', 'update'), controller.handleWithResourceLocking('patchInstance', CONST.OPERATION_TYPE.UPDATE)])
   .delete([middleware.validateRequest(), controller.handleWithResourceLocking('deleteInstance', CONST.OPERATION_TYPE.DELETE)])
   .all(commonMiddleware.methodNotAllowed(['PUT', 'PATCH', 'DELETE']));
 instanceRouter.route('/last_operation')
   .get(controller.handler('getLastInstanceOperation'))
   .all(commonMiddleware.methodNotAllowed(['GET']));
 instanceRouter.route('/service_bindings/:binding_id')
-  .put([middleware.checkBlockingOperationInProgress(), controller.handler('putBinding')])
+  .put([middleware.checkBlockingOperationInProgress(), middleware.validateSchemaForRequest('service_binding', 'create'), controller.handler('putBinding')])
   .delete(middleware.checkBlockingOperationInProgress(), controller.handler('deleteBinding'))
   .all(commonMiddleware.methodNotAllowed(['PUT', 'DELETE']));

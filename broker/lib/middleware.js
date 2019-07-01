@@ -1,5 +1,6 @@
 'use strict';
 
+const ajv = require('ajv');
 const _ = require('lodash');
 const errors = require('../../common/errors');
 const logger = require('../../common/logger');
@@ -11,6 +12,7 @@ const catalog = require('../../common/models/catalog');
 const eventmesh = require('../../data-access-layer/eventmesh');
 const CONST = require('./../../common/constants');
 const DeploymentAlreadyLocked = errors.DeploymentAlreadyLocked;
+const InvalidServiceParameters = errors.InvalidServiceParameters;
 const UnprocessableEntity = errors.UnprocessableEntity;
 
 
@@ -40,6 +42,38 @@ exports.validateCreateRequest = function () {
     if (!_.get(req.body, 'space_guid') || !_.get(req.body, 'organization_guid')) {
       return next(new BadRequest('This request is missing mandatory organization guid and/or space guid.'));
     }
+    next();
+  };
+};
+
+exports.validateSchemaForRequest = function (target, operation) {
+  return function (req, res, next) {
+    const plan = getPlanFromRequest(req);
+
+    const schema = _.get(plan, `schemas.${target}.${operation}.parameters`);
+
+    if (schema) {
+      const parameters = _.get(req, 'body.parameters', {});
+
+      const schemaVersion = schema['$schema'] || '';
+      const validator = new ajv({ schemaId: 'auto' });
+      if (schemaVersion.includes('draft-06')) {
+        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+      } else if (schemaVersion.includes('draft-04')) {
+        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+      } else if (!schemaVersion.includes('draft-07')) {
+        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+        validator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+      }
+      const validate = validator.compile(schema);
+
+      const isValid = validate(parameters);
+      if (!isValid) {
+        const reason = _.map(validate.errors, ({ dataPath, message }) => `${dataPath} ${message}`).join(', ');
+        return next(new InvalidServiceParameters(`Failed to validate service parameters, reason: ${reason}`));
+      }
+    }
+
     next();
   };
 };
