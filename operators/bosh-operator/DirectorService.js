@@ -109,10 +109,10 @@ class DirectorService extends BaseDirectorService {
   getContextFromResource() {
     logger.debug(`Fetching context from etcd for ${this.guid}`);
     return eventmesh.apiServerClient.getPlatformContext({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        resourceId: this.guid
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      resourceId: this.guid
+    })
       .catch(err => {
         logger.error(`Error occured while getting context from resource for instance ${this.guid} `, err);
         return;
@@ -180,9 +180,9 @@ class DirectorService extends BaseDirectorService {
     return Promise.all(promises)
       .then(deploymentNameCollection =>
         _.chain(deploymentNameCollection)
-        .flatten()
-        .uniq()
-        .value()
+          .flatten()
+          .uniq()
+          .value()
       )
       .then(deploymentNames => {
         const deploymentName = _.find(deploymentNames, name => _.endsWith(name, guid));
@@ -198,9 +198,9 @@ class DirectorService extends BaseDirectorService {
   deleteRestoreFile() {
     if (_.includes(this.agent.features, 'backup')) {
       return Promise.try(() => this.platformManager.ensureTenantId({
-          context: this.platformContext,
-          guid: this.guid
-        }))
+        context: this.platformContext,
+        guid: this.guid
+      }))
         .then(tenant_id => tenant_id ? this.deleteRestoreFileFromObjectStore(tenant_id, this.guid) : Promise.resolve({}))
         .catch(err => {
           logger.error(`Failed to delete restore file of instance '${this.guid}'`, err);
@@ -234,10 +234,10 @@ class DirectorService extends BaseDirectorService {
         switch (operation.type) {
           case 'create':
             return Promise.try(() => this.platformManager.postInstanceProvisionOperations({
-                ipRuleOptions: this.buildIpRules(),
-                guid: this.guid,
-                context: operation.context
-              }))
+              ipRuleOptions: this.buildIpRules(),
+              guid: this.guid,
+              context: operation.context
+            }))
               .tap(() => operation.state === CONST.OPERATION.SUCCEEDED ? this.scheduleAutoUpdate() : {});
 
           case 'update':
@@ -316,10 +316,10 @@ class DirectorService extends BaseDirectorService {
 
   getDeploymentNamesInCache() {
     return eventmesh.apiServerClient.getResourceListByState({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
-        stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
+      stateList: [CONST.APISERVER.RESOURCE_STATE.WAITING]
+    })
       .map(resource => _.get(resource, 'status.response.deployment_name'))
       .then(deploymentNames => _
         .chain(deploymentNames)
@@ -698,10 +698,10 @@ class DirectorService extends BaseDirectorService {
   bind(params) {
     let bindingCredentials;
     return this.platformManager.preBindOperations({
-        context: params.context,
-        bind_resource: params.bind_resource,
-        bindingId: params.binding_id
-      })
+      context: params.context,
+      bind_resource: params.bind_resource,
+      bindingId: params.binding_id
+    })
       .then(() => this
         .initialize({
           type: 'bind'
@@ -739,17 +739,17 @@ class DirectorService extends BaseDirectorService {
     };
     _.assign(actionContext, binding);
     return Promise.join(
-        this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
-        this.getDeploymentIps(deploymentName),
-        (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
-          operation: 'CREATE_CREDENTIAL_AGENT',
-          maxAttempts: 2,
-          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-        })
+      this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_BIND, actionContext),
+      this.getDeploymentIps(deploymentName),
+      (preBindResponse, ips) => utils.retry(() => this.agent.createCredentials(ips, binding.parameters, preBindResponse), {
+        operation: 'CREATE_CREDENTIAL_AGENT',
+        maxAttempts: 2,
+        timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+      })
         .catch(errors.Timeout, err => {
           throw err;
         })
-      )
+    )
       .tap(credentials => {
         _.set(binding, 'credentials', credentials);
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -784,16 +784,16 @@ class DirectorService extends BaseDirectorService {
     return this.executeActions(CONST.SERVICE_LIFE_CYCLE.PRE_UNBIND, actionContext)
       .then(preUnbindResponse =>
         Promise
-        .all([
-          Promise.resolve(preUnbindResponse),
-          this.getDeploymentIps(deploymentName),
-          this.getCredentials(deploymentName, id)
-        ]))
+          .all([
+            Promise.resolve(preUnbindResponse),
+            this.getDeploymentIps(deploymentName),
+            this.getCredentials(deploymentName, id)
+          ]))
       .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
-          operation: 'DELETE_CREDENTIAL_AGENT',
-          maxAttempts: 2,
-          timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
-        })
+        operation: 'DELETE_CREDENTIAL_AGENT',
+        maxAttempts: 2,
+        timeout: config.agent_operation_timeout || CONST.AGENT.OPERATION_TIMEOUT_IN_MILLIS
+      })
         .catch(errors.Timeout, err => {
           throw err;
         })
@@ -821,10 +821,10 @@ class DirectorService extends BaseDirectorService {
   getCredentialsFromResource(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
     return eventmesh.apiServerClient.getResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-        resourceId: id
-      })
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+      resourceId: id
+    })
       .then(resource => {
         let response = _.get(resource, 'status.response', undefined);
         if (!_.isEmpty(response)) {
