@@ -129,7 +129,9 @@ function initializeEventListener(appConfig, appType) {
     .assign(config.riemann)
     .set('event_type', appConfig.event_type)
     .value();
-  const riemannClient = new EventLogRiemannClient(riemannOptions); // eslint-disable-line no-unused-vars
+  if (riemannOptions.enabled !== false) {
+    const riemannClient = new EventLogRiemannClient(riemannOptions); // eslint-disable-line no-unused-vars
+  }
   // if events are to be forwarded to monitoring agent via domain socket
   if (appConfig.domain_socket && appConfig.domain_socket.fwd_events) {
     /* jshint unused:false */
