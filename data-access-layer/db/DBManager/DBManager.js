@@ -9,6 +9,7 @@ const DirectorService = require('../../../operators/bosh-operator/DirectorServic
 const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
+const Timeout = errors.Timeout;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
@@ -98,6 +99,9 @@ class DBManager {
   }
 
   getDbBindInfo() {
+    function throwTimeoutError(err) {
+      throw err.error;
+    }
     return Promise.try(() => {
       if (this.bindInfo) {
         return this.bindInfo;
@@ -113,6 +117,7 @@ class DBManager {
         maxAttempts: 5,
         minDelay: 1000
       })
+        .catch(Timeout, throwTimeoutError)
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')))
         .catch(NotFound, () => {
           // TODO: This can be removed from T2018.13B onwards as bind property would have been moved to ApiServer by then.
