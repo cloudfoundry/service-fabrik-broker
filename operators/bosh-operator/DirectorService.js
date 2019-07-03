@@ -722,7 +722,7 @@ class DirectorService extends BaseDirectorService {
         if (this.platformManager.platformName === CONST.PLATFORM.CF) {
           return this
             .scheduleBackUp()
-            .catch(() => { });
+            .catch(() => {});
         } else {
           // TODO: revisit this when supporting extension APIs for K8S consumption
           return;
@@ -870,6 +870,10 @@ class DirectorService extends BaseDirectorService {
         const networks = this.getNetworks(index);
         const allRequiredNetworks = _.union(networks.dynamic, networks.all.filter(net => _.startsWith(net.name, this.networkName)));
         const tags = _.pick(opts.context, 'organization_guid', 'space_guid');
+        const serviceId = opts.service_id;
+        if (serviceId) {
+          _.assign(tags, _.get(catalog.getService(serviceId), 'service_tags'));
+        }
         const skipAddOns = _.get(opts, 'skip_addons', false) || _.get(config, 'service_addon_jobs', []).length === 0;
         const header = new Header({
           name: deploymentName,

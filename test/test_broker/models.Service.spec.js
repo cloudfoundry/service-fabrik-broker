@@ -34,6 +34,7 @@ describe('models', () => {
           subnet: null,
           metadata: null,
           requires: [],
+          service_tags: {},
           plan_updateable: true,
           dashboard_client: {},
           plans: [],
