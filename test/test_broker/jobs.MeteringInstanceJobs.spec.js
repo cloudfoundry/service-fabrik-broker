@@ -349,7 +349,7 @@ describe('Jobs', () => {
         options_json.service.plan_guid = not_excluded_plan;
         expect(MeterInstanceJob.enrichEvent(options_json)).to.eql({
           'consumer': {
-            'environment': '',
+            'environment': 'CF',
             'instance': '4e099918-1b37-42a8-9dbd-a752225fcd07',
             'org': '33915d88-6002-4e83-b154-9ec2075e1435',
             'region': 'asia',
