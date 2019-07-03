@@ -82,6 +82,10 @@ class MeterInstanceJob extends BaseJob {
     options.service.plan = catalog.getPlanSKUFromPlanGUID(serviceId, planId);
     options.service = _.omit(options.service, ['service_guid', 'plan_guid']);
     options.consumer.region = config.metering.region;
+    if (!options.consumer.environment) {
+      // By default environment should be cloudfoundry for now
+      options.consumer.environment = "CF"
+    }
     logger.info('Enriched metering document', options);
     return options;
   }
