@@ -130,6 +130,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
       if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
         if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE ||
           lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
+          const postProcessingEnabled = _.get(config, 'feature.ServiceInstancePostProcessing', false); // TODO add as feature switch?
           return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
             .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
             .then(ips => eventmesh.apiServerClient.updateResource({
@@ -138,7 +139,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               resourceId: instanceId,
               status: {
                 lastOperation: lastOperationValue,
-                state: lastOperationValue.resourceState,
+                state: postProcessingEnabled ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : lastOperationValue.resourceState,
                 appliedOptions: options
               },
               metadata: {

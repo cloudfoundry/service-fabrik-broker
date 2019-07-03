@@ -367,6 +367,7 @@ module.exports = Object.freeze({
       IN_QUEUE: 'in_queue',
       IN_PROGRESS: 'in_progress',
       WAITING: 'waiting',
+      POST_PROCESSING: 'post_processing',
       DELETE: 'delete',
       DELETED: 'deleted',
       SUCCEEDED: 'succeeded',
