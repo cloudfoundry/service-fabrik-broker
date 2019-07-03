@@ -84,7 +84,7 @@ class MeterInstanceJob extends BaseJob {
     options.consumer.region = config.metering.region;
     if (!options.consumer.environment) {
       // By default environment should be cloudfoundry for now
-      options.consumer.environment = "CF"
+      options.consumer.environment = 'CF';
     }
     logger.info('Enriched metering document', options);
     return options;
