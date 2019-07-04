@@ -13,6 +13,19 @@ const catalog = require('../../common/models/catalog');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const config = require('../../common/config');
 
+/*
+  This Operator carries out new improved restore by following a sequence of steps.
+  These steps are implemented as various states in the restore resource.
+  BoshRestoreService and BoshRestoreStatusPoller handle these states. Sequence of the states is as follows:
+  in_queue (service) --> TRIGGER_BOSH_STOP (service) --> in_progress_BOSH_STOP (poller) -->
+  in_progress_CREATE_DISK (service) --> TRIGGER_ATTACH_DISK (service) --> in_progress_ATTACH_DISK (poller) -->
+  in_progress_PUT_FILE (service) --> TRIGGER_BASEBACKUP_ERRAND (service) --> in_progress_BASEBACKUP_ERRAND (poller) -->
+  TRIGGER_PITR_ERRAND (service) --> in_progress_PITR_ERRAND (poller) -->
+  TRIGGER_BOSH_START (service) --> in_progress_BOSH_START (poller) -->
+  TRIGGER_POST_BOSH_START_ERRAND (service) --> in_progress_POST_BOSH_START_ERRAND (poller) --> FINALIZE (service)
+  Number of states is kept higher for the sake of modulaization. Most of the states have identical implementation
+  and are intuitive in nature.
+*/
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
@@ -23,88 +36,76 @@ class BoshRestoreService extends BaseDirectorService {
   }
 
   async startRestore(opts) { 
-    try {
-      logger.debug('Starting restore with options:', opts);
-      const args = opts.arguments;
-      const backupMetadata = _.get(args, 'backup');
-      const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid); 
-      const data = _
-        .chain(opts)
-        .pick('service_id', 'plan_id', 'instance_guid', 'username')
-        .assign({
-          operation: CONST.OPERATION_TYPE.RESTORE,
-          backup_guid: args.backup_guid,
-          time_stamp: args.time_stamp,
-          state: CONST.RESTORE_OPERATION.PROCESSING,
-          started_at: new Date().toISOString(),
-          finished_at: null,
-          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
-        })
-        .value();
-      const service = catalog.getService(opts.service_id);
-      const instanceGroups = _.get(service, 'restore_operation.instance_group');
-      let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); 
-      let getDiskMetadataFn = async instance => {
-        let diskCid = instance.disk_cid;
-        let az = instance.az;
-        instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
-      };
-      await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); 
-      const optionsData = _
-        .assign({
-          restoreMetadata: {
-            timeStamp: args.time_stamp,
-            filePath: _.get(service, 'restore_operation.filesystem_path'),
-            snapshotId: _.get(backupMetadata, 'snapshotId'),
-            deploymentName: deploymentName,
-            deploymentInstancesInfo: persistentDiskInfo,
-            baseBackupErrand: {
-              name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
-              instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
-            },
-            pointInTimeErrand: {
-              name: _.get(service, 'restore_operation.errands.point_in_time.name'),
-              instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
-            },
-            postStartErrand: {
-              name: _.get(service, 'restore_operation.errands.post_start.name'),
-              instances: _.get(service, 'restore_operation.errands.post_start.instances')
-            }
+    logger.debug('Starting restore with options:', opts);
+    const args = opts.arguments;
+    const backupMetadata = _.get(args, 'backup');
+    const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid); 
+    const data = _
+      .chain(opts)
+      .pick('service_id', 'plan_id', 'instance_guid', 'username')
+      .assign({
+        operation: CONST.OPERATION_TYPE.RESTORE,
+        backup_guid: args.backup_guid,
+        time_stamp: args.time_stamp,
+        state: CONST.RESTORE_OPERATION.PROCESSING,
+        started_at: new Date().toISOString(),
+        finished_at: null,
+        tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
+      })
+      .value();
+    const service = catalog.getService(opts.service_id);
+    const instanceGroups = _.get(service, 'restore_operation.instance_group');
+    let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); 
+    let getDiskMetadataFn = async instance => {
+      let diskCid = instance.disk_cid;
+      let az = instance.az;
+      instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
+    };
+    await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); 
+    const optionsData = _
+      .assign({
+        restoreMetadata: {
+          timeStamp: args.time_stamp,
+          filePath: _.get(service, 'restore_operation.filesystem_path'),
+          snapshotId: _.get(backupMetadata, 'snapshotId'),
+          deploymentName: deploymentName,
+          deploymentInstancesInfo: persistentDiskInfo,
+          baseBackupErrand: {
+            name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
+            instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
           },
-          stateResults: {}
-        });
-      let restoreFileMetadata;
-      try {
-        restoreFileMetadata = await this.backupStore.getRestoreFile(data);
-      } catch(err) {
-        if (!(err instanceof errors.NotFound)) {
-          throw err;
-        }
+          pointInTimeErrand: {
+            name: _.get(service, 'restore_operation.errands.point_in_time.name'),
+            instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
+          },
+          postStartErrand: {
+            name: _.get(service, 'restore_operation.errands.post_start.name'),
+            instances: _.get(service, 'restore_operation.errands.post_start.instances')
+          }
+        },
+        stateResults: {}
+      });
+    let restoreFileMetadata;
+    try {
+      restoreFileMetadata = await this.backupStore.getRestoreFile(data);
+    } catch(err) {
+      if (!(err instanceof errors.NotFound)) {
+        throw err;
       }
-      await this.backupStore.putFile(_.assign(data, {
-        restore_dates: _.get(restoreFileMetadata, 'restore_dates')
-      }));
-      return eventmesh.apiServerClient.patchResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
-        options: optionsData,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`,
-          'response': data
-        }
-      });
-    } catch (err) {
-      logger.error(`Error occurred while starting the restore: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
-        status: {
-          'state': CONST.APISERVER.RESOURCE_STATE.FAILED
-        }
-      });
     }
+    await this.backupStore.putFile(_.assign(data, {
+      restore_dates: _.get(restoreFileMetadata, 'restore_dates')
+    }));
+    return eventmesh.apiServerClient.patchResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+      resourceId: opts.restore_guid,
+      options: optionsData,
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`,
+        'response': data
+      }
+    });
   }
  
   async createPatchObject(opts, stateToUpdate) {

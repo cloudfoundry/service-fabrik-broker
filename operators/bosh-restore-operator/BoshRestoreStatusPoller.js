@@ -22,7 +22,7 @@ class BoshRestoreStatusPoller extends BaseStatusPoller {
         `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
         `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`],
       validEventList: [CONST.API_SERVER.WATCH_EVENT.ADDED, CONST.API_SERVER.WATCH_EVENT.MODIFIED],
-      pollInterval: 10000 // TODO: Take it from constant
+      pollInterval: CONST.BOSH_RESTORE_POLLER_INTERVAL
     });
     this.director = bosh.director;
   }

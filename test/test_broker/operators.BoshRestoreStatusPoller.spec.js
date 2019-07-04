@@ -14,12 +14,11 @@ class BaseStatusPoller {
     }
 }
 
-const BoshRestoreStatusPoller = proxyquire('../../operators/bosh-restore-operator/BoshRestoreStatusPoller', {
-    '../BaseStatusPoller': BaseStatusPoller
-});
-
 describe('operators', function() {
     describe('BoshRestoreStatusPoller', function() {
+        const BoshRestoreStatusPoller = proxyquire('../../operators/bosh-restore-operator/BoshRestoreStatusPoller', {
+            '../BaseStatusPoller': BaseStatusPoller
+        });        
         const deploymentName = 'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa';
         const restoreGuid = '2ed8d561-9eb5-11e8-a55f-784f43900dff';
         describe('#getStatus', function() {
