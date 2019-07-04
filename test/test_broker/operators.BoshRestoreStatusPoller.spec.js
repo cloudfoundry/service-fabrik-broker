@@ -67,7 +67,7 @@ describe('operators', function() {
                 });
             });
 
-            it.only('should handle errors in any of the child methods', () => {
+            it('should handle errors in any of the child methods', () => {
                 stubs[0].rejects('InternalServerError');
                 const dummyPoller = new BoshRestoreStatusPoller();
                 let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
