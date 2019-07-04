@@ -5,6 +5,7 @@ const _ = require('lodash');
 const CONST = require('../../common/constants');
 const bosh = require('../../data-access-layer/bosh');
 const eventmesh = require('../../data-access-layer/eventmesh');
+const backupStore = require('../../data-access-layer/iaas').backupStore;
 
 class BaseStatusPoller {
     constructor(opts) {
@@ -66,6 +67,33 @@ describe('operators', function() {
                 });
             });
 
+            it.only('should handle errors in any of the child methods', () => {
+                stubs[0].rejects('InternalServerError');
+                const dummyPoller = new BoshRestoreStatusPoller();
+                let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+                let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
+                let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource').resolves();
+                let restoreResource = {
+                    metadata: {
+                        name: restoreGuid
+                    },
+                    spec: {
+                        options: {
+                            restore_guid: restoreGuid,
+                            'plan_id': 'bc158c9a-7934-401e-94ab-057082a5073f',
+                        }
+                    },
+                    status: {
+                        state: `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
+                    }
+                };
+                return dummyPoller.getStatus(restoreResource, 'dummyIntervalId')
+                .catch(err => {
+                    expect(patchResourceStub.callCount).to.eql(1);
+                    expect(getRestoreFileStub.callCount).to.eql(1);
+                    expect(patchRestoreFileStub.callCount).to.eql(1);
+                });
+            });
         });
         describe('#_handleBoshStartStopPolling', function() {
             let sandbox;
