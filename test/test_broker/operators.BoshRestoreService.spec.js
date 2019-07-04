@@ -130,7 +130,7 @@ describe('operators', function () {
       let sandbox;
       let stubs = [];
       let functions = ['processBoshStop', 'processCreateDisk', 'processAttachDisk', 'processPutFile',
-        'processBaseBackupErrand', 'processPitrErrand', 'processBoshStart', 'processPostStart'
+        'processBaseBackupErrand', 'processPitrErrand', 'processBoshStart', 'processPostStart', 'processFinalize'
       ];
       beforeEach(() => {
         plan = catalog.getPlan(planId);
@@ -152,7 +152,8 @@ describe('operators', function () {
           `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BASEBACKUP_ERRAND`,
           `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`,
           `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`,
-          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`,
+          `${CONST.APISERVER.RESOURCE_STATE.FINALIZE}`
         ];
         let restoreResource = {
           spec: {
@@ -736,5 +737,40 @@ describe('operators', function () {
       });
     });
 
+    describe('#processFinalize', function() {
+      let sandbox;
+      let patchResourceStub;
+      let restoreMetadata = {
+        deploymentName: deploymentName
+      };
+      beforeEach(() => {
+        plan = catalog.getPlan(planId);
+        sandbox = sinon.createSandbox();
+        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+      it('should create patchObj and update restoreFile and CRD', () => {
+        let restoreOptions = {
+          restoreMetadata: restoreMetadata,
+          restore_guid: 'dummyGuid',
+          instance_guid: 'dummyInstanceGuid'
+        };
+        let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
+        let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
+        patchResourceStub.resolves();
+        mocks.serviceFabrikClient.scheduleBackup('dummyInstanceGuid', function (body) {
+          return body.type === CONST.BACKUP.TYPE.ONLINE;
+        });
+        return BoshRestoreService.createService(plan)
+          .then(rs => rs.processFinalize(restoreOptions))
+          .then(() => {
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(getRestoreFileStub.callCount).to.eql(1);
+            expect(patchRestoreFileStub.callCount).to.eql(1);
+        });
+      });
+    });
   });
 });

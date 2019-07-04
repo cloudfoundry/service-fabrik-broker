@@ -11,6 +11,7 @@ const logger = require('../../common/logger');
 const bosh = require('../../data-access-layer/bosh');
 const catalog = require('../../common/models/catalog');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
+const config = require('../../common/config');
 
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
