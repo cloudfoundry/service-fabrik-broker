@@ -70,7 +70,8 @@ module.exports = Object.freeze({
   },
   DIRECTOR_RESOURCE_POLLER_INTERVAL: 50000, // in ms
   POLLER_RELAXATION_TIME: 5000, // in ms
-  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes
+  PROCESSING_REQUEST_BY_MANAGER_TIMEOUT: 300000, // 5 minutes,
+  BOSH_RESTORE_POLLER_INTERVAL: 10000, // 10s
   OPERATION: {
     SUCCEEDED: 'succeeded',
     FAILED: 'failed',
@@ -376,7 +377,9 @@ module.exports = Object.freeze({
       ABORTED: 'aborted',
       UPDATE: 'update',
       LOCKED: 'locked',
-      UNLOCKED: 'unlocked'
+      UNLOCKED: 'unlocked',
+      TRIGGER: 'TRIGGER',
+      FINALIZE: 'FINALIZE'
     },
     FINALIZERS: {
       BROKER: 'broker.servicefabrik.io'

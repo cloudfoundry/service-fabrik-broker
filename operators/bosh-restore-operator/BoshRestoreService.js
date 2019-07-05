@@ -13,6 +13,19 @@ const catalog = require('../../common/models/catalog');
 const backupStore = require('../../data-access-layer/iaas').backupStore;
 const config = require('../../common/config');
 
+/*
+  This Operator carries out new improved restore by following a sequence of steps.
+  These steps are implemented as various states in the restore resource.
+  BoshRestoreService and BoshRestoreStatusPoller handle these states. Sequence of the states is as follows:
+  in_queue (service) --> TRIGGER_BOSH_STOP (service) --> in_progress_BOSH_STOP (poller) -->
+  in_progress_CREATE_DISK (service) --> TRIGGER_ATTACH_DISK (service) --> in_progress_ATTACH_DISK (poller) -->
+  in_progress_PUT_FILE (service) --> TRIGGER_BASEBACKUP_ERRAND (service) --> in_progress_BASEBACKUP_ERRAND (poller) -->
+  TRIGGER_PITR_ERRAND (service) --> in_progress_PITR_ERRAND (poller) -->
+  TRIGGER_BOSH_START (service) --> in_progress_BOSH_START (poller) -->
+  TRIGGER_POST_BOSH_START_ERRAND (service) --> in_progress_POST_BOSH_START_ERRAND (poller) --> FINALIZE (service)
+  Number of states is kept higher for the sake of modulaization. Most of the states have identical implementation
+  and are intuitive in nature.
+*/
 class BoshRestoreService extends BaseDirectorService {
   constructor(plan) {
     super(plan);
@@ -23,88 +36,76 @@ class BoshRestoreService extends BaseDirectorService {
   }
 
   async startRestore(opts) { 
-    try {
-      logger.debug('Starting restore with options:', opts);
-      const args = opts.arguments;
-      const backupMetadata = _.get(args, 'backup');
-      const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid); 
-      const data = _
-        .chain(opts)
-        .pick('service_id', 'plan_id', 'instance_guid', 'username')
-        .assign({
-          operation: CONST.OPERATION_TYPE.RESTORE,
-          backup_guid: args.backup_guid,
-          time_stamp: args.time_stamp,
-          state: CONST.RESTORE_OPERATION.PROCESSING,
-          started_at: new Date().toISOString(),
-          finished_at: null,
-          tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
-        })
-        .value();
-      const service = catalog.getService(opts.service_id);
-      const instanceGroups = _.get(service, 'restore_operation.instance_group');
-      let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); 
-      let getDiskMetadataFn = async instance => {
-        let diskCid = instance.disk_cid;
-        let az = instance.az;
-        instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
-      };
-      await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); 
-      const optionsData = _
-        .assign({
-          restoreMetadata: {
-            timeStamp: args.time_stamp,
-            filePath: _.get(service, 'restore_operation.filesystem_path'),
-            snapshotId: _.get(backupMetadata, 'snapshotId'),
-            deploymentName: deploymentName,
-            deploymentInstancesInfo: persistentDiskInfo,
-            baseBackupErrand: {
-              name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
-              instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
-            },
-            pointInTimeErrand: {
-              name: _.get(service, 'restore_operation.errands.point_in_time.name'),
-              instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
-            },
-            postStartErrand: {
-              name: _.get(service, 'restore_operation.errands.post_start.name'),
-              instances: _.get(service, 'restore_operation.errands.post_start.instances')
-            }
+    logger.debug('Starting restore with options:', opts);
+    const args = opts.arguments;
+    const backupMetadata = _.get(args, 'backup');
+    const deploymentName = await this.findDeploymentNameByInstanceId(opts.instance_guid); 
+    const data = _
+      .chain(opts)
+      .pick('service_id', 'plan_id', 'instance_guid', 'username')
+      .assign({
+        operation: CONST.OPERATION_TYPE.RESTORE,
+        backup_guid: args.backup_guid,
+        time_stamp: args.time_stamp,
+        state: CONST.RESTORE_OPERATION.PROCESSING,
+        started_at: new Date().toISOString(),
+        finished_at: null,
+        tenant_id: opts.context ? this.getTenantGuid(opts.context) : args.space_guid
+      })
+      .value();
+    const service = catalog.getService(opts.service_id);
+    const instanceGroups = _.get(service, 'restore_operation.instance_group');
+    let persistentDiskInfo = await this.director.getPersistentDisks(deploymentName, instanceGroups); 
+    let getDiskMetadataFn = async instance => {
+      let diskCid = instance.disk_cid;
+      let az = instance.az;
+      instance.oldDiskInfo = await this.cloudProvider.getDiskMetadata(diskCid, az);
+    };
+    await Promise.all(persistentDiskInfo.map(getDiskMetadataFn)); 
+    const optionsData = _
+      .assign({
+        restoreMetadata: {
+          timeStamp: args.time_stamp,
+          filePath: _.get(service, 'restore_operation.filesystem_path'),
+          snapshotId: _.get(backupMetadata, 'snapshotId'),
+          deploymentName: deploymentName,
+          deploymentInstancesInfo: persistentDiskInfo,
+          baseBackupErrand: {
+            name: _.get(service, 'restore_operation.errands.base_backup_restore.name'),
+            instances: _.get(service, 'restore_operation.errands.base_backup_restore.instances')
           },
-          stateResults: {}
-        });
-      let restoreFileMetadata;
-      try {
-        restoreFileMetadata = await this.backupStore.getRestoreFile(data);
-      } catch(err) {
-        if (!(err instanceof errors.NotFound)) {
-          throw err;
-        }
+          pointInTimeErrand: {
+            name: _.get(service, 'restore_operation.errands.point_in_time.name'),
+            instances: _.get(service, 'restore_operation.errands.point_in_time.instances')
+          },
+          postStartErrand: {
+            name: _.get(service, 'restore_operation.errands.post_start.name'),
+            instances: _.get(service, 'restore_operation.errands.post_start.instances')
+          }
+        },
+        stateResults: {}
+      });
+    let restoreFileMetadata;
+    try {
+      restoreFileMetadata = await this.backupStore.getRestoreFile(data);
+    } catch(err) {
+      if (!(err instanceof errors.NotFound)) {
+        throw err;
       }
-      await this.backupStore.putFile(_.assign(data, {
-        restore_dates: _.get(restoreFileMetadata, 'restore_dates')
-      }));
-      return eventmesh.apiServerClient.patchResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
-        options: optionsData,
-        status: {
-          'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
-          'response': data
-        }
-      });
-    } catch (err) {
-      logger.error(`Error occurred while starting the restore: ${err}`);
-      return eventmesh.apiServerClient.updateResource({
-        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-        resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-        resourceId: opts.restore_guid,
-        status: {
-          'state': CONST.APISERVER.RESOURCE_STATE.FAILED
-        }
-      });
     }
+    await this.backupStore.putFile(_.assign(data, {
+      restore_dates: _.get(restoreFileMetadata, 'restore_dates')
+    }));
+    return eventmesh.apiServerClient.patchResource({
+      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
+      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
+      resourceId: opts.restore_guid,
+      options: optionsData,
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`,
+        'response': data
+      }
+    });
   }
  
   async createPatchObject(opts, stateToUpdate) {
@@ -153,35 +154,41 @@ class BoshRestoreService extends BaseDirectorService {
     let currentState, changedOptions;
     try {
       currentState = changeObjectBody.status.state;
-      logger.info(`routing ${currentState} to appropriate function..`);
       changedOptions = JSON.parse(changeObjectBody.spec.options);
+      logger.info(`routing ${currentState} to appropriate function in service for restore ${changedOptions.restore_guid}`);
       switch (currentState) {
-        case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`:
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`:
           await this.processBoshStop(changedOptions);
           break;
         case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`:
           await this.processCreateDisk(changedOptions);
           break;
-        case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`:
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_ATTACH_DISK`:
           await this.processAttachDisk(changedOptions);
           break;
         case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`:
           await this.processPutFile(changedOptions);
           break;
-        case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`:
-          await this.processRunErrands(changedOptions);
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BASEBACKUP_ERRAND`:
+          await this.processBaseBackupErrand(changedOptions);
           break;
-        case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`:
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`:
+          await this.processPitrErrand(changedOptions);
+          break;
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`:
           await this.processBoshStart(changedOptions);
           break;
-        case `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`:
+        case `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`:
           await this.processPostStart(changedOptions);
+          break;
+        case `${CONST.APISERVER.RESOURCE_STATE.FINALIZE}`:
+          await this.processFinalize(changedOptions);
           break;
         default:
           throw new errors.BadRequest(`Invalid state ${currentState} while bosh based restore operation.`);
       }
     } catch(err) {
-      logger.error(`Error occurred in state ${currentState}: ${err}`);
+      logger.error(`Error occurred in state ${currentState} for restore ${changedOptions.restore_guid}: ${err}`);
       const patchObj = await this.createPatchObject(changedOptions, 'failed');
       let patchResourceObj = {
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -201,43 +208,27 @@ class BoshRestoreService extends BaseDirectorService {
 
   async processBoshStop(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStop.taskId', undefined);
-    if (!_.isEmpty(oldTaskId)) {
-      await this.director.pollTaskStatusTillComplete(oldTaskId); 
-    }
-    const taskId = await this.director.stopDeployment(deploymentName); 
-    let stateResult = _.assign({
-      stateResults: {
-        'boshStop': {
-          taskId: taskId
-        }
-      }
-    });
-    await eventmesh.apiServerClient.patchResource({ 
+    let patchResourceObj = { 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
-      options: stateResult
-    });
-    const taskResult = await this.director.pollTaskStatusTillComplete(taskId); 
-    stateResult = {};
-    stateResult = _.assign({
-      stateResults: {
-        'boshStop': {
-          taskId: taskId,
-          taskResult: taskResult
-        }
-      }
-    });
-    return eventmesh.apiServerClient.patchResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
-      options: stateResult,
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`
       }
-    });
+    };
+    const oldTaskId = _.get(resourceOptions, 'stateResults.boshStop.taskId', undefined);
+    if (_.isEmpty(oldTaskId)) {
+      const taskId = await this.director.stopDeployment(deploymentName); 
+      let stateResult = _.assign({
+        stateResults: {
+          'boshStop': {
+            taskId: taskId
+          }
+        }
+      });
+      _.set(patchResourceObj, 'options', stateResult);
+    } 
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
   }
   // TODO: Store the logs in restorefile or not?
   // TODO: Putting some threshold on disk creation.
@@ -262,7 +253,7 @@ class BoshRestoreService extends BaseDirectorService {
         }
       },
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`
+        'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_ATTACH_DISK`
       }
     });
   
@@ -288,24 +279,9 @@ class BoshRestoreService extends BaseDirectorService {
         restoreMetadata: {
           deploymentInstancesInfo: deploymentInstancesInfo
         }
-      }
-    });
-    let taskPollingFn = async instance => {
-      let taskId = _.get(instance, 'attachDiskTaskId');
-      instance.attachDiskTaskResult = await this.director.pollTaskStatusTillComplete(taskId);
-    };
-    await Promise.all(deploymentInstancesInfo.map(taskPollingFn)); 
-    return eventmesh.apiServerClient.patchResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
-      options: {
-        restoreMetadata: {
-          deploymentInstancesInfo: deploymentInstancesInfo
-        }
       },
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`
       }
     });
   }
@@ -347,7 +323,7 @@ class BoshRestoreService extends BaseDirectorService {
         }
       },
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`
+        'state': `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BASEBACKUP_ERRAND`
       }
     });
   }
@@ -381,16 +357,24 @@ class BoshRestoreService extends BaseDirectorService {
     }
   }
 
-  async runErrand(resourceOptions, errandType) { 
+  async triggerErrand(resourceOptions, errandType) { 
     assert.ok(_.includes(['baseBackupErrand', 'pointInTimeErrand', 'postStartErrand'], errandType), ` Errand type ${errandType} is invalid.`);
     const oldTaskId = _.get(resourceOptions, `stateResults.errands.${errandType}.taskId`, undefined);
-    if (!_.isEmpty(oldTaskId)) {
-      logger.info(`Older task for ${errandType} exists. Waiting for task ${oldTaskId}. Won't trigger errand again.`);
-      const taskResult = await this.director.pollTaskStatusTillComplete(oldTaskId); 
+    if (_.isEmpty(oldTaskId)) {
+      const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
+      const errandName = _.get(resourceOptions, `restoreMetadata.${errandType}.name`);
+      const instanceOption = _.get(resourceOptions, `restoreMetadata.${errandType}.instances`);
+      if (_.isEmpty(errandName)) {
+        logger.info(`Errand ${errandType} not found in catalog for ${deploymentName}. Continuing without triggering ${errandType}.`);
+        return;
+      }
+      let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
+      let instancesForErrands = this.getInstancesForErrands(deploymentInstancesInfo, instanceOption);
+      logger.info(`Running errand ${errandName} for restore ${resourceOptions.restore_guid} on following instances: ${instancesForErrands}.`);
+      const taskIdForErrand = await this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands); 
       let errands = {};
       errands[errandType] = {
-        taskId: taskIdForErrand,
-        taskResult: taskResult
+        taskId: taskIdForErrand
       };
       let stateResults = _.assign({
         stateResults: {
@@ -403,114 +387,78 @@ class BoshRestoreService extends BaseDirectorService {
         resourceId: resourceOptions.restore_guid,
         options: stateResults
       });
-      return;
+    } else {
+      logger.info(`Older task for ${errandType} exists. Waiting for task ${oldTaskId}. Won't trigger errand again.`);
     }
-    const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const errandName = _.get(resourceOptions, `restoreMetadata.${errandType}.name`);
-    const instanceOption = _.get(resourceOptions, `restoreMetadata.${errandType}.instances`);
-    if (_.isEmpty(errandName)) {
-      logger.info(`Errand ${errandType} not found in catalog for ${deploymentName}. Continuing without triggering ${errandType}.`);
-      return;
-    }
-    let deploymentInstancesInfo = _.get(resourceOptions, 'restoreMetadata.deploymentInstancesInfo');
-    let instancesForErrands = this.getInstancesForErrands(deploymentInstancesInfo, instanceOption);
-    logger.info(`Running errand ${errandName} on following instances: ${instancesForErrands}.`);
-    const taskIdForErrand = await this.director.runDeploymentErrand(deploymentName, errandName, instancesForErrands); 
-    let errands = {};
-    errands[errandType] = {
-      taskId: taskIdForErrand
-    };
-    let stateResults = _.assign({
-      stateResults: {
-        errands: errands
-      }
-    });
-    await eventmesh.apiServerClient.patchResource({ 
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
-      resourceId: resourceOptions.restore_guid,
-      options: stateResults
-    });
-    const taskResult = await this.director.pollTaskStatusTillComplete(taskIdForErrand); 
-    errands = {};
-    stateResults = {};
-    errands[errandType] = {
-      taskId: taskIdForErrand,
-      taskResult: taskResult
-    };
-    stateResults = _.assign({
-      stateResults: {
-        errands: errands
-      }
-    });
+  }
+
+  async processBaseBackupErrand(resourceOptions) { 
+    await this.triggerErrand(resourceOptions, 'baseBackupErrand'); 
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
-      options: stateResults
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BASEBACKUP_ERRAND`
+      }
     });
   }
 
-  async processRunErrands(resourceOptions) { 
-    await this.runErrand(resourceOptions, 'baseBackupErrand'); 
+  async processPitrErrand(resourceOptions) {
     const timeStamp = _.get(resourceOptions, 'restoreMetadata.timeStamp');
+    let nextState = `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`;
     if (!_.isEmpty(timeStamp)) {
-      await this.runErrand(resourceOptions, 'pointInTimeErrand'); 
+      await this.triggerErrand(resourceOptions, 'pointInTimeErrand');
+      nextState = `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`;
     }
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
       status: {
-        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
+        'state': nextState
       }
     });
   }
 
   async processBoshStart(resourceOptions) { 
     const deploymentName = _.get(resourceOptions, 'restoreMetadata.deploymentName');
-    const oldTaskId = _.get(resourceOptions, 'restoreMetadata.stateResults.boshStart.taskId', undefined);
-    if (!_.isEmpty(oldTaskId)) {
-      await this.director.pollTaskStatusTillComplete(oldTaskId); 
-    }
-    const taskId = await this.director.startDeployment(deploymentName); 
-    let stateResult = _.assign({
-      stateResults: {
-        'boshStart': {
-          taskId: taskId
-        }
-      }
-    });
-    await eventmesh.apiServerClient.patchResource({ 
+    const oldTaskId = _.get(resourceOptions, 'stateResults.boshStart.taskId', undefined);
+    let patchResourceObj = { 
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
-      options: stateResult
-    });
-    const taskResult = await this.director.pollTaskStatusTillComplete(taskId); 
-    stateResult = {};
-    stateResult = _.assign({
-      stateResults: {
-        'boshStart': {
-          taskId: taskId,
-          taskResult: taskResult
-        }
+      status: {
+        'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`
       }
-    });
+    };
+    if (_.isEmpty(oldTaskId)) {
+      const taskId = await this.director.startDeployment(deploymentName); 
+      let stateResult = _.assign({
+        stateResults: {
+          'boshStart': {
+            taskId: taskId
+          }
+        }
+      });
+      _.set(patchResourceObj, 'options', stateResult);
+    } 
+    await eventmesh.apiServerClient.patchResource(patchResourceObj);
+  }
+
+  async processPostStart(resourceOptions) { 
+    await this.triggerErrand(resourceOptions, 'postStartErrand'); 
     return eventmesh.apiServerClient.patchResource({
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
       resourceType: CONST.APISERVER.RESOURCE_TYPES.DEFAULT_BOSH_RESTORE,
       resourceId: resourceOptions.restore_guid,
-      options: stateResult,
       status: {
         'state': `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`
       }
-    });
+    });   
   }
 
-  async processPostStart(resourceOptions) { 
-    await this.runErrand(resourceOptions, 'postStartErrand'); 
-    
+  async processFinalize(resourceOptions) {
     const patchObj = await this.createPatchObject(resourceOptions, 'succeeded');
     let patchResourceObj = {
       resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.RESTORE,
@@ -531,8 +479,8 @@ class BoshRestoreService extends BaseDirectorService {
         afterXminute: config.backup.reschedule_backup_delay_after_restore || CONST.BACKUP.RESCHEDULE_BACKUP_DELAY_AFTER_RESTORE
       });
     }
-  }
 
+  }
   static createService(plan) {
     if (!this[plan.id]) {
       this[plan.id] = new this(plan);

@@ -130,7 +130,7 @@ describe('operators', function () {
       let sandbox;
       let stubs = [];
       let functions = ['processBoshStop', 'processCreateDisk', 'processAttachDisk', 'processPutFile',
-        'processRunErrands', 'processBoshStart', 'processPostStart'
+        'processBaseBackupErrand', 'processPitrErrand', 'processBoshStart', 'processPostStart', 'processFinalize'
       ];
       beforeEach(() => {
         plan = catalog.getPlan(planId);
@@ -145,13 +145,15 @@ describe('operators', function () {
       });
       it('should call the appropriate method for valid states', () => {
         const RESTORE_STATES = [
-          `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`,
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`,
           `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_CREATE_DISK`,
-          `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`,
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_ATTACH_DISK`,
           `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PUT_FILE`,
-          `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_RUN_ERRANDS`,
-          `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`,
-          `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BASEBACKUP_ERRAND`,
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_PITR_ERRAND`,
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_START`,
+          `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_POST_BOSH_START_ERRAND`,
+          `${CONST.APISERVER.RESOURCE_STATE.FINALIZE}`
         ];
         let restoreResource = {
           spec: {
@@ -205,7 +207,7 @@ describe('operators', function () {
             })
           }
         };
-        _.set(restoreResource, 'status.state', `${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`);
+        _.set(restoreResource, 'status.state', `${CONST.APISERVER.RESOURCE_STATE.TRIGGER}_BOSH_STOP`);
         let patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
         stubs[0].restore();
         let processBoshStopStub = sandbox.stub(BoshRestoreService.prototype, 'processBoshStop').rejects('some error');
@@ -239,26 +241,20 @@ describe('operators', function () {
         sandbox.restore();
       });
 
-      it('should stop the deployment and update result correctly in ApiServere', () => {
+      it('should send signal to stop the deployment and update state correctly in ApiServer', () => {
         let restoreOptions = {
           restoreMetadata: restoreMetadata
         };
         const taskId = 'taskId';
         stopDeploymentStub.withArgs(deploymentName).resolves(taskId);
         patchResourceStub.resolves();
-        pollTaskStatusTillCompleteStub.withArgs(taskId).resolves({
-          state: 'done'
-        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processBoshStop(restoreOptions))
           .then(() => {
             expect(stopDeploymentStub.callCount).to.eql(1);
-            expect(patchResourceStub.callCount).to.eql(2);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
-            expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql(taskId);
+            expect(patchResourceStub.callCount).to.eql(1);
             expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskResult.state).to.eql('done');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`);
           });
       });
 
@@ -266,27 +262,14 @@ describe('operators', function () {
         let restoreOptions = {
           restoreMetadata: restoreMetadata
         };
-        _.set(restoreOptions, 'restoreMetadata.stateResults.boshStop.taskId', 'oldTaskId');
-        const taskId = 'taskId';
-        stopDeploymentStub.withArgs(deploymentName).resolves(taskId);
+        _.set(restoreOptions, 'stateResults.boshStop.taskId', 'oldTaskId');
         patchResourceStub.resolves();
-        pollTaskStatusTillCompleteStub.withArgs('oldTaskId').resolves({
-          state: 'done'
-        });
-        pollTaskStatusTillCompleteStub.withArgs(taskId).resolves({
-          state: 'done'
-        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processBoshStop(restoreOptions))
           .then(() => {
-            expect(stopDeploymentStub.callCount).to.eql(1);
-            expect(patchResourceStub.callCount).to.eql(2);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(2);
-            expect(pollTaskStatusTillCompleteStub.firstCall.args[0]).to.eql('oldTaskId');
-            expect(pollTaskStatusTillCompleteStub.secondCall.args[0]).to.eql(taskId);
-            expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStop.taskResult.state).to.eql('done');
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(patchResourceStub.firstCall.args[0].options).to.eql(undefined);
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_STOP`);
           });
       });
 
@@ -399,31 +382,16 @@ describe('operators', function () {
         createDiskAttachmentStub.withArgs(deploymentName, restoreMetadata.deploymentInstancesInfo[1].newDiskInfo.volumeId,
             restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
           .resolves(task_2);
-        pollTaskStatusTillCompleteStub.withArgs(task_1).resolves({
-          state: 'done'
-        });
-        pollTaskStatusTillCompleteStub.withArgs(task_2).resolves({
-          state: 'done'
-        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processAttachDisk(restoreOptions))
           .then(() => {
             expect(createDiskAttachmentStub.callCount).to.eql(restoreMetadata.deploymentInstancesInfo.length);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(restoreMetadata.deploymentInstancesInfo.length);
-            expect(patchResourceStub.callCount).to.eql(2);
+            expect(patchResourceStub.callCount).to.eql(1);
             expect(patchResourceStub.firstCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskId)
               .to.eql(task_1);
             expect(patchResourceStub.firstCall.args[0].options.restoreMetadata.deploymentInstancesInfo[1].attachDiskTaskId)
               .to.eql(task_2);
-
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskId)
-              .to.eql(task_1);
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskResult.state)
-              .to.eql('done');
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[1].attachDiskTaskId)
-              .to.eql(task_2);
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskResult.state)
-              .to.eql('done');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`);
           });
 
       });
@@ -438,32 +406,16 @@ describe('operators', function () {
         createDiskAttachmentStub.withArgs(deploymentName, restoreMetadata.deploymentInstancesInfo[1].newDiskInfo.volumeId,
             restoreMetadata.deploymentInstancesInfo[1].job_name, restoreMetadata.deploymentInstancesInfo[1].id)
           .resolves(task_2);
-        pollTaskStatusTillCompleteStub.withArgs('task-old').resolves({
-          state: 'done'
-        });
-        pollTaskStatusTillCompleteStub.withArgs(task_2).resolves({
-          state: 'done'
-        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processAttachDisk(restoreOptions))
           .then(() => {
-            console.log(createDiskAttachmentStub.callCount);
             expect(createDiskAttachmentStub.callCount).to.eql(restoreMetadata.deploymentInstancesInfo.length - 1);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(restoreMetadata.deploymentInstancesInfo.length);
-            expect(patchResourceStub.callCount).to.eql(2);
+            expect(patchResourceStub.callCount).to.eql(1);
             expect(patchResourceStub.firstCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskId)
               .to.eql('task-old');
             expect(patchResourceStub.firstCall.args[0].options.restoreMetadata.deploymentInstancesInfo[1].attachDiskTaskId)
               .to.eql(task_2);
-
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskId)
-              .to.eql('task-old');
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskResult.state)
-              .to.eql('done');
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[1].attachDiskTaskId)
-              .to.eql(task_2);
-            expect(patchResourceStub.secondCall.args[0].options.restoreMetadata.deploymentInstancesInfo[0].attachDiskTaskResult.state)
-              .to.eql('done');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_ATTACH_DISK`);
           });
 
       });
@@ -593,7 +545,6 @@ describe('operators', function () {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
         patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        pollTaskStatusTillCompleteStub = sandbox.stub(bosh.director, 'pollTaskStatusTillComplete');
         runDeploymentErrandStub = sandbox.stub(bosh.director, 'runDeploymentErrand');
       });
       afterEach(() => {
@@ -605,26 +556,20 @@ describe('operators', function () {
           service_id: serviceId
         };
         const taskId = 'taskId';
-        pollTaskStatusTillCompleteStub.withArgs(taskId).resolves({
-          state: 'done'
-        });
         runDeploymentErrandStub.resolves(taskId);
         patchResourceStub.resolves();
         return BoshRestoreService.createService(plan)
-          .then(rs => rs.runErrand(restoreOptions, 'baseBackupErrand'))
+          .then(rs => rs.triggerErrand(restoreOptions, 'baseBackupErrand'))
           .then(() => {
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
             expect(runDeploymentErrandStub.callCount).to.eql(1);
-            expect(patchResourceStub.callCount).to.eql(2);
+            expect(patchResourceStub.callCount).to.eql(1);
             let runErrandsArgs = runDeploymentErrandStub.firstCall.args;
             expect(runErrandsArgs[0]).to.eql(deploymentName);
             expect(runErrandsArgs[1]).to.eql(restoreMetadata.baseBackupErrand.name);
             expect(patchResourceStub.firstCall.args[0].options.stateResults.errands.baseBackupErrand.taskId)
               .to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.errands.baseBackupErrand.taskId)
+            expect(patchResourceStub.firstCall.args[0].options.stateResults.errands.baseBackupErrand.taskId)
               .to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.errands.baseBackupErrand.taskResult.state)
-              .to.eql('done');
           });
       });
       it('should throw assertion error for invalid errand type', () => {
@@ -633,7 +578,7 @@ describe('operators', function () {
           service_id: serviceId
         };
         return BoshRestoreService.createService(plan)
-          .then(rs => rs.runErrand(restoreOptions, 'invalidErrandType'))
+          .then(rs => rs.triggerErrand(restoreOptions, 'invalidErrandType'))
           .catch(err => {
             expect(err.message).to.eql(' Errand type invalidErrandType is invalid.');
           });
@@ -646,18 +591,17 @@ describe('operators', function () {
           service_id: serviceId
         };
         return BoshRestoreService.createService(plan)
-          .then(rs => rs.runErrand(restoreOptions, 'baseBackupErrand'))
+          .then(rs => rs.triggerErrand(restoreOptions, 'baseBackupErrand'))
           .then(() => {
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(0);
             expect(runDeploymentErrandStub.callCount).to.eql(0);
             expect(patchResourceStub.callCount).to.eql(0);
           });
       });
     });
 
-    describe('#processRunErrands', function () {
+    describe('#processBaseBackupErrand', function () {
       let sandbox;
-      let patchResourceStub, runErrandStub;
+      let patchResourceStub, triggerErrandStub;
       let restoreMetadata = {
         deploymentName: deploymentName,
         timeStamp: undefined
@@ -666,34 +610,62 @@ describe('operators', function () {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
         patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        runErrandStub = sandbox.stub(BoshRestoreService.prototype, 'runErrand');
+        triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
       });
       afterEach(() => {
         sandbox.restore();
       });
 
-      it('should trigger pitr errand only if timestamp is present in arguments', () => {
+      it('should trigger base backup errand and update the state on ApiServer', () => {
         let restoreOptions = {
           restoreMetadata: restoreMetadata
         };
         patchResourceStub.resolves();
-        runErrandStub.resolves();
+        triggerErrandStub.resolves();
         let rsObj;
         return BoshRestoreService.createService(plan)
           .tap(rs => rsObj = rs)
-          .then(() => rsObj.processRunErrands(restoreOptions))
+          .then(() => rsObj.processBaseBackupErrand(restoreOptions))
           .then(() => {
-            expect(runErrandStub.callCount).to.eql(1);
-            expect(runErrandStub.firstCall.args[1]).to.eql('baseBackupErrand');
-            runErrandStub.reset();
-            restoreOptions.restoreMetadata.timeStamp = 'some_timestamp';
-          })
-          .then(() => rsObj.processRunErrands(restoreOptions))
-          .then(() => {
-            expect(runErrandStub.callCount).to.eql(2);
-            expect(runErrandStub.firstCall.args[1]).to.eql('baseBackupErrand');
-            expect(runErrandStub.secondCall.args[1]).to.eql('pointInTimeErrand');
+            expect(triggerErrandStub.callCount).to.eql(1);
+            expect(triggerErrandStub.firstCall.args[1]).to.eql('baseBackupErrand');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BASEBACKUP_ERRAND`);
+          });
+      });
+    });
 
+    describe('#processPitrErrand', function () {
+      let sandbox;
+      let patchResourceStub, triggerErrandStub;
+      let restoreMetadata = {
+        deploymentName: deploymentName,
+        timeStamp: undefined
+      };
+      beforeEach(() => {
+        plan = catalog.getPlan(planId);
+        sandbox = sinon.createSandbox();
+        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+        triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should trigger pitr errand if timeStamp exists in args and update the state on ApiServer', () => {
+        let restoreOptions = {
+          restoreMetadata: restoreMetadata
+        };
+        patchResourceStub.resolves();
+        triggerErrandStub.resolves();
+        let rsObj;
+        restoreOptions.restoreMetadata.timeStamp = 'some_timestamp';
+        return BoshRestoreService.createService(plan)
+          .tap(rs => rsObj = rs)
+          .then(() => rsObj.processPitrErrand(restoreOptions))
+          .then(() => {
+            expect(triggerErrandStub.callCount).to.eql(1);
+            expect(triggerErrandStub.firstCall.args[1]).to.eql('pointInTimeErrand');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_PITR_ERRAND`);
           });
       });
     });
@@ -708,7 +680,6 @@ describe('operators', function () {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
         startDeploymentStub = sandbox.stub(bosh.director, 'startDeployment');
-        pollTaskStatusTillCompleteStub = sandbox.stub(bosh.director, 'pollTaskStatusTillComplete');
         patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
       });
       afterEach(() => {
@@ -721,25 +692,20 @@ describe('operators', function () {
         const taskId = 'taskId';
         startDeploymentStub.withArgs(deploymentName).resolves(taskId);
         patchResourceStub.resolves();
-        pollTaskStatusTillCompleteStub.withArgs(taskId).resolves({
-          state: 'done'
-        });
         return BoshRestoreService.createService(plan)
           .then(rs => rs.processBoshStart(restoreOptions))
           .then(() => {
             expect(startDeploymentStub.callCount).to.eql(1);
-            expect(patchResourceStub.callCount).to.eql(2);
-            expect(pollTaskStatusTillCompleteStub.callCount).to.eql(1);
+            expect(patchResourceStub.callCount).to.eql(1);
             expect(patchResourceStub.firstCall.args[0].options.stateResults.boshStart.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStart.taskId).to.eql(taskId);
-            expect(patchResourceStub.secondCall.args[0].options.stateResults.boshStart.taskResult.state).to.eql('done');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_BOSH_START`);
           });
       });
     });
 
     describe('#processPostStart', function () {
       let sandbox;
-      let patchResourceStub, runErrandStub;
+      let patchResourceStub, triggerErrandStub;
       let restoreMetadata = {
         deploymentName: deploymentName
       };
@@ -747,12 +713,45 @@ describe('operators', function () {
         plan = catalog.getPlan(planId);
         sandbox = sinon.createSandbox();
         patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
-        runErrandStub = sandbox.stub(BoshRestoreService.prototype, 'runErrand');
+        triggerErrandStub = sandbox.stub(BoshRestoreService.prototype, 'triggerErrand');
       });
       afterEach(() => {
         sandbox.restore();
       });
-      it('should call runErrand for postStartErrand and update ApiServer resource', () => {
+      it('should call triggerErrand for postStartErrand and update ApiServer resource', () => {
+        let restoreOptions = {
+          restoreMetadata: restoreMetadata,
+          restore_guid: 'dummyGuid',
+          instance_guid: 'dummyInstanceGuid'
+        };
+        patchResourceStub.resolves();
+        triggerErrandStub.resolves();
+        return BoshRestoreService.createService(plan)
+          .then(rs => rs.processPostStart(restoreOptions))
+          .then(() => {
+            expect(triggerErrandStub.callCount).to.eql(1);
+            expect(patchResourceStub.callCount).to.eql(1);
+            expect(triggerErrandStub.firstCall.args[1]).to.eql('postStartErrand');
+            expect(patchResourceStub.firstCall.args[0].status.state).to.eql(`${CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS}_POST_BOSH_START`);
+          });
+      });
+    });
+
+    describe('#processFinalize', function() {
+      let sandbox;
+      let patchResourceStub;
+      let restoreMetadata = {
+        deploymentName: deploymentName
+      };
+      beforeEach(() => {
+        plan = catalog.getPlan(planId);
+        sandbox = sinon.createSandbox();
+        patchResourceStub = sandbox.stub(eventmesh.apiServerClient, 'patchResource');
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+      it('should create patchObj and update restoreFile and CRD', () => {
         let restoreOptions = {
           restoreMetadata: restoreMetadata,
           restore_guid: 'dummyGuid',
@@ -761,21 +760,17 @@ describe('operators', function () {
         let getRestoreFileStub = sandbox.stub(backupStore, 'getRestoreFile').resolves();
         let patchRestoreFileStub = sandbox.stub(backupStore, 'patchRestoreFile').resolves();
         patchResourceStub.resolves();
-        runErrandStub.resolves();
         mocks.serviceFabrikClient.scheduleBackup('dummyInstanceGuid', function (body) {
           return body.type === CONST.BACKUP.TYPE.ONLINE;
         });
         return BoshRestoreService.createService(plan)
-          .then(rs => rs.processPostStart(restoreOptions))
+          .then(rs => rs.processFinalize(restoreOptions))
           .then(() => {
-            expect(runErrandStub.callCount).to.eql(1);
             expect(patchResourceStub.callCount).to.eql(1);
             expect(getRestoreFileStub.callCount).to.eql(1);
             expect(patchRestoreFileStub.callCount).to.eql(1);
-            expect(runErrandStub.firstCall.args[1]).to.eql('postStartErrand');
-          });
+        });
       });
     });
-
   });
 });
