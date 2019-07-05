@@ -23,13 +23,17 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
   getStatus(resourceBody, intervalId) {
     const instanceId = resourceBody.metadata.name;
     const resourceOptions = _.get(resourceBody, 'spec.options');
-    const deploymentName = _.get(resourceBody, 'status.response.deployment_name');
-    const operationType = _.get(resourceBody, 'status.response.type');
+    const deploymentName = _.get(resourceBody, 'status.lastOperation.deployment_name');
+    const operationType = _.get(resourceBody, 'status.lastOperation.type');
+    // only modify create and update operations
+    if (!_.includes(['create', 'update'], operationType)) {
+      return Promise.resolve({});
+    }
     return DirectorService
       .createInstance(instanceId, resourceOptions)
       .then(directorService => directorService.getAgentPostProcessingStatus(operationType, deploymentName))
-      .tap(postProcessingState => logger.debug('post processing state is ', postProcessingState))
-      .then(status => Promise.all([eventmesh.apiServerClient.updateResource({
+      .tap(agentResponse => logger.debug('agent response is ', agentResponse))
+      .then(agentResponse => Promise.all([eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceId,
@@ -40,7 +44,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
         }
       }), Promise.try(() => {
         // cancel the poller and clear the array
-        if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], status.state)) {
+        if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], agentResponse.state)) {
           this.clearPoller(instanceId, intervalId);
         }
       })]))

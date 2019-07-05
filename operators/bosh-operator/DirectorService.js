@@ -634,10 +634,7 @@ class DirectorService extends BaseDirectorService {
   }
 
   getAgentPostProcessingStatus(operationType, deploymentName) {
-    const featureName = {
-      'create': 'processing.postcreate', // TODO check feature names
-      'update': 'processing.postupdate'
-    }[operationType];
+    const featureName = `processing.post${operationType}`; // TODO check feature names
     if (_.includes(this.agent.features, featureName)) {
       return this
         .getDeploymentIps(deploymentName)
