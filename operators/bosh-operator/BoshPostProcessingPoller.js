@@ -25,6 +25,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
     const resourceOptions = _.get(resourceBody, 'spec.options');
     const deploymentName = _.get(resourceBody, 'status.lastOperation.deployment_name');
     const operationType = _.get(resourceBody, 'status.lastOperation.type');
+    const description = _.get(resourceBody, 'status.lastOperation.description');
     // only modify create and update operations
     if (!_.includes(['create', 'update'], operationType)) {
       return Promise.resolve({});
@@ -38,9 +39,10 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR,
         resourceId: instanceId,
         status: {
-          // TODO set response? set description?
-          // lastOperation: _.assign(resourceBody.status.lastOperation, {}),
-          // response: _.assign(resourceBody.status.response, { agent: agentResponse }),
+          lastOperation: _.assign(resourceBody.status.lastOperation, {
+            resourceState: agentResponse.state,
+            description: _.get(agentResponse, 'stage', description)
+          }),
           state: agentResponse.state
         }
       }), Promise.try(() => {
@@ -60,8 +62,8 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
           status: {
             state: CONST.APISERVER.RESOURCE_STATE.FAILED,
             lastOperation: {
-              state: CONST.APISERVER.RESOURCE_STATE.FAILED,
-              description: `${operationType} deployment ${deploymentName} failed at ${timestamp} with Error "${err.message}"`
+              resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED,
+              description: `Postprocessing of ${operationType} deployment ${deploymentName} failed at ${timestamp} with Error "${err.message}"`
             },
             error: utils.buildErrorJson(err)
           }

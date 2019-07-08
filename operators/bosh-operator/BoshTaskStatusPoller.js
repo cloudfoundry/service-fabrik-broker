@@ -40,7 +40,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
         .then(lastOperationValue => Promise.all([
           this._updateLastOperationStateInResource(instanceId, lastOperationValue, directorService, options),
           Promise.try(() => {
-            if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
+            if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED, CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING], lastOperationValue.resourceState)) {
               // cancel the poller and clear the array
               this.clearPoller(instanceId, intervalId);
             }
@@ -127,10 +127,9 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
 
   _updateLastOperationStateInResource(instanceId, lastOperationValue, directorService, options) {
     return Promise.try(() => {
-      if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+      if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING], lastOperationValue.resourceState)) {
         if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE ||
           lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
-          const postProcessingEnabled = _.get(config, 'feature.ServiceInstancePostProcessing', false);
           return directorService.director.getDeploymentNameForInstanceId(directorService.guid)
             .then(deploymentName => directorService.director.getDeploymentIpsFromDirector(deploymentName))
             .then(ips => eventmesh.apiServerClient.updateResource({
@@ -139,7 +138,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
               resourceId: instanceId,
               status: {
                 lastOperation: lastOperationValue,
-                state: postProcessingEnabled ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : lastOperationValue.resourceState,
+                state: lastOperationValue.resourceState,
                 appliedOptions: options
               },
               metadata: {
