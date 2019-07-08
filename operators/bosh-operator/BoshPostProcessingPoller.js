@@ -39,8 +39,9 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
         resourceId: instanceId,
         status: {
           // TODO set response? set description?
-          // response: _.assign(resourceBody.status.response, directorResponse),
-          state: status.state
+          // lastOperation: _.assign(resourceBody.status.lastOperation, {}),
+          // response: _.assign(resourceBody.status.response, { agent: agentResponse }),
+          state: agentResponse.state
         }
       }), Promise.try(() => {
         // cancel the poller and clear the array
