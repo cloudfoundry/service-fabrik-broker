@@ -16,6 +16,8 @@ exports.getInfo = getInfo;
 exports.getState = getState;
 exports.deprovision = deprovision;
 exports.preUpdate = preUpdate;
+exports.getPostCreateProcessingState = getPostCreateProcessingState;
+exports.getPostUpdateProcessingState = getPostUpdateProcessingState;
 exports.createCredentials = createCredentials;
 exports.deleteCredentials = deleteCredentials;
 exports.startBackup = startBackup;
@@ -28,7 +30,8 @@ exports.lastRestoreOperation = lastRestoreOperation;
 exports.getRestoreLogs = getRestoreLogs;
 
 function getInfo(times, featureNotSupported) {
-  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy', 'lifecycle.preupdate'];
+  let supportedFeatures = ['state', 'lifecycle', 'credentials', 'backup', 'restore', 'multi_tenancy',
+    'lifecycle.preupdate', 'processing.postcreate', 'processing.postupdate'];
   if (featureNotSupported) {
     supportedFeatures.splice(supportedFeatures.indexOf(featureNotSupported), 1);
   }
@@ -68,6 +71,19 @@ function preUpdate(expectedReturnStatusCode) {
     .replyContentLength()
     .post('/v1/lifecycle/preupdate', {})
     .reply(expectedReturnStatusCode || 200, {});
+}
+
+function getPostCreateProcessingState(body, status) {
+  return nock(agentUrl)
+    .replyContentLength()
+    .get('/v1/processing/postcreate')
+    .reply(status || 200, body);
+}
+
+function getPostUpdateProcessingState(body, status) {
+  return nock(agentUrl)
+    .get('/v1/processing/postupdate')
+    .reply(status || 200, body);
 }
 
 function createCredentials() {

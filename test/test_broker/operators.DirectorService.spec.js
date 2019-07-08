@@ -651,6 +651,143 @@ describe('#DirectorService', function () {
       });
 
 
+      describe('#getAgentPostProcessingStatus', function () {
+        const options = {
+          service_id: service_id,
+          plan_id: plan_id,
+          context: {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          },
+          organization_guid: organization_guid,
+          space_guid: space_guid,
+          parameters: parameters
+        };
+
+        it('create: should return succeeded if feature is not supported', function () {
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.getAgentPostProcessingStatus('create', 'deployment'))
+            .then(res => {
+              expect(_.get(res, 'state')).to.eql(CONST.APISERVER.RESOURCE_STATE.SUCCEEDED);
+            });
+        });
+
+        it('create: should return succeeded if feature is not supported by any agent', function () {
+          // TODO this response is cached and only necessary if this is the only test?
+          // mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo(1, 'processing.postcreate');
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
+            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: should return postprocessing if agent returns processing', function () {
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.getPostCreateProcessingState({
+            state: 'processing',
+            stage: 'Step 2/3',
+            updated_at: new Date().toISOString()
+          });
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
+            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: should return succeeded if agent returns succeeded', function () {
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.getPostCreateProcessingState({
+            state: 'succeeded',
+            stage: 'Step 3/3',
+            updated_at: new Date().toISOString()
+          });
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
+            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: should return succeeded if feature is not supported', function () {
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.getAgentPostProcessingStatus('update', 'deployment'))
+            .then(res => {
+              expect(_.get(res, 'state')).to.eql(CONST.APISERVER.RESOURCE_STATE.SUCCEEDED);
+            });
+        });
+
+        it('update: should return succeeded if feature is not supported by any agent', function () {
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo(1, 'processing.postupdate');
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
+            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: should return postprocessing if agent returns processing', function () {
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.getPostUpdateProcessingState({
+            state: 'processing',
+            stage: 'Step 2/3',
+            updated_at: new Date().toISOString()
+          });
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
+            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: should return succeeded if agent returns succeeded', function () {
+          mocks.director.getDeploymentInstances(deployment_name);
+          mocks.agent.getInfo();
+          mocks.agent.getPostUpdateProcessingState({
+            state: 'succeeded',
+            stage: 'Step 3/3',
+            updated_at: new Date().toISOString()
+          });
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
+            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(res => {
+              expect(_.pick(res, ['state'])).to.eql({
+                state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+      });
+
 
       describe('#lastOperation', function () {
         it('create: returns 200 OK (state = in progress)', function () {
