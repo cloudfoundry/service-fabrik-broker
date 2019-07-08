@@ -666,9 +666,10 @@ class DirectorService extends BaseDirectorService {
           };
         })
         .catch(err => {
+          // If an unexpected error occurs (e.g. bosh not reachable) try it again later
           logger.error('Error occurred while querying agent of feature \'postprocessing\':', err);
           return {
-            state: CONST.APISERVER.RESOURCE_STATE.FAILED
+            state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
           };
         });
     } else {
