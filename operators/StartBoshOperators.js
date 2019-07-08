@@ -11,6 +11,6 @@ const boshBindOperator = new BoshBindOperator();
 /* jshint nonew:false */
 new BoshTaskStatusPoller();
 new BoshStaggeredDeploymentPoller();
-new BoshPostProcessingPoller(); // TODO maybe disable this with the feature switch
+new BoshPostProcessingPoller();
 boshOperator.init();
 boshBindOperator.init();
