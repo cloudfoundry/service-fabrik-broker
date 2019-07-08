@@ -652,6 +652,19 @@ describe('#DirectorService', function () {
 
 
       describe('#getAgentPostProcessingStatus', function () {
+
+        let getDeploymentIpsStub;
+        before(function () {
+          getDeploymentIpsStub = sinon.stub(DirectorService.prototype, 'getDeploymentIps');
+          getDeploymentIpsStub.returns(Promise.resolve([mocks.agent.ip]));
+        });
+        afterEach(function () {
+          getDeploymentIpsStub.resetHistory();
+        });
+        after(function () {
+          getDeploymentIpsStub.restore();
+        });
+
         const options = {
           service_id: service_id,
           plan_id: plan_id,
@@ -674,9 +687,6 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return succeeded if feature is not supported by any agent', function () {
-          // TODO this response is cached and only necessary if this is the only test?
-          // mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT, CONST.APISERVER.RESOURCE_TYPES.DIRECTOR, instance_id, dummyDeplResourceWithContext, 2);
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo(1, 'processing.postcreate');
           return DirectorService.createInstance(instance_id, options)
             .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
@@ -690,7 +700,6 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return postprocessing if agent returns processing', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getPostCreateProcessingState({
             state: 'processing',
@@ -709,7 +718,6 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return succeeded if agent returns succeeded', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getPostCreateProcessingState({
             state: 'succeeded',
@@ -736,7 +744,6 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return succeeded if feature is not supported by any agent', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo(1, 'processing.postupdate');
           return DirectorService.createInstance(instance_id, options)
             .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
@@ -750,7 +757,6 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return postprocessing if agent returns processing', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getPostUpdateProcessingState({
             state: 'processing',
@@ -769,7 +775,6 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return succeeded if agent returns succeeded', function () {
-          mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.agent.getPostUpdateProcessingState({
             state: 'succeeded',
