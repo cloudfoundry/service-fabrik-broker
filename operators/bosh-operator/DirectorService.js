@@ -719,10 +719,14 @@ class DirectorService extends BaseDirectorService {
     const timestamp = new Date(task.timestamp * 1000).toISOString();
     switch (task.state) {
       case 'done':
+        // only start postprocessing if it is enabled by a feature flag and supported by the agent
+        const postProcessingFeatureName = `processing.post${operation.type}`; // TODO check feature names
+        const shallPostProcess = _.get(config, 'feature.ServiceInstancePostProcessing', false) &&
+          _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
           state: 'succeeded',
-          resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          resourceState: shallPostProcess ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         });
       case 'error':
       case 'cancelled':
