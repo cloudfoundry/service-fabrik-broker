@@ -654,12 +654,15 @@ describe('#DirectorService', function () {
       describe('#getAgentPostProcessingStatus', function () {
 
         let getDeploymentIpsStub;
+        let supportedFeatures;
         before(function () {
           getDeploymentIpsStub = sinon.stub(DirectorService.prototype, 'getDeploymentIps');
           getDeploymentIpsStub.returns(Promise.resolve([mocks.agent.ip]));
+          supportedFeatures = _.clone(plan.manager.settings.agent.supported_features);
         });
         afterEach(function () {
           getDeploymentIpsStub.resetHistory();
+          plan.manager.settings.agent.supported_features = supportedFeatures;
         });
         after(function () {
           getDeploymentIpsStub.restore();
@@ -687,9 +690,9 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return succeeded if feature is not supported by any agent', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
           mocks.agent.getInfo(1, 'processing.postcreate');
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
             .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -700,6 +703,7 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return postprocessing if agent returns processing', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
           mocks.agent.getInfo();
           mocks.agent.getPostCreateProcessingState({
             state: 'processing',
@@ -707,7 +711,6 @@ describe('#DirectorService', function () {
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
             .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -718,6 +721,7 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return succeeded if agent returns succeeded', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
           mocks.agent.getInfo();
           mocks.agent.getPostCreateProcessingState({
             state: 'succeeded',
@@ -725,7 +729,6 @@ describe('#DirectorService', function () {
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
             .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -744,9 +747,9 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return succeeded if feature is not supported by any agent', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
           mocks.agent.getInfo(1, 'processing.postupdate');
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
             .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -757,6 +760,7 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return postprocessing if agent returns processing', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
           mocks.agent.getInfo();
           mocks.agent.getPostUpdateProcessingState({
             state: 'processing',
@@ -764,7 +768,6 @@ describe('#DirectorService', function () {
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
             .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -775,6 +778,7 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return succeeded if agent returns succeeded', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
           mocks.agent.getInfo();
           mocks.agent.getPostUpdateProcessingState({
             state: 'succeeded',
@@ -782,7 +786,6 @@ describe('#DirectorService', function () {
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
             .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
@@ -795,8 +798,13 @@ describe('#DirectorService', function () {
 
 
       describe('#lastOperation', function () {
+        let supportedFeatures;
+        before(function () {
+          supportedFeatures = _.clone(plan.manager.settings.agent.supported_features);
+        });
         afterEach(function () {
           config.feature.ServiceInstancePostProcessing = false;
+          plan.manager.settings.agent.supported_features = supportedFeatures;
         });
         it('create: returns 200 OK (state = in progress)', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
@@ -921,6 +929,7 @@ describe('#DirectorService', function () {
         });
 
         it('create: returns 200 OK (state = succeeded, resourceState = post_processing) if postcreate is supported by agent', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
@@ -953,7 +962,6 @@ describe('#DirectorService', function () {
             }
           };
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
@@ -1179,6 +1187,7 @@ describe('#DirectorService', function () {
         });
 
         it('update: returns 200 OK (state = succeeded, resourceState = post_processing) if postupdate is supported by agent', function () {
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,
@@ -1203,7 +1212,6 @@ describe('#DirectorService', function () {
             context: context
           };
           return DirectorService.createInstance(instance_id, options)
-            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
             .then(service => service.lastOperation(response))
             .then(res => {
               expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
