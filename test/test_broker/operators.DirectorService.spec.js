@@ -795,6 +795,9 @@ describe('#DirectorService', function () {
 
 
       describe('#lastOperation', function () {
+        afterEach(function () {
+          config.feature.ServiceInstancePostProcessing = false;
+        });
         it('create: returns 200 OK (state = in progress)', function () {
           mocks.director.getDeploymentTask(task_id, 'processing');
           const options = {
@@ -821,9 +824,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: 'in progress',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
               });
               mocks.verify();
             });
@@ -863,9 +867,99 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: returns 200 OK (state = succeeded, resourceState = succeeded) if postcreate not supported by agent', function () {
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.createSecurityGroup(instance_id);
+          const payload = {
+            repeatInterval: CONST.SCHEDULE.RANDOM,
+            timeZone: 'Asia/Kolkata'
+          };
+          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          config.feature.ServiceInstancePostProcessing = true;
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          const response = {
+            task_id: `${deployment_name}_${task_id}`,
+            type: 'create',
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            }
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.lastOperation(response))
+            .then(res => {
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
+                description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('create: returns 200 OK (state = succeeded, resourceState = post_processing) if postcreate is supported by agent', function () {
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.createSecurityGroup(instance_id);
+          const payload = {
+            repeatInterval: CONST.SCHEDULE.RANDOM,
+            timeZone: 'Asia/Kolkata'
+          };
+          mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          config.feature.ServiceInstancePostProcessing = true;
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            },
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          const response = {
+            task_id: `${deployment_name}_${task_id}`,
+            type: 'create',
+            context: {
+              platform: 'cloudfoundry',
+              organization_guid: organization_guid,
+              space_guid: space_guid
+            }
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postcreate'))
+            .then(service => service.lastOperation(response))
+            .then(res => {
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
+                description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
               });
               mocks.verify();
             });
@@ -901,9 +995,10 @@ describe('#DirectorService', function () {
             .then(service => service.lastOperation(response))
             .then(res => {
               CONST.CF_SECURITY_GROUP.MAX_RETRIES = oldRetryCount;
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: 'Create deployment \'service-fabrik-0021-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa\' not yet completely succeeded because "Failed to create security group \'service-fabrik-b4719e7c-e8d3-4f7f-c515-769ad1c3ebfa\'"',
-                state: 'failed'
+                state: 'failed',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.FAILED
               });
               mocks.verify();
             });
@@ -933,9 +1028,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Create deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: 'in progress',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
               });
               mocks.verify();
             });
@@ -970,9 +1066,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Create deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
               });
               mocks.verify();
             });
@@ -1001,9 +1098,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Update deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: 'in progress',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
               });
               mocks.verify();
             });
@@ -1035,9 +1133,83 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: returns 200 OK (state = succeeded, resourceState = succeeded) if postupdate not supported by agent', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.findSecurityGroupByName(instance_id);
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          config.feature.ServiceInstancePostProcessing = true;
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            context: context,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          const response = {
+            task_id: `${deployment_name}_${task_id}`,
+            type: 'update',
+            context: context
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .then(service => service.lastOperation(response))
+            .then(res => {
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
+                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+              });
+              mocks.verify();
+            });
+        });
+
+        it('update: returns 200 OK (state = succeeded, resourceState = post_processing) if postupdate is supported by agent', function () {
+          const context = {
+            platform: 'cloudfoundry',
+            organization_guid: organization_guid,
+            space_guid: space_guid
+          };
+          mocks.director.getDeploymentTask(task_id, 'done');
+          mocks.cloudController.findSecurityGroupByName(instance_id);
+          config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
+          config.mongodb.provision.plan_id = 'TEST';
+          config.feature.ServiceInstancePostProcessing = true;
+          const options = {
+            service_id: service_id,
+            plan_id: plan_id,
+            context: context,
+            organization_guid: organization_guid,
+            space_guid: space_guid,
+            parameters: parameters
+          };
+          const response = {
+            task_id: `${deployment_name}_${task_id}`,
+            type: 'update',
+            context: context
+          };
+          return DirectorService.createInstance(instance_id, options)
+            .tap(service => service.agent.settings.supported_features = _.concat(service.agent.features, 'processing.postupdate'))
+            .then(service => service.lastOperation(response))
+            .then(res => {
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
+                description: `Update deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
               });
               mocks.verify();
             });
@@ -1065,9 +1237,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Delete deployment ${deployment_name} is still in progress`,
-                state: 'in progress'
+                state: 'in progress',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.IN_PROGRESS
               });
               mocks.verify();
             });
@@ -1096,9 +1269,10 @@ describe('#DirectorService', function () {
           return DirectorService.createInstance(instance_id, options)
             .then(service => service.lastOperation(response))
             .then(res => {
-              expect(_.pick(res, ['description', 'state'])).to.eql({
+              expect(_.pick(res, ['description', 'state', 'resourceState'])).to.eql({
                 description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
-                state: 'succeeded'
+                state: 'succeeded',
+                resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
               });
               mocks.verify();
             });
