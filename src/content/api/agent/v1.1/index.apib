@@ -15,6 +15,8 @@ to enable autonomous releases, and to avoid dependencies between the Service Fab
 * `GET /state` get an indicator whether the service instance is currently operational.
 * `POST /lifecycle/deprovision` perform any operations before the deprovision of the service instance.
 * `POST /lifecycle/preupdate` perform any operations before the update of the service instance.
+* `GET /processing/postcreate` poll for post create operations running inside the service instance after the instance creation.
+* `GET /processing/postupdate` poll for post create operations running inside the service instance after an instance update.
 * `POST /backup/start` start a backup of service-specific data.
 * `POST /backup/abort` abort a running backup.
 * `GET /backup` retrieve the last operation during a backup
@@ -135,6 +137,24 @@ The agent is asked to perform any necessary operations before the broker execute
 + Response 500
 <!-- include(responses/500.apib) -->
 
+
+# Group Processing
+Polling for service instance internal operations after lifecycle events (create and update).
+
+## PostCreate [GET /processing/postcreate]
+Called when ```cf create-service``` is invoked to create a BOSH service instance and the bosh deployment is finished.
+The agent is asked whether service instance internal post processing steps have been finished.
+
++ Response 200
+<!-- include(responses/processing_200.apib) -->
+
+
+## PostUpdate [GET /processing/postupdate]
+Called when ```cf update-service``` is invoked on a BOSH service instance and the bosh deployment is finished.
+The agent is asked whether service instance internal post processing steps have been finished.
+
++ Response 200
+<!-- include(responses/processing_200.apib) -->
 
 
 # Group Credentials
