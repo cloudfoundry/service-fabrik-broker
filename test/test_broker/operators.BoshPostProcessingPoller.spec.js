@@ -74,7 +74,7 @@ describe('operators', function () {
     };
 
 
-    let sandbox, initStub, clearPollerStub, createStub, updateStub, deleteStub, getAgentPostProcessingStatusStub;
+    let sandbox, initStub, clearPollerStub, createStub, updateStub, deleteStub, getAgentLifecyclePostProcessingStatusStub;
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       initStub = sandbox.stub(BaseStatusPoller.prototype, 'init');
@@ -82,7 +82,7 @@ describe('operators', function () {
       createStub = sandbox.stub();
       updateStub = sandbox.stub();
       deleteStub = sandbox.stub();
-      getAgentPostProcessingStatusStub = sandbox.stub();
+      getAgentLifecyclePostProcessingStatusStub = sandbox.stub();
     });
 
     afterEach(function () {
@@ -102,7 +102,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -112,7 +112,7 @@ describe('operators', function () {
         const type = 'create';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .onCall(0)
           .returns(Promise.resolve({
@@ -131,7 +131,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(0);
             mocks.verify();
@@ -148,7 +148,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -158,7 +158,7 @@ describe('operators', function () {
         const type = 'update';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .withArgs(resourceBodyCopy.status.response.type, resourceBodyCopy.status.response.deployment_name)
           .onCall(0)
@@ -178,7 +178,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(0);
             mocks.verify();
@@ -195,7 +195,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -205,7 +205,7 @@ describe('operators', function () {
         const type = 'create';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .withArgs(resourceBodyCopy.status.response.type, resourceBodyCopy.status.response.deployment_name)
           .onCall(0)
@@ -225,7 +225,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();
@@ -242,7 +242,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -252,7 +252,7 @@ describe('operators', function () {
         const type = 'update';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .withArgs(resourceBodyCopy.status.response.type, resourceBodyCopy.status.response.deployment_name)
           .onCall(0)
@@ -272,7 +272,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();
@@ -289,7 +289,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -299,7 +299,7 @@ describe('operators', function () {
         const type = 'create';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .withArgs(resourceBodyCopy.status.response.type, resourceBodyCopy.status.response.deployment_name)
           .onCall(0)
@@ -319,7 +319,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();
@@ -337,7 +337,7 @@ describe('operators', function () {
             'createInstance': function () {
               /* jshint unused:false */
               return Promise.resolve({
-                'getAgentPostProcessingStatus': getAgentPostProcessingStatusStub
+                'getAgentLifecyclePostProcessingStatus': getAgentLifecyclePostProcessingStatusStub
               });
             }
           }
@@ -347,7 +347,7 @@ describe('operators', function () {
         const type = 'update';
         resourceBodyCopy.status.lastOperation.type = type;
         resourceBodyCopy.status.response.type = type;
-        getAgentPostProcessingStatusStub
+        getAgentLifecyclePostProcessingStatusStub
           .withArgs(type, 'deployment_name')
           .withArgs(resourceBodyCopy.status.response.type, resourceBodyCopy.status.response.deployment_name)
           .onCall(0)
@@ -367,7 +367,7 @@ describe('operators', function () {
             /* jshint unused:false */
             expect(res.statusCode).to.be.eql(200);
             expect(res.body).to.be.eql({});
-            expect(getAgentPostProcessingStatusStub.callCount).to.be.eql(1);
+            expect(getAgentLifecyclePostProcessingStatusStub.callCount).to.be.eql(1);
             expect(initStub.callCount).to.be.eql(1);
             expect(clearPollerStub.callCount).to.be.eql(1);
             mocks.verify();

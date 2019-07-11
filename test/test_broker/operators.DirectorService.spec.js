@@ -651,7 +651,7 @@ describe('#DirectorService', function () {
       });
 
 
-      describe('#getAgentPostProcessingStatus', function () {
+      describe('#getAgentLifecyclePostProcessingStatus', function () {
 
         let getDeploymentIpsStub;
         let supportedFeatures;
@@ -683,17 +683,17 @@ describe('#DirectorService', function () {
 
         it('create: should return succeeded if feature is not supported', function () {
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('create', 'deployment'))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('create', 'deployment'))
             .then(res => {
               expect(_.get(res, 'state')).to.eql(CONST.APISERVER.RESOURCE_STATE.SUCCEEDED);
             });
         });
 
         it('create: should return succeeded if feature is not supported by any agent', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
-          mocks.agent.getInfo(1, 'processing.postcreate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postcreate');
+          mocks.agent.getInfo(1, 'lifecycle.async.postcreate');
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
@@ -703,15 +703,15 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return postprocessing if agent returns processing', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postcreate');
           mocks.agent.getInfo();
-          mocks.agent.getPostCreateProcessingState({
+          mocks.agent.getLifecyclePostCreateProcessingState({
             state: 'processing',
             stage: 'Step 2/3',
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
@@ -721,15 +721,15 @@ describe('#DirectorService', function () {
         });
 
         it('create: should return succeeded if agent returns succeeded', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postcreate');
           mocks.agent.getInfo();
-          mocks.agent.getPostCreateProcessingState({
+          mocks.agent.getLifecyclePostCreateProcessingState({
             state: 'succeeded',
             stage: 'Step 3/3',
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('create', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('create', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
@@ -740,17 +740,17 @@ describe('#DirectorService', function () {
 
         it('update: should return succeeded if feature is not supported', function () {
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('update', 'deployment'))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('update', 'deployment'))
             .then(res => {
               expect(_.get(res, 'state')).to.eql(CONST.APISERVER.RESOURCE_STATE.SUCCEEDED);
             });
         });
 
         it('update: should return succeeded if feature is not supported by any agent', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
-          mocks.agent.getInfo(1, 'processing.postupdate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postupdate');
+          mocks.agent.getInfo(1, 'lifecycle.async.postupdate');
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
@@ -760,15 +760,15 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return postprocessing if agent returns processing', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postupdate');
           mocks.agent.getInfo();
-          mocks.agent.getPostUpdateProcessingState({
+          mocks.agent.getLifecyclePostUpdateProcessingState({
             state: 'processing',
             stage: 'Step 2/3',
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
@@ -778,15 +778,15 @@ describe('#DirectorService', function () {
         });
 
         it('update: should return succeeded if agent returns succeeded', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postupdate');
           mocks.agent.getInfo();
-          mocks.agent.getPostUpdateProcessingState({
+          mocks.agent.getLifecyclePostUpdateProcessingState({
             state: 'succeeded',
             stage: 'Step 3/3',
             updated_at: new Date().toISOString()
           });
           return DirectorService.createInstance(instance_id, options)
-            .then(service => service.getAgentPostProcessingStatus('update', deployment_name))
+            .then(service => service.getAgentLifecyclePostProcessingStatus('update', deployment_name))
             .then(res => {
               expect(_.pick(res, ['state'])).to.eql({
                 state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
@@ -927,7 +927,7 @@ describe('#DirectorService', function () {
         });
 
         it('create: returns 200 OK (state = succeeded, resourceState = post_processing) if postcreate is supported by agent', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postcreate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postcreate');
           mocks.director.getDeploymentTask(task_id, 'done');
           mocks.cloudController.createSecurityGroup(instance_id);
           const payload = {
@@ -1183,7 +1183,7 @@ describe('#DirectorService', function () {
         });
 
         it('update: returns 200 OK (state = succeeded, resourceState = post_processing) if postupdate is supported by agent', function () {
-          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'processing.postupdate');
+          plan.manager.settings.agent.supported_features = _.concat(supportedFeatures, 'lifecycle.async.postupdate');
           const context = {
             platform: 'cloudfoundry',
             organization_guid: organization_guid,

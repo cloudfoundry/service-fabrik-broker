@@ -32,7 +32,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
     }
     return DirectorService
       .createInstance(instanceId, resourceOptions)
-      .then(directorService => directorService.getAgentPostProcessingStatus(operationType, deploymentName))
+      .then(directorService => directorService.getAgentLifecyclePostProcessingStatus(operationType, deploymentName))
       .tap(agentResponse => logger.debug('agent response is ', agentResponse))
       .then(agentResponse => Promise.all([eventmesh.apiServerClient.updateResource({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.DEPLOYMENT,

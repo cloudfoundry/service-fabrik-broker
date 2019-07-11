@@ -633,8 +633,8 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  getAgentPostProcessingStatus(operationType, deploymentName) {
-    const featureName = `processing.post${operationType}`; // TODO check feature names
+  getAgentLifecyclePostProcessingStatus(operationType, deploymentName) {
+    const featureName = `lifecycle.async.post${operationType}`;
     if (_.includes(this.agent.features, featureName)) {
       return this
         .getDeploymentIps(deploymentName)
@@ -720,12 +720,12 @@ class DirectorService extends BaseDirectorService {
     switch (task.state) {
       case 'done':
         // only start postprocessing if it is enabled by a feature flag and supported by the agent
-        const postProcessingFeatureName = `processing.post${operation.type}`; // TODO check feature names
-        const shallPostProcess = _.includes(this.agent.features, postProcessingFeatureName);
+        const postProcessingFeatureName = `lifecycle.async.post${operation.type}`;
+        const shallWaitForPostProcessing = _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
           state: 'succeeded',
-          resourceState: shallPostProcess ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          resourceState: shallWaitForPostProcessing ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         });
       case 'error':
       case 'cancelled':

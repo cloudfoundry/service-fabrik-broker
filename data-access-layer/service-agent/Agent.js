@@ -209,8 +209,8 @@ class Agent extends HttpClient {
    * @returns {*} The response of the agent
    */
   getProcessingState(ips, eventType, lifecycleState) {
-    const featureName = `processing.${lifecycleState}${eventType}`; // TODO check feature name
-    const pathname = `processing/${lifecycleState}${eventType}`; // TODO check route
+    const featureName = `lifecycle.async.${lifecycleState}${eventType}`;
+    const pathname = `lifecycle/${lifecycleState}${eventType}`;
 
     return this
       .getHost(ips, featureName)
