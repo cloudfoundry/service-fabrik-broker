@@ -14,18 +14,18 @@ func (e *InteroperatorError) Error() string {
 	return e.Message
 }
 
-// NewClusterFactoryError returns new error indicating incorrect arguments passed.
-func NewClusterFactoryError(message string, err error) *InteroperatorError {
+// NewClusterRegistryError returns new error indicating incorrect arguments passed.
+func NewClusterRegistryError(message string, err error) *InteroperatorError {
 	return &InteroperatorError{
 		Err:     err,
-		Code:    CodeClusterFactoryError,
+		Code:    CodeClusterRegistryError,
 		Message: message,
 	}
 }
 
-// ClusterFactoryError checks whether error is of CodeClusterError type
-func ClusterFactoryError(err error) bool {
-	return ErrorCode(err) == CodeClusterFactoryError
+// ClusterRegistryError checks whether error is of CodeClusterError type
+func ClusterRegistryError(err error) bool {
+	return ErrorCode(err) == CodeClusterRegistryError
 }
 
 // NewMarshalError returns new error indicating marshalling to specific format failed.
@@ -126,6 +126,20 @@ func SFServiceBindingNotFound(err error) bool {
 	return ErrorCode(err) == CodeSFServiceBindingNotFound
 }
 
+// NewSFClusterNotFound returns a new error which indicates that the SfService is not found.
+func NewSFClusterNotFound(name string, err error) *InteroperatorError {
+	return &InteroperatorError{
+		Err:     err,
+		Code:    CodeSFClusterNotFound,
+		Message: fmt.Sprintf("SFCluster %s not found", name),
+	}
+}
+
+// SFClusterNotFound is true if the error indicates the requested cluster object is not found.
+func SFClusterNotFound(err error) bool {
+	return ErrorCode(err) == CodeSFClusterNotFound
+}
+
 // NotFound is true if the error indicates any not found error
 func NotFound(err error) bool {
 	code := ErrorCode(err)
@@ -133,6 +147,7 @@ func NotFound(err error) bool {
 		code == CodeSFPlanNotFound ||
 		code == CodeSFServiceInstanceNotFound ||
 		code == CodeSFServiceBindingNotFound ||
+		code == CodeSFClusterNotFound ||
 		code == CodeTemplateNotFound
 }
 

@@ -23,9 +23,9 @@ import (
 	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	mock_clusterRegistry "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry/mock_registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-	mock_clusterFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/cluster/factory/mock_factory"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources/mock_resources"
 	"github.com/golang/mock/gomock"
@@ -187,12 +187,12 @@ func TestReconcile(t *testing.T) {
 	c = mgr.GetClient()
 
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
-	mockClusterFactory := mock_clusterFactory.NewMockClusterFactory(ctrl)
-	reconciler := newReconciler(mgr, mockResourceManager, mockClusterFactory)
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
+	reconciler := newReconciler(mgr, mockResourceManager, mockClusterRegistry)
 
 	mockResourceManager.EXPECT().ComputeExpectedResources(gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(expectedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().SetOwnerReference(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockClusterFactory.EXPECT().GetCluster("instance-id", "", "service-id", "plan-id").Return(reconciler, nil).AnyTimes()
+	mockClusterRegistry.EXPECT().GetClient("1").Return(reconciler, nil).AnyTimes()
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, err1).Times(1)
 	mockResourceManager.EXPECT().ReconcileResources(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 	mockResourceManager.EXPECT().ComputeStatus(gomock.Any(), gomock.Any(), "instance-id", "", "service-id", "plan-id", osbv1alpha1.ProvisionAction, "default").Return(&properties.Status{
@@ -285,7 +285,7 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c := mgr.GetClient()
 	mockResourceManager := mock_resources.NewMockResourceManager(ctrl)
-	mockClusterFactory := mock_clusterFactory.NewMockClusterFactory(ctrl)
+	mockClusterRegistry := mock_clusterRegistry.NewMockClusterRegistry(ctrl)
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 	defer func() {
 		close(stopMgr)
@@ -324,7 +324,7 @@ func TestReconcileSFServiceInstance_handleError(t *testing.T) {
 	r := &ReconcileSFServiceInstance{
 		Client:          c,
 		scheme:          mgr.GetScheme(),
-		clusterFactory:  mockClusterFactory,
+		clusterRegistry: mockClusterRegistry,
 		resourceManager: mockResourceManager,
 	}
 	type args struct {

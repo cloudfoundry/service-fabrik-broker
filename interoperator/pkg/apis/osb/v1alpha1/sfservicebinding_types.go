@@ -17,8 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -56,6 +60,7 @@ type BindingResponse struct {
 
 // SFServiceBinding is the Schema for the sfservicebindings API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name=state,type=string,JSONPath=.status.state
 type SFServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -91,4 +96,20 @@ func (r *SFServiceBinding) SetState(state string) {
 	if r != nil {
 		r.Status.State = state
 	}
+}
+
+// GetClusterID fetches the ClusterID of the SFServiceBinding
+// WARN: This will fetch the corresponding SFServiceInstance
+func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) string {
+	instance := &SFServiceInstance{}
+	var instanceKey = types.NamespacedName{
+		Name:      r.Spec.InstanceID,
+		Namespace: r.GetNamespace(),
+	}
+	err := c.Get(context.TODO(), instanceKey, instance)
+	if err != nil {
+		log.Error(err, "failed to get sfserviceinstance", "InstanceID", r.Spec.InstanceID, "BindingID", r.GetName())
+		return ""
+	}
+	return instance.GetClusterID()
 }

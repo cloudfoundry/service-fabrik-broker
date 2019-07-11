@@ -48,6 +48,7 @@ type SFServiceInstanceStatus struct {
 
 // SFServiceInstance is the Schema for the sfserviceinstances API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name=state,type=string,JSONPath=.status.state
 type SFServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -83,4 +84,13 @@ func (r *SFServiceInstance) SetState(state string) {
 	if r != nil {
 		r.Status.State = state
 	}
+}
+
+// GetClusterID fetches the ClusterID of the SFServiceInstance
+func (r *SFServiceInstance) GetClusterID() string {
+	if r == nil || r.Spec.ClusterID == "" {
+		log.Info("failed to read ClusterID", "SFServiceInstance", r.GetName())
+		return ""
+	}
+	return r.Spec.ClusterID
 }
