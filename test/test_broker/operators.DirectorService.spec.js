@@ -803,7 +803,6 @@ describe('#DirectorService', function () {
           supportedFeatures = _.clone(plan.manager.settings.agent.supported_features);
         });
         afterEach(function () {
-          config.feature.ServiceInstancePostProcessing = false;
           plan.manager.settings.agent.supported_features = supportedFeatures;
         });
         it('create: returns 200 OK (state = in progress)', function () {
@@ -894,7 +893,6 @@ describe('#DirectorService', function () {
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          config.feature.ServiceInstancePostProcessing = true;
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -939,7 +937,6 @@ describe('#DirectorService', function () {
           mocks.serviceFabrikClient.scheduleUpdate(instance_id, payload);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          config.feature.ServiceInstancePostProcessing = true;
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -1160,7 +1157,6 @@ describe('#DirectorService', function () {
           mocks.cloudController.findSecurityGroupByName(instance_id);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          config.feature.ServiceInstancePostProcessing = true;
           const options = {
             service_id: service_id,
             plan_id: plan_id,
@@ -1197,7 +1193,6 @@ describe('#DirectorService', function () {
           mocks.cloudController.findSecurityGroupByName(instance_id);
           config.scheduler.jobs.service_instance_update.run_every_xdays = 15;
           config.mongodb.provision.plan_id = 'TEST';
-          config.feature.ServiceInstancePostProcessing = true;
           const options = {
             service_id: service_id,
             plan_id: plan_id,

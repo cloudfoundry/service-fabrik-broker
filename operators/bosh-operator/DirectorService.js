@@ -721,8 +721,7 @@ class DirectorService extends BaseDirectorService {
       case 'done':
         // only start postprocessing if it is enabled by a feature flag and supported by the agent
         const postProcessingFeatureName = `processing.post${operation.type}`; // TODO check feature names
-        const shallPostProcess = _.get(config, 'feature.ServiceInstancePostProcessing', false) &&
-          _.includes(this.agent.features, postProcessingFeatureName);
+        const shallPostProcess = _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
           state: 'succeeded',

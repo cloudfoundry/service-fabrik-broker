@@ -118,7 +118,6 @@ defaults: &defaults
     ServiceInstanceAutoUpdate: true #Switch to turn on / turn off schedule_update feature
     EnableSecurityGroupsOps: true
     AllowInstanceSharing: true
-    ServiceInstancePostProcessing: false
   # this timeout is set to 175 secs by default because CF has a default timeout of 180 secs
   http_timeout: 175000
   deployment_action_timeout: 80000
