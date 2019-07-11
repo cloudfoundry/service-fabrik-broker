@@ -14,9 +14,9 @@ to enable autonomous releases, and to avoid dependencies between the Service Fab
 * `GET /info` now returns `supported_features` field, showing a list of features the agent supports at the moment he receives the request.
 * `GET /state` get an indicator whether the service instance is currently operational.
 * `POST /lifecycle/deprovision` perform any operations before the deprovision of the service instance.
+* `GET /lifecyle/postcreate` poll for post create operations running inside the service instance after the instance creation.
 * `POST /lifecycle/preupdate` perform any operations before the update of the service instance.
-* `GET /processing/postcreate` poll for post create operations running inside the service instance after the instance creation.
-* `GET /processing/postupdate` poll for post create operations running inside the service instance after an instance update.
+* `GET /lifecyle/postupdate` poll for post update operations running inside the service instance after an instance update.
 * `POST /backup/start` start a backup of service-specific data.
 * `POST /backup/abort` abort a running backup.
 * `GET /backup` retrieve the last operation during a backup
@@ -99,6 +99,13 @@ The agent is asked to perform any necessary operations before the broker execute
 + Response 500
 <!-- include(responses/500.apib) -->
 
+## PostCreate [GET /lifecycle/postcreate]
+Called when ```cf create-service``` is invoked to create a BOSH service instance and the bosh deployment is finished.
+The agent is asked whether service instance internal post processing steps have been finished.
+
++ Response 200
+<!-- include(responses/lifecyle_async_polling_200.apib) -->
+
 # Group Lifecycle.PreUpdate
 Whenever someone asks the broker to update a service instance, it commissions an agent to perform any operations required to be executed before the actual update of the instance gets triggered.
 
@@ -138,23 +145,12 @@ The agent is asked to perform any necessary operations before the broker execute
 <!-- include(responses/500.apib) -->
 
 
-# Group Processing
-Polling for service instance internal operations after lifecycle events (create and update).
-
-## PostCreate [GET /processing/postcreate]
-Called when ```cf create-service``` is invoked to create a BOSH service instance and the bosh deployment is finished.
-The agent is asked whether service instance internal post processing steps have been finished.
-
-+ Response 200
-<!-- include(responses/processing_200.apib) -->
-
-
-## PostUpdate [GET /processing/postupdate]
+## PostUpdate [GET /lifecycle/postupdate]
 Called when ```cf update-service``` is invoked on a BOSH service instance and the bosh deployment is finished.
 The agent is asked whether service instance internal post processing steps have been finished.
 
 + Response 200
-<!-- include(responses/processing_200.apib) -->
+<!-- include(responses/lifecyle_async_polling_200.apib) -->
 
 
 # Group Credentials
