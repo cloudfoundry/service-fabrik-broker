@@ -41,7 +41,7 @@ class BoshPostProcessingPoller extends BaseStatusPoller {
         status: {
           lastOperation: _.assign(resourceBody.status.lastOperation, {
             resourceState: agentResponse.state,
-            description: _.get(agentResponse, 'stage', description)
+            description: _.get(agentResponse, 'description', description)
           }),
           state: agentResponse.state
         }

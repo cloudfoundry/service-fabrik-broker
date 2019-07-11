@@ -640,23 +640,29 @@ class DirectorService extends BaseDirectorService {
         .getDeploymentIps(deploymentName)
         .then(ips => this.agent.getProcessingState(ips, operationType, 'post'))
         .then(res => {
+          const action = _.capitalize(operationType);
+          const timestamp = res.updated_at || new Date().toISOString();
+          const stage = _.get(res, 'stage', '');
+          let description;
           let state;
           switch (res.state) {
             case 'succeeded':
               state = CONST.APISERVER.RESOURCE_STATE.SUCCEEDED;
+              description = `${action} deployment ${deploymentName} succeeded at ${timestamp}: ${stage}`;
               break;
             case 'processing':
               state = CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING;
+              description = `${action} deployment ${deploymentName} is still in progress: ${stage}`;
               break;
             case 'failed':
             default:
               state = CONST.APISERVER.RESOURCE_STATE.FAILED;
+              description = `${action} deployment ${deploymentName} failed at ${timestamp} during: ${stage}`;
               break;
           }
           return {
             state,
-            stage: res.stage,
-            update_at: res.update_at
+            description
           };
         })
         .catch(FeatureNotSupportedByAnyAgent, err => {
