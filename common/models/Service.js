@@ -17,7 +17,7 @@ class Service {
         metadata: null,
         requires: [],
         plan_updateable: true,
-        dashboard_client: {},
+        // dashboard_client: {},
         application_access_ports: null,
         service_tags: {}
       })
