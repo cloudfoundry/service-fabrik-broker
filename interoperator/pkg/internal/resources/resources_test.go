@@ -140,7 +140,7 @@ func Test_resourceManager_fetchResources(t *testing.T) {
 			InstanceRetrievable: true,
 			BindingRetrievable:  true,
 			Metadata:            nil,
-			DashboardClient: osbv1alpha1.DashboardClient{
+			DashboardClient: &osbv1alpha1.DashboardClient{
 				ID:          "id",
 				Secret:      "secret",
 				RedirectURI: "redirecturi",
@@ -403,7 +403,7 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 			InstanceRetrievable: true,
 			BindingRetrievable:  true,
 			Metadata:            nil,
-			DashboardClient: osbv1alpha1.DashboardClient{
+			DashboardClient: &osbv1alpha1.DashboardClient{
 				ID:          "id",
 				Secret:      "secret",
 				RedirectURI: "redirecturi",
@@ -1155,7 +1155,7 @@ directorbind:
 			InstanceRetrievable: true,
 			BindingRetrievable:  true,
 			Metadata:            nil,
-			DashboardClient: osbv1alpha1.DashboardClient{
+			DashboardClient: &osbv1alpha1.DashboardClient{
 				ID:          "id",
 				Secret:      "secret",
 				RedirectURI: "redirecturi",
