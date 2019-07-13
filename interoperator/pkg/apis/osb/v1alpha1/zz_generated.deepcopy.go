@@ -497,7 +497,11 @@ func (in *SFServiceSpec) DeepCopyInto(out *SFServiceSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	out.DashboardClient = in.DashboardClient
+	if in.DashboardClient != nil {
+		in, out := &in.DashboardClient, &out.DashboardClient
+		*out = new(DashboardClient)
+		**out = **in
+	}
 	if in.RawContext != nil {
 		in, out := &in.RawContext, &out.RawContext
 		*out = new(runtime.RawExtension)

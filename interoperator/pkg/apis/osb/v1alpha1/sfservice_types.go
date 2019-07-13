@@ -39,7 +39,7 @@ type SFServiceSpec struct {
 	InstanceRetrievable bool                  `json:"instanceRetrievable,omitempty"`
 	BindingRetrievable  bool                  `json:"bindingRetrievable,omitempty"`
 	Metadata            *runtime.RawExtension `json:"metadata,omitempty"`
-	DashboardClient     DashboardClient       `json:"dashboardClient,omitempty"`
+	DashboardClient     *DashboardClient      `json:"dashboardClient,omitempty"`
 	PlanUpdatable       bool                  `json:"planUpdatable,omitempty"`
 	RawContext          *runtime.RawExtension `json:"context,omitempty"`
 }

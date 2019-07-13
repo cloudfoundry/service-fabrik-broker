@@ -116,7 +116,7 @@ func TestFindServiceInfo(t *testing.T) {
 			InstanceRetrievable: true,
 			BindingRetrievable:  true,
 			Metadata:            nil,
-			DashboardClient: osbv1alpha1.DashboardClient{
+			DashboardClient: &osbv1alpha1.DashboardClient{
 				ID:          "id",
 				Secret:      "secret",
 				RedirectURI: "redirecturi",

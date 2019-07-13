@@ -56,7 +56,7 @@ func TestStorageSFService(t *testing.T) {
 			InstanceRetrievable: true,
 			BindingRetrievable:  true,
 			Metadata:            re,
-			DashboardClient: DashboardClient{
+			DashboardClient: &DashboardClient{
 				ID:          "id",
 				Secret:      "secret",
 				RedirectURI: "redirecturi",
@@ -104,7 +104,9 @@ func TestStorageSFService(t *testing.T) {
 	copiedStatus := updated.Status.DeepCopy()
 	g.Expect(copiedStatus).To(gomega.Equal(&updated.Status))
 	copiedDashboardClient := updated.Spec.DashboardClient.DeepCopy()
-	g.Expect(copiedDashboardClient).To(gomega.Equal(&updated.Spec.DashboardClient))
+	g.Expect(copiedDashboardClient.ID).To(gomega.Equal(updated.Spec.DashboardClient.ID))
+	g.Expect(copiedDashboardClient.Secret).To(gomega.Equal(updated.Spec.DashboardClient.Secret))
+	g.Expect(copiedDashboardClient.RedirectURI).To(gomega.Equal(updated.Spec.DashboardClient.RedirectURI))
 
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
