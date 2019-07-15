@@ -40,7 +40,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
         .then(lastOperationValue => Promise.all([
           this._updateLastOperationStateInResource(instanceId, lastOperationValue, directorService, options),
           Promise.try(() => {
-            if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED], lastOperationValue.resourceState)) {
+            if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.FAILED, CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING], lastOperationValue.resourceState)) {
               // cancel the poller and clear the array
               this.clearPoller(instanceId, intervalId);
             }
@@ -127,7 +127,7 @@ class BoshTaskStatusPoller extends BaseStatusPoller {
 
   _updateLastOperationStateInResource(instanceId, lastOperationValue, directorService, options) {
     return Promise.try(() => {
-      if (lastOperationValue.resourceState === CONST.APISERVER.RESOURCE_STATE.SUCCEEDED) {
+      if (_.includes([CONST.APISERVER.RESOURCE_STATE.SUCCEEDED, CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING], lastOperationValue.resourceState)) {
         if (lastOperationValue.type === CONST.OPERATION_TYPE.CREATE ||
           lastOperationValue.type === CONST.OPERATION_TYPE.UPDATE) {
           return directorService.director.getDeploymentNameForInstanceId(directorService.guid)

@@ -633,6 +633,58 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
+  getAgentLifecyclePostProcessingStatus(operationType, deploymentName) {
+    const featureName = `lifecycle.async.post${operationType}`;
+    if (_.includes(this.agent.features, featureName)) {
+      return this
+        .getDeploymentIps(deploymentName)
+        .then(ips => this.agent.getProcessingState(ips, operationType, 'post'))
+        .then(res => {
+          const action = _.capitalize(operationType);
+          const timestamp = res.updated_at || new Date().toISOString();
+          const stage = _.get(res, 'stage', '');
+          let description;
+          let state;
+          switch (res.state) {
+            case 'succeeded':
+              state = CONST.APISERVER.RESOURCE_STATE.SUCCEEDED;
+              description = `${action} deployment ${deploymentName} succeeded at ${timestamp}: ${stage}`;
+              break;
+            case 'processing':
+              state = CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING;
+              description = `${action} deployment ${deploymentName} is still in progress: ${stage}`;
+              break;
+            case 'failed':
+            default:
+              state = CONST.APISERVER.RESOURCE_STATE.FAILED;
+              description = `${action} deployment ${deploymentName} failed at ${timestamp} during: ${stage}`;
+              break;
+          }
+          return {
+            state,
+            description
+          };
+        })
+        .catch(FeatureNotSupportedByAnyAgent, err => {
+          logger.debug('+-> Caught expected error of feature \'postprocessing\':', err);
+          return {
+            state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          };
+        })
+        .catch(err => {
+          // If an unexpected error occurs (e.g. bosh not reachable) try it again later
+          logger.error('Error occurred while querying agent of feature \'postprocessing\':', err);
+          return {
+            state: CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING
+          };
+        });
+    } else {
+      return Promise.resolve({
+        state: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+      });
+    }
+  }
+
   getBoshTaskStatus(instanceId, operation, taskId) {
     return Promise
       .try(() => {
@@ -673,10 +725,13 @@ class DirectorService extends BaseDirectorService {
     const timestamp = new Date(task.timestamp * 1000).toISOString();
     switch (task.state) {
       case 'done':
+        // only start postprocessing if it is enabled by a feature flag and supported by the agent
+        const postProcessingFeatureName = `lifecycle.async.post${operation.type}`;
+        const shallWaitForPostProcessing = _.includes(this.agent.features, postProcessingFeatureName);
         return _.assign(operation, {
           description: `${action} deployment ${task.deployment} succeeded at ${timestamp}`,
           state: 'succeeded',
-          resourceState: CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
+          resourceState: shallWaitForPostProcessing ? CONST.APISERVER.RESOURCE_STATE.POST_PROCESSING : CONST.APISERVER.RESOURCE_STATE.SUCCEEDED
         });
       case 'error':
       case 'cancelled':

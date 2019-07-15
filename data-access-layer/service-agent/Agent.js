@@ -200,6 +200,29 @@ class Agent extends HttpClient {
       .then(ip => this.post(ip, 'lifecycle/preupdate', context, CONST.HTTP_STATUS_CODE.OK, agentCredsBeforeUpdate));
   }
 
+  /**
+   * Poll the agent for the process of the lifecycle last operation within the deployment
+   *
+   * @param ips The ip addresses of all available agents
+   * @param {string} eventType The current lifecycle event, supported values: "create", "update"
+   * @param {string} lifecycleState The current lifecycle state of the operation, supported values: "post"
+   * @returns {*} The response of the agent
+   */
+  getProcessingState(ips, eventType, lifecycleState) {
+    const featureName = `lifecycle.async.${lifecycleState}${eventType}`;
+    const pathname = `lifecycle/${lifecycleState}${eventType}`;
+
+    return this
+      .getHost(ips, featureName)
+      .then(ip => this.getUrl(ip, pathname))
+      .then(url => this.request({
+        method: 'GET',
+        url: url,
+        auth: this.auth
+      }, CONST.HTTP_STATUS_CODE.OK))
+      .then(res => res.body);
+  }
+
   createCredentials(ips, parameters, preBindResponse) {
     const body = {
       parameters: parameters,
