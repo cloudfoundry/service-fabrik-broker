@@ -275,7 +275,7 @@ by &#8216;state=processing&#8217; and &#8216;step=X&#8217;.</p>
 <h2>Volumes<a class="headerlink" href="#volumes" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_volume">
-<tt class="descclassname">BaseClient.</tt><tt class="descname">get_volume</tt><big>(</big><em>volume_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_volume" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_volume</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a volume.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -458,7 +458,7 @@ by &#8216;state=processing&#8217; and &#8216;step=X&#8217;.</p>
 <h2>Snapshots<a class="headerlink" href="#snapshots" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.get_snapshot">
-<tt class="descclassname">BaseClient.</tt><tt class="descname">get_snapshot</tt><big>(</big><em>snapshot_id</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_snapshot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">get_snapshot</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.get_snapshot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a snapshot.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -748,7 +748,7 @@ Since it&#8217;s a volume created from the snapshot, the UUID doesn&#8217;t chan
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.upload_to_blobstore">
-<tt class="descclassname">BaseClient.</tt><tt class="descname">upload_to_blobstore</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.upload_to_blobstore" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">upload_to_blobstore</tt><big>(</big><em>*args</em>, <em>throw_exception=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.upload_to_blobstore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Upload a file to the BLOB storage.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -757,10 +757,13 @@ Since it&#8217;s a volume created from the snapshot, the UUID doesn&#8217;t chan
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>blob_to_upload_path</strong> &#8211; the path of the file to be uploaded</li>
 <li><strong>blob_target_name</strong> &#8211; the name of the uploaded file in the BLOB storage</li>
+<li><strong>throw_exception</strong> &#8211; flag which determines if the exception should be thrown back to the invoker (default: False)</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">upload_to_blobstore</span><span class="p">(</span><span class="s">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;files.tar.gz&#39;</span><span class="p">)</span>
+
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">upload_to_blobstore</span><span class="p">(</span><span class="s">&#39;/tmp/backup/files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;files.tar.gz&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>
@@ -771,7 +774,7 @@ Since it&#8217;s a volume created from the snapshot, the UUID doesn&#8217;t chan
 
 <dl class="method">
 <dt id="lib.clients.BaseClient.BaseClient.download_from_blobstore">
-<tt class="descclassname">BaseClient.</tt><tt class="descname">download_from_blobstore</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.download_from_blobstore" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseClient.</tt><tt class="descname">download_from_blobstore</tt><big>(</big><em>*args</em>, <em>throw_exception=None</em><big>)</big><a class="headerlink" href="#lib.clients.BaseClient.BaseClient.download_from_blobstore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Download a file from the BLOB storage.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -780,10 +783,13 @@ Since it&#8217;s a volume created from the snapshot, the UUID doesn&#8217;t chan
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>blob_to_download_name</strong> &#8211; the name of the file to be downloaded</li>
 <li><strong>blob_download_target_path</strong> &#8211; the path where the file should be downloaded to</li>
+<li><strong>throw_exception</strong> &#8211; flag which determines if the exception should be thrown back to the invoker (default: False)</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"><div class="first last highlight-python"><div class="highlight"><pre><span class="n">iaas_client</span><span class="o">.</span><span class="n">download_from_blobstore</span><span class="p">(</span><span class="s">&#39;files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">)</span>
+
+<span class="n">iaas_client</span><span class="o">.</span><span class="n">download_from_blobstore</span><span class="p">(</span><span class="s">&#39;files.tar.gz&#39;</span><span class="p">,</span> <span class="s">&#39;/tmp/restore/files.tar.gz&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </td>

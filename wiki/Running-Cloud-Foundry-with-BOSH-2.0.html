@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Bootstrap-BOSH-2.0-with-local-VirtualBox.html">Bootstrap-BOSH-2.0-with-local-VirtualBox</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resource-structure,-Locking-and-Unlocking-with-apiserver.html">Resource-structure,-Locking-and-Unlocking-with-apiserver</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Running-Cloud-Foundry-with-BOSH-2.0.html">Running-Cloud-Foundry-with-BOSH-2.0</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Broker-Error-Codes.html">Service-Broker-Error-Codes</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Quota-Management-in-Service-Fabrik.html">Service-Quota-Management-in-Service-Fabrik</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Running-Cloud-Foundry-with-BOSH-2.0</h1>
+</header>
+<p>If you do not have a BOSH-Lite installed with bosh2 locally on your VirtualBox yet, you can follow <a href="https://github.com/cloudfoundry-incubator/service-fabrik-broker/wiki/Bootstrap-BOSH-2.0-with-local-VirtualBox">Bootstrap BOSH on VirtualBox with BOSH 2.0</a> to do so. If you already have BOSH-Lite installed, make sure you are logged into your director as <code>admin</code> user. Also make sure your are using bosh cli v2. In this blog we are assuming that the BOSH-Lite is using IP <code>192.168.50.6</code> and the alias is <code>bosh</code>.</p>
+<h3 id="target-bosh2">Target BOSH2</h3>
+<p>You can login to your <code>BOSH director</code> using environment variables if not already done:</p>
+<pre><code class="lang-shell">cd path/<span class="hljs-keyword">to</span>/bosh-deployment
+<span class="hljs-builtin-name">export</span> <span class="hljs-attribute">BOSH_CLIENT</span>=admin
+<span class="hljs-builtin-name">export</span> <span class="hljs-attribute">BOSH_CLIENT_SECRET</span>=`bosh int ./creds.yml --path /admin_password`
+cd -
+</code></pre>
+<h3 id="deploy-cloud-foundry">Deploy Cloud Foundry</h3>
+<p>First clone the <a href="https://github.com/cloudfoundry/cf-deployment">cf-deployment</a> repo</p>
+<pre><code class="lang-shell">git clone http<span class="hljs-variable">s:</span>//github.<span class="hljs-keyword">com</span>/cloudfoundry/<span class="hljs-keyword">cf</span>-deployment
+<span class="hljs-keyword">cd</span> <span class="hljs-keyword">cf</span>-deployment
+</code></pre>
+<h4 id="upload-stemcell-">Upload stemcell:</h4>
+<pre><code class="lang-shell"><span class="hljs-keyword">bosh </span>-e <span class="hljs-keyword">bosh </span>upload-stemcell https://<span class="hljs-keyword">bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent</span>
+</code></pre>
+<h4 id="upload-update-cloud-config-for-cf-deployment-">Upload/update cloud-config for cf deployment:</h4>
+<pre><code class="lang-shell">bosh -e bosh update-cloud-<span class="hljs-built_in">config</span> iaas-support/bosh-lite/cloud-<span class="hljs-built_in">config</span>.yml
+</code></pre>
+<h4 id="deploy-cf-">Deploy CF:</h4>
+<pre><code class="lang-shell">bosh -e bosh -d cf deploy cf-deployment<span class="hljs-selector-class">.yml</span> \
+-o operations/bosh-lite<span class="hljs-selector-class">.yml</span> \
+--vars-store deployment-vars<span class="hljs-selector-class">.yml</span> \
+-v system_domain=bosh-lite.com
+</code></pre>
+<p>Run bosh -e bosh -d cf instances and you will see:</p>
+<pre><code class="lang-shell">Deployment <span class="hljs-string">'cf'</span>
+
+Instance                                            Process State  AZ  IPs
+api/<span class="hljs-number">20</span>a3fa6f<span class="hljs-number">-9f</span>5a<span class="hljs-number">-4</span>de2-a8ca<span class="hljs-number">-768</span>b2f4386ba            running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.134</span>
+blobstore/c2758b58-dea0<span class="hljs-number">-45</span>a3<span class="hljs-number">-911</span>c<span class="hljs-number">-9701273</span>b623b      running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.133</span>
+cc-bridge/c4c1d381<span class="hljs-number">-6</span>b62<span class="hljs-number">-49e7</span>-ba2f-be7de97a039d      running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.140</span>
+cc-clock/f300ac6d-a93c<span class="hljs-number">-418e-9f</span>93<span class="hljs-number">-9</span>b6e9845b191       running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.139</span>
+consul/<span class="hljs-number">843f</span>1048<span class="hljs-number">-2</span>dfa<span class="hljs-number">-4767</span><span class="hljs-number">-8</span>bc9-ed68d52e5103         running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.128</span>
+diego-bbs/cc2c41df-ffa3<span class="hljs-number">-4081</span><span class="hljs-number">-9</span>aee-d507dbff0b7f      running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.135</span>
+diego-brain/bd5a5843-b7ea<span class="hljs-number">-4</span>c15-aa10<span class="hljs-number">-0599</span>bc4472e8    running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.136</span>
+diego-cell/f1eb8bc4-a0f8<span class="hljs-number">-4430</span><span class="hljs-number">-9</span>eef<span class="hljs-number">-21616</span>b443f9d     running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.137</span>
+doppler/<span class="hljs-number">8</span>b6ccc50-fe95<span class="hljs-number">-449</span>b<span class="hljs-number">-8e75</span>-d28de9a4477b        running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.141</span>
+etcd/<span class="hljs-number">0</span>da55d0e-acb3<span class="hljs-number">-40f</span>4<span class="hljs-number">-9800</span>-c69e1dbb1932           running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.130</span>
+log-api/b3d30ac5<span class="hljs-number">-822</span>d<span class="hljs-number">-4</span>b26<span class="hljs-number">-931e-055</span>d8d64f04c        running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.142</span>
+nats/<span class="hljs-number">1f</span>680c67<span class="hljs-number">-51</span>b0<span class="hljs-number">-41</span>d8<span class="hljs-number">-9475</span><span class="hljs-number">-1f</span>bfe0e5f5a0           running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.129</span>
+postgres/f00865c7<span class="hljs-number">-1</span>a1a<span class="hljs-number">-42</span>eb<span class="hljs-number">-9</span>b63<span class="hljs-number">-5</span>c1559e8123e       running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.131</span>
+route-emitter/<span class="hljs-number">76</span>a97ceb-d930<span class="hljs-number">-4085</span>-be8c-f050bd635843  running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.138</span>
+router/e9fed71a<span class="hljs-number">-7f</span>51<span class="hljs-number">-4</span>a58<span class="hljs-number">-9151</span><span class="hljs-number">-790</span>c98be1c11         running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.34</span>
+smoke-tests/fb636f19-f2e3<span class="hljs-number">-4</span>ab3<span class="hljs-number">-9795</span><span class="hljs-number">-5</span>c495a8f3f9e    -              z1  -
+uaa/<span class="hljs-number">9</span>d015e66<span class="hljs-number">-47</span>d2<span class="hljs-number">-4</span>c73<span class="hljs-number">-9</span>d8e<span class="hljs-number">-742</span>dfc9fa281            running        z1  <span class="hljs-number">10.244</span><span class="hljs-number">.0</span><span class="hljs-number">.132</span>
+
+<span class="hljs-number">17</span> instances
+</code></pre>
+<p>Logging into the CF API
+Add the following route so you will be able to reach the <code>CF API</code> and also <code>bosh ssh</code> to the instances you deployed.</p>
+<p>Adding route:</p>
+<pre><code class="lang-shell">sudo<span class="hljs-built_in"> route </span><span class="hljs-builtin-name">add</span> -net 10.244.0.0/16    192.168.50.6 # Mac OS X
+sudo<span class="hljs-built_in"> route </span><span class="hljs-builtin-name">add</span> -net 10.244.0.0/16 gw 192.168.50.6 # Linux<span class="hljs-built_in">
+route </span><span class="hljs-builtin-name">add</span>           10.244.0.0/16    192.168.50.6 # Windows
+</code></pre>
+<p>Set up <code>CF api</code> and login as <code>admin</code>. If you do not have cf cli installed yet, you can follow <a href="https://docs.cloudfoundry.org/cf-cli/install-go-cli.html">Install CF CLI</a>.</p>
+<pre><code class="lang-shell">cf api https:<span class="hljs-comment">//api.bosh-lite.com --skip-ssl-validation</span>
+export CF_ADMIN_PASSWORD=<span class="hljs-constructor">$(<span class="hljs-params">bosh</span> <span class="hljs-params">int</span> .<span class="hljs-operator">/</span><span class="hljs-params">deployment</span>-<span class="hljs-params">vars</span>.<span class="hljs-params">yml</span> --<span class="hljs-params">path</span> <span class="hljs-operator">/</span><span class="hljs-params">cf_admin_password</span>)</span>
+cf auth admin $CF_ADMIN_PASSWORD
+</code></pre>
+<p>Congratulations! Your CF is ready to go!</p>
+<p><a href="https://starkandwayne.com/blog/running-cloud-foundry-locally-on-bosh-lite-with-bosh2/">Source</a></p>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>

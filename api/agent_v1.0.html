@@ -75,6 +75,10 @@ to process/use for its computations. These parameters can be set by the executor
     "<span class="hljs-attribute">parameters</span>": <span class="hljs-value">{
       "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
       "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service-specific configuration parameters"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">actions</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The result of the internally executed pre-bind actions for the service plan"</span>
     </span>}
   </span>}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid response body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of a success response, the request was processed correctly and the required credentials were created.
@@ -108,6 +112,10 @@ asked to delete. The individual properties within the <code>credentials</code> o
     "<span class="hljs-attribute">credentials</span>": <span class="hljs-value">{
       "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
       "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"Service-specific credentials to delete"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">actions</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">type</span>": <span class="hljs-value"><span class="hljs-string">"object"</span></span>,
+      "<span class="hljs-attribute">description</span>": <span class="hljs-value"><span class="hljs-string">"The result of the internally executed pre-unbind actions for the service plan"</span>
     </span>}
   </span>}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div><hr><strong style="font-size: 18px">Response</strong><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>200</code>&nbsp;<span style="font-weight: normal;">-&nbsp;success</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>400</code>&nbsp;<span style="font-weight: normal;">-&nbsp;invalid response body</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>405</code>&nbsp;<span style="font-weight: normal;">-&nbsp;wrong HTTP method used</span></strong></div><div class="title"><strong style="font-size: 16px">&nbsp;&nbsp;<code>500</code>&nbsp;<span style="font-weight: normal;">-&nbsp;an error occurred</span></strong></div><div style="height: 10px"></div><div class="description"><p>In case of a success response, the request was processed successfully and the sent credentials were deleted. In case

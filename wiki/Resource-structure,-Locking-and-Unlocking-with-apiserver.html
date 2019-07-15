@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Bootstrap-BOSH-2.0-with-local-VirtualBox.html">Bootstrap-BOSH-2.0-with-local-VirtualBox</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resource-structure,-Locking-and-Unlocking-with-apiserver.html">Resource-structure,-Locking-and-Unlocking-with-apiserver</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Running-Cloud-Foundry-with-BOSH-2.0.html">Running-Cloud-Foundry-with-BOSH-2.0</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Broker-Error-Codes.html">Service-Broker-Error-Codes</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Quota-Management-in-Service-Fabrik.html">Service-Quota-Management-in-Service-Fabrik</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Resource-structure,-Locking-and-Unlocking-with-apiserver</h1>
+</header>
+<p>Resource groups:</p>
+<ul>
+<li>Deployments<ul>
+<li>Director</li>
+<li>Docker</li>
+</ul>
+</li>
+<li>Backup<ul>
+<li>DefaultBackup</li>
+</ul>
+</li>
+<li>Lock<ul>
+<li>DeploymentLock</li>
+</ul>
+</li>
+<li>Bind<ul>
+<li>DirectorBind</li>
+<li>DockerBind</li>
+</ul>
+</li>
+</ul>
+<p>Data Structure of resources:</p>
+<p><strong>Director:</strong></p>
+<p>Schema</p>
+<pre><code class="lang-javascript">{
+kind: <span class="hljs-string">"Director/Docker"</span>
+metadata : {
+name : <span class="hljs-variable">&lt;instance_guid&gt;</span>,
+labels : {
+<span class="hljs-keyword">state</span> : <span class="hljs-variable">&lt;success/deleted etc&gt;</span>
+}
+},
+spec: {
+<span class="hljs-variable">&lt;options&gt;</span>
+},
+status: {
+response: <span class="hljs-variable">&lt;response&gt;</span>,
+lastOperation: <span class="hljs-variable">&lt;lo&gt;</span>,
+<span class="hljs-keyword">state</span>: <span class="hljs-variable">&lt;success/deleted etc&gt;</span>
+}
+}
+</code></pre>
+<p>Example:</p>
+<pre><code class="lang-javascript">{
+<span class="hljs-attr">"kind"</span>: <span class="hljs-string">"Director"</span>,
+<span class="hljs-attr">"apiVersion"</span>: <span class="hljs-string">"deployment.servicefabrik.io/v1alpha1"</span>,
+<span class="hljs-attr">"metadata"</span>: {
+<span class="hljs-attr">"name"</span>: <span class="hljs-string">"55ac1af2-abcd-4541-ae78-abcdefgh8d94"</span>,
+<span class="hljs-attr">"namespace"</span>: <span class="hljs-string">"default"</span>,
+<span class="hljs-attr">"selfLink"</span>: <span class="hljs-string">"/apis/deployment.servicefabrik.io/v1alpha1/namespaces/default/directors/55ac1af2-abcd-4541-ae78-abcdefgh8d94"</span>,
+<span class="hljs-attr">"uid"</span>: <span class="hljs-string">"eda66a0b-abcd-11e8-b417-abcdefgh13dc"</span>,
+<span class="hljs-attr">"resourceVersion"</span>: <span class="hljs-string">"60603"</span>,
+<span class="hljs-attr">"generation"</span>: <span class="hljs-number">1</span>,
+<span class="hljs-attr">"creationTimestamp"</span>: <span class="hljs-string">"2018-07-25T11:29:01Z"</span>,
+<span class="hljs-attr">"labels"</span>: {
+<span class="hljs-attr">"instance_guid"</span>: <span class="hljs-string">"55ac1af2-abcd-4541-ae78-abcdefgh8d94"</span>,
+<span class="hljs-attr">"last_backup_defaultbackups"</span>: <span class="hljs-string">"ffde9529-cefd-45db-abcd-abcdefghd4d8"</span>,
+<span class="hljs-attr">"state"</span>: <span class="hljs-string">"in_queue"</span>
+}
+},
+<span class="hljs-attr">"spec"</span>: {
+<span class="hljs-attr">"options"</span>: <span class="hljs-string">"{}"</span>
+},
+<span class="hljs-attr">"status"</span>: {
+<span class="hljs-attr">"state"</span>: <span class="hljs-string">"in_queue"</span>,
+<span class="hljs-attr">"lastOperation"</span>: <span class="hljs-string">"created"</span>,
+<span class="hljs-attr">"response"</span>: <span class="hljs-string">"{}"</span>
+}
+}
+</code></pre>
+<p><strong>Backup:</strong></p>
+<p>Schema</p>
+<pre><code class="lang-javascript">{
+kind: <span class="hljs-string">"DefaultBackup"</span>
+metadata : {
+name : <span class="hljs-variable">&lt;backup_guid&gt;</span>,
+labels : {
+instance_guid : <span class="hljs-variable">&lt;instance for which backup was taken&gt;</span>,
+<span class="hljs-keyword">state</span> : <span class="hljs-variable">&lt;current state of operation&gt;</span>
+}
+},
+spec: {
+options: <span class="hljs-string">"string"</span>
+},
+status: {
+<span class="hljs-keyword">state</span>: <span class="hljs-string">"string"</span>
+error: <span class="hljs-string">"string"</span>
+lastOperation: <span class="hljs-string">"string"</span>
+response: <span class="hljs-string">"string"</span>
+}
+}
+</code></pre>
+<p>Example:</p>
+<pre><code class="lang-javascript">{
+<span class="hljs-attr">"kind"</span>: <span class="hljs-string">"DefaultBackup"</span>,
+<span class="hljs-attr">"apiVersion"</span>: <span class="hljs-string">"backup.servicefabrik.io/v1alpha1"</span>,
+<span class="hljs-attr">"metadata"</span>: {
+<span class="hljs-attr">"name"</span>: <span class="hljs-string">"ffde9529-cefd-45db-abcd-abcdefghd4d8"</span>,
+<span class="hljs-attr">"namespace"</span>: <span class="hljs-string">"default"</span>,
+<span class="hljs-attr">"selfLink"</span>: <span class="hljs-string">"/apis/backup.servicefabrik.io/v1alpha1/namespaces/default/defaultbackups/ffde9529-cefd-45db-8c2a-6f5f0f71d4d8"</span>,
+<span class="hljs-attr">"uid"</span>: <span class="hljs-string">"fa5d5192-94f7-11e8-8e4f-abcdefghde69e"</span>,
+<span class="hljs-attr">"resourceVersion"</span>: <span class="hljs-string">"49444"</span>,
+<span class="hljs-attr">"generation"</span>: <span class="hljs-number">3</span>,
+<span class="hljs-attr">"creationTimestamp"</span>: <span class="hljs-string">"2018-07-31T19:29:01Z"</span>,
+<span class="hljs-attr">"labels"</span>: {
+<span class="hljs-attr">"instance_guid"</span>: <span class="hljs-string">"55ac1af2-abcd-4541-ae78-abcdefgh8d94"</span>,
+<span class="hljs-attr">"state"</span>: <span class="hljs-string">"succeeded"</span>
+},
+<span class="hljs-attr">"annotations"</span>: {
+<span class="hljs-attr">"lockedByManager"</span>: <span class="hljs-string">"10.0.2.2"</span>
+}
+},
+<span class="hljs-attr">"spec"</span>: {
+<span class="hljs-attr">"options"</span>: <span class="hljs-string">"{\"guid\":\"ffde9529-cefd-45db-abcd-abcdefghd4d8\",\"instance_guid\":\"55ac1af2-abcd-4541-ae78-abcdefgh8d94\",\"plan_id\":\"bc158c9a-7934-401e-94ab-057082a5073f\",\"service_id\":\"24731fb8-7b84-4f57-914f-c3d55d793dd4\"}"</span>
+},
+<span class="hljs-attr">"status"</span>: {
+<span class="hljs-attr">"state"</span>: <span class="hljs-string">"succeeded"</span>,
+<span class="hljs-attr">"lastOperation"</span>: <span class="hljs-string">"created"</span>,
+<span class="hljs-attr">"response"</span>: <span class="hljs-string">"{\"service_id\":\"24731fb8-7b84-4f57-914f-c3d55d793dd4\",\"plan_id\":\"bc158c9a-7934-401e-94ab-057082a5073f\",\"instance_guid\":\"55ac1af2-abcd-4541-ae78-abcdefgh8d94\"}"</span>
+}
+}
+</code></pre>
+<p><strong>Lock:</strong></p>
+<p>Schema</p>
+<pre><code class="lang-javascript">{
+kind: "Lock"
+metadata : {
+<span class="hljs-type">name</span> : &lt;<span class="hljs-keyword">lock</span> <span class="hljs-type">name</span>&gt;,
+},
+spec: {
+<span class="hljs-keyword">options</span>: {
+<span class="hljs-type">JSON</span>.stringify({
+lockType: &lt;<span class="hljs-keyword">Read</span>/<span class="hljs-keyword">Write</span>&gt;,
+lockTime: &lt;<span class="hljs-type">time</span> <span class="hljs-keyword">in</span> UTC <span class="hljs-keyword">when</span> <span class="hljs-keyword">lock</span> was acquired, can be updated <span class="hljs-keyword">when</span> one wants <span class="hljs-keyword">to</span> <span class="hljs-keyword">refresh</span> <span class="hljs-keyword">lock</span>&gt;,
+lockTTL: &lt;<span class="hljs-keyword">lock</span> ttl=&gt; <span class="hljs-keyword">set</span> <span class="hljs-keyword">to</span> <span class="hljs-keyword">Infinity</span> <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> provided&gt;,
+lockedResourceDetails: &lt;details <span class="hljs-keyword">of</span> locked resource <span class="hljs-keyword">like</span> resourceType(backup/director), resourceId, operation etc&gt;
+})
+}
+}
+}
+</code></pre>
+<p>Example:</p>
+<pre><code class="lang-javascript">   {
+<span class="hljs-attr">"kind"</span>: <span class="hljs-string">"DeploymentLock"</span>,
+<span class="hljs-attr">"apiVersion"</span>: <span class="hljs-string">"lock.servicefabrik.io/v1alpha1"</span>,
+<span class="hljs-attr">"metadata"</span>: {
+<span class="hljs-attr">"name"</span>: <span class="hljs-string">"55ac1af2-abcd-4541-ae78-abcdefgh8d94"</span>,
+<span class="hljs-attr">"namespace"</span>: <span class="hljs-string">"default"</span>,
+<span class="hljs-attr">"selfLink"</span>: <span class="hljs-string">"/apis/lock.servicefabrik.io/v1alpha1/namespaces/default/deploymentlocks/dc88713e-9c52-4e8a-822d-b5c16832991a"</span>,
+<span class="hljs-attr">"uid"</span>: <span class="hljs-string">"9857eec2-93d8-abcd-ae73-abcdefghe69e"</span>,
+<span class="hljs-attr">"resourceVersion"</span>: <span class="hljs-string">"39318"</span>,
+<span class="hljs-attr">"generation"</span>: <span class="hljs-number">1</span>,
+<span class="hljs-attr">"creationTimestamp"</span>: <span class="hljs-string">"2018-07-30T09:11:51Z"</span>
+},
+<span class="hljs-attr">"spec"</span>: {
+<span class="hljs-attr">"options"</span>: <span class="hljs-string">"{\"lockedResourceDetails\":{\"resourceGroup\":\"backup\",\"resourceType\":\"defaultbackups\",\"resourceId\":\"fde9529-cefd-45db-abcd-abcdefghd4d8\",\"operation\":\"backup\"},\"lockType\":\"READ\",\"lockTTL\":null,\"lockTime\":\"2018-07-30T09:11:51.283Z\"}"</span>
+},
+<span class="hljs-attr">"status"</span>: {}
+}
+</code></pre>
+<p>Bind:</p>
+<pre><code class="lang-javascript">{
+kind: <span class="hljs-string">"DirectorBind/DockerBind"</span>
+metadata : {
+name : <span class="hljs-variable">&lt;bind_id&gt;</span>,
+labels : {
+instance_guid : <span class="hljs-variable">&lt;instance for which backup was taken&gt;</span>,
+<span class="hljs-keyword">state</span> : <span class="hljs-variable">&lt;current state of operation&gt;</span>
+}
+},
+spec: {
+instance: <span class="hljs-variable">&lt;instance_guid&gt;</span>,
+options: <span class="hljs-string">"string"</span>
+},
+status: {
+<span class="hljs-keyword">state</span>: <span class="hljs-string">"string"</span>
+response: <span class="hljs-string">"string"</span>
+}
+}
+</code></pre>
+<p>High level execution flow</p>
+<h2 id="lifecycle-operations-">Lifecycle Operations:</h2>
+<p><strong>create:</strong></p>
+<ul>
+<li><p>ApiController creates a deployment(director/docker) resource with state as in_queue</p>
+</li>
+<li><p>BoshManager is watching on director resource and gets an in_queue event</p>
+</li>
+<li><p>Starts provisioning and changes state to in_progress</p>
+</li>
+</ul>
+<p><strong>update:</strong></p>
+<ul>
+<li><p>ApiController updates the deployment(director/docker) resource with state as update</p>
+</li>
+<li><p>BoshManager is watching on director resource and gets an update event</p>
+</li>
+</ul>
+<p>Starts updating and changes state to in_progress</p>
+<p><strong>delete:</strong></p>
+<ul>
+<li><p>ApiController updates the deployment(director/docker) resource with state as delete</p>
+</li>
+<li><p>BoshManager is watching on director resource and gets an delete event</p>
+</li>
+<li><p>Starts deletion and changes state to in_progress</p>
+</li>
+</ul>
+<p><strong>lastOperation:</strong></p>
+<ul>
+<li><p>Gets state of resource from Apiserver</p>
+</li>
+<li><p>In case of delete controller deletes the resource</p>
+</li>
+</ul>
+<p><strong>bind:</strong></p>
+<ul>
+<li><p>ApiController creates a bind(directorbind/dockerbind) resource with state as in_queue and waits for state to change to succeeded</p>
+</li>
+<li><p>BindManager is watching on bind resource and gets an in_queue event</p>
+</li>
+<li><p>Starts bind and changes state to succeeded</p>
+</li>
+</ul>
+<p><strong>unbind:</strong></p>
+<ul>
+<li><p>ApiController updates the bind(directorbind/dockerbind) resource with state as delete and waits for state to change to succeeded and then delete bind resource</p>
+</li>
+<li><p>BindManager is watching on bind resource and gets an delete event</p>
+</li>
+<li><p>Unbinds and changes state to succeeded</p>
+</li>
+</ul>
+<h2 id="backup-operation-">Backup Operation:</h2>
+<p><strong>startBackup:</strong></p>
+<ul>
+<li><p>ApiController creates a backup(defaultbackup) resource with state as in_queue</p>
+</li>
+<li><p>BackupManager is watching on backup resource and gets an in_queue event</p>
+</li>
+<li><p>Starts backup and changes state to in_progress</p>
+</li>
+</ul>
+<p><strong>abortBackup:</strong></p>
+<ul>
+<li><p>ApiController updates the backup(defaultbackup) resource with state as abort and waits for state to change into aborting</p>
+</li>
+<li><p>BackupManager is watching on backup resource and gets an abort event</p>
+</li>
+<li><p>Starts abort and changes state to aborting</p>
+</li>
+</ul>
+<p><strong>deletebackup:</strong></p>
+<ul>
+<li><p>ApiController updates the backup(defaultbackup) resource with state as delete and waits for state to change into deleted</p>
+</li>
+<li><p>BackupManager is watching on backup resource and gets an delete event</p>
+</li>
+<li><p>Deletes and changes state to deleted</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>

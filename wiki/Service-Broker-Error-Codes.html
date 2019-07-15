@@ -29,12 +29,26 @@
 </nav>
 <div class="content">
 <header>
-<h1 id="top">Process-Guidelines</h1>
+<h1 id="top">Service-Broker-Error-Codes</h1>
 </header>
-<ul>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Process-to-Submit-a-Patch">Process to Submit a Patch</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Patch-Review-&amp;-Acceptance">Patch Review and Acceptance</a></strong></li>
-</ul>
+<p>When some error occurs with broker during any lifecycle operation. Service Broker will send the description which contains several error codes based on the type of error. Such error codes are listed below:</p>
+<h3 id="broker-errors">Broker Errors</h3>
+<p><strong>10001</strong>: This is default error code</p>
+<h3 id="bosh-errors">Bosh Errors</h3>
+<p><strong>20002</strong>: Bad format error. Ex- Task id is not in correct format
+<strong>20003</strong>: Bosh is unavailable
+<strong>20004</strong>: Deployment is not found
+<strong>20009</strong>: Deployment already exists</p>
+<h3 id="docker-errors">Docker Errors</h3>
+<p><strong>30003</strong>: Docker unavailable</p>
+<h3 id="cf">CF</h3>
+<p><strong>40001</strong>: Default CF error</p>
+<h3 id="store">Store</h3>
+<p><strong>50001</strong>: Default backup/restore error</p>
+<h2 id="more-debugging">More Debugging</h2>
+<p>Further admin can see the actual error message from corresponding crd</p>
+<pre><code>kubectl <span class="hljs-keyword">get</span> director &lt;<span class="hljs-built_in">id</span>&gt; -o json | jq -r '.status.<span class="hljs-keyword">error</span>'
+</code></pre>
 </div>
 </div>
 </div>

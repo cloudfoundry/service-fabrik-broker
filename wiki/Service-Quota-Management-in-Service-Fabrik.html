@@ -29,11 +29,52 @@
 </nav>
 <div class="content">
 <header>
-<h1 id="top">Process-Guidelines</h1>
+<h1 id="top">Service-Quota-Management-in-Service-Fabrik</h1>
 </header>
+<p>As a Service Provider, if one wants to define quotas on services provisioned, It can be possible using Service Fabrik. Here is how quota management works in Service Fabrik.</p>
 <ul>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Process-to-Submit-a-Patch">Process to Submit a Patch</a></strong></li>
-<li><strong><a href="https://github.com/SAP/service-fabrik-broker/wiki/Patch-Review-&amp;-Acceptance">Patch Review and Acceptance</a></strong></li>
+<li>It is possible to disable quota check, setting it in the settings file.</li>
+</ul>
+<pre><code>  ###################
+# QUOTA MANAGEMENT SETTINGS #
+###################
+quota:
+enabled: false
+</code></pre><ul>
+<li><p>If the quota check is turned on, then Service Fabrik does the quota check in the following way : </p>
+<ul>
+<li><p>It integrates with an entitlement service which is supposed to expose additional API that returns the quota assigned to a CF org for a given service and service plan <code>GET /orgs/{orgId}/services/{serviceName}/plan/{versionIndependentPlanName}</code> which returns the quantity as integer assigned to the given org for the specified service and service plan name (should be version independent). The details of the entitlement service and co-ordinates are to be added in the settings.</p>
+<pre><code>###################
+# QUOTA MANAGEMENT SETTINGS #
+###################
+quota:
+enabled: true
+oauthDomain: https:<span class="hljs-comment">//myauth-domain.com</span>
+serviceDomain: https:<span class="hljs-comment">//my-tenant-onboarding.com</span>
+username: quota_user
+password: quota_password
+
+</code></pre><p>Service Farbik Broker calls this API when a new service instance is created.</p>
+</li>
+<li><p>Already used quota is calculated calling CF and checking the number of service instances existing in the org. CF co-ordinates with admin user credential is necessary for the same.</p>
+<pre><code>#############################
+# CLOUD-CONTROLLER SETTINGS #
+#############################
+cf:
+url: https:<span class="hljs-comment">//api.cf.&lt;mydomain&gt;.com</span>
+username: admin
+password: *****************
+identity_provider: uaa
+</code></pre></li>
+<li><p>Remaining quota is calculated based on above two values and based on that provision request is allowed.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>Limitations</strong></p>
+<ul>
+<li>Assumes consuming platform to be only one and only Cloud Foundry</li>
+<li>CF admin credentials are needed in order to get number of service instances in an organization.</li>
 </ul>
 </div>
 </div>

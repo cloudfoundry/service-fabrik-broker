@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Service Fabrik Wiki</title>
+<link href="../css/font-awesome.min.css" rel="stylesheet">
+<link href="../css/service-fabrik.css" rel="stylesheet">
+<link href="../img/favicon.ico" rel="SHORTCUT ICON">
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+</head>
+<body class="preload">
+<div class="container-fluid-custom">
+<div class="row">
+<nav>
+<a href="https://github.com/sap/service-fabrik-broker/">
+<center>
+<img src="../img/service-fabrik.svg" width="235" height="320" />
+</center></a>
+<ul class="custom">
+	<li><a style="border: 0px;" href="../index.html">&#9726; Home page</a></li>
+	<li><a style="border: 0px;" href="../api/broker_v1.0.html">&#9726; Broker API Reference</a></li>
+	<li><a style="border: 0px;" href="../api/agent_v1.1.html">&#9726; Agent API Reference</a></li>
+	<li><a style="border: 0px;" href="../backup-restore-library/overview.html">&#9726; Backup &amp; Restore Library</a></li>
+	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Bootstrap-BOSH-2.0-with-local-VirtualBox.html">Bootstrap-BOSH-2.0-with-local-VirtualBox</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resource-structure,-Locking-and-Unlocking-with-apiserver.html">Resource-structure,-Locking-and-Unlocking-with-apiserver</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Running-Cloud-Foundry-with-BOSH-2.0.html">Running-Cloud-Foundry-with-BOSH-2.0</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Broker-Error-Codes.html">Service-Broker-Error-Codes</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Quota-Management-in-Service-Fabrik.html">Service-Quota-Management-in-Service-Fabrik</a></li>
+</ul>
+</nav>
+<div class="content">
+<header>
+<h1 id="top">Bootstrap-BOSH-2.0-with-local-VirtualBox</h1>
+</header>
+<blockquote>
+<p>This blog shows how you can bring up a BOSH-Lite directly on your VirtualBox using bosh quickly</p>
+</blockquote>
+<h2 id="requirements-on-your-machine">Requirements on your machine</h2>
+<ol>
+<li><p>8GB RAM and 100GB free disk space (smaller configurations may work)</p>
+</li>
+<li><p>Install <a href="https://www.virtualbox.org/wiki/Downloads">VirtualBox</a></p>
+</li>
+</ol>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Run the following command to check you are on <code>VirtualBox 5.1+</code> since previous versions had a network connectivity bug.</p>
+<pre><code class="lang-shell"> $ VBoxManage <span class="hljs-comment">--version</span>
+</code></pre>
+<ol start="3">
+<li>Install Bosh2 CLI</li>
+</ol>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;## <a href="https://bosh.io/docs/cli-v2.html">https://bosh.io/docs/cli-v2.html</a></p>
+<h2 id="install-bosh-lite-director">Install Bosh-Lite Director</h2>
+<pre><code class="lang-shell">git <span class="hljs-keyword">clone</span> <span class="hljs-title">https</span>://github.com/cloudfoundry/bosh-deployment
+cd bosh-deployment
+</code></pre>
+<p>The command below will create your BOSH-Lite env using the <code>bosh.yml</code> as the base manifest while loading manifest operations from all the other <code>.yml-files</code> specified by -o command options and setting variables such as director name, director IP, gateway and network using -v command options. It will create <code>state.json</code> (for recording the latest running state) and <code>creds.yml</code> (for credentials and certs) in your <code>bosh-deployment</code> directory. It also will automatically create/enable <a href="https://github.com/cppforlife/bosh-virtualbox-cpi-release/blob/master/docs/networks-host-only.md">Host-only</a> network <code>192.168.50.0/24</code> and <a href="https://github.com/cppforlife/bosh-virtualbox-cpi-release/blob/master/docs/networks-nat-network.md">NAT network &#39;NatNetwork&#39; with DHCP enabled</a>.</p>
+<pre><code class="lang-shell">bosh create-env bosh<span class="hljs-selector-class">.yml</span> \
+--state ./state<span class="hljs-selector-class">.json</span> \
+-o virtualbox/cpi<span class="hljs-selector-class">.yml</span> \
+-o virtualbox/outbound-network<span class="hljs-selector-class">.yml</span> \
+-o bosh-lite<span class="hljs-selector-class">.yml</span> \
+-o bosh-lite-runc<span class="hljs-selector-class">.yml</span> \
+-o jumpbox-user<span class="hljs-selector-class">.yml</span> \
+--vars-store ./creds<span class="hljs-selector-class">.yml</span> \
+-v director_name=<span class="hljs-string">"Bosh Lite Director"</span> \
+-v internal_ip=<span class="hljs-number">192.168</span>.<span class="hljs-number">50.6</span> \
+-v internal_gw=<span class="hljs-number">192.168</span>.<span class="hljs-number">50.1</span> \
+-v internal_cidr=<span class="hljs-number">192.168</span>.<span class="hljs-number">50.0</span>/<span class="hljs-number">24</span> \
+-v outbound_network_name=NatNetwork
+</code></pre>
+<h3 id="setup-alias-as-vbox">Setup Alias as vbox</h3>
+<pre><code class="lang-shell">bosh -e <span class="hljs-number">192.168</span><span class="hljs-number">.50</span><span class="hljs-number">.6</span> --ca-cert &lt;(bosh <span class="hljs-built_in">int</span> ./creds.yml --path /director_ssl/ca) alias-env bosh
+</code></pre>
+<h3 id="log-into-the-director">Log into the Director</h3>
+<pre><code class="lang-shell"><span class="hljs-builtin-name">export</span> <span class="hljs-attribute">BOSH_CLIENT</span>=admin
+<span class="hljs-builtin-name">export</span> <span class="hljs-attribute">BOSH_CLIENT_SECRET</span>=`bosh int ./creds.yml --path /admin_password`
+</code></pre>
+<h3 id="enable-bosh-ssh">Enable bosh ssh</h3>
+<pre><code class="lang-shell">sudo<span class="hljs-built_in"> route </span><span class="hljs-builtin-name">add</span> -net 10.244.0.0/16    192.168.50.6 # Mac OS X
+sudo<span class="hljs-built_in"> route </span><span class="hljs-builtin-name">add</span> -net 10.244.0.0/16 gw 192.168.50.6 # Linux<span class="hljs-built_in">
+route </span><span class="hljs-builtin-name">add</span>           10.244.0.0/16    192.168.50.6 # Windows
+</code></pre>
+<h3 id="ssh-to-the-director-as-jumpbox-user">SSH to the Director as jumpbox User</h3>
+<pre><code class="lang-shell">bosh int ./creds<span class="hljs-selector-class">.yml</span> --path /jumpbox_ssh/private_key &gt; ~/.ssh/bosh-virtualbox<span class="hljs-selector-class">.key</span>
+chmod <span class="hljs-number">600</span> ~/.ssh/bosh-virtualbox<span class="hljs-selector-class">.key</span>
+ssh -<span class="hljs-selector-tag">i</span> ~/.ssh/bosh-virtualbox<span class="hljs-selector-class">.key</span> jumpbox@<span class="hljs-number">192.168</span>.<span class="hljs-number">50.6</span>
+</code></pre>
+<h2 id="keep-your-boshlite-env-preserved">Keep your boshlite env preserved</h2>
+<p>Although it is really easy to install boshlite but still you may want to preserve the state of vm all the time.
+These command may come handy</p>
+<pre><code class="lang-shell"># To save state <span class="hljs-keyword">of</span> vm
+vboxmanage controlvm <span class="hljs-constructor">$(<span class="hljs-params">bosh</span> <span class="hljs-params">int</span> ~<span class="hljs-operator">/</span><span class="hljs-params">bosh</span>-<span class="hljs-params">deployment</span><span class="hljs-operator">/</span><span class="hljs-params">state</span>.<span class="hljs-params">json</span> --<span class="hljs-params">path</span> <span class="hljs-operator">/</span><span class="hljs-params">current_vm_cid</span>)</span> savestate
+# To start vm
+vboxmanage startvm <span class="hljs-constructor">$(<span class="hljs-params">bosh</span> <span class="hljs-params">int</span> ~<span class="hljs-operator">/</span><span class="hljs-params">bosh</span>-<span class="hljs-params">deployment</span><span class="hljs-operator">/</span><span class="hljs-params">state</span>.<span class="hljs-params">json</span> --<span class="hljs-params">path</span> <span class="hljs-operator">/</span><span class="hljs-params">current_vm_cid</span>)</span> --<span class="hljs-keyword">type</span> headless
+</code></pre>
+<p>It is recommended to save <code>state.json</code> and <code>creds.yml</code> stored locally and the same <code>create-env</code> command can be run to resurrect bosh in worst scenerios.</p>
+<p><strong>Pro Tip: Keep your boshlite safe, for the world is dark and full of terrors.</strong></p>
+<h2 id="hack-for-bringing-back-crashed-bosh-lite-to-life">Hack for bringing back crashed BOSH-lite to life</h2>
+<p>To bring back a crashed BOSH-lite to life, just change something small like password in the <code>creds.yml</code> and deploy again using the earlier command. It would start working again!</p>
+<p><a href="https://www.starkandwayne.com/blog/bosh-lite-on-virtualbox-with-bosh2/">Source</a></p>
+</div>
+</div>
+</div>
+<p class="text-muted" style="text-align: center;">Copyright &copy; SAP SE 2016.</p>
+<p></p>
+</body>
+</html>

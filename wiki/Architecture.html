@@ -24,7 +24,7 @@
 	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Bootstrap-BOSH-2.0-with-local-VirtualBox.html">Bootstrap-BOSH-2.0-with-local-VirtualBox</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resource-structure,-Locking-and-Unlocking-with-apiserver.html">Resource-structure,-Locking-and-Unlocking-with-apiserver</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Running-Cloud-Foundry-with-BOSH-2.0.html">Running-Cloud-Foundry-with-BOSH-2.0</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Broker-Error-Codes.html">Service-Broker-Error-Codes</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Quota-Management-in-Service-Fabrik.html">Service-Quota-Management-in-Service-Fabrik</a></li>
 </ul>
 </nav>
 <div class="content">
@@ -32,30 +32,28 @@
 <h1 id="top">Architecture</h1>
 </header>
 <h4 id="quick-reference">Quick Reference</h4>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/component-quick-reference.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/SF2.0-component-quick-reference.png?raw=true" alt="Missing"></p>
 <h4 id="overview-tam-block-diagram">Overview TAM Block Diagram</h4>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/tam-block-diagram-overview.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/SF2.0-tam-block-diagram-overview.png?raw=true" alt="Missing"></p>
 <h4 id="sequence-diagrams">Sequence Diagrams</h4>
 <h6 id="create-bosh-service-instance">Create Bosh Service Instance</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-provisioning.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-bosh-provisioning.png?raw=true" alt="Missing"></p>
 <h6 id="delete-bosh-service-instance">Delete Bosh Service Instance</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-deprovisioning.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-bosh-deprovisioning.png?raw=true" alt="Missing"></p>
 <h6 id="create-docker-service-instance">Create Docker Service Instance</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-docker-provisioning.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-docker-provisioning.png?raw=true" alt="Missing"></p>
 <h6 id="delete-docker-service-instance">Delete Docker Service Instance</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-docker-deprovisioning.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-docker-deprovisioning.png?raw=true" alt="Missing"></p>
 <h6 id="create-service-binding-key">Create Service Binding/Key</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-binding-creation.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-binding-creation.png?raw=true" alt="Missing"></p>
 <h6 id="delete-service-binding-key">Delete Service Binding/Key</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-binding-deletion.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-binding-deletion.png?raw=true" alt="Missing"></p>
 <h6 id="update-bosh-service-instance">Update Bosh Service Instance</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-update.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-bosh-update.png?raw=true" alt="Missing"></p>
 <h6 id="update-bosh-outdated-service-instance-s-">Update Bosh (Outdated) Service Instance(s)</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-update-automated.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-bosh-update-automated.png?raw=true" alt="Missing"></p>
 <h6 id="create-online-bosh-service-instance-backup">Create Online Bosh Service Instance Backup</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-backup-online.png?raw=true" alt="Missing"></p>
-<h6 id="create-offline-bosh-service-instance-backup">Create Offline Bosh Service Instance Backup</h6>
-<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/service-instance-bosh-backup-offline.png?raw=true" alt="Missing"></p>
+<p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/architecture/SF2.0-service-instance-bosh-backup-online.png?raw=true" alt="Missing"></p>
 <h4 id="operations-tam-state-diagram">Operations TAM State Diagram</h4>
 <p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/tam-state-diagram-operations.png?raw=true" alt="Missing"></p>
 </div>

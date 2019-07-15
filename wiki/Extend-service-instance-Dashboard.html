@@ -24,13 +24,20 @@
 	<li><a style="border: 0px;" href="../wiki/Home.html">&#9726; Wiki</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li>
+<li class="toctree-l1"><a class="current reference internal" href="Home.html">Home</a></li><li class="toctree-l1"><a class="current reference internal" href="Architecture.html">Architecture</a></li><li class="toctree-l1"><a class="current reference internal" href="Big-Picture.html">Big-Picture</a></li><li class="toctree-l1"><a class="current reference internal" href="Bootstrap-BOSH-2.0-with-local-VirtualBox.html">Bootstrap-BOSH-2.0-with-local-VirtualBox</a></li><li class="toctree-l1"><a class="current reference internal" href="Deployment-hooks-for-service-lifecycle-operations.html">Deployment-hooks-for-service-lifecycle-operations</a></li><li class="toctree-l1"><a class="current reference internal" href="Extend-service-instance-Dashboard.html">Extend-service-instance-Dashboard</a></li><li class="toctree-l1"><a class="current reference internal" href="Patch-Review-&-Acceptance.html">Patch-Review-&-Acceptance</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-Guidelines.html">Process-Guidelines</a></li><li class="toctree-l1"><a class="current reference internal" href="Process-to-Submit-a-Patch.html">Process-to-Submit-a-Patch</a></li><li class="toctree-l1"><a class="current reference internal" href="Resource-structure,-Locking-and-Unlocking-with-apiserver.html">Resource-structure,-Locking-and-Unlocking-with-apiserver</a></li><li class="toctree-l1"><a class="current reference internal" href="Resources.html">Resources</a></li><li class="toctree-l1"><a class="current reference internal" href="Running-Cloud-Foundry-with-BOSH-2.0.html">Running-Cloud-Foundry-with-BOSH-2.0</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Broker-Error-Codes.html">Service-Broker-Error-Codes</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Fabrik-Goals-Available-Features-&-Roadmap.html">Service-Fabrik-Goals-Available-Features-&-Roadmap</a></li><li class="toctree-l1"><a class="current reference internal" href="Service-Quota-Management-in-Service-Fabrik.html">Service-Quota-Management-in-Service-Fabrik</a></li>
 </ul>
 </nav>
 <div class="content">
 <header>
 <h1 id="top">Extend-service-instance-Dashboard</h1>
 </header>
+<h3 id="how-to-provide-custom-dashboard">How to provide custom dashboard</h3>
+<p>If a service has its own custom dashboard, it can send the url to that dashboard as well. To do so, it can leverage custom dashboard url template for their plans. Under SFPlans or the plan metadata, one needs to add the following metadata. </p>
+<pre><code><span class="hljs-symbol">  manager:</span>
+<span class="hljs-symbol">    settings:</span>
+<span class="hljs-symbol">      dashboard_url_template:</span> aHR0cHM6Ly8ke2luc3RhbmNlX2lkfS5teWRvbWFpbi5jb20vdWk=
+
+</code></pre><p>In this, the value of <code>dashboard_url_template</code> is a base64 encoded string of the url template. For example, if the URL is of the form <code>https://${instance_id}.mydomain.com/ui</code>, then you have to base64 encode it and set it as the value. the expression ${instance_id} will be automatically evaluated in the runtime. You can use more variables like <code>plan_id</code> <code>service_id</code> which are part of body or parameters of standard OSBAPI request.</p>
 <h3 id="how-to-extend-service-instance-dashboard">How to extend service instance dashboard</h3>
 <p>Service Fabrik provides a default dashboard for service instances, the link to the same can be found in service instance description.</p>
 <pre><code>cf service blueprint-instance
@@ -48,20 +55,20 @@ Dashboard: https://service-fabrik-broker.bosh-lite.com/manage/instances/24731fb8
 <p><img src="https://github.com/sap/service-fabrik-broker/blob/gh-pages/img/default-dashboard.png?raw=true" alt="Missing"></p>
 <p>This section of service instance dashboard can be configured to have extra rows in each panel.
 Let&#39;s add Additional information in each panel. To do that, we will have to write a dashboard template and specify added fields inside template. Let&#39;s write a template example.</p>
-<pre><code>&lt;%
-const plan_manager = plan.manager.name;
-const instance_create_time = <span class="hljs-keyword">instance</span>.metadata.created_at;
-%&gt;
+<pre><code><span class="hljs-attr">&lt;%</span>
+<span class="hljs-attr">const</span> <span class="hljs-string">plan_manager = plan.manager.name;</span>
+<span class="hljs-attr">const</span> <span class="hljs-string">instance_create_time = instance.metadata.created_at;</span>
+<span class="hljs-attr">%&gt;</span>
 
-service:
-Additional: <span class="hljs-string">'This is template example'</span>
+<span class="hljs-attr">service</span>:<span class="hljs-string"></span>
+<span class="hljs-attr">Additional</span>: <span class="hljs-string">'This is template example'</span>
 
-plan:
-Manager: &lt;%= plan_manager %&gt;
-URL: <span class="hljs-string">'protocol://example.com'</span>
+<span class="hljs-attr">plan</span>:<span class="hljs-string"></span>
+<span class="hljs-attr">Manager</span>: <span class="hljs-string">&lt;%= plan_manager %&gt;</span>
+<span class="hljs-attr">URL</span>: <span class="hljs-string">'protocol://example.com'</span>
 
-service_instance:
-Creation Time: &lt;%= instance_create_time %&gt;
+<span class="hljs-attr">service_instance</span>:<span class="hljs-string"></span>
+<span class="hljs-attr">Creation</span> <span class="hljs-string">Time: &lt;%= instance_create_time %&gt;</span>
 
 </code></pre><p>Above template will add &#39;Additional&#39; row in service panel, &#39;Manager&#39; and &#39;URL&#39; in plan panel, &#39;Creation Time&#39; in service_instance panel.</p>
 <p>Save this template file as <code>/config/templates/blueprint-dashboard.yml.ejs</code>
