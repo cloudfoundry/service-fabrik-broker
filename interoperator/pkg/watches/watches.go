@@ -274,6 +274,10 @@ func computeSources(c client.Client, service *osbv1alpha1.SFService, plan *osbv1
 	output, err := renderer.Render(input)
 	if err != nil {
 		log.Error(err, "failed rendering sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
+		if errors.RendererError(err) {
+			rendererError := err.(*errors.InteroperatorError)
+			log.Error(rendererError.Err, "failed rendering sources")
+		}
 		return nil, err
 	}
 

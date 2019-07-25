@@ -142,6 +142,10 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 	output, err := renderer.Render(input)
 	if err != nil {
 		log.Error(err, "failed rendering resource", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
+		if errors.RendererError(err) {
+			rendererError := err.(*errors.InteroperatorError)
+			log.Error(rendererError.Err, "failed rendering resource")
+		}
 		return nil, err
 	}
 
@@ -322,6 +326,10 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 	output, err := renderer.Render(input)
 	if err != nil {
 		log.Error(err, "failed rendering sources", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
+		if errors.RendererError(err) {
+			rendererError := err.(*errors.InteroperatorError)
+			log.Error(rendererError.Err, "failed rendering sources")
+		}
 		return nil, err
 	}
 
@@ -397,6 +405,10 @@ func (r resourceManager) ComputeStatus(sourceClient kubernetes.Client, targetCli
 	output, err = renderer.Render(input)
 	if err != nil {
 		log.Error(err, "failed rendering status", "serviceID", serviceID, "planID", planID, "instanceID", instanceID, "bindingID", bindingID, "action", action)
+		if errors.RendererError(err) {
+			rendererError := err.(*errors.InteroperatorError)
+			log.Error(rendererError.Err, "failed rendering status")
+		}
 		return nil, err
 	}
 
