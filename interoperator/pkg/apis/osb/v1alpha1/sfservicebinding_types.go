@@ -19,6 +19,9 @@ package v1alpha1
 import (
 	"context"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -100,7 +103,7 @@ func (r *SFServiceBinding) SetState(state string) {
 
 // GetClusterID fetches the ClusterID of the SFServiceBinding
 // WARN: This will fetch the corresponding SFServiceInstance
-func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) string {
+func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) (string, error) {
 	instance := &SFServiceInstance{}
 	var instanceKey = types.NamespacedName{
 		Name:      r.Spec.InstanceID,
@@ -109,7 +112,10 @@ func (r *SFServiceBinding) GetClusterID(c kubernetes.Client) string {
 	err := c.Get(context.TODO(), instanceKey, instance)
 	if err != nil {
 		log.Error(err, "failed to get sfserviceinstance", "InstanceID", r.Spec.InstanceID, "BindingID", r.GetName())
-		return ""
+		if apiErrors.IsNotFound(err) {
+			return "", errors.NewSFServiceInstanceNotFound(r.Spec.InstanceID, err)
+		}
+		return "", err
 	}
 	return instance.GetClusterID()
 }

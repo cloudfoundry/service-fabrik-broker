@@ -159,14 +159,15 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	if !ok {
 		lastOperation = "in_queue"
 	}
-	clusterID := instance.GetClusterID()
-	if clusterID == "" {
-		log.Info("clusterID not set. Ignoring", "instance", instanceID)
-		return reconcile.Result{}, nil
-	}
 
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
+	}
+
+	clusterID, err := instance.GetClusterID()
+	if err != nil {
+		log.Info("clusterID not set. Ignoring", "instance", instanceID)
+		return reconcile.Result{}, nil
 	}
 
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)

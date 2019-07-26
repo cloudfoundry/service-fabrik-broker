@@ -28,6 +28,20 @@ func ClusterRegistryError(err error) bool {
 	return ErrorCode(err) == CodeClusterRegistryError
 }
 
+// NewClusterIDNotSet returns new error indicating clusterID is not set for the instance
+func NewClusterIDNotSet(name string, err error) *InteroperatorError {
+	return &InteroperatorError{
+		Err:     err,
+		Code:    CodeClusterIDNotSet,
+		Message: fmt.Sprintf("ClusterID is not set for SFServiceInstance %s", name),
+	}
+}
+
+// ClusterIDNotSet checks whether error is of CodeClusterError type
+func ClusterIDNotSet(err error) bool {
+	return ErrorCode(err) == CodeClusterIDNotSet
+}
+
 // NewMarshalError returns new error indicating marshalling to specific format failed.
 func NewMarshalError(message string, err error) *InteroperatorError {
 	return &InteroperatorError{
