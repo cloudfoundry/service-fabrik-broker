@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -153,19 +154,23 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	if !ok {
 		lastOperation = "in_queue"
 	}
-	clusterID := binding.GetClusterID(r)
-	if clusterID == "" {
-		log.Info("clusterID not set. Ignoring", "instanceID", instanceID, "bindingID", bindingID)
-		return reconcile.Result{}, nil
-	}
 
 	if err := r.reconcileFinalizers(binding, 0); err != nil {
 		return r.handleError(binding, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
 
-	targetClient, err := r.clusterRegistry.GetClient(clusterID)
-	if err != nil {
-		return r.handleError(binding, reconcile.Result{}, err, "", 0)
+	var targetClient kubernetes.Client
+	getTargetClient := func() error {
+		clusterID, err := binding.GetClusterID(r)
+		if err != nil {
+			return err
+		}
+
+		targetClient, err = r.clusterRegistry.GetClient(clusterID)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if state == "delete" && !binding.GetDeletionTimestamp().IsZero() {
@@ -179,17 +184,39 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		bindSecret.Name = secretName
 		bindSecret.Namespace = binding.GetNamespace()
 		resourceRefs := append(binding.Status.Resources, bindSecret)
-		remainingResource, err := r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
+
+		err = getTargetClient()
 		if err != nil {
-			log.Error(err, "Delete sub resources failed", "binding", bindingID)
-			return r.handleError(binding, reconcile.Result{}, err, state, 0)
+			if errors.SFServiceInstanceNotFound(err) || errors.ClusterIDNotSet(err) {
+				log.Error(err, "failed to get clusterID for delete. Proceding without cleanup",
+					"instanceID", instanceID, "bindingID", bindingID)
+			} else {
+				log.Error(err, "error getting targetClient",
+					"instanceID", instanceID, "bindingID", bindingID)
+				return r.handleError(binding, reconcile.Result{}, err, state, 0)
+			}
 		}
+		var remainingResource []osbv1alpha1.Source
+		if targetClient != nil {
+			remainingResource, err = r.resourceManager.DeleteSubResources(targetClient, resourceRefs)
+			if err != nil {
+				log.Error(err, "Delete sub resources failed", "binding", bindingID)
+				return r.handleError(binding, reconcile.Result{}, err, state, 0)
+			}
+		}
+
 		err = r.setInProgress(request.NamespacedName, state, remainingResource, 0)
 		if err != nil {
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
 		lastOperation = state
 	} else if state == "in_queue" || state == "update" {
+		err = getTargetClient()
+		if err != nil {
+			log.Error(err, "error getting targetClient",
+				"instanceID", instanceID, "bindingID", bindingID)
+			return r.handleError(binding, reconcile.Result{}, err, state, 0)
+		}
 		expectedResources, err := r.resourceManager.ComputeExpectedResources(r, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, binding.GetNamespace())
 		if err != nil {
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
@@ -223,11 +250,28 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 	}
 
 	if state == "in progress" {
+		err = getTargetClient()
 		if lastOperation == "delete" {
-			if err := r.updateUnbindStatus(targetClient, binding, 0); err != nil {
+			if err != nil {
+				if errors.SFServiceInstanceNotFound(err) || errors.ClusterIDNotSet(err) {
+					log.Error(err, "failed to get clusterID for delete. Proceding",
+						"instanceID", instanceID, "bindingID", bindingID)
+				} else {
+					log.Error(err, "error getting targetClient",
+						"instanceID", instanceID, "bindingID", bindingID)
+					return r.handleError(binding, reconcile.Result{}, err, state, 0)
+				}
+			}
+			err = r.updateUnbindStatus(targetClient, binding, 0)
+			if err != nil {
 				return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
 			}
 		} else if lastOperation == "in_queue" || lastOperation == "update" {
+			if err != nil {
+				log.Error(err, "error getting targetClient",
+					"instanceID", instanceID, "bindingID", bindingID)
+				return r.handleError(binding, reconcile.Result{}, err, state, 0)
+			}
 			err = r.updateBindStatus(targetClient, binding, 0)
 			if err != nil {
 				return r.handleError(binding, reconcile.Result{}, err, lastOperation, 0)
@@ -313,15 +357,22 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	instanceID := binding.Spec.InstanceID
 	bindingID := binding.GetName()
 	namespace := binding.GetNamespace()
-	computedStatus, err := r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
-	if err != nil && !errors.NotFound(err) {
-		log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
-		return err
+	var err error
+	var computedStatus *properties.Status
+	if targetClient != nil {
+		computedStatus, err = r.resourceManager.ComputeStatus(r, targetClient, instanceID, bindingID, serviceID, planID, osbv1alpha1.BindAction, namespace)
+		if err != nil && !errors.NotFound(err) {
+			log.Error(err, "ComputeStatus failed for unbind", "binding", bindingID)
+			return err
+		}
 	}
 
-	if errors.NotFound(err) && computedStatus == nil {
+	if computedStatus == nil {
 		computedStatus = &properties.Status{}
 		computedStatus.Unbind.State = binding.GetState()
+	}
+
+	if errors.NotFound(err) {
 		computedStatus.Unbind.Error = err.Error()
 	}
 
@@ -342,21 +393,24 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	updatedStatus.Error = computedStatus.Unbind.Error
 
 	remainingResource := []osbv1alpha1.Source{}
-	for _, subResource := range binding.Status.Resources {
-		resource := &unstructured.Unstructured{}
-		resource.SetKind(subResource.Kind)
-		resource.SetAPIVersion(subResource.APIVersion)
-		resource.SetName(subResource.Name)
-		resource.SetNamespace(subResource.Namespace)
-		namespacedName := types.NamespacedName{
-			Name:      resource.GetName(),
-			Namespace: resource.GetNamespace(),
-		}
-		err := targetClient.Get(context.TODO(), namespacedName, resource)
-		if !apiErrors.IsNotFound(err) {
-			remainingResource = append(remainingResource, subResource)
+	if targetClient == nil {
+		for _, subResource := range binding.Status.Resources {
+			resource := &unstructured.Unstructured{}
+			resource.SetKind(subResource.Kind)
+			resource.SetAPIVersion(subResource.APIVersion)
+			resource.SetName(subResource.Name)
+			resource.SetNamespace(subResource.Namespace)
+			namespacedName := types.NamespacedName{
+				Name:      resource.GetName(),
+				Namespace: resource.GetNamespace(),
+			}
+			err := targetClient.Get(context.TODO(), namespacedName, resource)
+			if !apiErrors.IsNotFound(err) {
+				remainingResource = append(remainingResource, subResource)
+			}
 		}
 	}
+
 	updatedStatus.Resources = remainingResource
 	if !reflect.DeepEqual(&binding.Status, updatedStatus) {
 		updatedStatus.DeepCopyInto(&binding.Status)

@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -159,19 +160,23 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	if !ok {
 		lastOperation = "in_queue"
 	}
-	clusterID := instance.GetClusterID()
-	if clusterID == "" {
-		log.Info("clusterID not set. Ignoring", "instance", instanceID)
-		return reconcile.Result{}, nil
-	}
 
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
 
-	targetClient, err := r.clusterRegistry.GetClient(clusterID)
-	if err != nil {
-		return r.handleError(instance, reconcile.Result{}, err, "", 0)
+	var targetClient kubernetes.Client
+	if state == "in_queue" || state == "update" || state == "delete" || state == "in progress" {
+		clusterID, err := instance.GetClusterID()
+		if err != nil {
+			log.Info("clusterID not set. Ignoring", "instance", instanceID)
+			return reconcile.Result{}, nil
+		}
+
+		targetClient, err = r.clusterRegistry.GetClient(clusterID)
+		if err != nil {
+			return r.handleError(instance, reconcile.Result{}, err, state, 0)
+		}
 	}
 
 	if state == "delete" && !instance.GetDeletionTimestamp().IsZero() {
