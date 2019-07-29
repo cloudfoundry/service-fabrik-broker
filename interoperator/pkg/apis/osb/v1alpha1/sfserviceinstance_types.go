@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -87,10 +88,10 @@ func (r *SFServiceInstance) SetState(state string) {
 }
 
 // GetClusterID fetches the ClusterID of the SFServiceInstance
-func (r *SFServiceInstance) GetClusterID() string {
+func (r *SFServiceInstance) GetClusterID() (string, error) {
 	if r == nil || r.Spec.ClusterID == "" {
 		log.Info("failed to read ClusterID", "SFServiceInstance", r.GetName())
-		return ""
+		return "", errors.NewClusterIDNotSet(r.GetName(), nil)
 	}
-	return r.Spec.ClusterID
+	return r.Spec.ClusterID, nil
 }

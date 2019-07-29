@@ -14,6 +14,7 @@ const (
 	CodeRendererError = "RendererError"
 
 	CodeClusterRegistryError = "ClusterRegistryError"
+	CodeClusterIDNotSet      = "ClusterIDNotSet"
 
 	CodeInputError     = "CodeInputError"
 	CodeMarshalError   = "CodeMarshalError"
