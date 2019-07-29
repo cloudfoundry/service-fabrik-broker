@@ -9,8 +9,6 @@ const CONST = require('../../common/constants');
 const catalog = require('../../common/models').catalog;
 const NotFound = errors.NotFound;
 const ServiceBindingNotFound = errors.ServiceBindingNotFound;
-const ServiceBindingAlreadyExists = errors.ServiceBindingAlreadyExists;
-const BadRequest = errors.BadRequest;
 const Gone = errors.Gone;
 const BaseService = require('../BaseService');
 const cf = require('../../data-access-layer/cf');
@@ -105,7 +103,7 @@ class VirtualHostService extends BaseService {
     logger.info(`Creating binding '${binding.id}' with binding parameters ${binding.parameters} for deployment '${deploymentName}', virtual host '${instanceId}'...`);
     return this.director.getDeploymentIps(deploymentName)
       .then(ips => this.agent.createCredentials(ips, instanceId, binding.parameters))
-      .then(credentials => this.createBindingProperty(deploymentName, binding.id, _.set(binding, 'credentials', credentials)))
+      .then(credentials =>  _.set(binding, 'credentials', credentials))
       .then(() => binding.credentials)
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -127,28 +125,35 @@ class VirtualHostService extends BaseService {
     return Promise
       .all([
         this.director.getDeploymentIps(deploymentName),
-        this.getBindingProperty(deploymentName, bindingId)
+        this.getCredentials(bindingId)
       ])
-      .spread((ips, binding) => this.agent.deleteCredentials(ips, instanceId, binding.credentials))
-      .then(() => this.deleteBindingProperty(deploymentName, bindingId))
+      .spread((ips, credentials) => this.agent.deleteCredentials(ips, instanceId, credentials))
       .tap(() => logger.info('+-> Deleted service binding'))
       .catchThrow(NotFound, new ServiceBindingNotFound(bindingId));
   }
 
-  createBindingProperty(deploymentName, bindingId, value) {
-    return this.director
-      .createDeploymentProperty(deploymentName, `binding-${bindingId}`, JSON.stringify(value))
-      .catchThrow(BadRequest, new ServiceBindingAlreadyExists(bindingId));
-  }
-
-  getBindingProperty(deploymentName, bindingId) {
-    return this.director
-      .getDeploymentProperty(deploymentName, `binding-${bindingId}`)
-      .then(result => JSON.parse(result));
-  }
-
-  deleteBindingProperty(deploymentName, bindingId) {
-    return this.director.deleteDeploymentProperty(deploymentName, `binding-${bindingId}`);
+  getCredentials(id) {
+    logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
+    return utils.retry(tries => {
+      logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
+      eventmesh.apiServerClient.getResponse({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
+        resourceId: id
+      })
+      .then(response => {
+          if (response) {
+            return utils.decodeBase64(response);
+          }
+        })
+    }, {
+      maxAttempts: 5,
+      minDelay: 1000
+    })
+    .catch(err => {
+      logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
+      throw err;
+    })
   }
 
   /* Dashboard rendering functions */

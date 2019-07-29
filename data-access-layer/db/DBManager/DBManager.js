@@ -69,8 +69,7 @@ class DBManager {
         logger.info(`Connecting to DB with the provided config URL : ${config.mongodb.url}`);
         return this.initDb(config.mongodb);
       }
-    }) // On deterministic error, just log message and stop
-      .catch(ServiceBindingNotFound, err => logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err))
+    })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
         logger.info(`Will attempt to reinitalize DB Manager after ${config.mongodb.retry_connect.min_delay} (ms)`);
@@ -118,26 +117,7 @@ class DBManager {
         minDelay: 1000
       })
         .catch(Timeout, throwTimeoutError)
-        .then(resource => utils.decodeBase64(_.get(resource, 'status.response')))
-        .catch(NotFound, () => {
-          // TODO: This can be removed from T2018.13B onwards as bind property would have been moved to ApiServer by then.
-          return utils
-            .retry(() => this
-              .directorService
-              .getBindingProperty(config.mongodb.deployment_name, CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID), {
-              maxAttempts: 5,
-              minDelay: 5000,
-              predicate: err => !(err instanceof ServiceBindingNotFound)
-            })
-            .then(bindInfo => {
-              return this.storeBindPropertyOnApiServer({
-                id: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID),
-                parameters: bindInfo.parameters,
-                credentials: bindInfo.credentials
-              })
-                .then(() => bindInfo);
-            });
-        });
+        .then(resource => utils.decodeBase64(_.get(resource, 'status.response')));
     });
   }
 
