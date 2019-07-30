@@ -1273,6 +1273,43 @@ describe('service-broker-api-2.0', function () {
               mocks.verify();
             });
         });
+        it('delete-sf20: returns 200 OK (state = failed): If deletion was successful, but there are still resources', function () {
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {
+            status: {
+              description: `Delete deployment ${deployment_name} succeeded at 2016-07-04T10:58:24.000Z`,
+              state: 'succeeded',
+              resources: [
+                {
+                  apiVersion: 'deployment.servicefabrik.io/v1alpha1',
+                  kind: 'Director',
+                  name: instance_id,
+                  namespace: 'default'
+                }
+              ]
+            }
+          });
+
+          return chai.request(app)
+            .get(`${base_url}/service_instances/${instance_id}/last_operation`)
+            .set('X-Broker-API-Version', api_version)
+            .auth(config.username, config.password)
+            .query({
+              service_id: service_id,
+              plan_id: plan_id,
+              operation: utils.encodeBase64({
+                'type': 'delete'
+              })
+            })
+            .catch(err => err.response)
+            .then(res => {
+              expect(res).to.have.status(200);
+              expect(res.body).to.eql({
+                description: `Failed to delete the Service Instance ${instance_id}. There are still resources attached after the deletion.`,
+                state: 'failed'
+              });
+              mocks.verify();
+            });
+        });
 
         it('delete-sf20: returns 410 GONE', function () {
           mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR, CONST.APISERVER.RESOURCE_TYPES.INTEROPERATOR_SERVICEINSTANCES, instance_id, {}, 1, 404);

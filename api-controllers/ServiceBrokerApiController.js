@@ -294,6 +294,13 @@ class ServiceBrokerApiController extends FabrikBaseController {
       logger.debug('returning ..', body);
       return Promise.try(() => {
         if (_.get(operation, 'type') === 'delete' && body.state === CONST.OPERATION.SUCCEEDED && resourceGroup === CONST.APISERVER.RESOURCE_GROUPS.INTEROPERATOR) {
+          // consistency check that a successfully deleted resource has no resources attached
+          if (!_.isEmpty(result.resources)) {
+            logger.error(`The Service instance ${resourceId} still has resources, although the deletion operation is marked as successful after the deletion.`);
+            body.state = CONST.OPERATION.FAILED;
+            body.description = `Failed to delete the Service Instance ${resourceId}. There are still resources attached after the deletion.`;
+            return Promise.resolve({});
+          }
           return this.removeFinalizersFromOSBResource(
             resourceType,
             resourceId,
