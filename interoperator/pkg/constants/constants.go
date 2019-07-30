@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 // Constants used by interoperator
 const (
 	LeaderElectionID = "interoperator-leader-election-helper"
@@ -16,4 +18,6 @@ const (
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
+
+	PlanWatchDrainTimeout = time.Second * 2
 )
