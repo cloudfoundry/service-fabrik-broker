@@ -10,7 +10,6 @@ const bosh = require('../../../data-access-layer/bosh');
 const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
 const Timeout = errors.Timeout;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const NotFound = errors.NotFound;
 const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
@@ -70,6 +69,9 @@ class DBManager {
         return this.initDb(config.mongodb);
       }
     })
+      .catch(NotFound , err => {
+        logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
+      })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
         logger.info(`Will attempt to reinitalize DB Manager after ${config.mongodb.retry_connect.min_delay} (ms)`);
@@ -114,8 +116,9 @@ class DBManager {
         });
       }, {
         maxAttempts: 5,
-        minDelay: 1000
-      })
+        minDelay: 1000,
+        predicate: err => !(err instanceof NotFound)
+      }) 
         .catch(Timeout, throwTimeoutError)
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')));
     });
@@ -248,7 +251,7 @@ class DBManager {
     return this
       .getDbBindInfo()
       .then(() => this.initialize())
-      .catch(ServiceBindingNotFound, () => {
+      .catch(NotFound, () => {
         return this
           .directorService
           .createBinding(config.mongodb.deployment_name, {

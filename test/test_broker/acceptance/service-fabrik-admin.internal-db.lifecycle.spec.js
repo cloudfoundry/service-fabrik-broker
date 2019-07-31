@@ -22,7 +22,6 @@ describe('service-fabrik-admin', function () {
     const container = backupStore.containerName;
     let deploymentHookRequestBody;
     let timestampStub, uuidv4Stub;
-    let getResourceStub, deleteResourceStub, createResourceStub;
 
     function isoDate(time) {
       return new Date(time).toISOString().replace(/\.\d*/, '').replace(/:/g, '-');
@@ -54,18 +53,6 @@ describe('service-fabrik-admin', function () {
           sf_operations_args: {},
         }
       };
-      getResourceStub = sinon.stub(eventmesh.apiServerClient, 'getResource');
-      createResourceStub = sinon.stub(eventmesh.apiServerClient, 'createResource');
-      deleteResourceStub = sinon.stub(eventmesh.apiServerClient, 'deleteResource');
-
-      getResourceStub.withArgs().returns(Promise.try(() => {
-        throw new errors.NotFound('resource not found on ApiServer');
-      }));
-      deleteResourceStub.withArgs().returns(Promise.try(() => {
-        throw new errors.NotFound('resource not found on ApiServer');
-      }));
-
-      createResourceStub.withArgs().returns(Promise.resolve());
 
       //By default config is not configured for DB. So just for the test cases in this suite
       //setting up plan id and reinitializing DBManager.
@@ -91,15 +78,13 @@ describe('service-fabrik-admin', function () {
     after(function () {
       timestampStub.restore();
       uuidv4Stub.restore();
-      getResourceStub.restore();
-      deleteResourceStub.restore();
-      createResourceStub.restore();
       delete config.mongodb.provision.plan_id;
     });
 
     describe('create', function () {
       let clock;
       let sandbox, retryStub;
+      let getResourceStub, deleteResourceStub, createResourceStub;
       before(function(){
         sandbox = sinon.createSandbox();
         retryStub = sandbox.stub(utils, 'retry').callsFake((callback, options) => callback());
@@ -107,9 +92,24 @@ describe('service-fabrik-admin', function () {
 
       beforeEach(function () {
         clock = sinon.useFakeTimers(new Date().getTime());
+        getResourceStub = sandbox.stub(eventmesh.apiServerClient, 'getResource');
+        createResourceStub = sandbox.stub(eventmesh.apiServerClient, 'createResource');
+        deleteResourceStub = sandbox.stub(eventmesh.apiServerClient, 'deleteResource');
+        getResourceStub.withArgs().returns(Promise.try(() => {
+          throw new errors.NotFound('resource not found on ApiServer');
+        }));
+        deleteResourceStub.withArgs().returns(Promise.try(() => {
+          throw new errors.NotFound('resource not found on ApiServer');
+        }));
+
+        createResourceStub.withArgs().returns(Promise.resolve());
+
       });
 
       afterEach(function () {
+        getResourceStub.restore();
+        createResourceStub.restore();
+        deleteResourceStub.restore();
         retryStub.resetHistory();
         clock.restore();
       });
@@ -129,7 +129,6 @@ describe('service-fabrik-admin', function () {
         expectedRequestBody.phase = CONST.SERVICE_LIFE_CYCLE.PRE_BIND;
         mocks.deploymentHookClient.executeDeploymentActions(200, deploymentHookRequestBody);
         mocks.deploymentHookClient.executeDeploymentActions(200, expectedRequestBody);
-        mocks.director.getBindingProperty(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID, {}, config.mongodb.deployment_name, 'NOTFOUND');
         mocks.director.getDeployment(config.mongodb.deployment_name, false, undefined, 2);
         mocks.director.getDeploymentInstances(config.mongodb.deployment_name);
         mocks.director.createOrUpdateDeployment('777');

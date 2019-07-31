@@ -22,7 +22,6 @@ const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const DeploymentDelayed = errors.DeploymentDelayed;
 const BaseDirectorService = require('../BaseDirectorService');
 const cf = require('../../data-access-layer/cf');
@@ -850,24 +849,26 @@ class DirectorService extends BaseDirectorService {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
     return utils.retry(tries => {
       logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
-      eventmesh.apiServerClient.getResponse({
+      return eventmesh.apiServerClient.getResponse({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
         resourceId: id
       })
-      .then(response => {
+        .then(response => {
+          logger.debug(`[getCredentials] Response obtained from ApiServer for ${id}`);
           if (response) {
             return utils.decodeBase64(response);
           }
-        })
+        });
     }, {
       maxAttempts: 5,
-      minDelay: 1000
+      minDelay: 1000,
+      predicate: err => !(err instanceof NotFound)
     })
-    .catch(err => {
-      logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
-      throw err;
-    })
+      .catch(err => {
+        logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
+        throw err;
+      });
   }
 
   diffManifest(deploymentName, opts) {

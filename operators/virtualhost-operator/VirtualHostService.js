@@ -103,7 +103,7 @@ class VirtualHostService extends BaseService {
     logger.info(`Creating binding '${binding.id}' with binding parameters ${binding.parameters} for deployment '${deploymentName}', virtual host '${instanceId}'...`);
     return this.director.getDeploymentIps(deploymentName)
       .then(ips => this.agent.createCredentials(ips, instanceId, binding.parameters))
-      .then(credentials =>  _.set(binding, 'credentials', credentials))
+      .then(credentials => _.set(binding, 'credentials', credentials))
       .then(() => binding.credentials)
       .tap(() => {
         const bindCreds = _.cloneDeep(binding.credentials);
@@ -136,24 +136,24 @@ class VirtualHostService extends BaseService {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
     return utils.retry(tries => {
       logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
-      eventmesh.apiServerClient.getResponse({
+      return eventmesh.apiServerClient.getResponse({
         resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
         resourceType: CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND,
         resourceId: id
       })
-      .then(response => {
+        .then(response => {
           if (response) {
             return utils.decodeBase64(response);
           }
-        })
+        });
     }, {
       maxAttempts: 5,
       minDelay: 1000
     })
-    .catch(err => {
-      logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
-      throw err;
-    })
+      .catch(err => {
+        logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
+        throw err;
+      });
   }
 
   /* Dashboard rendering functions */

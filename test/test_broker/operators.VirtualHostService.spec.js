@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const CONST = require('../../common/constants');
 const VirtualHostService = require('../../operators/virtualhost-operator/VirtualHostService');
-
+const utils = require('../../common/utils');
 
 describe('#VirtualHostService', function () {
   describe('instances', function () {
@@ -123,7 +123,6 @@ describe('#VirtualHostService', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.createCredentials(instance_id);
-          mocks.director.createBindingProperty(binding_id, {}, deployment_name, mocks.virtualHostAgent.credentials);
           const options = {
             binding_id: binding_id,
             service_id: service_id,
@@ -148,8 +147,13 @@ describe('#VirtualHostService', function () {
           mocks.director.getDeploymentInstances(deployment_name);
           mocks.agent.getInfo();
           mocks.virtualHostAgent.deleteCredentials(instance_id);
-          mocks.director.getBindingProperty(binding_id, {}, deployment_name, false, mocks.virtualHostAgent.credentials);
-          mocks.director.deleteBindingProperty(binding_id);
+          let dummyBindResource = {
+            status: {
+              response: utils.encodeBase64(mocks.virtualHostAgent.credentials),
+              state: 'succeeded'
+            }
+          };
+          mocks.apiServerEventMesh.nockGetResource(CONST.APISERVER.RESOURCE_GROUPS.BIND, CONST.APISERVER.RESOURCE_TYPES.VIRTUALHOST_BIND, binding_id, dummyBindResource, 1, 200);
           const options = {
             binding_id: binding_id,
             service_id: service_id,
@@ -162,8 +166,7 @@ describe('#VirtualHostService', function () {
           };
           return VirtualHostService.createVirtualHostService(instance_id, options)
             .then(service => service.unbind(options))
-            .then(res => {
-              expect(res.body).to.eql('');
+            .then(() => {
               mocks.verify();
             });
         });

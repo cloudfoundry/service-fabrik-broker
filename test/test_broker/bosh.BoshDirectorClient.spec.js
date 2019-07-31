@@ -680,26 +680,6 @@ describe('bosh', () => {
       });
     });
 
-    describe('#getDeploymentProperties', () => {
-      it('returns a JSON object', (done) => {
-        let request = {
-          method: 'GET',
-          url: `/deployments/${id}/properties`
-        };
-        let response = {
-          body: JSON.stringify({
-            uuid: uuid.v4()
-          }),
-          statusCode: 200
-        };
-
-        new MockBoshDirectorClient(request, response).getDeploymentProperties(id).then((content) => {
-          expect(content).to.eql(JSON.parse(response.body));
-          done();
-        }).catch(done);
-      });
-    });
-
     describe('#errands', () => {
       it('should return errands array for the deployment', () => {
         const req = {
@@ -940,52 +920,6 @@ describe('bosh', () => {
       });
     });
 
-    describe('#createDeploymentProperty', () => {
-      it('returns correct status code', (done) => {
-        let request = {
-          method: 'POST',
-          url: `/deployments/${id}/properties`,
-          json: true,
-          body: {}
-        };
-        let response = {
-          body: JSON.stringify({
-            uuid: uuid.v4()
-          }),
-          statusCode: 204
-        };
-
-        new MockBoshDirectorClient(request, response).createDeploymentProperty(id).then((content) => {
-          expect(content.statusCode).to.eql(204);
-          done();
-        }).catch(done);
-      });
-    });
-
-    describe('#updateDeploymentProperty', () => {
-      it('returns correct status code', (done) => {
-        let request = {
-          method: 'PUT',
-          url: `/deployments/${id}/properties/${id}`,
-          json: true,
-          body: {
-            value: id
-          }
-        };
-        let response = {
-          body: JSON.stringify({
-            uuid: uuid.v4()
-          }),
-          statusCode: 204
-        };
-
-        new MockBoshDirectorClient(request, response).updateDeploymentProperty(id, id, id).then((content) => {
-          expect(content.statusCode).to.eql(204);
-          done();
-        }).catch(done);
-      });
-    });
-
     describe('#stopDeployment', () => {
       let sandbox, getDirectorConfigStub, request, response;
       let mockBoshDirectorClient;
@@ -1061,100 +995,6 @@ describe('bosh', () => {
           .then(taskId => {
             expect(taskId).to.equal(`${deployment_name}_taskId`);
           });
-      });
-    });
-
-    describe('#createOrUpdateDeploymentProperty', () => {
-      it('returns correct status code', (done) => {
-        let request = {
-          method: 'PUT',
-          url: `/deployments/${id}/properties/${id}`,
-          json: true,
-          body: {
-            value: id
-          }
-        };
-        let response = {
-          body: JSON.stringify({
-            uuid: uuid.v4()
-          }),
-          statusCode: 400
-        };
-
-        new MockBoshDirectorClient(request, response).createOrUpdateDeploymentProperty(id, id, id)
-          .then(() => {
-            done();
-          })
-          .catch((content) => {
-            expect(content.statusCode).to.eql(204);
-            done();
-          });
-      });
-    });
-
-    describe('#updateOrCreateDeploymentProperty', () => {
-      it('returns correct status code', (done) => {
-        let request = {
-          method: 'POST',
-          url: `/deployments/${id}/properties`,
-          json: true,
-          body: {
-            name: id,
-            value: id
-          }
-        };
-        let response = {
-          body: JSON.stringify({
-            uuid: uuid.v4()
-          }),
-          statusCode: 404
-        };
-
-        new MockBoshDirectorClient(request, response).updateOrCreateDeploymentProperty(id, id, id)
-          .then(() => {
-            done();
-          })
-          .catch((content) => {
-            expect(content.statusCode).to.eql(204);
-            done();
-          });
-      });
-    });
-
-    describe('#getDeploymentProperty', () => {
-      it('returns an integer (task-id)', (done) => {
-        let request = {
-          method: 'GET',
-          url: `/deployments/${id}/properties/${id}`
-        };
-        let response = {
-          body: JSON.stringify({
-            value: id
-          }),
-          statusCode: 200
-        };
-
-        new MockBoshDirectorClient(request, response).getDeploymentProperty(id, id).then((content) => {
-          expect(content).to.eql(id);
-          done();
-        }).catch(done);
-      });
-    });
-
-    describe('#deleteDeploymentProperty', () => {
-      it('returns correct status code', (done) => {
-        let request = {
-          method: 'DELETE',
-          url: `/deployments/${id}/properties/${id}`
-        };
-        let response = {
-          statusCode: 204
-        };
-
-        new MockBoshDirectorClient(request, response).deleteDeploymentProperty(id, id).then((content) => {
-          expect(content.statusCode).to.eql(204);
-          done();
-        }).catch(done);
       });
     });
 
