@@ -147,8 +147,9 @@ class VirtualHostService extends BaseService {
           }
         });
     }, {
-      maxAttempts: 5,
-      minDelay: 1000
+      maxAttempts: 3,
+      minDelay: 1000,
+      predicate: err => !(err instanceof NotFound)
     })
       .catch(err => {
         logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);

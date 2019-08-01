@@ -55,7 +55,7 @@ class DirectorService extends BaseDirectorService {
   get platformContext() {
     return this.getContextFromResource()
       .then(context => {
-        if (!context) {
+        if (_.isEmpty(context)) {
           context = {
             platform: CONST.PLATFORM.CF
           };
@@ -861,7 +861,7 @@ class DirectorService extends BaseDirectorService {
           }
         });
     }, {
-      maxAttempts: 5,
+      maxAttempts: 3,
       minDelay: 1000,
       predicate: err => !(err instanceof NotFound)
     })
