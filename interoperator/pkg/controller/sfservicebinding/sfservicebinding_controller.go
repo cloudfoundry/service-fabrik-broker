@@ -393,7 +393,7 @@ func (r *ReconcileSFServiceBinding) updateUnbindStatus(targetClient client.Clien
 	updatedStatus.Error = computedStatus.Unbind.Error
 
 	remainingResource := []osbv1alpha1.Source{}
-	if targetClient == nil {
+	if targetClient != nil {
 		for _, subResource := range binding.Status.Resources {
 			resource := &unstructured.Unstructured{}
 			resource.SetKind(subResource.Kind)
