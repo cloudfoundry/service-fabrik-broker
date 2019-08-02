@@ -22,7 +22,6 @@ const ServiceInstanceAlreadyExists = errors.ServiceInstanceAlreadyExists;
 const DirectorServiceUnavailable = errors.DirectorServiceUnavailable;
 const ServiceInstanceNotOperational = errors.ServiceInstanceNotOperational;
 const FeatureNotSupportedByAnyAgent = errors.FeatureNotSupportedByAnyAgent;
-const ServiceBindingNotFound = errors.ServiceBindingNotFound;
 const DeploymentDelayed = errors.DeploymentDelayed;
 const BaseDirectorService = require('../BaseDirectorService');
 const cf = require('../../data-access-layer/cf');
@@ -56,27 +55,12 @@ class DirectorService extends BaseDirectorService {
   get platformContext() {
     return this.getContextFromResource()
       .then(context => {
-        if (context) {
-          return context;
-        }
-        logger.debug(`Fetching context from etcd failed for ${this.guid}. Trying to fetch from Bosh...`);
-        return Promise.try(() => _.isInteger(this.networkSegmentIndex) ? this.deploymentName : this.director.getDeploymentNameForInstanceId(this.guid))
-          .then(deploymentName => this.director.getDeploymentProperty(deploymentName, CONST.PLATFORM_CONTEXT_KEY))
-          .then(context => JSON.parse(context))
-          .catch(NotFound, () => {
-            /* Following is to handle existing deployments. 
-                For them platform-context is not saved in deployment property. Defaults to CF.
-            */
-            /* TODO: Remove the code for querying bosh for property.
-             */
-            logger.warn(`Deployment property '${CONST.PLATFORM_CONTEXT_KEY}' not found for instance '${this.guid}'.\ 
-          Setting default platform as '${CONST.PLATFORM.CF}'`);
-
-            const context = {
-              platform: CONST.PLATFORM.CF
-            };
-            return context;
-          });
+        if (_.isEmpty(context)) {
+          context = {
+            platform: CONST.PLATFORM.CF
+          };
+        } 
+        return context;
       });
   }
 
@@ -842,7 +826,7 @@ class DirectorService extends BaseDirectorService {
           .all([
             Promise.resolve(preUnbindResponse),
             this.getDeploymentIps(deploymentName),
-            this.getCredentials(deploymentName, id)
+            this.getCredentials(id)
           ]))
       .spread((preUnbindResponse, ips, credentials) => utils.retry(() => this.agent.deleteCredentials(ips, credentials, preUnbindResponse), {
         operation: 'DELETE_CREDENTIAL_AGENT',
@@ -861,42 +845,30 @@ class DirectorService extends BaseDirectorService {
       });
   }
 
-  getCredentials(deploymentName, id) {
-    return this.getCredentialsFromResource(id)
-      .then(credentials => {
-        if (credentials) {
-          return credentials;
-        }
-        logger.info(`[getCredentials] Fetching property from bosh for binding ${id}`);
-        return this.getBindingProperty(deploymentName, id)
-          .then(binding => binding.credentials);
-      });
-  }
-
-  getCredentialsFromResource(id) {
+  getCredentials(id) {
     logger.info(`[getCredentials] making request to ApiServer for binding ${id}`);
-    return eventmesh.apiServerClient.getResource({
-      resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
-      resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
-      resourceId: id
-    })
-      .then(resource => {
-        let response = _.get(resource, 'status.response', undefined);
-        if (!_.isEmpty(response)) {
-          return utils.decodeBase64(response);
-        }
+    return utils.retry(tries => {
+      logger.debug(`+-> Attempt ${tries + 1} to get binding ${id} from apiserver`);
+      return eventmesh.apiServerClient.getResponse({
+        resourceGroup: CONST.APISERVER.RESOURCE_GROUPS.BIND,
+        resourceType: CONST.APISERVER.RESOURCE_TYPES.DIRECTOR_BIND,
+        resourceId: id
       })
+        .then(response => {
+          logger.debug(`[getCredentials] Response obtained from ApiServer for ${id}`);
+          if (response) {
+            return utils.decodeBase64(response);
+          }
+        });
+    }, {
+      maxAttempts: 3,
+      minDelay: 1000,
+      predicate: err => !(err instanceof NotFound)
+    })
       .catch(err => {
         logger.error(`[getCredentials] error while fetching resource for binding ${id} - `, err);
-        return;
+        throw err;
       });
-  }
-
-  getBindingProperty(deploymentName, id) {
-    return this.director
-      .getDeploymentProperty(deploymentName, `binding-${id}`)
-      .then(result => JSON.parse(result))
-      .catchThrow(NotFound, new ServiceBindingNotFound(id));
   }
 
   diffManifest(deploymentName, opts) {

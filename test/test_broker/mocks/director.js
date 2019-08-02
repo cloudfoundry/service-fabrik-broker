@@ -72,18 +72,10 @@ exports.deleteDeployment = deleteDeployment;
 exports.getDeploymentTask = getDeploymentTask;
 exports.getDeploymentManifest = getDeploymentManifest;
 exports.diffDeploymentManifest = diffDeploymentManifest;
-exports.getBindingProperty = getBindingProperty;
-exports.createBindingProperty = createBindingProperty;
-exports.updateBindingProperty = updateBindingProperty;
-exports.deleteBindingProperty = deleteBindingProperty;
-exports.createDeploymentProperty = createDeploymentProperty;
-exports.getDeploymentProperty = getDeploymentProperty;
 exports.bindDeployment = bindDeployment;
 exports.unbindDeployment = unbindDeployment;
 exports.getDeploymentVms = getDeploymentVms;
 exports.verifyDeploymentLockStatus = verifyDeploymentLockStatus;
-exports.acquireLock = acquireLock;
-exports.releaseLock = releaseLock;
 exports.manifest = manifest;
 exports.getDeploymentInstances = getDeploymentInstances;
 
@@ -307,87 +299,6 @@ function diffDeploymentManifest(times, diff) {
     });
 }
 
-function createBindingProperty(binding_id, parameters, deployment, binding_credentials) {
-  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
-
-  return nock(directorUrl)
-    .post(`/deployments/${deploymentName}/properties`, body => {
-      return body.name === `binding-${binding_id}` &&
-        _.isEqual(JSON.parse(body.value), {
-          id: binding_id,
-          credentials: binding_credentials || credentials,
-          parameters: parameters || {}
-        });
-    })
-    .reply(204);
-}
-
-function createDeploymentProperty(name, value, deployment) {
-  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
-
-  return nock(directorUrl)
-    .post(`/deployments/${deploymentName}/properties`, body => {
-      return body.name === name &&
-        _.isEqual(JSON.parse(body.value), value);
-    })
-    .reply(204);
-}
-
-function getDeploymentProperty(deploymentName, found, key, value) {
-  if (!found) {
-    return nock(directorUrl)
-      .replyContentLength()
-      .get(`/deployments/${deploymentName}/properties/${key}`)
-      .reply(404, {});
-  }
-  return nock(directorUrl)
-    .replyContentLength()
-    .get(`/deployments/${deploymentName}/properties/${key}`)
-    .reply(200,
-      JSON.stringify({
-        value: JSON.stringify(value)
-      } || {})
-    );
-}
-
-function updateBindingProperty(binding_id, parameters, binding_credentials) {
-  return nock(directorUrl)
-    .put(`/deployments/${deploymentNameByIndex(networkSegmentIndex)}/properties/binding-${binding_id}`, body => {
-      return _.isEqual(JSON.parse(body.value), {
-        id: binding_id,
-        credentials: binding_credentials || credentials,
-        parameters: parameters || {}
-      });
-    })
-    .reply(204);
-}
-
-function deleteBindingProperty(binding_id, deployment) {
-  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
-  return nock(directorUrl)
-    .delete(`/deployments/${deploymentName}/properties/binding-${binding_id}`)
-    .reply(204);
-}
-
-function getBindingProperty(binding_id, parameters, deployment, notFound, binding_credentials) {
-  const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);
-  if (notFound) {
-    return nock(directorUrl)
-      .replyContentLength()
-      .get(`/deployments/${deploymentName}/properties/binding-${binding_id}`)
-      .reply(404, {});
-  }
-  return nock(directorUrl)
-    .replyContentLength()
-    .get(`/deployments/${deploymentName}/properties/binding-${binding_id}`)
-    .reply(200, {
-      value: JSON.stringify({
-        id: binding_id,
-        credentials: binding_credentials || credentials,
-        parameters: parameters || {}
-      })
-    });
-}
 
 function verifyDeploymentLockStatus(deployment, locked, params) {
   const deploymentName = deployment || deploymentNameByIndex(networkSegmentIndex);

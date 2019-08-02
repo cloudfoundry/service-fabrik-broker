@@ -13,25 +13,11 @@ const DBManagerNoProxy = require('../../data-access-layer/db/DBManager/DBManager
 
 let bindPropertyFound = 0;
 let bindPropertyFoundOnApiServer = false;
+let errorsWithApiServer = false;
 let failCreateUpdate = false;
 const mongoDBUrl = 'mongodb://username:password@10.11.0.2:27017,10.11.0.3:27017,10.11.0.4:27017/service-fabrik';
 let dbConnectionState = 1;
 class DirectorServiceStub {
-  getBindingProperty() {
-    return Promise.try(() => {
-      if (bindPropertyFound === 0) {
-        return {
-          credentials: {
-            uri: mongoDBUrl
-          }
-        };
-      } else if (bindPropertyFound === 1) {
-        throw new errors.ServiceBindingNotFound('SF Mongodb binding not found...Expected error.');
-      } else {
-        throw new errors.ServiceUnavailable('BOSH is down... simulated failure. Expected error.!');
-      }
-    });
-  }
   createBinding() {
     return Promise.resolve({
       credentials: {
@@ -55,6 +41,9 @@ let eventMeshStub = {
   apiServerClient: {
     getResource: () => {
       return Promise.try(() => {
+        if (errorsWithApiServer) {
+          throw new errors.ServiceUnavailable('could not connect to ApiServer');
+        }
         if (bindPropertyFoundOnApiServer) {
           return {
             status: {
@@ -266,7 +255,8 @@ describe('fabrik', function () {
         configStub = sandbox.stub(config);
       });
       beforeEach(function () {
-        bindPropertyFound = 0;
+        bindPropertyFoundOnApiServer = true;
+        errorsWithApiServer = false;
       });
       afterEach(function () {
         errorOnDbStart = false;
@@ -299,26 +289,14 @@ describe('fabrik', function () {
         return validateConnected(dbManager, 1);
       });
       it('On start if binding property cannot be retrieved then keep trying till it succeeds', function () {
-        bindPropertyFound = 2;
+        errorsWithApiServer = true;
         const dbManager = new DBManager();
         return Promise.delay(10).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManager.dbInitialized).to.eql(false);
-          bindPropertyFound = 0;
+          errorsWithApiServer = false;
           return validateConnected(dbManager);
-        });
-      });
-      it('On start if binding property is found in ApiServer then no further calls to director are made', function () {
-        bindPropertyFoundOnApiServer = true;
-        bindPropertyFound = 1; //ensure bindProperty won't be found on Director 
-        const dbManager = new DBManager();
-        return Promise.delay(10).then(() => {
-          expect(dbManager.dbState).to.eql(CONST.DB.STATE.CONNECTING);
-          expect(dbManager.dbInitialized).to.eql(true);
-          bindPropertyFound = 0;
-          bindPropertyFoundOnApiServer = false;
-          return validateConnected(dbManager, 1);
         });
       });
       it('On start if mongodb URL is configured, then it must connect to it successfully', function () {
@@ -344,7 +322,8 @@ describe('fabrik', function () {
 
     describe('#create', function () {
       beforeEach(function () {
-        bindPropertyFound = 1;
+        bindPropertyFoundOnApiServer = false;
+        errorsWithApiServer = false;
       });
       afterEach(function () {
         errorPollTask = false;
@@ -383,10 +362,10 @@ describe('fabrik', function () {
         return Promise.delay(2).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).to.be.calledOnce;
-          expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
-          let taskId;
+          expect(loggerWarnSpy.firstCall.args[1] instanceof errors.NotFound).to.eql(true);          let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
+            .tap(() => bindPropertyFoundOnApiServer = true)
             .then(() => Promise.delay(3))
             .then(() => {
               expect(getDeploymentStub).to.be.calledOnce;
@@ -398,7 +377,7 @@ describe('fabrik', function () {
             });
         });
       });
-
+      
       it('Should gracefully handle BOSH errors while creating deployment', function () {
         errorPollTask = true;
         const dbManager = new DBManager();
@@ -406,7 +385,7 @@ describe('fabrik', function () {
         return Promise.delay(2).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).to.be.calledOnce;
-          expect(loggerWarnSpy.firstCall.args[1] instanceof errors.ServiceBindingNotFound).to.eql(true);
+          expect(loggerWarnSpy.firstCall.args[1] instanceof errors.NotFound).to.eql(true);
           let taskId;
           return dbManager.createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
@@ -424,17 +403,18 @@ describe('fabrik', function () {
             });
         });
       });
-      it('At start of app, binding retrieval from BOSH fails & then subsequent create operation should provision mongodb and connect to DB Successfully', function () {
+      it('At start of app, binding retrieval from ApiServer fails & then subsequent create operation should provision mongodb and connect to DB Successfully', function () {
         this.timeout(25000);
-        bindPropertyFound = 2;
+        errorsWithApiServer = true;
         const dbManager = new DBManagerCreateWithDelayedReconnectRetry();
         deferred.reject(new errors.NotFound('Deployment not found'));
         return Promise.delay(5).then(() => {
           expect(dbManager.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbInitializeForCreateSpy).called;
-          bindPropertyFound = 1;
           let taskId;
+          errorsWithApiServer = false;
+          bindPropertyFoundOnApiServer = true
           return dbManager
             .createOrUpdateDbDeployment(true)
             .tap(out => taskId = out.task_id)
@@ -453,7 +433,8 @@ describe('fabrik', function () {
 
     describe('#update', function () {
       beforeEach(function () {
-        bindPropertyFound = 0;
+        bindPropertyFoundOnApiServer = true;
+        errorsWithApiServer = false;
       });
       afterEach(function () {
         failCreateUpdate = false;
@@ -492,14 +473,13 @@ describe('fabrik', function () {
         });
       });
       it('DB update should succeed but get binding must fail which should result in retrying the operation', function () {
-        bindPropertyFound = 2;
+        errorsWithApiServer = true;
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(2).then(() => {
           expect(dbManagerForUpdate.dbState).to.eql(CONST.DB.STATE.TB_INIT);
           expect(loggerWarnSpy).not.to.be.called;
           expect(dbManagerForUpdate.dbInitialized).to.eql(false);
           let taskId;
-          bindPropertyFound = 2;
           return dbManagerForUpdate.createOrUpdateDbDeployment(false)
             .then(out => {
               taskId = out.task_id;
@@ -535,10 +515,11 @@ describe('fabrik', function () {
 
     describe('#getState', function () {
       afterEach(function () {
-        bindPropertyFound = 0;
+        bindPropertyFoundOnApiServer = true;
         failCreateUpdate = false;
       });
       it('get state of DB state of connected successfully', function () {
+        bindPropertyFoundOnApiServer = true;
         const dbManagerForUpdate = new DBManagerForUpdate();
         return Promise.delay(2).then(() => {
           dbConnectionState = 1;

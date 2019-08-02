@@ -536,16 +536,6 @@ class BoshDirectorClient extends HttpClient {
       .catch(err => this.convertHttpErrorAndThrow(err));
   }
 
-  /* Property operations */
-  getDeploymentProperties(deploymentName) {
-    return this
-      .makeRequest({
-        method: 'GET',
-        url: `/deployments/${deploymentName}/properties`
-      }, 200, deploymentName)
-      .then(res => JSON.parse(res.body));
-  }
-
   getDeploymentIps(deploymentName) {
     return Promise.try(() => {
       if (this.deploymentIpsCache[deploymentName] !== undefined) {
@@ -741,66 +731,6 @@ class BoshDirectorClient extends HttpClient {
       const timer = setInterval(statePoller,
         pollInterval || this.activePrimary[0].default_task_poll_interval);
     });
-  }
-
-  createDeploymentProperty(deploymentName, propertyName, propertyValue) {
-    return this
-      .makeRequest({
-        method: 'POST',
-        url: `/deployments/${deploymentName}/properties`,
-        json: true,
-        body: {
-          name: propertyName,
-          value: propertyValue
-        }
-      }, 204, deploymentName);
-  }
-
-  updateDeploymentProperty(deploymentName, propertyName, propertyValue) {
-    return this
-      .makeRequest({
-        method: 'PUT',
-        url: `/deployments/${deploymentName}/properties/${propertyName}`,
-        json: true,
-        body: {
-          value: propertyValue
-        }
-      }, 204, deploymentName);
-  }
-
-  createOrUpdateDeploymentProperty(deploymentName, propertyName, propertyValue) {
-    return this
-      .createDeploymentProperty(deploymentName, propertyName, propertyValue)
-      .catch(BadRequest, err => {
-        /* jshint unused:false */
-        return this.updateDeploymentProperty(deploymentName, propertyName, propertyValue);
-      });
-  }
-
-  updateOrCreateDeploymentProperty(deploymentName, propertyName, propertyValue) {
-    return this
-      .updateDeploymentProperty(deploymentName, propertyName, propertyValue)
-      .catch(NotFound, err => {
-        /* jshint unused:false */
-        return this.createDeploymentProperty(deploymentName, propertyName, propertyValue);
-      });
-  }
-
-  getDeploymentProperty(deploymentName, propertyName) {
-    return this
-      .makeRequest({
-        method: 'GET',
-        url: `/deployments/${deploymentName}/properties/${propertyName}`
-      }, 200, deploymentName)
-      .then(res => JSON.parse(res.body).value);
-  }
-
-  deleteDeploymentProperty(deploymentName, propertyName) {
-    return this
-      .makeRequest({
-        method: 'DELETE',
-        url: `/deployments/${deploymentName}/properties/${propertyName}`
-      }, 204, deploymentName);
   }
 
   /*  Task operations */
