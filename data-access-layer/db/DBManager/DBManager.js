@@ -11,6 +11,7 @@ const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
 const Timeout = errors.Timeout;
 const NotFound = errors.NotFound;
+const PageNotFound = errors.PageNotFound;
 const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
 const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
@@ -70,7 +71,13 @@ class DBManager {
       }
     })
       .catch(NotFound , err => {
-        logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
+        if (err instanceof PageNotFound) {
+          logger.info(`Will attempt to reinitalize DB Manager after ${config.mongodb.retry_connect.min_delay} (ms)`);
+          // Keep on trying till you can connect to DB for any other errors
+          setTimeout(() => this.initialize(), CONST.APISERVER.RETRY_DELAY);
+        } else {
+          logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
+        }
       })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
@@ -115,8 +122,8 @@ class DBManager {
           resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
         });
       }, {
-        maxAttempts: 5,
-        minDelay: 1000,
+        maxAttempts: 3,
+        minDelay: CONST.APISERVER.RETRY_DELAY,
         predicate: err => !(err instanceof NotFound)
       }) 
         .catch(Timeout, throwTimeoutError)
