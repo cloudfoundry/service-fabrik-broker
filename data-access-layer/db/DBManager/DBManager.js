@@ -71,7 +71,7 @@ class DBManager {
       }
     })
       .catch(NotFound , err => {
-          logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
+        logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
       })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
