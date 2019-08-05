@@ -71,13 +71,7 @@ class DBManager {
       }
     })
       .catch(NotFound , err => {
-        if (err instanceof PageNotFound) {
-          logger.info(`Will attempt to reinitalize DB Manager after ${config.mongodb.retry_connect.min_delay} (ms)`);
-          // Keep on trying till you can connect to DB for any other errors
-          setTimeout(() => this.initialize(), CONST.APISERVER.RETRY_DELAY);
-        } else {
           logger.warn('MongoDB binding to ServiceFabrik not found. This generally should not occur. More Info:', err);
-        }
       })
       .catch(err => {
         logger.error('Error occurred while initializing DB ...', err);
@@ -124,7 +118,8 @@ class DBManager {
       }, {
         maxAttempts: 3,
         minDelay: CONST.APISERVER.RETRY_DELAY,
-        predicate: err => !(err instanceof NotFound)
+        // Should not retry when err is NotFound, but should retry when err is PageNotFound
+        predicate: err => !(err instanceof NotFound && !(err instanceof PageNotFound))
       }) 
         .catch(Timeout, throwTimeoutError)
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')));
