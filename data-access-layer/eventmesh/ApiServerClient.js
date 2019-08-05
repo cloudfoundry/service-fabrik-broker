@@ -13,6 +13,7 @@ const errors = require('../../common/errors');
 const Timeout = errors.Timeout;
 const BadRequest = errors.BadRequest;
 const NotFound = errors.NotFound;
+const PageNotFound = errors.PageNotFound;
 const Conflict = errors.Conflict;
 const camelcaseKeys = require('camelcase-keys');
 const InternalServerError = errors.InternalServerError;
@@ -48,7 +49,11 @@ function convertToHttpErrorAndThrow(err) {
       newErr = new BadRequest(message);
       break;
     case CONST.HTTP_STATUS_CODE.NOT_FOUND:
-      newErr = new NotFound(message);
+      if (message.includes('page not found')) {
+        newErr = new PageNotFound(message);
+      } else {
+        newErr = new NotFound(message);
+      }
       break;
     case CONST.HTTP_STATUS_CODE.CONFLICT:
       newErr = new Conflict(message);

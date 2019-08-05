@@ -11,6 +11,7 @@ const utils = require('../../../common/utils');
 const errors = require('../../../common/errors');
 const Timeout = errors.Timeout;
 const NotFound = errors.NotFound;
+const PageNotFound = errors.PageNotFound;
 const CONST = require('../../../common/constants');
 const dbConnectionManager = require('../../../data-access-layer/db/DbConnectionManager');
 const BasePlatformManager = require('../../../platform-managers/BasePlatformManager');
@@ -115,9 +116,10 @@ class DBManager {
           resourceId: _.toLower(CONST.FABRIK_INTERNAL_MONGO_DB.BINDING_ID)
         });
       }, {
-        maxAttempts: 5,
-        minDelay: 1000,
-        predicate: err => !(err instanceof NotFound)
+        maxAttempts: 3,
+        minDelay: CONST.APISERVER.RETRY_DELAY,
+        // Should not retry when err is NotFound, but should retry when err is PageNotFound
+        predicate: err => !(err instanceof NotFound && !(err instanceof PageNotFound))
       }) 
         .catch(Timeout, throwTimeoutError)
         .then(resource => utils.decodeBase64(_.get(resource, 'status.response')));
