@@ -156,6 +156,14 @@ class NotFound extends HttpClientError {
 }
 exports.NotFound = NotFound;
 
+class PageNotFound extends NotFound {
+  constructor(message, statusCode) {
+    super(CONST.HTTP_STATUS_CODE.NOT_FOUND, 'Page Not Found', message, statusCode);
+  }  
+}
+
+exports.PageNotFound = PageNotFound;
+
 class MethodNotAllowed extends HttpClientError {
   constructor(method, allow) {
     let message = `The method ${method} is not allowed for the resource identified by the URI`;
