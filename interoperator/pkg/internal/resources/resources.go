@@ -16,10 +16,11 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -29,7 +30,7 @@ var log = logf.Log.WithName("resources.internal")
 //go:generate mockgen -source resources.go -destination ./mock_resources/mock_resources.go
 type ResourceManager interface {
 	ComputeExpectedResources(client kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) ([]*unstructured.Unstructured, error)
-	SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error
+	SetOwnerReference(owner metav1.Object, ownerGVK schema.GroupVersionKind, resources []*unstructured.Unstructured) error
 	ReconcileResources(sourceClient kubernetes.Client, targetClient kubernetes.Client, expectedResources []*unstructured.Unstructured, lastResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
 	ComputeStatus(sourceClient kubernetes.Client, targetClient kubernetes.Client, instanceID, bindingID, serviceID, planID, action, namespace string) (*properties.Status, error)
 	DeleteSubResources(client kubernetes.Client, subResources []osbv1alpha1.Source) ([]osbv1alpha1.Source, error)
@@ -178,12 +179,20 @@ func (r resourceManager) ComputeExpectedResources(client kubernetes.Client, inst
 }
 
 // SetOwnerReference updates the owner reference for all the resources
-func (r resourceManager) SetOwnerReference(owner metav1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
+// For multi cluster support we cannot use k8s OwnerReference as
+// owner object might be in a different cluster. So use annotations.
+// Not using labels as it was restrictions of field values.
+func (r resourceManager) SetOwnerReference(owner metav1.Object, ownerGVK schema.GroupVersionKind, resources []*unstructured.Unstructured) error {
 	for _, obj := range resources {
-		if err := controllerutil.SetControllerReference(owner, obj, scheme); err != nil {
-			log.Error(err, "failed setting owner reference for resource", "owner", owner, "resource", obj)
-			return err
+		annotations := obj.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
 		}
+		annotations[constants.OwnerNameKey] = owner.GetName()
+		annotations[constants.OwnerNamespaceKey] = owner.GetNamespace()
+		annotations[constants.OwnerKindKey] = ownerGVK.Kind
+		annotations[constants.OwnerAPIVersionKey] = ownerGVK.GroupVersion().String()
+		obj.SetAnnotations(annotations)
 	}
 	return nil
 }
@@ -518,4 +527,57 @@ func (r resourceManager) deleteSubResource(client kubernetes.Client, resource *u
 		}
 	}
 	return client.Delete(context.TODO(), resource)
+}
+
+// MapReconcileByAnnotations maps resources to its owner using the Annotations
+func MapReconcileByAnnotations(a handler.MapObject, ownerGvk schema.GroupVersionKind) []reconcile.Request {
+	annotations := a.Meta.GetAnnotations()
+	ownerKind, ok := annotations[constants.OwnerKindKey]
+	if !ok {
+		return nil
+	}
+	ownerAPIVersion, ok := annotations[constants.OwnerAPIVersionKey]
+	if !ok {
+		return nil
+	}
+
+	if ownerKind != ownerGvk.Kind || ownerAPIVersion != ownerGvk.GroupVersion().String() {
+		return nil
+	}
+
+	ownerName, ok := annotations[constants.OwnerNameKey]
+	if !ok {
+		return nil
+	}
+	ownerNamespace, ok := annotations[constants.OwnerNamespaceKey]
+	if !ok {
+		return nil
+	}
+
+	return []reconcile.Request{{NamespacedName: types.NamespacedName{
+		Name:      ownerName,
+		Namespace: ownerNamespace,
+	}}}
+}
+
+// MapReconcileByControllerReference maps resources to its owner using
+// owner reference. Finds only the owner which is set a controller
+func MapReconcileByControllerReference(a handler.MapObject, ownerGvk schema.GroupVersionKind) []reconcile.Request {
+	ownerRef := metav1.GetControllerOf(a.Meta)
+	if ownerRef == nil {
+		return nil
+	}
+
+	// Compare the OwnerReference Group and Kind against the OwnerType Group and Kind specified by the user.
+	// If the two match, create a Request for the objected referred to by
+	// the OwnerReference. Use the Name from the OwnerReference and the Namespace from the
+	// object in the event.
+	if ownerRef.Kind != ownerGvk.Kind || ownerRef.APIVersion != ownerGvk.GroupVersion().String() {
+		return nil
+	}
+
+	return []reconcile.Request{{NamespacedName: types.NamespacedName{
+		Name:      ownerRef.Name,
+		Namespace: a.Meta.GetNamespace(),
+	}}}
 }

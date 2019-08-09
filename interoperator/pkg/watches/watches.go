@@ -76,7 +76,7 @@ func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches
 		return true, cfgManager.UpdateConfig(interoperatorCfg)
 	}
 
-	log.Info("Watch List in configmap up todate", "InstanceContollerWatchList", instanceWatches, "BindingContollerWatchList", bindingWatches)
+	log.Info("Watch List in configmap up todate")
 	return false, nil
 }
 
@@ -95,11 +95,6 @@ func compareWatchLists(list1, list2 []osbv1alpha1.APIVersionKind) bool {
 		}
 	}
 	return true
-}
-
-type k8sObject interface {
-	metav1.Object
-	runtime.Object
 }
 
 func computeWatchList(c client.Client, sfNamespace string) ([]osbv1alpha1.APIVersionKind, []osbv1alpha1.APIVersionKind, error) {

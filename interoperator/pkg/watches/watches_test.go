@@ -409,6 +409,11 @@ func _getDummyBinding() *osbv1alpha1.SFServiceBinding {
 	}
 }
 
+type k8sObject interface {
+	metav1.Object
+	runtime.Object
+}
+
 func deleteObject(c client.Client, object k8sObject) error {
 	var err error
 	for retry := 0; retry < constants.ErrorThreshold; retry++ {

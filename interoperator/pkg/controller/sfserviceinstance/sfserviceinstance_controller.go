@@ -25,6 +25,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
@@ -34,6 +35,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,6 +48,7 @@ import (
 )
 
 var log = logf.Log.WithName("instance.controller")
+var instanceGVK schema.GroupVersionKind
 
 // Add creates a new SFServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -83,32 +86,63 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	instance := &osbv1alpha1.SFServiceInstance{}
+	scheme := mgr.GetScheme()
+	gvkList, unVersioned, err := scheme.ObjectKinds(instance)
+	if err != nil {
+		return err
+	}
+	if unVersioned {
+		return fmt.Errorf("SFServiceInstance is not versioned")
+	}
+	if len(gvkList) != 1 {
+		return fmt.Errorf("SFServiceInstance maps to unexpected ObjectKinds %s", gvkList)
+	}
+	instanceGVK = gvkList[0]
+
 	// Watch for changes to SFServiceInstance
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
-	// TODO dynamically setup rbac rules and watches
-	subresources := make([]runtime.Object, len(interoperatorCfg.InstanceContollerWatchList))
-	for i, gvk := range interoperatorCfg.InstanceContollerWatchList {
-		object := &unstructured.Unstructured{}
-		object.SetKind(gvk.GetKind())
-		object.SetAPIVersion(gvk.GetAPIVersion())
-		subresources[i] = object
-	}
+	// TODO dynamically setup rbac rules
 
-	for _, subresource := range subresources {
-		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &osbv1alpha1.SFServiceInstance{},
+	// Define a mapping from the object in the event to one or more
+	// objects to Reconcile
+	mapFn := handler.ToRequestsFunc(
+		func(a handler.MapObject) []reconcile.Request {
+			result := resources.MapReconcileByAnnotations(a, instanceGVK)
+			if result != nil && len(result) != 0 {
+				return result
+			}
+			return resources.MapReconcileByControllerReference(a, instanceGVK)
 		})
-		if err != nil {
-			log.Error(err, "failed to start watch")
-		}
+
+	watchEvents, _, err := watches.CreateWatchChannel(getClusterRegistry(r),
+		interoperatorCfg.InstanceContollerWatchList)
+	if err != nil {
+		return err
+	}
+	err = c.Watch(
+		&source.Channel{Source: watchEvents},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: mapFn,
+		},
+	)
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func getClusterRegistry(obj reconcile.Reconciler) registry.ClusterRegistry {
+	r, ok := obj.(*ReconcileSFServiceInstance)
+	if !ok {
+		return nil
+	}
+	return r.clusterRegistry
 }
 
 var _ reconcile.Reconciler = &ReconcileSFServiceInstance{}
@@ -161,6 +195,8 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		lastOperation = "in_queue"
 	}
 
+	log.Info("Instance kind", "instanceId", instanceID, "GroupVersionKind", instanceGVK)
+
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
@@ -198,7 +234,7 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 			return r.handleError(instance, reconcile.Result{}, err, state, 0)
 		}
 
-		err = r.resourceManager.SetOwnerReference(instance, expectedResources, r.scheme)
+		err = r.resourceManager.SetOwnerReference(instance, instanceGVK, expectedResources)
 		if err != nil {
 			return r.handleError(instance, reconcile.Result{}, err, state, 0)
 		}

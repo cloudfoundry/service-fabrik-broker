@@ -29,12 +29,14 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,6 +50,7 @@ import (
 )
 
 var log = logf.Log.WithName("binding.controller")
+var bindingGVK schema.GroupVersionKind
 
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -86,32 +89,63 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	binding := &osbv1alpha1.SFServiceBinding{}
+	scheme := mgr.GetScheme()
+	gvkList, unVersioned, err := scheme.ObjectKinds(binding)
+	if err != nil {
+		return err
+	}
+	if unVersioned {
+		return fmt.Errorf("SFServiceBinding is not versioned")
+	}
+	if len(gvkList) != 1 {
+		return fmt.Errorf("SFServiceBinding maps to unexpected ObjectKinds %s", gvkList)
+	}
+	bindingGVK := gvkList[0]
+
 	// Watch for changes to SFServiceBinding
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceBinding{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
-	// TODO dynamically setup rbac rules and watches
-	subresources := make([]runtime.Object, len(interoperatorCfg.BindingContollerWatchList))
-	for i, gvk := range interoperatorCfg.BindingContollerWatchList {
-		object := &unstructured.Unstructured{}
-		object.SetKind(gvk.GetKind())
-		object.SetAPIVersion(gvk.GetAPIVersion())
-		subresources[i] = object
-	}
+	// TODO dynamically setup rbac rules
 
-	for _, subresource := range subresources {
-		err = c.Watch(&source.Kind{Type: subresource}, &handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &osbv1alpha1.SFServiceBinding{},
+	// Define a mapping from the object in the event to one or more
+	// objects to Reconcile
+	mapFn := handler.ToRequestsFunc(
+		func(a handler.MapObject) []reconcile.Request {
+			result := resources.MapReconcileByAnnotations(a, bindingGVK)
+			if result != nil && len(result) != 0 {
+				return result
+			}
+			return resources.MapReconcileByControllerReference(a, bindingGVK)
 		})
-		if err != nil {
-			log.Error(err, "failed to start watch")
-		}
+
+	watchEvents, _, err := watches.CreateWatchChannel(getClusterRegistry(r),
+		interoperatorCfg.BindingContollerWatchList)
+	if err != nil {
+		return err
+	}
+	err = c.Watch(
+		&source.Channel{Source: watchEvents},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: mapFn,
+		},
+	)
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func getClusterRegistry(obj reconcile.Reconciler) registry.ClusterRegistry {
+	r, ok := obj.(*ReconcileSFServiceBinding)
+	if !ok {
+		return nil
+	}
+	return r.clusterRegistry
 }
 
 var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}
@@ -221,7 +255,8 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		if err != nil {
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}
-		err = r.resourceManager.SetOwnerReference(binding, expectedResources, r.scheme)
+
+		err = r.resourceManager.SetOwnerReference(binding, bindingGVK, expectedResources)
 		if err != nil {
 			return r.handleError(binding, reconcile.Result{}, err, state, 0)
 		}

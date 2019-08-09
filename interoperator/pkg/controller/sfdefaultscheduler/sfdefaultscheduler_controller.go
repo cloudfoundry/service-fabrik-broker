@@ -20,6 +20,7 @@ import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/prometheus/common/log"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -100,7 +101,7 @@ func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 	if instance.Spec.ClusterID == "" {
-		instance.Spec.ClusterID = "1"
+		instance.Spec.ClusterID = constants.DefaultClusterID
 		if err := r.Update(context.Background(), instance); err != nil {
 			log.Error(err, "failed to update cluster id for ", "instance", instance.GetName())
 			return reconcile.Result{}, err

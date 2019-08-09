@@ -10,7 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	reflect "reflect"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,17 +54,17 @@ func (mr *MockResourceManagerMockRecorder) ComputeExpectedResources(client, inst
 }
 
 // SetOwnerReference mocks base method
-func (m *MockResourceManager) SetOwnerReference(owner v1.Object, resources []*unstructured.Unstructured, scheme *runtime.Scheme) error {
+func (m *MockResourceManager) SetOwnerReference(owner v1.Object, ownerGVK schema.GroupVersionKind, resources []*unstructured.Unstructured) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetOwnerReference", owner, resources, scheme)
+	ret := m.ctrl.Call(m, "SetOwnerReference", owner, ownerGVK, resources)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetOwnerReference indicates an expected call of SetOwnerReference
-func (mr *MockResourceManagerMockRecorder) SetOwnerReference(owner, resources, scheme interface{}) *gomock.Call {
+func (mr *MockResourceManagerMockRecorder) SetOwnerReference(owner, ownerGVK, resources interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOwnerReference", reflect.TypeOf((*MockResourceManager)(nil).SetOwnerReference), owner, resources, scheme)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOwnerReference", reflect.TypeOf((*MockResourceManager)(nil).SetOwnerReference), owner, ownerGVK, resources)
 }
 
 // ReconcileResources mocks base method

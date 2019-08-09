@@ -9,15 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
-
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/dynamic"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -567,38 +566,19 @@ func Test_resourceManager_ComputeExpectedResources(t *testing.T) {
 func Test_resourceManager_SetOwnerReference(t *testing.T) {
 	type args struct {
 		owner     metav1.Object
+		ownerGVK  schema.GroupVersionKind
 		resources []*unstructured.Unstructured
-		scheme    *runtime.Scheme
 	}
+
+	owner := &osbv1alpha1.SFServiceInstance{}
+	owner.SetName("instance-id")
+	owner.SetNamespace("default")
+	ownerGVK := schema.FromAPIVersionAndKind("osb.servicefabrik.io/v1alpha1", "SFServiceInstance")
 
 	resource := &unstructured.Unstructured{}
 	resource.SetAPIVersion("kubedb.com/v1alpha1")
 	resource.SetKind("Postgres")
 	resource.SetNamespace("default")
-
-	spec := osbv1alpha1.SFServiceInstanceSpec{}
-	owner := &osbv1alpha1.SFServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "instance-id",
-			Namespace: "default",
-		},
-		Spec: spec,
-		Status: osbv1alpha1.SFServiceInstanceStatus{
-			DashboardURL: "",
-			State:        "",
-			Error:        "",
-			Description:  "",
-			AppliedSpec:  spec,
-			Resources: []osbv1alpha1.Source{
-				{
-					APIVersion: "v1alpha1",
-					Kind:       "Director",
-					Name:       "dddd",
-					Namespace:  "default",
-				},
-			},
-		},
-	}
 
 	tests := []struct {
 		name    string
@@ -611,8 +591,8 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 			r:    resourceManager{},
 			args: args{
 				owner:     owner,
+				ownerGVK:  ownerGVK,
 				resources: []*unstructured.Unstructured{resource},
-				scheme:    scheme.Scheme,
 			},
 			wantErr: false,
 		},
@@ -620,7 +600,7 @@ func Test_resourceManager_SetOwnerReference(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := resourceManager{}
-			if err := r.SetOwnerReference(tt.args.owner, tt.args.resources, tt.args.scheme); (err != nil) != tt.wantErr {
+			if err := r.SetOwnerReference(tt.args.owner, tt.args.ownerGVK, tt.args.resources); (err != nil) != tt.wantErr {
 				t.Errorf("resourceManager.SetOwnerReference() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

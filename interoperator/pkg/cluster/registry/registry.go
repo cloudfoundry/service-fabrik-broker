@@ -86,7 +86,11 @@ func (r *clusterRegistry) createClient(configBytes []byte) (kubernetes.Client, e
 }
 
 // GetClient returns a kubernetes client for a cluster
+// If clusterID in empty returns the default client
 func (r *clusterRegistry) GetClient(clusterID string) (kubernetes.Client, error) {
+	if clusterID == "" {
+		return r.c, nil
+	}
 	cluster, err := r.GetCluster(clusterID)
 	if err != nil {
 		return nil, err

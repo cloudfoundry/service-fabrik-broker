@@ -98,7 +98,7 @@ func (cfg *config) fetchConfig() error {
 		return err
 	}
 	cfg.configMap = configMap
-	log.Info("Successfully fetched configmap", "name", cfg.configMap.Name,
+	log.V(1).Info("Successfully fetched configmap", "name", cfg.configMap.Name,
 		"namespace", cfg.configMap.Namespace, "data", cfg.configMap.Data)
 	return nil
 }
@@ -153,9 +153,9 @@ func (cfg *config) UpdateConfig(interoperatorConfig *InteroperatorConfig) error 
 		return err
 	}
 	if toCreate {
-		log.Info("created interoperator config map", "data", cfg.configMap.Data)
+		log.V(1).Info("created interoperator config map", "data", cfg.configMap.Data)
 	} else {
-		log.Info("updated interoperator config map", "data", cfg.configMap.Data)
+		log.V(1).Info("updated interoperator config map", "data", cfg.configMap.Data)
 	}
 	return nil
 }
