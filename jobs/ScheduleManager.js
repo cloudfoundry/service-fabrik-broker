@@ -46,6 +46,12 @@ class ScheduleManager {
       } else if (interval === CONST.SCHEDULE.RANDOM) {
         const JobDefinition = JobFabrik.getJob(jobType);
         interval = JobDefinition.getRandomRepeatInterval();
+      } else {
+        // ensure safe cron expressions only
+        const isSafe = utils.isCronSafe(interval);
+        if (!isSafe) {
+          throw new errors.BadRequest(`invalid interval ${interval}. Safety validation failed. `);
+        }
       }
       return scheduler
         .schedule(name, jobType, interval, jobData)
