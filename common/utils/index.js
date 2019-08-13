@@ -72,6 +72,7 @@ exports.getAllPlansForService = getAllPlansForService;
 exports.loadCatalogFromAPIServer = loadCatalogFromAPIServer;
 exports.getDefaultErrorMsg = getDefaultErrorMsg;
 exports.sleep = sleep;
+exports.isCronSafe = isCronSafe;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -88,6 +89,20 @@ function verifyFeatureSupport(plan, feature) {
   if (!_.includes(plan.manager.settings.agent.supported_features, feature)) {
     throw new NotImplemented(`Feature '${feature}' not supported`);
   }
+}
+
+// valid format: sec|* (optional) min|* hour|* day|* month|* day of week|*
+function isCronSafe(interval) {
+  const parts = interval.trim().split(/\s+/);
+  if (parts.length < 5 || parts.length > 6) {
+    return false;
+  }
+  for(let i = 0; i < parts.length; i++) {
+    if (parts[i] != '*') {
+      return true;
+    }
+  }
+  return false;
 }
 
 function streamToPromise(stream, options) {
