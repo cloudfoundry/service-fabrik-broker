@@ -19,9 +19,10 @@ package sfplan
 import (
 	"context"
 	"fmt"
-	"os"
+	"time"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -49,14 +50,14 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	initWatches := make(chan struct{})
-	stopWatches := make(chan struct{})
-	go restartOnWatchUpdate(mgr, initWatches, stopWatches)
+	reconfigureWatch := make(chan struct{}, 100)
+	stopReconfigureWatch := make(chan struct{})
+	go reconfigureWatches(mgr, reconfigureWatch, stopReconfigureWatch)
 	return &ReconcileSfPlan{
-		Client:      mgr.GetClient(),
-		scheme:      mgr.GetScheme(),
-		initWatches: initWatches,
-		stopWatches: stopWatches,
+		Client:                 mgr.GetClient(),
+		scheme:                 mgr.GetScheme(),
+		reconfigureWatches:     reconfigureWatch,
+		stopReconfigureWatches: stopReconfigureWatch,
 	}
 }
 
@@ -76,17 +77,28 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-func restartOnWatchUpdate(mgr manager.Manager, initWatches, stop <-chan struct{}) {
+func reconfigureWatches(mgr manager.Manager, reconfigureWatch, stop <-chan struct{}) {
 	for {
 		select {
-		case <-initWatches:
-			toUpdate, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper())
+		case <-reconfigureWatch:
+			drainTimeout := time.After(constants.ChannelDrainTimeout)
+		DrainLoop:
+			for {
+				select {
+				case <-reconfigureWatch:
+					// NOP
+					// Since the ReconfigureWatches performs the same computation
+					// regardless of which plan has changed, drain all the
+					// events occuring in a 2 second window and call
+					// ReconfigureWatches only once. This significantly improves
+					// startup and watch refreshes.
+				case <-drainTimeout:
+					break DrainLoop
+				}
+			}
+			err := watches.ReconfigureWatches()
 			if err != nil {
 				log.Error(err, "unable initializing interoperator watch list")
-			}
-			if toUpdate {
-				log.Info("Watch list changed. Restarting interoperator")
-				os.Exit(1)
 			}
 		case <-stop:
 			// We are done
@@ -100,9 +112,9 @@ var _ reconcile.Reconciler = &ReconcileSfPlan{}
 // ReconcileSfPlan reconciles a SFPlan object
 type ReconcileSfPlan struct {
 	client.Client
-	scheme      *runtime.Scheme
-	initWatches chan struct{}
-	stopWatches chan struct{}
+	scheme                 *runtime.Scheme
+	reconfigureWatches     chan struct{}
+	stopReconfigureWatches chan struct{}
 }
 
 // Reconcile reads that state of the cluster for a SFPlan object and makes changes based on the state read
@@ -111,7 +123,7 @@ type ReconcileSfPlan struct {
 func (r *ReconcileSfPlan) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Recompute watches
 	defer func() {
-		r.initWatches <- struct{}{}
+		r.reconfigureWatches <- struct{}{}
 	}()
 	// Fetch the SFPlan instance
 	instance := &osbv1alpha1.SFPlan{}

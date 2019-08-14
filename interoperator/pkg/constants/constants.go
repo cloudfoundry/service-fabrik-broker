@@ -1,5 +1,9 @@
 package constants
 
+import (
+	"time"
+)
+
 // Constants used by interoperator
 const (
 	LeaderElectionID   = "interoperator-leader-election-helper"
@@ -23,4 +27,6 @@ const (
 	DefaultBindingWorkerCount     = 20
 	DefaultSchedulerWorkerCount   = 10
 	DefaultClusterID              = "1"
+
+	ChannelDrainTimeout = time.Millisecond * 500
 )

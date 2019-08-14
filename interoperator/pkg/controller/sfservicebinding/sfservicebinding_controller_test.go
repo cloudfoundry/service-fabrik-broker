@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -226,6 +227,14 @@ func TestReconcile(t *testing.T) {
 	mockResourceManager.EXPECT().DeleteSubResources(gomock.Any(), gomock.Any()).Return(appliedResources, nil).AnyTimes()
 
 	setupInteroperatorConfig(g)
+	_getWatchChannel := getWatchChannel
+	defer func() {
+		getWatchChannel = _getWatchChannel
+	}()
+	getWatchChannel = func(controllerName string) (<-chan event.GenericEvent, error) {
+		return make(chan event.GenericEvent), nil
+	}
+
 	recFn, requests := SetupTestReconcile(reconciler)
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
 

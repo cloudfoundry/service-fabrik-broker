@@ -52,6 +52,9 @@ import (
 var log = logf.Log.WithName("binding.controller")
 var bindingGVK schema.GroupVersionKind
 
+// To the function mock
+var getWatchChannel = watches.GetWatchChannel
+
 // Add creates a new SFServiceBinding Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -122,8 +125,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			return resources.MapReconcileByControllerReference(a, bindingGVK)
 		})
 
-	watchEvents, _, err := watches.CreateWatchChannel(getClusterRegistry(r),
-		interoperatorCfg.BindingContollerWatchList)
+	watchEvents, err := getWatchChannel("bindingContoller")
 	if err != nil {
 		return err
 	}
@@ -138,14 +140,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	return nil
-}
-
-func getClusterRegistry(obj reconcile.Reconciler) registry.ClusterRegistry {
-	r, ok := obj.(*ReconcileSFServiceBinding)
-	if !ok {
-		return nil
-	}
-	return r.clusterRegistry
 }
 
 var _ reconcile.Reconciler = &ReconcileSFServiceBinding{}

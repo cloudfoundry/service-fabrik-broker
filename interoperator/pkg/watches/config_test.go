@@ -13,9 +13,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 
-	"github.com/onsi/gomega"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -53,103 +51,103 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestInitWatchConfig(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-	service := _getDummyService()
-	plan := _getDummyPlan()
+// func TestInitWatchConfig(t *testing.T) {
+// 	g := gomega.NewGomegaWithT(t)
+// 	service := _getDummyService()
+// 	plan := _getDummyPlan()
 
-	type args struct {
-		kubeConfig *rest.Config
-		scheme     *runtime.Scheme
-		mapper     meta.RESTMapper
-	}
-	tests := []struct {
-		name    string
-		setup   func()
-		args    args
-		wantErr bool
-		want    bool
-		cleanup func()
-	}{
-		{
-			name: "fail on invalid config",
-			args: args{
-				kubeConfig: nil,
-			},
-			wantErr: true,
-			want:    false,
-		},
-		{
-			name: "fail on invalid scheme",
-			args: args{
-				kubeConfig: kubeConfig,
-			},
-			wantErr: true,
-			want:    false,
-		},
-		{
-			name: "do nothing watches if no plans",
-			args: args{
-				kubeConfig: kubeConfig,
-				scheme:     sch,
-			},
-			wantErr: false,
-			want:    false,
-		},
-		{
-			name: "update watches if plans are there",
-			setup: func() {
-				g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
-				g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
-			},
-			args: args{
-				kubeConfig: kubeConfig,
-				scheme:     sch,
-			},
-			wantErr: false,
-			want:    true,
-		},
-		{
-			name: "update watches if plans sources are changed",
-			setup: func() {
-				plan.Spec.Templates[3].Content = `cfg:
-  apiVersion: v1
-  kind: ConfigMap
-  name: name
-  namespace: namespace`
-				g.Expect(c.Update(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
-			},
-			args: args{
-				kubeConfig: kubeConfig,
-				scheme:     sch,
-			},
-			wantErr: false,
-			want:    true,
-			cleanup: func() {
-				g.Expect(deleteObject(c, plan)).NotTo(gomega.HaveOccurred())
-				g.Expect(deleteObject(c, service)).NotTo(gomega.HaveOccurred())
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
-			if tt.cleanup != nil {
-				defer tt.cleanup()
-			}
-			got, err := InitWatchConfig(tt.args.kubeConfig, tt.args.scheme, tt.args.mapper)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("InitWatchConfig() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("InitWatchConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+// 	type args struct {
+// 		kubeConfig *rest.Config
+// 		scheme     *runtime.Scheme
+// 		mapper     meta.RESTMapper
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		setup   func()
+// 		args    args
+// 		wantErr bool
+// 		want    bool
+// 		cleanup func()
+// 	}{
+// 		{
+// 			name: "fail on invalid config",
+// 			args: args{
+// 				kubeConfig: nil,
+// 			},
+// 			wantErr: true,
+// 			want:    false,
+// 		},
+// 		{
+// 			name: "fail on invalid scheme",
+// 			args: args{
+// 				kubeConfig: kubeConfig,
+// 			},
+// 			wantErr: true,
+// 			want:    false,
+// 		},
+// 		{
+// 			name: "do nothing watches if no plans",
+// 			args: args{
+// 				kubeConfig: kubeConfig,
+// 				scheme:     sch,
+// 			},
+// 			wantErr: false,
+// 			want:    false,
+// 		},
+// 		{
+// 			name: "update watches if plans are there",
+// 			setup: func() {
+// 				g.Expect(c.Create(context.TODO(), service)).NotTo(gomega.HaveOccurred())
+// 				g.Expect(c.Create(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
+// 			},
+// 			args: args{
+// 				kubeConfig: kubeConfig,
+// 				scheme:     sch,
+// 			},
+// 			wantErr: false,
+// 			want:    true,
+// 		},
+// 		{
+// 			name: "update watches if plans sources are changed",
+// 			setup: func() {
+// 				plan.Spec.Templates[3].Content = `cfg:
+//   apiVersion: v1
+//   kind: ConfigMap
+//   name: name
+//   namespace: namespace`
+// 				g.Expect(c.Update(context.TODO(), plan)).NotTo(gomega.HaveOccurred())
+// 			},
+// 			args: args{
+// 				kubeConfig: kubeConfig,
+// 				scheme:     sch,
+// 			},
+// 			wantErr: false,
+// 			want:    true,
+// 			cleanup: func() {
+// 				g.Expect(deleteObject(c, plan)).NotTo(gomega.HaveOccurred())
+// 				g.Expect(deleteObject(c, service)).NotTo(gomega.HaveOccurred())
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if tt.setup != nil {
+// 				tt.setup()
+// 			}
+// 			if tt.cleanup != nil {
+// 				defer tt.cleanup()
+// 			}
+// 			got, err := InitWatchConfig(tt.args.kubeConfig, tt.args.scheme, tt.args.mapper)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("InitWatchConfig() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if got != tt.want {
+// 				t.Errorf("InitWatchConfig() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
 
 func Test_computeSources(t *testing.T) {
 	service := _getDummyService()

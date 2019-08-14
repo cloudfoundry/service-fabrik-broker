@@ -2,62 +2,17 @@ package watches
 
 import (
 	"context"
-	"os"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	rendererFactory "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/renderer/factory"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
-
-var log = logf.Log.WithName("init.watches")
-
-// InitWatchConfig populates the watch configs for instance and binding
-// controllers by rendering dummy instance and binding for each plan.
-// Must be called before starting controllers.
-func InitWatchConfig(kubeConfig *rest.Config, scheme *runtime.Scheme, mapper meta.RESTMapper) (bool, error) {
-	if kubeConfig == nil {
-		return false, errors.NewInputError("InitWatchConfig", "kubeConfig", nil)
-	}
-
-	if scheme == nil {
-		return false, errors.NewInputError("InitWatchConfig", "scheme", nil)
-	}
-
-	c, err := client.New(kubeConfig, client.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-	})
-	if err != nil {
-		return false, err
-	}
-	sfNamespace := os.Getenv(constants.NamespaceEnvKey)
-	if sfNamespace == "" {
-		sfNamespace = constants.DefaultServiceFabrikNamespace
-	}
-	instanceWatches, bindingWatches, err := computeWatchList(c, sfNamespace)
-	if err != nil {
-		log.Error(err, "Failed to compute watch lists")
-		return false, err
-	}
-
-	cfgManager, err := config.New(kubeConfig, scheme, mapper)
-	if err != nil {
-		return false, err
-	}
-
-	return updateWatchConfig(cfgManager, instanceWatches, bindingWatches)
-}
 
 func updateWatchConfig(cfgManager config.Config, instanceWatches, bindingWatches []osbv1alpha1.APIVersionKind) (bool, error) {
 	interoperatorCfg := cfgManager.GetConfig()
@@ -97,6 +52,8 @@ func compareWatchLists(list1, list2 []osbv1alpha1.APIVersionKind) bool {
 	return true
 }
 
+// computeWatchList populates the watch configs for instance and binding
+// controllers by rendering dummy instance and binding for each plan.
 func computeWatchList(c client.Client, sfNamespace string) ([]osbv1alpha1.APIVersionKind, []osbv1alpha1.APIVersionKind, error) {
 	serviceInstance := getDummyServiceInstance(sfNamespace)
 	serviceBinding := getDummyServiceBinding(sfNamespace)

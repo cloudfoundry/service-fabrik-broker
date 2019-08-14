@@ -75,10 +75,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Init watch list
-	log.Info("Initializing interoperator watch list")
-	if _, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
-		log.Error(err, "unable initializing interoperator watch list")
+	// Init watch manager
+	log.Info("Initializing interoperator watch manager")
+	if err := watches.SetupWatchManager(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
+		log.Error(err, "unable initializing interoperator watch manager")
 		os.Exit(1)
 	}
 

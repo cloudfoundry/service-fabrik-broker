@@ -50,6 +50,9 @@ import (
 var log = logf.Log.WithName("instance.controller")
 var instanceGVK schema.GroupVersionKind
 
+// To the function mock
+var getWatchChannel = watches.GetWatchChannel
+
 // Add creates a new SFServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -119,8 +122,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			return resources.MapReconcileByControllerReference(a, instanceGVK)
 		})
 
-	watchEvents, _, err := watches.CreateWatchChannel(getClusterRegistry(r),
-		interoperatorCfg.InstanceContollerWatchList)
+	watchEvents, err := getWatchChannel("instanceContoller")
 	if err != nil {
 		return err
 	}
@@ -135,14 +137,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	return nil
-}
-
-func getClusterRegistry(obj reconcile.Reconciler) registry.ClusterRegistry {
-	r, ok := obj.(*ReconcileSFServiceInstance)
-	if !ok {
-		return nil
-	}
-	return r.clusterRegistry
 }
 
 var _ reconcile.Reconciler = &ReconcileSFServiceInstance{}
@@ -194,8 +188,6 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 	if !ok {
 		lastOperation = "in_queue"
 	}
-
-	log.Info("Instance kind", "instanceId", instanceID, "GroupVersionKind", instanceGVK)
 
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
