@@ -46,6 +46,7 @@ exports.getRandomCronForOnceEveryXDays = getRandomCronForOnceEveryXDays;
 exports.getRandomCronForOnceEveryXDaysWeekly = getRandomCronForOnceEveryXDaysWeekly;
 exports.getRandomCronForEveryDayAtXHoursInterval = getRandomCronForEveryDayAtXHoursInterval;
 exports.getCronWithIntervalAndAfterXminute = getCronWithIntervalAndAfterXminute;
+exports.getCronAfterXMinuteFromNow = getCronAfterXMinuteFromNow;
 exports.isDBConfigured = isDBConfigured;
 exports.isFeatureEnabled = isFeatureEnabled;
 exports.isServiceFabrikOperation = isServiceFabrikOperation;
@@ -524,6 +525,18 @@ function getCronWithIntervalAndAfterXminute(interval, afterXminute) {
       message: 'interval should \'daily\' or in \'x hours\' format'
     });
   }
+  return interval;
+}
+
+function getCronAfterXMinuteFromNow(afterXminute) {
+  afterXminute = afterXminute || 3;
+  const currentTime = new Date().getTime();
+  const timeAfterXMinute = new Date(currentTime + afterXminute * 60 * 1000);
+  const hr = timeAfterXMinute.getHours();
+  const min = timeAfterXMinute.getMinutes();
+  const date = timeAfterXMinute.getDate();
+  const month = timeAfterXMinute.getMonth();
+  const interval = `${min} ${hr} ${date} ${month} *`;
   return interval;
 }
 
