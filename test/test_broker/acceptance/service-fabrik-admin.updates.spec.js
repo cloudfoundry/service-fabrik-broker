@@ -58,10 +58,10 @@ describe('service-fabrik-admin', function () {
     };
 
     let sandbox = sinon.createSandbox();
-    let runNowStub = sandbox.stub(ScheduleManager, 'runNow').callsFake(() => Promise.resolve(jobResponse));
+    let runAtStub = sandbox.stub(ScheduleManager, 'runAt').callsFake(() => Promise.resolve(jobResponse));
 
     afterEach(function () {
-      runNowStub.resetHistory();
+      runAtStub.resetHistory();
     });
     after(function () {
       sandbox.restore();
@@ -78,14 +78,14 @@ describe('service-fabrik-admin', function () {
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
-          expect(runNowStub).to.be.calledOnce; // jshint ignore:line
-          expect(runNowStub.firstCall.args[0]).to.be.equal('Meter_Instance');
-          expect(runNowStub.firstCall.args[1]).to.be.equal('MeterInstance');
-          expect(runNowStub.firstCall.args[2]).to.deep.equal({});
-          expect(runNowStub.firstCall.args[3]).to.deep.equal({
+          expect(runAtStub).to.be.calledOnce; // jshint ignore:line
+          expect(runAtStub.firstCall.args[0]).to.be.equal('Meter_Instance');
+          expect(runAtStub.firstCall.args[1]).to.be.equal('MeterInstance');
+          expect(runAtStub.firstCall.args[3]).to.deep.equal({});
+          expect(runAtStub.firstCall.args[4]).to.deep.equal({
             name: config.username
           });
-          expect(res).to.have.status(200);
+          expect(res).to.have.status(CONST.HTTP_STATUS_CODE.CREATED);
           expect(res.body.name).to.equal(jobResponse.name);
         });
     });
@@ -101,16 +101,16 @@ describe('service-fabrik-admin', function () {
         .auth(config.username, config.password)
         .catch(err => err.response)
         .then(res => {
-          expect(runNowStub).to.be.calledOnce; // jshint ignore:line
-          expect(runNowStub.firstCall.args[0]).to.be.equal('Meter_Instance');
-          expect(runNowStub.firstCall.args[1]).to.be.equal('MeterInstance');
-          expect(runNowStub.firstCall.args[2]).to.deep.equal({
+          expect(runAtStub).to.be.calledOnce; // jshint ignore:line
+          expect(runAtStub.firstCall.args[0]).to.be.equal('Meter_Instance');
+          expect(runAtStub.firstCall.args[1]).to.be.equal('MeterInstance');
+          expect(runAtStub.firstCall.args[3]).to.deep.equal({
             instance_guid: 'fake_instance_guid'
           });
-          expect(runNowStub.firstCall.args[3]).to.deep.equal({
+          expect(runAtStub.firstCall.args[4]).to.deep.equal({
             name: config.username
           });
-          expect(res).to.have.status(200);
+          expect(res).to.have.status(CONST.HTTP_STATUS_CODE.CREATED);
           expect(res.body.name).to.equal(jobResponse.name);
         });
     });

@@ -757,9 +757,10 @@ class ServiceFabrikAdminController extends FabrikBaseController {
     const jobData = instance_guid == undefined ? {} : {
       instance_guid: instance_guid
     };
+    const interval = utils.getCronAfterXMinuteFromNow(1);
     return ScheduleManager
-      .runNow(req.body.job_name, req.params.job_type, jobData, req.user)
-      .then(body => res.status(200).send(body));
+      .runAt(req.body.job_name, req.params.job_type, interval, jobData, req.user)
+      .then(body => res.status(CONST.HTTP_STATUS_CODE.CREATED).send(body));
   }
 
   createUpdateConfig(req, res) {
