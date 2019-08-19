@@ -64,6 +64,7 @@ type BindingResponse struct {
 // SFServiceBinding is the Schema for the sfservicebindings API
 // +k8s:openapi-gen=true
 // +kubebuilder:printcolumn:name=state,type=string,JSONPath=.status.state
+// +kubebuilder:printcolumn:name=age,type=date,JSONPath=.metadata.creationTimestamp
 type SFServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
