@@ -6,4 +6,4 @@ metadata:
   name: sfcluster-sample
 spec:
   # Add fields here
-  foo: bar
+  secretRef: bar

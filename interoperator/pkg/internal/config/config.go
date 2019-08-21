@@ -24,9 +24,10 @@ var log = logf.Log.WithName("config.manager")
 
 // InteroperatorConfig contains tuneable configs used by interoperator
 type InteroperatorConfig struct {
-	InstanceWorkerCount  int `yaml:"instanceWorkerCount,omitempty"`
-	BindingWorkerCount   int `yaml:"bindingWorkerCount,omitempty"`
-	SchedulerWorkerCount int `yaml:"schedulerWorkerCount,omitempty"`
+	InstanceWorkerCount  int    `yaml:"instanceWorkerCount,omitempty"`
+	BindingWorkerCount   int    `yaml:"bindingWorkerCount,omitempty"`
+	SchedulerWorkerCount int    `yaml:"schedulerWorkerCount,omitempty"`
+	SchedulerType        string `yaml:"schedulerType,omitempty"`
 
 	InstanceContollerWatchList []osbv1alpha1.APIVersionKind `yaml:"instanceContollerWatchList,omitempty"`
 	BindingContollerWatchList  []osbv1alpha1.APIVersionKind `yaml:"bindingContollerWatchList,omitempty"`
@@ -42,6 +43,9 @@ func setConfigDefaults(interoperatorConfig *InteroperatorConfig) *InteroperatorC
 	}
 	if interoperatorConfig.SchedulerWorkerCount == 0 {
 		interoperatorConfig.SchedulerWorkerCount = constants.DefaultSchedulerWorkerCount
+	}
+	if interoperatorConfig.SchedulerType == "" {
+		interoperatorConfig.SchedulerType = constants.DefaultSchedulerType
 	}
 
 	return interoperatorConfig

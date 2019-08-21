@@ -13,8 +13,12 @@ manager: generate fmt vet
 	go build -o bin/manager github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/cmd/manager
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet
-	go run ./cmd/manager/main.go
+run_provisioners: generate fmt vet
+	go run -tags provisioners ./cmd/manager/main.go
+
+# Run schedulers only in ~/.kube/config
+run_schedulers: generate fmt vet
+	go run -tags schedulers ./cmd/manager/main.go
 
 # Install CRDs into a cluster
 install: manifests

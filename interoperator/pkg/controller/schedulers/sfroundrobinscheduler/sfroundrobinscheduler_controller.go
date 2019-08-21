@@ -14,17 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sfdefaultscheduler
+package sfroundrobinscheduler
 
 import (
 	"context"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
+	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/prometheus/common/log"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -32,12 +35,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+var (
+	lastProvisionedClusterIndex = 0
+)
+
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new SFDefaultScheduler Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new SFRoundRobinScheduler Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 // USER ACTION REQUIRED: update cmd/manager/main.go to call this osb.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
@@ -46,7 +53,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileSFDefaultScheduler{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileSFRoundRobinScheduler{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -56,8 +63,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
+	if interoperatorCfg.SchedulerType != constants.RoundRobinSchedulerType {
+		return nil
+	}
 	// Create a new controller
-	c, err := controller.New("sfdefaultscheduler-controller", mgr, controller.Options{
+	c, err := controller.New("sfroundrobinscheduler-controller", mgr, controller.Options{
 		Reconciler:              r,
 		MaxConcurrentReconciles: interoperatorCfg.SchedulerWorkerCount,
 	})
@@ -65,7 +75,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SFDefaultScheduler
+	// Watch for changes to SFServiceInstance
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
@@ -74,20 +84,20 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileSFDefaultScheduler{}
+var _ reconcile.Reconciler = &ReconcileSFRoundRobinScheduler{}
 
-// ReconcileSFDefaultScheduler reconciles a SFDefaultScheduler object
-type ReconcileSFDefaultScheduler struct {
+// ReconcileSFRoundRobinScheduler reconciles a SFServiceInstance object
+type ReconcileSFRoundRobinScheduler struct {
 	client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a SFDefaultScheduler object and makes changes based on the state read
-// and what is in the SFDefaultScheduler.Spec
+// Reconcile reads that state of the cluster for a SFRoundRobinScheduler object and makes changes based on the state read
+// and what is in the SFRoundRobinScheduler.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the SFDefaultScheduler instance
+func (r *ReconcileSFRoundRobinScheduler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the SFRoundRobinScheduler instance
 	instance := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
@@ -100,9 +110,20 @@ func (r *ReconcileSFDefaultScheduler) Reconcile(request reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 	if instance.Spec.ClusterID == "" {
-		instance.Spec.ClusterID = "1"
+		clusters := &resourcev1alpha1.SFClusterList{}
+		options := &kubernetes.ListOptions{}
+		err := r.List(context.TODO(), options, clusters)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if len(clusters.Items) <= lastProvisionedClusterIndex {
+			lastProvisionedClusterIndex = 0
+		}
+		currentlyProvisionedCluster := clusters.Items[lastProvisionedClusterIndex]
+		lastProvisionedClusterIndex++
+		instance.Spec.ClusterID = currentlyProvisionedCluster.ObjectMeta.Name
 		if err := r.Update(context.Background(), instance); err != nil {
-			log.Error(err, "failed to update cluster id for ", "instance", instance.GetName())
+			log.Error(err, "failed to update cluster id for ", "sfroundrobincontroller", instance.GetName())
 			return reconcile.Result{}, err
 		}
 	}

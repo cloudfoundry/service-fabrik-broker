@@ -15,14 +15,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 package controller
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/schedulers/sfdefaultscheduler"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/schedulers/sfroundrobinscheduler"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, sfdefaultscheduler.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, sfroundrobinscheduler.Add)
 }
