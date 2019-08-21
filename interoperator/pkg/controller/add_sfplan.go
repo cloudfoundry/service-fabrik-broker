@@ -19,7 +19,7 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/sfplan"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/provisioners/sfplan"
 )
 
 func init() {
