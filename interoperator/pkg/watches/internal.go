@@ -43,6 +43,7 @@ func (wm *watchManager) reconfigureWatches() error {
 	}
 
 	if isUpdated {
+		log.Info("ReconfigureWatches started")
 		wm.instanceContoller.resources = instanceWatches
 		wm.instanceContoller.reconfigure <- struct{}{}
 
@@ -78,7 +79,7 @@ type controllerWatcher struct {
 	events  chan event.GenericEvent
 	_events <-chan event.GenericEvent
 
-	// write to stop is passed through to _stop
+	// write to stop will close _stop
 	stop  chan struct{}
 	_stop chan<- struct{}
 
@@ -143,7 +144,7 @@ func (controller *controllerWatcher) start() {
 			stopped = true
 			_newEvents = nil
 			_newStop = nil
-			controller._stop <- struct{}{}
+			close(controller._stop)
 			log.Info("stop called for watch. forcefully closing",
 				"controller", controller.name)
 		case <-controller.reconfigure:
@@ -159,7 +160,7 @@ func (controller *controllerWatcher) start() {
 					"controller", controller.name)
 				os.Exit(1)
 			}
-			controller._stop <- struct{}{}
+			close(controller._stop)
 		}
 	}
 }

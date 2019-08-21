@@ -20,7 +20,8 @@ import (
 
 // createWatchChannel creates a channel and sets watches on all the
 // clusters for all resources. Return the channel on which events are sent
-// and a channel for stopping the watches
+// and a channel for stopping the watches. close the stop channel
+// for stopping the watches.
 func createWatchChannel(controllerName string, defaultCluster kubernetes.Client, clusterRegistry registry.ClusterRegistry,
 	resources []osbv1alpha1.APIVersionKind) (<-chan event.GenericEvent, chan<- struct{}, error) {
 
@@ -75,7 +76,6 @@ func createWatchChannel(controllerName string, defaultCluster kubernetes.Client,
 			continue
 		}
 
-		stop := make(chan struct{})
 		clusterWatcherList[i] = &clusterWatcher{
 			controllerName:  controllerName,
 			clusterID:       cluster.GetName(),
@@ -83,8 +83,7 @@ func createWatchChannel(controllerName string, defaultCluster kubernetes.Client,
 			discoveryClient: discoveryClient,
 			gvkList:         gvkList,
 			events:          events,
-			stop:            stop,
-			stopper:         stop,
+			stop:            stopCh,
 			waitgroup:       &waitgroup,
 		}
 		err = clusterWatcherList[i].start()
@@ -95,17 +94,15 @@ func createWatchChannel(controllerName string, defaultCluster kubernetes.Client,
 		}
 	}
 	go func() {
-		<-stopCh
-		for _, clusterWatcher := range clusterWatcherList {
-			if clusterWatcher != nil {
-				clusterWatcher.stopper <- struct{}{}
+		// close events after all clusterWatchers are done
+		select {
+		case _, ok := <-stopCh:
+			if !ok {
+				waitgroup.Wait()
+				close(events)
+				log.Info("closed watch channel", "controller", controllerName)
 			}
 		}
-		// close events after all clusterWatchers are done
-		waitgroup.Wait()
-		close(events)
-		log.Info("closed watch channel", "controller", controllerName)
-
 	}()
 	log.Info("created watch channel", "controller", controllerName)
 	return events, stopCh, nil
@@ -120,10 +117,8 @@ type clusterWatcher struct {
 	gvrList         []schema.GroupVersionResource
 	watchers        []*watcher
 	events          chan<- event.GenericEvent
-	stop            <-chan struct{}
-	// stopper is the write side of the stop channel. They should have the same value.
-	stopper   chan<- struct{}
-	waitgroup *sync.WaitGroup
+	stop            chan struct{}
+	waitgroup       *sync.WaitGroup
 }
 
 func (cw *clusterWatcher) computeGVRList() {
@@ -156,15 +151,13 @@ func (cw *clusterWatcher) start() error {
 	cw.computeGVRList()
 	cw.watchers = make([]*watcher, len(cw.gvrList))
 	for i, gvr := range cw.gvrList {
-		stop := make(chan struct{})
 		cw.watchers[i] = &watcher{
 			controllerName: cw.controllerName,
 			clusterID:      cw.clusterID,
 			dynamicClient:  cw.dynamicClient,
 			gvr:            gvr,
 			events:         cw.events,
-			stop:           stop,
-			stopper:        stop,
+			stop:           cw.stop,
 			waitgroup:      cw.waitgroup,
 		}
 		err := cw.watchers[i].start()
@@ -174,12 +167,6 @@ func (cw *clusterWatcher) start() error {
 			continue
 		}
 	}
-	go func() {
-		<-cw.stop
-		for _, watcher := range cw.watchers {
-			watcher.stopper <- struct{}{}
-		}
-	}()
 	return nil
 }
 
@@ -189,10 +176,8 @@ type watcher struct {
 	dynamicClient  dynamic.Interface
 	gvr            schema.GroupVersionResource
 	events         chan<- event.GenericEvent
-	stop           <-chan struct{}
-	// stopper is the write side of the stop channel. They should have the same value.
-	stopper   chan<- struct{}
-	waitgroup *sync.WaitGroup
+	stop           chan struct{}
+	waitgroup      *sync.WaitGroup
 }
 
 func (rw *watcher) start() error {
@@ -240,11 +225,13 @@ func (rw *watcher) start() error {
 					Meta:   metaObject,
 					Object: watchEvent.Object,
 				}
-			case <-rw.stop:
-				log.V(1).Info("stop called for watch. forcefully closing", "clusterID",
-					rw.clusterID, "gvr", rw.gvr, "controller", rw.controllerName)
-				w.Stop()
-				return
+			case _, ok := <-rw.stop:
+				if !ok {
+					log.V(1).Info("stop called for watch. forcefully closing", "clusterID",
+						rw.clusterID, "gvr", rw.gvr, "controller", rw.controllerName)
+					w.Stop()
+					return
+				}
 			}
 		}
 	}()
