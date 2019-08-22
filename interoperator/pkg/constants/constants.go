@@ -11,6 +11,7 @@ const (
 	ConfigMapName   = "interoperator-config"
 	ConfigMapKey    = "config"
 	NamespaceEnvKey = "POD_NAMESPACE"
+	StatefulSetName = "web"
 
 	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10
