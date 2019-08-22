@@ -22,13 +22,12 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
-	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
-
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/errors"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
