@@ -19,6 +19,7 @@ package sfserviceinstance
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 
@@ -29,13 +30,13 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/properties"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/resources"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/utils"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	kubernetes "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -45,6 +46,7 @@ import (
 )
 
 var log = logf.Log.WithName("instance.controller")
+var ownClusterID string
 
 // Add creates a new SFServiceInstance Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -73,6 +75,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 	interoperatorCfg := cfgManager.GetConfig()
+
+	ownClusterID = os.Getenv(constants.OwnClusterIDEnvKey)
+	if ownClusterID == "" {
+		ownClusterID = constants.MasterClusterID
+	}
+
 	// Create a new controller
 	c, err := controller.New("sfserviceinstance-controller", mgr, controller.Options{
 		Reconciler:              r,
@@ -145,10 +153,6 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		return r.handleError(instance, reconcile.Result{}, err, "", 0)
 	}
 
-	if instance.Spec.ClusterID == "" {
-		return reconcile.Result{}, nil
-	}
-
 	serviceID := instance.Spec.ServiceID
 	planID := instance.Spec.PlanID
 	instanceID := instance.GetName()
@@ -160,23 +164,24 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		lastOperation = "in_queue"
 	}
 
+	clusterID, err := instance.GetClusterID()
+	if err != nil {
+		if errors.SFServiceInstanceNotFound(err) || errors.ClusterIDNotSet(err) {
+			log.Info("clusterID not set. Ignoring", "instance", instanceID)
+			return reconcile.Result{}, nil
+		}
+		log.Error(err, "failed to get clusterID", "instance", instanceID)
+		return r.handleError(instance, reconcile.Result{}, err, state, 0)
+	}
+	if clusterID != ownClusterID {
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.reconcileFinalizers(instance, 0); err != nil {
 		return r.handleError(instance, reconcile.Result{Requeue: true}, nil, "", 0)
 	}
 
-	var targetClient kubernetes.Client
-	if state == "in_queue" || state == "update" || state == "delete" || state == "in progress" {
-		clusterID, err := instance.GetClusterID()
-		if err != nil {
-			log.Info("clusterID not set. Ignoring", "instance", instanceID)
-			return reconcile.Result{}, nil
-		}
-
-		targetClient, err = r.clusterRegistry.GetClient(clusterID)
-		if err != nil {
-			return r.handleError(instance, reconcile.Result{}, err, state, 0)
-		}
-	}
+	targetClient := r
 
 	if state == "delete" && !instance.GetDeletionTimestamp().IsZero() {
 		// The object is being deleted
@@ -258,7 +263,7 @@ func (r *ReconcileSFServiceInstance) reconcileFinalizers(object *osbv1alpha1.SFS
 		return err
 	}
 	if object.GetDeletionTimestamp().IsZero() {
-		if !containsString(object.GetFinalizers(), constants.FinalizerName) {
+		if !utils.ContainsString(object.GetFinalizers(), constants.FinalizerName) {
 			// The object is not being deleted, so if it does not have our finalizer,
 			// then lets add the finalizer and update the object.
 			object.SetFinalizers(append(object.GetFinalizers(), constants.FinalizerName))
@@ -370,7 +375,7 @@ func (r *ReconcileSFServiceInstance) updateDeprovisionStatus(targetClient client
 	if instance.GetState() == "succeeded" || len(remainingResource) == 0 {
 		// remove our finalizer from the list and update it.
 		log.Info("Removing finalizer", "instance", instanceID)
-		instance.SetFinalizers(removeString(instance.GetFinalizers(), constants.FinalizerName))
+		instance.SetFinalizers(utils.RemoveString(instance.GetFinalizers(), constants.FinalizerName))
 		instance.SetState("succeeded")
 		updateRequired = true
 	}
@@ -431,28 +436,6 @@ func (r *ReconcileSFServiceInstance) updateStatus(targetClient client.Client, in
 		}
 	}
 	return nil
-}
-
-//
-// Helper functions to check and remove string from a slice of strings.
-//
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-	return false
-}
-
-func removeString(slice []string, s string) (result []string) {
-	for _, item := range slice {
-		if item == s {
-			continue
-		}
-		result = append(result, item)
-	}
-	return
 }
 
 func (r *ReconcileSFServiceInstance) handleError(object *osbv1alpha1.SFServiceInstance, result reconcile.Result, inputErr error, lastOperation string, retryCount int) (reconcile.Result, error) {

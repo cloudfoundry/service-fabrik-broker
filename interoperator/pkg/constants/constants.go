@@ -8,10 +8,12 @@ const (
 	LastOperationKey = "interoperator.servicefabrik.io/lastoperation"
 	ErrorThreshold   = 10
 
-	ConfigMapName   = "interoperator-config"
-	ConfigMapKey    = "config"
-	NamespaceEnvKey = "POD_NAMESPACE"
-	StatefulSetName = "web"
+	ConfigMapName      = "interoperator-config"
+	ConfigMapKey       = "config"
+	NamespaceEnvKey    = "POD_NAMESPACE"
+	OwnClusterIDEnvKey = "OwnClusterID"
+	MasterClusterID    = "1"
+	StatefulSetName    = "web"
 
 	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10
