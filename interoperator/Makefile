@@ -24,6 +24,10 @@ run_schedulers: generate fmt vet
 run_mcd: generate fmt vet
 	go run -tags multiclusterdeploy ./cmd/manager/main.go
 
+# Run schedulers only in ~/.kube/config
+run_default: generate fmt vet
+	go run -tags default ./cmd/manager/main.go
+
 # Install CRDs into a cluster
 install: manifests
 	kubectl apply -f config/crds

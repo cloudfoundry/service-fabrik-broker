@@ -3,4 +3,4 @@ kind: SFServiceInstance
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: sfsi-sample8
+  name: sfsi-sample

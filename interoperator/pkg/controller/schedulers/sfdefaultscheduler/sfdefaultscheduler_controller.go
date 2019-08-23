@@ -70,7 +70,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to SFDefaultScheduler
+	// Watch for changes to SFServiceInstance
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
