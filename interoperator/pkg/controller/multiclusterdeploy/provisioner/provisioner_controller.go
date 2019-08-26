@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/rbac/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,12 +131,12 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	// Create Statefulset in target cluster for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
 	provisionerInstance := &appsv1.StatefulSet{}
-	provisionerInstance.SetName("haha")
-	provisionerInstance.SetNamespace("default")
+	provisionerInstance.SetName(statefulSetInstance.GetName())
+	provisionerInstance.SetNamespace(statefulSetInstance.GetNamespace())
 	// copy spec
 	statefulSetInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
 	// set replicaCount to 1
-	replicaCount := int32(0)
+	replicaCount := int32(1)
 	provisionerInstance.Spec.Replicas = &replicaCount
 
 	// set env CLUSTER_ID for containers
@@ -154,15 +155,45 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			log.Info("Provisioner not found, creating in cluster ", clusterID)
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
+				log.Error("Error occurred while creating provisioner in cluster ", clusterID, err)
 				return reconcile.Result{}, err
 			}
 			return reconcile.Result{}, nil
 		}
-		log.Error("Error occurred", err)
+		log.Error("Error occurred while updating provisioner in cluster ", clusterID, err)
 		return reconcile.Result{}, err
 	}
 
-	// TODO - Deploy cluster roles and bindings
+	// Deploy cluster rolebinding
+	clusterRoleBinding := &v1.ClusterRoleBinding{}
+	clusterRoleBinding.SetName("inter-operator-clusterrolebinding")
+	clusterRoleBindingSubject := &v1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      "default",
+		Namespace: "default",
+	}
+	clusterRoleRef := &v1.RoleRef{
+		APIGroup: "rbac.authorization.k8s.io",
+		Kind:     "ClusterRole",
+		Name:     "cluster-admin",
+	}
+	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, *clusterRoleBindingSubject)
+	clusterRoleBinding.RoleRef = *clusterRoleRef
+	log.Info("Updating clusterRole in cluster ", clusterID)
+	err = targetClient.Update(context.TODO(), clusterRoleBinding)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			log.Info("ClusterRoleBinding not found, creating role binding in cluster ", clusterID)
+			err = targetClient.Create(context.TODO(), clusterRoleBinding)
+			if err != nil {
+				log.Error("Error occurred while creating ClusterRoleBinding for cluster ", clusterID, err)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		log.Error("Error occurred while updating ClusterRoleBinding for cluster ", clusterID, err)
+		return reconcile.Result{}, err
+	}
 
 	return reconcile.Result{}, nil
 }
