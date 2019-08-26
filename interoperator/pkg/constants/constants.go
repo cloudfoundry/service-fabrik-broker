@@ -2,7 +2,6 @@ package constants
 
 // Constants used by interoperator
 const (
-	LeaderElectionID = "interoperator-leader-election-helper"
 	FinalizerName    = "interoperator.servicefabrik.io"
 	ErrorCountKey    = "interoperator.servicefabrik.io/error"
 	LastOperationKey = "interoperator.servicefabrik.io/lastoperation"
