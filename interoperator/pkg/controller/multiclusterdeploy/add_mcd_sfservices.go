@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package multiclusterdeploy
 
 import (
 	sfservices "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/sfservicesreplicator"
