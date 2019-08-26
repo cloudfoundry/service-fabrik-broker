@@ -25,6 +25,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/provisioner"
 	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -110,7 +111,6 @@ type ReconcileProvisioner struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Im here")
 	// Fetch the SFCluster
 	clusterInstance := &resourcev1alpha1.SFCluster{}
 	err := r.Get(context.TODO(), request.NamespacedName, clusterInstance)
@@ -122,22 +122,36 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterID := clusterInstance.GetName()
 	log.Info("Cluster id is ", clusterID)
 
+	// Get targetClient for targetCluster
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	// Create Statefulset in target cluster for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
 	provisionerInstance := &appsv1.StatefulSet{}
-	statefulSetInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
-	replicaCount := int32(1)
 	provisionerInstance.SetName("haha")
 	provisionerInstance.SetNamespace("default")
+	// copy spec
+	statefulSetInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
+	// set replicaCount to 1
+	replicaCount := int32(0)
 	provisionerInstance.Spec.Replicas = &replicaCount
 
-	log.Info("Deploying provisioner in cluster ", clusterID)
+	// set env CLUSTER_ID for containers
+	for i := range provisionerInstance.Spec.Template.Spec.Containers {
+		clusterIDEnv := &corev1.EnvVar{
+			Name:  "CLUSTER_ID",
+			Value: clusterID,
+		}
+		provisionerInstance.Spec.Template.Spec.Containers[i].Env = append(provisionerInstance.Spec.Template.Spec.Containers[i].Env, *clusterIDEnv)
+	}
+
+	log.Info("Updating provisioner in cluster ", clusterID)
 	err = targetClient.Update(context.TODO(), provisionerInstance)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
+			log.Info("Provisioner not found, creating in cluster ", clusterID)
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -147,6 +161,8 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 		log.Error("Error occurred", err)
 		return reconcile.Result{}, err
 	}
+
+	// TODO - Deploy cluster roles and bindings
 
 	return reconcile.Result{}, nil
 }
