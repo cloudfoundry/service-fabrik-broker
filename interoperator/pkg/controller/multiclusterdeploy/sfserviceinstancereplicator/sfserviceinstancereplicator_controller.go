@@ -22,7 +22,6 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/prometheus/common/log"
 
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+var log = logf.Log.WithName("instance.replicator")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -107,10 +109,16 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	}
 
 	instanceID := instance.GetName()
-	clusterID, err := instance.GetClusterID()
 	state := instance.GetState()
+	clusterID, err := instance.GetClusterID()
 	if err != nil {
 		log.Info("clusterID not set. Ignoring", "instance", instanceID)
+		return reconcile.Result{}, nil
+	}
+
+	if clusterID == constants.MasterClusterID {
+		// Target cluster is mastercluster itself
+		// Replication not needed
 		return reconcile.Result{}, nil
 	}
 
@@ -119,7 +127,9 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
-	err = r.reconcileNamespace(targetClient, instance.GetNamespace(), clusterID)
+	// Trigger delete for namespace in target cluster if deletion time stamp is set for instance
+	err = r.reconcileNamespace(targetClient, instance.GetNamespace(), clusterID,
+		!instance.GetDeletionTimestamp().IsZero())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -184,7 +194,7 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient client.Client, namespace, clusterID string) error {
+func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient client.Client, namespace, clusterID string, delete bool) error {
 	ns := &corev1.Namespace{}
 
 	err := targetClient.Get(context.TODO(), types.NamespacedName{
@@ -192,6 +202,9 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 	}, ns)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
+			if delete {
+				return nil
+			}
 			log.Info("creating namespace in target cluster", "clusterID", clusterID,
 				"namespace", namespace)
 			ns.SetName(namespace)
@@ -211,6 +224,15 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 		return err
 
 	}
+	if delete {
+		err = targetClient.Delete(context.TODO(), ns)
+		if err != nil {
+			log.Error(err, "Failed to delete namespace from target cluster", "namespace", namespace,
+				"clusterID", clusterID)
+			return err
+		}
+	}
+
 	return nil
 }
 
