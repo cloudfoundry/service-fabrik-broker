@@ -18,14 +18,16 @@ package sfserviceinstancereplicator
 
 import (
 	"context"
-	"reflect"
 
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/prometheus/common/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -95,7 +97,7 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	replica := &osbv1alpha1.SFServiceInstance{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
@@ -106,6 +108,7 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 
 	instanceID := instance.GetName()
 	clusterID, err := instance.GetClusterID()
+	state := instance.GetState()
 	if err != nil {
 		log.Info("clusterID not set. Ignoring", "instance", instanceID)
 		return reconcile.Result{}, nil
@@ -116,43 +119,123 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
-	err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
+	err = r.reconcileNamespace(targetClient, instance.GetNamespace(), clusterID)
 	if err != nil {
-		if !errors.IsNotFound(err) {
-			log.Info("creating SFServiceInstance in target cluster", "instance", instanceID,
-				"clusterID", clusterID)
-			replica.SetName(instance.GetName())
-			replica.SetNamespace(instance.GetNamespace())
-			replica.SetLabels(instance.GetLabels())
-			replica.SetAnnotations(instance.GetAnnotations())
-			instance.Spec.DeepCopyInto(&replica.Spec)
-
-			err = targetClient.Create(context.TODO(), replica)
-			if err != nil {
-				log.Error(err, "Error during creation of SFServiceInstance in target cluster", "instance", instanceID,
-					"clusterID", clusterID)
-				return reconcile.Result{}, err
-			}
-			log.Info("Created SFServiceInstance in target cluster", "instance", instanceID,
-				"clusterID", clusterID)
-			return reconcile.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// object already existed, so we update it
-	if !reflect.DeepEqual(instance.Spec, replica.Spec) {
-		instance.Spec.DeepCopyInto(&replica.Spec)
-		err = targetClient.Update(context.TODO(), replica)
+	if !instance.GetDeletionTimestamp().IsZero() {
+		replica.SetName(instance.GetName())
+		replica.SetNamespace(instance.GetNamespace())
+		err := targetClient.Delete(context.TODO(), replica)
 		if err != nil {
-			log.Error(err, "Error during updating of SFServiceInstance in target cluster", "instance", instanceID,
-				"clusterID", clusterID)
 			return reconcile.Result{}, err
 		}
-		log.Info("Updated SFServiceInstance in target cluster", "instance", instanceID,
-			"clusterID", clusterID)
+	}
+
+	if state == "in_queue" || state == "update" || state == "delete" {
+		replica.SetName(instance.GetName())
+		replica.SetNamespace(instance.GetNamespace())
+		replica.SetLabels(instance.GetLabels())
+		replica.SetAnnotations(instance.GetAnnotations())
+		instance.Spec.DeepCopyInto(&replica.Spec)
+		instance.Status.DeepCopyInto(&replica.Status)
+		err = targetClient.Update(context.TODO(), replica)
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				err = targetClient.Create(context.TODO(), replica)
+				if err != nil {
+					log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
+						"clusterID", clusterID, "instanceID", instanceID, "state", state)
+					return reconcile.Result{}, err
+				}
+			} else {
+				log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
+					"clusterID", clusterID, "instanceID", instanceID, "state", state)
+				return reconcile.Result{}, err
+			}
+		}
+		err = r.setInProgress(instance, 0)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	state = instance.GetState()
+
+	if state == "in progress" {
+		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
+		if err != nil {
+			log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
+				"clusterID", clusterID, "state", state)
+			// Error reading the object - requeue the request.
+			return reconcile.Result{}, err
+		}
+		replica.Status.DeepCopyInto(&instance.Status)
+		err = r.Update(context.TODO(), instance)
+		if err != nil {
+			log.Error(err, "Failed to update SFServiceInstance in master cluster", "instance", instanceID,
+				"clusterID", clusterID, "state", state)
+			// Error updating the object - requeue the request.
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient client.Client, namespace, clusterID string) error {
+	ns := &corev1.Namespace{}
+
+	err := targetClient.Get(context.TODO(), types.NamespacedName{
+		Name: namespace,
+	}, ns)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			log.Info("creating namespace in target cluster", "clusterID", clusterID,
+				"namespace", namespace)
+			ns.SetName(namespace)
+			err = r.Create(context.TODO(), ns)
+			if err != nil {
+				log.Error(err, "Failed to create namespace in target cluster", "namespace", namespace,
+					"clusterID", clusterID)
+				// Error updating the object - requeue the request.
+				return err
+			}
+			log.Info("Created namespace in target cluster", "namespace", namespace,
+				"clusterID", clusterID)
+			return nil
+		}
+		log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
+			"clusterID", clusterID)
+		return err
+
+	}
+	return nil
+}
+
+func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alpha1.SFServiceInstance, retryCount int) error {
+	instanceID := instance.GetName()
+	state := instance.GetState()
+	instance.SetState("in progress")
+	err := r.Update(context.TODO(), instance)
+	if err != nil {
+		if retryCount < constants.ErrorThreshold {
+			log.Info("Retrying", "function", "setInProgress", "retryCount", retryCount+1, "objectID", instanceID)
+			err := r.Get(context.TODO(), types.NamespacedName{
+				Name:      instanceID,
+				Namespace: instance.GetNamespace(),
+			}, instance)
+			if err != nil {
+				log.Error(err, "Failed to fetch sfserviceinstance for setInProgress", "operation", state,
+					"instanceId", instanceID)
+				return err
+			}
+			return r.setInProgress(instance, retryCount+1)
+		}
+		log.Error(err, "Updating status to in progress failed", "operation", state, "instanceId", instanceID)
+		return err
+	}
+	log.Info("Updated status to in progress", "operation", state, "instanceId", instanceID)
+	return nil
 }

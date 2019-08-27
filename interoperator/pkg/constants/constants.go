@@ -10,7 +10,7 @@ const (
 	ConfigMapName      = "interoperator-config"
 	ConfigMapKey       = "config"
 	NamespaceEnvKey    = "POD_NAMESPACE"
-	OwnClusterIDEnvKey = "OwnClusterID"
+	OwnClusterIDEnvKey = "CLUSTER_ID"
 	MasterClusterID    = "1"
 	StatefulSetName    = "web"
 
