@@ -21,6 +21,7 @@ import (
 
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/provisioner"
 	"github.com/prometheus/common/log"
@@ -142,7 +143,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	// set env CLUSTER_ID for containers
 	for i := range provisionerInstance.Spec.Template.Spec.Containers {
 		clusterIDEnv := &corev1.EnvVar{
-			Name:  "CLUSTER_ID",
+			Name:  constants.OwnClusterIDEnvKey,
 			Value: clusterID,
 		}
 		provisionerInstance.Spec.Template.Spec.Containers[i].Env = append(provisionerInstance.Spec.Template.Spec.Containers[i].Env, *clusterIDEnv)

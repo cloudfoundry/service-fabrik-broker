@@ -168,8 +168,7 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		if err != nil {
 			if errors.SFServiceInstanceNotFound(err) || errors.ClusterIDNotSet(err) {
 				if state != "delete" && state != "in progress" {
-					log.Info("clusterID not set. Ignoring", "instance", instanceID, "bindingID", bindingID)
-					return reconcile.Result{}, nil
+					return r.handleError(binding, reconcile.Result{}, err, state, 0)
 				}
 				log.Error(err, "failed to get clusterID. Proceding",
 					"instanceID", instanceID, "bindingID", bindingID, "state", state)
