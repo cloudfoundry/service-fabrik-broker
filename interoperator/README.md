@@ -50,7 +50,10 @@ In a new terminal, create an instance of the CRD and check if controller picks i
 ```
 kubectl apply -f config/samples/interoperator_v1alpha1_serviceinstance.yaml
 ```
-
+### Generate the clients for crds
+```
+vendor/k8s.io/code-generator/generate-groups.sh client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/client github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis osb:v1alpha1
+```
 
 ## Deployment
 
