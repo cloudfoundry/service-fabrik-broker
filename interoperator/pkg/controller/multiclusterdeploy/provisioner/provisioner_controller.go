@@ -22,6 +22,7 @@ import (
 	resourcev1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/resource/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/provisioner"
 	appsv1 "k8s.io/api/apps/v1"
@@ -120,6 +121,14 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterInstance := &resourcev1alpha1.SFCluster{}
 	err := r.Get(context.TODO(), request.NamespacedName, clusterInstance)
 	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// Object not found, return.
+			err = watchmanager.RemoveCluster(request.Name)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
 		log.Error(err, "Failed to get SFCluster...", "clusterId", request.NamespacedName.Name)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -191,6 +200,10 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
 				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
+				return reconcile.Result{}, err
+			}
+			err = watchmanager.AddCluster(clusterID)
+			if err != nil {
 				return reconcile.Result{}, err
 			}
 			return reconcile.Result{}, nil
