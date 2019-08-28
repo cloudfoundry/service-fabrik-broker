@@ -16,6 +16,7 @@ import (
 )
 
 // Provisioner fetches provisioner stateful set
+//go:generate mockgen -source provisioner.go -destination ./mock_provisioner/mock_provisioner.go
 type Provisioner interface {
 	FetchStatefulset() error
 	GetStatefulSet() *appsv1.StatefulSet
