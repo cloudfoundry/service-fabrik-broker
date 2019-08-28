@@ -157,15 +157,10 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	}
 
 	if state == "in_queue" || state == "update" || state == "delete" {
-		replica.SetName(instance.GetName())
-		replica.SetNamespace(instance.GetNamespace())
-		replica.SetLabels(instance.GetLabels())
-		replica.SetAnnotations(instance.GetAnnotations())
-		instance.Spec.DeepCopyInto(&replica.Spec)
-		instance.Status.DeepCopyInto(&replica.Status)
-		err = targetClient.Update(context.TODO(), replica)
+		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
+				copyObject(instance, replica)
 				err = targetClient.Create(context.TODO(), replica)
 				if err != nil {
 					log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
@@ -173,11 +168,21 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 					return reconcile.Result{}, err
 				}
 			} else {
+				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
+					"clusterID", clusterID, "state", state)
+				// Error reading the object - requeue the request.
+				return reconcile.Result{}, err
+			}
+		} else {
+			copyObject(instance, replica)
+			err = targetClient.Update(context.TODO(), replica)
+			if err != nil {
 				log.Error(err, "Error occurred while replicating SFServiceInstance to cluster ",
 					"clusterID", clusterID, "instanceID", instanceID, "state", state)
 				return reconcile.Result{}, err
 			}
 		}
+
 		err = r.setInProgress(instance, 0)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -185,16 +190,27 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 	}
 
 	state = instance.GetState()
+	labels := instance.GetLabels()
+	lastOperation, ok := labels[constants.LastOperationKey]
+	if !ok {
+		lastOperation = "in_queue"
+	}
 
 	if state == "in progress" {
 		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
 		if err != nil {
-			log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
-				"clusterID", clusterID, "state", state)
-			// Error reading the object - requeue the request.
-			return reconcile.Result{}, err
+			if apiErrors.IsNotFound(err) && lastOperation == "delete" {
+				instance.SetState("succeeded")
+			} else {
+				log.Error(err, "Failed to fetch SFServiceInstance from target cluster", "instance", instanceID,
+					"clusterID", clusterID, "state", state)
+				// Error reading the object - requeue the request.
+				return reconcile.Result{}, err
+			}
+		} else {
+			copyObject(replica, instance)
 		}
-		replica.Status.DeepCopyInto(&instance.Status)
+
 		err = r.Update(context.TODO(), instance)
 		if err != nil {
 			log.Error(err, "Failed to update SFServiceInstance in master cluster", "instance", instanceID,
@@ -273,4 +289,13 @@ func (r *ReconcileSFServiceInstanceReplicator) setInProgress(instance *osbv1alph
 	}
 	log.Info("Updated status to in progress", "operation", state, "instanceId", instanceID)
 	return nil
+}
+
+func copyObject(source, destination *osbv1alpha1.SFServiceInstance) {
+	destination.SetName(source.GetName())
+	destination.SetNamespace(source.GetNamespace())
+	destination.SetLabels(source.GetLabels())
+	destination.SetAnnotations(source.GetAnnotations())
+	source.Spec.DeepCopyInto(&destination.Spec)
+	source.Status.DeepCopyInto(&destination.Status)
 }
