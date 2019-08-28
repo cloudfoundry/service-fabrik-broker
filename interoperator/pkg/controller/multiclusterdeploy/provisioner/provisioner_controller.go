@@ -23,19 +23,22 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/config"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/internal/provisioner"
-	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+var log = logf.Log.WithName("provisioner.controller")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -116,23 +119,54 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterInstance := &resourcev1alpha1.SFCluster{}
 	err := r.Get(context.TODO(), request.NamespacedName, clusterInstance)
 	if err != nil {
-		log.Error("Failed to get SFCluster", err)
+		log.Error(err, "Failed to get SFCluster...", "clusterId", request.NamespacedName.Name)
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 	clusterID := clusterInstance.GetName()
-	log.Info("Cluster id is ", clusterID)
+	log.Info("cluster id", clusterID)
 
 	// Get targetClient for targetCluster
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	// Create Statefulset in target cluster for provisioner
+
+	// Get statefulSetInstance for provisioner
 	statefulSetInstance := r.provisioner.GetStatefulSet()
+
+	// Create/Update Namespace in target cluster for provisioner
+	ns := &corev1.Namespace{}
+	namespace := statefulSetInstance.GetNamespace()
+
+	err = targetClient.Get(context.TODO(), types.NamespacedName{
+		Name: namespace,
+	}, ns)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			log.Info("creating namespace in target cluster", "clusterID", clusterID,
+				"namespace", namespace)
+			ns.SetName(namespace)
+			err = targetClient.Create(context.TODO(), ns)
+			if err != nil {
+				log.Error(err, "Failed to create namespace in target cluster", "namespace", namespace,
+					"clusterID", clusterID)
+				// Error updating the object - requeue the request.
+				return reconcile.Result{}, err
+			}
+			log.Info("Created namespace in target cluster", "namespace", namespace,
+				"clusterID", clusterID)
+		}
+		log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
+			"clusterID", clusterID)
+		return reconcile.Result{}, err
+	}
+
+	// Create Statefulset in target cluster for provisioner
 	provisionerInstance := &appsv1.StatefulSet{}
 	provisionerInstance.SetName(statefulSetInstance.GetName())
 	provisionerInstance.SetNamespace(statefulSetInstance.GetNamespace())
+	provisionerInstance.SetLabels(statefulSetInstance.GetLabels())
 	// copy spec
 	statefulSetInstance.Spec.DeepCopyInto(&provisionerInstance.Spec)
 	// set replicaCount to 1
@@ -148,19 +182,19 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 		provisionerInstance.Spec.Template.Spec.Containers[i].Env = append(provisionerInstance.Spec.Template.Spec.Containers[i].Env, *clusterIDEnv)
 	}
 
-	log.Info("Updating provisioner in cluster ", clusterID)
+	log.Info("Updating provisioner", "Cluster", clusterID)
 	err = targetClient.Update(context.TODO(), provisionerInstance)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
-			log.Info("Provisioner not found, creating in cluster ", clusterID)
+			log.Info("Provisioner not found, Creating...", "clusterId", clusterID)
 			err = targetClient.Create(context.TODO(), provisionerInstance)
 			if err != nil {
-				log.Error("Error occurred while creating provisioner in cluster ", clusterID, err)
+				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
 				return reconcile.Result{}, err
 			}
 			return reconcile.Result{}, nil
 		}
-		log.Error("Error occurred while updating provisioner in cluster ", clusterID, err)
+		log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
 		return reconcile.Result{}, err
 	}
 
@@ -179,19 +213,19 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, *clusterRoleBindingSubject)
 	clusterRoleBinding.RoleRef = *clusterRoleRef
-	log.Info("Updating clusterRole in cluster ", clusterID)
+	log.Info("Updating clusterRole", "clusterId", clusterID)
 	err = targetClient.Update(context.TODO(), clusterRoleBinding)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
-			log.Info("ClusterRoleBinding not found, creating role binding in cluster ", clusterID)
+			log.Info("ClusterRoleBinding not found, creating role binding", "clusterId", clusterID)
 			err = targetClient.Create(context.TODO(), clusterRoleBinding)
 			if err != nil {
-				log.Error("Error occurred while creating ClusterRoleBinding for cluster ", clusterID, err)
+				log.Error(err, "Error occurred while creating ClusterRoleBinding", "clusterId", clusterID)
 				return reconcile.Result{}, err
 			}
 			return reconcile.Result{}, nil
 		}
-		log.Error("Error occurred while updating ClusterRoleBinding for cluster ", clusterID, err)
+		log.Error(err, "Error occurred while updating ClusterRoleBinding", "clusterId", clusterID)
 		return reconcile.Result{}, err
 	}
 
