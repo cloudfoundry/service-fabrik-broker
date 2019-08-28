@@ -85,7 +85,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New("provisioner-controller", mgr, controller.Options{
 		Reconciler:              r,
-		MaxConcurrentReconciles: interoperatorCfg.SchedulerWorkerCount,
+		MaxConcurrentReconciles: interoperatorCfg.ProvisionerWorkerCount,
 	})
 	if err != nil {
 		return err
