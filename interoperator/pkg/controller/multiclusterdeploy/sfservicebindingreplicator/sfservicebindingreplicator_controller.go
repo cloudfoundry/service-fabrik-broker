@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/prometheus/common/log"
 
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/watchmanager"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +39,8 @@ import (
 )
 
 //var log = logf.Log.WithName("binding.replicator")
+
+var getWatchChannel = watchmanager.GetWatchChannel
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -76,6 +79,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
+
+	/*
+		watchEvents, err := getWatchChannel("sfservicebindings")
+		if err != nil {
+			return err
+		}
+		err = c.Watch(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{})
+		if err != nil {
+			return err
+		}
+	*/
 
 	return nil
 }
