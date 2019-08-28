@@ -193,7 +193,7 @@ func RendererError(err error) bool {
 	return ErrorCode(err) == CodeRendererError
 }
 
-// NewTemplateNotFound returns a new error which indicates plan template mot found
+// NewTemplateNotFound returns a new error which indicates plan template not found
 func NewTemplateNotFound(name, planID string, err error) *InteroperatorError {
 	return &InteroperatorError{
 		Err:     err,
@@ -207,7 +207,7 @@ func TemplateNotFound(err error) bool {
 	return ErrorCode(err) == CodeTemplateNotFound
 }
 
-// NewInputError returns a new error which indicates plan template mot found
+// NewInputError returns a new error which indicates error in args to a functions
 func NewInputError(fn, inputs string, err error) *InteroperatorError {
 	return &InteroperatorError{
 		Err:     err,
@@ -219,4 +219,18 @@ func NewInputError(fn, inputs string, err error) *InteroperatorError {
 // InputError is true if the error indicates an InputError.
 func InputError(err error) bool {
 	return ErrorCode(err) == CodeInputError
+}
+
+// NewPreconditionError returns a new error which indicates precondition not met
+func NewPreconditionError(fn, message string, err error) *InteroperatorError {
+	return &InteroperatorError{
+		Err:     err,
+		Code:    CodePreconditionError,
+		Message: fmt.Sprintf("precondition for function %s not met. %s", fn, message),
+	}
+}
+
+// PreconditionError is true if the error indicates an PreconditionError.
+func PreconditionError(err error) bool {
+	return ErrorCode(err) == CodePreconditionError
 }

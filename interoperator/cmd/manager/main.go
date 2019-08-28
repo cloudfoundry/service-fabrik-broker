@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/watchmanager"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/watches"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/webhook"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -79,6 +80,13 @@ func main() {
 	log.Info("Initializing interoperator watch list")
 	if _, err := watches.InitWatchConfig(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
 		log.Error(err, "unable initializing interoperator watch list")
+		os.Exit(1)
+	}
+
+	// Init watch manager
+	log.Info("Initializing interoperator watch manager")
+	if err := watchmanager.Initialize(mgr.GetConfig(), mgr.GetScheme(), mgr.GetRESTMapper()); err != nil {
+		log.Error(err, "unable initializing interoperator watch manager")
 		os.Exit(1)
 	}
 

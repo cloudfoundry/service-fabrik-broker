@@ -14,6 +14,8 @@ const (
 	MasterClusterID    = "1"
 	StatefulSetName    = "web"
 
+	MultiClusterWatchTimeout = 28800 // 8 hours in seconds
+
 	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10
 	DefaultBindingWorkerCount     = 20

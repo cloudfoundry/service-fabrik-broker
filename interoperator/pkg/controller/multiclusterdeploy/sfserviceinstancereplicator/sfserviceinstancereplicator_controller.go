@@ -22,6 +22,7 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
+	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/watchmanager"
 
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,6 +38,9 @@ import (
 )
 
 var log = logf.Log.WithName("instance.replicator")
+
+// To the function mock
+var getWatchChannel = watchmanager.GetWatchChannel
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -72,6 +76,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to SFServiceInstanceReplicator
 	err = c.Watch(&source.Kind{Type: &osbv1alpha1.SFServiceInstance{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
+
+	watchEvents, err := getWatchChannel("sfserviceinstances")
+	if err != nil {
+		return err
+	}
+	err = c.Watch(&source.Channel{Source: watchEvents}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
