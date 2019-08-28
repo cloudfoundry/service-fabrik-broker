@@ -12,7 +12,7 @@ const (
 	NamespaceEnvKey    = "POD_NAMESPACE"
 	OwnClusterIDEnvKey = "OwnClusterID"
 	MasterClusterID    = "1"
-	StatefulSetName    = "web"
+	StatefulSetName    = "provisioner"
 
 	DefaultServiceFabrikNamespace = "default"
 	DefaultInstanceWorkerCount    = 10

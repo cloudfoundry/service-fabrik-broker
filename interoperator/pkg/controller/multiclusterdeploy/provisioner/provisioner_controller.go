@@ -200,7 +200,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 
 	// Deploy cluster rolebinding
 	clusterRoleBinding := &v1.ClusterRoleBinding{}
-	clusterRoleBinding.SetName("inter-operator-clusterrolebinding")
+	clusterRoleBinding.SetName("provisioner-clusterrolebinding")
 	clusterRoleBindingSubject := &v1.Subject{
 		Kind:      "ServiceAccount",
 		Name:      "default",
