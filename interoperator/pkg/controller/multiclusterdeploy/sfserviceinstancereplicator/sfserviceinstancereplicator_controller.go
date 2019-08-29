@@ -152,9 +152,9 @@ func (r *ReconcileSFServiceInstanceReplicator) Reconcile(request reconcile.Reque
 		replica.SetNamespace(instance.GetNamespace())
 		err := targetClient.Delete(context.TODO(), replica)
 		if err != nil {
-			log.Error(err, "Failed to delete SFServiceInstance from target cluster", "instance", instanceID,
-				"clusterID", clusterID, "state", state)
 			if !apiErrors.IsNotFound(err) {
+				log.Error(err, "Failed to delete SFServiceInstance from target cluster", "instance", instanceID,
+					"clusterID", clusterID, "state", state)
 				return reconcile.Result{}, err
 			}
 		}
@@ -270,7 +270,7 @@ func (r *ReconcileSFServiceInstanceReplicator) reconcileNamespace(targetClient c
 	if delete {
 		err = targetClient.Delete(context.TODO(), ns)
 		if err != nil {
-			if apiErrors.IsConflict(err) {
+			if apiErrors.IsConflict(err) || apiErrors.IsNotFound(err) {
 				// delete triggered
 				return nil
 			}

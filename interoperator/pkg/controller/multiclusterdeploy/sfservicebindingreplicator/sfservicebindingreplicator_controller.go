@@ -251,10 +251,14 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 				bindingSecret.SetNamespace(binding.GetNamespace())
 				err = r.Delete(context.TODO(), bindingSecret)
 				if err != nil {
-					log.Error(err, "Failed to delete secret in master cluster", "binding", bindingID,
-						"clusterID ", clusterID, "state ", state)
-					// Error deleting the object - requeue the request.
-					return reconcile.Result{}, err
+					if apiErrors.IsNotFound(err) {
+						log.Error(err, "Seems like binding secret is already deleted", "bindinID", bindingID)
+					} else {
+						log.Error(err, "Failed to delete secret in master cluster", "binding", bindingID,
+							"clusterID ", clusterID, "state ", state)
+						// Error deleting the object - requeue the request.
+						return reconcile.Result{}, err
+					}
 				}
 			} else {
 				replicaSecret := &corev1.Secret{}
