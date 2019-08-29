@@ -180,23 +180,39 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 
 	// Creating/Updating sfcluster in target cluster
 	targetSFCluster := &resourcev1alpha1.SFCluster{}
-	targetSFCluster.SetName(clusterInstance.GetName())
-	targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
-	targetSFCluster.SetLabels(clusterInstance.GetLabels())
-	// copy spec
-	clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
-	log.Info("Updating SFCluster in target cluster", "Cluster", clusterID)
-	err = targetClient.Update(context.TODO(), targetSFCluster)
+	err = targetClient.Get(context.TODO(), types.NamespacedName{
+		Name:      clusterInstance.GetName(),
+		Namespace: clusterInstance.GetNamespace(),
+	}, targetSFCluster)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			log.Info("SFCluster not found, Creating...", "clusterId", clusterID)
+			targetSFCluster.SetName(clusterInstance.GetName())
+			targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
+			targetSFCluster.SetLabels(clusterInstance.GetLabels())
+			// copy spec
+			clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
 			err = targetClient.Create(context.TODO(), targetSFCluster)
 			if err != nil {
 				log.Error(err, "Error occurred while creating sfcluster", "clusterId", clusterID)
+				// Error updating the object - requeue the request.
 				return reconcile.Result{}, err
 			}
+			log.Info("Created SFCluster in target cluster", "clusterID", clusterID)
 		} else {
 			log.Error(err, "Error occurred while sfcluster provisioner", "clusterId", clusterID)
+			return reconcile.Result{}, err
+		}
+	} else {
+		targetSFCluster.SetName(clusterInstance.GetName())
+		targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
+		targetSFCluster.SetLabels(clusterInstance.GetLabels())
+		// copy spec
+		clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
+		log.Info("Updating SFCluster in target cluster", "Cluster", clusterID)
+		err = targetClient.Update(context.TODO(), targetSFCluster)
+		if err != nil {
+			log.Error(err, "Error occurred while updating sfcluster provisioner", "clusterId", clusterID)
 			return reconcile.Result{}, err
 		}
 	}
