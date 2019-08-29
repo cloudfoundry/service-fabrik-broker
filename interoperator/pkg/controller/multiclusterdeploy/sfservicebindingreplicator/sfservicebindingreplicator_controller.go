@@ -22,7 +22,6 @@ import (
 	osbv1alpha1 "github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/apis/osb/v1alpha1"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/cluster/registry"
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/constants"
-	"github.com/prometheus/common/log"
 
 	"github.com/cloudfoundry-incubator/service-fabrik-broker/interoperator/pkg/controller/multiclusterdeploy/watchmanager"
 	corev1 "k8s.io/api/core/v1"
@@ -35,10 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-//var log = logf.Log.WithName("binding.replicator")
+var log = logf.Log.WithName("binding.replicator")
 
 var getWatchChannel = watchmanager.GetWatchChannel
 
@@ -125,20 +125,20 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 
 	bindingID := binding.GetName()
 	state := binding.GetState()
-	/*
-		clusterID, err := binding.GetClusterID(r)
-		if err != nil {
-			log.Info("clusterID not set. Ignoring", "instance", bindingID)
-			return reconcile.Result{}, nil
-		}
-	*/
-	clusterID := "2"
+
+	clusterID, err := binding.GetClusterID(r)
+	if err != nil {
+		log.Info("clusterID not set. Ignoring", "instance", bindingID)
+		return reconcile.Result{}, nil
+	}
+
 	if clusterID == constants.MasterClusterID {
 		// Target cluster is mastercluster itself
 		// Replication not needed
 		log.Info("Target cluster is master cluster itself, replication not needed..")
 		return reconcile.Result{}, nil
 	}
+	log.Info("Binding replication started for sister cluster:", "bindinID", bindingID, "clusterID", clusterID)
 
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
@@ -151,15 +151,16 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 		err := targetClient.Delete(context.TODO(), replica)
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
-				log.Info("Seems like replica is already deleted from sister cluster.. ignoring delete failure.")
+				log.Error(err, "Seems like replica is already deleted from sister cluster.. ignoring delete failure.", "bindinID", bindingID, "clusterID", clusterID)
 			} else {
+				log.Error(err, "Could not delete replica from sister cluster for unbind..aborting", "bindinID", bindingID, "clusterID", clusterID)
 				return reconcile.Result{}, err
 			}
 		}
 	}
 
 	if state == "in_queue" || state == "delete" {
-		log.Info("Trying to get binding ", bindingID, " from cluster", clusterID)
+		log.Info("Trying to get binding from sister cluster.. ", "bindinID", bindingID, "clusterID", clusterID, "state", state)
 		err = targetClient.Get(context.TODO(), types.NamespacedName{
 			Name:      binding.GetName(),
 			Namespace: binding.GetNamespace(),
@@ -173,6 +174,9 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 						"clusterID", clusterID, "bindingID", bindingID, "state", state)
 					return reconcile.Result{}, err
 				}
+			} else if apiErrors.IsNotFound(err) && state == "delete" {
+				log.Error(err, "binding id not found on sister cluster for processing delete .. proceeding with deleting binding on master also..",
+					"clusterID", clusterID, "bindingID", bindingID, "state", state)
 			} else {
 				log.Error(err, "Error occurred while getting SFServiceBinding from cluster ",
 					"clusterID", clusterID, "bindingID", bindingID, "state", state)
@@ -190,6 +194,8 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 
 		err = r.setInProgress(binding, 0)
 		if err != nil {
+			log.Error(err, "Error occurred while setting SFServiceBinding to in progress on master cluster ",
+				"bindingID", bindingID, "state", state)
 			return reconcile.Result{}, err
 		}
 	}
@@ -197,23 +203,29 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 	state = binding.GetState()
 
 	//TODO: change it to in progress
-	if state == "in_progress" {
+	if state == "in progress" {
 		replicaLabels := make(map[string]string)
 		var replicaState, replicaLastOperation string
+		log.Info("Trying to obtain binding replica from sister cluster",
+			"clusterID", clusterID, "bindingID", bindingID, "state", state)
 		err = targetClient.Get(context.TODO(), request.NamespacedName, replica)
 		if err != nil {
 			if apiErrors.IsNotFound(err) && !binding.GetDeletionTimestamp().IsZero() {
 				//current operation is unbind and it must have been succeeded on sister cluster
+				log.Info("binding replica not found on sister cluster, but current operation is unbind , so ignoring the failure",
+					"clusterID", clusterID, "bindingID", bindingID, "state", state)
 				binding.SetState("succeeded")
 				replicaState = "succeeded"
 				replicaLabels[constants.LastOperationKey] = "delete"
 			} else {
-				log.Error(err, "Failed to fetch SFServiceBinding from target cluster", "binding ", bindingID,
+				log.Error(err, "Failed to fetch SFServiceBinding from sister cluster", "binding ", bindingID,
 					"clusterID ", clusterID, "state ", state)
 				// Error reading the object - requeue the request.
 				return reconcile.Result{}, err
 			}
 		} else if replica.GetState() == "in_queue" || replica.GetState() == "delete" {
+			log.Info("replica in in_queue or delete state, not replicating it to master cluster",
+				"clusterID", clusterID, "bindingID", bindingID, "state", state)
 			return reconcile.Result{}, nil
 		} else {
 			replica.Status.DeepCopyInto(&binding.Status)
@@ -230,6 +242,8 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 		if replicaState == "succeeded" {
 			if replicaLastOperation == "delete" {
 				//delete the secret
+				log.Info("unbind on sister cluster completed, deleting secret from master cluster..",
+					"clusterID", clusterID, "bindingID", bindingID, "state", state)
 				secretName := replica.Status.Response.SecretRef
 				if secretName == "" {
 					secretName = "sf-" + binding.GetName()
@@ -270,6 +284,8 @@ func (r *ReconcileSFServiceBindingReplicator) Reconcile(request reconcile.Reques
 					log.Error(err, "failed to set owner reference for secret", "binding", bindingID)
 					return reconcile.Result{}, err
 				}
+				log.Info("bind on sister cluster completed, replicating secret to master cluster..",
+					"clusterID", clusterID, "bindingID", bindingID, "state", state)
 				err = r.Update(context.TODO(), bindingSecret)
 				if err != nil {
 					if apiErrors.IsNotFound(err) {
