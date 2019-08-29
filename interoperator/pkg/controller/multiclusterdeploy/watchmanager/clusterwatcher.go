@@ -81,7 +81,8 @@ func (cw *clusterWatcher) start() error {
 					instanceWatch, err = instanceClient.Watch(opts)
 					if err != nil {
 						log.Error(err, "failed to re-establish watch for sfserviceinstance", "clusterID", cluster.GetName())
-						continue
+						_ = RemoveCluster(cluster.GetName())
+						return
 					}
 					log.V(1).Info("watch refreshed for sfserviceinstance", "clusterID", cluster.GetName())
 				}
@@ -103,7 +104,8 @@ func (cw *clusterWatcher) start() error {
 					bindingWatch, err = bindingClient.Watch(opts)
 					if err != nil {
 						log.Error(err, "failed to re-establish watch for sfservicebinding", "clusterID", cluster.GetName())
-						continue
+						_ = RemoveCluster(cluster.GetName())
+						return
 					}
 					log.V(1).Info("watch refreshed for sfservicebinding", "clusterID", cluster.GetName())
 				}

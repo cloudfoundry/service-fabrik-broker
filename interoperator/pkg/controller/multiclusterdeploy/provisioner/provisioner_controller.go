@@ -148,11 +148,6 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterID := clusterInstance.GetName()
 	log.Info("reconciling cluster", "clusterID", clusterID)
 
-	err = watchmanager.AddCluster(clusterID)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	// Get targetClient for targetCluster
 	targetClient, err := r.clusterRegistry.GetClient(clusterID)
 	if err != nil {
@@ -165,40 +160,60 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	// Register sf CRDs
 	SFCrdNames := []string{
 		"sfplans.osb.servicefabrik.io",
-		"sfservice.osb.servicefabrik.io",
-		"sfserviceinstance.osb.servicefabrik.io",
-		"sfservicebinding.osb.servicefabrik.io",
-		"sfcluster.osb.servicefabrik.io",
+		"sfservices.osb.servicefabrik.io",
+		"sfserviceinstances.osb.servicefabrik.io",
+		"sfservicebindings.osb.servicefabrik.io",
+		"sfclusters.resource.servicefabrik.io",
 	}
 	for _, sfcrdname := range SFCrdNames {
 		// Get crd registered in master cluster
 		sfCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
 		err = r.Get(context.TODO(), types.NamespacedName{Name: sfcrdname}, sfCRDInstance)
 		if err != nil {
+			log.Error(err, "Error occurred geeting CRD in master cluster", "CRD", sfcrdname)
 			return reconcile.Result{}, err
 		}
 		// Create/Update CRD in target cluster
 		targetCRDInstance := &apiextensionsv1beta1.CustomResourceDefinition{}
-		targetCRDInstance.SetName(sfCRDInstance.GetName())
-		targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
-		// copy spec
-		sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
-
-		log.Info("Updating CRD in target cluster", "Cluster", clusterID, "CRD", sfcrdname)
-		err = targetClient.Update(context.TODO(), targetCRDInstance)
+		err = targetClient.Get(context.TODO(), types.NamespacedName{
+			Name: sfCRDInstance.GetName(),
+		}, targetCRDInstance)
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
 				log.Info("CRD in target cluster not found, Creating...", "clusterId", clusterID, "CRD", sfcrdname)
+				targetCRDInstance.SetName(sfCRDInstance.GetName())
+				targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
+				// copy spec
+				sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
+				sfCRDInstance.Status.DeepCopyInto(&targetCRDInstance.Status)
 				err = targetClient.Create(context.TODO(), targetCRDInstance)
 				if err != nil {
 					log.Error(err, "Error occurred while creating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
 					return reconcile.Result{}, err
 				}
 			} else {
+				log.Error(err, "Error occurred while getting CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
+				return reconcile.Result{}, err
+			}
+		} else {
+			targetCRDInstance.SetName(sfCRDInstance.GetName())
+			targetCRDInstance.SetLabels(sfCRDInstance.GetLabels())
+			// copy spec
+			sfCRDInstance.Spec.DeepCopyInto(&targetCRDInstance.Spec)
+			sfCRDInstance.Status.DeepCopyInto(&targetCRDInstance.Status)
+
+			log.Info("Updating CRD in target cluster", "Cluster", clusterID, "CRD", sfcrdname)
+			err = targetClient.Update(context.TODO(), targetCRDInstance)
+			if err != nil {
 				log.Error(err, "Error occurred while updating CRD in target cluster", "clusterId", clusterID, "CRD", sfcrdname)
 				return reconcile.Result{}, err
 			}
 		}
+	}
+
+	err = watchmanager.AddCluster(clusterID)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	// Create/Update Namespace in target cluster for provisioner
