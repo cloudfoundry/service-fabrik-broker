@@ -163,6 +163,10 @@ func (r *ReconcileSFServiceBinding) Reconcile(request reconcile.Request) (reconc
 		lastOperation = "in_queue"
 	}
 
+	if state == "succeeded" || state == "failed" {
+		return reconcile.Result{}, nil
+	}
+
 	if state == "in_queue" || state == "update" || state == "delete" || state == "in progress" {
 		clusterID, err := binding.GetClusterID(r)
 		if err != nil {

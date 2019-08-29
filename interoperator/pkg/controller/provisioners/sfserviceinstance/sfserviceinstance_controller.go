@@ -164,6 +164,10 @@ func (r *ReconcileSFServiceInstance) Reconcile(request reconcile.Request) (recon
 		lastOperation = "in_queue"
 	}
 
+	if state == "succeeded" || state == "failed" {
+		return reconcile.Result{}, nil
+	}
+
 	clusterID, err := instance.GetClusterID()
 	if err != nil {
 		if errors.SFServiceInstanceNotFound(err) || errors.ClusterIDNotSet(err) {
