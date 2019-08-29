@@ -171,10 +171,66 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 			}
 			log.Info("Created namespace in target cluster", "namespace", namespace,
 				"clusterID", clusterID)
+		} else {
+			log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
+				"clusterID", clusterID)
+			return reconcile.Result{}, err
 		}
-		log.Error(err, "Failed to fetch namespace from target cluster", "namespace", namespace,
-			"clusterID", clusterID)
+	}
+
+	// Creating/Updating sfcluster in target cluster
+	targetSFCluster := &resourcev1alpha1.SFCluster{}
+	targetSFCluster.SetName(clusterInstance.GetName())
+	targetSFCluster.SetNamespace(clusterInstance.GetNamespace())
+	targetSFCluster.SetLabels(clusterInstance.GetLabels())
+	// copy spec
+	clusterInstance.Spec.DeepCopyInto(&targetSFCluster.Spec)
+	log.Info("Updating SFCluster in target cluster", "Cluster", clusterID)
+	err = targetClient.Update(context.TODO(), targetSFCluster)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			log.Info("SFCluster not found, Creating...", "clusterId", clusterID)
+			err = targetClient.Create(context.TODO(), targetSFCluster)
+			if err != nil {
+				log.Error(err, "Error occurred while creating sfcluster", "clusterId", clusterID)
+				return reconcile.Result{}, err
+			}
+		} else {
+			log.Error(err, "Error occurred while sfcluster provisioner", "clusterId", clusterID)
+			return reconcile.Result{}, err
+		}
+	}
+
+	// Creating/Updating kubeconfig secret for sfcluster in target cluster
+	clusterInstanceSecret := &corev1.Secret{}
+	err = r.Get(context.TODO(), types.NamespacedName{Name: clusterInstance.Spec.SecretRef, Namespace: namespace}, clusterInstanceSecret)
+	if err != nil {
+		log.Error(err, "Failed to get be kubeconfig secret for sfcluster...", "clusterId", request.NamespacedName.Name, "kubeconfig-secret", clusterInstance.Spec.SecretRef)
 		return reconcile.Result{}, err
+	}
+	targetSFClusterSecret := &corev1.Secret{}
+	targetSFClusterSecret.SetName(clusterInstanceSecret.GetName())
+	targetSFClusterSecret.SetNamespace(clusterInstanceSecret.GetNamespace())
+	targetSFClusterSecret.SetLabels(clusterInstanceSecret.GetLabels())
+	// copy Data
+	targetSFClusterSecret.Data = make(map[string][]byte)
+	for key, val := range clusterInstanceSecret.Data {
+		targetSFClusterSecret.Data[key] = val
+	}
+	log.Info("Updating kubeconfig secret for sfcluster in target cluster", "Cluster", clusterID)
+	err = targetClient.Update(context.TODO(), targetSFClusterSecret)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			log.Info("kubeconfig secret for sfcluster in target cluster not found, Creating...", "clusterId", clusterID)
+			err = targetClient.Create(context.TODO(), targetSFClusterSecret)
+			if err != nil {
+				log.Error(err, "Error occurred while creating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+				return reconcile.Result{}, err
+			}
+		} else {
+			log.Error(err, "Error occurred while updating kubeconfig secret for sfcluster in target cluster", "clusterId", clusterID)
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Create Statefulset in target cluster for provisioner
@@ -207,10 +263,10 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 				log.Error(err, "Error occurred while creating provisioner", "clusterId", clusterID)
 				return reconcile.Result{}, err
 			}
-			return reconcile.Result{}, nil
+		} else {
+			log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
+			return reconcile.Result{}, err
 		}
-		log.Error(err, "Error occurred while updating provisioner", "clusterId", clusterID)
-		return reconcile.Result{}, err
 	}
 
 	// Deploy cluster rolebinding
@@ -219,7 +275,7 @@ func (r *ReconcileProvisioner) Reconcile(request reconcile.Request) (reconcile.R
 	clusterRoleBindingSubject := &v1.Subject{
 		Kind:      "ServiceAccount",
 		Name:      "default",
-		Namespace: "default",
+		Namespace: namespace,
 	}
 	clusterRoleRef := &v1.RoleRef{
 		APIGroup: "rbac.authorization.k8s.io",
